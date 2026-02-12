@@ -1,0 +1,368 @@
+# =============================================================================
+# Aegis AI X - Development Docker Compose
+# =============================================================================
+# Usage: docker compose -f infrastructure/docker-compose/development.yml up
+#
+# Features:
+#   - Debug ports exposed for all services
+#   - Hot reload via volume mounts
+#   - Source code mounted into containers
+#   - Lower resource constraints for local machines
+#   - Debug logging enabled
+# =============================================================================
+
+version: "3.9"
+
+x-common-dev-env: &common-dev-env
+  APP_ENV: development
+  LOG_LEVEL: DEBUG
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONUNBUFFERED: "1"
+
+x-common-dev-volumes: &common-dev-volumes
+  - ../../services:/app/services:cached
+  - ../../libs:/app/libs:cached
+  - ../../pyproject.toml:/app/pyproject.toml:ro
+
+services:
+  # ─── API Gateway ─────────────────────────────────────────────────────────────
+  api-gateway:
+    build:
+      context: ../..
+      dockerfile: services/api-gateway/Dockerfile
+      target: development
+    ports:
+      - "${API_GATEWAY_PORT:-8000}:8000"
+      - "${API_GATEWAY_DEBUG_PORT:-5678}:5678"   # debugpy
+    environment:
+      <<: *common-dev-env
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-aegis_ai}
+      POSTGRES_USER: ${POSTGRES_USER:-aegis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aegis_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-aegis_dev}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-key-change-in-production}
+      RELOAD: "true"
+    volumes:
+      - *common-dev-volumes
+      - ../../services/api-gateway:/app/services/api-gateway:cached
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - aegis-net
+    restart: unless-stopped
+
+  # ─── Supervisor Service ──────────────────────────────────────────────────────
+  supervisor:
+    build:
+      context: ../..
+      dockerfile: services/supervisor/Dockerfile
+      target: development
+    ports:
+      - "${SUPERVISOR_PORT:-8010}:8010"
+      - "${SUPERVISOR_DEBUG_PORT:-5679}:5678"    # debugpy
+    environment:
+      <<: *common-dev-env
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-aegis_dev}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-aegis_ai}
+      POSTGRES_USER: ${POSTGRES_USER:-aegis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aegis_dev}
+      RELOAD: "true"
+    volumes:
+      - *common-dev-volumes
+      - ../../services/supervisor:/app/services/supervisor:cached
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - aegis-net
+    restart: unless-stopped
+
+  # ─── Agent Service ───────────────────────────────────────────────────────────
+  agents:
+    build:
+      context: ../..
+      dockerfile: services/agents/Dockerfile
+      target: development
+    ports:
+      - "${AGENTS_PORT:-8020}:8020"
+      - "${AGENTS_DEBUG_PORT:-5680}:5678"        # debugpy
+    environment:
+      <<: *common-dev-env
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      GOOGLE_AI_API_KEY: ${GOOGLE_AI_API_KEY:-}
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: "6333"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-aegis_dev}
+      RELOAD: "true"
+    volumes:
+      - *common-dev-volumes
+      - ../../services/agents:/app/services/agents:cached
+    depends_on:
+      - redis
+      - qdrant
+    networks:
+      - aegis-net
+    restart: unless-stopped
+
+  # ─── Execution Service ──────────────────────────────────────────────────────
+  execution:
+    build:
+      context: ../..
+      dockerfile: services/execution/Dockerfile
+      target: development
+    ports:
+      - "${EXECUTION_PORT:-8030}:8030"
+      - "${EXECUTION_DEBUG_PORT:-5681}:5678"     # debugpy
+    privileged: true
+    environment:
+      <<: *common-dev-env
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-aegis_dev}
+      RELOAD: "true"
+    volumes:
+      - *common-dev-volumes
+      - ../../services/execution:/app/services/execution:cached
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - redis
+    networks:
+      - aegis-net
+    restart: unless-stopped
+
+  # ─── Approval Service ───────────────────────────────────────────────────────
+  approval:
+    build:
+      context: ../..
+      dockerfile: services/approval/Dockerfile
+      target: development
+    ports:
+      - "${APPROVAL_PORT:-8040}:8040"
+      - "${APPROVAL_DEBUG_PORT:-5682}:5678"      # debugpy
+    environment:
+      <<: *common-dev-env
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-aegis_ai}
+      POSTGRES_USER: ${POSTGRES_USER:-aegis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aegis_dev}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-aegis_dev}
+      RELOAD: "true"
+    volumes:
+      - *common-dev-volumes
+      - ../../services/approval:/app/services/approval:cached
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - aegis-net
+    restart: unless-stopped
+
+  # ─── Auth Service ────────────────────────────────────────────────────────────
+  auth:
+    build:
+      context: ../..
+      dockerfile: services/auth/Dockerfile
+      target: development
+    ports:
+      - "${AUTH_PORT:-8050}:8050"
+      - "${AUTH_DEBUG_PORT:-5683}:5678"           # debugpy
+    environment:
+      <<: *common-dev-env
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-aegis_ai}
+      POSTGRES_USER: ${POSTGRES_USER:-aegis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aegis_dev}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-dev-secret-key-change-in-production}
+      OAUTH_GITHUB_CLIENT_ID: ${OAUTH_GITHUB_CLIENT_ID:-}
+      OAUTH_GITHUB_CLIENT_SECRET: ${OAUTH_GITHUB_CLIENT_SECRET:-}
+      RELOAD: "true"
+    volumes:
+      - *common-dev-volumes
+      - ../../services/auth:/app/services/auth:cached
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - aegis-net
+    restart: unless-stopped
+
+  # ─── Analytics Service ──────────────────────────────────────────────────────
+  analytics:
+    build:
+      context: ../..
+      dockerfile: services/analytics/Dockerfile
+      target: development
+    ports:
+      - "${ANALYTICS_PORT:-8060}:8060"
+      - "${ANALYTICS_DEBUG_PORT:-5684}:5678"     # debugpy
+    environment:
+      <<: *common-dev-env
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:-aegis_ai}
+      POSTGRES_USER: ${POSTGRES_USER:-aegis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aegis_dev}
+      MONGO_HOST: mongodb
+      MONGO_PORT: "27017"
+      MONGO_USER: ${MONGO_USER:-aegis}
+      MONGO_PASSWORD: ${MONGO_PASSWORD:-aegis_dev}
+      RELOAD: "true"
+    volumes:
+      - *common-dev-volumes
+      - ../../services/analytics:/app/services/analytics:cached
+    depends_on:
+      - postgres
+      - mongodb
+    networks:
+      - aegis-net
+    restart: unless-stopped
+
+  # ─── Frontend Dashboard ─────────────────────────────────────────────────────
+  dashboard:
+    build:
+      context: ../../frontend/dashboard
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "${DASHBOARD_PORT:-3000}:3000"
+    environment:
+      - REACT_APP_API_URL=http://localhost:${API_GATEWAY_PORT:-8000}
+      - CHOKIDAR_USEPOLLING=true
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ../../frontend/dashboard/src:/app/src:cached
+      - ../../frontend/dashboard/public:/app/public:cached
+    networks:
+      - aegis-net
+    restart: unless-stopped
+
+  # ─── Infrastructure: PostgreSQL ──────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-aegis_ai}
+      POSTGRES_USER: ${POSTGRES_USER:-aegis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aegis_dev}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../database:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aegis} -d ${POSTGRES_DB:-aegis_ai}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aegis-net
+
+  # ─── Infrastructure: MongoDB ─────────────────────────────────────────────────
+  mongodb:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-aegis}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-aegis_dev}
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - aegis-net
+
+  # ─── Infrastructure: Redis ──────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    command: redis-server --requirepass ${REDIS_PASSWORD:-aegis_dev} --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-aegis_dev}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - redis_data:/data
+    networks:
+      - aegis-net
+
+  # ─── Infrastructure: Qdrant ─────────────────────────────────────────────────
+  qdrant:
+    image: qdrant/qdrant:latest
+    ports:
+      - "${QDRANT_HTTP_PORT:-6333}:6333"
+      - "${QDRANT_GRPC_PORT:-6334}:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - aegis-net
+
+  # ─── Monitoring: Prometheus ─────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ../kubernetes/configmaps/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - aegis-net
+
+  # ─── Monitoring: Grafana ────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "${GRAFANA_PORT:-3001}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - aegis-net
+
+  # ─── Mail: Mailhog (dev email testing) ─────────────────────────────────────
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"    # SMTP
+      - "8025:8025"    # Web UI
+    networks:
+      - aegis-net
+
+volumes:
+  postgres_data:
+    driver: local
+  mongo_data:
+    driver: local
+  redis_data:
+    driver: local
+  qdrant_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  aegis-net:
+    driver: bridge

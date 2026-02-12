@@ -1,0 +1,61 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: agents
+  namespace: aegis-ai
+  labels:
+    app: aegis-ai
+    component: agents
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: aegis-ai
+      component: agents
+  template:
+    metadata:
+      labels:
+        app: aegis-ai
+        component: agents
+    spec:
+      containers:
+        - name: agents
+          image: ghcr.io/aegis-ai-x/agents:latest
+          ports:
+            - containerPort: 8002
+          envFrom:
+            - secretRef:
+                name: aegis-secrets
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "2Gi"
+              cpu: "1000m"
+          livenessProbe:
+            httpGet:
+              path: /agents/health
+              port: 8002
+            initialDelaySeconds: 15
+            periodSeconds: 10
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: agents-hpa
+  namespace: aegis-ai
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: agents
+  minReplicas: 2
+  maxReplicas: 8
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

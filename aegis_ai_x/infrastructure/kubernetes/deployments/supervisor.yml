@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: supervisor
+  namespace: aegis-ai
+  labels:
+    app: aegis-ai
+    component: supervisor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aegis-ai
+      component: supervisor
+  template:
+    metadata:
+      labels:
+        app: aegis-ai
+        component: supervisor
+    spec:
+      containers:
+        - name: supervisor
+          image: ghcr.io/aegis-ai-x/supervisor:latest
+          ports:
+            - containerPort: 8001
+          envFrom:
+            - secretRef:
+                name: aegis-secrets
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /supervisor/health
+              port: 8001
+            initialDelaySeconds: 15
+            periodSeconds: 10

@@ -1,0 +1,51 @@
+name: Security
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  pull_request:
+    branches: [main]
+
+jobs:
+  dependency-audit:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install and run pip-audit
+        run: |
+          pip install pip-audit
+          cd aegis_ai_x && pip install -e "." && pip-audit
+
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  container-scan:
+    name: Container Image Scan
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service: [api-gateway, auth, agents]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: cd aegis_ai_x && docker build -f services/${{ matrix.service }}/Dockerfile -t scan-target:latest .
+      - name: Run Trivy scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: "scan-target:latest"
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
