@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID
@@ -140,11 +139,12 @@ class WorkflowEngine:
 
         if approved:
             approval.status = ApprovalStatus.APPROVED
-            # Update task status
+            # Set task to QUEUED so the orchestrator picks it up for execution.
+            # Avoids race between APPROVED and RUNNING statuses.
             task_result = await db.execute(select(Task).where(Task.id == approval.task_id))
             task = task_result.scalar_one_or_none()
             if task:
-                task.status = TaskStatus.APPROVED
+                task.status = TaskStatus.QUEUED
 
             logger.info("approval_granted", approval_id=str(approval_id))
             return {"status": "approved", "task_id": str(approval.task_id)}

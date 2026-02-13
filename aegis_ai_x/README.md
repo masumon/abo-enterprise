@@ -9,7 +9,7 @@ Aegis AI X is a full-stack platform for deploying, managing, and governing AI ag
 ```
 aegis_ai_x/
 ├── services/          # Microservices
-│   ├── api-gateway/   # REST API entry point
+│   ├── api_gateway/   # REST API entry point
 │   ├── supervisor/    # Task analysis & orchestration
 │   ├── agents/        # AI agents (planner, code, automation)
 │   ├── execution/     # Sandboxed code execution
@@ -28,16 +28,46 @@ aegis_ai_x/
 └── .github/workflows/ # CI/CD pipelines
 ```
 
+## Prerequisites
+
+- **Python 3.11+**
+- **Node.js 18+** (for frontend)
+- **Docker & Docker Compose**
+- **Git**
+
 ## Quick Start
 
-```bash
-# 1. Configure environment
-cp .env.example .env    # Edit with your API keys
+### Linux / macOS
 
-# 2. Start everything
+```bash
+# 1. Run the setup script
+bash scripts/setup/init.sh
+
+# 2. Activate virtual environment
+source .venv/bin/activate
+
+# 3. Start everything
 make dev
 
-# 3. Access the platform
+# 4. Access the platform
+# API:       http://localhost:8000
+# Dashboard: http://localhost:3000
+# Grafana:   http://localhost:3001
+```
+
+### Windows (PowerShell)
+
+```powershell
+# 1. Run the setup script
+powershell -ExecutionPolicy Bypass -File scripts\setup\init.ps1
+
+# 2. Activate virtual environment
+.\.venv\Scripts\Activate.ps1
+
+# 3. Start everything
+docker compose up --build -d
+
+# 4. Access the platform
 # API:       http://localhost:8000
 # Dashboard: http://localhost:3000
 # Grafana:   http://localhost:3001
@@ -52,6 +82,7 @@ make dev
 - **Enterprise Security** - Code scanning, secrets management, compliance checking
 - **Full Observability** - Prometheus metrics, distributed tracing, structured logging
 - **Multi-Cloud** - Terraform configs for AWS, GCP, and Azure
+- **Cross-Platform** - Runs on Windows 11 and Linux (Ubuntu)
 
 ## Tech Stack
 
@@ -67,6 +98,8 @@ make dev
 
 ## Commands
 
+### Linux / macOS (Makefile)
+
 ```bash
 make help           # Show all commands
 make dev            # Start development environment
@@ -75,6 +108,36 @@ make lint           # Run linter
 make migrate        # Run database migrations
 make clean          # Stop and remove everything
 ```
+
+### Windows (PowerShell)
+
+```powershell
+# Setup
+powershell -ExecutionPolicy Bypass -File scripts\setup\init.ps1
+
+# Start services
+docker compose up --build -d
+
+# Run tests
+python -m pytest tests/ -v
+
+# Run linter
+ruff check .
+
+# Run migrations
+alembic upgrade head
+
+# Stop services
+docker compose down
+```
+
+## Scripts
+
+| Script | Linux | Windows |
+|--------|-------|---------|
+| Setup  | `scripts/setup/init.sh` | `scripts\setup\init.ps1` |
+| Migrate | `scripts/migration/run_migrations.sh` | `scripts\migration\run_migrations.ps1` |
+| Deploy | `scripts/deployment/deploy.sh` | `scripts\deployment\deploy.ps1` |
 
 ## License
 

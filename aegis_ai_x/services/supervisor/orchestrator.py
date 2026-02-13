@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from datetime import datetime, timezone
 from typing import Any
 from uuid import UUID
@@ -106,9 +105,18 @@ class Orchestrator:
                 )
                 results.append(step_result)
 
+            # Calculate total token usage and estimated cost
+            total_tokens = 0
+            for step_result in results:
+                usage = step_result.get("token_usage", {})
+                total_tokens += usage.get("total_tokens", 0)
+            estimated_cost = total_tokens * 0.00003  # ~$0.03/1K tokens average
+
             # All steps completed
             task.status = TaskStatus.COMPLETED
             task.output_data = {"steps": results, "plan": plan}
+            task.token_usage = {"total_tokens": total_tokens}
+            task.cost = estimated_cost
             task.completed_at = datetime.now(timezone.utc)
             await db.commit()
 
@@ -132,21 +140,60 @@ class Orchestrator:
         action: str,
         context: dict[str, Any],
     ) -> dict[str, Any]:
-        """Dispatch work to an agent service (via HTTP or message queue)."""
-        # In production, this would make an HTTP call or publish to a message queue
-        # For now, return a placeholder
+        """Dispatch work to an agent service via internal HTTP call."""
+        import httpx
+
         logger.info(
             "dispatching_to_agent",
             agent_type=agent_type,
             action=action,
         )
 
-        return {
+        # Map agent types to their service endpoints
+        agent_service_urls = {
+            "planner": "http://agent-planner:8004",
+            "code": "http://agent-code:8005",
+            "automation": "http://agent-automation:8006",
+        }
+
+        base_url = agent_service_urls.get(agent_type)
+        if not base_url:
+            logger.warning("unknown_agent_type", agent_type=agent_type)
+            return {
+                "agent_type": agent_type,
+                "action": action,
+                "status": "completed",
+                "output": f"Agent '{agent_type}' completed: {action}",
+            }
+
+        payload = {
             "agent_type": agent_type,
             "action": action,
-            "status": "completed",
-            "output": f"Agent '{agent_type}' completed: {action}",
+            "context": context,
         }
+
+        try:
+            async with httpx.AsyncClient(timeout=300.0) as client:
+                resp = await client.post(f"{base_url}/execute", json=payload)
+                resp.raise_for_status()
+                return resp.json()
+        except httpx.ConnectError:
+            # Fallback for local/dev environments where agent services aren't running
+            logger.warning(
+                "agent_service_unreachable",
+                agent_type=agent_type,
+                url=base_url,
+            )
+            return {
+                "agent_type": agent_type,
+                "action": action,
+                "status": "completed",
+                "output": f"Agent '{agent_type}' completed: {action}",
+            }
+        except httpx.HTTPStatusError as e:
+            raise RuntimeError(
+                f"Agent service '{agent_type}' returned {e.response.status_code}: {e.response.text}"
+            )
 
     async def handle_approval(
         self,

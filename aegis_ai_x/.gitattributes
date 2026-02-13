@@ -1,0 +1,60 @@
+# Cross-platform line ending normalization
+# Ensures consistent LF in the repo, native endings in working tree
+* text=auto eol=lf
+
+# Force LF for shell scripts (Linux/macOS)
+*.sh text eol=lf
+*.bash text eol=lf
+Makefile text eol=lf
+
+# Force CRLF for Windows batch/powershell scripts
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Python
+*.py text eol=lf
+*.pyi text eol=lf
+
+# JavaScript/TypeScript
+*.js text eol=lf
+*.jsx text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+
+# Config
+*.yml text eol=lf
+*.yaml text eol=lf
+*.toml text eol=lf
+*.ini text eol=lf
+*.cfg text eol=lf
+*.env text eol=lf
+
+# Docker
+Dockerfile text eol=lf
+docker-compose*.yml text eol=lf
+
+# Terraform
+*.tf text eol=lf
+*.tfvars text eol=lf
+
+# SQL
+*.sql text eol=lf
+
+# Markdown & docs
+*.md text eol=lf
+*.rst text eol=lf
+
+# Binary files - no conversion
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.zip binary
+*.tar.gz binary

@@ -138,3 +138,4 @@ async def delete_agent(
     if not agent:
         raise HTTPException(status_code=404, detail="Agent not found")
     agent.is_active = False
+    await db.flush()

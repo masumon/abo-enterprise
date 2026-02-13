@@ -32,7 +32,7 @@ class TaskResponse(BaseModel):
     status: str
     priority: int
     input_data: dict
-    output_data: dict
+    output_data: dict | None = None
     error_message: str | None
     created_at: str
 
@@ -73,7 +73,7 @@ async def create_task(
         status=task.status.value,
         priority=task.priority,
         input_data=task.input_data,
-        output_data=task.output_data,
+        output_data=task.output_data or {},
         error_message=task.error_message,
         created_at=task.created_at.isoformat() if task.created_at else "",
     )
@@ -106,7 +106,7 @@ async def list_tasks(
                 status=t.status.value,
                 priority=t.priority,
                 input_data=t.input_data,
-                output_data=t.output_data,
+                output_data=t.output_data or {},
                 error_message=t.error_message,
                 created_at=t.created_at.isoformat() if t.created_at else "",
             )
@@ -134,7 +134,7 @@ async def get_task(
         status=task.status.value,
         priority=task.priority,
         input_data=task.input_data,
-        output_data=task.output_data,
+        output_data=task.output_data or {},
         error_message=task.error_message,
         created_at=task.created_at.isoformat() if task.created_at else "",
     )
@@ -162,7 +162,7 @@ async def cancel_task(
         status=task.status.value,
         priority=task.priority,
         input_data=task.input_data,
-        output_data=task.output_data,
+        output_data=task.output_data or {},
         error_message=task.error_message,
         created_at=task.created_at.isoformat() if task.created_at else "",
     )

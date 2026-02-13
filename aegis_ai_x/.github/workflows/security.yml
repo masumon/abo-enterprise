@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [api-gateway, auth, agents]
+        service: [api_gateway, auth, agents]
     steps:
       - uses: actions/checkout@v4
       - name: Build image

@@ -81,7 +81,7 @@ jobs:
     needs: [lint, test]
     strategy:
       matrix:
-        service: [api-gateway, supervisor, agents, execution, approval, auth, analytics]
+        service: [api_gateway, supervisor, agents, execution, approval, auth, analytics]
     steps:
       - uses: actions/checkout@v4
       - name: Build ${{ matrix.service }}

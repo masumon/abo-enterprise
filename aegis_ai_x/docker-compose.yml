@@ -1,11 +1,9 @@
-version: "3.9"
-
 services:
   # ─── API Gateway ───────────────────────────
   api-gateway:
     build:
       context: .
-      dockerfile: services/api-gateway/Dockerfile
+      dockerfile: services/api_gateway/Dockerfile
     ports:
       - "${API_GATEWAY_PORT:-8000}:8000"
     environment:

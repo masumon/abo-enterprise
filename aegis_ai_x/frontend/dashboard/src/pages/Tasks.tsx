@@ -7,6 +7,7 @@ export default function Tasks() {
   const [showCreate, setShowCreate] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [projectId, setProjectId] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
   useEffect(() => {
@@ -15,8 +16,12 @@ export default function Tasks() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!projectId) {
+      alert('Please enter a Project ID');
+      return;
+    }
     await createTask({
-      project_id: '00000000-0000-0000-0000-000000000000', // placeholder
+      project_id: projectId,
       title,
       description,
     });
@@ -44,6 +49,14 @@ export default function Tasks() {
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold text-white mb-4">Create Task</h2>
           <form onSubmit={handleCreate} className="space-y-4">
+            <input
+              type="text"
+              value={projectId}
+              onChange={(e) => setProjectId(e.target.value)}
+              placeholder="Project ID (UUID)"
+              className="w-full px-3 py-2.5 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
             <input
               type="text"
               value={title}

@@ -129,3 +129,4 @@ async def delete_project(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     project.is_active = False
+    await db.flush()

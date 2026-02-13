@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir -e "."
 COPY libs/ libs/
 COPY database/ database/
 COPY services/auth/ services/auth/
-COPY services/api-gateway/ services/api_gateway/
+COPY services/api_gateway/ services/api_gateway/
 
 EXPOSE 8000
 

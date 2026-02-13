@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import asyncio
-import logging
 from typing import Any, AsyncIterator
 
 from libs.llm.providers.base import BaseLLMProvider, LLMResponse
 from libs.llm.cache import LLMCache
+from libs.monitoring.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger("llm-router")
 
 
 class LLMRouter:
@@ -17,6 +17,7 @@ class LLMRouter:
 
     def __init__(self) -> None:
         self._providers: dict[str, BaseLLMProvider] = {}
+        self._provider_priorities: dict[str, int] = {}
         self._priority: list[str] = []
         self._cache = LLMCache()
 
@@ -24,8 +25,10 @@ class LLMRouter:
         """Register an LLM provider with a priority (lower = higher priority)."""
         name = provider.provider_name
         self._providers[name] = provider
-        self._priority.append(name)
-        self._priority.sort(key=lambda n: priority)
+        self._provider_priorities[name] = priority
+        if name not in self._priority:
+            self._priority.append(name)
+        self._priority.sort(key=lambda n: self._provider_priorities.get(n, 999))
 
     def get_provider(self, name: str) -> BaseLLMProvider:
         """Get a specific provider by name."""

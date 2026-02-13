@@ -52,7 +52,7 @@ async def daily_usage(
 @app.get("/analytics/report")
 async def generate_report(
     days: int = Query(default=30, ge=1, le=365),
-    format: str = Query(default="json", regex="^(json|csv)$"),
+    format: str = Query(default="json", pattern="^(json|csv)$"),
     db: AsyncSession = Depends(get_db),
 ):
     """Generate an analytics report."""
