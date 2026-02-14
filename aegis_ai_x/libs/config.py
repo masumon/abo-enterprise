@@ -1,4 +1,4 @@
-"""Centralized configuration for the Aegis AI X platform."""
+"""Centralized configuration for the SUMONIX AI platform."""
 
 from __future__ import annotations
 
@@ -18,13 +18,14 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_debug: bool = False
     app_secret_key: str = "change-me-in-production"
+    app_name: str = "SUMONIX AI"
 
     # PostgreSQL
     postgres_host: str = "localhost"
     postgres_port: int = 5432
-    postgres_db: str = "aegis_ai"
-    postgres_user: str = "aegis"
-    postgres_password: str = "aegis_dev"
+    postgres_db: str = "sumonix_ai"
+    postgres_user: str = "sumonix"
+    postgres_password: str = "sumonix_dev"
 
     @property
     def postgres_dsn(self) -> str:
@@ -36,9 +37,9 @@ class Settings(BaseSettings):
     # MongoDB
     mongo_host: str = "localhost"
     mongo_port: int = 27017
-    mongo_db: str = "aegis_ai_logs"
-    mongo_user: str = "aegis"
-    mongo_password: str = "aegis_dev"
+    mongo_db: str = "sumonix_ai_logs"
+    mongo_user: str = "sumonix"
+    mongo_password: str = "sumonix_dev"
 
     @property
     def mongo_dsn(self) -> str:
@@ -50,7 +51,7 @@ class Settings(BaseSettings):
     # Redis
     redis_host: str = "localhost"
     redis_port: int = 6379
-    redis_password: str = "aegis_dev"
+    redis_password: str = "sumonix_dev"
 
     @property
     def redis_url(self) -> str:
@@ -72,6 +73,11 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     google_ai_api_key: str = ""
     ollama_base_url: str = "http://ollama:11434"
+
+    # Stripe (Payment)
+    stripe_secret_key: str = ""
+    stripe_publishable_key: str = ""
+    stripe_webhook_secret: str = ""
 
     # Qdrant
     qdrant_host: str = "localhost"

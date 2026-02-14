@@ -21,7 +21,7 @@ settings = get_settings()
 setup_logging("auth-service", level="DEBUG" if settings.app_debug else "INFO")
 logger = get_logger("auth")
 
-app = FastAPI(title="Aegis AI X - Auth Service", version="1.0.0")
+app = FastAPI(title="SUMONIX AI - Auth Service", version="2.0.0")
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 jwt_handler = JWTHandler()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
