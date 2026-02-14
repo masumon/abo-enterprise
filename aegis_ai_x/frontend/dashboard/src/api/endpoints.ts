@@ -11,6 +11,39 @@ export const authAPI = {
     apiClient.post('/auth/refresh', null, { params: { refresh_token: refreshToken } }),
 };
 
+// Chat
+export const chatAPI = {
+  listConversations: (archived?: boolean) =>
+    apiClient.get('/api/v1/chat/conversations', { params: { archived } }),
+  getConversation: (id: string) =>
+    apiClient.get(`/api/v1/chat/conversations/${id}`),
+  createConversation: (data: { title?: string; model?: string; system_prompt?: string }) =>
+    apiClient.post('/api/v1/chat/conversations', data),
+  deleteConversation: (id: string) =>
+    apiClient.delete(`/api/v1/chat/conversations/${id}`),
+  getMessages: (conversationId: string) =>
+    apiClient.get(`/api/v1/chat/conversations/${conversationId}/messages`),
+  sendMessage: (conversationId: string, data: { content: string; model?: string }) =>
+    apiClient.post(`/api/v1/chat/conversations/${conversationId}/messages`, data),
+  renameConversation: (id: string, title: string) =>
+    apiClient.patch(`/api/v1/chat/conversations/${id}/rename`, null, { params: { title } }),
+  togglePin: (id: string) =>
+    apiClient.patch(`/api/v1/chat/conversations/${id}/pin`),
+  toggleArchive: (id: string) =>
+    apiClient.patch(`/api/v1/chat/conversations/${id}/archive`),
+};
+
+// Subscriptions
+export const subscriptionsAPI = {
+  listPlans: () => apiClient.get('/api/v1/subscriptions/plans'),
+  getCurrent: () => apiClient.get('/api/v1/subscriptions/current'),
+  getUsage: () => apiClient.get('/api/v1/subscriptions/usage'),
+  upgrade: (data: { tier: string; billing_cycle: string; payment_method_id?: string }) =>
+    apiClient.post('/api/v1/subscriptions/upgrade', data),
+  cancel: () => apiClient.post('/api/v1/subscriptions/cancel'),
+  getBillingHistory: () => apiClient.get('/api/v1/subscriptions/billing-history'),
+};
+
 // Projects
 export const projectsAPI = {
   list: () => apiClient.get('/api/v1/projects'),

@@ -8,18 +8,18 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        aegis: {
-          50: "#eef2ff",
-          100: "#e0e7ff",
-          200: "#c7d2fe",
-          300: "#a5b4fc",
-          400: "#818cf8",
-          500: "#6366f1",
-          600: "#4f46e5",
-          700: "#4338ca",
-          800: "#3730a3",
-          900: "#312e81",
-          950: "#1e1b4b",
+        sumonix: {
+          50: "#faf5ff",
+          100: "#f3e8ff",
+          200: "#e9d5ff",
+          300: "#d8b4fe",
+          400: "#c084fc",
+          500: "#a855f7",
+          600: "#9333ea",
+          700: "#7e22ce",
+          800: "#6b21a8",
+          900: "#581c87",
+          950: "#3b0764",
         },
         surface: {
           50: "#f8fafc",
@@ -32,7 +32,7 @@ module.exports = {
           700: "#334155",
           800: "#1e293b",
           900: "#0f172a",
-          950: "#020617",
+          950: "#030712",
         },
       },
       fontFamily: {
@@ -43,6 +43,7 @@ module.exports = {
         "card": "0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04)",
         "card-hover": "0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.06)",
         "sidebar": "2px 0 8px -2px rgb(0 0 0 / 0.08)",
+        "glow": "0 0 20px -5px rgb(139 92 246 / 0.3)",
       },
       animation: {
         "fade-in": "fadeIn 0.3s ease-in-out",

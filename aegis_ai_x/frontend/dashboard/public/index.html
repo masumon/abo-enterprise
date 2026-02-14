@@ -3,11 +3,9 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0f172a" />
-    <meta name="description" content="Aegis AI X - Enterprise AI Orchestration Platform" />
-    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#030712" />
+    <meta name="description" content="SUMONIX AI - Next-Generation AI Platform. Chat, Code, Create, Automate." />
 
-    <!-- Preconnect to font CDN -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -18,64 +16,47 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
 
-    <title>Aegis AI X | Dashboard</title>
+    <title>SUMONIX AI | Chat, Code, Create, Automate</title>
 
     <style>
-      /* Critical CSS for initial load */
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-      }
-
+      *, *::before, *::after { box-sizing: border-box; }
       body {
-        margin: 0;
-        padding: 0;
+        margin: 0; padding: 0;
         font-family: "Inter", system-ui, -apple-system, sans-serif;
         -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        background-color: #0f172a;
-        color: #e2e8f0;
+        background-color: #030712; color: #e2e8f0;
       }
-
       #loading-screen {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        background-color: #0f172a;
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; height: 100vh; background-color: #030712;
       }
-
-      #loading-screen .logo-text {
-        font-size: 2rem;
-        font-weight: 700;
-        color: #818cf8;
+      #loading-screen .logo-box {
+        width: 64px; height: 64px; border-radius: 16px;
+        background: linear-gradient(135deg, #8b5cf6, #d946ef);
+        display: flex; align-items: center; justify-content: center;
         margin-bottom: 1.5rem;
-        letter-spacing: -0.025em;
       }
-
+      #loading-screen .logo-box span {
+        font-size: 1.75rem; font-weight: 800; color: white;
+      }
+      #loading-screen .logo-text {
+        font-size: 1.5rem; font-weight: 700; color: white;
+        margin-bottom: 1.5rem; letter-spacing: -0.025em;
+      }
       #loading-screen .spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid #1e293b;
-        border-top-color: #6366f1;
-        border-radius: 50%;
+        width: 36px; height: 36px; border: 3px solid #1e293b;
+        border-top-color: #8b5cf6; border-radius: 50%;
         animation: spin 0.8s linear infinite;
       }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
+      @keyframes spin { to { transform: rotate(360deg); } }
     </style>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run the Aegis AI X Dashboard.</noscript>
+    <noscript>You need to enable JavaScript to run SUMONIX AI.</noscript>
     <div id="root">
       <div id="loading-screen">
-        <div class="logo-text">Aegis AI X</div>
+        <div class="logo-box"><span>S</span></div>
+        <div class="logo-text">SUMONIX AI</div>
         <div class="spinner"></div>
       </div>
     </div>

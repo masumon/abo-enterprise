@@ -3,19 +3,29 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 const navItems = [
-  { path: '/', label: 'Dashboard', icon: '◉' },
-  { path: '/tasks', label: 'Tasks', icon: '☰' },
-  { path: '/agents', label: 'Agents', icon: '⚙' },
+  { path: '/chat', label: 'Chat', icon: '>' },
+  { path: '/dashboard', label: 'Dashboard', icon: '#' },
+  { path: '/tasks', label: 'Tasks', icon: '=' },
+  { path: '/agents', label: 'Agents', icon: '@' },
+  { path: '/pricing', label: 'Plans & Billing', icon: '$' },
+  { path: '/admin', label: 'Admin', icon: '*' },
 ];
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
 
   return (
-    <aside className="w-64 bg-gray-900 border-r border-gray-800 flex flex-col min-h-screen">
+    <aside className="w-64 bg-gray-950 border-r border-gray-800 flex flex-col min-h-screen">
       <div className="p-6 border-b border-gray-800">
-        <h1 className="text-xl font-bold text-white">Aegis AI X</h1>
-        <p className="text-xs text-gray-500 mt-1">AI Agent Platform</p>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white font-bold text-sm">
+            S
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-white">SUMONIX AI</h1>
+            <p className="text-xs text-gray-500">AI Platform</p>
+          </div>
+        </div>
       </div>
 
       <nav className="flex-1 p-4 space-y-1">
@@ -26,12 +36,12 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                 isActive
-                  ? 'bg-blue-600/20 text-blue-400'
+                  ? 'bg-violet-600/20 text-violet-400'
                   : 'text-gray-400 hover:bg-gray-800 hover:text-white'
               }`
             }
           >
-            <span className="text-lg">{item.icon}</span>
+            <span className="text-lg w-5 text-center">{item.icon}</span>
             {item.label}
           </NavLink>
         ))}
@@ -39,7 +49,7 @@ export default function Sidebar() {
 
       <div className="p-4 border-t border-gray-800">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-sm font-medium">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 flex items-center justify-center text-white text-sm font-medium">
             {user?.full_name?.[0] || user?.username?.[0] || '?'}
           </div>
           <div className="flex-1 min-w-0">

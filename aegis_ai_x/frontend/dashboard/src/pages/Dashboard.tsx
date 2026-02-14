@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import MetricsCard from '../components/MetricsCard';
 import { analyticsAPI } from '../api/endpoints';
+import { useNavigate } from 'react-router-dom';
 
 interface DashboardMetrics {
   total_tasks: number;
@@ -14,12 +15,12 @@ interface DashboardMetrics {
 export default function Dashboard() {
   const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     analyticsAPI.dashboard({ days: 30 })
       .then(({ data }) => setMetrics(data))
       .catch(() => {
-        // Use placeholder data when API is unavailable
         setMetrics({
           total_tasks: 0,
           tasks_by_status: {},
@@ -44,7 +45,7 @@ export default function Dashboard() {
     <div>
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-gray-400 mt-1">Overview of your AI platform activity</p>
+        <p className="text-gray-400 mt-1">SUMONIX AI platform overview</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -52,19 +53,19 @@ export default function Dashboard() {
           title="Total Tasks"
           value={metrics?.total_tasks ?? 0}
           subtitle="Last 30 days"
-          icon="☰"
+          icon="="
         />
         <MetricsCard
           title="Success Rate"
           value={`${metrics?.success_rate ?? 0}%`}
           subtitle="Completion rate"
-          icon="✓"
+          icon="+"
         />
         <MetricsCard
           title="Active Agents"
           value={metrics?.active_agents ?? 0}
           subtitle="Currently configured"
-          icon="⚙"
+          icon="@"
         />
         <MetricsCard
           title="Total Cost"
@@ -93,14 +94,22 @@ export default function Dashboard() {
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Quick Actions</h2>
           <div className="space-y-3">
-            <a href="/tasks" className="block p-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">
+            <button onClick={() => navigate('/chat')} className="block w-full text-left p-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">
+              <p className="text-sm font-medium text-white">Start Chat</p>
+              <p className="text-xs text-gray-400 mt-1">Chat with SUMONIX AI</p>
+            </button>
+            <button onClick={() => navigate('/tasks')} className="block w-full text-left p-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">
               <p className="text-sm font-medium text-white">Create New Task</p>
               <p className="text-xs text-gray-400 mt-1">Submit a task for AI agent processing</p>
-            </a>
-            <a href="/agents" className="block p-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">
+            </button>
+            <button onClick={() => navigate('/agents')} className="block w-full text-left p-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">
               <p className="text-sm font-medium text-white">Configure Agents</p>
               <p className="text-xs text-gray-400 mt-1">Set up and manage your AI agents</p>
-            </a>
+            </button>
+            <button onClick={() => navigate('/pricing')} className="block w-full text-left p-3 bg-gray-800 hover:bg-gray-700 rounded-lg transition-colors">
+              <p className="text-sm font-medium text-white">Upgrade Plan</p>
+              <p className="text-xs text-gray-400 mt-1">Get more features and higher limits</p>
+            </button>
           </div>
         </div>
       </div>
