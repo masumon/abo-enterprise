@@ -1,5 +1,5 @@
 # =============================================================================
-# Aegis AI X - Staging Docker Compose
+# SUMONIX AI - Staging Docker Compose
 # =============================================================================
 # Usage: docker compose -f infrastructure/docker-compose/staging.yml up -d
 #
@@ -35,7 +35,7 @@ x-common-deploy: &common-deploy
 services:
   # ─── API Gateway ─────────────────────────────────────────────────────────────
   api-gateway:
-    image: ${REGISTRY:-ghcr.io/aegis-ai-x}/api-gateway:${IMAGE_TAG:-staging}
+    image: ${REGISTRY:-ghcr.io/sumonix-ai}/api-gateway:${IMAGE_TAG:-staging}
     ports:
       - "${API_GATEWAY_PORT:-8000}:8000"
     environment:
@@ -49,7 +49,7 @@ services:
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
-      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://staging.aegis-ai.example.com}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://staging.sumonix-ai.example.com}
     deploy:
       <<: *common-deploy
       replicas: 1
@@ -69,7 +69,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - aegis-net
+      - sumonix-net
     logging:
       driver: json-file
       options:
@@ -78,7 +78,7 @@ services:
 
   # ─── Supervisor Service ──────────────────────────────────────────────────────
   supervisor:
-    image: ${REGISTRY:-ghcr.io/aegis-ai-x}/supervisor:${IMAGE_TAG:-staging}
+    image: ${REGISTRY:-ghcr.io/sumonix-ai}/supervisor:${IMAGE_TAG:-staging}
     environment:
       <<: *common-staging-env
       REDIS_HOST: redis
@@ -106,7 +106,7 @@ services:
       - redis
       - postgres
     networks:
-      - aegis-net
+      - sumonix-net
     logging:
       driver: json-file
       options:
@@ -115,7 +115,7 @@ services:
 
   # ─── Agent Service ───────────────────────────────────────────────────────────
   agents:
-    image: ${REGISTRY:-ghcr.io/aegis-ai-x}/agents:${IMAGE_TAG:-staging}
+    image: ${REGISTRY:-ghcr.io/sumonix-ai}/agents:${IMAGE_TAG:-staging}
     environment:
       <<: *common-staging-env
       OPENAI_API_KEY: ${OPENAI_API_KEY}
@@ -143,7 +143,7 @@ services:
       - redis
       - qdrant
     networks:
-      - aegis-net
+      - sumonix-net
     logging:
       driver: json-file
       options:
@@ -152,7 +152,7 @@ services:
 
   # ─── Execution Service ──────────────────────────────────────────────────────
   execution:
-    image: ${REGISTRY:-ghcr.io/aegis-ai-x}/execution:${IMAGE_TAG:-staging}
+    image: ${REGISTRY:-ghcr.io/sumonix-ai}/execution:${IMAGE_TAG:-staging}
     privileged: true
     environment:
       <<: *common-staging-env
@@ -177,7 +177,7 @@ services:
     depends_on:
       - redis
     networks:
-      - aegis-net
+      - sumonix-net
     logging:
       driver: json-file
       options:
@@ -186,7 +186,7 @@ services:
 
   # ─── Approval Service ───────────────────────────────────────────────────────
   approval:
-    image: ${REGISTRY:-ghcr.io/aegis-ai-x}/approval:${IMAGE_TAG:-staging}
+    image: ${REGISTRY:-ghcr.io/sumonix-ai}/approval:${IMAGE_TAG:-staging}
     environment:
       <<: *common-staging-env
       POSTGRES_HOST: postgres
@@ -214,7 +214,7 @@ services:
       - postgres
       - redis
     networks:
-      - aegis-net
+      - sumonix-net
     logging:
       driver: json-file
       options:
@@ -223,7 +223,7 @@ services:
 
   # ─── Auth Service ────────────────────────────────────────────────────────────
   auth:
-    image: ${REGISTRY:-ghcr.io/aegis-ai-x}/auth:${IMAGE_TAG:-staging}
+    image: ${REGISTRY:-ghcr.io/sumonix-ai}/auth:${IMAGE_TAG:-staging}
     environment:
       <<: *common-staging-env
       POSTGRES_HOST: postgres
@@ -251,7 +251,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - aegis-net
+      - sumonix-net
     logging:
       driver: json-file
       options:
@@ -260,7 +260,7 @@ services:
 
   # ─── Analytics Service ──────────────────────────────────────────────────────
   analytics:
-    image: ${REGISTRY:-ghcr.io/aegis-ai-x}/analytics:${IMAGE_TAG:-staging}
+    image: ${REGISTRY:-ghcr.io/sumonix-ai}/analytics:${IMAGE_TAG:-staging}
     environment:
       <<: *common-staging-env
       POSTGRES_HOST: postgres
@@ -289,7 +289,7 @@ services:
       - postgres
       - mongodb
     networks:
-      - aegis-net
+      - sumonix-net
     logging:
       driver: json-file
       options:
@@ -298,7 +298,7 @@ services:
 
   # ─── Frontend Dashboard ─────────────────────────────────────────────────────
   dashboard:
-    image: ${REGISTRY:-ghcr.io/aegis-ai-x}/dashboard:${IMAGE_TAG:-staging}
+    image: ${REGISTRY:-ghcr.io/sumonix-ai}/dashboard:${IMAGE_TAG:-staging}
     ports:
       - "${DASHBOARD_PORT:-3000}:80"
     deploy:
@@ -315,7 +315,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:80/"]
       <<: *common-healthcheck
     networks:
-      - aegis-net
+      - sumonix-net
     logging:
       driver: json-file
       options:
@@ -345,7 +345,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - aegis-net
+      - sumonix-net
 
   # ─── Infrastructure: MongoDB ─────────────────────────────────────────────────
   mongodb:
@@ -369,7 +369,7 @@ services:
     volumes:
       - mongo_data:/data/db
     networks:
-      - aegis-net
+      - sumonix-net
 
   # ─── Infrastructure: Redis ──────────────────────────────────────────────────
   redis:
@@ -396,7 +396,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - aegis-net
+      - sumonix-net
 
   # ─── Infrastructure: Qdrant ─────────────────────────────────────────────────
   qdrant:
@@ -417,7 +417,7 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
     networks:
-      - aegis-net
+      - sumonix-net
 
   # ─── Monitoring: Prometheus ─────────────────────────────────────────────────
   prometheus:
@@ -436,7 +436,7 @@ services:
       - ../kubernetes/configmaps/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     networks:
-      - aegis-net
+      - sumonix-net
 
   # ─── Monitoring: Grafana ────────────────────────────────────────────────────
   grafana:
@@ -446,7 +446,7 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_ROOT_URL=https://staging-grafana.aegis-ai.example.com
+      - GF_SERVER_ROOT_URL=https://staging-grafana.sumonix-ai.example.com
     deploy:
       resources:
         limits:
@@ -460,7 +460,7 @@ services:
     depends_on:
       - prometheus
     networks:
-      - aegis-net
+      - sumonix-net
 
 volumes:
   postgres_data:
@@ -477,5 +477,5 @@ volumes:
     driver: local
 
 networks:
-  aegis-net:
+  sumonix-net:
     driver: bridge

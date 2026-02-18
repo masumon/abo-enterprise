@@ -1,5 +1,5 @@
 # ============================================
-# Aegis AI X - Google Cloud Platform (GCP)
+# SUMONIX AI - Google Cloud Platform (GCP)
 # GKE Cluster + Cloud SQL
 # ============================================
 
@@ -14,7 +14,7 @@ terraform {
   }
 
   backend "gcs" {
-    bucket = "aegis-ai-terraform-state"
+    bucket = "sumonix-ai-terraform-state"
     prefix = "gcp"
   }
 }
@@ -89,7 +89,7 @@ resource "google_container_node_pool" "primary" {
     ]
 
     labels = {
-      app = "aegis-ai"
+      app = "sumonix-ai"
       env = var.environment
     }
   }
@@ -128,13 +128,13 @@ resource "google_sql_database_instance" "main" {
   deletion_protection = var.environment == "production"
 }
 
-resource "google_sql_database" "aegis" {
-  name     = "aegis_ai"
+resource "google_sql_database" "sumonix" {
+  name     = "sumonix_ai"
   instance = google_sql_database_instance.main.name
 }
 
-resource "google_sql_user" "aegis" {
-  name     = "aegis"
+resource "google_sql_user" "sumonix" {
+  name     = "sumonix"
   instance = google_sql_database_instance.main.name
   password = var.db_password
 }
@@ -149,7 +149,7 @@ variable "project_id" {
 variable "project_name" {
   description = "Project name prefix"
   type        = string
-  default     = "aegis-ai"
+  default     = "sumonix-ai"
 }
 
 variable "region" {

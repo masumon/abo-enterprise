@@ -1,5 +1,5 @@
 # ============================================
-# Aegis AI X - AWS Infrastructure
+# SUMONIX AI - AWS Infrastructure
 # EKS Cluster + RDS PostgreSQL
 # ============================================
 
@@ -12,7 +12,7 @@ terraform {
     }
   }
   backend "s3" {
-    bucket = "aegis-ai-terraform-state"
+    bucket = "sumonix-ai-terraform-state"
     key    = "aws/terraform.tfstate"
     region = "us-east-1"
   }
@@ -104,8 +104,8 @@ resource "aws_db_instance" "postgres" {
   instance_class         = var.db_instance_class
   allocated_storage      = 20
   max_allocated_storage  = 100
-  db_name                = "aegis_ai"
-  username               = "aegis"
+  db_name                = "sumonix_ai"
+  username               = "sumonix"
   password               = var.db_password
   db_subnet_group_name   = aws_db_subnet_group.main.name
   vpc_security_group_ids = [aws_security_group.rds.id]

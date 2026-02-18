@@ -1,5 +1,5 @@
 # ============================================
-# Aegis AI X - Microsoft Azure
+# SUMONIX AI - Microsoft Azure
 # AKS Cluster + Azure PostgreSQL Flexible Server
 # ============================================
 
@@ -14,8 +14,8 @@ terraform {
   }
 
   backend "azurerm" {
-    resource_group_name  = "aegis-ai-terraform"
-    storage_account_name = "aegisaiterraform"
+    resource_group_name  = "sumonix-ai-terraform"
+    storage_account_name = "sumonixaiterraform"
     container_name       = "tfstate"
     key                  = "azure.terraform.tfstate"
   }
@@ -33,7 +33,7 @@ resource "azurerm_resource_group" "main" {
 
   tags = {
     Environment = var.environment
-    Project     = "aegis-ai-x"
+    Project     = "sumonix-ai"
   }
 }
 
@@ -122,7 +122,7 @@ resource "azurerm_postgresql_flexible_server" "main" {
   version                = "16"
   delegated_subnet_id    = azurerm_subnet.db.id
   private_dns_zone_id    = azurerm_private_dns_zone.postgres.id
-  administrator_login    = "aegis"
+  administrator_login    = "sumonix"
   administrator_password = var.db_password
   zone                   = "1"
   storage_mb             = 32768
@@ -131,8 +131,8 @@ resource "azurerm_postgresql_flexible_server" "main" {
   depends_on = [azurerm_private_dns_zone_virtual_network_link.postgres]
 }
 
-resource "azurerm_postgresql_flexible_server_database" "aegis" {
-  name      = "aegis_ai"
+resource "azurerm_postgresql_flexible_server_database" "sumonix" {
+  name      = "sumonix_ai"
   server_id = azurerm_postgresql_flexible_server.main.id
   collation = "en_US.utf8"
   charset   = "utf8"
@@ -143,7 +143,7 @@ resource "azurerm_postgresql_flexible_server_database" "aegis" {
 variable "project_name" {
   description = "Project name prefix"
   type        = string
-  default     = "aegis-ai"
+  default     = "sumonix-ai"
 }
 
 variable "location" {

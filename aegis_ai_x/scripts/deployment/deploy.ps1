@@ -1,4 +1,4 @@
-# Aegis AI X - Deployment Script (Windows PowerShell)
+# SUMONIX AI - Deployment Script (Windows PowerShell)
 # Usage: .\scripts\deployment\deploy.ps1 [-Environment staging] [-ImageTag latest]
 
 param(
@@ -7,9 +7,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$Namespace = "aegis-ai"
+$Namespace = "sumonix-ai"
 
-Write-Host "=== Deploying Aegis AI X to $Environment ===" -ForegroundColor Cyan
+Write-Host "=== Deploying SUMONIX AI to $Environment ===" -ForegroundColor Cyan
 Write-Host "Image tag: $ImageTag"
 Write-Host "Namespace: $Namespace"
 
@@ -19,7 +19,7 @@ foreach ($service in $services) {
     Write-Host "[...] Updating $service" -ForegroundColor Yellow
     try {
         kubectl set image "deployment/$service" `
-            "${service}=ghcr.io/aegis-ai-x/${service}:$ImageTag" `
+            "${service}=ghcr.io/sumonix-ai/${service}:$ImageTag" `
             -n $Namespace --record
     } catch {
         Write-Host "[SKIP] $service deployment not found" -ForegroundColor Yellow

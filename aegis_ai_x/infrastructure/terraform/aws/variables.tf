@@ -1,7 +1,7 @@
 variable "project_name" {
   description = "Project name prefix"
   type        = string
-  default     = "aegis-ai"
+  default     = "sumonix-ai"
 }
 
 variable "region" {

@@ -7,7 +7,7 @@ help: ## Show this help
 # ─── Development ─────────────────────────────
 dev: ## Start all services in development mode
 	docker compose up --build -d
-	@echo "Aegis AI X is running at http://localhost:8000"
+	@echo "SUMONIX AI is running at http://localhost:8000"
 	@echo "Dashboard at http://localhost:3000"
 	@echo "Grafana at http://localhost:3001"
 
@@ -31,7 +31,7 @@ restart-%: ## Restart a specific service
 
 # ─── Testing ─────────────────────────────────
 test: ## Run all tests
-	python -m pytest tests/ -v --cov=aegis_ai_x --cov-report=term-missing
+	python -m pytest tests/ -v --cov=sumonix_ai_x --cov-report=term-missing
 
 test-unit: ## Run unit tests
 	python -m pytest tests/unit/ -v
@@ -44,13 +44,13 @@ test-e2e: ## Run end-to-end tests
 
 # ─── Code Quality ────────────────────────────
 lint: ## Run linter
-	ruff check aegis_ai_x/ tests/
+	ruff check sumonix_ai_x/ tests/
 
 format: ## Format code
-	ruff format aegis_ai_x/ tests/
+	ruff format sumonix_ai_x/ tests/
 
 typecheck: ## Run type checker
-	mypy aegis_ai_x/
+	mypy sumonix_ai_x/
 
 # ─── Database ────────────────────────────────
 migrate: ## Run database migrations

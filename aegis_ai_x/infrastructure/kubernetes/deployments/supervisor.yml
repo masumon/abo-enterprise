@@ -2,30 +2,30 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: supervisor
-  namespace: aegis-ai
+  namespace: sumonix-ai
   labels:
-    app: aegis-ai
+    app: sumonix-ai
     component: supervisor
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: aegis-ai
+      app: sumonix-ai
       component: supervisor
   template:
     metadata:
       labels:
-        app: aegis-ai
+        app: sumonix-ai
         component: supervisor
     spec:
       containers:
         - name: supervisor
-          image: ghcr.io/aegis-ai-x/supervisor:latest
+          image: ghcr.io/sumonix-ai/supervisor:latest
           ports:
             - containerPort: 8001
           envFrom:
             - secretRef:
-                name: aegis-secrets
+                name: sumonix-secrets
           resources:
             requests:
               memory: "256Mi"

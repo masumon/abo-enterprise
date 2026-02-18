@@ -1,5 +1,5 @@
 # =============================================================================
-# Aegis AI X - Production Docker Compose
+# SUMONIX AI - Production Docker Compose
 # =============================================================================
 # Usage: docker compose -f infrastructure/docker-compose/production.yml up -d
 #
@@ -99,7 +99,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
   # ─── Supervisor Service ──────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ services:
       - redis
       - postgres
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
   # ─── Agent Service ───────────────────────────────────────────────────────────
@@ -169,7 +169,7 @@ services:
       - redis
       - qdrant
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
   # ─── Execution Service ──────────────────────────────────────────────────────
@@ -201,7 +201,7 @@ services:
     depends_on:
       - redis
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
   # ─── Approval Service ───────────────────────────────────────────────────────
@@ -235,7 +235,7 @@ services:
       - postgres
       - redis
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
   # ─── Auth Service ────────────────────────────────────────────────────────────
@@ -271,7 +271,7 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
   # ─── Analytics Service ──────────────────────────────────────────────────────
@@ -306,7 +306,7 @@ services:
       - postgres
       - mongodb
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
   # ─── Frontend Dashboard ─────────────────────────────────────────────────────
@@ -338,7 +338,7 @@ services:
       - /var/cache/nginx:size=50M
       - /var/run:size=10M
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
   # ─── Infrastructure: PostgreSQL ──────────────────────────────────────────────
@@ -383,7 +383,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
   # ─── Infrastructure: MongoDB ─────────────────────────────────────────────────
@@ -414,7 +414,7 @@ services:
     volumes:
       - mongo_data:/data/db
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
   # ─── Infrastructure: Redis ──────────────────────────────────────────────────
@@ -449,7 +449,7 @@ services:
     volumes:
       - redis_data:/data
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
   # ─── Infrastructure: Qdrant ─────────────────────────────────────────────────
@@ -471,7 +471,7 @@ services:
     volumes:
       - qdrant_data:/qdrant/storage
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
   # ─── Monitoring: Prometheus ─────────────────────────────────────────────────
@@ -497,7 +497,7 @@ services:
       - ../kubernetes/configmaps/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
   # ─── Monitoring: Grafana ────────────────────────────────────────────────────
@@ -524,7 +524,7 @@ services:
     depends_on:
       - prometheus
     networks:
-      - aegis-net
+      - sumonix-net
     logging: *common-logging
 
 volumes:
@@ -542,7 +542,7 @@ volumes:
     driver: local
 
 networks:
-  aegis-net:
+  sumonix-net:
     driver: bridge
     ipam:
       config:

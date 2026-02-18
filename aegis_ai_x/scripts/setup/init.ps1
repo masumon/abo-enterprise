@@ -1,9 +1,9 @@
-# Aegis AI X - Initial Setup (Windows PowerShell)
+# SUMONIX AI - Initial Setup (Windows PowerShell)
 # Run with: powershell -ExecutionPolicy Bypass -File scripts\setup\init.ps1
 
 $ErrorActionPreference = "Stop"
 
-Write-Host "=== Aegis AI X - Initial Setup (Windows) ===" -ForegroundColor Cyan
+Write-Host "=== SUMONIX AI - Initial Setup (Windows) ===" -ForegroundColor Cyan
 
 # Navigate to project root
 Set-Location (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent)
@@ -58,7 +58,7 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
     Write-Host "[...] Waiting for PostgreSQL" -ForegroundColor Yellow
     $retries = 30
     while ($retries -gt 0) {
-        $result = docker compose exec -T postgres pg_isready -U aegis 2>&1
+        $result = docker compose exec -T postgres pg_isready -U sumonix 2>&1
         if ($LASTEXITCODE -eq 0) { break }
         Start-Sleep -Seconds 1
         $retries--
@@ -72,7 +72,7 @@ if (Get-Command docker -ErrorAction SilentlyContinue) {
 
     # Run migrations
     Write-Host "[...] Running database migrations" -ForegroundColor Yellow
-    Get-Content "database\migrations\postgresql\001_initial_schema.sql" | docker compose exec -T postgres psql -U aegis -d aegis_ai 2>$null
+    Get-Content "database\migrations\postgresql\001_initial_schema.sql" | docker compose exec -T postgres psql -U sumonix -d sumonix_ai 2>$null
     Write-Host "[OK] Migrations complete" -ForegroundColor Green
 } else {
     Write-Host "[WARN] Docker not found. Install Docker Desktop for Windows." -ForegroundColor Yellow

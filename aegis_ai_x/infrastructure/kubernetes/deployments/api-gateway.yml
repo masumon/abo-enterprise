@@ -2,25 +2,25 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-gateway
-  namespace: aegis-ai
+  namespace: sumonix-ai
   labels:
-    app: aegis-ai
+    app: sumonix-ai
     component: api-gateway
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: aegis-ai
+      app: sumonix-ai
       component: api-gateway
   template:
     metadata:
       labels:
-        app: aegis-ai
+        app: sumonix-ai
         component: api-gateway
     spec:
       containers:
         - name: api-gateway
-          image: ghcr.io/aegis-ai-x/api-gateway:latest
+          image: ghcr.io/sumonix-ai/api-gateway:latest
           ports:
             - containerPort: 8000
           env:
@@ -29,22 +29,22 @@ spec:
             - name: POSTGRES_HOST
               valueFrom:
                 secretKeyRef:
-                  name: aegis-secrets
+                  name: sumonix-secrets
                   key: POSTGRES_HOST
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: aegis-secrets
+                  name: sumonix-secrets
                   key: POSTGRES_PASSWORD
             - name: JWT_SECRET_KEY
               valueFrom:
                 secretKeyRef:
-                  name: aegis-secrets
+                  name: sumonix-secrets
                   key: JWT_SECRET_KEY
             - name: REDIS_HOST
               valueFrom:
                 secretKeyRef:
-                  name: aegis-secrets
+                  name: sumonix-secrets
                   key: REDIS_HOST
           resources:
             requests:
@@ -70,7 +70,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: api-gateway-hpa
-  namespace: aegis-ai
+  namespace: sumonix-ai
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

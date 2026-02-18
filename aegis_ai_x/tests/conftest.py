@@ -1,4 +1,4 @@
-"""Pytest configuration and shared fixtures for Aegis AI X tests."""
+"""Pytest configuration and shared fixtures for SUMONIX AI tests."""
 
 from __future__ import annotations
 
@@ -211,7 +211,7 @@ async def sample_user(db_session: AsyncSession) -> User:
 
     user = User(
         id=uuid.uuid4(),
-        email="testuser@aegis.dev",
+        email="testuser@sumonix.dev",
         username="testuser",
         hashed_password=pwd_context.hash("Str0ngP@ssw0rd!"),
         full_name="Test User",

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== Aegis AI X - Initial Setup (Linux/macOS) ==="
+echo "=== SUMONIX AI - Initial Setup (Linux/macOS) ==="
 
 cd "$(dirname "$0")/../.."
 
@@ -54,7 +54,7 @@ if command -v docker &> /dev/null; then
     # Wait for PostgreSQL
     echo "[...] Waiting for PostgreSQL"
     retries=30
-    until docker compose exec -T postgres pg_isready -U aegis 2>/dev/null; do
+    until docker compose exec -T postgres pg_isready -U sumonix 2>/dev/null; do
         sleep 1
         retries=$((retries - 1))
         if [ $retries -eq 0 ]; then
@@ -68,7 +68,7 @@ if command -v docker &> /dev/null; then
 
     # Run migrations
     echo "[...] Running database migrations"
-    docker compose exec -T postgres psql -U aegis -d aegis_ai -f /dev/stdin < database/migrations/postgresql/001_initial_schema.sql 2>/dev/null || true
+    docker compose exec -T postgres psql -U sumonix -d sumonix_ai -f /dev/stdin < database/migrations/postgresql/001_initial_schema.sql 2>/dev/null || true
     echo "[OK] Migrations complete"
 else
     echo "[WARN] Docker not found. Install Docker:"

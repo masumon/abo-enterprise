@@ -2,30 +2,30 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: agents
-  namespace: aegis-ai
+  namespace: sumonix-ai
   labels:
-    app: aegis-ai
+    app: sumonix-ai
     component: agents
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: aegis-ai
+      app: sumonix-ai
       component: agents
   template:
     metadata:
       labels:
-        app: aegis-ai
+        app: sumonix-ai
         component: agents
     spec:
       containers:
         - name: agents
-          image: ghcr.io/aegis-ai-x/agents:latest
+          image: ghcr.io/sumonix-ai/agents:latest
           ports:
             - containerPort: 8002
           envFrom:
             - secretRef:
-                name: aegis-secrets
+                name: sumonix-secrets
           resources:
             requests:
               memory: "512Mi"
@@ -44,7 +44,7 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: agents-hpa
-  namespace: aegis-ai
+  namespace: sumonix-ai
 spec:
   scaleTargetRef:
     apiVersion: apps/v1

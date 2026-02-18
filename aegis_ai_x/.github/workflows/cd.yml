@@ -39,8 +39,8 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v5
         with:
-          context: ./aegis_ai_x
-          file: ./aegis_ai_x/services/${{ matrix.service }}/Dockerfile
+          context: ./sumonix_ai
+          file: ./sumonix_ai/services/${{ matrix.service }}/Dockerfile
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}

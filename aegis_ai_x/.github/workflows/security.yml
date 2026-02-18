@@ -18,7 +18,7 @@ jobs:
       - name: Install and run pip-audit
         run: |
           pip install pip-audit
-          cd aegis_ai_x && pip install -e "." && pip-audit
+          cd sumonix_ai && pip install -e "." && pip-audit
 
   secret-scan:
     name: Secret Scanning
@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build image
-        run: cd aegis_ai_x && docker build -f services/${{ matrix.service }}/Dockerfile -t scan-target:latest .
+        run: cd sumonix_ai && docker build -f services/${{ matrix.service }}/Dockerfile -t scan-target:latest .
       - name: Run Trivy scanner
         uses: aquasecurity/trivy-action@master
         with:
