@@ -1,4 +1,4 @@
--- Aegis AI X - Initial PostgreSQL Schema
+-- SUMONIX AI - Initial PostgreSQL Schema
 -- Migration: 001_initial_schema
 -- Description: Creates all core tables for the platform
 
@@ -13,6 +13,9 @@ CREATE TYPE task_status AS ENUM (
     'approved', 'rejected', 'completed', 'failed', 'cancelled'
 );
 CREATE TYPE approval_status AS ENUM ('pending', 'approved', 'rejected', 'expired');
+CREATE TYPE subscription_tier AS ENUM ('free', 'go', 'pro', 'ultra_pro');
+CREATE TYPE subscription_status AS ENUM ('active', 'cancelled', 'expired', 'past_due', 'trialing');
+CREATE TYPE billing_cycle AS ENUM ('monthly', 'yearly');
 
 -- ─── Users ───────────────────────────────────
 
@@ -143,7 +146,83 @@ CREATE INDEX idx_audit_logs_action ON audit_logs(action);
 CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at DESC);
 CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
 
--- ─── Updated At Trigger ─────────────────────
+-- ─── User Subscriptions ─────────────────────
+
+CREATE TABLE user_subscriptions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    tier subscription_tier NOT NULL DEFAULT 'free',
+    status subscription_status NOT NULL DEFAULT 'active',
+    billing_cycle billing_cycle NOT NULL DEFAULT 'monthly',
+    stripe_customer_id VARCHAR(255),
+    stripe_subscription_id VARCHAR(255),
+    current_period_start TIMESTAMPTZ,
+    current_period_end TIMESTAMPTZ,
+    cancel_at_period_end BOOLEAN DEFAULT FALSE,
+    messages_used_today INTEGER DEFAULT 0,
+    messages_used_this_month INTEGER DEFAULT 0,
+    tokens_used_this_month BIGINT DEFAULT 0,
+    last_usage_reset TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_user_subscriptions_user ON user_subscriptions(user_id);
+CREATE INDEX idx_user_subscriptions_tier ON user_subscriptions(tier);
+
+-- ─── Billing Transactions ───────────────────
+
+CREATE TABLE billing_transactions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    amount DOUBLE PRECISION NOT NULL,
+    currency VARCHAR(10) DEFAULT 'usd',
+    description VARCHAR(500),
+    stripe_payment_intent_id VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'succeeded',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_billing_transactions_user ON billing_transactions(user_id);
+CREATE INDEX idx_billing_transactions_created ON billing_transactions(created_at DESC);
+
+-- ─── Conversations ──────────────────────────
+
+CREATE TABLE conversations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(500) DEFAULT 'New Chat',
+    model VARCHAR(100) DEFAULT 'gpt-4o-mini',
+    system_prompt TEXT,
+    is_archived BOOLEAN DEFAULT FALSE,
+    is_pinned BOOLEAN DEFAULT FALSE,
+    total_tokens BIGINT DEFAULT 0,
+    message_count INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_conversations_user ON conversations(user_id);
+CREATE INDEX idx_conversations_updated ON conversations(updated_at DESC);
+
+-- ─── Chat Messages ──────────────────────────
+
+CREATE TABLE chat_messages (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL,
+    content TEXT NOT NULL,
+    model VARCHAR(100),
+    tokens_used INTEGER DEFAULT 0,
+    finish_reason VARCHAR(50),
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_chat_messages_conversation ON chat_messages(conversation_id);
+CREATE INDEX idx_chat_messages_created ON chat_messages(created_at);
+
+-- ─── Updated At Triggers ────────────────────
 
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -160,3 +239,23 @@ CREATE TRIGGER update_users_updated_at
 CREATE TRIGGER update_projects_updated_at
     BEFORE UPDATE ON projects
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_subscriptions_updated_at
+    BEFORE UPDATE ON user_subscriptions
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_conversations_updated_at
+    BEFORE UPDATE ON conversations
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ─── Daily Usage Reset Function ─────────────
+
+CREATE OR REPLACE FUNCTION reset_daily_usage()
+RETURNS void AS $$
+BEGIN
+    UPDATE user_subscriptions
+    SET messages_used_today = 0,
+        last_usage_reset = NOW()
+    WHERE last_usage_reset < CURRENT_DATE;
+END;
+$$ language 'plpgsql';
