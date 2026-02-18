@@ -83,10 +83,16 @@ async def _check_limits(db: AsyncSession, user_id: str) -> tuple[UserSubscriptio
     )
     sub = result.scalar_one_or_none()
     if not sub:
-        # Auto-create free subscription
         sub = UserSubscription(user_id=UUID(user_id), tier=SubscriptionTier.FREE)
         db.add(sub)
         await db.flush()
+
+    # Auto-reset daily counter if last reset was before today
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+    if sub.last_usage_reset and sub.last_usage_reset.date() < now.date():
+        sub.messages_used_today = 0
+        sub.last_usage_reset = now
 
     limits = PLAN_LIMITS[sub.tier]
     daily_limit = limits["messages_per_day"]

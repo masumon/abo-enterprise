@@ -148,8 +148,8 @@ async def get_usage(request: Request, db: AsyncSession = Depends(get_db)):
     daily_limit = limits["messages_per_day"]
     monthly_limit = limits["messages_per_month"]
 
-    pct_daily = (sub.messages_used_today / daily_limit * 100) if daily_limit > 0 else 0
-    pct_monthly = (sub.messages_used_this_month / monthly_limit * 100) if monthly_limit > 0 else 0
+    pct_daily = (sub.messages_used_today / daily_limit * 100) if daily_limit > 0 and daily_limit != -1 else 0
+    pct_monthly = (sub.messages_used_this_month / monthly_limit * 100) if monthly_limit > 0 and monthly_limit != -1 else 0
 
     return UsageResponse(
         messages_today=sub.messages_used_today,

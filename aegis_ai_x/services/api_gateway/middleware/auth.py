@@ -13,16 +13,21 @@ from services.auth.jwt_handler import JWTHandler
 # Paths that don't require authentication
 PUBLIC_PATHS = {
     "/health",
+    "/health/ready",
+    "/health/live",
     "/metrics",
     "/docs",
     "/openapi.json",
     "/redoc",
     "/auth/login",
     "/auth/register",
+    "/auth/refresh",
     "/auth/oauth/github",
     "/auth/oauth/github/callback",
     "/auth/oauth/google",
     "/auth/oauth/google/callback",
+    "/auth/health",
+    "/api/v1/subscriptions/plans",
 }
 
 

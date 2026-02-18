@@ -10,25 +10,43 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
+SKIP_PATHS = {"/health", "/health/ready", "/health/live", "/metrics"}
+
 
 class RateLimiterMiddleware(BaseHTTPMiddleware):
-    """Simple in-memory rate limiter (use Redis in production for multi-instance)."""
+    """In-memory sliding-window rate limiter with automatic cleanup."""
 
     def __init__(self, app, rate_limit: int = 100, window: int = 60) -> None:
         super().__init__(app)
         self.rate_limit = rate_limit
         self.window = window
         self._requests: dict[str, list[float]] = defaultdict(list)
+        self._last_cleanup = time.time()
+        self._cleanup_interval = 300  # purge stale IPs every 5 min
+
+    def _cleanup_stale(self, now: float) -> None:
+        """Remove IPs with no recent activity to prevent memory leak."""
+        if now - self._last_cleanup < self._cleanup_interval:
+            return
+        stale_keys = [
+            ip for ip, timestamps in self._requests.items()
+            if not timestamps or timestamps[-1] < now - self.window * 2
+        ]
+        for key in stale_keys:
+            del self._requests[key]
+        self._last_cleanup = now
 
     async def dispatch(self, request: Request, call_next: Callable):
-        # Skip rate limiting for health checks
-        if request.url.path in ("/health", "/metrics"):
+        if request.url.path in SKIP_PATHS:
             return await call_next(request)
 
         client_ip = request.client.host if request.client else "unknown"
         now = time.time()
 
-        # Clean old entries
+        # Periodic cleanup
+        self._cleanup_stale(now)
+
+        # Slide window
         self._requests[client_ip] = [
             t for t in self._requests[client_ip] if t > now - self.window
         ]
