@@ -10,8 +10,8 @@ envVars:
     value: production
   - key: LOG_LEVEL
     value: info
-  - key: CORS_ORIGINS
-    value: "https://aboenterprise.com,https://www.aboenterprise.com"
+  - key: ALLOWED_ORIGINS
+    value: "https://aboenterprise.com,https://www.aboenterprise.com,https://abo-enterprise.vercel.app,https://abo-enterprise-git-main.vercel.app"
   - key: DATABASE_URL
     syncWithPostgres: aboenterprise-postgres
   - key: REDIS_URL
