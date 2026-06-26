@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from app.core.database import get_db
 from app.models.models import Product, Order, LeadV2, BookingV2
 
-router = APIRouter(prefix="/api/v1/admin/bulk", tags=["bulk"])
+router = APIRouter(prefix="/admin/bulk", tags=["bulk"])
 
 
 # ── EXPORT ──────────────────────────────────────────────

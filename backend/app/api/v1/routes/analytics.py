@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.models.models import Order, BookingV2, LeadV2, Product, RevenueTransaction
 import uuid
 
-router = APIRouter(prefix="/api/v1/admin/analytics", tags=["analytics"])
+router = APIRouter(prefix="/admin/analytics", tags=["analytics"])
 
 
 @router.get("/overview")

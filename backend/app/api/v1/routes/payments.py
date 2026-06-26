@@ -13,7 +13,7 @@ from app.schemas.schemas import (
 )
 from datetime import datetime, timezone
 
-router = APIRouter(prefix="/api/v1/payments", tags=["payments"])
+router = APIRouter(prefix="/payments", tags=["payments"])
 
 
 @router.post("/bkash/initiate", response_model=PaymentResponseModel)

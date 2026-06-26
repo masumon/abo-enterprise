@@ -26,9 +26,9 @@ export default function AnalyticsPage() {
     setLoading(true);
     try {
       const [ov, ch, fn] = await Promise.all([
-        api.get(`/admin/analytics/overview?days=${days}`),
-        api.get(`/admin/analytics/revenue-chart?days=${days}`),
-        api.get(`/admin/analytics/lead-funnel?days=${days}`),
+        api.get(`/api/v1/admin/analytics/overview?days=${days}`),
+        api.get(`/api/v1/admin/analytics/revenue-chart?days=${days}`),
+        api.get(`/api/v1/admin/analytics/lead-funnel?days=${days}`),
       ]);
       setOverview(ov.data.data);
       setChart(ch.data.data);
