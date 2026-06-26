@@ -5,15 +5,23 @@ from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+import logging
 from app.core.config import settings
+from app.core.exceptions import ABOException, to_http_exception
 from app.api.v1.router import api_router
+
+logger = logging.getLogger(__name__)
 
 limiter = Limiter(key_func=get_remote_address)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Startup
+    logger.info(f"Starting {settings.APP_NAME}")
     yield
+    # Shutdown
+    logger.info(f"Shutting down {settings.APP_NAME}")
 
 
 app = FastAPI(
@@ -39,19 +47,59 @@ app.add_middleware(
 app.include_router(api_router)
 
 
-@app.get("/", include_in_schema=False)
-async def root():
-    return {"name": settings.APP_NAME, "version": "1.0.0", "status": "ok"}
+# ==================== EXCEPTION HANDLERS ====================
 
-
-@app.get("/health", include_in_schema=False)
-async def health():
-    return {"status": "healthy"}
+@app.exception_handler(ABOException)
+async def abo_exception_handler(request: Request, exc: ABOException):
+    """Handle ABO custom exceptions"""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "success": False,
+            "message": exc.message,
+            "error_code": exc.error_code,
+            "details": exc.details if exc.details else None,
+        },
+    )
 
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    """Global exception handler"""
+    logger.error(f"Unhandled exception: {str(exc)}", exc_info=exc)
+
+    error_message = "Internal server error"
+    if settings.DEBUG:
+        error_message = str(exc)
+
     return JSONResponse(
         status_code=500,
-        content={"success": False, "message": "Internal server error", "data": None},
+        content={
+            "success": False,
+            "message": error_message,
+            "error_code": "INTERNAL_SERVER_ERROR",
+            "details": None,
+        },
     )
+
+
+# ==================== ROUTES ====================
+
+@app.get("/", include_in_schema=False)
+async def root():
+    return {
+        "name": settings.APP_NAME,
+        "version": "1.0.0",
+        "status": "ok",
+        "docs": "/docs" if settings.DEBUG else "Not available",
+    }
+
+
+@app.get("/health", include_in_schema=False)
+async def health():
+    """Health check endpoint"""
+    return {
+        "status": "healthy",
+        "service": settings.APP_NAME,
+        "version": "1.0.0",
+    }

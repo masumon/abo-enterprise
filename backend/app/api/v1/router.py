@@ -11,6 +11,7 @@ from app.api.v1.routes import (
     admin_settings,
     bookings_v2,
     leads_v2,
+    invoices,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -24,5 +25,6 @@ api_router.include_router(leads.router)
 api_router.include_router(leads_v2.router)
 api_router.include_router(services.router)
 api_router.include_router(settings.router)
+api_router.include_router(invoices.router)
 api_router.include_router(admin.router)
 api_router.include_router(admin_settings.router)
