@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     WHATSAPP_NUMBER: str = "8801825007977"
     BUSINESS_EMAIL: str = "abo.enterprise@gmail.com"
 
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM: str = "noreply@aboenterprise.com"
+    SMTP_TLS: bool = True
+    ADMIN_NOTIFY_EMAIL: str = ""
+
     @property
     def allowed_origins_list(self) -> list[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]

@@ -25,7 +25,7 @@ api.interceptors.response.use(
 );
 
 export const productsApi = {
-  list: (params?: { category?: string; featured?: boolean; page?: number }) =>
+  list: (params?: { category?: string; featured?: boolean; search?: string; page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<Product>>("/api/v1/products", { params }),
 
   get: (slug: string) =>

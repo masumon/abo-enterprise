@@ -1,7 +1,7 @@
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
 from app.core.security import require_admin
 from app.models.models import Product
@@ -24,6 +24,9 @@ async def list_products(
         conditions.append(Product.category == category)
     if featured is not None:
         conditions.append(Product.is_featured == featured)
+    if search:
+        term = f"%{search}%"
+        conditions.append(or_(Product.name_en.ilike(term), Product.name_bn.ilike(term)))
 
     total_result = await db.execute(select(func.count(Product.id)).where(and_(*conditions)))
     total = total_result.scalar_one()

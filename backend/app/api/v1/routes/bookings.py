@@ -1,10 +1,12 @@
 from uuid import UUID
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.config import settings
+from app.core.email import send_email, booking_notification_html
 from app.models.models import Booking
 from app.schemas.schemas import BookingCreate, BookingOut, BookingStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 
@@ -17,7 +19,11 @@ def generate_booking_number() -> str:
 
 
 @router.post("", response_model=ApiResponse, status_code=201)
-async def create_booking(payload: BookingCreate, db: AsyncSession = Depends(get_db)):
+async def create_booking(
+    payload: BookingCreate,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
     booking = Booking(
         booking_number=generate_booking_number(),
         **payload.model_dump(),
@@ -25,6 +31,17 @@ async def create_booking(payload: BookingCreate, db: AsyncSession = Depends(get_
     db.add(booking)
     await db.flush()
     await db.refresh(booking)
+
+    if settings.ADMIN_NOTIFY_EMAIL:
+        html = booking_notification_html(
+            booking.booking_number, payload.customer_name, payload.customer_phone,
+            payload.service_type, payload.details or "",
+        )
+        background_tasks.add_task(
+            send_email, settings.ADMIN_NOTIFY_EMAIL,
+            f"New Booking {booking.booking_number} — ABO Enterprise", html,
+        )
+
     return ApiResponse(data=BookingOut.model_validate(booking), message="Booking created")
 
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { ShoppingCart, Star } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
@@ -34,6 +35,9 @@ export default function ProductCard({ product, onAddToCart }: Props) {
 
   return (
     <article className="card-hover group relative flex flex-col overflow-hidden">
+      {/* Clickable image/name area */}
+      <Link href={`/products/${product.slug}`} className="absolute inset-0 z-0" aria-label={product.name_en} />
+
       {/* Badges */}
       <div className="absolute top-3 left-3 right-3 flex justify-between z-10 pointer-events-none">
         {product.badge && (
@@ -94,7 +98,7 @@ export default function ProductCard({ product, onAddToCart }: Props) {
         <button
           onClick={handleAdd}
           disabled={product.stock_quantity === 0}
-          className="btn btn-brand btn-sm mt-auto w-full"
+          className="btn btn-brand btn-sm mt-auto w-full relative z-10"
         >
           <ShoppingCart className="w-4 h-4" />
           {product.stock_quantity === 0
