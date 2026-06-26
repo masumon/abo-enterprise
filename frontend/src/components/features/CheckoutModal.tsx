@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { X, CheckCircle } from "lucide-react";
+import { X, CheckCircle, Package } from "lucide-react";
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -41,6 +42,7 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
   const { lang } = useLanguageStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const cartTotal = total();
 
   const {
@@ -66,13 +68,15 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
         subtotal: i.price * i.quantity,
       }));
 
-      await ordersApi.create({
+      const orderRes = await ordersApi.create({
         ...data,
         items: orderItems,
         subtotal: cartTotal,
         delivery_charge: 0,
         total: cartTotal,
       }).catch(() => null);
+      const num = (orderRes?.data?.data as { order_number?: string } | undefined)?.order_number ?? null;
+      setOrderNumber(num);
 
       const waItems = items.map((i) => ({
         name: lang === "bn" ? i.name_bn : i.name_en,
@@ -115,19 +119,39 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
         </div>
 
         {isSuccess ? (
-          <div className="p-10 text-center">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <div className="p-8 text-center">
+            <CheckCircle className="w-14 h-14 text-green-500 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-900 mb-2">
               {lang === "bn" ? "অর্ডার হয়েছে!" : "Order Placed!"}
             </h3>
-            <p className="text-gray-500 text-sm mb-6">
+            <p className="text-gray-500 text-sm mb-4">
               {lang === "bn"
                 ? "WhatsApp খুলে গেছে। আমরা শীঘ্রই যোগাযোগ করব।"
                 : "WhatsApp opened. We'll contact you shortly."}
             </p>
-            <button onClick={onClose} className="btn btn-brand btn-md">
-              {lang === "bn" ? "ঠিক আছে" : "Done"}
-            </button>
+            {orderNumber && (
+              <div className="bg-brand-50 rounded-xl p-3 mb-5">
+                <p className="text-xs text-brand-600 font-medium mb-0.5">
+                  {lang === "bn" ? "অর্ডার নম্বর" : "Order Number"}
+                </p>
+                <p className="text-lg font-bold text-brand-700">{orderNumber}</p>
+              </div>
+            )}
+            <div className="flex flex-col gap-2">
+              {orderNumber && (
+                <Link
+                  href={`/track?order=${orderNumber}`}
+                  onClick={onClose}
+                  className="btn btn-outline btn-md flex items-center justify-center gap-2"
+                >
+                  <Package className="w-4 h-4" />
+                  {lang === "bn" ? "অর্ডার ট্র্যাক করুন" : "Track Order"}
+                </Link>
+              )}
+              <button onClick={onClose} className="btn btn-brand btn-md">
+                {lang === "bn" ? "ঠিক আছে" : "Done"}
+              </button>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">

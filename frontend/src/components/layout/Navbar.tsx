@@ -25,6 +25,7 @@ const NAV_LINKS = [
   },
   { href: "/about", label: { en: "About", bn: "আমাদের সম্পর্কে" } },
   { href: "/contact", label: { en: "Contact", bn: "যোগাযোগ" } },
+  { href: "/track", label: { en: "Track Order", bn: "অর্ডার ট্র্যাক" } },
 ];
 
 export default function Navbar() {

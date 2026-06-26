@@ -102,6 +102,7 @@ export default function Footer() {
               {[
                 { href: "/", label: { en: "Home", bn: "হোম" } },
                 { href: "/products", label: { en: "Products", bn: "পণ্য" } },
+                { href: "/track", label: { en: "Track Order", bn: "অর্ডার ট্র্যাক" } },
                 { href: "/about", label: { en: "About Us", bn: "আমাদের সম্পর্কে" } },
                 { href: "/contact", label: { en: "Contact", bn: "যোগাযোগ" } },
                 { href: "/admin/login", label: { en: "Admin", bn: "এডমিন" } },
