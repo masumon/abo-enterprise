@@ -6,7 +6,7 @@ from sqlalchemy import select, func, and_
 from app.core.database import get_db
 from app.core.security import require_admin
 from app.core.config import settings
-from app.core.email import send_email, booking_notification_html
+from app.core.email import send_email, booking_notification_html, customer_booking_confirmation_html
 from app.models.models import Booking
 from app.schemas.schemas import BookingCreate, BookingOut, BookingStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 
@@ -32,6 +32,7 @@ async def create_booking(
     await db.flush()
     await db.refresh(booking)
 
+    # Send admin notification
     if settings.ADMIN_NOTIFY_EMAIL:
         html = booking_notification_html(
             booking.booking_number, payload.customer_name, payload.customer_phone,
@@ -42,7 +43,24 @@ async def create_booking(
             f"New Booking {booking.booking_number} — ABO Enterprise", html,
         )
 
-    return ApiResponse(data=BookingOut.model_validate(booking), message="Booking created")
+    # Send customer confirmation email
+    if payload.customer_email:
+        html = customer_booking_confirmation_html(
+            booking.booking_number,
+            payload.customer_name,
+            payload.service_type,
+            booking.estimated_price or "Quote upon confirmation",
+            settings.WHATSAPP_NUMBER,
+        )
+        background_tasks.add_task(
+            send_email, payload.customer_email,
+            f"Booking Confirmation #{booking.booking_number} — ABO Enterprise", html,
+        )
+
+    return ApiResponse(
+        data={"booking_id": str(booking.id), "booking_number": booking.booking_number},
+        message="Booking created successfully! Check your email for confirmation."
+    )
 
 
 @router.get("", response_model=PaginatedResponse)

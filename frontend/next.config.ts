@@ -1,25 +1,59 @@
 import type { NextConfig } from "next";
+import withPWA from "next-pwa";
 
 const nextConfig: NextConfig = {
+  compress: true,
+  poweredByHeader: false,
   images: {
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [375, 640, 750, 828, 1080, 1200, 1920],
     remotePatterns: [
       { protocol: "https", hostname: "res.cloudinary.com" },
       { protocol: "https", hostname: "i.ibb.co.com" },
       { protocol: "https", hostname: "i.ibb.co" },
     ],
   },
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
   async headers() {
     return [
       {
         source: "/(.*)",
         headers: [
-          { key: "X-Frame-Options", value: "DENY" },
-          { key: "X-Content-Type-Options", value: "nosniff" },
-          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-Frame-Options",           value: "DENY" },
+          { key: "X-Content-Type-Options",     value: "nosniff" },
+          { key: "X-XSS-Protection",           value: "1; mode=block" },
+          { key: "Referrer-Policy",            value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy",         value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Strict-Transport-Security",  value: "max-age=63072000; includeSubDomains; preload" },
         ],
       },
+      {
+        source: "/icons/(.*)",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+      {
+        source: "/_next/static/(.*)",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+    ];
+  },
+  async redirects() {
+    return [
+      { source: "/home", destination: "/", permanent: true },
+      { source: "/shop", destination: "/products", permanent: true },
+      { source: "/book", destination: "/services", permanent: true },
     ];
   },
 };
 
-export default nextConfig;
+const pwaConfig = withPWA({
+  dest: "public",
+  register: true,
+  skipWaiting: true,
+  scope: "/",
+  sw: "/sw.js",
+})(nextConfig);
+
+export default pwaConfig;

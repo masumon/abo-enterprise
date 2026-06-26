@@ -1,0 +1,54 @@
+name: abo-enterprise-api
+runtime: python-3.11
+plan: starter
+buildCommand: pip install -r requirements.txt
+startCommand: |
+  uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
+
+envVars:
+  - key: ENVIRONMENT
+    value: production
+  - key: LOG_LEVEL
+    value: info
+  - key: CORS_ORIGINS
+    value: "https://aboenterprise.com,https://www.aboenterprise.com"
+  - key: DATABASE_URL
+    syncWithPostgres: aboenterprise-postgres
+  - key: REDIS_URL
+    scope: all
+  - key: JWT_SECRET_KEY
+    scope: all
+    isPrivate: true
+  - key: ALGORITHM
+    value: HS256
+  - key: ACCESS_TOKEN_EXPIRE_MINUTES
+    value: "1440"
+  - key: SMTP_HOST
+    value: smtp.sendgrid.net
+  - key: SMTP_PORT
+    value: "587"
+  - key: SMTP_USERNAME
+    value: apikey
+  - key: SMTP_PASSWORD
+    scope: all
+    isPrivate: true
+  - key: FROM_EMAIL
+    value: noreply@aboenterprise.com
+  - key: CLOUDINARY_CLOUD_NAME
+    scope: all
+  - key: CLOUDINARY_API_KEY
+    scope: all
+  - key: CLOUDINARY_API_SECRET
+    scope: all
+    isPrivate: true
+
+services:
+  - type: postgresql
+    name: aboenterprise-postgres
+    plan: free
+    version: 15
+    databaseName: aboenterprise
+    user: postgres
+
+autoDeploy: true
+previewsEnabled: true

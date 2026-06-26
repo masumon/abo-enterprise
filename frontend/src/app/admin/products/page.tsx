@@ -110,7 +110,7 @@ export default function AdminProductsPage() {
     try {
       const payload = { ...data } as Partial<Product>;
       if (editing) {
-        await productsApi.update(editing.id, payload);
+        await productsApi.update(editing.id!, payload);
       } else {
         await productsApi.create(payload);
       }
@@ -197,7 +197,7 @@ export default function AdminProductsPage() {
                       <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
                         <Pencil className="w-4 h-4" />
                       </button>
-                      <button onClick={() => setDeleteId(p.id)} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+                      <button onClick={() => setDeleteId(p.id ?? null)} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>

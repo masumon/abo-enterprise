@@ -4,16 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Package, ShoppingCart, Briefcase, Users,
-  LogOut, ExternalLink, Bot,
+  LogOut, ExternalLink, BarChart2, Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
-  { href: "/admin/products", icon: Package, label: "Products" },
-  { href: "/admin/orders", icon: ShoppingCart, label: "Orders" },
-  { href: "/admin/bookings", icon: Briefcase, label: "Bookings" },
-  { href: "/admin/leads", icon: Users, label: "Leads" },
+  { href: "/admin",            icon: LayoutDashboard, label: "Dashboard",  exact: true },
+  { href: "/admin/products",   icon: Package,         label: "Products" },
+  { href: "/admin/orders",     icon: ShoppingCart,    label: "Orders" },
+  { href: "/admin/bookings",   icon: Briefcase,       label: "Bookings" },
+  { href: "/admin/leads",      icon: Users,           label: "Leads" },
+  { href: "/admin/analytics",  icon: BarChart2,       label: "Analytics" },
+  { href: "/admin/settings",   icon: Settings,        label: "Settings" },
 ];
 
 interface Props {
@@ -33,7 +35,7 @@ export default function AdminSidebar({ onLogout, adminName = "Admin" }: Props) {
       <div className="h-16 flex items-center px-5 border-b border-white/10">
         <div className="flex items-center gap-2.5">
           <div className="w-7 h-7 bg-brand-500 rounded-lg flex items-center justify-center">
-            <Bot className="w-4 h-4 text-white" />
+            <LayoutDashboard className="w-4 h-4 text-white" />
           </div>
           <div>
             <p className="text-white font-bold text-sm leading-tight">ABO Enterprise</p>

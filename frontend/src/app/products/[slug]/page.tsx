@@ -30,7 +30,7 @@ export default function ProductDetailPage() {
   const handleAdd = () => {
     if (!product) return;
     addItem({
-      product_id: product.id,
+      product_id: product.id ?? product.slug,
       name_en: product.name_en,
       name_bn: product.name_bn,
       price: product.price,
@@ -128,7 +128,7 @@ export default function ProductDetailPage() {
 
               {/* Stock */}
               <div className="mb-4">
-                {product.stock_quantity > 0 ? (
+                {(product.stock_quantity ?? 0) > 0 ? (
                   <span className="inline-flex items-center gap-1.5 text-green-600 text-sm font-medium">
                     <CheckCircle className="w-4 h-4" />
                     In Stock ({product.stock_quantity} available)

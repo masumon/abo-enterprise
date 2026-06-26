@@ -7,7 +7,7 @@ from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.security import require_admin
 from app.core.config import settings
-from app.core.email import send_email, order_notification_html
+from app.core.email import send_email, order_notification_html, customer_order_confirmation_html
 from app.models.models import Order, OrderItem
 from app.schemas.schemas import OrderCreate, OrderOut, OrderStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 
@@ -60,6 +60,7 @@ async def create_order(
     )
     order = result.scalar_one()
 
+    # Send admin notification
     if settings.ADMIN_NOTIFY_EMAIL:
         items_summary = ", ".join(f"{i.product_name} x{i.quantity}" for i in payload.items)
         html = order_notification_html(
@@ -71,7 +72,28 @@ async def create_order(
             f"New Order {order.order_number} — ABO Enterprise", html,
         )
 
-    return ApiResponse(data=OrderOut.model_validate(order), message="Order placed successfully")
+    # Send customer confirmation email
+    if payload.customer_email:
+        items = [
+            {"name": i.product_name, "quantity": i.quantity, "price": float(i.product_price)}
+            for i in payload.items
+        ]
+        html = customer_order_confirmation_html(
+            order.order_number,
+            payload.customer_name,
+            items,
+            float(payload.total),
+            settings.WHATSAPP_NUMBER,
+        )
+        background_tasks.add_task(
+            send_email, payload.customer_email,
+            f"Order Confirmation #{order.order_number} — ABO Enterprise", html,
+        )
+
+    return ApiResponse(
+        data={"order_id": str(order.id), "order_number": order.order_number},
+        message="Order placed successfully! Check your email for confirmation."
+    )
 
 
 # Public order tracking endpoint

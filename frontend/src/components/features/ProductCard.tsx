@@ -20,7 +20,7 @@ export default function ProductCard({ product, onAddToCart }: Props) {
 
   const handleAdd = () => {
     addItem({
-      product_id: product.id,
+      product_id: product.id ?? product.slug,
       name_en: product.name_en,
       name_bn: product.name_bn,
       price: product.price,
