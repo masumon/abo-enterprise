@@ -15,6 +15,15 @@
     --glass-bg: rgba(255, 255, 255, 0.72);
     --glass-border: rgba(255, 255, 255, 0.35);
     --glass-shadow: 0 8px 32px rgba(30, 91, 168, 0.08), 0 2px 8px rgba(0,0,0,0.04);
+    --surface: #fafbff;
+    --surface-secondary: #f0f4ff;
+    --navy: #0a1628;
+  }
+
+  .dark {
+    --glass-bg: rgba(10, 22, 40, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -80,6 +89,16 @@
   .btn-sm  { @apply px-3.5 py-1.5 text-sm; }
   .btn-md  { @apply px-5 py-2.5 text-sm; }
   .btn-lg  { @apply px-7 py-3.5 text-base; }
+
+  .btn-ripple {
+    @apply relative overflow-hidden;
+  }
+  .btn-ripple::after {
+    content: "";
+    @apply absolute inset-0 opacity-0 transition-opacity duration-300;
+    background: radial-gradient(circle, rgba(255,255,255,0.35) 0%, transparent 70%);
+  }
+  .btn-ripple:active::after { @apply opacity-100; }
 
   /* ── Inputs ── */
   .input {

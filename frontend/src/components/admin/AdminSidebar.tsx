@@ -10,12 +10,15 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/admin",            icon: LayoutDashboard, label: "Dashboard",  exact: true },
-  { href: "/admin/products",   icon: Package,         label: "Products" },
   { href: "/admin/orders",     icon: ShoppingCart,    label: "Orders" },
   { href: "/admin/bookings",   icon: Briefcase,       label: "Bookings" },
+  { href: "/admin/products",   icon: Package,         label: "Products" },
   { href: "/admin/leads",      icon: Users,           label: "Leads" },
+  { href: "/projects",         icon: ExternalLink,    label: "Projects", external: true },
   { href: "/admin/analytics",  icon: BarChart2,       label: "Analytics" },
   { href: "/admin/settings",   icon: Settings,        label: "Settings" },
+  { href: "/admin/users",      icon: Users,           label: "Users" },
+  { href: "/admin/audit",      icon: BarChart2,       label: "Audit Logs" },
 ];
 
 interface Props {
@@ -60,20 +63,24 @@ export default function AdminSidebar({ onLogout, adminName = "Admin", mobileOpen
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {NAV.map(({ href, icon: Icon, label, exact }) => {
-          const active = isActive(href, exact);
+        {NAV.map(({ href, icon: Icon, label, exact, external }) => {
+          const active = !external && isActive(href, exact);
+          const className = cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
+            active
+              ? "bg-brand-600/90 text-white shadow-lg shadow-brand-900/30"
+              : "text-gray-400 hover:bg-white/[0.07] hover:text-gray-200"
+          );
+          if (external) {
+            return (
+              <a key={href} href={href} target="_blank" rel="noopener noreferrer" className={className}>
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                {label}
+              </a>
+            );
+          }
           return (
-            <Link
-              key={href}
-              href={href}
-              onClick={onClose}
-              className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
-                active
-                  ? "bg-brand-600/90 text-white shadow-lg shadow-brand-900/30"
-                  : "text-gray-400 hover:bg-white/[0.07] hover:text-gray-200"
-              )}
-            >
+            <Link key={href} href={href} onClick={onClose} className={className}>
               <Icon className={cn("w-4 h-4 flex-shrink-0 transition-transform duration-150", active ? "scale-110" : "")} />
               {label}
               {active && <span className="ml-auto w-1.5 h-1.5 bg-white/60 rounded-full" />}

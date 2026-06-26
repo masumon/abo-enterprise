@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import {
-  Printer, Scale, Globe, Bot, Cog, MonitorSmartphone, ArrowRight
+  Printer, Scale, Code, Megaphone, Briefcase, Building2, ArrowRight,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
+import GlassCard from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
 
 const SERVICES = [
@@ -12,67 +13,43 @@ const SERVICES = [
     icon: Printer,
     href: "/services/printing",
     color: "from-purple-500 to-pink-500",
-    title: { en: "Printing Services", bn: "প্রিন্টিং সেবা" },
-    desc: {
-      en: "Visiting cards, banners, brochures, document printing at the best price.",
-      bn: "ভিজিটিং কার্ড, ব্যানার, ব্রোশিওর, ডকুমেন্ট প্রিন্টিং।",
-    },
-    price: { en: "From ৳3/page", bn: "৳৩/পাতা থেকে" },
+    title: { en: "Printing", bn: "প্রিন্টিং" },
+    desc: { en: "Cards, banners, brochures & documents.", bn: "কার্ড, ব্যানার, ব্রোশিওর ও ডকুমেন্ট।" },
+  },
+  {
+    icon: Code,
+    href: "/services/software",
+    color: "from-green-500 to-teal-500",
+    title: { en: "Software", bn: "সফটওয়্যার" },
+    desc: { en: "Web, mobile & enterprise applications.", bn: "ওয়েব, মোবাইল ও এন্টারপ্রাইজ অ্যাপ।" },
   },
   {
     icon: Scale,
     href: "/services/legal",
     color: "from-blue-500 to-cyan-500",
-    title: { en: "Legal Case Writing", bn: "আইনি কেস রাইটিং" },
-    desc: {
-      en: "GD, FIR, and legal application writing with professional assistance.",
-      bn: "জিডি, এফআইআর এবং আইনি আবেদন পত্র লেখার সেবা।",
-    },
-    price: { en: "From ৳500", bn: "৳৫০০ থেকে" },
+    title: { en: "Legal", bn: "আইনি" },
+    desc: { en: "GD, FIR & legal document assistance.", bn: "জিডি, এফআইআর ও আইনি ডকুমেন্ট সহায়তা।" },
   },
   {
-    icon: Globe,
-    href: "/services/software",
-    color: "from-green-500 to-teal-500",
-    title: { en: "Website Development", bn: "ওয়েবসাইট ডেভেলপমেন্ট" },
-    desc: {
-      en: "Professional websites, web apps, and e-commerce solutions.",
-      bn: "প্রফেশনাল ওয়েবসাইট, ওয়েব অ্যাপ ও ই-কমার্স।",
-    },
-    price: { en: "Custom quote", bn: "কাস্টম মূল্য" },
+    icon: Megaphone,
+    href: "/services",
+    color: "from-orange-500 to-amber-500",
+    title: { en: "Digital Marketing", bn: "ডিজিটাল মার্কেটিং" },
+    desc: { en: "Social media, SEO & online growth.", bn: "সোশ্যাল মিডিয়া, SEO ও অনলাইন প্রচার।" },
   },
   {
-    icon: Bot,
-    href: "/services/software",
-    color: "from-orange-500 to-red-500",
-    title: { en: "AI Solutions", bn: "AI সমাধান" },
-    desc: {
-      en: "Custom AI agents, OCR, automation, and intelligent business solutions.",
-      bn: "কাস্টম AI এজেন্ট, OCR, অটোমেশন ও স্মার্ট সমাধান।",
-    },
-    price: { en: "Project-based", bn: "প্রজেক্ট ভিত্তিক" },
+    icon: Briefcase,
+    href: "/contact",
+    color: "from-indigo-500 to-violet-500",
+    title: { en: "Business Consulting", bn: "ব্যবসায়িক পরামর্শ" },
+    desc: { en: "Strategy, planning & digital transformation.", bn: "কৌশল, পরিকল্পনা ও ডিজিটাল রূপান্তর।" },
   },
   {
-    icon: Cog,
-    href: "/services/software",
-    color: "from-indigo-500 to-purple-500",
-    title: { en: "Python Automation", bn: "পাইথন অটোমেশন" },
-    desc: {
-      en: "Automate repetitive tasks, data processing, and business workflows.",
-      bn: "ব্যবসায়িক কাজ, ডেটা প্রক্রিয়াকরণ স্বয়ংক্রিয় করুন।",
-    },
-    price: { en: "From ৳5,000", bn: "৳৫,০০০ থেকে" },
-  },
-  {
-    icon: MonitorSmartphone,
-    href: "/services/software",
-    color: "from-pink-500 to-rose-500",
-    title: { en: "Custom Software", bn: "কাস্টম সফটওয়্যার" },
-    desc: {
-      en: "POS, ERP, CRM, ISP Billing, Hospital, School, Restaurant software.",
-      bn: "POS, ERP, CRM, ISP বিলিং, হাসপাতাল, স্কুল সফটওয়্যার।",
-    },
-    price: { en: "Project-based", bn: "প্রজেক্ট ভিত্তিক" },
+    icon: Building2,
+    href: "/projects",
+    color: "from-brand-500 to-brand-700",
+    title: { en: "Enterprise Solutions", bn: "এন্টারপ্রাইজ সমাধান" },
+    desc: { en: "ERP, POS, CRM & custom systems.", bn: "ERP, POS, CRM ও কাস্টম সিস্টেম।" },
   },
 ];
 
@@ -83,12 +60,12 @@ export default function ServicesOverview() {
     <section id="services" className="py-16">
       <div className="container mx-auto px-4">
         <div className="section-title text-center mb-10">
-          <h2>{lang === "bn" ? "আমাদের সেবা" : "Our Services"}</h2>
+          <h2>{lang === "bn" ? "মূল সেবাসমূহ" : "Core Services"}</h2>
           <div className="section-divider" />
           <p className="text-gray-500 text-sm max-w-lg mx-auto">
             {lang === "bn"
-              ? "প্রিন্টিং থেকে AI সমাধান পর্যন্ত — আপনার প্রতিটি ব্যবসায়িক প্রয়োজন আমরা মেটাই।"
-              : "From printing to AI solutions — we meet every business need you have."}
+              ? "গ্লাস কার্ডে আমাদের প্রধান সেবা — হোভার করলে বিস্তারিত দেখুন।"
+              : "Our core services in premium glass cards — hover to explore."}
           </p>
         </div>
 
@@ -96,10 +73,10 @@ export default function ServicesOverview() {
           {SERVICES.map((service) => {
             const Icon = service.icon;
             return (
-              <Link key={service.href + service.title.en} href={service.href}>
-                <div className="card-hover p-6 group h-full">
+              <Link key={service.title.en} href={service.href} className="group">
+                <GlassCard hover className="p-6 h-full">
                   <div className={cn(
-                    "w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center text-white mb-4 transition-transform duration-200 group-hover:scale-110",
+                    "w-12 h-12 rounded-xl bg-gradient-to-br flex items-center justify-center text-white mb-4 transition-transform duration-300 group-hover:scale-110",
                     service.color
                   )}>
                     <Icon className="w-6 h-6" />
@@ -110,13 +87,11 @@ export default function ServicesOverview() {
                   <p className="text-gray-500 text-sm mb-4 leading-relaxed">
                     {lang === "bn" ? service.desc.bn : service.desc.en}
                   </p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-accent-500">
-                      {lang === "bn" ? service.price.bn : service.price.en}
-                    </span>
-                    <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-brand-500 group-hover:translate-x-1 transition-all" />
-                  </div>
-                </div>
+                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-brand-600 group-hover:gap-2 transition-all">
+                    {lang === "bn" ? "বিস্তারিত" : "Learn more"}
+                    <ArrowRight className="w-4 h-4" />
+                  </span>
+                </GlassCard>
               </Link>
             );
           })}

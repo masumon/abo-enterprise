@@ -1,19 +1,36 @@
 "use client";
 
 import { useState } from "react";
-import { X, Minus, Plus, Trash2, ShoppingBag, ArrowRight } from "lucide-react";
+import { X, Minus, Plus, Trash2, ShoppingBag, ArrowRight, Tag } from "lucide-react";
 import Image from "next/image";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
+import { useT } from "@/lib/i18n/useT";
 import { formatPrice, generateWhatsAppOrderMessage, WHATSAPP_NUMBER } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import CheckoutModal from "./CheckoutModal";
 
+const COUPONS: Record<string, number> = { ABO10: 0.1, WELCOME: 0.05 };
+
 export default function CartDrawer() {
   const { items, isOpen, closeCart, updateQuantity, removeItem, total } = useCartStore();
   const { lang } = useLanguageStore();
+  const t = useT();
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const cartTotal = total();
+  const [coupon, setCoupon] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+
+  const cartSubtotal = total();
+  const discountRate = appliedCoupon ? COUPONS[appliedCoupon] ?? 0 : 0;
+  const discount = Math.round(cartSubtotal * discountRate);
+  const delivery = 0;
+  const tax = 0;
+  const cartTotal = cartSubtotal - discount + delivery + tax;
+
+  const applyCoupon = () => {
+    const code = coupon.trim().toUpperCase();
+    if (COUPONS[code]) setAppliedCoupon(code);
+  };
 
   if (!isOpen) return null;
 
@@ -121,26 +138,35 @@ export default function CartDrawer() {
 
         {/* Footer */}
         {items.length > 0 && (
-          <div
-            className="px-5 py-5 border-t border-gray-100"
-            style={{ background: "rgba(248,250,255,0.95)" }}
-          >
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-500">{lang === "bn" ? "ডেলিভারি" : "Delivery"}</span>
-                <span className="text-green-600 font-semibold bg-green-50 px-2 py-0.5 rounded-full text-xs">
-                  {lang === "bn" ? "ফ্রি" : "FREE"}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="font-bold text-gray-900">{lang === "bn" ? "মোট" : "Total"}</span>
+          <div className="px-5 py-5 border-t border-gray-100" style={{ background: "rgba(248,250,255,0.95)" }}>
+            <div className="flex gap-2 mb-4">
+              <input
+                value={coupon}
+                onChange={(e) => setCoupon(e.target.value)}
+                placeholder={t("cart_coupon")}
+                className="input flex-1 text-sm py-2"
+              />
+              <button type="button" onClick={applyCoupon} className="btn btn-outline btn-sm">
+                <Tag className="w-4 h-4" />
+                {t("cart_apply")}
+              </button>
+            </div>
+            {appliedCoupon && (
+              <p className="text-xs text-green-600 mb-2">
+                {appliedCoupon} {lang === "bn" ? "প্রয়োগ হয়েছে" : "applied"}
+              </p>
+            )}
+            <div className="space-y-2 mb-4 text-sm">
+              <div className="flex justify-between"><span className="text-gray-500">{t("cart_subtotal")}</span><span>{formatPrice(cartSubtotal)}</span></div>
+              {discount > 0 && <div className="flex justify-between text-green-600"><span>{lang === "bn" ? "ছাড়" : "Discount"}</span><span>-{formatPrice(discount)}</span></div>}
+              <div className="flex justify-between"><span className="text-gray-500">{t("cart_delivery")}</span><span className="text-green-600 font-medium">{lang === "bn" ? "ফ্রি" : "FREE"}</span></div>
+              <div className="flex justify-between"><span className="text-gray-500">{t("cart_tax")}</span><span>{formatPrice(tax)}</span></div>
+              <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+                <span className="font-bold text-gray-900">{t("cart_total")}</span>
                 <span className="text-2xl font-bold text-accent-500">{formatPrice(cartTotal)}</span>
               </div>
             </div>
-            <button
-              onClick={() => { closeCart(); setCheckoutOpen(true); }}
-              className="btn btn-primary btn-lg w-full"
-            >
+            <button onClick={() => { closeCart(); setCheckoutOpen(true); }} className="btn btn-primary btn-lg w-full btn-ripple">
               {lang === "bn" ? "অর্ডার করুন" : "Checkout"}
               <ArrowRight className="w-5 h-5" />
             </button>

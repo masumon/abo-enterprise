@@ -1,39 +1,35 @@
 "use client";
 
-import { Users, Package, Truck, Shield, Code, Brain } from "lucide-react";
-import { useLanguageStore } from "@/store/language";
+import { Users, Briefcase, Package, Clock, Headphones } from "lucide-react";
+import { useT } from "@/lib/i18n/useT";
+import AnimatedCounter from "@/components/ui/AnimatedCounter";
+import GlassCard from "@/components/ui/GlassCard";
 
 const STATS = [
-  { icon: Users,   value: "500+", label: { en: "Happy Clients",     bn: "সন্তুষ্ট গ্রাহক" } },
-  { icon: Package, value: "200+", label: { en: "Products",          bn: "পণ্য" } },
-  { icon: Code,    value: "50+",  label: { en: "Software Projects", bn: "সফটওয়্যার প্রজেক্ট" } },
-  { icon: Truck,   value: "FREE", label: { en: "Delivery",          bn: "ডেলিভারি" } },
-  { icon: Brain,   value: "10+",  label: { en: "AI Solutions",      bn: "AI সমাধান" } },
-  { icon: Shield,  value: "100%", label: { en: "Secure",            bn: "নিরাপদ" } },
+  { icon: Users, end: 500, suffix: "+", key: "trust_clients" as const },
+  { icon: Briefcase, end: 50, suffix: "+", key: "trust_projects" as const },
+  { icon: Package, end: 200, suffix: "+", key: "trust_products" as const },
+  { icon: Clock, end: 5, suffix: "+", key: "trust_years" as const },
+  { icon: Headphones, end: 24, suffix: "/7", key: "trust_support" as const },
 ];
 
 export default function Stats() {
-  const { lang } = useLanguageStore();
+  const t = useT();
 
   return (
-    <section className="gradient-brand py-10 relative overflow-hidden">
-      {/* subtle shimmer overlay */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent pointer-events-none" />
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-          {STATS.map(({ icon: Icon, value, label }) => (
-            <div
-              key={label.en}
-              className="text-center text-white group"
-            >
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center transition-transform duration-200 group-hover:scale-110 group-hover:bg-white/20">
-                <Icon className="w-6 h-6 text-white/80 group-hover:text-white transition-colors" />
+    <section className="py-14 gradient-surface">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {STATS.map(({ icon: Icon, end, suffix, key }) => (
+            <GlassCard key={key} hover className="p-6 text-center">
+              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-brand-50 flex items-center justify-center">
+                <Icon className="w-6 h-6 text-brand-600" />
               </div>
-              <div className="text-2xl font-bold tracking-tight">{value}</div>
-              <div className="text-xs text-white/70 mt-0.5 font-medium">
-                {lang === "bn" ? label.bn : label.en}
-              </div>
-            </div>
+              <p className="text-3xl font-bold text-brand-700">
+                <AnimatedCounter end={end} suffix={suffix} />
+              </p>
+              <p className="text-sm text-gray-500 mt-1">{t(key)}</p>
+            </GlassCard>
           ))}
         </div>
       </div>
