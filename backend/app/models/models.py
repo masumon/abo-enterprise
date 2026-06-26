@@ -35,6 +35,28 @@ class Product(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
     order_items: Mapped[list["OrderItem"]] = relationship(back_populates="product")
+    reviews: Mapped[list["Review"]] = relationship(back_populates="product")
+
+
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    product_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="SET NULL"))
+    customer_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    company: Mapped[str | None] = mapped_column(String(255))
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    review_en: Mapped[str] = mapped_column(Text, nullable=False)
+    review_bn: Mapped[str | None] = mapped_column(Text)
+    photo_url: Mapped[str | None] = mapped_column(Text)
+    source: Mapped[str] = mapped_column(String(50), default="direct")
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_featured: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+    product: Mapped["Product | None"] = relationship(back_populates="reviews")
 
 
 class Order(Base):

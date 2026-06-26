@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import Image from "next/image";
 import LeadForm from "@/components/projects/LeadForm";
 import { CheckCircle, ArrowRight } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
+import { PROJECTS } from "@/lib/data/projects";
+import GlassCard from "@/components/ui/GlassCard";
 
 const STEPS = [
   { title: { en: "Submit Requirements", bn: "প্রয়োজনীয়তা জমা দিন" }, desc: { en: "Tell us about your project, timeline, and budget", bn: "প্রজেক্ট, সময়সীমা ও বাজেট জানান" } },
@@ -42,6 +46,28 @@ export default function ProjectsPage() {
               <h3 className="font-bold text-gray-900 mb-2">{t(s.title)}</h3>
               <p className="text-sm text-gray-600">{t(s.desc)}</p>
             </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="max-w-6xl mx-auto px-4 py-12">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+          {t({ en: "Project Gallery", bn: "প্রজেক্ট গ্যালারি" })}
+        </h2>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {PROJECTS.map((p) => (
+            <Link key={p.slug} href={`/projects/${p.slug}`}>
+              <GlassCard hover className="overflow-hidden h-full">
+                <div className="relative h-40">
+                  <Image src={p.image} alt={t(p.title)} fill className="object-cover" sizes="(max-width:640px) 100vw, 33vw" />
+                </div>
+                <div className="p-4">
+                  <p className="text-xs text-brand-600 font-semibold">{t(p.category)}</p>
+                  <h3 className="font-bold mt-1">{t(p.title)}</h3>
+                  <p className="text-xs text-gray-500 mt-2">{p.technologies.join(" · ")}</p>
+                </div>
+              </GlassCard>
+            </Link>
           ))}
         </div>
       </section>

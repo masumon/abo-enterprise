@@ -5,11 +5,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  ShoppingCart, Menu, X, Globe, Search, Briefcase,
+  ShoppingCart, Menu, X, Globe, Search, Briefcase, Moon, Sun,
 } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
+import { useThemeStore } from "@/store/theme";
 import { useT } from "@/lib/i18n/useT";
+import SearchSuggestions from "@/components/search/SearchSuggestions";
 import { cn } from "@/lib/utils";
 
 const NAV_LINKS = [
@@ -31,6 +33,7 @@ export default function Navbar() {
 
   const { itemCount, openCart } = useCartStore();
   const { lang, toggle } = useLanguageStore();
+  const { theme, toggle: toggleTheme } = useThemeStore();
   const count = itemCount();
 
   useEffect(() => {
@@ -92,7 +95,7 @@ export default function Navbar() {
 
         <div className="flex items-center gap-1.5">
           {searchOpen ? (
-            <form onSubmit={handleSearch} className="flex items-center">
+            <form onSubmit={handleSearch} className="flex items-center relative">
               <div className="relative">
                 <input
                   ref={searchRef}
@@ -104,6 +107,7 @@ export default function Navbar() {
                 <button type="submit" aria-label="Submit search" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-600">
                   <Search className="w-4 h-4" />
                 </button>
+                <SearchSuggestions query={searchQuery} onSelect={() => { setSearchOpen(false); setSearchQuery(""); }} />
               </div>
               <button type="button" aria-label="Close search" onClick={() => setSearchOpen(false)}
                 className="ml-1 w-8 h-8 flex items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100">
@@ -117,6 +121,12 @@ export default function Navbar() {
               <Search className="w-[18px] h-[18px]" />
             </button>
           )}
+
+          <button type="button" onClick={toggleTheme}
+            className="hidden sm:flex w-9 h-9 items-center justify-center rounded-xl text-gray-600 hover:bg-brand-50 dark:text-gray-300 dark:hover:bg-white/10"
+            aria-label="Toggle dark mode">
+            {theme === "dark" ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
+          </button>
 
           <button type="button" onClick={toggle}
             className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border border-brand-200 text-brand-700 hover:bg-brand-50 transition-colors"

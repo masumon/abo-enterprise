@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Package, Star, Heart, Eye } from "lucide-react";
+import { ShoppingCart, Package, Star, Heart, Eye, GitCompare } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useWishlistStore } from "@/store/wishlist";
+import { useCompareStore } from "@/store/compare";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
@@ -21,6 +22,7 @@ interface Props {
 export default function ProductCard({ product, onAddToCart, layout = "grid" }: Props) {
   const { addItem } = useCartStore();
   const { toggle, has } = useWishlistStore();
+  const { add: addCompare, has: isCompared } = useCompareStore();
   const { lang } = useLanguageStore();
   const t = useT();
   const toast = useToastStore((s) => s.push);
@@ -116,6 +118,9 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
       <div className="absolute top-3 right-3 z-20 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <button onClick={handleWishlist} className={cn("w-8 h-8 rounded-lg glass flex items-center justify-center pointer-events-auto", wished ? "text-accent-500" : "text-gray-500")} aria-label={t("wishlist")}>
           <Heart className={cn("w-4 h-4", wished && "fill-current")} />
+        </button>
+        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); addCompare(product); toast("info", lang === "bn" ? "তুলনায় যোগ" : "Added to compare"); }} disabled={isCompared(productId)} className="w-8 h-8 rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto" aria-label={t("compare")}>
+          <GitCompare className="w-4 h-4" />
         </button>
         <Link href={`/products/${product.slug}`} className="w-8 h-8 rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto" aria-label={t("view_details")}>
           <Eye className="w-4 h-4" />

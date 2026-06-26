@@ -120,6 +120,32 @@ async def track_order(
     })
 
 
+@router.get("/by-phone", response_model=ApiResponse)
+async def orders_by_phone(
+    phone: str = Query(..., description="Customer phone 01XXXXXXXXX"),
+    db: AsyncSession = Depends(get_db),
+):
+    if not phone.startswith("0") or len(phone) != 11:
+        raise HTTPException(status_code=400, detail="Invalid phone format")
+    result = await db.execute(
+        select(Order).options(selectinload(Order.items))
+        .where(Order.customer_phone == phone, Order.is_deleted == False)  # noqa: E712
+        .order_by(Order.created_at.desc())
+        .limit(20)
+    )
+    orders = result.scalars().all()
+    return ApiResponse(data=[
+        {
+            "order_number": o.order_number,
+            "order_status": o.order_status,
+            "total": float(o.total),
+            "items_count": len(o.items),
+            "created_at": o.created_at.isoformat(),
+        }
+        for o in orders
+    ])
+
+
 @router.get("", response_model=PaginatedResponse)
 async def list_orders(
     order_status: str | None = Query(None),

@@ -15,6 +15,7 @@ from app.api.v1.routes import (
     payments,
     analytics,
     bulk,
+    reviews,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -34,3 +35,4 @@ api_router.include_router(analytics.router)
 api_router.include_router(bulk.router)
 api_router.include_router(admin.router)
 api_router.include_router(admin_settings.router)
+api_router.include_router(reviews.router)
