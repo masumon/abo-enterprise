@@ -1,10 +1,12 @@
 from uuid import UUID
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.config import settings
+from app.core.email import send_email, order_notification_html
 from app.models.models import Order, OrderItem
 from app.schemas.schemas import OrderCreate, OrderOut, OrderStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 
@@ -17,7 +19,11 @@ def generate_order_number() -> str:
 
 
 @router.post("", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
-async def create_order(payload: OrderCreate, db: AsyncSession = Depends(get_db)):
+async def create_order(
+    payload: OrderCreate,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
     order = Order(
         order_number=generate_order_number(),
         customer_name=payload.customer_name,
@@ -47,6 +53,20 @@ async def create_order(payload: OrderCreate, db: AsyncSession = Depends(get_db))
 
     await db.flush()
     await db.refresh(order)
+
+    if settings.ADMIN_NOTIFY_EMAIL:
+        items_summary = ", ".join(
+            f"{i.product_name} x{i.quantity}" for i in payload.items
+        )
+        html = order_notification_html(
+            order.order_number, payload.customer_name, payload.customer_phone,
+            float(payload.total), items_summary,
+        )
+        background_tasks.add_task(
+            send_email, settings.ADMIN_NOTIFY_EMAIL,
+            f"New Order {order.order_number} — ABO Enterprise", html,
+        )
+
     return ApiResponse(data=OrderOut.model_validate(order), message="Order placed successfully")
 
 

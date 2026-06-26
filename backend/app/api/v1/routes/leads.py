@@ -1,9 +1,11 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.config import settings
+from app.core.email import send_email, lead_notification_html
 from app.models.models import Lead
 from app.schemas.schemas import LeadCreate, LeadOut, LeadStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 
@@ -11,11 +13,26 @@ router = APIRouter(prefix="/leads", tags=["leads"])
 
 
 @router.post("", response_model=ApiResponse, status_code=201)
-async def create_lead(payload: LeadCreate, db: AsyncSession = Depends(get_db)):
+async def create_lead(
+    payload: LeadCreate,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
     lead = Lead(**payload.model_dump())
     db.add(lead)
     await db.flush()
     await db.refresh(lead)
+
+    if settings.ADMIN_NOTIFY_EMAIL:
+        html = lead_notification_html(
+            payload.name, payload.phone, payload.lead_type,
+            payload.project_description or "", payload.budget_range or "",
+        )
+        background_tasks.add_task(
+            send_email, settings.ADMIN_NOTIFY_EMAIL,
+            f"New Lead: {payload.name} ({payload.lead_type.replace('_', ' ')}) — ABO Enterprise", html,
+        )
+
     return ApiResponse(data=LeadOut.model_validate(lead), message="Lead submitted successfully")
 
 
