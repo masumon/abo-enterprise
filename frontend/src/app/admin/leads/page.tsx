@@ -1,127 +1,155 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Users, ChevronDown } from "lucide-react";
-import { leadsApi } from "@/lib/api";
-import type { Lead } from "@/types";
-import StatusBadge from "@/components/admin/StatusBadge";
+import api from "@/lib/api";
+import { Mail, Phone, Briefcase, TrendingUp } from "lucide-react";
+import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
-const STATUSES = ["new", "contacted", "qualified", "proposal_sent", "won", "lost"];
-const TYPES = ["software_development", "ai_solutions", "automation", "erp", "general"];
+interface Lead {
+  id: string;
+  lead_number: string;
+  name: string;
+  email?: string;
+  phone: string;
+  company?: string;
+  project_description?: string;
+  lead_type: string;
+  qualification_score: number;
+  status: string;
+  budget_min?: number;
+  budget_max?: number;
+}
 
-export default function AdminLeadsPage() {
+export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [typeFilter, setTypeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [minScore, setMinScore] = useState(0);
 
-  const load = async () => {
-    setLoading(true);
+  useEffect(() => {
+    fetchLeads();
+  }, [minScore]);
+
+  async function fetchLeads() {
     try {
-      const r = await leadsApi.list({
-        lead_type: typeFilter || undefined,
-        status: statusFilter || undefined,
-        page,
-      });
-      setLeads(r.data.data ?? []);
-      setTotal(r.data.meta?.total ?? 0);
+      setLoading(true);
+      const params: any = { page: 1, per_page: 20 };
+      if (minScore > 0) params.min_score = minScore;
+
+      const response = await api.get("/admin/leads", { params });
+      setLeads(response.data.data);
+    } catch (error) {
+      console.error("Failed to fetch leads:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
-  useEffect(() => { load(); }, [typeFilter, statusFilter, page]);
-
-  const updateStatus = async (id: string, status: string) => {
-    setUpdatingId(id);
+  async function updateLeadStatus(leadId: string, newStatus: string) {
     try {
-      await leadsApi.updateStatus(id, status);
-      await load();
-    } finally {
-      setUpdatingId(null);
+      await api.patch(/admin/leads/{leadId}/status, { status: newStatus });
+      setLeads(leads.map((l) => (l.id === leadId ? { ...l, status: newStatus } : l)));
+      if (selectedLead?.id === leadId) {
+        setSelectedLead({ ...selectedLead, status: newStatus });
+      }
+    } catch (error) {
+      alert("Failed to update lead status");
     }
+  }
+
+  const SCORE_COLORS = (score: number) => {
+    if (score >= 70) return "bg-green-100 text-green-700";
+    if (score >= 50) return "bg-yellow-100 text-yellow-700";
+    return "bg-gray-100 text-gray-700";
   };
 
   return (
-    <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
-          <p className="text-gray-500 text-sm mt-1">{total} total leads</p>
-        </div>
-        <div className="flex gap-2">
-          <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="input w-auto text-sm">
-            <option value="">All Types</option>
-            {TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
-          </select>
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="input w-auto text-sm">
-            <option value="">All Status</option>
-            {STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-          </select>
-        </div>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold text-gray-900">Project Leads</h1>
+
+      <div className="flex gap-4">
+        <button
+          onClick={() => setMinScore(0)}
+          className={px-4 py-2 rounded-lg }
+        >
+          All Leads
+        </button>
+        <button
+          onClick={() => setMinScore(50)}
+          className={px-4 py-2 rounded-lg }
+        >
+          Warm (50+)
+        </button>
+        <button
+          onClick={() => setMinScore(70)}
+          className={px-4 py-2 rounded-lg }
+        >
+          Hot (70+)
+        </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="p-12 flex justify-center">
-            <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
-          </div>
-        ) : leads.length === 0 ? (
-          <div className="p-12 text-center">
-            <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No leads found</p>
-          </div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
-              <tr>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Budget</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {leads.map((l) => (
-                <tr key={l.id} className="hover:bg-gray-50/50">
-                  <td className="px-5 py-3">
-                    <p className="font-medium text-gray-900">{l.name}</p>
-                    <p className="text-xs text-gray-400">{l.phone}{l.company ? ` · ${l.company}` : ""}</p>
-                  </td>
-                  <td className="px-5 py-3 text-gray-600 capitalize">{l.lead_type.replace(/_/g, " ")}</td>
-                  <td className="px-5 py-3 text-gray-600">{l.budget_range ?? "—"}</td>
-                  <td className="px-5 py-3 text-gray-500 whitespace-nowrap">
-                    {new Date((l as { created_at?: string }).created_at ?? "").toLocaleDateString("en-BD")}
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="relative">
-                      <select
-                        value={l.status ?? "new"}
-                        disabled={updatingId === l.id}
-                        onChange={(e) => updateStatus(l.id!, e.target.value)}
-                        className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
-                      >
-                        {STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-                      </select>
-                      <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+      {loading ? (
+        <LoadingSpinner />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2 space-y-2">
+            {leads.map((lead) => (
+              <div
+                key={lead.id}
+                onClick={() => setSelectedLead(lead)}
+                className={p-4 border rounded-lg cursor-pointer hover:bg-gray-50 }
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold">{lead.name}</h3>
+                    <p className="text-sm text-gray-600">{lead.lead_type}</p>
+                    <p className="text-sm text-gray-900 mt-1">{lead.company}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className={px-3 py-1 rounded font-bold text-sm }>
+                      {lead.qualification_score}
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
 
-      {total > 20 && (
-        <div className="flex justify-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-          <span className="px-4 py-2 text-sm text-gray-600">Page {page}</span>
-          <button disabled={leads.length < 20} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">Next</button>
+          {selectedLead && (
+            <div className="bg-white border border-gray-200 rounded-lg p-6">
+              <h2 className="text-lg font-bold mb-4">Lead Details</h2>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs text-gray-600 font-semibold">NAME</p>
+                  <p className="text-gray-900">{selectedLead.name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 font-semibold">TYPE</p>
+                  <p className="text-gray-900">{selectedLead.lead_type}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 font-semibold">SCORE</p>
+                  <p className={	ext-lg font-bold }>
+                    {selectedLead.qualification_score}/100
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-600 font-semibold">BUDGET</p>
+                  <p className="text-gray-900">
+                    {selectedLead.budget_min && selectedLead.budget_max
+                      ? ৳ - ৳
+                      : "Not specified"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => updateLeadStatus(selectedLead.id, "qualified")}
+                  className="w-full mt-6 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  Mark as Qualified
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
