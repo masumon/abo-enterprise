@@ -73,29 +73,29 @@ export default function AdminOrdersPage() {
         </select>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="admin-card overflow-hidden">
         {loading ? (
           <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
         ) : orders.length === 0 ? (
           <div className="p-12 text-center">
-            <ShoppingCart className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No orders found</p>
+            <ShoppingCart className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-400 font-medium">No orders found</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
+          <table className="table-premium">
+            <thead>
               <tr>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Payment</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th>Order</th>
+                <th>Customer</th>
+                <th>Payment</th>
+                <th>Total</th>
+                <th>Date</th>
+                <th>Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody>
               {orders.map((o) => (
-                <tr key={o.id} className="hover:bg-gray-50/50 cursor-pointer" onClick={() => openDetail(o.id)}>
+                <tr key={o.id} className="cursor-pointer" onClick={() => openDetail(o.id)}>
                   <td className="px-5 py-3">
                     <p className="font-medium text-gray-900">{o.order_number}</p>
                     <p className="text-xs text-gray-400">{o.items?.length ?? 0} items</p>
@@ -139,8 +139,8 @@ export default function AdminOrdersPage() {
 
       {/* Order Detail Modal */}
       {(detail || detailLoading) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setDetail(null)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }} onClick={() => setDetail(null)}>
+          <div className="rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col animate-scale-in" style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)" }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">
                 {detail ? `Order ${detail.order_number}` : "Loading..."}

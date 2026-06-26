@@ -1,16 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import api from "@/lib/api";
 import {
-  TrendingUp,
-  ShoppingCart,
-  Calendar,
-  AlertCircle,
-  Users,
-  FileText,
+  TrendingUp, ShoppingCart, Calendar, AlertCircle, Users, FileText, Settings, ArrowRight,
 } from "lucide-react";
 import StatsCard from "@/components/admin/StatsCard";
+import StatusBadge from "@/components/admin/StatusBadge";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 interface DashboardStats {
@@ -25,21 +22,26 @@ interface DashboardStats {
   recent_leads: any[];
 }
 
+const QUICK_ACTIONS = [
+  { href: "/admin/products",  icon: FileText,  label: "Products",  color: "bg-brand-50 hover:bg-brand-100 text-brand-600" },
+  { href: "/admin/bookings",  icon: Calendar,  label: "Bookings",  color: "bg-green-50 hover:bg-green-100 text-green-600" },
+  { href: "/admin/leads",     icon: Users,     label: "Leads",     color: "bg-purple-50 hover:bg-purple-100 text-purple-600" },
+  { href: "/admin/settings",  icon: Settings,  label: "Settings",  color: "bg-amber-50 hover:bg-amber-100 text-amber-600" },
+];
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  useEffect(() => { fetchStats(); }, []);
 
   async function fetchStats() {
     try {
       setLoading(true);
       const response = await api.get("/api/v1/admin/stats");
       setStats(response.data.data);
-    } catch (error) {
-      console.error("Failed to fetch stats:", error);
+    } catch {
+      // silent fail
     } finally {
       setLoading(false);
     }
@@ -47,206 +49,113 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-[60vh]">
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Welcome Header */}
-      <div>
-        <h1 className="text-4xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">
-          Welcome back! Here's an overview of your business.
-        </p>
+    <div className="space-y-8 max-w-7xl">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
+          <p className="text-gray-500 mt-1 text-sm">
+            Welcome back! Here&apos;s an overview of your business.
+          </p>
+        </div>
+        <span className="flex items-center gap-2 text-xs text-green-600 bg-green-50 border border-green-100 px-3 py-1.5 rounded-full font-semibold">
+          <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+          Live
+        </span>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <StatsCard
-          icon={ShoppingCart}
-          title="Total Orders"
-          value={stats?.total_orders || 0}
-          sub={`${stats?.pending_orders || 0} pending`}
-          color="brand"
-        />
-
-        <StatsCard
-          icon={Calendar}
-          title="Service Bookings"
-          value={stats?.total_bookings || 0}
-          sub={`${stats?.pending_bookings || 0} pending`}
-          color="green"
-        />
-
-        <StatsCard
-          icon={Users}
-          title="Leads"
-          value={stats?.total_leads || 0}
-          sub={`${stats?.new_leads || 0} new`}
-          color="accent"
-        />
-
-        <StatsCard
-          icon={FileText}
-          title="Products"
-          value={stats?.total_products || 0}
-          sub="In catalog"
-          color="amber"
-        />
-
-        <StatsCard
-          icon={AlertCircle}
-          title="Action Items"
-          value={(stats?.pending_orders || 0) + (stats?.pending_bookings || 0)}
-          sub="Require attention"
-          color="accent"
-        />
-
-        <StatsCard
-          icon={TrendingUp}
-          title="Revenue"
-          value="৳0"
-          sub="This month"
-          color="brand"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <StatsCard icon={ShoppingCart} title="Total Orders"    value={stats?.total_orders ?? 0}  sub={`${stats?.pending_orders ?? 0} pending`}   color="brand" />
+        <StatsCard icon={Calendar}    title="Service Bookings" value={stats?.total_bookings ?? 0} sub={`${stats?.pending_bookings ?? 0} pending`} color="green" />
+        <StatsCard icon={Users}       title="Leads"            value={stats?.total_leads ?? 0}    sub={`${stats?.new_leads ?? 0} new`}           color="accent" />
+        <StatsCard icon={FileText}    title="Products"         value={stats?.total_products ?? 0} sub="In catalog"                               color="amber" />
+        <StatsCard icon={AlertCircle} title="Action Items"     value={(stats?.pending_orders ?? 0) + (stats?.pending_bookings ?? 0)} sub="Require attention" color="accent" />
+        <StatsCard icon={TrendingUp}  title="Revenue"          value="৳—"                         sub="This month"                               color="brand" />
       </div>
 
       {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Recent Orders */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Orders</h2>
-
+        <div className="admin-card p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-base font-bold text-gray-900">Recent Orders</h2>
+            <Link href="/admin/orders" className="text-xs text-brand-600 hover:text-brand-700 font-semibold flex items-center gap-1">
+              View all <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
           {stats?.recent_orders && stats.recent_orders.length > 0 ? (
-            <div className="space-y-4">
+            <div className="divide-y divide-gray-50">
               {stats.recent_orders.slice(0, 5).map((order: any) => (
-                <div
-                  key={order.id}
-                  className="flex items-center justify-between py-3 border-b last:border-b-0"
-                >
+                <div key={order.id} className="flex items-center justify-between py-3">
                   <div>
-                    <p className="font-semibold text-gray-900">
-                      {order.customer_name}
-                    </p>
-                    <p className="text-sm text-gray-600">{order.order_number}</p>
+                    <p className="font-semibold text-gray-800 text-sm">{order.customer_name}</p>
+                    <p className="text-xs text-gray-400 font-mono mt-0.5">{order.order_number}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-gray-900">
-                      ৳{order.total?.toLocaleString()}
-                    </p>
-                    <span
-                      className={`text-xs font-semibold px-2 py-1 rounded ${
-                        order.order_status === "completed"
-                          ? "bg-green-100 text-green-700"
-                          : order.order_status === "pending"
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-blue-100 text-blue-700"
-                      }`}
-                    >
-                      {order.order_status}
-                    </span>
+                  <div className="text-right flex flex-col items-end gap-1">
+                    <p className="font-bold text-gray-900 text-sm">৳{order.total?.toLocaleString("bn-BD")}</p>
+                    <StatusBadge status={order.order_status} />
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No recent orders</p>
+            <p className="text-gray-400 text-sm py-6 text-center">No recent orders</p>
           )}
-
-          <a
-            href="/admin/orders"
-            className="mt-4 inline-block text-blue-600 hover:text-blue-700 font-semibold text-sm"
-          >
-            View all orders →
-          </a>
         </div>
 
         {/* Recent Leads */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-bold text-gray-900 mb-4">Recent Leads</h2>
-
+        <div className="admin-card p-6">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-base font-bold text-gray-900">Recent Leads</h2>
+            <Link href="/admin/leads" className="text-xs text-brand-600 hover:text-brand-700 font-semibold flex items-center gap-1">
+              View all <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
           {stats?.recent_leads && stats.recent_leads.length > 0 ? (
-            <div className="space-y-4">
+            <div className="divide-y divide-gray-50">
               {stats.recent_leads.slice(0, 5).map((lead: any) => (
-                <div
-                  key={lead.id}
-                  className="flex items-center justify-between py-3 border-b last:border-b-0"
-                >
+                <div key={lead.id} className="flex items-center justify-between py-3">
                   <div>
-                    <p className="font-semibold text-gray-900">{lead.name}</p>
-                    <p className="text-sm text-gray-600">{lead.lead_type}</p>
+                    <p className="font-semibold text-gray-800 text-sm">{lead.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5 capitalize">{lead.lead_type?.replace(/_/g, " ")}</p>
                   </div>
-                  <div className="text-right">
-                    <div className="text-sm font-semibold text-gray-900">
-                      Score: {lead.qualification_score}
-                    </div>
-                    <span
-                      className={`text-xs font-semibold px-2 py-1 rounded ${
-                        lead.qualification_score >= 70
-                          ? "bg-green-100 text-green-700"
-                          : lead.qualification_score >= 50
-                          ? "bg-yellow-100 text-yellow-700"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {lead.status}
-                    </span>
+                  <div className="text-right flex flex-col items-end gap-1">
+                    <p className="text-xs font-semibold text-gray-500">Score: {lead.qualification_score}</p>
+                    <StatusBadge status={lead.status} />
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-gray-500">No recent leads</p>
+            <p className="text-gray-400 text-sm py-6 text-center">No recent leads</p>
           )}
-
-          <a
-            href="/admin/leads"
-            className="mt-4 inline-block text-blue-600 hover:text-blue-700 font-semibold text-sm"
-          >
-            View all leads →
-          </a>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
+      <div className="admin-card p-6">
+        <h2 className="text-base font-bold text-gray-900 mb-5">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <a
-            href="/admin/products"
-            className="p-4 bg-blue-50 rounded-lg hover:bg-blue-100 transition text-center"
-          >
-            <FileText className="w-6 h-6 text-blue-600 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-gray-900">
-              Manage Products
-            </p>
-          </a>
-          <a
-            href="/admin/bookings"
-            className="p-4 bg-green-50 rounded-lg hover:bg-green-100 transition text-center"
-          >
-            <Calendar className="w-6 h-6 text-green-600 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-gray-900">Bookings</p>
-          </a>
-          <a
-            href="/admin/leads"
-            className="p-4 bg-purple-50 rounded-lg hover:bg-purple-100 transition text-center"
-          >
-            <Users className="w-6 h-6 text-purple-600 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-gray-900">
-              Manage Leads
-            </p>
-          </a>
-          <a
-            href="/admin/settings"
-            className="p-4 bg-orange-50 rounded-lg hover:bg-orange-100 transition text-center"
-          >
-            <TrendingUp className="w-6 h-6 text-orange-600 mx-auto mb-2" />
-            <p className="text-sm font-semibold text-gray-900">Settings</p>
-          </a>
+          {QUICK_ACTIONS.map(({ href, icon: Icon, label, color }) => (
+            <Link
+              key={href}
+              href={href}
+              className={`flex flex-col items-center gap-3 p-5 rounded-2xl transition-all duration-200 hover:-translate-y-0.5 group ${color}`}
+            >
+              <div className="w-12 h-12 bg-white/60 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
+                <Icon className="w-6 h-6" />
+              </div>
+              <p className="text-sm font-semibold text-gray-800">{label}</p>
+            </Link>
+          ))}
         </div>
       </div>
     </div>

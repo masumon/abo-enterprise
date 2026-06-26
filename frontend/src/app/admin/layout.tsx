@@ -18,7 +18,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div
+      className="min-h-screen"
+      style={{
+        background: "linear-gradient(145deg, #f0f4ff 0%, #f8faff 50%, #faf0ff 100%)",
+      }}
+    >
       <AdminSidebar onLogout={logout} adminName={user.name} />
       <div className="pl-60">
         <main className="min-h-screen p-6 md:p-8">{children}</main>

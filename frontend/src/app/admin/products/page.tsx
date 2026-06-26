@@ -146,31 +146,31 @@ export default function AdminProductsPage() {
         </button>
       </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="admin-card overflow-hidden">
         {loading ? (
           <div className="p-12 flex justify-center">
             <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
           </div>
         ) : products.length === 0 ? (
           <div className="p-12 text-center">
-            <Package className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">No products yet</p>
+            <Package className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-400 font-medium">No products yet</p>
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 border-b border-gray-100">
+          <table className="table-premium">
+            <thead>
               <tr>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                <th className="text-left px-5 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-5 py-3" />
+                <th>Product</th>
+                <th>Category</th>
+                <th>Price</th>
+                <th>Stock</th>
+                <th>Status</th>
+                <th />
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-50">
+            <tbody>
               {products.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50/50">
+                <tr key={p.id}>
                   <td className="px-5 py-3">
                     <div className="flex items-center gap-3">
                       {p.image_url ? (
@@ -211,8 +211,8 @@ export default function AdminProductsPage() {
 
       {/* Product Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
+          <div className="rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)" }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">{editing ? "Edit Product" : "New Product"}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
@@ -319,8 +319,8 @@ export default function AdminProductsPage() {
 
       {/* Delete Confirm */}
       {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
+          <div className="rounded-2xl w-full max-w-sm p-6 animate-scale-in" style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)" }}>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Product?</h3>
             <p className="text-gray-500 text-sm mb-5">This action cannot be undone.</p>
             <div className="flex justify-end gap-3">

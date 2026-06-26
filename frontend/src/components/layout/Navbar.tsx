@@ -120,7 +120,9 @@ export default function Navbar() {
                     <ChevronDown className="w-3.5 h-3.5" />
                   </button>
                   <div className={cn(
-                    "absolute top-full left-0 mt-1 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 py-2 transition-all duration-150",
+                    "absolute top-full left-0 mt-2 w-60 rounded-2xl py-2 transition-all duration-200",
+                    "bg-white/95 backdrop-blur-xl border border-gray-100/80",
+                    "shadow-[0_8px_32px_rgba(30,91,168,0.12),0_2px_8px_rgba(0,0,0,0.06)]",
                     activeDropdown === link.href ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 -translate-y-2 pointer-events-none"
                   )}>
                     {link.children.map((child) => {
@@ -171,7 +173,7 @@ export default function Navbar() {
             <button type="button" onClick={() => setSearchOpen(true)}
               className={cn("w-9 h-9 flex items-center justify-center rounded-lg transition-colors", isScrolled ? "text-gray-600 hover:bg-gray-100" : "text-white hover:bg-white/10")}
               aria-label="Open search">
-              <Search className="w-4.5 h-4.5" />
+              <Search className="w-[18px] h-[18px]" />
             </button>
           )}
 
@@ -189,7 +191,7 @@ export default function Navbar() {
             className={cn("relative w-10 h-10 flex items-center justify-center rounded-xl transition-all",
               isScrolled ? "bg-accent-500 text-white hover:bg-accent-600" : "bg-white/15 text-white hover:bg-white/25")}
             aria-label={`Cart (${count} items)`}>
-            <ShoppingCart className="w-4.5 h-4.5" />
+            <ShoppingCart className="w-[18px] h-[18px]" />
             {count > 0 && (
               <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-green-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                 {count > 9 ? "9+" : count}

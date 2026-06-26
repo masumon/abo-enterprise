@@ -11,28 +11,56 @@ interface Props {
 }
 
 const COLOR_MAP = {
-  brand:  { bg: "bg-brand-50",  icon: "text-brand-600",  ring: "border-brand-100" },
-  accent: { bg: "bg-accent-50", icon: "text-accent-600", ring: "border-accent-100" },
-  green:  { bg: "bg-green-50",  icon: "text-green-600",  ring: "border-green-100"  },
-  amber:  { bg: "bg-amber-50",  icon: "text-amber-600",  ring: "border-amber-100"  },
+  brand:  {
+    bg: "bg-gradient-to-br from-brand-50 to-brand-100/60",
+    icon: "text-brand-600",
+    ring: "border-brand-100",
+    glow: "shadow-brand-100",
+    value: "text-brand-700",
+  },
+  accent: {
+    bg: "bg-gradient-to-br from-accent-50 to-accent-100/60",
+    icon: "text-accent-600",
+    ring: "border-accent-100",
+    glow: "shadow-accent-100",
+    value: "text-accent-700",
+  },
+  green:  {
+    bg: "bg-gradient-to-br from-green-50 to-emerald-100/60",
+    icon: "text-green-600",
+    ring: "border-green-100",
+    glow: "shadow-green-100",
+    value: "text-green-700",
+  },
+  amber:  {
+    bg: "bg-gradient-to-br from-amber-50 to-yellow-100/60",
+    icon: "text-amber-600",
+    ring: "border-amber-100",
+    glow: "shadow-amber-100",
+    value: "text-amber-700",
+  },
 };
 
 export default function StatsCard({ title, value, sub, icon: Icon, color = "brand", loading }: Props) {
   const c = COLOR_MAP[color];
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-5 shadow-sm">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">{title}</p>
+    <div className="admin-card p-5 group hover:-translate-y-0.5 transition-all duration-200">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">{title}</p>
           {loading ? (
-            <div className="h-7 w-16 bg-gray-100 rounded animate-pulse" />
+            <div className="h-8 w-20 bg-gray-100 rounded-lg animate-pulse" />
           ) : (
-            <p className="text-2xl font-bold text-gray-900">{value}</p>
+            <p className={cn("text-3xl font-bold tracking-tight", c.value)}>{value}</p>
           )}
-          {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
+          {sub && <p className="text-xs text-gray-400 mt-1.5 font-medium">{sub}</p>}
         </div>
-        <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center border", c.bg, c.ring)}>
-          <Icon className={cn("w-5 h-5", c.icon)} />
+        <div className={cn(
+          "w-12 h-12 rounded-2xl flex items-center justify-center border flex-shrink-0",
+          "shadow-md transition-transform duration-200 group-hover:scale-110",
+          c.bg, c.ring, c.glow
+        )}>
+          <Icon className={cn("w-6 h-6", c.icon)} />
         </div>
       </div>
     </div>

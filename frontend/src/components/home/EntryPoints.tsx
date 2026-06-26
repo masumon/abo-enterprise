@@ -92,10 +92,10 @@ export default function EntryPoints() {
               <Link
                 key={entry.href}
                 href={entry.href}
-                className="group bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden flex flex-col"
+                className="group card-hover overflow-hidden flex flex-col hover:-translate-y-1.5"
               >
                 {/* Card top gradient strip */}
-                <div className={`h-1.5 w-full bg-gradient-to-r ${entry.gradient}`} />
+                <div className={`h-1 w-full bg-gradient-to-r ${entry.gradient}`} />
 
                 <div className="p-6 flex flex-col flex-1">
                   {/* Icon */}
