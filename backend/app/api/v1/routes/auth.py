@@ -25,6 +25,7 @@ async def login(payload: LoginRequest, db: AsyncSession = Depends(get_db)):
         )
 
     user.last_login = datetime.now(timezone.utc)
+    await db.commit()
     token = create_access_token(str(user.id))
     return ApiResponse(
         data=TokenResponse(access_token=token),
@@ -61,8 +62,9 @@ async def setup_admin(db: AsyncSession = Depends(get_db)):
     admin = AdminUser(
         email=settings.ADMIN_EMAIL,
         password_hash=hash_password(settings.ADMIN_PASSWORD),
-        name="Mumain Ahmed (Sumon)",
+        name=settings.ADMIN_NAME,
         role="super_admin",
     )
     db.add(admin)
+    await db.commit()
     return {"message": "Admin created", "email": settings.ADMIN_EMAIL}

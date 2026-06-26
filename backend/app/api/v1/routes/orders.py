@@ -1,3 +1,4 @@
+import secrets
 from uuid import UUID
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
@@ -16,7 +17,7 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 
 def generate_order_number() -> str:
     now = datetime.now()
-    return f"ABO-{now.year}{now.month:02d}-{now.microsecond % 10000:04d}"
+    return f"ABO-{now.year}{now.month:02d}-{secrets.token_hex(3).upper()}"
 
 
 @router.post("", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
