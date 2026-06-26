@@ -42,6 +42,16 @@ export const metadata: Metadata = {
     description: "Bangladesh's Complete Technology Ecosystem",
   },
   robots: { index: true, follow: true },
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon-192.png",
+    apple: "/icons/icon-192.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "ABO Enterprise",
+  },
 };
 
 export const viewport: Viewport = {
