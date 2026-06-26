@@ -245,3 +245,357 @@ class SettingOut(SettingBase):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ==================== SERVICE SCHEMAS ====================
+
+class ServicePricingTierBase(BaseModel):
+    tier_name: str
+    description_en: str | None = None
+    description_bn: str | None = None
+    price: float
+    duration_days: int | None = None
+    features: list[str] = []
+    includes: str | None = None
+    is_active: bool = True
+    sort_order: int | None = None
+
+
+class ServicePricingTierCreate(ServicePricingTierBase):
+    pass
+
+
+class ServicePricingTierOut(ServicePricingTierBase):
+    id: uuid.UUID
+    service_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ServiceBookingFormBase(BaseModel):
+    field_name: str
+    field_type: str
+    field_label_en: str
+    field_label_bn: str
+    is_required: bool = True
+    placeholder: str | None = None
+    options: list[str] | None = None
+    sort_order: int | None = None
+    is_active: bool = True
+
+
+class ServiceBookingFormCreate(ServiceBookingFormBase):
+    pass
+
+
+class ServiceBookingFormOut(ServiceBookingFormBase):
+    id: uuid.UUID
+    service_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ServiceBase(BaseModel):
+    slug: str
+    name_en: str
+    name_bn: str
+    description_en: str | None = None
+    description_bn: str | None = None
+    short_description_en: str | None = None
+    short_description_bn: str | None = None
+    long_description_en: str | None = None
+    long_description_bn: str | None = None
+    category: str
+    icon_url: str | None = None
+    featured_image_url: str | None = None
+    icon_color: str | None = None
+    pricing_type: str
+    base_price: float | None = None
+    min_price: float | None = None
+    max_price: float | None = None
+    hourly_rate: float | None = None
+    is_active: bool = True
+    is_featured: bool = False
+    sort_order: int = 0
+    lead_priority: int = 5
+    lead_qualification_score: int = 0
+    tags: list[str] = []
+
+
+class ServiceCreate(ServiceBase):
+    pass
+
+
+class ServiceUpdate(BaseModel):
+    name_en: str | None = None
+    name_bn: str | None = None
+    description_en: str | None = None
+    description_bn: str | None = None
+    category: str | None = None
+    pricing_type: str | None = None
+    base_price: float | None = None
+    is_active: bool | None = None
+    is_featured: bool | None = None
+    lead_priority: int | None = None
+
+
+class ServiceOut(ServiceBase):
+    id: uuid.UUID
+    pricing_tiers: list[ServicePricingTierOut] = []
+    booking_forms: list[ServiceBookingFormOut] = []
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ==================== BOOKING V2 SCHEMAS ====================
+
+class BookingV2Create(BaseModel):
+    service_id: uuid.UUID
+    service_tier: str | None = None
+    customer_name: str
+    customer_phone: str
+    customer_email: str | None = None
+    customer_company: str | None = None
+    booking_date: datetime | None = None
+    estimated_completion_date: datetime | None = None
+    pricing_type: str
+    quoted_price: float | None = None
+    details: str | None = None
+    requirements: str | None = None
+    attachments: list[str] = []
+
+    @field_validator("customer_phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        return bd_phone(v)
+
+
+class BookingV2StatusUpdate(BaseModel):
+    status: str
+
+
+class BookingV2Out(BaseModel):
+    id: uuid.UUID
+    booking_number: str
+    service_id: uuid.UUID
+    service_name: str
+    service_tier: str | None
+    customer_name: str
+    customer_phone: str
+    customer_email: str | None
+    customer_company: str | None
+    booking_date: datetime | None
+    estimated_completion_date: datetime | None
+    pricing_type: str
+    quoted_price: float | None
+    final_price: float | None
+    hours_worked: float | None
+    details: str | None
+    requirements: str | None
+    status: str
+    payment_status: str
+    payment_method: str | None
+    notes: str | None
+    created_at: datetime
+    updated_at: datetime
+    completed_at: datetime | None
+
+    model_config = {"from_attributes": True}
+
+
+# ==================== LEAD V2 SCHEMAS ====================
+
+class LeadV2Create(BaseModel):
+    service_id: uuid.UUID | None = None
+    lead_type: str
+    name: str
+    email: str | None = None
+    phone: str
+    company: str | None = None
+    job_title: str | None = None
+    company_size: str | None = None
+    project_description: str | None = None
+    requirements: str | None = None
+    budget_range: str | None = None
+    budget_min: float | None = None
+    budget_max: float | None = None
+    timeline: str | None = None
+    attachments: list[str] = []
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        return bd_phone(v)
+
+
+class LeadV2StatusUpdate(BaseModel):
+    status: str
+    reason_lost: str | None = None
+
+
+class LeadV2Out(BaseModel):
+    id: uuid.UUID
+    lead_number: str
+    service_id: uuid.UUID | None
+    lead_type: str
+    source: str
+    name: str
+    email: str | None
+    phone: str
+    company: str | None
+    project_description: str | None
+    requirements: str | None
+    budget_range: str | None
+    budget_min: float | None
+    budget_max: float | None
+    timeline: str | None
+    qualification_score: int
+    status: str
+    assigned_to: uuid.UUID | None
+    created_at: datetime
+    updated_at: datetime
+    converted_at: datetime | None
+
+    model_config = {"from_attributes": True}
+
+
+# ==================== INVOICE SCHEMAS ====================
+
+class InvoiceItemBase(BaseModel):
+    name: str
+    quantity: int
+    price: float
+
+
+class InvoiceCreate(BaseModel):
+    order_id: uuid.UUID | None = None
+    booking_id: uuid.UUID | None = None
+    customer_name: str
+    customer_email: str | None = None
+    customer_phone: str | None = None
+    items: list[InvoiceItemBase]
+    subtotal: float
+    tax: float = 0
+    total: float
+    payment_method: str | None = None
+    notes: str | None = None
+
+
+class InvoiceOut(BaseModel):
+    id: uuid.UUID
+    invoice_number: str
+    order_id: uuid.UUID | None
+    booking_id: uuid.UUID | None
+    customer_name: str
+    customer_email: str | None
+    customer_phone: str | None
+    items: list[dict]
+    subtotal: float
+    tax: float
+    total: float
+    payment_method: str | None
+    payment_status: str
+    issued_date: datetime | None
+    due_date: datetime | None
+    paid_date: datetime | None
+    pdf_url: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ==================== PAYMENT SCHEMAS ====================
+
+class PaymentMethodBase(BaseModel):
+    payment_gateway: str
+    is_active: bool = True
+    account_identifier: str | None = None
+    commission_percentage: float = 0
+    min_amount: float | None = None
+    max_amount: float | None = None
+    description: str | None = None
+    sort_order: int | None = None
+
+
+class PaymentMethodCreate(PaymentMethodBase):
+    pass
+
+
+class PaymentMethodOut(PaymentMethodBase):
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ==================== ADMIN SETTINGS SCHEMAS ====================
+
+class AdminSettingBase(BaseModel):
+    category: str
+    key: str
+    value: str
+    data_type: str
+    description_en: str | None = None
+    description_bn: str | None = None
+    is_editable: bool = True
+    is_secret: bool = False
+    display_type: str | None = None
+    sort_order: int | None = None
+
+
+class AdminSettingCreate(AdminSettingBase):
+    pass
+
+
+class AdminSettingUpdate(BaseModel):
+    value: str
+    description_en: str | None = None
+    description_bn: str | None = None
+
+
+class AdminSettingOut(AdminSettingBase):
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# ==================== EMAIL TEMPLATE SCHEMAS ====================
+
+class EmailTemplateBase(BaseModel):
+    template_name: str
+    subject_en: str
+    subject_bn: str
+    body_en: str
+    body_bn: str
+    variables: list[str] = []
+    is_active: bool = True
+
+
+class EmailTemplateCreate(EmailTemplateBase):
+    pass
+
+
+class EmailTemplateUpdate(BaseModel):
+    subject_en: str | None = None
+    subject_bn: str | None = None
+    body_en: str | None = None
+    body_bn: str | None = None
+    is_active: bool | None = None
+
+
+class EmailTemplateOut(EmailTemplateBase):
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}

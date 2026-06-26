@@ -1,0 +1,490 @@
+import uuid
+from fastapi import APIRouter, Depends, HTTPException, status, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func, and_
+from app.core.database import get_db
+from app.core.security import require_admin
+from app.models.models import Service, ServicePricingTier, ServiceBookingForm, ActivityLog, AdminUser
+from app.schemas.schemas import (
+    ServiceOut,
+    ServiceCreate,
+    ServiceUpdate,
+    ServicePricingTierOut,
+    ServicePricingTierCreate,
+    ServiceBookingFormOut,
+    ServiceBookingFormCreate,
+    PaginatedResponse,
+    PaginatedMeta,
+    ApiResponse,
+)
+
+router = APIRouter(prefix="/services", tags=["services"])
+
+# ==================== PUBLIC ENDPOINTS ====================
+
+@router.get("", response_model=PaginatedResponse)
+async def list_services(
+    db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+    category: str | None = None,
+    featured: bool | None = None,
+):
+    """List all active services (public endpoint)"""
+    query = select(Service).where(
+        and_(
+            Service.is_deleted == False,
+            Service.is_active == True,
+        )
+    )
+
+    if category:
+        query = query.where(Service.category == category)
+
+    if featured is not None:
+        query = query.where(Service.is_featured == featured)
+
+    # Count total
+    count_result = await db.execute(
+        select(func.count(Service.id)).select_from(Service).where(
+            and_(Service.is_deleted == False, Service.is_active == True)
+        )
+    )
+    total = count_result.scalar()
+
+    # Pagination
+    total_pages = (total + per_page - 1) // per_page
+    query = query.offset((page - 1) * per_page).limit(per_page)
+    query = query.order_by(Service.sort_order)
+
+    result = await db.execute(query)
+    services = result.scalars().all()
+
+    return PaginatedResponse(
+        data=[ServiceOut.from_orm(s).dict() for s in services],
+        message="Services fetched successfully",
+        meta=PaginatedMeta(
+            page=page,
+            per_page=per_page,
+            total=total,
+            total_pages=total_pages,
+        ),
+    )
+
+
+@router.get("/{slug}", response_model=ApiResponse)
+async def get_service(
+    slug: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Get service details by slug (public)"""
+    result = await db.execute(
+        select(Service).where(
+            and_(Service.slug == slug, Service.is_deleted == False, Service.is_active == True)
+        )
+    )
+    service = result.scalar_one_or_none()
+
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    return ApiResponse(
+        data=ServiceOut.from_orm(service).dict(),
+        message="Service fetched successfully",
+    )
+
+
+@router.get("/{service_id}/booking-form", response_model=ApiResponse)
+async def get_booking_form(
+    service_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+):
+    """Get booking form fields for a service (public)"""
+    result = await db.execute(
+        select(ServiceBookingForm)
+        .where(
+            and_(
+                ServiceBookingForm.service_id == service_id,
+                ServiceBookingForm.is_deleted == False,
+                ServiceBookingForm.is_active == True,
+            )
+        )
+        .order_by(ServiceBookingForm.sort_order)
+    )
+    fields = result.scalars().all()
+
+    return ApiResponse(
+        data=[ServiceBookingFormOut.from_orm(f).dict() for f in fields],
+        message="Booking form fields fetched successfully",
+    )
+
+
+# ==================== ADMIN ENDPOINTS ====================
+
+@router.post("/admin/services", response_model=ApiResponse)
+async def create_service(
+    payload: ServiceCreate,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a new service (admin only)"""
+    # Check if slug already exists
+    existing = await db.execute(
+        select(Service).where(Service.slug == payload.slug)
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Slug already exists")
+
+    service = Service(**payload.dict())
+    db.add(service)
+    await db.commit()
+    await db.refresh(service)
+
+    # Log activity
+    log = ActivityLog(
+        admin_id=uuid.UUID(admin_id),
+        action="create",
+        entity_type="service",
+        entity_id=service.id,
+        new_values=payload.dict(),
+    )
+    db.add(log)
+    await db.commit()
+
+    return ApiResponse(
+        data=ServiceOut.from_orm(service).dict(),
+        message="Service created successfully",
+    )
+
+
+@router.get("/admin/services", response_model=PaginatedResponse)
+async def list_services_admin(
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=100),
+):
+    """List all services (admin)"""
+    query = select(Service).where(Service.is_deleted == False)
+
+    # Count total
+    count_result = await db.execute(
+        select(func.count(Service.id)).where(Service.is_deleted == False)
+    )
+    total = count_result.scalar()
+
+    # Pagination
+    total_pages = (total + per_page - 1) // per_page
+    query = query.offset((page - 1) * per_page).limit(per_page)
+    query = query.order_by(Service.sort_order)
+
+    result = await db.execute(query)
+    services = result.scalars().all()
+
+    return PaginatedResponse(
+        data=[ServiceOut.from_orm(s).dict() for s in services],
+        message="Services fetched successfully",
+        meta=PaginatedMeta(
+            page=page,
+            per_page=per_page,
+            total=total,
+            total_pages=total_pages,
+        ),
+    )
+
+
+@router.get("/admin/services/{service_id}", response_model=ApiResponse)
+async def get_service_admin(
+    service_id: uuid.UUID,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get service details (admin)"""
+    result = await db.execute(
+        select(Service).where(
+            and_(Service.id == service_id, Service.is_deleted == False)
+        )
+    )
+    service = result.scalar_one_or_none()
+
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    return ApiResponse(
+        data=ServiceOut.from_orm(service).dict(),
+        message="Service fetched successfully",
+    )
+
+
+@router.put("/admin/services/{service_id}", response_model=ApiResponse)
+async def update_service(
+    service_id: uuid.UUID,
+    payload: ServiceUpdate,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update service (admin only)"""
+    result = await db.execute(
+        select(Service).where(
+            and_(Service.id == service_id, Service.is_deleted == False)
+        )
+    )
+    service = result.scalar_one_or_none()
+
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    old_values = {
+        "name_en": service.name_en,
+        "name_bn": service.name_bn,
+        "base_price": service.base_price,
+        "is_active": service.is_active,
+    }
+
+    # Update fields
+    update_data = payload.dict(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(service, field, value)
+
+    await db.commit()
+    await db.refresh(service)
+
+    # Log activity
+    log = ActivityLog(
+        admin_id=uuid.UUID(admin_id),
+        action="update",
+        entity_type="service",
+        entity_id=service.id,
+        old_values=old_values,
+        new_values=update_data,
+    )
+    db.add(log)
+    await db.commit()
+
+    return ApiResponse(
+        data=ServiceOut.from_orm(service).dict(),
+        message="Service updated successfully",
+    )
+
+
+@router.delete("/admin/services/{service_id}", response_model=ApiResponse)
+async def delete_service(
+    service_id: uuid.UUID,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Soft delete service (admin only)"""
+    result = await db.execute(
+        select(Service).where(
+            and_(Service.id == service_id, Service.is_deleted == False)
+        )
+    )
+    service = result.scalar_one_or_none()
+
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    service.is_deleted = True
+    await db.commit()
+
+    # Log activity
+    log = ActivityLog(
+        admin_id=uuid.UUID(admin_id),
+        action="delete",
+        entity_type="service",
+        entity_id=service.id,
+    )
+    db.add(log)
+    await db.commit()
+
+    return ApiResponse(
+        message="Service deleted successfully",
+    )
+
+
+# ==================== SERVICE PRICING TIERS ====================
+
+@router.post("/admin/services/{service_id}/tiers", response_model=ApiResponse)
+async def create_pricing_tier(
+    service_id: uuid.UUID,
+    payload: ServicePricingTierCreate,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create pricing tier for service (admin only)"""
+    # Verify service exists
+    service_result = await db.execute(
+        select(Service).where(Service.id == service_id)
+    )
+    if not service_result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    tier = ServicePricingTier(service_id=service_id, **payload.dict())
+    db.add(tier)
+    await db.commit()
+    await db.refresh(tier)
+
+    return ApiResponse(
+        data=ServicePricingTierOut.from_orm(tier).dict(),
+        message="Pricing tier created successfully",
+    )
+
+
+@router.put("/admin/services/{service_id}/tiers/{tier_id}", response_model=ApiResponse)
+async def update_pricing_tier(
+    service_id: uuid.UUID,
+    tier_id: uuid.UUID,
+    payload: ServicePricingTierCreate,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update pricing tier (admin only)"""
+    result = await db.execute(
+        select(ServicePricingTier).where(
+            and_(
+                ServicePricingTier.id == tier_id,
+                ServicePricingTier.service_id == service_id,
+                ServicePricingTier.is_deleted == False,
+            )
+        )
+    )
+    tier = result.scalar_one_or_none()
+
+    if not tier:
+        raise HTTPException(status_code=404, detail="Tier not found")
+
+    # Update
+    for field, value in payload.dict(exclude_unset=True).items():
+        setattr(tier, field, value)
+
+    await db.commit()
+    await db.refresh(tier)
+
+    return ApiResponse(
+        data=ServicePricingTierOut.from_orm(tier).dict(),
+        message="Tier updated successfully",
+    )
+
+
+@router.delete("/admin/services/{service_id}/tiers/{tier_id}", response_model=ApiResponse)
+async def delete_pricing_tier(
+    service_id: uuid.UUID,
+    tier_id: uuid.UUID,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete pricing tier (admin only)"""
+    result = await db.execute(
+        select(ServicePricingTier).where(
+            and_(
+                ServicePricingTier.id == tier_id,
+                ServicePricingTier.service_id == service_id,
+            )
+        )
+    )
+    tier = result.scalar_one_or_none()
+
+    if not tier:
+        raise HTTPException(status_code=404, detail="Tier not found")
+
+    tier.is_deleted = True
+    await db.commit()
+
+    return ApiResponse(message="Tier deleted successfully")
+
+
+# ==================== BOOKING FORM FIELDS ====================
+
+@router.post(
+    "/admin/services/{service_id}/form-fields", response_model=ApiResponse
+)
+async def create_booking_form_field(
+    service_id: uuid.UUID,
+    payload: ServiceBookingFormCreate,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create booking form field (admin only)"""
+    # Verify service exists
+    service_result = await db.execute(
+        select(Service).where(Service.id == service_id)
+    )
+    if not service_result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    field = ServiceBookingForm(service_id=service_id, **payload.dict())
+    db.add(field)
+    await db.commit()
+    await db.refresh(field)
+
+    return ApiResponse(
+        data=ServiceBookingFormOut.from_orm(field).dict(),
+        message="Form field created successfully",
+    )
+
+
+@router.put(
+    "/admin/services/{service_id}/form-fields/{field_id}", response_model=ApiResponse
+)
+async def update_booking_form_field(
+    service_id: uuid.UUID,
+    field_id: uuid.UUID,
+    payload: ServiceBookingFormCreate,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update booking form field (admin only)"""
+    result = await db.execute(
+        select(ServiceBookingForm).where(
+            and_(
+                ServiceBookingForm.id == field_id,
+                ServiceBookingForm.service_id == service_id,
+                ServiceBookingForm.is_deleted == False,
+            )
+        )
+    )
+    field = result.scalar_one_or_none()
+
+    if not field:
+        raise HTTPException(status_code=404, detail="Field not found")
+
+    # Update
+    for key, value in payload.dict(exclude_unset=True).items():
+        setattr(field, key, value)
+
+    await db.commit()
+    await db.refresh(field)
+
+    return ApiResponse(
+        data=ServiceBookingFormOut.from_orm(field).dict(),
+        message="Field updated successfully",
+    )
+
+
+@router.delete(
+    "/admin/services/{service_id}/form-fields/{field_id}", response_model=ApiResponse
+)
+async def delete_booking_form_field(
+    service_id: uuid.UUID,
+    field_id: uuid.UUID,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Delete booking form field (admin only)"""
+    result = await db.execute(
+        select(ServiceBookingForm).where(
+            and_(
+                ServiceBookingForm.id == field_id,
+                ServiceBookingForm.service_id == service_id,
+            )
+        )
+    )
+    field = result.scalar_one_or_none()
+
+    if not field:
+        raise HTTPException(status_code=404, detail="Field not found")
+
+    field.is_deleted = True
+    await db.commit()
+
+    return ApiResponse(message="Field deleted successfully")
