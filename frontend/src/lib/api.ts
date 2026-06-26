@@ -4,7 +4,7 @@ import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead } fr
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
   headers: { "Content-Type": "application/json" },
-  timeout: 10000,
+  timeout: 60000, // 60s — Render free tier cold start can take 30-50s
 });
 
 api.interceptors.request.use((config) => {
