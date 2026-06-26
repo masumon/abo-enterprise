@@ -18,7 +18,7 @@ export default function FeaturedProducts() {
   useEffect(() => {
     productsApi.list({ featured: true, per_page: 8 } as Parameters<typeof productsApi.list>[0])
       .then(r => setProducts(r.data.data ?? []))
-      .catch(() => null)
+      .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, []);
 

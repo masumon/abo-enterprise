@@ -19,6 +19,7 @@ const CATEGORIES: { value: string; label: string }[] = [
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [category, setCategory] = useState<ProductCategory | "">("");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -34,6 +35,7 @@ export default function ProductsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError(false);
     try {
       const r = await productsApi.list({
         category: category || undefined,
@@ -43,6 +45,8 @@ export default function ProductsPage() {
       });
       setProducts(r.data.data ?? []);
       setTotal(r.data.meta?.total ?? 0);
+    } catch {
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -112,8 +116,20 @@ export default function ProductsPage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-20">
+          <div className="flex flex-col items-center justify-center py-24 gap-3">
             <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
+            <p className="text-sm text-gray-400">Loading products...</p>
+          </div>
+        ) : error ? (
+          <div className="text-center py-24">
+            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <SlidersHorizontal className="w-7 h-7 text-red-300" />
+            </div>
+            <p className="text-gray-600 font-semibold mb-1">সার্ভার সংযোগ হচ্ছে না</p>
+            <p className="text-gray-400 text-sm mb-5">Backend may be starting up (30–60s). Please try again.</p>
+            <button onClick={() => load()} className="btn btn-brand btn-md">
+              Retry
+            </button>
           </div>
         ) : products.length === 0 ? (
           <div className="text-center py-20">
