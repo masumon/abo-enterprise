@@ -20,6 +20,7 @@ export interface Product {
   image_url?: string;
   images?: string[];
   stock_quantity?: number;
+  rating?: number;
   is_active?: boolean;
   is_featured?: boolean;
   sort_order?: number;

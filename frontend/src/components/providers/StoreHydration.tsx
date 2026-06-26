@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useLanguageStore } from "@/store/language";
 import { useCartStore } from "@/store/cart";
+import { useWishlistStore } from "@/store/wishlist";
 
 export default function StoreHydration() {
   const lang = useLanguageStore((s) => s.lang);
@@ -10,6 +11,7 @@ export default function StoreHydration() {
   useEffect(() => {
     useLanguageStore.persist.rehydrate();
     useCartStore.persist.rehydrate();
+    useWishlistStore.persist.rehydrate();
   }, []);
 
   useEffect(() => {

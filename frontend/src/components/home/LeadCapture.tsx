@@ -13,6 +13,7 @@ const schema = z.object({
   name: z.string().min(2, "নাম দিন"),
   company: z.string().optional(),
   phone: z.string().regex(/^0[13-9]\d{8}$/, "সঠিক নম্বর দিন"),
+  email: z.string().email("সঠিক ইমেইল দিন").optional().or(z.literal("")),
   lead_type: z.enum(["software_development", "ai_solutions", "automation", "erp", "general"]),
   project_description: z.string().min(20, "কমপক্ষে ২০ অক্ষরে প্রজেক্ট বর্ণনা করুন"),
 });
@@ -49,7 +50,7 @@ export default function LeadCapture() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      await leadsApi.create({ ...data, source: "website" } as Parameters<typeof leadsApi.create>[0]);
+      await leadsApi.create({ ...data, email: data.email || undefined, source: "website" } as Parameters<typeof leadsApi.create>[0]);
       setIsSubmitted(true);
     } catch {
       setSubmitError(
@@ -168,6 +169,19 @@ export default function LeadCapture() {
                   placeholder="01XXXXXXXXX"
                 />
                 {errors.phone && <p className="text-red-300 text-xs mt-1">{errors.phone.message}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">
+                  {lang === "bn" ? "ইমেইল (ঐচ্ছিক)" : "Email (optional)"}
+                </label>
+                <input
+                  {...register("email")}
+                  type="email"
+                  className={cn("input", errors.email && "input-error")}
+                  placeholder="your@email.com"
+                />
+                {errors.email && <p className="text-red-300 text-xs mt-1">{errors.email.message}</p>}
               </div>
 
               <div>
