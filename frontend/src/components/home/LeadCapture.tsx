@@ -1,0 +1,195 @@
+"use client";
+
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Send, CheckCircle, Bot, Code, Cog } from "lucide-react";
+import { leadsApi } from "@/lib/api";
+import { useLanguageStore } from "@/store/language";
+import { cn } from "@/lib/utils";
+
+const schema = z.object({
+  name: z.string().min(2, "নাম দিন"),
+  company: z.string().optional(),
+  phone: z.string().regex(/^0[13-9]\d{8}$/, "সঠিক নম্বর দিন"),
+  lead_type: z.enum(["software_development", "ai_solutions", "automation", "erp", "general"]),
+  project_description: z.string().min(20, "কমপক্ষে ২০ অক্ষরে প্রজেক্ট বর্ণনা করুন"),
+});
+
+type FormData = z.infer<typeof schema>;
+
+const LEAD_TYPES = [
+  { value: "software_development", label: { en: "Custom Software", bn: "কাস্টম সফটওয়্যার" }, icon: Code },
+  { value: "ai_solutions", label: { en: "AI Solutions", bn: "AI সমাধান" }, icon: Bot },
+  { value: "automation", label: { en: "Automation", bn: "অটোমেশন" }, icon: Cog },
+  { value: "erp", label: { en: "ERP / POS / CRM", bn: "ERP / POS / CRM" }, icon: Code },
+  { value: "general", label: { en: "General Inquiry", bn: "সাধারণ জিজ্ঞাসা" }, icon: Send },
+] as const;
+
+export default function LeadCapture() {
+  const { lang } = useLanguageStore();
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { lead_type: "software_development" },
+  });
+
+  const selectedType = watch("lead_type");
+
+  const onSubmit = async (data: FormData) => {
+    setIsSubmitting(true);
+    try {
+      await leadsApi.create({ ...data, source: "website" } as Parameters<typeof leadsApi.create>[0]).catch(() => null);
+      setIsSubmitted(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <section className="py-16 gradient-brand">
+      <div className="container mx-auto px-4">
+        <div className="max-w-2xl mx-auto">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
+              {lang === "bn"
+                ? "AI, সফটওয়্যার বা অটোমেশন দরকার?"
+                : "Need AI, Software or Automation?"}
+            </h2>
+            <p className="text-white/70">
+              {lang === "bn"
+                ? "আপনার প্রজেক্টের বিবরণ দিন — ২৪ ঘণ্টার মধ্যে বিস্তারিত প্রস্তাব পাবেন।"
+                : "Describe your project and get a detailed proposal within 24 hours."}
+            </p>
+          </div>
+
+          {isSubmitted ? (
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-10 text-center text-white">
+              <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
+              <h3 className="text-xl font-bold mb-2">
+                {lang === "bn" ? "আপনার অনুরোধ পেয়েছি!" : "Request Received!"}
+              </h3>
+              <p className="text-white/70">
+                {lang === "bn"
+                  ? "২৪ ঘণ্টার মধ্যে WhatsApp বা ফোনে যোগাযোগ করা হবে।"
+                  : "We'll contact you via WhatsApp or phone within 24 hours."}
+              </p>
+            </div>
+          ) : (
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 space-y-5"
+            >
+              {/* Service Type */}
+              <div>
+                <label className="block text-sm font-medium text-white mb-3">
+                  {lang === "bn" ? "কোন সেবা প্রয়োজন?" : "What service do you need?"}
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {LEAD_TYPES.map((type) => {
+                    const Icon = type.icon;
+                    return (
+                      <label
+                        key={type.value}
+                        className={cn(
+                          "flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all text-sm",
+                          selectedType === type.value
+                            ? "border-white bg-white text-brand-700 font-semibold"
+                            : "border-white/30 text-white hover:border-white/60"
+                        )}
+                      >
+                        <input
+                          type="radio"
+                          value={type.value}
+                          {...register("lead_type")}
+                          className="sr-only"
+                        />
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        {lang === "bn" ? type.label.bn : type.label.en}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-white mb-1">
+                    {lang === "bn" ? "আপনার নাম *" : "Your Name *"}
+                  </label>
+                  <input
+                    {...register("name")}
+                    className={cn("input", errors.name && "input-error")}
+                    placeholder={lang === "bn" ? "নাম লিখুন" : "Full name"}
+                  />
+                  {errors.name && <p className="text-red-300 text-xs mt-1">{errors.name.message}</p>}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-white mb-1">
+                    {lang === "bn" ? "কোম্পানি" : "Company (optional)"}
+                  </label>
+                  <input
+                    {...register("company")}
+                    className="input"
+                    placeholder={lang === "bn" ? "কোম্পানির নাম" : "Company name"}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">
+                  {lang === "bn" ? "মোবাইল নম্বর *" : "Mobile Number *"}
+                </label>
+                <input
+                  {...register("phone")}
+                  type="tel"
+                  className={cn("input", errors.phone && "input-error")}
+                  placeholder="01XXXXXXXXX"
+                />
+                {errors.phone && <p className="text-red-300 text-xs mt-1">{errors.phone.message}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white mb-1">
+                  {lang === "bn" ? "প্রজেক্টের বিবরণ *" : "Project Description *"}
+                </label>
+                <textarea
+                  {...register("project_description")}
+                  rows={3}
+                  className={cn("input resize-none", errors.project_description && "input-error")}
+                  placeholder={
+                    lang === "bn"
+                      ? "আপনার প্রজেক্ট সম্পর্কে বিস্তারিত লিখুন..."
+                      : "Describe your project requirements in detail..."
+                  }
+                />
+                {errors.project_description && (
+                  <p className="text-red-300 text-xs mt-1">{errors.project_description.message}</p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="btn btn-primary btn-lg w-full shadow-lg"
+              >
+                <Send className="w-5 h-5" />
+                {isSubmitting
+                  ? lang === "bn" ? "পাঠানো হচ্ছে..." : "Sending..."
+                  : lang === "bn" ? "বিনামূল্যে পরামর্শ পান" : "Get Free Consultation"}
+              </button>
+            </form>
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
