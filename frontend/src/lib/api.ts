@@ -109,6 +109,12 @@ export const adminApi = {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
+
+  getSettings: () =>
+    api.get<ApiResponse<Record<string, string>>>("/api/v1/settings"),
+
+  updateSetting: (key: string, data: { value: string; is_editable?: boolean }) =>
+    api.put<ApiResponse<{ key: string; value: string }>>(`/api/v1/settings/${key}`, data),
 };
 
 export default api;
