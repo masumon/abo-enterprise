@@ -63,7 +63,7 @@ export default function CustomerReviews() {
             {lang === "bn" ? "গ্রাহকরা কী বলছেন?" : "What Our Clients Say"}
           </h2>
           <p className="text-gray-500 text-sm">
-            {lang === "bn" ? "৫০০+ সন্তুষ্ট গ্রাহক আমাদের সেরা পুরস্কার।" : "500+ happy clients are our greatest reward."}
+            {lang === "bn" ? "৫০০+ সন্তুষ্ট গ্রাহক (নমুনা রিভিউ)" : "500+ happy clients (sample reviews)"}
           </p>
         </div>
 

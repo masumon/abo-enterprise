@@ -114,6 +114,19 @@ export default function Navbar() {
                     aria-haspopup="true"
                     aria-expanded={activeDropdown === link.href ? "true" : "false"}
                     aria-label={lang === "bn" ? link.label.bn : link.label.en}
+                    onFocus={() => setActiveDropdown(link.href!)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") setActiveDropdown(null);
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setActiveDropdown(activeDropdown === link.href ? null : link.href!);
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) {
+                        setActiveDropdown(null);
+                      }
+                    }}
                     className={cn("flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors", textCls)}
                   >
                     {lang === "bn" ? link.label.bn : link.label.en}

@@ -5,7 +5,8 @@ import { Package, Phone, MessageCircle, LogIn } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 
 const MENU = [
-  { href: "/track", icon: Package, label: { bn: "অর্ডার ট্র্যাক", en: "Track Order" }, sub: { bn: "অর্ডার নম্বর দিয়ে স্ট্যাটাস দেখুন", en: "Check status with your order number" } },
+  { href: "/orders", icon: Package, label: { bn: "আমার অর্ডার", en: "My Orders" }, sub: { bn: "অর্ডার ট্র্যাক করুন", en: "Track your orders" } },
+  { href: "/track", icon: Package, label: { bn: "অর্ডার ট্র্যাক", en: "Track Order" }, sub: { bn: "অর্ডার নম্বর দিয়ে স্ট্যাটাস", en: "Status by order number" } },
   { href: "/services", icon: Package, label: { bn: "আমার বুকিং", en: "My Bookings" }, sub: { bn: "নতুন সেবা বুক করুন", en: "Book a new service" } },
   { href: "/contact", icon: Phone, label: { bn: "সাপোর্ট", en: "Support" }, sub: { bn: "আমাদের সাথে যোগাযোগ করুন", en: "Get help from us" } },
 ];

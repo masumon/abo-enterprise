@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { ShoppingCart, Star, ChevronLeft, Package, Loader2, CheckCircle } from "lucide-react";
+import { ShoppingCart, ChevronLeft, Package, Loader2, CheckCircle } from "lucide-react";
 import { productsApi } from "@/lib/api";
 import type { Product } from "@/types";
 import { useCartStore } from "@/store/cart";
@@ -112,13 +112,7 @@ export default function ProductDetailPage() {
             <div className="p-6 flex flex-col">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">{name}</h1>
 
-              {/* Rating */}
-              <div className="flex items-center gap-1 mb-4">
-                {[1,2,3,4,5].map(s => <Star key={s} className="w-4 h-4 fill-yellow-400 text-yellow-400" />)}
-                <span className="text-sm text-gray-500 ml-1">(4.8)</span>
-              </div>
-
-              {/* Price */}
+              {/* Stock & trust — no fake ratings */}
               <div className="flex items-baseline gap-3 mb-4">
                 <span className="text-3xl font-bold text-accent-500">{formatPrice(product.price)}</span>
                 {product.original_price && (

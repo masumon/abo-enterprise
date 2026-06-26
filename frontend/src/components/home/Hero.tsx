@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingBag, Calendar, Briefcase, ArrowRight, Zap, Bot, Code, Printer, Scale, Star } from "lucide-react";
+import { ShoppingBag, Calendar, Briefcase, ArrowRight, Zap, Bot, Code, Printer, Scale } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 
 const FEATURES = [
@@ -104,9 +104,6 @@ export default function Hero() {
                   <div className="text-white/60 text-xs">{lang === "bn" ? stat.label.bn : stat.label.en}</div>
                 </div>
               ))}
-              <div className="flex items-center gap-1 ml-auto">
-                {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 text-yellow-400 fill-yellow-400" />)}
-              </div>
             </div>
           </div>
 

@@ -10,6 +10,7 @@ import { productsApi, adminApi } from "@/lib/api";
 import type { Product } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { cn } from "@/lib/utils";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 const CATEGORIES = ["accessories", "gadgets", "electronics", "computer"];
 const BADGES = ["", "HOT", "NEW", "SALE"];
@@ -44,6 +45,7 @@ export default function AdminProductsPage() {
   const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
+  const modalRef = useFocusTrap(showModal);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -233,7 +235,7 @@ export default function AdminProductsPage() {
       {/* Product Modal */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div className="rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)" }}>
+          <div ref={modalRef} role="dialog" aria-modal="true" className="rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)" }}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">{editing ? "Edit Product" : "New Product"}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
