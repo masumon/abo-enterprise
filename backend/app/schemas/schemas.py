@@ -599,3 +599,94 @@ class EmailTemplateOut(EmailTemplateBase):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# Payment Schemas
+from pydantic import BaseModel, Field
+from typing import Optional
+from decimal import Decimal
+from uuid import UUID
+from datetime import datetime
+
+class PaymentInitiateRequest(BaseModel):
+    order_id: UUID
+    payment_gateway: str = Field(..., regex="^(bkash|nagad)$")
+    
+    class Config:
+        from_attributes = True
+
+
+class PaymentVerifyRequest(BaseModel):
+    payment_id: str
+    payment_gateway: str = Field(..., regex="^(bkash|nagad)$")
+    
+    class Config:
+        from_attributes = True
+
+
+class PaymentResponseModel(BaseModel):
+    success: bool
+    payment_url: Optional[str] = None
+    payment_gateway: str
+    transaction_id: Optional[str] = None
+    status: Optional[str] = None
+    message: Optional[str] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class PaymentWebhookRequest(BaseModel):
+    transaction_id: str
+    status: str
+    amount: Optional[Decimal] = None
+    timestamp: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
+
+
+class BkashTransactionOut(BaseModel):
+    id: UUID
+    order_id: Optional[UUID]
+    booking_id: Optional[UUID]
+    bkash_transaction_id: str
+    payment_id: Optional[str]
+    amount: Decimal
+    status: str
+    payment_execute_time: Optional[datetime]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class NagadTransactionOut(BaseModel):
+    id: UUID
+    order_id: Optional[UUID]
+    booking_id: Optional[UUID]
+    nagad_reference_id: str
+    merchant_order_id: str
+    amount: Decimal
+    status: str
+    payment_completion_time: Optional[datetime]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+
+class PaymentReconciliationOut(BaseModel):
+    id: UUID
+    reconciliation_date: datetime
+    payment_gateway: str
+    total_transactions: int
+    total_amount: Decimal
+    successful_count: int
+    failed_count: int
+    pending_count: int
+    reconciliation_status: str
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True

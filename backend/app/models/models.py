@@ -368,6 +368,73 @@ class CustomerInteraction(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class BkashTransaction(Base):
+    __tablename__ = "bkash_transactions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("orders.id"))
+    booking_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("bookings_v2.id"))
+    bkash_transaction_id: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    payment_id: Mapped[str | None] = mapped_column(String(50), unique=True)
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), default="BDT")
+    payer_reference: Mapped[str | None] = mapped_column(String(255))
+    merchant_invoice_number: Mapped[str | None] = mapped_column(String(50))
+    status: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    status_message: Mapped[str | None] = mapped_column(Text)
+    payment_execute_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    webhook_received: Mapped[bool] = mapped_column(Boolean, default=False)
+    webhook_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    raw_response: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class NagadTransaction(Base):
+    __tablename__ = "nagad_transactions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("orders.id"))
+    booking_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("bookings_v2.id"))
+    nagad_reference_id: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    merchant_order_id: Mapped[str] = mapped_column(String(50), nullable=False)
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), default="BDT")
+    customer_number: Mapped[str | None] = mapped_column(String(20))
+    merchant_number: Mapped[str] = mapped_column(String(20), nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    status_message: Mapped[str | None] = mapped_column(Text)
+    settlement_status: Mapped[str | None] = mapped_column(String(20))
+    payment_completion_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    webhook_received: Mapped[bool] = mapped_column(Boolean, default=False)
+    webhook_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    raw_response: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class PaymentReconciliation(Base):
+    __tablename__ = "payment_reconciliation"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    reconciliation_date: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, index=True)
+    payment_gateway: Mapped[str] = mapped_column(String(20), nullable=False)
+    total_transactions: Mapped[int] = mapped_column(Integer, default=0)
+    total_amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
+    successful_count: Mapped[int] = mapped_column(Integer, default=0)
+    failed_count: Mapped[int] = mapped_column(Integer, default=0)
+    pending_count: Mapped[int] = mapped_column(Integer, default=0)
+    discrepancies: Mapped[list] = mapped_column(JSON, default=list)
+    reconciliation_status: Mapped[str] = mapped_column(String(20), default="pending")
+    notes: Mapped[str | None] = mapped_column(Text)
+    processed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("admin_users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class ActivityLog(Base):
     __tablename__ = "activity_logs"
 
