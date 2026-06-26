@@ -2,7 +2,7 @@
 
 Bangladesh's Complete Technology Ecosystem
 
-**Founder:** Mumain Ahmed (Sumon) | [Mumain.dev](https://mumain.dev)
+**Founder:** [Mumain Ahmed (Sumon)](https://mumainsumon.netlify.app)
 
 ---
 
