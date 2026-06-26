@@ -31,6 +31,7 @@ export default function LeadCapture() {
   const { lang } = useLanguageStore();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const {
     register,
@@ -46,9 +47,16 @@ export default function LeadCapture() {
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
-      await leadsApi.create({ ...data, source: "website" } as Parameters<typeof leadsApi.create>[0]).catch(() => null);
+      await leadsApi.create({ ...data, source: "website" } as Parameters<typeof leadsApi.create>[0]);
       setIsSubmitted(true);
+    } catch {
+      setSubmitError(
+        lang === "bn"
+          ? "পাঠানো যায়নি। আবার চেষ্টা করুন বা WhatsApp-এ যোগাযোগ করুন।"
+          : "Could not submit. Please try again or contact us on WhatsApp."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -88,6 +96,11 @@ export default function LeadCapture() {
               onSubmit={handleSubmit(onSubmit)}
               className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 space-y-5"
             >
+              {submitError && (
+                <p role="alert" className="text-red-200 text-sm bg-red-500/20 border border-red-300/30 rounded-xl px-4 py-2">
+                  {submitError}
+                </p>
+              )}
               {/* Service Type */}
               <div>
                 <label className="block text-sm font-medium text-white mb-3">

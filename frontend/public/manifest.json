@@ -6,7 +6,7 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "theme_color": "#2563eb",
+  "theme_color": "#1e5ba8",
   "background_color": "#ffffff",
   "categories": ["business", "productivity"],
   "icons": [
@@ -51,10 +51,10 @@
       "icons": [{"src": "/icons/projects-icon.png", "sizes": "192x192"}]
     },
     {
-      "name": "View My Bookings",
-      "short_name": "Bookings",
-      "description": "Manage your service bookings",
-      "url": "/bookings",
+      "name": "Track Order",
+      "short_name": "Track",
+      "description": "Track your order status",
+      "url": "/track",
       "icons": [{"src": "/icons/bookings-icon.png", "sizes": "192x192"}]
     }
   ]

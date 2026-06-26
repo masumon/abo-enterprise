@@ -21,9 +21,11 @@ const NAV = [
 interface Props {
   onLogout: () => void;
   adminName?: string;
+  mobileOpen?: boolean;
+  onClose?: () => void;
 }
 
-export default function AdminSidebar({ onLogout, adminName = "Admin" }: Props) {
+export default function AdminSidebar({ onLogout, adminName = "Admin", mobileOpen = false, onClose }: Props) {
   const pathname = usePathname();
 
   const isActive = (href: string, exact?: boolean) =>
@@ -31,7 +33,10 @@ export default function AdminSidebar({ onLogout, adminName = "Admin" }: Props) {
 
   return (
     <aside
-      className="fixed inset-y-0 left-0 z-40 w-60 flex flex-col"
+      className={cn(
+        "fixed inset-y-0 left-0 z-40 w-60 flex flex-col transition-transform duration-300 lg:translate-x-0",
+        mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      )}
       style={{
         background: "rgba(10,16,35,0.97)",
         backdropFilter: "blur(20px)",
@@ -61,6 +66,7 @@ export default function AdminSidebar({ onLogout, adminName = "Admin" }: Props) {
             <Link
               key={href}
               href={href}
+              onClick={onClose}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
                 active

@@ -6,7 +6,7 @@ import { leadsApi } from "@/lib/api";
 import type { Lead } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 
-const STATUSES = ["new", "contacted", "qualified", "proposal_sent", "won", "lost"];
+const STATUSES = ["new", "contacted", "qualified", "proposal_sent", "negotiation", "won", "lost"];
 const TYPES = ["software_development", "ai_solutions", "automation", "erp", "general"];
 
 interface AdminLead extends Lead {

@@ -32,6 +32,7 @@ export default function PrintingPage() {
   const { lang } = useLanguageStore();
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { register, handleSubmit, getValues, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -40,6 +41,7 @@ export default function PrintingPage() {
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       await bookingsApi.create({
         service_type: "printing",
@@ -47,7 +49,7 @@ export default function PrintingPage() {
         customer_name: data.customer_name,
         customer_phone: data.customer_phone,
         details: data.details,
-      }).catch(() => null);
+      });
 
       const msg = generateWhatsAppBookingMessage(
         PRINT_SERVICES.find((s) => s.value === data.service_subtype)?.label.en ?? data.service_subtype,
@@ -57,6 +59,12 @@ export default function PrintingPage() {
       );
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
       setIsSuccess(true);
+    } catch {
+      setSubmitError(
+        lang === "bn"
+          ? "বুকিং জমা দেওয়া যায়নি। আবার চেষ্টা করুন।"
+          : "Could not submit booking. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -98,6 +106,11 @@ export default function PrintingPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              {submitError && (
+                <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2">
+                  {submitError}
+                </p>
+              )}
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   {lang === "bn" ? "সেবার ধরন *" : "Service Type *"}

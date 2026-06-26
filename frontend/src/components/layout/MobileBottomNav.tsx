@@ -60,7 +60,7 @@ export default function MobileBottomNav() {
             );
           })}
         </div>
-        <div className="h-safe-bottom" />
+        <div className="h-safe-bottom min-h-[env(safe-area-inset-bottom,0px)]" />
       </div>
     </nav>
   );

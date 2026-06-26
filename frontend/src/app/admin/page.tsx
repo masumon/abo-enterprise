@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ShoppingCart, Briefcase, Users, Package, Clock, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { ShoppingCart, Briefcase, Users, Package, Clock, TrendingUp, AlertCircle } from "lucide-react";
 import { adminApi } from "@/lib/api";
 import StatsCard from "@/components/admin/StatsCard";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -28,21 +29,31 @@ interface Stats {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     adminApi.stats()
-      .then((r) => setStats(r.data.data as Stats))
-      .catch(() => null)
+      .then((r) => {
+        setStats(r.data.data as Stats);
+        setError(false);
+      })
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
   return (
     <div className="space-y-6 max-w-6xl">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         <p className="text-gray-500 text-sm mt-1">ABO Enterprise — Admin Overview</p>
       </div>
+
+      {error && (
+        <div role="alert" className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          Failed to load dashboard stats. Please refresh the page.
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -88,7 +99,7 @@ export default function AdminDashboard() {
               <Clock className="w-4 h-4 text-gray-400" />
               Recent Orders
             </h2>
-            <a href="/admin/orders" className="text-xs text-brand-600 hover:underline">View all</a>
+            <Link href="/admin/orders" className="text-xs text-brand-600 hover:underline">View all</Link>
           </div>
           <div className="divide-y divide-gray-50">
             {loading ? (
@@ -124,7 +135,7 @@ export default function AdminDashboard() {
               <TrendingUp className="w-4 h-4 text-gray-400" />
               Recent Leads
             </h2>
-            <a href="/admin/leads" className="text-xs text-brand-600 hover:underline">View all</a>
+            <Link href="/admin/leads" className="text-xs text-brand-600 hover:underline">View all</Link>
           </div>
           <div className="divide-y divide-gray-50">
             {loading ? (

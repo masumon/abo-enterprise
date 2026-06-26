@@ -6,17 +6,19 @@ import { productsApi } from "@/lib/api";
 import type { Product, ProductCategory } from "@/types";
 import ProductCard from "@/components/features/ProductCard";
 import { useCartStore } from "@/store/cart";
+import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 
-const CATEGORIES: { value: string; label: string }[] = [
-  { value: "", label: "All" },
-  { value: "accessories", label: "Accessories" },
-  { value: "gadgets", label: "Gadgets" },
-  { value: "electronics", label: "Electronics" },
-  { value: "computer", label: "Computer" },
+const CATEGORIES: { value: string; label: { en: string; bn: string } }[] = [
+  { value: "", label: { en: "All", bn: "সব" } },
+  { value: "accessories", label: { en: "Accessories", bn: "এক্সেসরিজ" } },
+  { value: "gadgets", label: { en: "Gadgets", bn: "গ্যাজেট" } },
+  { value: "electronics", label: { en: "Electronics", bn: "ইলেকট্রনিক্স" } },
+  { value: "computer", label: { en: "Computer", bn: "কম্পিউটার" } },
 ];
 
 export default function ProductsPage() {
+  const { lang } = useLanguageStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -68,8 +70,14 @@ export default function ProductsPage() {
     <main className="min-h-screen">
       <section className="bg-gradient-to-br from-brand-600 to-brand-800 text-white py-16 px-4">
         <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">Our Products</h1>
-          <p className="text-brand-100 text-lg">Quality accessories & electronics at the best prices</p>
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">
+            {lang === "bn" ? "আমাদের পণ্য" : "Our Products"}
+          </h1>
+          <p className="text-brand-100 text-lg">
+            {lang === "bn"
+              ? "সেরা দামে মানসম্মত এক্সেসরিজ ও ইলেকট্রনিক্স"
+              : "Quality accessories & electronics at the best prices"}
+          </p>
         </div>
       </section>
 
@@ -81,7 +89,7 @@ export default function ProductsPage() {
               type="text"
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search products..."
+              placeholder={lang === "bn" ? "পণ্য খুঁজুন..." : "Search products..."}
               className="input pl-10 w-full"
             />
           </div>
@@ -99,7 +107,7 @@ export default function ProductsPage() {
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                 )}
               >
-                {c.label}
+                {lang === "bn" ? c.label.bn : c.label.en}
               </button>
             ))}
           </div>
@@ -108,10 +116,10 @@ export default function ProductsPage() {
             onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
             className="input w-auto text-sm flex-shrink-0"
           >
-            <option value="">Sort: Default</option>
-            <option value="price_asc">Price: Low to High</option>
-            <option value="price_desc">Price: High to Low</option>
-            <option value="newest">Newest First</option>
+            <option value="">{lang === "bn" ? "সাজান: ডিফল্ট" : "Sort: Default"}</option>
+            <option value="price_asc">{lang === "bn" ? "দাম: কম থেকে বেশি" : "Price: Low to High"}</option>
+            <option value="price_desc">{lang === "bn" ? "দাম: বেশি থেকে কম" : "Price: High to Low"}</option>
+            <option value="newest">{lang === "bn" ? "নতুন আগে" : "Newest First"}</option>
           </select>
         </div>
 

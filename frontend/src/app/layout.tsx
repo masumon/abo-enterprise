@@ -1,12 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import Navbar from "@/components/layout/Navbar";
-import Footer from "@/components/layout/Footer";
-import AnnouncementBar from "@/components/layout/AnnouncementBar";
-import MobileBottomNav from "@/components/layout/MobileBottomNav";
-import CartDrawer from "@/components/features/CartDrawer";
-import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import StoreHydration from "@/components/providers/StoreHydration";
+import PublicShell from "@/components/layout/PublicShell";
 
 export const metadata: Metadata = {
   title: {
@@ -71,14 +66,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="min-h-screen flex flex-col">
-        <AnnouncementBar />
-        <Navbar />
-        <main className="flex-1 pt-16">{children}</main>
-        <Footer />
         <StoreHydration />
-        <CartDrawer />
-        <WhatsAppButton />
-        <MobileBottomNav />
+        <PublicShell>{children}</PublicShell>
       </body>
     </html>
   );

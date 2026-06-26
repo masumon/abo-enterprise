@@ -69,7 +69,7 @@ export default function WhyChooseUs() {
           {REASONS.map(({ icon: Icon, title, desc }) => (
             <div key={title.en} className="card p-6">
               <div className="w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center mb-4">
-                <Icon className="w-5.5 h-5.5 text-brand-600" />
+                <Icon className="w-5 h-5 text-brand-600" />
               </div>
               <h3 className="font-bold text-gray-900 mb-2 text-sm">
                 {lang === "bn" ? title.bn : title.en}

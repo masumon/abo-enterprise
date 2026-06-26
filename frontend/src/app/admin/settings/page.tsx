@@ -30,6 +30,7 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [saved, setSaved] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     load();
@@ -51,21 +52,20 @@ export default function AdminSettingsPage() {
 
   async function save(key: string) {
     setSaving(key);
+    setActionError(null);
     try {
       await adminApi.updateSetting(key, { value: edited[key] ?? "" });
       setSettings((prev) => ({ ...prev, [key]: edited[key] ?? "" }));
       setSaved(key);
       setTimeout(() => setSaved(null), 2000);
     } catch {
-      alert("Failed to save. Please try again.");
+      setActionError("Failed to save. Please try again.");
     } finally {
       setSaving(null);
     }
   }
 
-  const displayKeys = loading
-    ? []
-    : EDITABLE_KEYS.filter((k) => k in settings || true);
+  const displayKeys = loading ? [] : EDITABLE_KEYS;
 
   return (
     <div className="space-y-6">
@@ -82,6 +82,12 @@ export default function AdminSettingsPage() {
           Refresh
         </button>
       </div>
+
+      {actionError && (
+        <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-2">
+          {actionError}
+        </p>
+      )}
 
       {loading ? (
         <div className="grid gap-4">

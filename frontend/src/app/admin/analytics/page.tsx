@@ -13,6 +13,8 @@ interface Overview {
 
 interface ChartDay { date: string; orders: number; bookings: number; total: number }
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
 export default function AnalyticsPage() {
   const [days, setDays] = useState(30);
   const [overview, setOverview] = useState<Overview | null>(null);
@@ -90,7 +92,7 @@ export default function AnalyticsPage() {
       <div className="bg-white rounded-xl border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-gray-900">Revenue ({days}d)</h2>
-          <a href="/api/v1/admin/bulk/export/orders" className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700">
+          <a href={`${API_BASE}/api/v1/admin/bulk/export/orders?days=${days}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700">
             <Download className="w-3.5 h-3.5" /> Export CSV
           </a>
         </div>
@@ -129,7 +131,7 @@ export default function AnalyticsPage() {
             };
             return (
               <div key={stage} className="flex items-center gap-3">
-                <span className="w-28 text-sm text-gray-600 capitalize">{stage.replace("_", " ")}</span>
+                <span className="w-28 text-sm text-gray-600 capitalize">{stage.replaceAll("_", " ")}</span>
                 <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all ${colors[stage]}`}
@@ -148,9 +150,9 @@ export default function AnalyticsPage() {
         <h2 className="font-bold text-gray-900 mb-4">Export Data</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { label: "Export Products CSV", href: "/api/v1/admin/bulk/export/products" },
-            { label: "Export Orders CSV",   href: `/api/v1/admin/bulk/export/orders?days=${days}` },
-            { label: "Export Leads CSV",    href: "/api/v1/admin/bulk/export/leads" },
+            { label: "Export Products CSV", href: `${API_BASE}/api/v1/admin/bulk/export/products` },
+            { label: "Export Orders CSV",   href: `${API_BASE}/api/v1/admin/bulk/export/orders?days=${days}` },
+            { label: "Export Leads CSV",    href: `${API_BASE}/api/v1/admin/bulk/export/leads` },
           ].map(btn => (
             <a
               key={btn.label}

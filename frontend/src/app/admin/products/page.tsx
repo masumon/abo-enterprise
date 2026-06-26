@@ -34,6 +34,9 @@ type FormData = z.infer<typeof schema>;
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -49,17 +52,21 @@ export default function AdminProductsPage() {
 
   const currentImage = watch("image_url");
 
-  const load = async () => {
+  const load = async (pageNum = page) => {
     setLoading(true);
+    setActionError(null);
     try {
-      const r = await productsApi.list({ page: 1 });
+      const r = await productsApi.list({ page: pageNum, per_page: 20 });
       setProducts(r.data.data ?? []);
+      setTotal(r.data.meta?.total ?? 0);
+    } catch {
+      setActionError("Failed to load products.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(page); }, [page]);
 
   const openCreate = () => {
     setEditing(null);
@@ -99,7 +106,7 @@ export default function AdminProductsPage() {
       setValue("image_url", url);
       setImageUrl(url);
     } catch {
-      alert("Image upload failed");
+      setActionError("Image upload failed");
     } finally {
       setUploading(false);
     }
@@ -115,9 +122,9 @@ export default function AdminProductsPage() {
         await productsApi.create(payload);
       }
       setShowModal(false);
-      await load();
+      await load(page);
     } catch {
-      alert("Failed to save product");
+      setActionError("Failed to save product");
     } finally {
       setSaving(false);
     }
@@ -128,9 +135,9 @@ export default function AdminProductsPage() {
     try {
       await productsApi.delete(deleteId);
       setDeleteId(null);
-      await load();
+      await load(page);
     } catch {
-      alert("Failed to delete product");
+      setActionError("Failed to delete product");
     }
   };
 
@@ -139,12 +146,18 @@ export default function AdminProductsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-500 text-sm mt-1">{products.length} items</p>
+          <p className="text-gray-500 text-sm mt-1">{total} items</p>
         </div>
         <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
           <Plus className="w-4 h-4" /> Add Product
         </button>
       </div>
+
+      {actionError && (
+        <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-2">
+          {actionError}
+        </p>
+      )}
 
       <div className="admin-card overflow-hidden">
         {loading ? (
@@ -208,6 +221,14 @@ export default function AdminProductsPage() {
           </table>
         )}
       </div>
+
+      {total > 20 && (
+        <div className="flex justify-center gap-3">
+          <button type="button" disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="btn btn-outline btn-sm">Previous</button>
+          <span className="px-4 py-2 text-sm text-gray-600 self-center">Page {page}</span>
+          <button type="button" disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">Next</button>
+        </div>
+      )}
 
       {/* Product Modal */}
       {showModal && (

@@ -32,7 +32,7 @@ const CONTACT_INFO = [
   {
     icon: MapPin,
     label: "Location",
-    value: "Dhaka, Bangladesh",
+    value: "Hazi Bahar Uddin Market, Sylhet-3170",
     href: null,
   },
   {
@@ -46,6 +46,7 @@ const CONTACT_INFO = [
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -53,6 +54,7 @@ export default function ContactPage() {
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
+    setSubmitError(null);
     try {
       await leadsApi.create({
         lead_type: "general",
@@ -63,7 +65,7 @@ export default function ContactPage() {
       });
       setSubmitted(true);
     } catch {
-      alert("Failed to send message. Please try WhatsApp or call us directly.");
+      setSubmitError("Failed to send message. Please try WhatsApp or call us directly.");
     } finally {
       setLoading(false);
     }
@@ -124,6 +126,11 @@ export default function ContactPage() {
             ) : (
               <>
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Send a Message</h2>
+                {submitError && (
+                  <p role="alert" className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-2">
+                    {submitError}
+                  </p>
+                )}
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>

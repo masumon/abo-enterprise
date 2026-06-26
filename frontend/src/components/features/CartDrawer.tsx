@@ -29,6 +29,7 @@ export default function CartDrawer() {
 
       {/* Drawer */}
       <aside
+        aria-label={lang === "bn" ? "শপিং কার্ট" : "Shopping cart"}
         className="fixed right-0 top-0 bottom-0 z-50 w-full max-w-md flex flex-col animate-slide-right"
         style={{
           background: "rgba(255,255,255,0.97)",

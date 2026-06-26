@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { X, Zap } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
+
+const STORAGE_KEY = "abo-announcement-dismissed";
 
 const ANNOUNCEMENTS = [
   {
@@ -28,19 +30,39 @@ export default function AnnouncementBar() {
   const [idx, setIdx] = useState(0);
   const { lang } = useLanguageStore();
 
+  useEffect(() => {
+    if (localStorage.getItem(STORAGE_KEY) === "1") {
+      setVisible(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!visible) return;
+    const timer = setInterval(() => {
+      setIdx((i) => (i + 1) % ANNOUNCEMENTS.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [visible]);
+
+  const dismiss = () => {
+    setVisible(false);
+    localStorage.setItem(STORAGE_KEY, "1");
+  };
+
   if (!visible) return null;
 
   const current = ANNOUNCEMENTS[idx];
 
   return (
-    <div className="bg-gradient-to-r from-brand-700 via-brand-600 to-accent-600 text-white text-xs sm:text-sm relative z-50">
+    <div className="bg-gradient-to-r from-brand-700 via-brand-600 to-accent-600 text-white text-xs sm:text-sm relative z-40 h-9">
       <div className="container mx-auto px-4 h-9 flex items-center justify-between gap-4">
-        {/* Dots */}
         <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
           {ANNOUNCEMENTS.map((_, i) => (
             <button
               key={i}
+              type="button"
               onClick={() => setIdx(i)}
+              aria-label={`Announcement ${i + 1}`}
               className={`w-1.5 h-1.5 rounded-full transition-all ${
                 i === idx ? "bg-white scale-125" : "bg-white/40"
               }`}
@@ -48,7 +70,6 @@ export default function AnnouncementBar() {
           ))}
         </div>
 
-        {/* Message */}
         <Link
           href={current.href}
           className="flex-1 text-center font-medium hover:text-white/90 transition-colors flex items-center justify-center gap-2"
@@ -59,9 +80,9 @@ export default function AnnouncementBar() {
           </span>
         </Link>
 
-        {/* Close */}
         <button
-          onClick={() => setVisible(false)}
+          type="button"
+          onClick={dismiss}
           className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-white/20 transition-colors"
           aria-label="Close announcement"
         >

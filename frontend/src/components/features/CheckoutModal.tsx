@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, CheckCircle, Package } from "lucide-react";
+import { X, CheckCircle, Package, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +18,7 @@ const schema = z.object({
   customer_phone: z
     .string()
     .regex(/^0[13-9]\d{8}$/, "সঠিক বাংলাদেশি নম্বর দিন (01XXXXXXXXX)"),
+  customer_email: z.string().email("সঠিক ইমেইল দিন").optional().or(z.literal("")),
   delivery_address: z.string().min(10, "সম্পূর্ণ ঠিকানা দিন"),
   payment_method: z.enum(["bkash", "rocket", "bank", "cod"] as const),
   notes: z.string().optional(),
@@ -43,6 +44,7 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const cartTotal = total();
 
   const {
@@ -59,6 +61,7 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       const orderItems = items.map((i) => ({
         product_id: i.product_id,
@@ -69,13 +72,19 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
       }));
 
       const orderRes = await ordersApi.create({
-        ...data,
+        customer_name: data.customer_name,
+        customer_phone: data.customer_phone,
+        customer_email: data.customer_email || undefined,
+        delivery_address: data.delivery_address,
+        payment_method: data.payment_method,
+        notes: data.notes,
         items: orderItems,
         subtotal: cartTotal,
         delivery_charge: 0,
         total: cartTotal,
-      }).catch(() => null);
-      const num = (orderRes?.data?.data as { order_number?: string } | undefined)?.order_number ?? null;
+      });
+
+      const num = (orderRes.data.data as { order_number?: string } | undefined)?.order_number ?? null;
       setOrderNumber(num);
 
       const waItems = items.map((i) => ({
@@ -98,6 +107,12 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
 
       clearCart();
       setIsSuccess(true);
+    } catch {
+      setSubmitError(
+        lang === "bn"
+          ? "অর্ডার জমা দেওয়া যায়নি। আবার চেষ্টা করুন বা WhatsApp-এ যোগাযোগ করুন।"
+          : "Could not submit order. Please try again or contact us on WhatsApp."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -108,12 +123,11 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
-        {/* Header */}
         <div className="sticky top-0 flex items-center justify-between px-6 py-4 gradient-brand rounded-t-2xl">
           <h2 className="text-white font-bold text-lg">
             {lang === "bn" ? "অর্ডার করুন" : "Place Order"}
           </h2>
-          <button onClick={onClose} className="text-white hover:bg-white/20 w-9 h-9 rounded-lg flex items-center justify-center">
+          <button type="button" onClick={onClose} aria-label="Close" className="text-white hover:bg-white/20 w-9 h-9 rounded-lg flex items-center justify-center">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -148,14 +162,20 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
                   {lang === "bn" ? "অর্ডার ট্র্যাক করুন" : "Track Order"}
                 </Link>
               )}
-              <button onClick={onClose} className="btn btn-brand btn-md">
+              <button type="button" onClick={onClose} className="btn btn-brand btn-md">
                 {lang === "bn" ? "ঠিক আছে" : "Done"}
               </button>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-5">
-            {/* Order Summary */}
+            {submitError && (
+              <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>{submitError}</span>
+              </div>
+            )}
+
             <div className="bg-gray-50 rounded-xl p-4 space-y-2">
               <p className="font-semibold text-sm text-gray-700 mb-3">
                 {lang === "bn" ? "অর্ডার সারসংক্ষেপ" : "Order Summary"}
@@ -174,7 +194,6 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
               </div>
             </div>
 
-            {/* Customer Info */}
             <div className="space-y-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -186,7 +205,7 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
                   placeholder={lang === "bn" ? "আপনার নাম লিখুন" : "Enter your full name"}
                 />
                 {errors.customer_name && (
-                  <p className="text-red-500 text-xs mt-1">{errors.customer_name.message}</p>
+                  <p role="alert" className="text-red-500 text-xs mt-1">{errors.customer_name.message}</p>
                 )}
               </div>
 
@@ -201,7 +220,22 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
                   placeholder="01XXXXXXXXX"
                 />
                 {errors.customer_phone && (
-                  <p className="text-red-500 text-xs mt-1">{errors.customer_phone.message}</p>
+                  <p role="alert" className="text-red-500 text-xs mt-1">{errors.customer_phone.message}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  {lang === "bn" ? "ইমেইল (ঐচ্ছিক)" : "Email (optional)"}
+                </label>
+                <input
+                  {...register("customer_email")}
+                  type="email"
+                  className={cn("input", errors.customer_email && "input-error")}
+                  placeholder={lang === "bn" ? "your@email.com" : "your@email.com"}
+                />
+                {errors.customer_email && (
+                  <p role="alert" className="text-red-500 text-xs mt-1">{errors.customer_email.message}</p>
                 )}
               </div>
 
@@ -216,12 +250,11 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
                   placeholder={lang === "bn" ? "বিস্তারিত ঠিকানা লিখুন" : "Street, Area, District"}
                 />
                 {errors.delivery_address && (
-                  <p className="text-red-500 text-xs mt-1">{errors.delivery_address.message}</p>
+                  <p role="alert" className="text-red-500 text-xs mt-1">{errors.delivery_address.message}</p>
                 )}
               </div>
             </div>
 
-            {/* Payment Method */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-3">
                 {lang === "bn" ? "পেমেন্ট পদ্ধতি *" : "Payment Method *"}

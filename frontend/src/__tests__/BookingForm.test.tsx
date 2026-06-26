@@ -1,8 +1,13 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import BookingForm from "@/components/booking/BookingForm";
+import { bookingsApi } from "@/lib/api";
 
-jest.mock("@/lib/api");
+jest.mock("@/lib/api", () => ({
+  bookingsApi: {
+    create: jest.fn().mockResolvedValue({ status: 201, data: { data: {} } }),
+  },
+}));
 
 describe("Booking Form E2E", () => {
   const mockService = {
@@ -75,6 +80,7 @@ describe("Booking Form E2E", () => {
     await user.click(submitBtn);
 
     await waitFor(() => {
+      expect(bookingsApi.create).toHaveBeenCalled();
       expect(screen.getByText(/submitted successfully/i)).toBeInTheDocument();
     });
   });

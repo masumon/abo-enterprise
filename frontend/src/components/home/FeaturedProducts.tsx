@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, AlertCircle } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useCartStore } from "@/store/cart";
 import ProductCard from "@/components/features/ProductCard";
+import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import { productsApi } from "@/lib/api";
 import type { Product } from "@/types";
 
@@ -14,11 +15,15 @@ export default function FeaturedProducts() {
   const { openCart } = useCartStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     productsApi.list({ featured: true, per_page: 8 } as Parameters<typeof productsApi.list>[0])
-      .then(r => setProducts(r.data.data ?? []))
-      .catch(() => setProducts([]))
+      .then((r) => {
+        setProducts(r.data.data ?? []);
+        setError(false);
+      })
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
   }, []);
 
@@ -36,17 +41,24 @@ export default function FeaturedProducts() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16">
-            <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)}
           </div>
+        ) : error ? (
+          <div role="alert" className="text-center py-12">
+            <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 text-sm">
+              {lang === "bn" ? "পণ্য লোড করা যায়নি।" : "Could not load products."}
+            </p>
+          </div>
+        ) : products.length === 0 ? (
+          <p className="text-center text-gray-400 py-12 text-sm">
+            {lang === "bn" ? "এখন কোনো জনপ্রিয় পণ্য নেই।" : "No featured products right now."}
+          </p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             {products.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={openCart}
-              />
+              <ProductCard key={product.id} product={product} onAddToCart={openCart} />
             ))}
           </div>
         )}

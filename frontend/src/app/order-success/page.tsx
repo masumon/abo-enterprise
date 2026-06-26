@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Package, ArrowRight } from "lucide-react";
+import { useLanguageStore } from "@/store/language";
 
-export default function OrderSuccessPage() {
+function OrderSuccessContent() {
   const params = useSearchParams();
+  const { lang } = useLanguageStore();
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
 
   useEffect(() => {
@@ -22,16 +24,24 @@ export default function OrderSuccessPage() {
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Order Placed!</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          {lang === "bn" ? "অর্ডার হয়েছে!" : "Order Placed!"}
+        </h1>
         <p className="text-gray-500 mb-6">
-          Thank you for your order. We&apos;ll contact you shortly to confirm.
+          {lang === "bn"
+            ? "আপনার অর্ডারের জন্য ধন্যবাদ। নিশ্চিত করতে আমরা শীঘ্রই যোগাযোগ করব।"
+            : "Thank you for your order. We'll contact you shortly to confirm."}
         </p>
 
         {orderNumber && (
           <div className="bg-brand-50 rounded-xl p-4 mb-6">
-            <p className="text-xs text-brand-600 font-medium mb-1">Order Number</p>
+            <p className="text-xs text-brand-600 font-medium mb-1">
+              {lang === "bn" ? "অর্ডার নম্বর" : "Order Number"}
+            </p>
             <p className="text-xl font-bold text-brand-700">{orderNumber}</p>
-            <p className="text-xs text-brand-500 mt-1">Save this to track your order</p>
+            <p className="text-xs text-brand-500 mt-1">
+              {lang === "bn" ? "ট্র্যাক করতে সংরক্ষণ করুন" : "Save this to track your order"}
+            </p>
           </div>
         )}
 
@@ -42,18 +52,26 @@ export default function OrderSuccessPage() {
               className="btn btn-brand btn-md w-full flex items-center justify-center gap-2"
             >
               <Package className="w-4 h-4" />
-              Track Order
+              {lang === "bn" ? "অর্ডার ট্র্যাক করুন" : "Track Order"}
             </Link>
           )}
           <Link
             href="/products"
             className="btn btn-outline btn-md w-full flex items-center justify-center gap-2"
           >
-            Continue Shopping
+            {lang === "bn" ? "কেনাকাটা চালিয়ে যান" : "Continue Shopping"}
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
       </div>
     </main>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin" /></div>}>
+      <OrderSuccessContent />
+    </Suspense>
   );
 }

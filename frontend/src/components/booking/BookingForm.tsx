@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import api from "@/lib/api";
+import { bookingsApi } from "@/lib/api";
 import type { Service } from "@/types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
@@ -44,12 +44,13 @@ export default function BookingForm({ service, onSuccess }: BookingFormProps) {
     try {
       setSubmitting(true);
 
-      const response = await api.post("/bookings", {
+      const response = await bookingsApi.create({
         service_id: service.id,
+        service_type: service.category,
         ...data,
-      });
+      } as unknown as Parameters<typeof bookingsApi.create>[0]);
 
-      if (response.status === 200) {
+      if (response.status === 200 || response.status === 201) {
         setSuccess(true);
         reset();
         setTimeout(() => {
