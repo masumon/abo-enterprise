@@ -4,16 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Package, ShoppingCart, Briefcase, Users,
-  LogOut, ExternalLink, Bot,
+  LogOut, ExternalLink, BarChart2, Download, Settings, CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/admin", icon: LayoutDashboard, label: "Dashboard", exact: true },
-  { href: "/admin/products", icon: Package, label: "Products" },
-  { href: "/admin/orders", icon: ShoppingCart, label: "Orders" },
-  { href: "/admin/bookings", icon: Briefcase, label: "Bookings" },
-  { href: "/admin/leads", icon: Users, label: "Leads" },
+  { href: "/admin",            icon: LayoutDashboard, label: "Dashboard",  exact: true },
+  { href: "/admin/products",   icon: Package,         label: "Products" },
+  { href: "/admin/orders",     icon: ShoppingCart,    label: "Orders" },
+  { href: "/admin/bookings",   icon: Briefcase,       label: "Bookings" },
+  { href: "/admin/leads",      icon: Users,           label: "Leads" },
+  { href: "/admin/analytics",  icon: BarChart2,       label: "Analytics" },
+  { href: "/admin/settings",   icon: Settings,        label: "Settings" },
 ];
 
 interface Props {
