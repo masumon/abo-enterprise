@@ -36,7 +36,7 @@ export default function AdminDashboard() {
   async function fetchStats() {
     try {
       setLoading(true);
-      const response = await api.get("/admin/stats");
+      const response = await api.get("/api/v1/admin/stats");
       setStats(response.data.data);
     } catch (error) {
       console.error("Failed to fetch stats:", error);
@@ -70,7 +70,7 @@ export default function AdminDashboard() {
           label="Total Orders"
           value={stats?.total_orders || 0}
           subtext={`${stats?.pending_orders || 0} pending`}
-          color="blue"
+          color="brand"
         />
 
         <StatsCard
@@ -86,7 +86,7 @@ export default function AdminDashboard() {
           label="Leads"
           value={stats?.total_leads || 0}
           subtext={`${stats?.new_leads || 0} new`}
-          color="purple"
+          color="accent"
         />
 
         <StatsCard
@@ -94,7 +94,7 @@ export default function AdminDashboard() {
           label="Products"
           value={stats?.total_products || 0}
           subtext="In catalog"
-          color="orange"
+          color="amber"
         />
 
         <StatsCard
@@ -102,7 +102,7 @@ export default function AdminDashboard() {
           label="Action Items"
           value={(stats?.pending_orders || 0) + (stats?.pending_bookings || 0)}
           subtext="Require attention"
-          color="red"
+          color="accent"
         />
 
         <StatsCard
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
           label="Revenue"
           value="৳0"
           subtext="This month"
-          color="indigo"
+          color="brand"
         />
       </div>
 
