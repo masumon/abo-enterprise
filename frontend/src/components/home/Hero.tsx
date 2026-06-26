@@ -75,23 +75,23 @@ export default function Hero() {
             <div className="flex flex-col sm:flex-row gap-3 pt-2">
               <Link
                 href="/products"
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-brand-700 font-semibold rounded-xl hover:bg-gray-50 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-white text-brand-700 font-semibold rounded-xl hover:bg-gray-50 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0"
               >
-                <ShoppingBag className="w-4.5 h-4.5" />
+                <ShoppingBag className="w-[18px] h-[18px]" />
                 {lang === "bn" ? "পণ্য দেখুন" : "Shop Products"}
               </Link>
               <Link
                 href="/services"
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-white/15 text-white font-semibold rounded-xl border border-white/30 hover:bg-white/25 transition-all backdrop-blur-sm"
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-white/15 text-white font-semibold rounded-xl border border-white/30 hover:bg-white/25 transition-all backdrop-blur-sm hover:-translate-y-0.5 active:translate-y-0"
               >
-                <Calendar className="w-4.5 h-4.5" />
+                <Calendar className="w-[18px] h-[18px]" />
                 {lang === "bn" ? "সেবা বুক করুন" : "Book a Service"}
               </Link>
               <Link
                 href="/projects"
-                className="flex items-center justify-center gap-2 px-6 py-3 bg-accent-500/80 text-white font-semibold rounded-xl border border-accent-400/50 hover:bg-accent-500 transition-all backdrop-blur-sm"
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-accent-500/80 text-white font-semibold rounded-xl border border-accent-400/50 hover:bg-accent-500 transition-all backdrop-blur-sm hover:-translate-y-0.5 active:translate-y-0"
               >
-                <Briefcase className="w-4.5 h-4.5" />
+                <Briefcase className="w-[18px] h-[18px]" />
                 {lang === "bn" ? "কোটেশন নিন" : "Get a Quote"}
               </Link>
             </div>
