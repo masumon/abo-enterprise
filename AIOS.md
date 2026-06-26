@@ -61,21 +61,19 @@
 
 ## 1.3 Identified Gaps — Questions That Must Be Answered
 
-> `[GAP-01]` — Team size: Is the founder solo or is there a team? This changes the entire architecture and timeline strategy.
+> `[GAP-01 — RESOLVED]` Team: Solo founder. Design for future multi-user enterprise team. All systems must support multi-tenancy from the start.
 
-> `[GAP-02]` — Budget: What is the monthly/project budget for platform development? This determines phasing.
+> `[GAP-02 — RESOLVED]` Budget: Cost-efficient managed cloud, scalable for enterprise growth. Stack: Vercel + Render + Supabase + Cloudinary + Cloudflare.
 
-> `[GAP-03]` — Which of the listed capabilities are currently active vs aspirational? (e.g., does ABO currently deliver ERP or Hospital Software, or is this planned?)
+> `[GAP-03 — RESOLVED]` Active now: Mobile Accessories, Gadgets, Digital Services, Printing, Legal Case Writing, Website Development, AI Solutions, Python Automation, Custom Software. Enterprise software (POS, ERP, CRM, ISP Billing) delivered as custom projects.
 
-> `[GAP-04]` — Current client count and monthly revenue. This determines urgency of specific features.
+> `[GAP-04 — RESOLVED]` Priority: Increase product sales, enable online orders, service booking, and lead generation for AI/software/automation. No existing client portal needed in Phase 1.
 
-> `[GAP-05]` — Is Sylhet the primary market, or is Dhaka / national scale the immediate goal?
+> `[GAP-05 — RESOLVED]` Phase 1 priority: Products + Online Orders + Service Booking + Lead Generation. Launch ASAP.
 
-> `[GAP-06]` — Does the founder want to position as a reseller/aggregator of software, or custom builder, or both?
+> `[GAP-06 — RESOLVED]` Custom builder model, not reseller. ABO builds everything in-house.
 
-> `[GAP-07]` — Preferred deployment: managed cloud (Vercel/Railway/DigitalOcean) or own VPS/server?
-
-> These gaps are noted. AIOS will operate on best-available reasoning until answers are provided. Where a gap affects a decision, it will be flagged inline.
+> `[GAP-07 — RESOLVED]` Confirmed tech stack: GitHub (source control), Vercel (frontend), Render (backend), Supabase PostgreSQL (database), Cloudinary (media), Cloudflare (CDN/security).
 
 ## 1.4 Market Analysis — Bangladesh Tech Ecosystem
 
@@ -821,18 +819,18 @@ LAYERS:
 ### Key Architecture Decisions
 
 ```
-ARCH-01: FastAPI (Python) for all backend APIs
-ARCH-02: Next.js 14+ (App Router) for web frontend
-ARCH-03: PostgreSQL as primary database
-ARCH-04: Redis for caching and session management
-ARCH-05: S3-compatible storage for files/media
+ARCH-01: FastAPI (Python) on Render for all backend APIs
+ARCH-02: Next.js 14+ (App Router) on Vercel for web frontend
+ARCH-03: Supabase PostgreSQL as primary database
+ARCH-04: Supabase Row-Level Security for multi-tenant data
+ARCH-05: Cloudinary for all media/image storage
 ARCH-06: JWT + Refresh tokens for authentication
-ARCH-07: Docker + Docker Compose for development
-ARCH-08: Docker + cloud for production
-ARCH-09: Nginx as reverse proxy
-ARCH-10: GitHub Actions for CI/CD
-ARCH-11: pgvector for AI embeddings (no separate vector DB initially)
-ARCH-12: WebSockets for real-time features (order tracking, chat)
+ARCH-07: Docker for local development
+ARCH-08: Render (backend), Vercel (frontend) for production
+ARCH-09: Cloudflare for CDN, DNS, DDoS protection, SSL
+ARCH-10: GitHub Actions for CI/CD to Vercel + Render
+ARCH-11: pgvector (Supabase extension) for AI embeddings (Phase 2)
+ARCH-12: WebSockets for real-time features (Phase 2)
 ```
 
 ---
@@ -2175,7 +2173,11 @@ At the end of every session, the agent should:
 SESSION LOG (append to this section):
   2026-06-26: AIOS v1.0.0 created. Initial business discovery complete.
               Business gaps GAP-01 through GAP-07 identified.
-              Awaiting founder answers to proceed with platform architecture.
+  2026-06-26: AIOS v1.1.0. All 7 gaps resolved by founder.
+              Tech stack confirmed: Vercel + Render + Supabase + Cloudinary + Cloudflare.
+              Phase 1 platform build initiated.
+              Active services confirmed. Solo founder, multi-team architecture target.
+              Priority: Products + Orders + Service Booking + Lead Generation.
 ```
 
 ---

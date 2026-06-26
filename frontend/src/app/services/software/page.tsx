@@ -1,0 +1,272 @@
+"use client";
+
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { CheckCircle, Code, Bot, Cog, Globe, MonitorSmartphone, Database } from "lucide-react";
+import { leadsApi } from "@/lib/api";
+import { useLanguageStore } from "@/store/language";
+import { cn } from "@/lib/utils";
+
+const schema = z.object({
+  name: z.string().min(2),
+  company: z.string().optional(),
+  phone: z.string().regex(/^0[13-9]\d{8}$/),
+  email: z.string().email().optional().or(z.literal("")),
+  lead_type: z.enum(["software_development", "ai_solutions", "automation", "erp", "general"]),
+  budget_range: z.string().optional(),
+  project_description: z.string().min(20),
+});
+
+type FormData = z.infer<typeof schema>;
+
+const SERVICE_CARDS = [
+  {
+    icon: Globe,
+    color: "from-green-500 to-teal-500",
+    title: { en: "Website & Web App", bn: "ওয়েবসাইট ও ওয়েব অ্যাপ" },
+    items: [
+      { en: "Business websites", bn: "ব্যবসায়িক ওয়েবসাইট" },
+      { en: "E-commerce platforms", bn: "ই-কমার্স প্ল্যাটফর্ম" },
+      { en: "Web applications", bn: "ওয়েব অ্যাপ্লিকেশন" },
+      { en: "PWA development", bn: "PWA ডেভেলপমেন্ট" },
+    ],
+  },
+  {
+    icon: Bot,
+    color: "from-orange-500 to-red-500",
+    title: { en: "AI Solutions", bn: "AI সমাধান" },
+    items: [
+      { en: "Custom AI agents", bn: "কাস্টম AI এজেন্ট" },
+      { en: "OCR / Document processing", bn: "OCR / ডকুমেন্ট প্রসেসিং" },
+      { en: "Chatbot integration", bn: "চ্যাটবট ইন্টিগ্রেশন" },
+      { en: "Data extraction & analysis", bn: "ডেটা এক্সট্রাকশন" },
+    ],
+  },
+  {
+    icon: Cog,
+    color: "from-indigo-500 to-purple-500",
+    title: { en: "Python Automation", bn: "পাইথন অটোমেশন" },
+    items: [
+      { en: "Business process automation", bn: "ব্যবসায়িক প্রক্রিয়া স্বয়ংক্রিয়" },
+      { en: "Data scraping & processing", bn: "ডেটা স্ক্র্যাপিং" },
+      { en: "API integrations", bn: "API ইন্টিগ্রেশন" },
+      { en: "Scheduled task automation", bn: "নির্ধারিত কাজ স্বয়ংক্রিয়" },
+    ],
+  },
+  {
+    icon: Database,
+    color: "from-cyan-500 to-blue-500",
+    title: { en: "ERP / POS / CRM", bn: "ERP / POS / CRM" },
+    items: [
+      { en: "Inventory management", bn: "ইনভেন্টরি ম্যানেজমেন্ট" },
+      { en: "POS for retail & restaurant", bn: "রিটেইল ও রেস্টুরেন্ট POS" },
+      { en: "ISP Billing system", bn: "ISP বিলিং সিস্টেম" },
+      { en: "Hospital & school software", bn: "হাসপাতাল ও স্কুল সফটওয়্যার" },
+    ],
+  },
+  {
+    icon: MonitorSmartphone,
+    color: "from-pink-500 to-rose-500",
+    title: { en: "Mobile & Desktop Apps", bn: "মোবাইল ও ডেস্কটপ অ্যাপ" },
+    items: [
+      { en: "Android & iOS apps", bn: "Android ও iOS অ্যাপ" },
+      { en: "Cross-platform apps", bn: "ক্রস-প্ল্যাটফর্ম অ্যাপ" },
+      { en: "Desktop software", bn: "ডেস্কটপ সফটওয়্যার" },
+      { en: "API backend development", bn: "API ব্যাকএন্ড" },
+    ],
+  },
+  {
+    icon: Code,
+    color: "from-violet-500 to-purple-500",
+    title: { en: "DevOps & Cloud", bn: "DevOps ও ক্লাউড" },
+    items: [
+      { en: "Docker & containerization", bn: "Docker কন্টেইনারাইজেশন" },
+      { en: "Cloud deployment (AWS/GCP)", bn: "ক্লাউড ডিপ্লয়মেন্ট" },
+      { en: "CI/CD pipeline setup", bn: "CI/CD পাইপলাইন" },
+      { en: "Hosting & maintenance", bn: "হোস্টিং ও মেইনটেন্যান্স" },
+    ],
+  },
+];
+
+const BUDGET_OPTIONS = [
+  { value: "under_10k", label: { en: "Under ৳10,000", bn: "৳১০,০০০ এর নিচে" } },
+  { value: "10k_50k", label: { en: "৳10,000–50,000", bn: "৳১০,০০০–৫০,০০০" } },
+  { value: "50k_150k", label: { en: "৳50,000–1,50,000", bn: "৳৫০,০০০–১,৫০,০০০" } },
+  { value: "above_150k", label: { en: "Above ৳1,50,000", bn: "৳১,৫০,০০০ এর উপরে" } },
+  { value: "discuss", label: { en: "Let's discuss", bn: "আলোচনা করব" } },
+];
+
+export default function SoftwarePage() {
+  const { lang } = useLanguageStore();
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { lead_type: "software_development" },
+  });
+
+  const onSubmit = async (data: FormData) => {
+    setIsSubmitting(true);
+    try {
+      await leadsApi.create({ ...data, source: "website" } as Parameters<typeof leadsApi.create>[0]).catch(() => null);
+      setIsSuccess(true);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen">
+      {/* Hero */}
+      <div className="gradient-brand py-16 text-center text-white">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">
+            {lang === "bn" ? "সফটওয়্যার, AI ও অটোমেশন" : "Software, AI & Automation"}
+          </h1>
+          <p className="text-white/75 max-w-xl mx-auto">
+            {lang === "bn"
+              ? "ছোট ব্যবসা থেকে বড় প্রতিষ্ঠান — আপনার ব্যবসার জন্য কাস্টম প্রযুক্তি সমাধান।"
+              : "From small businesses to enterprises — custom technology solutions for your needs."}
+          </p>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-12">
+        {/* Service Cards */}
+        <div className="section-title text-center mb-8">
+          <h2>{lang === "bn" ? "আমরা যা তৈরি করি" : "What We Build"}</h2>
+          <div className="section-divider" />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-14">
+          {SERVICE_CARDS.map(({ icon: Icon, color, title, items }) => (
+            <div key={title.en} className="card p-5">
+              <div className={cn("w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-white mb-3", color)}>
+                <Icon className="w-5 h-5" />
+              </div>
+              <h3 className="font-bold text-gray-900 mb-3 text-sm">
+                {lang === "bn" ? title.bn : title.en}
+              </h3>
+              <ul className="space-y-1.5">
+                {items.map((item) => (
+                  <li key={item.en} className="flex items-center gap-2 text-xs text-gray-500">
+                    <span className="w-1.5 h-1.5 bg-brand-500 rounded-full flex-shrink-0" />
+                    {lang === "bn" ? item.bn : item.en}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        {/* Lead Form */}
+        <div className="max-w-2xl mx-auto">
+          <div className="card p-6 md:p-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">
+              {lang === "bn" ? "বিনামূল্যে পরামর্শ পান" : "Get a Free Consultation"}
+            </h2>
+
+            {isSuccess ? (
+              <div className="text-center py-8">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  {lang === "bn" ? "আপনার বার্তা পেয়েছি!" : "Message Received!"}
+                </h3>
+                <p className="text-gray-500">
+                  {lang === "bn"
+                    ? "২৪ ঘণ্টার মধ্যে WhatsApp বা ফোনে যোগাযোগ করব।"
+                    : "We'll contact you within 24 hours via WhatsApp or phone."}
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {lang === "bn" ? "নাম *" : "Name *"}
+                    </label>
+                    <input {...register("name")} className={cn("input", errors.name && "input-error")}
+                      placeholder={lang === "bn" ? "আপনার নাম" : "Your name"} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {lang === "bn" ? "কোম্পানি" : "Company"}
+                    </label>
+                    <input {...register("company")} className="input"
+                      placeholder={lang === "bn" ? "কোম্পানির নাম" : "Company name"} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {lang === "bn" ? "মোবাইল *" : "Mobile *"}
+                    </label>
+                    <input {...register("phone")} type="tel" className={cn("input", errors.phone && "input-error")}
+                      placeholder="01XXXXXXXXX" />
+                    {errors.phone && <p className="text-red-500 text-xs mt-1">সঠিক নম্বর দিন</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email
+                    </label>
+                    <input {...register("email")} type="email" className="input"
+                      placeholder="email@example.com" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {lang === "bn" ? "সেবার ধরন *" : "Service Type *"}
+                    </label>
+                    <select {...register("lead_type")} className="input">
+                      <option value="software_development">{lang === "bn" ? "কাস্টম সফটওয়্যার" : "Custom Software"}</option>
+                      <option value="ai_solutions">{lang === "bn" ? "AI সমাধান" : "AI Solutions"}</option>
+                      <option value="automation">{lang === "bn" ? "অটোমেশন" : "Automation"}</option>
+                      <option value="erp">ERP / POS / CRM</option>
+                      <option value="general">{lang === "bn" ? "সাধারণ" : "General Inquiry"}</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {lang === "bn" ? "বাজেট" : "Budget Range"}
+                    </label>
+                    <select {...register("budget_range")} className="input">
+                      <option value="">{lang === "bn" ? "বাজেট বেছে নিন" : "Select budget"}</option>
+                      {BUDGET_OPTIONS.map((b) => (
+                        <option key={b.value} value={b.value}>
+                          {lang === "bn" ? b.label.bn : b.label.en}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    {lang === "bn" ? "প্রজেক্টের বিবরণ *" : "Project Description *"}
+                  </label>
+                  <textarea {...register("project_description")} rows={4} className={cn("input resize-none", errors.project_description && "input-error")}
+                    placeholder={lang === "bn" ? "আপনার প্রজেক্ট সম্পর্কে বিস্তারিত লিখুন..." : "Describe your project in detail..."} />
+                  {errors.project_description && (
+                    <p className="text-red-500 text-xs mt-1">{lang === "bn" ? "কমপক্ষে ২০ অক্ষর লিখুন" : "Please provide more details"}</p>
+                  )}
+                </div>
+
+                <button type="submit" disabled={isSubmitting} className="btn btn-primary btn-lg w-full">
+                  {isSubmitting
+                    ? lang === "bn" ? "পাঠানো হচ্ছে..." : "Sending..."
+                    : lang === "bn" ? "বিনামূল্যে পরামর্শের জন্য আবেদন করুন" : "Request Free Consultation"}
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
