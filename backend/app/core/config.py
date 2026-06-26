@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     CLOUDINARY_API_SECRET: str = ""
 
     ADMIN_EMAIL: str = "admin@aboenterprise.com"
-    ADMIN_PASSWORD: str
+    ADMIN_PASSWORD: str = ""
 
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60

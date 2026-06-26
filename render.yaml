@@ -16,7 +16,10 @@ envVars:
     syncWithPostgres: aboenterprise-postgres
   - key: REDIS_URL
     scope: all
-  - key: JWT_SECRET_KEY
+  - key: SECRET_KEY
+    scope: all
+    isPrivate: true
+  - key: ADMIN_PASSWORD
     scope: all
     isPrivate: true
   - key: ALGORITHM

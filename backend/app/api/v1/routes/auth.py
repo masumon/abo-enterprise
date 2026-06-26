@@ -48,6 +48,12 @@ async def get_me(
 @router.post("/setup", include_in_schema=False)
 async def setup_admin(db: AsyncSession = Depends(get_db)):
     """One-time admin setup. Disable after first use."""
+    if not settings.ADMIN_PASSWORD:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="ADMIN_PASSWORD environment variable is not set",
+        )
+
     existing = await db.execute(select(AdminUser).where(AdminUser.email == settings.ADMIN_EMAIL))
     if existing.scalar_one_or_none():
         return {"message": "Admin already exists"}
