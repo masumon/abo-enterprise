@@ -29,6 +29,21 @@ export interface Product {
   updated_at?: string;
 }
 
+export interface Review {
+  id: string;
+  product_id?: string | null;
+  customer_name: string;
+  company?: string | null;
+  rating: number;
+  review_en: string;
+  review_bn?: string | null;
+  photo_url?: string | null;
+  source: string;
+  is_verified: boolean;
+  is_featured: boolean;
+  created_at?: string;
+}
+
 export interface CartItem {
   product_id: string;
   name_en: string;

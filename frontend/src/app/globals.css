@@ -44,6 +44,13 @@
     background-attachment: fixed;
   }
 
+  html.dark body {
+    @apply bg-[#0a1628] text-gray-100;
+    background-image:
+      radial-gradient(ellipse at 20% 50%, rgba(30,91,168,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(233,30,99,0.05) 0%, transparent 50%);
+  }
+
   h1,h2,h3,h4,h5,h6 { line-height: 1.2; font-weight: 700; }
 
   :focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }

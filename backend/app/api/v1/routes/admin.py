@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 import cloudinary
@@ -7,8 +7,8 @@ import cloudinary.uploader
 from app.core.database import get_db
 from app.core.security import require_admin
 from app.core.config import settings
-from app.models.models import Order, Booking, Lead, Product
-from app.schemas.schemas import ApiResponse, DashboardStats
+from app.models.models import Order, Booking, Lead, Product, AdminUser, ActivityLog
+from app.schemas.schemas import ApiResponse, DashboardStats, PaginatedResponse, PaginatedMeta
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -113,4 +113,63 @@ async def upload_image(
     return ApiResponse(
         data={"url": result["secure_url"], "public_id": result["public_id"]},
         message="Image uploaded",
+    )
+
+
+@router.get("/users", response_model=PaginatedResponse)
+async def list_admin_users(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_admin),
+):
+    total = (await db.execute(select(func.count(AdminUser.id)))).scalar_one()
+    result = await db.execute(
+        select(AdminUser).order_by(AdminUser.created_at.desc())
+        .offset((page - 1) * per_page).limit(per_page)
+    )
+    users = result.scalars().all()
+    return PaginatedResponse(
+        data=[
+            {
+                "id": str(u.id),
+                "email": u.email,
+                "name": u.name,
+                "role": u.role,
+                "is_active": u.is_active,
+                "last_login": u.last_login.isoformat() if u.last_login else None,
+                "created_at": u.created_at.isoformat(),
+            }
+            for u in users
+        ],
+        meta=PaginatedMeta(page=page, per_page=per_page, total=total, total_pages=max(1, -(-total // per_page))),
+    )
+
+
+@router.get("/audit-logs", response_model=PaginatedResponse)
+async def list_audit_logs(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(30, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_admin),
+):
+    total = (await db.execute(select(func.count(ActivityLog.id)))).scalar_one()
+    result = await db.execute(
+        select(ActivityLog).order_by(ActivityLog.created_at.desc())
+        .offset((page - 1) * per_page).limit(per_page)
+    )
+    logs = result.scalars().all()
+    return PaginatedResponse(
+        data=[
+            {
+                "id": str(log.id),
+                "admin_id": str(log.admin_id),
+                "action": log.action,
+                "entity_type": log.entity_type,
+                "entity_id": str(log.entity_id) if log.entity_id else None,
+                "created_at": log.created_at.isoformat(),
+            }
+            for log in logs
+        ],
+        meta=PaginatedMeta(page=page, per_page=per_page, total=total, total_pages=max(1, -(-total // per_page))),
     )

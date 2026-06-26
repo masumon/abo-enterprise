@@ -54,6 +54,53 @@ async def list_products(
     )
 
 
+@router.get("/suggest", response_model=ApiResponse)
+async def suggest_products(
+    q: str = Query(..., min_length=1),
+    limit: int = Query(8, ge=1, le=20),
+    db: AsyncSession = Depends(get_db),
+):
+    term = f"%{q}%"
+    result = await db.execute(
+        select(Product)
+        .where(
+            Product.is_active == True,  # noqa: E712
+            Product.is_deleted == False,  # noqa: E712
+            or_(Product.name_en.ilike(term), Product.name_bn.ilike(term)),
+        )
+        .order_by(Product.sort_order.asc())
+        .limit(limit)
+    )
+    products = result.scalars().all()
+    return ApiResponse(data=[
+        {"slug": p.slug, "name_en": p.name_en, "name_bn": p.name_bn, "price": float(p.price), "image_url": p.image_url}
+        for p in products
+    ])
+
+
+@router.get("/{slug}/related", response_model=ApiResponse)
+async def related_products(slug: str, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Product).where(Product.slug == slug, Product.is_deleted == False)  # noqa: E712
+    )
+    product = result.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    related = await db.execute(
+        select(Product)
+        .where(
+            Product.category == product.category,
+            Product.id != product.id,
+            Product.is_active == True,  # noqa: E712
+            Product.is_deleted == False,  # noqa: E712
+        )
+        .order_by(Product.is_featured.desc(), Product.sort_order.asc())
+        .limit(4)
+    )
+    items = related.scalars().all()
+    return ApiResponse(data=[ProductOut.model_validate(p) for p in items])
+
+
 @router.get("/{slug}", response_model=ApiResponse)
 async def get_product(slug: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(

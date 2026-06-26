@@ -10,7 +10,7 @@ import { useWishlistStore } from "@/store/wishlist";
 import GlassCard from "@/components/ui/GlassCard";
 
 const PORTAL_ITEMS = [
-  { href: "/orders", icon: Package, labelKey: "profile_orders" as const, live: true },
+  { href: "/login", icon: Package, labelKey: "profile_orders" as const, live: true },
   { href: "/services", icon: Calendar, labelKey: "profile_bookings" as const, live: true },
   { href: "/profile/wishlist", icon: Heart, labelKey: "profile_wishlist" as const, live: true },
   { href: "/profile", icon: FileText, labelKey: "profile_invoices" as const, live: false },

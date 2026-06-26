@@ -31,6 +31,12 @@ export const productsApi = {
   get: (slug: string) =>
     api.get<ApiResponse<Product>>(`/api/v1/products/${slug}`),
 
+  related: (slug: string) =>
+    api.get<ApiResponse<Product[]>>(`/api/v1/products/${slug}/related`),
+
+  suggest: (q: string) =>
+    api.get<ApiResponse<{ slug: string; name_en: string; name_bn: string; price: number; image_url?: string }[]>>("/api/v1/products/suggest", { params: { q } }),
+
   create: (data: Partial<Product>) =>
     api.post<ApiResponse<Product>>("/api/v1/products", data),
 
@@ -54,6 +60,9 @@ export const ordersApi = {
 
   track: (orderNumber: string) =>
     api.get<ApiResponse<{ order_number: string; order_status: string; payment_method: string; total: number; items_count: number; created_at: string }>>("/api/v1/orders/track", { params: { number: orderNumber } }),
+
+  byPhone: (phone: string) =>
+    api.get<ApiResponse<{ order_number: string; order_status: string; total: number; items_count: number; created_at: string }[]>>("/api/v1/orders/by-phone", { params: { phone } }),
 
   updateStatus: (id: string, status: string) =>
     api.patch<ApiResponse<Order>>(`/api/v1/orders/${id}/status`, { status }),
@@ -98,6 +107,14 @@ export const authApi = {
     api.get<ApiResponse<{ id: string; email: string; name: string; role: string }>>("/api/v1/auth/me"),
 };
 
+export const reviewsApi = {
+  list: (params?: { featured?: boolean; product_id?: string; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<import("@/types").Review>>("/api/v1/reviews", { params }),
+
+  create: (data: Partial<import("@/types").Review>) =>
+    api.post<ApiResponse<import("@/types").Review>>("/api/v1/reviews", data),
+};
+
 export const adminApi = {
   stats: () =>
     api.get<ApiResponse<{
@@ -125,6 +142,12 @@ export const adminApi = {
 
   updateSetting: (key: string, data: { value: string; is_editable?: boolean }) =>
     api.put<ApiResponse<{ key: string; value: string }>>(`/api/v1/settings/${key}`, data),
+
+  listUsers: (page = 1) =>
+    api.get<PaginatedResponse<{ id: string; email: string; name: string; role: string; is_active: boolean; last_login: string | null }>>("/api/v1/admin/users", { params: { page } }),
+
+  listAuditLogs: (page = 1) =>
+    api.get<PaginatedResponse<{ id: string; action: string; entity_type: string; entity_id: string | null; created_at: string }>>("/api/v1/admin/audit-logs", { params: { page } }),
 };
 
 export default api;

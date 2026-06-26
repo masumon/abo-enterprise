@@ -79,6 +79,43 @@ class ProductOut(ProductBase):
     model_config = {"from_attributes": True}
 
 
+# ---- Review ----
+
+class ReviewCreate(BaseModel):
+    product_id: uuid.UUID | None = None
+    customer_name: str
+    company: str | None = None
+    rating: int
+    review_en: str
+    review_bn: str | None = None
+    photo_url: str | None = None
+    source: str = "direct"
+
+    @field_validator("rating")
+    @classmethod
+    def validate_rating(cls, v: int) -> int:
+        if v < 1 or v > 5:
+            raise ValueError("Rating must be 1-5")
+        return v
+
+
+class ReviewOut(BaseModel):
+    id: uuid.UUID
+    product_id: uuid.UUID | None
+    customer_name: str
+    company: str | None
+    rating: int
+    review_en: str
+    review_bn: str | None
+    photo_url: str | None
+    source: str
+    is_verified: bool
+    is_featured: bool
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 # ---- Order ----
 
 class OrderItemCreate(BaseModel):

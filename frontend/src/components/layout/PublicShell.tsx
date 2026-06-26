@@ -7,6 +7,8 @@ import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import CartDrawer from "@/components/features/CartDrawer";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
+import CompareBar from "@/components/ui/CompareBar";
+import OfflineBanner from "@/components/ui/OfflineBanner";
 import ToastProvider from "@/components/ui/ToastProvider";
 
 export default function PublicShell({ children }: { children: React.ReactNode }) {
@@ -20,12 +22,14 @@ export default function PublicShell({ children }: { children: React.ReactNode })
   return (
     <>
       <AnnouncementBar />
+      <OfflineBanner />
       <Navbar />
-      <main className="flex-1 pt-[6.25rem] pb-20 lg:pb-0 min-h-screen" style={{ background: "var(--surface, #fafbff)" }}>
+      <main className="flex-1 pt-[6.25rem] pb-20 lg:pb-0 min-h-screen bg-[var(--surface)] dark:bg-[var(--navy)]">
         {children}
       </main>
       <Footer />
       <CartDrawer />
+      <CompareBar />
       <WhatsAppButton />
       <MobileBottomNav />
       <ToastProvider />
