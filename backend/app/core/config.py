@@ -45,7 +45,10 @@ class Settings(BaseSettings):
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = "noreply@aboenterprise.com"
     SMTP_TLS: bool = True
+    EMAIL_SENDER_NAME: str = "ABO Enterprise"
     ADMIN_NOTIFY_EMAIL: str = ""
+
+    ADMIN_NAME: str = "Admin"
 
     # bKash gateway (optional — only needed if bKash API integration is active)
     BKASH_APP_KEY: str = ""
