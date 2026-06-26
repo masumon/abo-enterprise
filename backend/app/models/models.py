@@ -125,3 +125,18 @@ class AdminUser(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Setting(Base):
+    __tablename__ = "settings"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    key: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    value: Mapped[str] = mapped_column(Text, nullable=False)
+    data_type: Mapped[str] = mapped_column(String(50), default="string")
+    description: Mapped[str | None] = mapped_column(Text)
+    is_secret: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_editable: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)

@@ -217,3 +217,31 @@ class DashboardStats(BaseModel):
     total_products: int
     recent_orders: list[Any] = []
     recent_leads: list[Any] = []
+
+
+# ---- Settings ----
+
+class SettingBase(BaseModel):
+    key: str
+    value: str
+    data_type: str = "string"
+    description: str | None = None
+    is_secret: bool = False
+    is_editable: bool = True
+
+
+class SettingCreate(SettingBase):
+    pass
+
+
+class SettingUpdate(BaseModel):
+    value: str
+    is_editable: bool | None = None
+
+
+class SettingOut(SettingBase):
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}

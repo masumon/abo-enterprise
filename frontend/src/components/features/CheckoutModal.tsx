@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { X, CheckCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -37,6 +38,7 @@ interface Props {
 }
 
 export default function CheckoutModal({ isOpen, onClose }: Props) {
+  const router = useRouter();
   const { items, total, clearCart } = useCartStore();
   const { lang } = useLanguageStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,13 +68,16 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
         subtotal: i.price * i.quantity,
       }));
 
-      await ordersApi.create({
+      const response = await ordersApi.create({
         ...data,
         items: orderItems,
         subtotal: cartTotal,
         delivery_charge: 0,
         total: cartTotal,
-      }).catch(() => null);
+        customer_email: data.customer_email || undefined,
+      }).catch(() => ({ data: null }));
+
+      const orderId = response?.data?.order_id;
 
       const waItems = items.map((i) => ({
         name: lang === "bn" ? i.name_bn : i.name_en,
@@ -94,6 +99,13 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
 
       clearCart();
       setIsSuccess(true);
+
+      setTimeout(() => {
+        onClose();
+        if (orderId) {
+          router.push(`/order-success?id=${orderId}`);
+        }
+      }, 1500);
     } finally {
       setIsSubmitting(false);
     }
