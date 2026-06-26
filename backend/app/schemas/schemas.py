@@ -614,7 +614,7 @@ from datetime import datetime
 
 class PaymentInitiateRequest(BaseModel):
     order_id: UUID
-    payment_gateway: str = Field(..., regex="^(bkash|nagad)$")
+    payment_gateway: str = Field(..., pattern="^(bkash|nagad)$")
     
     class Config:
         from_attributes = True
@@ -622,7 +622,7 @@ class PaymentInitiateRequest(BaseModel):
 
 class PaymentVerifyRequest(BaseModel):
     payment_id: str
-    payment_gateway: str = Field(..., regex="^(bkash|nagad)$")
+    payment_gateway: str = Field(..., pattern="^(bkash|nagad)$")
     
     class Config:
         from_attributes = True

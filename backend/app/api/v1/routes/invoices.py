@@ -57,7 +57,7 @@ async def create_invoice(
             await db.refresh(invoice)
 
         return ApiResponse(
-            data=InvoiceOut.from_orm(invoice).dict(),
+            data=InvoiceOut.model_validate(invoice).model_dump(),
             message="Invoice created successfully",
         )
     except Exception as e:
@@ -82,7 +82,7 @@ async def get_invoice(
         raise HTTPException(status_code=404, detail="Invoice not found")
 
     return ApiResponse(
-        data=InvoiceOut.from_orm(invoice).dict(),
+        data=InvoiceOut.model_validate(invoice).model_dump(),
         message="Invoice fetched successfully",
     )
 
@@ -160,7 +160,7 @@ async def list_invoices_admin(
     invoices = result.scalars().all()
 
     return PaginatedResponse(
-        data=[InvoiceOut.from_orm(i).dict() for i in invoices],
+        data=[InvoiceOut.model_validate(i).model_dump() for i in invoices],
         message="Invoices fetched successfully",
         meta=PaginatedMeta(
             page=page,
@@ -213,7 +213,7 @@ async def update_invoice_payment_status(
     await db.commit()
 
     return ApiResponse(
-        data=InvoiceOut.from_orm(invoice).dict(),
+        data=InvoiceOut.model_validate(invoice).model_dump(),
         message="Invoice payment status updated successfully",
     )
 

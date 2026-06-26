@@ -81,7 +81,7 @@ async def create_lead(
 
     lead = LeadV2(
         lead_number=lead_number,
-        **payload.dict(),
+        **payload.model_dump(),
     )
 
     db.add(lead)
@@ -98,7 +98,7 @@ async def create_lead(
     # TODO: Notify admin of new lead with score
 
     return ApiResponse(
-        data=LeadV2Out.from_orm(lead).dict(),
+        data=LeadV2Out.model_validate(lead).model_dump(),
         message="Lead submitted successfully",
     )
 
@@ -118,7 +118,7 @@ async def get_lead(
         raise HTTPException(status_code=404, detail="Lead not found")
 
     return ApiResponse(
-        data=LeadV2Out.from_orm(lead).dict(),
+        data=LeadV2Out.model_validate(lead).model_dump(),
         message="Lead fetched successfully",
     )
 
@@ -165,7 +165,7 @@ async def list_leads_admin(
     leads = result.scalars().all()
 
     return PaginatedResponse(
-        data=[LeadV2Out.from_orm(l).dict() for l in leads],
+        data=[LeadV2Out.model_validate(l).model_dump() for l in leads],
         message="Leads fetched successfully",
         meta=PaginatedMeta(
             page=page,
@@ -192,7 +192,7 @@ async def get_lead_admin(
         raise HTTPException(status_code=404, detail="Lead not found")
 
     return ApiResponse(
-        data=LeadV2Out.from_orm(lead).dict(),
+        data=LeadV2Out.model_validate(lead).model_dump(),
         message="Lead fetched successfully",
     )
 
@@ -237,7 +237,7 @@ async def update_lead_status(
     await db.commit()
 
     return ApiResponse(
-        data=LeadV2Out.from_orm(lead).dict(),
+        data=LeadV2Out.model_validate(lead).model_dump(),
         message="Lead status updated successfully",
     )
 
@@ -276,7 +276,7 @@ async def update_lead_score(
     await db.commit()
 
     return ApiResponse(
-        data=LeadV2Out.from_orm(lead).dict(),
+        data=LeadV2Out.model_validate(lead).model_dump(),
         message="Lead score updated successfully",
     )
 
@@ -320,7 +320,7 @@ async def assign_lead(
     await db.commit()
 
     return ApiResponse(
-        data=LeadV2Out.from_orm(lead).dict(),
+        data=LeadV2Out.model_validate(lead).model_dump(),
         message="Lead assigned successfully",
     )
 

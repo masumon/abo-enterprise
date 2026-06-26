@@ -56,7 +56,7 @@ async def create_booking(
     booking = BookingV2(
         booking_number=booking_number,
         service_name=service.name_en,
-        **payload.dict(),
+        **payload.model_dump(),
     )
 
     db.add(booking)
@@ -67,7 +67,7 @@ async def create_booking(
     # TODO: Notify admin of new booking
 
     return ApiResponse(
-        data=BookingV2Out.from_orm(booking).dict(),
+        data=BookingV2Out.model_validate(booking).model_dump(),
         message="Booking created successfully",
     )
 
@@ -89,7 +89,7 @@ async def get_booking(
         raise HTTPException(status_code=404, detail="Booking not found")
 
     return ApiResponse(
-        data=BookingV2Out.from_orm(booking).dict(),
+        data=BookingV2Out.model_validate(booking).model_dump(),
         message="Booking fetched successfully",
     )
 
@@ -136,7 +136,7 @@ async def list_bookings_admin(
     bookings = result.scalars().all()
 
     return PaginatedResponse(
-        data=[BookingV2Out.from_orm(b).dict() for b in bookings],
+        data=[BookingV2Out.model_validate(b).model_dump() for b in bookings],
         message="Bookings fetched successfully",
         meta=PaginatedMeta(
             page=page,
@@ -165,7 +165,7 @@ async def get_booking_admin(
         raise HTTPException(status_code=404, detail="Booking not found")
 
     return ApiResponse(
-        data=BookingV2Out.from_orm(booking).dict(),
+        data=BookingV2Out.model_validate(booking).model_dump(),
         message="Booking fetched successfully",
     )
 
@@ -212,7 +212,7 @@ async def update_booking_status(
     # TODO: Send status update email to customer
 
     return ApiResponse(
-        data=BookingV2Out.from_orm(booking).dict(),
+        data=BookingV2Out.model_validate(booking).model_dump(),
         message="Booking status updated successfully",
     )
 
@@ -255,7 +255,7 @@ async def update_booking(
     await db.commit()
 
     return ApiResponse(
-        data=BookingV2Out.from_orm(booking).dict(),
+        data=BookingV2Out.model_validate(booking).model_dump(),
         message="Booking updated successfully",
     )
 

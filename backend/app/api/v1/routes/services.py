@@ -61,7 +61,7 @@ async def list_services(
     services = result.scalars().all()
 
     return PaginatedResponse(
-        data=[ServiceOut.from_orm(s).dict() for s in services],
+        data=[ServiceOut.model_validate(s).model_dump() for s in services],
         message="Services fetched successfully",
         meta=PaginatedMeta(
             page=page,
@@ -89,7 +89,7 @@ async def get_service(
         raise HTTPException(status_code=404, detail="Service not found")
 
     return ApiResponse(
-        data=ServiceOut.from_orm(service).dict(),
+        data=ServiceOut.model_validate(service).model_dump(),
         message="Service fetched successfully",
     )
 
@@ -114,7 +114,7 @@ async def get_booking_form(
     fields = result.scalars().all()
 
     return ApiResponse(
-        data=[ServiceBookingFormOut.from_orm(f).dict() for f in fields],
+        data=[ServiceBookingFormOut.model_validate(f).model_dump() for f in fields],
         message="Booking form fields fetched successfully",
     )
 
@@ -135,7 +135,7 @@ async def create_service(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Slug already exists")
 
-    service = Service(**payload.dict())
+    service = Service(**payload.model_dump())
     db.add(service)
     await db.commit()
     await db.refresh(service)
@@ -146,13 +146,13 @@ async def create_service(
         action="create",
         entity_type="service",
         entity_id=service.id,
-        new_values=payload.dict(),
+        new_values=payload.model_dump(),
     )
     db.add(log)
     await db.commit()
 
     return ApiResponse(
-        data=ServiceOut.from_orm(service).dict(),
+        data=ServiceOut.model_validate(service).model_dump(),
         message="Service created successfully",
     )
 
@@ -182,7 +182,7 @@ async def list_services_admin(
     services = result.scalars().all()
 
     return PaginatedResponse(
-        data=[ServiceOut.from_orm(s).dict() for s in services],
+        data=[ServiceOut.model_validate(s).model_dump() for s in services],
         message="Services fetched successfully",
         meta=PaginatedMeta(
             page=page,
@@ -211,7 +211,7 @@ async def get_service_admin(
         raise HTTPException(status_code=404, detail="Service not found")
 
     return ApiResponse(
-        data=ServiceOut.from_orm(service).dict(),
+        data=ServiceOut.model_validate(service).model_dump(),
         message="Service fetched successfully",
     )
 
@@ -262,7 +262,7 @@ async def update_service(
     await db.commit()
 
     return ApiResponse(
-        data=ServiceOut.from_orm(service).dict(),
+        data=ServiceOut.model_validate(service).model_dump(),
         message="Service updated successfully",
     )
 
@@ -319,13 +319,13 @@ async def create_pricing_tier(
     if not service_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Service not found")
 
-    tier = ServicePricingTier(service_id=service_id, **payload.dict())
+    tier = ServicePricingTier(service_id=service_id, **payload.model_dump())
     db.add(tier)
     await db.commit()
     await db.refresh(tier)
 
     return ApiResponse(
-        data=ServicePricingTierOut.from_orm(tier).dict(),
+        data=ServicePricingTierOut.model_validate(tier).model_dump(),
         message="Pricing tier created successfully",
     )
 
@@ -361,7 +361,7 @@ async def update_pricing_tier(
     await db.refresh(tier)
 
     return ApiResponse(
-        data=ServicePricingTierOut.from_orm(tier).dict(),
+        data=ServicePricingTierOut.model_validate(tier).model_dump(),
         message="Tier updated successfully",
     )
 
@@ -412,13 +412,13 @@ async def create_booking_form_field(
     if not service_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Service not found")
 
-    field = ServiceBookingForm(service_id=service_id, **payload.dict())
+    field = ServiceBookingForm(service_id=service_id, **payload.model_dump())
     db.add(field)
     await db.commit()
     await db.refresh(field)
 
     return ApiResponse(
-        data=ServiceBookingFormOut.from_orm(field).dict(),
+        data=ServiceBookingFormOut.model_validate(field).model_dump(),
         message="Form field created successfully",
     )
 
@@ -456,7 +456,7 @@ async def update_booking_form_field(
     await db.refresh(field)
 
     return ApiResponse(
-        data=ServiceBookingFormOut.from_orm(field).dict(),
+        data=ServiceBookingFormOut.model_validate(field).model_dump(),
         message="Field updated successfully",
     )
 

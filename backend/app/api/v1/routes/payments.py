@@ -233,7 +233,7 @@ async def nagad_webhook(request: PaymentWebhookRequest, db: Session = Depends(ge
 @router.get("/transaction/{transaction_id}")
 async def get_payment_transaction(
     transaction_id: str,
-    gateway: str = Query(..., regex="^(bkash|nagad)$"),
+    gateway: str = Query(..., pattern="^(bkash|nagad)$"),
     db: Session = Depends(get_db),
 ):
     """Get payment transaction details"""

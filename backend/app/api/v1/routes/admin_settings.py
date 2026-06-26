@@ -42,7 +42,7 @@ async def get_settings(
     for setting in settings:
         if setting.category not in grouped:
             grouped[setting.category] = []
-        grouped[setting.category].append(AdminSettingOut.from_orm(setting).dict())
+        grouped[setting.category].append(AdminSettingOut.model_validate(setting).model_dump())
 
     return ApiResponse(
         data=grouped,
@@ -68,7 +68,7 @@ async def get_setting(
         raise HTTPException(status_code=404, detail="Setting not found")
 
     return ApiResponse(
-        data=AdminSettingOut.from_orm(setting).dict(),
+        data=AdminSettingOut.model_validate(setting).model_dump(),
         message="Setting fetched successfully",
     )
 
@@ -119,7 +119,7 @@ async def update_setting(
     await db.commit()
 
     return ApiResponse(
-        data=AdminSettingOut.from_orm(setting).dict(),
+        data=AdminSettingOut.model_validate(setting).model_dump(),
         message="Setting updated successfully",
     )
 
@@ -138,13 +138,13 @@ async def create_setting(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Setting key already exists")
 
-    setting = AdminSetting(**payload.dict())
+    setting = AdminSetting(**payload.model_dump())
     db.add(setting)
     await db.commit()
     await db.refresh(setting)
 
     return ApiResponse(
-        data=AdminSettingOut.from_orm(setting).dict(),
+        data=AdminSettingOut.model_validate(setting).model_dump(),
         message="Setting created successfully",
     )
 
@@ -163,7 +163,7 @@ async def list_payment_methods(
     methods = result.scalars().all()
 
     return ApiResponse(
-        data=[PaymentMethodOut.from_orm(m).dict() for m in methods],
+        data=[PaymentMethodOut.model_validate(m).model_dump() for m in methods],
         message="Payment methods fetched successfully",
     )
 
@@ -184,7 +184,7 @@ async def get_payment_method(
         raise HTTPException(status_code=404, detail="Payment method not found")
 
     return ApiResponse(
-        data=PaymentMethodOut.from_orm(method).dict(),
+        data=PaymentMethodOut.model_validate(method).model_dump(),
         message="Payment method fetched successfully",
     )
 
@@ -196,13 +196,13 @@ async def create_payment_method(
     db: AsyncSession = Depends(get_db),
 ):
     """Create payment method"""
-    method = PaymentMethod(**payload.dict())
+    method = PaymentMethod(**payload.model_dump())
     db.add(method)
     await db.commit()
     await db.refresh(method)
 
     return ApiResponse(
-        data=PaymentMethodOut.from_orm(method).dict(),
+        data=PaymentMethodOut.model_validate(method).model_dump(),
         message="Payment method created successfully",
     )
 
@@ -231,7 +231,7 @@ async def update_payment_method(
     await db.refresh(method)
 
     return ApiResponse(
-        data=PaymentMethodOut.from_orm(method).dict(),
+        data=PaymentMethodOut.model_validate(method).model_dump(),
         message="Payment method updated successfully",
     )
 
@@ -272,6 +272,6 @@ async def list_active_payment_methods(
     methods = result.scalars().all()
 
     return ApiResponse(
-        data=[PaymentMethodOut.from_orm(m).dict() for m in methods],
+        data=[PaymentMethodOut.model_validate(m).model_dump() for m in methods],
         message="Payment methods fetched successfully",
     )
