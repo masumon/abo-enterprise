@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
 
 
 class Settings(BaseSettings):
@@ -11,6 +12,15 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:3000"
 
     DATABASE_URL: str
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def fix_database_url(cls, v: str) -> str:
+        if v.startswith("postgresql://"):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        if v.startswith("postgres://"):
+            return v.replace("postgres://", "postgresql+asyncpg://", 1)
+        return v
     SUPABASE_URL: str = ""
     SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_ROLE_KEY: str = ""
