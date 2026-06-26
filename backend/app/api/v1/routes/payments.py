@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, Depends, Query
 from sqlalchemy.orm import Session
 from decimal import Decimal
 from app.core.database import get_db
-from app.core.bkash import bkash_gateway
-from app.core.nagad import nagad_gateway
+from app.core.bkash import get_bkash_gateway
+from app.core.nagad import get_nagad_gateway
 from app.models.models import Order, BkashTransaction, NagadTransaction
 from app.schemas.schemas import (
     PaymentInitiateRequest,
@@ -29,7 +29,7 @@ async def initiate_bkash_payment(
             raise HTTPException(status_code=404, detail="Order not found")
 
         # Create payment link
-        payment_link = await bkash_gateway.create_payment_link(
+        payment_link = await get_bkash_gateway().create_payment_link(
             amount=Decimal(order.total),
             invoice_id=order.order_number,
             customer_phone=order.customer_phone,
@@ -75,7 +75,7 @@ async def verify_bkash_payment(
             raise HTTPException(status_code=404, detail="Transaction not found")
 
         # Verify payment
-        result = await bkash_gateway.verify_payment(request.payment_id)
+        result = await get_bkash_gateway().verify_payment(request.payment_id)
         if not result:
             raise HTTPException(status_code=400, detail="Payment verification failed")
 
@@ -116,7 +116,7 @@ async def initiate_nagad_payment(
             raise HTTPException(status_code=404, detail="Order not found")
 
         # Create payment link
-        payment_link = await nagad_gateway.create_payment_link(
+        payment_link = await get_nagad_gateway().create_payment_link(
             amount=Decimal(order.total),
             invoice_id=order.order_number,
             customer_phone=order.customer_phone,
@@ -163,7 +163,7 @@ async def verify_nagad_payment(
             raise HTTPException(status_code=404, detail="Transaction not found")
 
         # Verify payment
-        result = await nagad_gateway.verify_payment(request.payment_id)
+        result = await get_nagad_gateway().verify_payment(request.payment_id)
         if not result:
             raise HTTPException(status_code=400, detail="Payment verification failed")
 

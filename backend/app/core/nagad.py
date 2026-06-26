@@ -163,4 +163,10 @@ class NagadGateway:
         return expected_signature == signature
 
 
-nagad_gateway = NagadGateway()
+_nagad_instance: "NagadGateway | None" = None
+
+def get_nagad_gateway() -> "NagadGateway":
+    global _nagad_instance
+    if _nagad_instance is None:
+        _nagad_instance = NagadGateway()
+    return _nagad_instance

@@ -149,4 +149,10 @@ class BkashGateway:
             return None
 
 
-bkash_gateway = BkashGateway()
+_bkash_instance: "BkashGateway | None" = None
+
+def get_bkash_gateway() -> "BkashGateway":
+    global _bkash_instance
+    if _bkash_instance is None:
+        _bkash_instance = BkashGateway()
+    return _bkash_instance

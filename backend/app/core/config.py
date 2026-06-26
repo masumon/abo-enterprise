@@ -47,6 +47,21 @@ class Settings(BaseSettings):
     SMTP_TLS: bool = True
     ADMIN_NOTIFY_EMAIL: str = ""
 
+    # bKash gateway (optional — only needed if bKash API integration is active)
+    BKASH_APP_KEY: str = ""
+    BKASH_APP_SECRET: str = ""
+    BKASH_USERNAME: str = ""
+    BKASH_PASSWORD: str = ""
+    BKASH_API_URL: str = "https://tokenized.sandbox.bka.sh/v1.2.0-beta"
+    BKASH_CALLBACK_URL: str = ""
+
+    # Nagad gateway (optional)
+    NAGAD_MERCHANT_ID: str = ""
+    NAGAD_MERCHANT_KEY: str = ""
+    NAGAD_API_URL: str = "https://sandbox.mynagad.com:10080/remote-payment-gateway-1.0"
+    NAGAD_CALLBACK_URL: str = ""
+    NAGAD_MERCHANT_NUMBER: str = ""
+
     @property
     def allowed_origins_list(self) -> list[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]
