@@ -67,49 +67,49 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <StatsCard
           icon={ShoppingCart}
-          label="Total Orders"
+          title="Total Orders"
           value={stats?.total_orders || 0}
-          subtext={`${stats?.pending_orders || 0} pending`}
+          sub={`${stats?.pending_orders || 0} pending`}
           color="brand"
         />
 
         <StatsCard
           icon={Calendar}
-          label="Service Bookings"
+          title="Service Bookings"
           value={stats?.total_bookings || 0}
-          subtext={`${stats?.pending_bookings || 0} pending`}
+          sub={`${stats?.pending_bookings || 0} pending`}
           color="green"
         />
 
         <StatsCard
           icon={Users}
-          label="Leads"
+          title="Leads"
           value={stats?.total_leads || 0}
-          subtext={`${stats?.new_leads || 0} new`}
+          sub={`${stats?.new_leads || 0} new`}
           color="accent"
         />
 
         <StatsCard
           icon={FileText}
-          label="Products"
+          title="Products"
           value={stats?.total_products || 0}
-          subtext="In catalog"
+          sub="In catalog"
           color="amber"
         />
 
         <StatsCard
           icon={AlertCircle}
-          label="Action Items"
+          title="Action Items"
           value={(stats?.pending_orders || 0) + (stats?.pending_bookings || 0)}
-          subtext="Require attention"
+          sub="Require attention"
           color="accent"
         />
 
         <StatsCard
           icon={TrendingUp}
-          label="Revenue"
+          title="Revenue"
           value="৳0"
-          subtext="This month"
+          sub="This month"
           color="brand"
         />
       </div>
