@@ -91,7 +91,7 @@ class NotificationManager {
           type: payload.type,
           ...payload.data,
         },
-      });
+      } as NotificationOptions & { actions?: Array<{ action: string; title: string }> });
     } catch (error) {
       console.error("Send notification failed:", error);
     }

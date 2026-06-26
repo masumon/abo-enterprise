@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { ShoppingBag, Calendar, Briefcase, ArrowRight } from "lucide-react";
 import { useLanguageStore } from "@/store/language";

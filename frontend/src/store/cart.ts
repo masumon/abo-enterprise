@@ -62,6 +62,7 @@ export const useCartStore = create<CartStore>()(
     {
       name: "abo-cart",
       partialize: (state) => ({ items: state.items }),
+      skipHydration: true,
     }
   )
 );

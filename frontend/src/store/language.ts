@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type { Language } from "@/types";
 
 interface LanguageStore {
@@ -8,6 +8,17 @@ interface LanguageStore {
   toggle: () => void;
 }
 
+const ssrSafeStorage = createJSONStorage(() => {
+  if (typeof window === "undefined") {
+    return {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+    };
+  }
+  return localStorage;
+});
+
 export const useLanguageStore = create<LanguageStore>()(
   persist(
     (set, get) => ({
@@ -15,6 +26,10 @@ export const useLanguageStore = create<LanguageStore>()(
       setLang: (lang) => set({ lang }),
       toggle: () => set({ lang: get().lang === "en" ? "bn" : "en" }),
     }),
-    { name: "abo-lang" }
+    {
+      name: "abo-lang",
+      storage: ssrSafeStorage,
+      skipHydration: true,
+    }
   )
 );

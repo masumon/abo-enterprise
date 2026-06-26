@@ -6,6 +6,7 @@ import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import CartDrawer from "@/components/features/CartDrawer";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
+import StoreHydration from "@/components/providers/StoreHydration";
 
 export const metadata: Metadata = {
   title: {
@@ -74,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Navbar />
         <main className="flex-1 pt-16">{children}</main>
         <Footer />
+        <StoreHydration />
         <CartDrawer />
         <WhatsAppButton />
         <MobileBottomNav />

@@ -66,6 +66,37 @@ export interface Order {
   updated_at?: string;
 }
 
+export interface ServicePricingTier {
+  id: string;
+  tier_name: string;
+  price: number;
+  description?: string;
+  features?: string[];
+}
+
+export interface Service {
+  id: string;
+  slug: string;
+  name_en: string;
+  name_bn?: string;
+  description_en?: string;
+  description_bn?: string;
+  short_description_en?: string;
+  short_description_bn?: string;
+  pricing_type: "fixed" | "package" | "hourly" | "custom" | "custom_quote";
+  base_price?: number;
+  hourly_rate?: number;
+  pricing_tiers?: ServicePricingTier[];
+  is_active?: boolean;
+  is_featured?: boolean;
+  image_url?: string;
+  featured_image_url?: string;
+  category?: string;
+  tags?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Booking {
   id?: string;
   booking_number?: string;

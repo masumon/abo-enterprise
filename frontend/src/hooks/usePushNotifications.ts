@@ -72,7 +72,7 @@ export function usePushNotifications() {
         requireInteraction: options.requireInteraction || false,
         actions: options.actions || [],
         data: options.data || {},
-      });
+      } as NotificationOptions & { actions?: Array<{ action: string; title: string }> });
     } catch (error) {
       console.error("Show notification failed:", error);
     }
