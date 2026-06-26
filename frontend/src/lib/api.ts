@@ -25,7 +25,7 @@ api.interceptors.response.use(
 );
 
 export const productsApi = {
-  list: (params?: { category?: string; featured?: boolean; search?: string; page?: number; per_page?: number }) =>
+  list: (params?: { category?: string; featured?: boolean; search?: string; sort_by?: string; page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<Product>>("/api/v1/products", { params }),
 
   get: (slug: string) =>
@@ -45,11 +45,15 @@ export const ordersApi = {
   create: (data: Order) =>
     api.post<ApiResponse<Order>>("/api/v1/orders", data),
 
-  list: (params?: { status?: string; page?: number }) =>
+  // order_status matches backend query param name
+  list: (params?: { order_status?: string; page?: number }) =>
     api.get<PaginatedResponse<Order>>("/api/v1/orders", { params }),
 
   get: (id: string) =>
     api.get<ApiResponse<Order>>(`/api/v1/orders/${id}`),
+
+  track: (orderNumber: string) =>
+    api.get<ApiResponse<{ order_number: string; order_status: string; payment_method: string; total: number; items_count: number; created_at: string }>>("/api/v1/orders/track", { params: { number: orderNumber } }),
 
   updateStatus: (id: string, status: string) =>
     api.patch<ApiResponse<Order>>(`/api/v1/orders/${id}/status`, { status }),
@@ -62,6 +66,9 @@ export const bookingsApi = {
   list: (params?: { service_type?: string; status?: string; page?: number }) =>
     api.get<PaginatedResponse<Booking>>("/api/v1/bookings", { params }),
 
+  get: (id: string) =>
+    api.get<ApiResponse<Booking>>(`/api/v1/bookings/${id}`),
+
   updateStatus: (id: string, status: string) =>
     api.patch<ApiResponse<Booking>>(`/api/v1/bookings/${id}/status`, { status }),
 };
@@ -72,6 +79,9 @@ export const leadsApi = {
 
   list: (params?: { lead_type?: string; status?: string; page?: number }) =>
     api.get<PaginatedResponse<Lead>>("/api/v1/leads", { params }),
+
+  get: (id: string) =>
+    api.get<ApiResponse<Lead>>(`/api/v1/leads/${id}`),
 
   updateStatus: (id: string, status: string) =>
     api.patch<ApiResponse<Lead>>(`/api/v1/leads/${id}/status`, { status }),

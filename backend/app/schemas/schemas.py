@@ -59,13 +59,17 @@ class ProductCreate(ProductBase):
 class ProductUpdate(BaseModel):
     name_en: str | None = None
     name_bn: str | None = None
+    description_en: str | None = None
+    description_bn: str | None = None
     price: float | None = None
     original_price: float | None = None
+    category: str | None = None
     stock_quantity: int | None = None
     is_active: bool | None = None
     is_featured: bool | None = None
     badge: str | None = None
     image_url: str | None = None
+    sort_order: int | None = None
 
 
 class ProductOut(ProductBase):

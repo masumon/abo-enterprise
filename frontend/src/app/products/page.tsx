@@ -22,6 +22,7 @@ export default function ProductsPage() {
   const [category, setCategory] = useState<ProductCategory | "">("");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sortBy, setSortBy] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const { openCart } = useCartStore();
@@ -37,6 +38,7 @@ export default function ProductsPage() {
       const r = await productsApi.list({
         category: category || undefined,
         search: debouncedSearch || undefined,
+        sort_by: sortBy || undefined,
         page,
       });
       setProducts(r.data.data ?? []);
@@ -44,7 +46,7 @@ export default function ProductsPage() {
     } finally {
       setLoading(false);
     }
-  }, [category, debouncedSearch, page]);
+  }, [category, debouncedSearch, sortBy, page]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -97,6 +99,16 @@ export default function ProductsPage() {
               </button>
             ))}
           </div>
+          <select
+            value={sortBy}
+            onChange={(e) => { setSortBy(e.target.value); setPage(1); }}
+            className="input w-auto text-sm flex-shrink-0"
+          >
+            <option value="">Sort: Default</option>
+            <option value="price_asc">Price: Low to High</option>
+            <option value="price_desc">Price: High to Low</option>
+            <option value="newest">Newest First</option>
+          </select>
         </div>
 
         {loading ? (

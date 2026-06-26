@@ -29,7 +29,7 @@ export default function AdminOrdersPage() {
   const load = async () => {
     setLoading(true);
     try {
-      const r = await ordersApi.list({ status: filter || undefined, page });
+      const r = await ordersApi.list({ order_status: filter || undefined, page });
       setOrders((r.data.data ?? []) as unknown as AdminOrder[]);
       setTotal(r.data.meta?.total ?? 0);
     } finally {

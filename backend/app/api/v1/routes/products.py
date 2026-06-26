@@ -15,6 +15,7 @@ async def list_products(
     category: str | None = Query(None),
     featured: bool | None = Query(None),
     search: str | None = Query(None),
+    sort_by: str | None = Query(None),  # price_asc | price_desc | newest
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -28,13 +29,20 @@ async def list_products(
         term = f"%{search}%"
         conditions.append(or_(Product.name_en.ilike(term), Product.name_bn.ilike(term)))
 
+    if sort_by == "price_asc":
+        order_clause = Product.price.asc()
+    elif sort_by == "price_desc":
+        order_clause = Product.price.desc()
+    else:
+        order_clause = Product.sort_order.asc()
+
     total_result = await db.execute(select(func.count(Product.id)).where(and_(*conditions)))
     total = total_result.scalar_one()
 
     result = await db.execute(
         select(Product)
         .where(and_(*conditions))
-        .order_by(Product.sort_order.asc(), Product.created_at.desc())
+        .order_by(order_clause, Product.created_at.desc())
         .offset((page - 1) * per_page)
         .limit(per_page)
     )

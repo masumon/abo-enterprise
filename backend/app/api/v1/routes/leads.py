@@ -65,6 +65,19 @@ async def list_leads(
     )
 
 
+@router.get("/{lead_id}", response_model=ApiResponse)
+async def get_lead(
+    lead_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_admin),
+):
+    result = await db.execute(select(Lead).where(Lead.id == lead_id))
+    lead = result.scalar_one_or_none()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    return ApiResponse(data=LeadOut.model_validate(lead))
+
+
 @router.patch("/{lead_id}/status", response_model=ApiResponse)
 async def update_lead_status(
     lead_id: UUID,

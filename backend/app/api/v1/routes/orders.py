@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
+from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.security import require_admin
 from app.core.config import settings
@@ -52,12 +53,15 @@ async def create_order(
         db.add(item)
 
     await db.flush()
-    await db.refresh(order)
+
+    # Reload with items relationship to avoid async lazy-load error
+    result = await db.execute(
+        select(Order).options(selectinload(Order.items)).where(Order.id == order.id)
+    )
+    order = result.scalar_one()
 
     if settings.ADMIN_NOTIFY_EMAIL:
-        items_summary = ", ".join(
-            f"{i.product_name} x{i.quantity}" for i in payload.items
-        )
+        items_summary = ", ".join(f"{i.product_name} x{i.quantity}" for i in payload.items)
         html = order_notification_html(
             order.order_number, payload.customer_name, payload.customer_phone,
             float(payload.total), items_summary,
@@ -68,6 +72,29 @@ async def create_order(
         )
 
     return ApiResponse(data=OrderOut.model_validate(order), message="Order placed successfully")
+
+
+# Public order tracking endpoint
+@router.get("/track", response_model=ApiResponse)
+async def track_order(
+    number: str = Query(..., description="Order number e.g. ABO-202406-1234"),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        select(Order).options(selectinload(Order.items))
+        .where(Order.order_number == number, Order.is_deleted == False)  # noqa: E712
+    )
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return ApiResponse(data={
+        "order_number": order.order_number,
+        "order_status": order.order_status,
+        "payment_method": order.payment_method,
+        "total": float(order.total),
+        "items_count": len(order.items),
+        "created_at": order.created_at.isoformat(),
+    })
 
 
 @router.get("", response_model=PaginatedResponse)
@@ -84,7 +111,8 @@ async def list_orders(
 
     total = (await db.execute(select(func.count(Order.id)).where(and_(*conditions)))).scalar_one()
     result = await db.execute(
-        select(Order).where(and_(*conditions))
+        select(Order).options(selectinload(Order.items))
+        .where(and_(*conditions))
         .order_by(Order.created_at.desc())
         .offset((page - 1) * per_page)
         .limit(per_page)
@@ -102,7 +130,9 @@ async def get_order(
     db: AsyncSession = Depends(get_db),
     _admin: str = Depends(require_admin),
 ):
-    result = await db.execute(select(Order).where(Order.id == order_id))
+    result = await db.execute(
+        select(Order).options(selectinload(Order.items)).where(Order.id == order_id)
+    )
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -119,7 +149,9 @@ async def update_order_status(
     valid_statuses = {"pending", "confirmed", "processing", "shipped", "delivered", "cancelled"}
     if payload.status not in valid_statuses:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
-    result = await db.execute(select(Order).where(Order.id == order_id))
+    result = await db.execute(
+        select(Order).options(selectinload(Order.items)).where(Order.id == order_id)
+    )
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")

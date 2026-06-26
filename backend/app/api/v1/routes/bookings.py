@@ -74,6 +74,19 @@ async def list_bookings(
     )
 
 
+@router.get("/{booking_id}", response_model=ApiResponse)
+async def get_booking(
+    booking_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_admin),
+):
+    result = await db.execute(select(Booking).where(Booking.id == booking_id))
+    booking = result.scalar_one_or_none()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return ApiResponse(data=BookingOut.model_validate(booking))
+
+
 @router.patch("/{booking_id}/status", response_model=ApiResponse)
 async def update_booking_status(
     booking_id: UUID,
