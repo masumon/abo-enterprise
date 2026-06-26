@@ -83,6 +83,32 @@ export const authApi = {
       email,
       password,
     }),
+
+  getMe: () =>
+    api.get<ApiResponse<{ id: string; email: string; name: string; role: string }>>("/api/v1/auth/me"),
+};
+
+export const adminApi = {
+  stats: () =>
+    api.get<ApiResponse<{
+      total_orders: number;
+      pending_orders: number;
+      total_bookings: number;
+      pending_bookings: number;
+      new_leads: number;
+      total_leads: number;
+      total_products: number;
+      recent_orders: unknown[];
+      recent_leads: unknown[];
+    }>>("/api/v1/admin/stats"),
+
+  uploadImage: (file: File) => {
+    const form = new FormData();
+    form.append("file", file);
+    return api.post<ApiResponse<{ url: string; public_id: string }>>("/api/v1/admin/upload", form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
 };
 
 export default api;

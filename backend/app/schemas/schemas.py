@@ -213,4 +213,7 @@ class DashboardStats(BaseModel):
     total_bookings: int
     pending_bookings: int
     new_leads: int
+    total_leads: int
     total_products: int
+    recent_orders: list[Any] = []
+    recent_leads: list[Any] = []
