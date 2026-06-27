@@ -39,9 +39,15 @@ _COLUMNS: list[tuple[str, str, str]] = [
     ("products", "low_stock_threshold",  "INTEGER DEFAULT 5"),
     ("products", "is_best_seller",       "BOOLEAN DEFAULT FALSE"),
 
-    # ── reviews (Sprint F: admin reply) ──────────────────────────────
+    # ── reviews (Sprint F: moderation + admin reply) ─────────────────
+    ("reviews", "is_active",      "BOOLEAN DEFAULT TRUE"),
+    ("reviews", "updated_at",     "TIMESTAMPTZ DEFAULT now()"),
     ("reviews", "admin_reply",    "TEXT"),
     ("reviews", "admin_reply_at", "TIMESTAMPTZ"),
+
+    # ── services (may be missing if added after initial table creation)
+    ("services", "lead_qualification_score", "INTEGER DEFAULT 0"),
+    ("services", "tags",                     "JSONB DEFAULT '[]'::jsonb"),
 
     # ── services (Sprint A: SEO) ──────────────────────────────────────
     ("services", "seo_title",       "VARCHAR(255)"),
