@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service } from "@/types";
+import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier } from "@/types";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
@@ -166,6 +166,32 @@ export const adminBlogApi = {
 
   delete: (id: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/blog/admin/posts/${id}`),
+};
+
+export const servicesAdminApi = {
+  list: (params?: { page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<Service>>("/api/v1/services/admin/services", { params }),
+
+  get: (id: string) =>
+    api.get<ApiResponse<Service>>(`/api/v1/services/admin/services/${id}`),
+
+  create: (data: Partial<Service>) =>
+    api.post<ApiResponse<Service>>("/api/v1/services/admin/services", data),
+
+  update: (id: string, data: Partial<Service>) =>
+    api.put<ApiResponse<Service>>(`/api/v1/services/admin/services/${id}`, data),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/services/admin/services/${id}`),
+
+  createTier: (serviceId: string, data: Partial<ServicePricingTier>) =>
+    api.post<ApiResponse<ServicePricingTier>>(`/api/v1/services/admin/services/${serviceId}/tiers`, data),
+
+  updateTier: (serviceId: string, tierId: string, data: Partial<ServicePricingTier>) =>
+    api.put<ApiResponse<ServicePricingTier>>(`/api/v1/services/admin/services/${serviceId}/tiers/${tierId}`, data),
+
+  deleteTier: (serviceId: string, tierId: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/services/admin/services/${serviceId}/tiers/${tierId}`),
 };
 
 export const adminApi = {

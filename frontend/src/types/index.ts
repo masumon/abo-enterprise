@@ -130,12 +130,16 @@ export interface Service {
   booking_forms?: ServiceBookingFormField[];
   is_active?: boolean;
   is_featured?: boolean;
+  icon_url?: string;
+  icon_color?: string;
   image_url?: string;
   icon_url?: string;
   featured_image_url?: string;
   icon_color?: string;
   category?: string;
   tags?: string[];
+  sort_order?: number;
+  lead_priority?: number;
   created_at?: string;
   updated_at?: string;
 }

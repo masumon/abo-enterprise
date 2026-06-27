@@ -1,37 +1,59 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, Briefcase, X, ToggleLeft, ToggleRight } from "lucide-react";
-import api from "@/lib/api";
+import {
+  Loader2, Briefcase, Plus, Pencil, Trash2, X,
+  ToggleLeft, ToggleRight, Star, ChevronDown, ChevronUp,
+} from "lucide-react";
+import { servicesAdminApi } from "@/lib/api";
+import type { Service, ServicePricingTier } from "@/types";
 import { formatPrice } from "@/lib/utils";
+import { useToastStore } from "@/store/toast";
 
-interface AdminService {
-  id: string;
-  name_en: string;
-  name_bn: string;
-  slug: string;
-  category: string;
-  base_price: number | null;
-  is_active: boolean;
-  is_featured: boolean;
-  sort_order: number;
-  description_en: string | null;
-  created_at: string;
+const CATEGORIES = ["printing", "legal", "web_development", "ai_solutions", "automation", "software", "general"];
+const PRICING_TYPES = ["fixed", "hourly", "package", "custom"] as const;
+
+const EMPTY_SERVICE: Partial<Service> = {
+  slug: "", name_en: "", name_bn: "",
+  description_en: "", short_description_en: "",
+  description_bn: "", short_description_bn: "",
+  category: "general", pricing_type: "fixed",
+  base_price: undefined, min_price: undefined, max_price: undefined, hourly_rate: undefined,
+  is_active: true, is_featured: false, sort_order: 0, lead_priority: 5,
+  featured_image_url: "", icon_url: "", icon_color: "",
+};
+
+const EMPTY_TIER: Partial<ServicePricingTier> = {
+  tier_name: "", price: 0, description_en: "", features: [], is_active: true, sort_order: 0,
+};
+
+function slugify(t: string) {
+  return t.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
 }
 
 export default function AdminServicesPage() {
-  const [services, setServices] = useState<AdminService[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [editing, setEditing] = useState<Partial<Service> | null>(null);
+  const [isNew, setIsNew] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
-  const [detail, setDetail] = useState<AdminService | null>(null);
+  // Pricing tier sub-state (when editing)
+  const [newTier, setNewTier] = useState<Partial<ServicePricingTier>>(EMPTY_TIER);
+  const [addingTier, setAddingTier] = useState(false);
+  const [savingTier, setSavingTier] = useState(false);
+  const [deletingTierId, setDeletingTierId] = useState<string | null>(null);
+  const [tierFormOpen, setTierFormOpen] = useState(false);
+  const toast = useToastStore((s) => s.push);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await api.get("/api/v1/services/admin/services", { params: { page, per_page: 20 } });
-      setServices((r.data.data ?? []) as AdminService[]);
+      const r = await servicesAdminApi.list({ page, per_page: 20 });
+      setServices((r.data.data ?? []) as Service[]);
       setTotal(r.data.meta?.total ?? 0);
     } finally {
       setLoading(false);
@@ -40,23 +62,131 @@ export default function AdminServicesPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const toggleActive = async (service: AdminService) => {
-    setTogglingId(service.id);
+  const openNew = () => { setEditing({ ...EMPTY_SERVICE }); setIsNew(true); setTierFormOpen(false); setNewTier(EMPTY_TIER); };
+
+  const openEdit = async (s: Service) => {
     try {
-      await api.put(`/api/v1/services/admin/services/${service.id}`, { is_active: !service.is_active });
+      const r = await servicesAdminApi.get(s.id);
+      setEditing(r.data.data as Service);
+    } catch {
+      setEditing({ ...s });
+    }
+    setIsNew(false);
+    setTierFormOpen(false);
+    setNewTier(EMPTY_TIER);
+  };
+
+  const closeEditor = () => { setEditing(null); setIsNew(false); };
+
+  const handleNameChange = (v: string) => {
+    setEditing(prev => {
+      if (!prev) return prev;
+      const updates: Partial<Service> = { name_en: v };
+      if (isNew || !prev.slug) updates.slug = slugify(v);
+      return { ...prev, ...updates };
+    });
+  };
+
+  const handleSave = async () => {
+    if (!editing) return;
+    if (!editing.name_en?.trim()) { toast("error", "Name (EN) is required"); return; }
+    if (!editing.slug?.trim()) { toast("error", "Slug is required"); return; }
+    if (!editing.category) { toast("error", "Category is required"); return; }
+    if (!editing.pricing_type) { toast("error", "Pricing type is required"); return; }
+
+    setSaving(true);
+    try {
+      if (isNew) {
+        await servicesAdminApi.create(editing);
+        toast("success", "Service created");
+      } else {
+        await servicesAdminApi.update(editing.id!, editing);
+        toast("success", "Service updated");
+      }
+      closeEditor();
+      await load();
+    } catch {
+      toast("error", isNew ? "Failed to create service" : "Failed to update service");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this service? This cannot be undone.")) return;
+    setDeletingId(id);
+    try {
+      await servicesAdminApi.delete(id);
+      toast("success", "Service deleted");
+      await load();
+    } catch {
+      toast("error", "Failed to delete service");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const toggleActive = async (s: Service) => {
+    setTogglingId(s.id);
+    try {
+      await servicesAdminApi.update(s.id, { is_active: !s.is_active });
       await load();
     } finally {
       setTogglingId(null);
     }
   };
 
+  const handleAddTier = async () => {
+    if (!editing?.id) return;
+    if (!newTier.tier_name?.trim()) { toast("error", "Tier name is required"); return; }
+    if (!newTier.price && newTier.price !== 0) { toast("error", "Price is required"); return; }
+
+    setSavingTier(true);
+    try {
+      const r = await servicesAdminApi.createTier(editing.id, newTier);
+      const created = r.data.data as ServicePricingTier;
+      setEditing(prev => prev ? { ...prev, pricing_tiers: [...(prev.pricing_tiers ?? []), created] } : prev);
+      setNewTier(EMPTY_TIER);
+      setTierFormOpen(false);
+      toast("success", "Tier added");
+    } catch {
+      toast("error", "Failed to add tier");
+    } finally {
+      setSavingTier(false);
+    }
+  };
+
+  const handleDeleteTier = async (tierId: string) => {
+    if (!editing?.id) return;
+    if (!confirm("Remove this pricing tier?")) return;
+    setDeletingTierId(tierId);
+    try {
+      await servicesAdminApi.deleteTier(editing.id, tierId);
+      setEditing(prev => prev ? { ...prev, pricing_tiers: prev.pricing_tiers?.filter(t => t.id !== tierId) } : prev);
+      toast("success", "Tier removed");
+    } catch {
+      toast("error", "Failed to remove tier");
+    } finally {
+      setDeletingTierId(null);
+    }
+  };
+
+  const f = (field: keyof Service) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+    setEditing(prev => prev ? { ...prev, [field]: e.target.value } : prev);
+
+  const fNum = (field: keyof Service) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setEditing(prev => prev ? { ...prev, [field]: e.target.value ? Number(e.target.value) : undefined } : prev);
+
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Services</h1>
           <p className="text-gray-500 text-sm mt-1">{total} total services</p>
         </div>
+        <button onClick={openNew} className="btn btn-primary btn-sm gap-1.5">
+          <Plus className="w-4 h-4" /> New Service
+        </button>
       </div>
 
       <div className="admin-card overflow-hidden">
@@ -66,6 +196,9 @@ export default function AdminServicesPage() {
           <div className="p-12 text-center">
             <Briefcase className="w-10 h-10 text-gray-200 mx-auto mb-3" />
             <p className="text-gray-400 font-medium">No services found</p>
+            <button onClick={openNew} className="btn btn-primary btn-sm mt-4 gap-1.5">
+              <Plus className="w-4 h-4" /> Create first service
+            </button>
           </div>
         ) : (
           <table className="table-premium">
@@ -73,36 +206,64 @@ export default function AdminServicesPage() {
               <tr>
                 <th>Service</th>
                 <th>Category</th>
-                <th>Base Price</th>
+                <th>Pricing</th>
+                <th>Tiers</th>
                 <th>Featured</th>
                 <th>Active</th>
+                <th className="text-right pr-5">Actions</th>
               </tr>
             </thead>
             <tbody>
               {services.map((s) => (
-                <tr key={s.id} className="cursor-pointer" onClick={() => setDetail(s)}>
+                <tr key={s.id}>
                   <td className="px-5 py-3">
                     <p className="font-medium text-gray-900">{s.name_en}</p>
-                    <p className="text-xs text-gray-400">{s.name_bn}</p>
+                    <p className="text-xs text-gray-400">{s.slug}</p>
                   </td>
-                  <td className="px-5 py-3 text-gray-600 capitalize">{s.category.replace(/_/g, " ")}</td>
-                  <td className="px-5 py-3 text-gray-900">{s.base_price ? formatPrice(s.base_price) : "—"}</td>
+                  <td className="px-5 py-3 text-gray-600 capitalize">{(s.category ?? "").replace(/_/g, " ")}</td>
                   <td className="px-5 py-3">
-                    <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${s.is_featured ? "bg-amber-100 text-amber-700" : "bg-gray-100 text-gray-500"}`}>
-                      {s.is_featured ? "Yes" : "No"}
-                    </span>
+                    <p className="text-gray-600 capitalize text-sm">{s.pricing_type}</p>
+                    {s.base_price != null && <p className="text-xs text-gray-400">{formatPrice(s.base_price)}</p>}
                   </td>
-                  <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+                  <td className="px-5 py-3 text-gray-500 text-sm">{s.pricing_tiers?.length ?? 0}</td>
+                  <td className="px-5 py-3">
+                    {s.is_featured
+                      ? <Star className="w-4 h-4 text-amber-400" />
+                      : <span className="text-gray-300 text-xs">—</span>
+                    }
+                  </td>
+                  <td className="px-5 py-3">
                     <button
                       onClick={() => toggleActive(s)}
                       disabled={togglingId === s.id}
                       className="text-gray-400 hover:text-brand-600 transition-colors disabled:opacity-40"
                     >
-                      {s.is_active
-                        ? <ToggleRight className="w-6 h-6 text-green-500" />
-                        : <ToggleLeft className="w-6 h-6" />
+                      {togglingId === s.id
+                        ? <Loader2 className="w-5 h-5 animate-spin" />
+                        : s.is_active
+                          ? <ToggleRight className="w-6 h-6 text-green-500" />
+                          : <ToggleLeft className="w-6 h-6" />
                       }
                     </button>
+                  </td>
+                  <td className="px-5 py-3 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => openEdit(s)}
+                        className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                        title="Edit"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(s.id)}
+                        disabled={deletingId === s.id}
+                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        {deletingId === s.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -119,28 +280,261 @@ export default function AdminServicesPage() {
         </div>
       )}
 
-      {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }} onClick={() => setDetail(null)}>
-          <div className="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in" style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)" }} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">{detail.name_en}</h2>
-              <button onClick={() => setDetail(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+      {/* Create / Edit panel */}
+      {editing !== null && (
+        <div className="fixed inset-0 z-50 flex" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
+          <div className="ml-auto w-full max-w-2xl h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+              <h2 className="text-lg font-semibold text-gray-900">{isNew ? "New Service" : "Edit Service"}</h2>
+              <button onClick={closeEditor} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
-            <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><p className="text-gray-500 text-xs">Name (BN)</p><p className="font-medium">{detail.name_bn}</p></div>
-                <div><p className="text-gray-500 text-xs">Slug</p><p className="font-medium text-gray-600">{detail.slug}</p></div>
-                <div><p className="text-gray-500 text-xs">Category</p><p className="font-medium capitalize">{detail.category.replace(/_/g, " ")}</p></div>
-                <div><p className="text-gray-500 text-xs">Base Price</p><p className="font-medium">{detail.base_price ? formatPrice(detail.base_price) : "—"}</p></div>
-                <div><p className="text-gray-500 text-xs">Sort Order</p><p className="font-medium">{detail.sort_order}</p></div>
-                <div><p className="text-gray-500 text-xs">Created</p><p className="font-medium">{new Date(detail.created_at).toLocaleDateString("en-BD")}</p></div>
-              </div>
-              {detail.description_en && (
-                <div className="bg-gray-50 rounded-xl p-4">
-                  <p className="text-xs text-gray-500 mb-1">Description</p>
-                  <p className="text-sm text-gray-800">{detail.description_en}</p>
+
+            {/* Scrollable form */}
+            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+
+              {/* ── Basic ───────────────────────────────── */}
+              <section className="space-y-4">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Basic Info</h3>
+
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <div className="relative">
+                      <input type="checkbox" className="sr-only" checked={!!editing.is_active}
+                        onChange={e => setEditing(prev => prev ? { ...prev, is_active: e.target.checked } : prev)} />
+                      <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_active ? "bg-green-500" : "bg-gray-300"}`} />
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_active ? "translate-x-5" : "translate-x-1"}`} />
+                    </div>
+                    <span className="text-sm text-gray-700">Active</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <div className="relative">
+                      <input type="checkbox" className="sr-only" checked={!!editing.is_featured}
+                        onChange={e => setEditing(prev => prev ? { ...prev, is_featured: e.target.checked } : prev)} />
+                      <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_featured ? "bg-amber-400" : "bg-gray-300"}`} />
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_featured ? "translate-x-5" : "translate-x-1"}`} />
+                    </div>
+                    <span className="text-sm text-gray-700">Featured</span>
+                  </label>
                 </div>
+
+                <div>
+                  <label className="form-label">Name (English) <span className="text-red-400">*</span></label>
+                  <input value={editing.name_en ?? ""} onChange={e => handleNameChange(e.target.value)} placeholder="Service name" className="input w-full" />
+                </div>
+                <div>
+                  <label className="form-label">Name (বাংলা)</label>
+                  <input value={editing.name_bn ?? ""} onChange={f("name_bn")} placeholder="সার্ভিসের নাম" className="input w-full" dir="auto" />
+                </div>
+                <div>
+                  <label className="form-label">Slug <span className="text-red-400">*</span></label>
+                  <input value={editing.slug ?? ""} onChange={f("slug")} placeholder="url-friendly-slug" className="input w-full font-mono text-sm" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Category <span className="text-red-400">*</span></label>
+                    <select value={editing.category ?? ""} onChange={f("category")} className="input w-full text-sm">
+                      {CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Sort Order</label>
+                    <input type="number" value={editing.sort_order ?? 0} onChange={fNum("sort_order")} className="input w-full" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Icon URL</label>
+                    <input value={editing.icon_url ?? ""} onChange={f("icon_url")} placeholder="https://…" className="input w-full text-sm" />
+                  </div>
+                  <div>
+                    <label className="form-label">Featured Image URL</label>
+                    <input value={editing.featured_image_url ?? ""} onChange={f("featured_image_url")} placeholder="https://…" className="input w-full text-sm" />
+                  </div>
+                </div>
+              </section>
+
+              {/* ── Descriptions ────────────────────────── */}
+              <section className="space-y-4">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Descriptions</h3>
+                <div>
+                  <label className="form-label">Short Description (EN)</label>
+                  <textarea value={editing.short_description_en ?? ""} onChange={f("short_description_en")} rows={2} placeholder="One-line summary…" className="input w-full resize-none text-sm" />
+                </div>
+                <div>
+                  <label className="form-label">Full Description (EN)</label>
+                  <textarea value={editing.description_en ?? ""} onChange={f("description_en")} rows={4} placeholder="Detailed description…" className="input w-full resize-y text-sm" />
+                </div>
+                <div>
+                  <label className="form-label">Short Description (বাংলা)</label>
+                  <textarea value={editing.short_description_bn ?? ""} onChange={f("short_description_bn")} rows={2} placeholder="সংক্ষিপ্ত বিবরণ…" className="input w-full resize-none text-sm" dir="auto" />
+                </div>
+                <div>
+                  <label className="form-label">Full Description (বাংলা)</label>
+                  <textarea value={editing.description_bn ?? ""} onChange={f("description_bn")} rows={4} placeholder="বিস্তারিত বিবরণ…" className="input w-full resize-y text-sm" dir="auto" />
+                </div>
+              </section>
+
+              {/* ── Pricing ─────────────────────────────── */}
+              <section className="space-y-4">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pricing</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Pricing Type <span className="text-red-400">*</span></label>
+                    <select value={editing.pricing_type ?? "fixed"} onChange={f("pricing_type")} className="input w-full text-sm">
+                      {PRICING_TYPES.map(pt => <option key={pt} value={pt} className="capitalize">{pt}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Lead Priority (1-10)</label>
+                    <input type="number" min={1} max={10} value={editing.lead_priority ?? 5} onChange={fNum("lead_priority")} className="input w-full" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Base Price (BDT)</label>
+                    <input type="number" value={editing.base_price ?? ""} onChange={fNum("base_price")} placeholder="0" className="input w-full" />
+                  </div>
+                  <div>
+                    <label className="form-label">Hourly Rate (BDT)</label>
+                    <input type="number" value={editing.hourly_rate ?? ""} onChange={fNum("hourly_rate")} placeholder="0" className="input w-full" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Min Price (BDT)</label>
+                    <input type="number" value={editing.min_price ?? ""} onChange={fNum("min_price")} placeholder="0" className="input w-full" />
+                  </div>
+                  <div>
+                    <label className="form-label">Max Price (BDT)</label>
+                    <input type="number" value={editing.max_price ?? ""} onChange={fNum("max_price")} placeholder="0" className="input w-full" />
+                  </div>
+                </div>
+              </section>
+
+              {/* ── Pricing Tiers (edit only) ────────────── */}
+              {!isNew && (
+                <section className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Pricing Tiers ({editing.pricing_tiers?.length ?? 0})
+                    </h3>
+                    <button
+                      onClick={() => setTierFormOpen(v => !v)}
+                      className="btn btn-outline btn-sm gap-1 text-xs"
+                    >
+                      {tierFormOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      {tierFormOpen ? "Cancel" : "Add Tier"}
+                    </button>
+                  </div>
+
+                  {/* Existing tiers */}
+                  {(editing.pricing_tiers ?? []).map(tier => (
+                    <div key={tier.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">{tier.tier_name}</p>
+                        <p className="text-xs text-gray-500">{formatPrice(tier.price)}
+                          {tier.duration_days ? ` · ${tier.duration_days} days` : ""}
+                        </p>
+                        {tier.description_en && <p className="text-xs text-gray-400 mt-0.5 truncate">{tier.description_en}</p>}
+                      </div>
+                      <button
+                        onClick={() => handleDeleteTier(tier.id)}
+                        disabled={deletingTierId === tier.id}
+                        className="p-1 text-gray-400 hover:text-red-500 flex-shrink-0 rounded transition-colors"
+                      >
+                        {deletingTierId === tier.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* New tier form */}
+                  {tierFormOpen && (
+                    <div className="border border-brand-100 rounded-xl p-4 space-y-3 bg-brand-50/30">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="form-label text-[11px]">Tier Name <span className="text-red-400">*</span></label>
+                          <input
+                            value={newTier.tier_name ?? ""}
+                            onChange={e => setNewTier(p => ({ ...p, tier_name: e.target.value }))}
+                            placeholder="e.g. Basic, Premium"
+                            className="input w-full text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label text-[11px]">Price (BDT) <span className="text-red-400">*</span></label>
+                          <input
+                            type="number"
+                            value={newTier.price ?? ""}
+                            onChange={e => setNewTier(p => ({ ...p, price: Number(e.target.value) }))}
+                            placeholder="0"
+                            className="input w-full text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="form-label text-[11px]">Duration (days)</label>
+                          <input
+                            type="number"
+                            value={newTier.duration_days ?? ""}
+                            onChange={e => setNewTier(p => ({ ...p, duration_days: e.target.value ? Number(e.target.value) : undefined }))}
+                            placeholder="e.g. 7"
+                            className="input w-full text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label text-[11px]">Sort Order</label>
+                          <input
+                            type="number"
+                            value={newTier.sort_order ?? 0}
+                            onChange={e => setNewTier(p => ({ ...p, sort_order: Number(e.target.value) }))}
+                            className="input w-full text-sm"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="form-label text-[11px]">Description</label>
+                        <textarea
+                          value={newTier.description_en ?? ""}
+                          onChange={e => setNewTier(p => ({ ...p, description_en: e.target.value }))}
+                          placeholder="What's included…"
+                          rows={2}
+                          className="input w-full text-sm resize-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label text-[11px]">Features (one per line)</label>
+                        <textarea
+                          value={(newTier.features ?? []).join("\n")}
+                          onChange={e => setNewTier(p => ({ ...p, features: e.target.value.split("\n").filter(Boolean) }))}
+                          placeholder="Feature 1&#10;Feature 2"
+                          rows={3}
+                          className="input w-full text-sm resize-none font-mono"
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => { setTierFormOpen(false); setNewTier(EMPTY_TIER); }} className="btn btn-outline btn-sm text-xs">Cancel</button>
+                        <button onClick={handleAddTier} disabled={savingTier} className="btn btn-primary btn-sm text-xs gap-1">
+                          {savingTier ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                          Add Tier
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </section>
               )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-gray-50/50">
+              <button onClick={closeEditor} className="btn btn-outline btn-sm">Cancel</button>
+              <button onClick={handleSave} disabled={saving} className="btn btn-primary btn-sm gap-1.5">
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                {isNew ? "Create Service" : "Save Changes"}
+              </button>
             </div>
           </div>
         </div>
