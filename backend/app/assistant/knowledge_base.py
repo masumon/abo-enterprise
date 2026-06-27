@@ -1,0 +1,115 @@
+"""Static and database-backed knowledge retrieval."""
+
+import json
+from pathlib import Path
+
+from sqlalchemy import select, and_, or_
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.models import Product, Service, Setting, BlogPost
+from app.core.config import settings
+
+_FAQ_PATH = Path(__file__).parent / "data" / "faq_knowledge.json"
+
+
+class KnowledgeBase:
+    def __init__(self) -> None:
+        with open(_FAQ_PATH, encoding="utf-8") as f:
+            self._faq = json.load(f)
+
+    def get_faq(self, key: str, language: str = "en") -> str | None:
+        suffix = "_bn" if language == "bn" else "_en"
+        return self._faq.get(f"{key}{suffix}") or self._faq.get(f"{key}_en")
+
+    async def get_contact_info(self, db: AsyncSession) -> dict:
+        result = await db.execute(
+            select(Setting).where(
+                Setting.key.in_(["business_phone", "business_email", "business_address", "whatsapp_number"]),
+                Setting.is_deleted == False,  # noqa: E712
+            )
+        )
+        data = {s.key: s.value for s in result.scalars().all()}
+        return {
+            "phone": data.get("business_phone") or settings.WHATSAPP_NUMBER,
+            "email": data.get("business_email") or settings.BUSINESS_EMAIL,
+            "whatsapp": data.get("whatsapp_number") or settings.WHATSAPP_NUMBER,
+            "address": data.get("business_address", ""),
+        }
+
+    async def search_products(
+        self, db: AsyncSession, query: str, limit: int = 5, category: str | None = None, brand: str | None = None
+    ) -> list[Product]:
+        conditions = [Product.is_active == True, Product.is_deleted == False]  # noqa: E712
+        if category:
+            conditions.append(Product.category.ilike(f"%{category}%"))
+        if brand:
+            conditions.append(Product.brand.ilike(f"%{brand}%"))
+        if query:
+            term = f"%{query}%"
+            conditions.append(
+                or_(
+                    Product.name_en.ilike(term),
+                    Product.name_bn.ilike(term),
+                    Product.sku.ilike(term),
+                    Product.brand.ilike(term),
+                )
+            )
+        result = await db.execute(
+            select(Product).where(and_(*conditions)).order_by(Product.sort_order.asc()).limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def get_product_by_slug_or_name(self, db: AsyncSession, identifier: str) -> Product | None:
+        result = await db.execute(
+            select(Product).where(
+                Product.is_deleted == False,  # noqa: E712
+                or_(Product.slug == identifier, Product.name_en.ilike(identifier), Product.name_bn.ilike(identifier)),
+            ).limit(1)
+        )
+        return result.scalar_one_or_none()
+
+    async def list_categories(self, db: AsyncSession) -> list[str]:
+        result = await db.execute(
+            select(Product.category).where(
+                Product.is_active == True, Product.is_deleted == False  # noqa: E712
+            ).distinct()
+        )
+        return sorted({r[0] for r in result.all() if r[0]})
+
+    async def list_brands(self, db: AsyncSession) -> list[str]:
+        result = await db.execute(
+            select(Product.brand).where(
+                Product.is_active == True,
+                Product.is_deleted == False,  # noqa: E712
+                Product.brand.isnot(None),
+            ).distinct()
+        )
+        return sorted({r[0] for r in result.all() if r[0]})
+
+    async def search_services(self, db: AsyncSession, query: str = "", limit: int = 5) -> list[Service]:
+        conditions = [Service.is_active == True, Service.is_deleted == False]  # noqa: E712
+        if query:
+            term = f"%{query}%"
+            conditions.append(or_(Service.name_en.ilike(term), Service.name_bn.ilike(term)))
+        result = await db.execute(
+            select(Service).where(and_(*conditions)).order_by(Service.sort_order.asc()).limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def get_service_by_slug_or_name(self, db: AsyncSession, identifier: str) -> Service | None:
+        result = await db.execute(
+            select(Service).where(
+                Service.is_deleted == False,  # noqa: E712
+                or_(Service.slug == identifier, Service.name_en.ilike(identifier), Service.name_bn.ilike(identifier)),
+            ).limit(1)
+        )
+        return result.scalar_one_or_none()
+
+    async def get_recent_blog_posts(self, db: AsyncSession, limit: int = 3) -> list[BlogPost]:
+        result = await db.execute(
+            select(BlogPost).where(
+                BlogPost.status == "published",
+                BlogPost.is_deleted == False,  # noqa: E712
+            ).order_by(BlogPost.published_at.desc().nullslast()).limit(limit)
+        )
+        return list(result.scalars().all())

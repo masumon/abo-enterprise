@@ -9,6 +9,7 @@ const DEFAULTS: Record<string, boolean> = {
   feature_guest_checkout: true,
   feature_newsletter: true,
   feature_infinite_scroll: true,
+  feature_assistant_chat: true,
 };
 
 let cache: Flags | null = null;

@@ -1,0 +1,15 @@
+{
+  "product": ["item", "goods", "পণ্য", "প্রোডাক্ট", "prod"],
+  "order": ["purchase", "buy", "অর্ডার", "ord"],
+  "delivery": ["shipping", "courier", "ডেলিভারি", "ship"],
+  "payment": ["pay", "bkash", "nagad", "cod", "পেমেন্ট", "বিকাশ"],
+  "price": ["cost", "rate", "দাম", "মূল্য", "tk", "taka"],
+  "stock": ["inventory", "available", "স্টক", "মজুদ"],
+  "service": ["solution", "সেবা", "সার্ভিস"],
+  "booking": ["appointment", "schedule", "বুকিং"],
+  "warranty": ["guarantee", "ওয়ারেন্টি", "গ্যারান্টি"],
+  "return": ["refund", "exchange", "রিটার্ন", "ফেরত"],
+  "invoice": ["bill", "receipt", "ইনভয়েস", "বিল"],
+  "contact": ["phone", "email", "address", "যোগাযোগ"],
+  "quote": ["quotation", "estimate", "কোট", "কোটেশন"]
+}

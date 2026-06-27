@@ -869,3 +869,61 @@ class BlogPostOut(BlogPostBase):
     updated_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+# ---- Assistant ----
+
+class AssistantChatRequest(BaseModel):
+    message: str
+    session_id: str | None = None
+    customer_name: str | None = None
+    customer_phone: str | None = None
+    customer_email: str | None = None
+    language: str | None = None
+
+    @field_validator("message")
+    @classmethod
+    def validate_message(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("Message cannot be empty")
+        if len(v) > 2000:
+            raise ValueError("Message exceeds 2000 characters")
+        return v
+
+    @field_validator("customer_phone")
+    @classmethod
+    def validate_phone_optional(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return None
+        return bd_phone(v)
+
+
+class AssistantChatResponse(BaseModel):
+    message: str
+    intent: str
+    language: str
+    session_id: str
+    data: dict | None = None
+    suggestions: list[str] | None = None
+
+
+class AssistantMessageOut(BaseModel):
+    role: str
+    content: str
+    intent: str | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class AssistantActionLogOut(BaseModel):
+    id: UUID
+    session_id: str | None
+    intent: str | None
+    action: str
+    status: str
+    details: dict
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
