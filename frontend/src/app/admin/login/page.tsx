@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Bot, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Bot, Eye, EyeOff, AlertCircle, Wifi, WifiOff, Loader2 } from "lucide-react";
 import { authApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -15,10 +15,42 @@ const schema = z.object({
 });
 type FormData = z.infer<typeof schema>;
 
+type ErrorType = "auth" | "network" | "timeout" | "unknown";
+
+function getErrorInfo(e: unknown): { type: ErrorType; msg: string } {
+  const err = e as {
+    code?: string;
+    message?: string;
+    response?: { status?: number; data?: { detail?: string } };
+  };
+
+  // Has a response from server
+  if (err.response) {
+    const detail = err.response.data?.detail;
+    if (err.response.status === 401) {
+      return { type: "auth", msg: detail ?? "ইমেইল বা পাসওয়ার্ড সঠিক নয়" };
+    }
+    return { type: "unknown", msg: detail ?? `Server error (${err.response.status})` };
+  }
+
+  // No response — network level failure
+  if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
+    return {
+      type: "timeout",
+      msg: "Server respond করতে দেরি হচ্ছে। Render free tier cold start-এ ৬০ সেকেন্ড পর্যন্ত লাগতে পারে। একটু পরে আবার চেষ্টা করুন।",
+    };
+  }
+
+  return {
+    type: "network",
+    msg: "Backend server-এর সাথে সংযোগ হচ্ছে না। CORS বা network সমস্যা হতে পারে।",
+  };
+}
+
 export default function AdminLoginPage() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [errorInfo, setErrorInfo] = useState<{ type: ErrorType; msg: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
@@ -27,7 +59,7 @@ export default function AdminLoginPage() {
 
   const onSubmit = async (data: FormData) => {
     setLoading(true);
-    setError(null);
+    setErrorInfo(null);
     try {
       const res = await authApi.login(data.email, data.password);
       const token = res.data.data?.access_token;
@@ -35,12 +67,15 @@ export default function AdminLoginPage() {
       localStorage.setItem("abo_admin_token", token);
       router.replace("/admin");
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
-      setError(msg ?? "Invalid email or password");
+      setErrorInfo(getErrorInfo(e));
     } finally {
       setLoading(false);
     }
   };
+
+  const ErrorIcon = errorInfo?.type === "network" || errorInfo?.type === "timeout"
+    ? WifiOff
+    : AlertCircle;
 
   return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
@@ -56,10 +91,23 @@ export default function AdminLoginPage() {
 
         {/* Form */}
         <div className="bg-gray-900 rounded-2xl p-6 border border-white/10 shadow-xl">
-          {error && (
-            <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-3 mb-5">
-              <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-              <p className="text-red-400 text-sm">{error}</p>
+          {errorInfo && (
+            <div className={cn(
+              "flex items-start gap-2 rounded-lg px-4 py-3 mb-5 border",
+              errorInfo.type === "auth"
+                ? "bg-red-500/10 border-red-500/20"
+                : "bg-yellow-500/10 border-yellow-500/20"
+            )}>
+              <ErrorIcon className={cn(
+                "w-4 h-4 flex-shrink-0 mt-0.5",
+                errorInfo.type === "auth" ? "text-red-400" : "text-yellow-400"
+              )} />
+              <p className={cn(
+                "text-sm leading-relaxed",
+                errorInfo.type === "auth" ? "text-red-400" : "text-yellow-400"
+              )}>
+                {errorInfo.msg}
+              </p>
             </div>
           )}
 
@@ -105,9 +153,16 @@ export default function AdminLoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-brand btn-md w-full mt-2"
+              className="btn btn-brand btn-md w-full mt-2 flex items-center justify-center gap-2"
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  সংযোগ হচ্ছে...
+                </>
+              ) : (
+                "Sign In"
+              )}
             </button>
           </form>
         </div>

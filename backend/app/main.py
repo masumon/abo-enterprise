@@ -17,10 +17,8 @@ limiter = Limiter(key_func=get_remote_address)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     logger.info(f"Starting {settings.APP_NAME}")
     yield
-    # Shutdown
     logger.info(f"Shutting down {settings.APP_NAME}")
 
 
@@ -39,6 +37,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins_list,
+    allow_origin_regex=r"https://.*\.vercel\.app",  # allow all Vercel preview & production URLs
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -46,7 +45,6 @@ app.add_middleware(
 
 app.include_router(api_router)
 
-# Health check (no prefix)
 from app.api.v1.routes.health import router as health_router
 app.include_router(health_router)
 
@@ -55,7 +53,6 @@ app.include_router(health_router)
 
 @app.exception_handler(ABOException)
 async def abo_exception_handler(request: Request, exc: ABOException):
-    """Handle ABO custom exceptions"""
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -69,18 +66,12 @@ async def abo_exception_handler(request: Request, exc: ABOException):
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    """Global exception handler"""
     logger.error(f"Unhandled exception: {str(exc)}", exc_info=exc)
-
-    error_message = "Internal server error"
-    if settings.DEBUG:
-        error_message = str(exc)
-
     return JSONResponse(
         status_code=500,
         content={
             "success": False,
-            "message": error_message,
+            "message": "Internal server error" if not settings.DEBUG else str(exc),
             "error_code": "INTERNAL_SERVER_ERROR",
             "details": None,
         },
@@ -91,19 +82,35 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 @app.get("/", include_in_schema=False)
 async def root():
-    return {
-        "name": settings.APP_NAME,
-        "version": "1.0.0",
-        "status": "ok",
-        "docs": "/docs" if settings.DEBUG else "Not available",
-    }
+    return {"name": settings.APP_NAME, "version": "1.0.0", "status": "ok"}
 
 
 @app.get("/health", include_in_schema=False)
 async def health():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "service": settings.APP_NAME,
-        "version": "1.0.0",
-    }
+    return {"status": "healthy", "service": settings.APP_NAME, "version": "1.0.0"}
+
+
+@app.get("/api/v1/auth/ping", include_in_schema=False)
+async def auth_ping():
+    """Diagnostic: check DB connectivity and admin existence."""
+    try:
+        from app.core.database import AsyncSessionLocal
+        from app.models.models import AdminUser
+        from sqlalchemy import select, func
+        import bcrypt
+        async with AsyncSessionLocal() as db:
+            count_result = await db.execute(select(func.count()).select_from(AdminUser))
+            admin_count = count_result.scalar()
+            active_result = await db.execute(
+                select(func.count()).select_from(AdminUser).where(AdminUser.is_active == True)  # noqa: E712
+            )
+            active_count = active_result.scalar()
+        return {
+            "db": "connected",
+            "admin_total": admin_count,
+            "admin_active": active_count,
+            "bcrypt_version": bcrypt.__version__,
+            "status": "ok" if active_count > 0 else "no_active_admin",
+        }
+    except Exception as e:
+        return {"db": "error", "detail": str(e), "status": "error"}
