@@ -1,5 +1,5 @@
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +15,14 @@ class ReviewAdminUpdate(BaseModel):
     is_active: Optional[bool] = None
     is_featured: Optional[bool] = None
     is_verified: Optional[bool] = None
+    customer_name: Optional[str] = None
+    company: Optional[str] = None
+    rating: Optional[int] = None
+    review_en: Optional[str] = None
+    review_bn: Optional[str] = None
+    photo_url: Optional[str] = None
+    source: Optional[str] = None
+    admin_reply: Optional[str] = None
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
@@ -86,7 +94,11 @@ async def update_review_admin(
     review = result.scalar_one_or_none()
     if not review:
         raise HTTPException(status_code=404, detail="Review not found")
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    updates = payload.model_dump(exclude_unset=True)
+    if "admin_reply" in updates:
+        review.admin_reply = updates.pop("admin_reply")
+        review.admin_reply_at = datetime.now(timezone.utc) if review.admin_reply else None
+    for field, value in updates.items():
         setattr(review, field, value)
     await db.commit()
     await db.refresh(review)
