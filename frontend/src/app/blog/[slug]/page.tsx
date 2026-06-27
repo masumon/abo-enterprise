@@ -26,13 +26,15 @@ export async function generateMetadata({
   const post = await fetchPost(params.slug);
   if (!post) return { title: "Post Not Found | ABO Enterprise" };
 
-  const title = `${post.title_en} | ABO Enterprise Blog`;
-  const description = post.excerpt_en ?? post.content_en.slice(0, 160);
-  const url = `https://aboenterprise.vercel.app/blog/${post.slug}`;
+  const title = post.seo_title ?? `${post.title_en} | ABO Enterprise Blog`;
+  const description = post.seo_description ?? post.excerpt_en ?? post.content_en.slice(0, 160);
+  const url = post.canonical_url ?? `https://aboenterprise.vercel.app/blog/${post.slug}`;
+  const ogImg = post.og_image ?? post.featured_image_url;
 
   return {
     title,
     description,
+    keywords: post.seo_keywords ?? undefined,
     alternates: { canonical: url },
     openGraph: {
       title,
@@ -41,15 +43,13 @@ export async function generateMetadata({
       type: "article",
       publishedTime: post.published_at,
       authors: [post.author_name],
-      images: post.featured_image_url
-        ? [{ url: post.featured_image_url, alt: post.title_en }]
-        : [],
+      images: ogImg ? [{ url: ogImg, alt: post.title_en }] : [],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: post.featured_image_url ? [post.featured_image_url] : [],
+      images: ogImg ? [ogImg] : [],
     },
   };
 }

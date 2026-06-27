@@ -47,6 +47,7 @@ export default function AdminServicesPage() {
   const [savingTier, setSavingTier] = useState(false);
   const [deletingTierId, setDeletingTierId] = useState<string | null>(null);
   const [tierFormOpen, setTierFormOpen] = useState(false);
+  const [seoOpen, setSeoOpen] = useState(false);
   const toast = useToastStore((s) => s.push);
 
   const load = useCallback(async () => {
@@ -62,7 +63,7 @@ export default function AdminServicesPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const openNew = () => { setEditing({ ...EMPTY_SERVICE }); setIsNew(true); setTierFormOpen(false); setNewTier(EMPTY_TIER); };
+  const openNew = () => { setEditing({ ...EMPTY_SERVICE }); setIsNew(true); setTierFormOpen(false); setNewTier(EMPTY_TIER); setSeoOpen(false); };
 
   const openEdit = async (s: Service) => {
     try {
@@ -74,6 +75,7 @@ export default function AdminServicesPage() {
     setIsNew(false);
     setTierFormOpen(false);
     setNewTier(EMPTY_TIER);
+    setSeoOpen(false);
   };
 
   const closeEditor = () => { setEditing(null); setIsNew(false); };
@@ -412,6 +414,39 @@ export default function AdminServicesPage() {
                     <input type="number" value={editing.max_price ?? ""} onChange={fNum("max_price")} placeholder="0" className="input w-full" />
                   </div>
                 </div>
+              </section>
+
+              {/* ── SEO ─────────────────────────────────── */}
+              <section>
+                <button type="button" onClick={() => setSeoOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl text-left">
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">SEO Settings</span>
+                  {seoOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                </button>
+                {seoOpen && (
+                  <div className="mt-2 space-y-3 px-1">
+                    <div>
+                      <label className="form-label text-xs">SEO Title <span className="text-gray-400 font-normal">(defaults to service name)</span></label>
+                      <input value={editing.seo_title ?? ""} onChange={f("seo_title")} placeholder="Custom SEO title..." className="input w-full text-sm" />
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">SEO Description <span className="text-gray-400 font-normal">(max 160 chars)</span></label>
+                      <textarea value={editing.seo_description ?? ""} onChange={f("seo_description")} rows={2} maxLength={160} placeholder="Meta description..." className="input w-full resize-none text-sm" />
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">Keywords <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+                      <input value={editing.seo_keywords ?? ""} onChange={f("seo_keywords")} placeholder="printing, web design, sylhet..." className="input w-full text-sm" />
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">Canonical URL <span className="text-gray-400 font-normal">(leave blank for default)</span></label>
+                      <input value={editing.canonical_url ?? ""} onChange={f("canonical_url")} placeholder="https://..." className="input w-full text-sm" />
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">OG Image URL <span className="text-gray-400 font-normal">(defaults to featured image)</span></label>
+                      <input value={editing.og_image ?? ""} onChange={f("og_image")} placeholder="https://..." className="input w-full text-sm" />
+                    </div>
+                  </div>
+                )}
               </section>
 
               {/* ── Pricing Tiers (edit only) ────────────── */}

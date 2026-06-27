@@ -28,30 +28,31 @@ export async function generateMetadata({
     return { title: "Product Not Found | ABO Enterprise" };
   }
 
-  const title = `${product.name_en} | ABO Enterprise`;
+  const title = product.seo_title ?? `${product.name_en} | ABO Enterprise`;
   const description =
+    product.seo_description ??
     product.description_en ??
     `Buy ${product.name_en} at the best price in Bangladesh. Fast delivery from ABO Enterprise, Sylhet.`;
-  const url = `https://aboenterprise.vercel.app/products/${product.slug}`;
+  const url = product.canonical_url ?? `https://aboenterprise.vercel.app/products/${product.slug}`;
+  const ogImg = product.og_image ?? product.image_url;
 
   return {
     title,
     description,
+    keywords: product.seo_keywords ?? undefined,
     alternates: { canonical: url },
     openGraph: {
       title,
       description,
       url,
       type: "website",
-      images: product.image_url
-        ? [{ url: product.image_url, alt: product.name_en, width: 800, height: 800 }]
-        : [],
+      images: ogImg ? [{ url: ogImg, alt: product.name_en, width: 800, height: 800 }] : [],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: product.image_url ? [product.image_url] : [],
+      images: ogImg ? [ogImg] : [],
     },
   };
 }

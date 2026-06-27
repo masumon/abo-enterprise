@@ -28,30 +28,32 @@ export async function generateMetadata({
     return { title: "Service Not Found | ABO Enterprise" };
   }
 
-  const title = `${service.name_en} | ABO Enterprise`;
+  const title = service.seo_title ?? `${service.name_en} | ABO Enterprise`;
   const description =
+    service.seo_description ??
     service.short_description_en ??
     service.description_en ??
     `Professional ${service.name_en} service by ABO Enterprise, Bangladesh.`;
-  const url = `https://aboenterprise.vercel.app/services/${service.slug}`;
+  const url = service.canonical_url ?? `https://aboenterprise.vercel.app/services/${service.slug}`;
+  const ogImg = service.og_image ?? service.featured_image_url;
 
   return {
     title,
     description,
+    keywords: service.seo_keywords ?? undefined,
     alternates: { canonical: url },
     openGraph: {
       title,
       description,
       url,
       type: "website",
-      images: service.featured_image_url
-        ? [{ url: service.featured_image_url, alt: service.name_en }]
-        : [],
+      images: ogImg ? [{ url: ogImg, alt: service.name_en }] : [],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
+      images: ogImg ? [ogImg] : [],
     },
   };
 }

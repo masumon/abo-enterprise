@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Plus, Pencil, Trash2, Upload, X, Loader2, Package } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X, Loader2, Package, ChevronDown, Search } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -29,6 +29,11 @@ const schema = z.object({
   is_active: z.boolean(),
   is_featured: z.boolean(),
   image_url: z.string().optional(),
+  seo_title: z.string().optional(),
+  seo_description: z.string().optional(),
+  seo_keywords: z.string().optional(),
+  canonical_url: z.string().optional(),
+  og_image: z.string().optional(),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -43,6 +48,7 @@ export default function AdminProductsPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [seoOpen, setSeoOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
   const modalRef = useFocusTrap(showModal);
@@ -72,8 +78,9 @@ export default function AdminProductsPage() {
 
   const openCreate = () => {
     setEditing(null);
-    reset({ is_active: true, is_featured: false, stock_quantity: 0, image_url: "" });
+    reset({ is_active: true, is_featured: false, stock_quantity: 0, image_url: "", seo_title: "", seo_description: "", seo_keywords: "", canonical_url: "", og_image: "" });
     setImageUrl("");
+    setSeoOpen(false);
     setShowModal(true);
   };
 
@@ -93,8 +100,14 @@ export default function AdminProductsPage() {
       is_active: p.is_active,
       is_featured: p.is_featured,
       image_url: p.image_url ?? "",
+      seo_title: p.seo_title ?? "",
+      seo_description: p.seo_description ?? "",
+      seo_keywords: p.seo_keywords ?? "",
+      canonical_url: p.canonical_url ?? "",
+      og_image: p.og_image ?? "",
     });
     setImageUrl(p.image_url ?? "");
+    setSeoOpen(false);
     setShowModal(true);
   };
 
@@ -316,6 +329,39 @@ export default function AdminProductsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description (বাংলা)</label>
                 <textarea {...register("description_bn")} rows={2} className="input resize-none" placeholder="পণ্যের বিবরণ..." />
+              </div>
+
+              {/* SEO Section */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button type="button" onClick={() => setSeoOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+                  <span className="text-sm font-medium text-gray-700">SEO Settings</span>
+                  <ChevronDown className={cn("w-4 h-4 text-gray-400 transition-transform", seoOpen && "rotate-180")} />
+                </button>
+                {seoOpen && (
+                  <div className="px-4 py-4 space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">SEO Title <span className="text-gray-400 font-normal">(defaults to product name)</span></label>
+                      <input {...register("seo_title")} className="input" placeholder="Custom SEO title..." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">SEO Description <span className="text-gray-400 font-normal">(max 160 chars)</span></label>
+                      <textarea {...register("seo_description")} rows={2} maxLength={160} className="input resize-none" placeholder="Meta description for search engines..." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Keywords <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+                      <input {...register("seo_keywords")} className="input" placeholder="phone case, accessories, sylhet..." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Canonical URL <span className="text-gray-400 font-normal">(leave blank for default)</span></label>
+                      <input {...register("canonical_url")} className="input" placeholder="https://..." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">OG Image URL <span className="text-gray-400 font-normal">(defaults to product image)</span></label>
+                      <input {...register("og_image")} className="input" placeholder="https://..." />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-6">

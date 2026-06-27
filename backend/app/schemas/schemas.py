@@ -50,6 +50,11 @@ class ProductBase(BaseModel):
     is_featured: bool = False
     sort_order: int = 0
     specifications: dict = {}
+    seo_title: str | None = None
+    seo_description: str | None = None
+    seo_keywords: str | None = None
+    canonical_url: str | None = None
+    og_image: str | None = None
 
 
 class ProductCreate(ProductBase):
@@ -70,6 +75,11 @@ class ProductUpdate(BaseModel):
     badge: str | None = None
     image_url: str | None = None
     sort_order: int | None = None
+    seo_title: str | None = None
+    seo_description: str | None = None
+    seo_keywords: str | None = None
+    canonical_url: str | None = None
+    og_image: str | None = None
 
 
 class ProductOut(ProductBase):
@@ -371,6 +381,11 @@ class ServiceBase(BaseModel):
     lead_priority: int = 5
     lead_qualification_score: int = 0
     tags: list[str] = []
+    seo_title: str | None = None
+    seo_description: str | None = None
+    seo_keywords: str | None = None
+    canonical_url: str | None = None
+    og_image: str | None = None
 
 
 class ServiceCreate(ServiceBase):
@@ -388,6 +403,11 @@ class ServiceUpdate(BaseModel):
     is_active: bool | None = None
     is_featured: bool | None = None
     lead_priority: int | None = None
+    seo_title: str | None = None
+    seo_description: str | None = None
+    seo_keywords: str | None = None
+    canonical_url: str | None = None
+    og_image: str | None = None
 
 
 class ServiceOut(ServiceBase):
@@ -757,6 +777,11 @@ class BlogPostBase(BaseModel):
     is_featured: bool = False
     sort_order: int = 0
     published_at: datetime | None = None
+    seo_title: str | None = None
+    seo_description: str | None = None
+    seo_keywords: str | None = None
+    canonical_url: str | None = None
+    og_image: str | None = None
 
 
 class BlogPostCreate(BlogPostBase):
@@ -778,6 +803,11 @@ class BlogPostUpdate(BaseModel):
     is_featured: bool | None = None
     sort_order: int | None = None
     published_at: datetime | None = None
+    seo_title: str | None = None
+    seo_description: str | None = None
+    seo_keywords: str | None = None
+    canonical_url: str | None = None
+    og_image: str | None = None
 
 
 class BlogPostOut(BlogPostBase):
