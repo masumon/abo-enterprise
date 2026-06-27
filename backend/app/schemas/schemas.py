@@ -111,6 +111,7 @@ class ReviewOut(BaseModel):
     source: str
     is_verified: bool
     is_featured: bool
+    is_active: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}
