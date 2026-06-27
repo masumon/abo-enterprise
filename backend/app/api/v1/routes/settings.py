@@ -4,7 +4,7 @@ from sqlalchemy import select
 from app.core.database import get_db
 from app.core.security import require_admin
 from app.models.models import Setting
-from app.schemas.schemas import SettingOut, SettingUpdate, ApiResponse
+from app.schemas.schemas import SettingOut, SettingUpdate, SettingCreate, ApiResponse
 from typing import Any
 
 router = APIRouter(prefix="/settings", tags=["settings"])
@@ -91,3 +91,27 @@ async def create_setting(key: str, value: str, db: AsyncSession = Depends(get_db
         data=SettingOut.model_validate(new_setting),
         message="Setting created successfully"
     )
+
+
+@router.post("/upsert", response_model=ApiResponse, dependencies=[Depends(require_admin)])
+async def upsert_settings(payload: list[SettingCreate], db: AsyncSession = Depends(get_db)):
+    """Create or update multiple settings at once (admin only)"""
+    results = []
+    for item in payload:
+        result = await db.execute(
+            select(Setting).where((Setting.key == item.key) & (Setting.is_deleted == False))
+        )
+        setting = result.scalar_one_or_none()
+        if setting:
+            setting.value = item.value
+            if item.data_type:
+                setting.data_type = item.data_type
+            if item.description is not None:
+                setting.description = item.description
+        else:
+            setting = Setting(**item.model_dump())
+            db.add(setting)
+        results.append({"key": item.key, "value": item.value})
+
+    await db.commit()
+    return ApiResponse(success=True, data=results, message=f"{len(results)} settings saved")
