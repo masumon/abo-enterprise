@@ -149,6 +149,11 @@ class OrderStatusUpdate(BaseModel):
     status: str
 
 
+class BulkOrderStatusUpdate(BaseModel):
+    order_ids: list[uuid.UUID]
+    status: str
+
+
 class OrderItemOut(OrderItemCreate):
     id: uuid.UUID
     model_config = {"from_attributes": True}

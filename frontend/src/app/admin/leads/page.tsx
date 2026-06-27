@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { Loader2, Users, ChevronDown, X } from "lucide-react";
-import { leadsApi } from "@/lib/api";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Loader2, Users, ChevronDown, X, Search, Download } from "lucide-react";
+import { leadsApi, downloadCsv } from "@/lib/api";
 import type { Lead } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
+import { useToastStore } from "@/store/toast";
 
 const STATUSES = ["new", "contacted", "qualified", "proposal_sent", "negotiation", "won", "lost"];
 const TYPES = ["software_development", "ai_solutions", "automation", "erp", "general"];
@@ -18,24 +19,46 @@ export default function AdminLeadsPage() {
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [detail, setDetail] = useState<AdminLead | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [csvLoading, setCsvLoading] = useState(false);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toast = useToastStore((s) => s.push);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await leadsApi.list({ lead_type: typeFilter || undefined, status: statusFilter || undefined, page });
+      const r = await leadsApi.list({ lead_type: typeFilter || undefined, status: statusFilter || undefined, search: search || undefined, page });
       setLeads((r.data.data ?? []) as unknown as AdminLead[]);
       setTotal(r.data.meta?.total ?? 0);
     } finally {
       setLoading(false);
     }
-  }, [typeFilter, statusFilter, page]);
+  }, [typeFilter, statusFilter, search, page]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleSearchChange = (v: string) => {
+    setSearchInput(v);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => { setSearch(v); setPage(1); }, 400);
+  };
+
+  const handleCsvExport = async () => {
+    setCsvLoading(true);
+    try {
+      await downloadCsv("/api/v1/admin/bulk/export/leads", "leads.csv");
+    } catch {
+      toast("error", "CSV export failed");
+    } finally {
+      setCsvLoading(false);
+    }
+  };
 
   const updateStatus = async (id: string, status: string) => {
     setUpdatingId(id);
@@ -65,7 +88,16 @@ export default function AdminLeadsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
           <p className="text-gray-500 text-sm mt-1">{total} total leads</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              value={searchInput}
+              onChange={e => handleSearchChange(e.target.value)}
+              placeholder="Search name, phone, company…"
+              className="input pl-9 text-sm w-56"
+            />
+          </div>
           <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="input w-auto text-sm">
             <option value="">All Types</option>
             {TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
@@ -74,6 +106,15 @@ export default function AdminLeadsPage() {
             <option value="">All Status</option>
             {STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
           </select>
+          <button
+            onClick={handleCsvExport}
+            disabled={csvLoading}
+            className="btn btn-outline btn-sm gap-1.5"
+            title="Export all leads to CSV"
+          >
+            {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            CSV
+          </button>
         </div>
       </div>
 

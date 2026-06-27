@@ -52,7 +52,7 @@ export const ordersApi = {
     api.post<ApiResponse<Order>>("/api/v1/orders", data),
 
   // order_status matches backend query param name
-  list: (params?: { order_status?: string; page?: number }) =>
+  list: (params?: { order_status?: string; search?: string; page?: number }) =>
     api.get<PaginatedResponse<Order>>("/api/v1/orders", { params }),
 
   get: (id: string) =>
@@ -66,13 +66,16 @@ export const ordersApi = {
 
   updateStatus: (id: string, status: string) =>
     api.patch<ApiResponse<Order>>(`/api/v1/orders/${id}/status`, { status }),
+
+  bulkUpdateStatus: (order_ids: string[], status: string) =>
+    api.post<ApiResponse<{ updated: number; ids: string[] }>>("/api/v1/admin/bulk/orders/status", { order_ids, status }),
 };
 
 export const bookingsApi = {
   create: (data: Booking) =>
     api.post<ApiResponse<Booking>>("/api/v1/bookings", data),
 
-  list: (params?: { service_type?: string; status?: string; page?: number }) =>
+  list: (params?: { service_type?: string; status?: string; search?: string; page?: number }) =>
     api.get<PaginatedResponse<Booking>>("/api/v1/bookings", { params }),
 
   get: (id: string) =>
@@ -86,7 +89,7 @@ export const leadsApi = {
   create: (data: Lead) =>
     api.post<ApiResponse<Lead>>("/api/v1/leads", data),
 
-  list: (params?: { lead_type?: string; status?: string; page?: number }) =>
+  list: (params?: { lead_type?: string; status?: string; search?: string; page?: number }) =>
     api.get<PaginatedResponse<Lead>>("/api/v1/leads", { params }),
 
   get: (id: string) =>
@@ -114,6 +117,23 @@ export const reviewsApi = {
   create: (data: Partial<import("@/types").Review>) =>
     api.post<ApiResponse<import("@/types").Review>>("/api/v1/reviews", data),
 };
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+
+export async function downloadCsv(path: string, filename: string): Promise<void> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("abo_admin_token") : null;
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error(`Export failed: ${res.statusText}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 export const adminApi = {
   stats: () =>
