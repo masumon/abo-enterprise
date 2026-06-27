@@ -15,10 +15,37 @@ logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
 
+async def _ensure_admin_exists():
+    """Create default admin on first startup if ADMIN_PASSWORD is set and no admin exists."""
+    if not settings.ADMIN_PASSWORD:
+        return
+    try:
+        from app.core.database import AsyncSessionLocal
+        from app.models.models import AdminUser
+        from app.core.security import hash_password
+        from sqlalchemy import select
+        async with AsyncSessionLocal() as db:
+            existing = await db.execute(select(AdminUser).limit(1))
+            if existing.scalar_one_or_none():
+                return
+            admin = AdminUser(
+                email=settings.ADMIN_EMAIL,
+                password_hash=hash_password(settings.ADMIN_PASSWORD),
+                name=settings.ADMIN_NAME,
+                role="super_admin",
+            )
+            db.add(admin)
+            await db.commit()
+            logger.info(f"Default admin created: {settings.ADMIN_EMAIL}")
+    except Exception as e:
+        logger.error(f"Failed to create default admin: {e}")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     logger.info(f"Starting {settings.APP_NAME}")
+    await _ensure_admin_exists()
     yield
     # Shutdown
     logger.info(f"Shutting down {settings.APP_NAME}")
