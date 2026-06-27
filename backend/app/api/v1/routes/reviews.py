@@ -1,12 +1,20 @@
 from uuid import UUID
 from datetime import datetime
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
+from pydantic import BaseModel
 from app.core.database import get_db
 from app.core.security import require_admin
 from app.models.models import Review
 from app.schemas.schemas import ReviewCreate, ReviewOut, ApiResponse, PaginatedResponse, PaginatedMeta
+
+
+class ReviewAdminUpdate(BaseModel):
+    is_active: Optional[bool] = None
+    is_featured: Optional[bool] = None
+    is_verified: Optional[bool] = None
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
 
@@ -65,3 +73,36 @@ async def admin_list_reviews(
         data=[ReviewOut.model_validate(r) for r in reviews],
         meta=PaginatedMeta(page=page, per_page=per_page, total=total, total_pages=max(1, -(-total // per_page))),
     )
+
+
+@router.patch("/{review_id}", response_model=ApiResponse)
+async def update_review_admin(
+    review_id: UUID,
+    payload: ReviewAdminUpdate,
+    db: AsyncSession = Depends(get_db),
+    _admin: dict = Depends(require_admin),
+):
+    result = await db.execute(select(Review).where(Review.id == review_id))
+    review = result.scalar_one_or_none()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(review, field, value)
+    await db.commit()
+    await db.refresh(review)
+    return ApiResponse(data=ReviewOut.model_validate(review))
+
+
+@router.delete("/{review_id}", response_model=ApiResponse)
+async def delete_review_admin(
+    review_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: dict = Depends(require_admin),
+):
+    result = await db.execute(select(Review).where(Review.id == review_id))
+    review = result.scalar_one_or_none()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    await db.delete(review)
+    await db.commit()
+    return ApiResponse(data=None, message="Review deleted")
