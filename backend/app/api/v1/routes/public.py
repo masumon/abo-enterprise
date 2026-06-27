@@ -1,11 +1,13 @@
 from datetime import datetime, timedelta, timezone
+import json
 
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel, EmailStr
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.models.models import BookingV2, LeadV2, Order, Product, Review, Service
+from app.models.models import BookingV2, LeadV2, Order, Product, Review, Service, Setting
 from app.schemas.schemas import ApiResponse
 
 router = APIRouter(prefix="/public", tags=["public"])
@@ -126,3 +128,63 @@ async def get_recent_activity(db: AsyncSession = Depends(get_db)):
 
     activities.sort(key=lambda a: a["created_at"], reverse=True)
     return ApiResponse(data=activities[:5])
+
+
+class NewsletterSubscribe(BaseModel):
+    email: EmailStr
+
+
+@router.post("/newsletter", response_model=ApiResponse)
+async def subscribe_newsletter(payload: NewsletterSubscribe, db: AsyncSession = Depends(get_db)):
+    """Store newsletter subscriber email in settings table."""
+    email = payload.email.strip().lower()
+    result = await db.execute(
+        select(Setting).where(Setting.key == "newsletter_subscribers", Setting.is_deleted == False)  # noqa: E712
+    )
+    setting = result.scalar_one_or_none()
+    subscribers: list[str] = []
+    if setting:
+        try:
+            subscribers = json.loads(setting.value) if setting.value else []
+        except json.JSONDecodeError:
+            subscribers = []
+    if email not in subscribers:
+        subscribers.append(email)
+        if setting:
+            setting.value = json.dumps(subscribers)
+        else:
+            db.add(Setting(
+                key="newsletter_subscribers",
+                value=json.dumps(subscribers),
+                data_type="json",
+                description="Newsletter subscriber emails",
+                is_editable=False,
+            ))
+    return ApiResponse(data={"subscribed": True, "total": len(subscribers)}, message="Subscribed successfully")
+
+
+DEFAULT_FLAGS = {
+    "feature_flash_sale": True,
+    "feature_coupons": True,
+    "feature_guest_checkout": True,
+    "feature_newsletter": True,
+    "feature_infinite_scroll": True,
+}
+
+
+@router.get("/feature-flags", response_model=ApiResponse)
+async def get_feature_flags(db: AsyncSession = Depends(get_db)):
+    """Public feature flags from settings table (keys prefixed with feature_)."""
+    result = await db.execute(
+        select(Setting).where(
+            Setting.key.like("feature_%"),
+            Setting.is_deleted == False,  # noqa: E712
+        )
+    )
+    flags = dict(DEFAULT_FLAGS)
+    for s in result.scalars().all():
+        if s.data_type == "boolean":
+            flags[s.key] = s.value.lower() in ("true", "1", "yes")
+        else:
+            flags[s.key] = s.value
+    return ApiResponse(data=flags)

@@ -9,6 +9,7 @@ import CartDrawer from "@/components/features/CartDrawer";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import CompareBar from "@/components/ui/CompareBar";
 import OfflineBanner from "@/components/ui/OfflineBanner";
+import ApiWarmup from "@/components/ui/ApiWarmup";
 import ToastProvider from "@/components/ui/ToastProvider";
 
 export default function PublicShell({ children }: { children: React.ReactNode }) {
@@ -31,6 +32,7 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <CartDrawer />
       <CompareBar />
       <WhatsAppButton />
+      <ApiWarmup />
       <MobileBottomNav />
       <ToastProvider />
     </>

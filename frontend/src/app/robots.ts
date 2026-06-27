@@ -1,11 +1,12 @@
 import { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/tokens";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       { userAgent: "*", allow: "/", disallow: ["/admin", "/api", "/_next"] },
     ],
-    sitemap: "https://aboenterprise.com/sitemap.xml",
-    host: "https://aboenterprise.com",
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

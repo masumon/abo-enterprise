@@ -3,10 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Facebook, MessageCircle, Mail, MapPin, Phone, Clock, Send } from "lucide-react";
+import { Facebook, MessageCircle, Mail, MapPin, Phone, Clock, Send, Loader2 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
+import { publicApi } from "@/lib/api";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 const SERVICES = [
   { href: "/products", label: { en: "Mobile Accessories", bn: "মোবাইল এক্সেসরিজ" } },
@@ -34,12 +36,21 @@ export default function Footer() {
   const t = useT();
   const toast = useToastStore((s) => s.push);
   const [email, setEmail] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const newsletterEnabled = useFeatureFlag("feature_newsletter");
 
-  const handleNewsletter = (e: React.FormEvent) => {
+  const handleNewsletter = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim()) {
+    if (!email.trim()) return;
+    setSubmitting(true);
+    try {
+      await publicApi.newsletter(email.trim());
       toast("success", lang === "bn" ? "সাবস্ক্রাইব হয়েছে!" : "Subscribed successfully!");
       setEmail("");
+    } catch {
+      toast("error", lang === "bn" ? "সাবস্ক্রাইব করা যায়নি" : "Could not subscribe");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -64,21 +75,26 @@ export default function Footer() {
                 ? "মোবাইল এক্সেসরিজ থেকে AI সমাধান — বাংলাদেশের সম্পূর্ণ টেকনোলজি ইকোসিস্টেম।"
                 : "From mobile accessories to AI solutions — Bangladesh's complete technology ecosystem."}
             </p>
-            <form onSubmit={handleNewsletter} className="flex gap-2 max-w-sm">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={lang === "bn" ? "আপনার ইমেইল" : "Your email"}
-                className="input flex-1 text-sm py-2.5"
-                aria-label={t("footer_newsletter")}
-              />
-              <button type="submit" className="btn btn-primary btn-sm flex-shrink-0">
-                <Send className="w-4 h-4" />
-                {t("footer_subscribe")}
-              </button>
-            </form>
-            <p className="text-xs text-gray-500 mt-2">{t("footer_newsletter_sub")}</p>
+            {newsletterEnabled && (
+              <>
+                <form onSubmit={handleNewsletter} className="flex gap-2 max-w-sm">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={lang === "bn" ? "আপনার ইমেইল" : "Your email"}
+                    className="input flex-1 text-sm py-2.5"
+                    aria-label={t("footer_newsletter")}
+                    required
+                  />
+                  <button type="submit" disabled={submitting} className="btn btn-primary btn-sm flex-shrink-0">
+                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                    {t("footer_subscribe")}
+                  </button>
+                </form>
+                <p className="text-xs text-gray-500 mt-2">{t("footer_newsletter_sub")}</p>
+              </>
+            )}
           </div>
 
           <div>

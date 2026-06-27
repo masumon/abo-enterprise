@@ -365,6 +365,12 @@ export const publicApi = {
       text_bn: string;
       time: string;
     }[]>>("/api/v1/public/activity"),
+
+  newsletter: (email: string) =>
+    api.post<ApiResponse<{ subscribed: boolean; total: number }>>("/api/v1/public/newsletter", { email }),
+
+  featureFlags: () =>
+    api.get<ApiResponse<Record<string, boolean | string>>>("/api/v1/public/feature-flags"),
 };
 
 export default api;

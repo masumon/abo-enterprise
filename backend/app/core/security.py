@@ -8,6 +8,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.config import settings
+from app.core.database import get_db
+from app.models.models import AdminUser
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -41,13 +43,22 @@ def decode_token(token: str) -> dict:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
-def require_admin(credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme)) -> str:
+async def require_admin(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> str:
     if not credentials:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     payload = decode_token(credentials.credentials)
     if payload.get("type") != "access":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
-    return payload["sub"]
+    admin_id = payload["sub"]
+    result = await db.execute(
+        select(AdminUser).where(AdminUser.id == UUID(admin_id), AdminUser.is_active == True)  # noqa: E712
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Admin account inactive or not found")
+    return admin_id
 
 
 def require_role(permission: str):
