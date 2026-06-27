@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/lib/api";
 
@@ -34,11 +34,15 @@ export function useAdmin(redirectOnFail = true) {
   const router = useRouter();
   const [user, setUser] = useState<AdminUser | null>(getCached);
   const [loading, setLoading] = useState(!getCached());
+  const redirectedRef = useRef(false);
 
   const checkAuth = useCallback(async () => {
     const token = localStorage.getItem("abo_admin_token");
     if (!token) {
-      if (redirectOnFail) router.replace("/admin/login");
+      if (redirectOnFail && !redirectedRef.current) {
+        redirectedRef.current = true;
+        router.replace("/admin/login");
+      }
       setLoading(false);
       return;
     }
@@ -55,12 +59,16 @@ export function useAdmin(redirectOnFail = true) {
       const adminUser = res.data.data as AdminUser;
       setCache(adminUser);
       setUser(adminUser);
+      setLoading(false);
     } catch {
       clearCache();
       localStorage.removeItem("abo_admin_token");
-      if (redirectOnFail) router.replace("/admin/login");
-    } finally {
-      setLoading(false);
+      if (redirectOnFail && !redirectedRef.current) {
+        redirectedRef.current = true;
+        router.replace("/admin/login");
+      } else {
+        setLoading(false);
+      }
     }
   }, [router, redirectOnFail]);
 

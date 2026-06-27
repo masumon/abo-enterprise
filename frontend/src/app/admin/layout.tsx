@@ -18,15 +18,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <>{children}</>;
   }
 
-  if (loading) {
+  if (loading || !user) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 text-brand-500 animate-spin mx-auto mb-3" />
+          <p className="text-gray-400 text-sm">যাচাই করছি...</p>
+        </div>
       </div>
     );
   }
-
-  if (!user) return null;
 
   return (
     <div

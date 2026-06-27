@@ -18,7 +18,10 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 && typeof window !== "undefined") {
       localStorage.removeItem("abo_admin_token");
-      window.location.href = "/admin/login";
+      // Only redirect if not already on login page (prevent redirect loop)
+      if (!window.location.pathname.includes("/admin/login")) {
+        window.location.href = "/admin/login";
+      }
     }
     return Promise.reject(error);
   }
