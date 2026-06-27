@@ -6,7 +6,7 @@ import {
   ToggleLeft, ToggleRight, Star, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { servicesAdminApi } from "@/lib/api";
-import type { Service, ServicePricingTier } from "@/types";
+import type { Service, ServicePricingTier, ServiceBookingFormField } from "@/types";
 import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
 
@@ -25,6 +25,19 @@ const EMPTY_SERVICE: Partial<Service> = {
 
 const EMPTY_TIER: Partial<ServicePricingTier> = {
   tier_name: "", price: 0, description_en: "", features: [], is_active: true, sort_order: 0,
+};
+
+const FIELD_TYPES = [
+  "text", "textarea", "number", "email", "phone", "url",
+  "date", "time", "datetime-local",
+  "select", "multiselect", "radio", "checkbox",
+  "file", "image", "rating", "range", "color", "hidden", "paragraph",
+] as const;
+
+const EMPTY_FIELD: Partial<ServiceBookingFormField> = {
+  field_name: "", field_type: "text", field_label_en: "", field_label_bn: "",
+  is_required: false, placeholder: "", options: [], sort_order: 0, is_active: true,
+  default_value: "",
 };
 
 function slugify(t: string) {
@@ -49,6 +62,11 @@ export default function AdminServicesPage() {
   const [deletingTierId, setDeletingTierId] = useState<string | null>(null);
   const [tierFormOpen, setTierFormOpen] = useState(false);
   const [seoOpen, setSeoOpen] = useState(false);
+  // Form field sub-state
+  const [newField, setNewField] = useState<Partial<ServiceBookingFormField>>(EMPTY_FIELD);
+  const [fieldFormOpen, setFieldFormOpen] = useState(false);
+  const [savingField, setSavingField] = useState(false);
+  const [deletingFieldId, setDeletingFieldId] = useState<string | null>(null);
   const toast = useToastStore((s) => s.push);
 
   const load = useCallback(async () => {
@@ -64,7 +82,7 @@ export default function AdminServicesPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const openNew = () => { setEditing({ ...EMPTY_SERVICE }); setIsNew(true); setTierFormOpen(false); setNewTier(EMPTY_TIER); setSeoOpen(false); setExtOpen(false); };
+  const openNew = () => { setEditing({ ...EMPTY_SERVICE }); setIsNew(true); setTierFormOpen(false); setNewTier(EMPTY_TIER); setSeoOpen(false); setExtOpen(false); setFieldFormOpen(false); setNewField(EMPTY_FIELD); };
 
   const openEdit = async (s: Service) => {
     try {
@@ -78,6 +96,8 @@ export default function AdminServicesPage() {
     setNewTier(EMPTY_TIER);
     setSeoOpen(false);
     setExtOpen(false);
+    setFieldFormOpen(false);
+    setNewField(EMPTY_FIELD);
   };
 
   const closeEditor = () => { setEditing(null); setIsNew(false); };
@@ -172,6 +192,41 @@ export default function AdminServicesPage() {
       toast("error", "Failed to remove tier");
     } finally {
       setDeletingTierId(null);
+    }
+  };
+
+  const handleAddField = async () => {
+    if (!editing?.id) return;
+    if (!newField.field_name?.trim()) { toast("error", "Field name is required"); return; }
+    if (!newField.field_label_en?.trim()) { toast("error", "Label (EN) is required"); return; }
+
+    setSavingField(true);
+    try {
+      const r = await servicesAdminApi.createFormField(editing.id, newField);
+      const created = r.data.data as ServiceBookingFormField;
+      setEditing(prev => prev ? { ...prev, booking_forms: [...(prev.booking_forms ?? []), created] } : prev);
+      setNewField(EMPTY_FIELD);
+      setFieldFormOpen(false);
+      toast("success", "Field added");
+    } catch {
+      toast("error", "Failed to add field");
+    } finally {
+      setSavingField(false);
+    }
+  };
+
+  const handleDeleteField = async (fieldId: string) => {
+    if (!editing?.id) return;
+    if (!confirm("Remove this form field?")) return;
+    setDeletingFieldId(fieldId);
+    try {
+      await servicesAdminApi.deleteFormField(editing.id, fieldId);
+      setEditing(prev => prev ? { ...prev, booking_forms: prev.booking_forms?.filter(f => f.id !== fieldId) } : prev);
+      toast("success", "Field removed");
+    } catch {
+      toast("error", "Failed to remove field");
+    } finally {
+      setDeletingFieldId(null);
     }
   };
 
@@ -506,6 +561,153 @@ export default function AdminServicesPage() {
                   </div>
                 </div>
               </section>
+
+              {/* ── Booking Form Fields (edit only) ─────── */}
+              {!isNew && (
+                <section className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      Booking Form Fields ({editing.booking_forms?.length ?? 0})
+                    </h3>
+                    <button
+                      onClick={() => setFieldFormOpen(v => !v)}
+                      className="btn btn-outline btn-sm gap-1 text-xs"
+                    >
+                      {fieldFormOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
+                      {fieldFormOpen ? "Cancel" : "Add Field"}
+                    </button>
+                  </div>
+
+                  {/* Existing fields */}
+                  {(editing.booking_forms ?? []).map(field => (
+                    <div key={field.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900">{field.field_label_en}</p>
+                        <p className="text-xs text-gray-500">
+                          <span className="font-mono">{field.field_name}</span>
+                          {" · "}
+                          <span className="capitalize">{field.field_type}</span>
+                          {field.is_required && <span className="text-red-400 ml-1">*required</span>}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => handleDeleteField(field.id)}
+                        disabled={deletingFieldId === field.id}
+                        className="p-1 text-gray-400 hover:text-red-500 flex-shrink-0 rounded transition-colors"
+                      >
+                        {deletingFieldId === field.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* New field form */}
+                  {fieldFormOpen && (
+                    <div className="border border-brand-100 rounded-xl p-4 space-y-3 bg-brand-50/30">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="form-label text-[11px]">Field Name (machine) <span className="text-red-400">*</span></label>
+                          <input
+                            value={newField.field_name ?? ""}
+                            onChange={e => setNewField(p => ({ ...p, field_name: e.target.value.replace(/\s+/g, "_").toLowerCase() }))}
+                            placeholder="e.g. business_name"
+                            className="input w-full text-sm font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label text-[11px]">Field Type <span className="text-red-400">*</span></label>
+                          <select
+                            value={newField.field_type ?? "text"}
+                            onChange={e => setNewField(p => ({ ...p, field_type: e.target.value }))}
+                            className="input w-full text-sm"
+                          >
+                            {FIELD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                          </select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="form-label text-[11px]">Label (EN) <span className="text-red-400">*</span></label>
+                          <input
+                            value={newField.field_label_en ?? ""}
+                            onChange={e => setNewField(p => ({ ...p, field_label_en: e.target.value }))}
+                            placeholder="e.g. Business Name"
+                            className="input w-full text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label text-[11px]">Label (বাংলা)</label>
+                          <input
+                            value={newField.field_label_bn ?? ""}
+                            onChange={e => setNewField(p => ({ ...p, field_label_bn: e.target.value }))}
+                            placeholder="ব্যবসার নাম"
+                            className="input w-full text-sm"
+                            dir="auto"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="form-label text-[11px]">Placeholder</label>
+                          <input
+                            value={newField.placeholder ?? ""}
+                            onChange={e => setNewField(p => ({ ...p, placeholder: e.target.value }))}
+                            className="input w-full text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label text-[11px]">Default Value</label>
+                          <input
+                            value={newField.default_value ?? ""}
+                            onChange={e => setNewField(p => ({ ...p, default_value: e.target.value }))}
+                            className="input w-full text-sm"
+                          />
+                        </div>
+                      </div>
+                      {["select", "multiselect", "radio"].includes(newField.field_type ?? "") && (
+                        <div>
+                          <label className="form-label text-[11px]">Options (one per line)</label>
+                          <textarea
+                            rows={3}
+                            value={(newField.options ?? []).join("\n")}
+                            onChange={e => setNewField(p => ({ ...p, options: e.target.value.split("\n").filter(Boolean) }))}
+                            placeholder={"Option 1\nOption 2\nOption 3"}
+                            className="input w-full text-sm resize-none font-mono"
+                          />
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="form-label text-[11px]">Sort Order</label>
+                          <input
+                            type="number"
+                            value={newField.sort_order ?? 0}
+                            onChange={e => setNewField(p => ({ ...p, sort_order: Number(e.target.value) }))}
+                            className="input w-full text-sm"
+                          />
+                        </div>
+                        <div className="flex items-end pb-1">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={!!newField.is_required}
+                              onChange={e => setNewField(p => ({ ...p, is_required: e.target.checked }))}
+                              className="w-4 h-4 rounded"
+                            />
+                            <span className="text-sm text-gray-700">Required</span>
+                          </label>
+                        </div>
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button onClick={() => { setFieldFormOpen(false); setNewField(EMPTY_FIELD); }} className="btn btn-outline btn-sm text-xs">Cancel</button>
+                        <button onClick={handleAddField} disabled={savingField} className="btn btn-primary btn-sm text-xs gap-1">
+                          {savingField ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                          Add Field
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </section>
+              )}
 
               {/* ── SEO ─────────────────────────────────── */}
               <section>

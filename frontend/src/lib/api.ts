@@ -192,6 +192,15 @@ export const servicesAdminApi = {
 
   deleteTier: (serviceId: string, tierId: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/services/admin/services/${serviceId}/tiers/${tierId}`),
+
+  createFormField: (serviceId: string, data: Partial<import("@/types").ServiceBookingFormField>) =>
+    api.post<ApiResponse<import("@/types").ServiceBookingFormField>>(`/api/v1/services/admin/services/${serviceId}/form-fields`, data),
+
+  updateFormField: (serviceId: string, fieldId: string, data: Partial<import("@/types").ServiceBookingFormField>) =>
+    api.put<ApiResponse<import("@/types").ServiceBookingFormField>>(`/api/v1/services/admin/services/${serviceId}/form-fields/${fieldId}`, data),
+
+  deleteFormField: (serviceId: string, fieldId: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/services/admin/services/${serviceId}/form-fields/${fieldId}`),
 };
 
 export const adminApi = {
