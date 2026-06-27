@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,7 +21,9 @@ limiter = Limiter(key_func=get_remote_address)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME}")
-    await bootstrap_admin()
+    # Bootstrap runs in background so Render health-check passes immediately.
+    # The admin account will be created within seconds of startup.
+    asyncio.create_task(bootstrap_admin())
     yield
     logger.info(f"Shutting down {settings.APP_NAME}")
 
