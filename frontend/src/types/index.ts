@@ -162,6 +162,11 @@ export interface Service {
   seo_keywords?: string;
   canonical_url?: string;
   og_image?: string;
+  process_steps?: { step: number; title: string; description: string }[];
+  benefits?: string[];
+  requirements?: string[];
+  required_documents?: string[];
+  faq?: { question: string; answer: string }[];
   created_at?: string;
   updated_at?: string;
 }
