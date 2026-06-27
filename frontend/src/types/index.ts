@@ -41,6 +41,9 @@ export interface Review {
   source: string;
   is_verified: boolean;
   is_featured: boolean;
+  is_active?: boolean;
+  admin_reply?: string | null;
+  admin_reply_at?: string | null;
   created_at?: string;
 }
 
