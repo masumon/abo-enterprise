@@ -260,6 +260,49 @@
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
 
+  /* ── Assistant chat ── */
+  .assistant-panel {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 20px 60px rgba(30, 91, 168, 0.18), 0 8px 24px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+  .dark .assistant-panel {
+    background: rgba(15, 26, 46, 0.94);
+    border-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 8px 24px rgba(30, 91, 168, 0.12);
+  }
+  .assistant-chat-bg {
+    background:
+      radial-gradient(ellipse at 10% 0%, rgba(30, 91, 168, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 100%, rgba(233, 30, 99, 0.04) 0%, transparent 50%),
+      linear-gradient(180deg, #f8faff 0%, #f0f4ff 100%);
+  }
+  .dark .assistant-chat-bg {
+    background:
+      radial-gradient(ellipse at 10% 0%, rgba(30, 91, 168, 0.12) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 100%, rgba(233, 30, 99, 0.06) 0%, transparent 50%),
+      linear-gradient(180deg, #0f1a2e 0%, #0a1628 100%);
+  }
+  .assistant-fab-ring {
+    animation: assistantPulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  .assistant-typing-dot {
+    animation: assistantTyping 1.4s ease-in-out infinite;
+  }
+  .assistant-typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .assistant-typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes assistantPulse {
+    0%, 100% { transform: scale(1); opacity: 0.6; }
+    50% { transform: scale(1.08); opacity: 0.25; }
+  }
+  @keyframes assistantTyping {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
   @keyframes fadeIn {
     from { opacity: 0; }
     to   { opacity: 1; }
