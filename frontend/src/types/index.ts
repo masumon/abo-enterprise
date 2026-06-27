@@ -84,10 +84,16 @@ export interface Order {
 
 export interface ServicePricingTier {
   id: string;
+  service_id?: string;
   tier_name: string;
   price: number;
-  description?: string;
+  description_en?: string;
+  description_bn?: string;
+  duration_days?: number;
   features?: string[];
+  includes?: string;
+  is_active?: boolean;
+  sort_order?: number;
 }
 
 export interface Service {
@@ -99,16 +105,24 @@ export interface Service {
   description_bn?: string;
   short_description_en?: string;
   short_description_bn?: string;
+  long_description_en?: string;
+  long_description_bn?: string;
   pricing_type: "fixed" | "package" | "hourly" | "custom" | "custom_quote";
   base_price?: number;
+  min_price?: number;
+  max_price?: number;
   hourly_rate?: number;
   pricing_tiers?: ServicePricingTier[];
   is_active?: boolean;
   is_featured?: boolean;
+  icon_url?: string;
+  icon_color?: string;
   image_url?: string;
   featured_image_url?: string;
   category?: string;
   tags?: string[];
+  sort_order?: number;
+  lead_priority?: number;
   created_at?: string;
   updated_at?: string;
 }
