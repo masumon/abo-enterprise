@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Package, ShoppingCart, Briefcase, Users,
-  LogOut, ExternalLink, BarChart2, Settings,
+  LogOut, ExternalLink, BarChart2, Settings, Wrench, FileText, Star,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +14,9 @@ const NAV = [
   { href: "/admin/bookings",   icon: Briefcase,       label: "Bookings" },
   { href: "/admin/products",   icon: Package,         label: "Products" },
   { href: "/admin/leads",      icon: Users,           label: "Leads" },
+  { href: "/admin/services",   icon: Wrench,          label: "Services" },
+  { href: "/admin/invoices",   icon: FileText,        label: "Invoices" },
+  { href: "/admin/reviews",    icon: Star,            label: "Reviews" },
   { href: "/projects",         icon: ExternalLink,    label: "Projects", external: true },
   { href: "/admin/analytics",  icon: BarChart2,       label: "Analytics" },
   { href: "/admin/settings",   icon: Settings,        label: "Settings" },

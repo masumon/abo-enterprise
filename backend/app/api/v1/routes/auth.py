@@ -47,7 +47,6 @@ async def get_me(
 
 
 @router.post("/setup", include_in_schema=False)
-@router.get("/setup", include_in_schema=False)
 async def setup_admin(db: AsyncSession = Depends(get_db)):
     """One-time admin setup — creates or resets admin from env vars."""
     if not settings.ADMIN_PASSWORD:

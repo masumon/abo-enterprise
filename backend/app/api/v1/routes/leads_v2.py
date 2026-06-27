@@ -17,7 +17,7 @@ from app.schemas.schemas import (
 import random
 import string
 
-router = APIRouter(prefix="/leads", tags=["leads"])
+router = APIRouter(prefix="/service-leads", tags=["service-leads"])
 
 
 def generate_lead_number():

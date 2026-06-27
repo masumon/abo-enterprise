@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Loader2, Users, ChevronDown, X } from "lucide-react";
 import { leadsApi } from "@/lib/api";
 import type { Lead } from "@/types";
@@ -24,7 +24,7 @@ export default function AdminLeadsPage() {
   const [detail, setDetail] = useState<AdminLead | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const r = await leadsApi.list({ lead_type: typeFilter || undefined, status: statusFilter || undefined, page });
@@ -33,9 +33,9 @@ export default function AdminLeadsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [typeFilter, statusFilter, page]);
 
-  useEffect(() => { load(); }, [typeFilter, statusFilter, page]);
+  useEffect(() => { load(); }, [load]);
 
   const updateStatus = async (id: string, status: string) => {
     setUpdatingId(id);
