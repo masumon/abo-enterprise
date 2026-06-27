@@ -50,6 +50,20 @@ class ProductBase(BaseModel):
     is_featured: bool = False
     sort_order: int = 0
     specifications: dict = {}
+    # Extended fields
+    sku: str | None = None
+    barcode: str | None = None
+    brand: str | None = None
+    sub_category: str | None = None
+    tags: list[str] = []
+    weight: float | None = None
+    warranty_info: str | None = None
+    delivery_info: str | None = None
+    is_flash_sale: bool = False
+    flash_sale_price: float | None = None
+    low_stock_threshold: int = 5
+    is_best_seller: bool = False
+    rating: float | None = None
 
 
 class ProductCreate(ProductBase):
@@ -70,6 +84,20 @@ class ProductUpdate(BaseModel):
     badge: str | None = None
     image_url: str | None = None
     sort_order: int | None = None
+    # Extended fields
+    sku: str | None = None
+    barcode: str | None = None
+    brand: str | None = None
+    sub_category: str | None = None
+    tags: list[str] | None = None
+    weight: float | None = None
+    warranty_info: str | None = None
+    delivery_info: str | None = None
+    is_flash_sale: bool | None = None
+    flash_sale_price: float | None = None
+    low_stock_threshold: int | None = None
+    is_best_seller: bool | None = None
+    rating: float | None = None
 
 
 class ProductOut(ProductBase):

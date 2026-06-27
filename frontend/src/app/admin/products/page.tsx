@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Plus, Pencil, Trash2, Upload, X, Loader2, Package } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload, X, Loader2, Package, ChevronDown } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -29,6 +29,19 @@ const schema = z.object({
   is_active: z.boolean(),
   is_featured: z.boolean(),
   image_url: z.string().optional(),
+  // Extended fields
+  sku: z.string().optional(),
+  barcode: z.string().optional(),
+  brand: z.string().optional(),
+  sub_category: z.string().optional(),
+  tags: z.string().optional(),
+  weight: z.coerce.number().optional(),
+  warranty_info: z.string().optional(),
+  delivery_info: z.string().optional(),
+  is_flash_sale: z.boolean().optional(),
+  flash_sale_price: z.coerce.number().optional(),
+  low_stock_threshold: z.coerce.number().min(0).optional(),
+  is_best_seller: z.boolean().optional(),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -44,6 +57,7 @@ export default function AdminProductsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [extOpen, setExtOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const modalRef = useFocusTrap(showModal);
 
@@ -72,8 +86,9 @@ export default function AdminProductsPage() {
 
   const openCreate = () => {
     setEditing(null);
-    reset({ is_active: true, is_featured: false, stock_quantity: 0, image_url: "" });
+    reset({ is_active: true, is_featured: false, stock_quantity: 0, image_url: "", low_stock_threshold: 5, is_flash_sale: false, is_best_seller: false });
     setImageUrl("");
+    setExtOpen(false);
     setShowModal(true);
   };
 
@@ -93,8 +108,21 @@ export default function AdminProductsPage() {
       is_active: p.is_active,
       is_featured: p.is_featured,
       image_url: p.image_url ?? "",
+      sku: p.sku ?? "",
+      barcode: p.barcode ?? "",
+      brand: p.brand ?? "",
+      sub_category: p.sub_category ?? "",
+      tags: p.tags?.join(", ") ?? "",
+      weight: p.weight ?? undefined,
+      warranty_info: p.warranty_info ?? "",
+      delivery_info: p.delivery_info ?? "",
+      is_flash_sale: p.is_flash_sale ?? false,
+      flash_sale_price: p.flash_sale_price ?? undefined,
+      low_stock_threshold: p.low_stock_threshold ?? 5,
+      is_best_seller: p.is_best_seller ?? false,
     });
     setImageUrl(p.image_url ?? "");
+    setExtOpen(false);
     setShowModal(true);
   };
 
@@ -117,7 +145,11 @@ export default function AdminProductsPage() {
   const onSubmit = async (data: FormData) => {
     setSaving(true);
     try {
-      const payload = { ...data } as Partial<Product>;
+      const { tags: tagsStr, ...rest } = data;
+      const payload: Partial<Product> = {
+        ...rest,
+        tags: tagsStr ? tagsStr.split(",").map((t) => t.trim()).filter(Boolean) : [],
+      } as Partial<Product>;
       if (editing) {
         await productsApi.update(editing.id!, payload);
       } else {
@@ -316,6 +348,71 @@ export default function AdminProductsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description (বাংলা)</label>
                 <textarea {...register("description_bn")} rows={2} className="input resize-none" placeholder="পণ্যের বিবরণ..." />
+              </div>
+
+              {/* Extended Details */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button type="button" onClick={() => setExtOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+                  <span className="text-sm font-medium text-gray-700">Extended Details</span>
+                  <ChevronDown className={cn("w-4 h-4 text-gray-400 transition-transform", extOpen && "rotate-180")} />
+                </button>
+                {extOpen && (
+                  <div className="px-4 py-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">SKU</label>
+                        <input {...register("sku")} className="input" placeholder="SKU-001" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Barcode</label>
+                        <input {...register("barcode")} className="input" placeholder="8901234567890" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Brand</label>
+                        <input {...register("brand")} className="input" placeholder="Samsung, Apple..." />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Sub-category</label>
+                        <input {...register("sub_category")} className="input" placeholder="Cables, Cases..." />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Weight (kg)</label>
+                        <input {...register("weight")} type="number" step="0.001" className="input" placeholder="0.250" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Low Stock Alert</label>
+                        <input {...register("low_stock_threshold")} type="number" className="input" placeholder="5" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Tags <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+                      <input {...register("tags")} className="input" placeholder="phone, accessories, black..." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Warranty Info</label>
+                      <textarea {...register("warranty_info")} rows={2} className="input resize-none text-sm" placeholder="6 months manufacturer warranty..." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Delivery Info</label>
+                      <textarea {...register("delivery_info")} rows={2} className="input resize-none text-sm" placeholder="Delivered within 2-3 business days..." />
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input {...register("is_flash_sale")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                        <span className="text-xs text-gray-700">Flash Sale</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input {...register("is_best_seller")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                        <span className="text-xs text-gray-700">Best Seller</span>
+                      </label>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Flash Sale Price (৳)</label>
+                      <input {...register("flash_sale_price")} type="number" className="input" placeholder="Leave blank if no flash sale" />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-6">
