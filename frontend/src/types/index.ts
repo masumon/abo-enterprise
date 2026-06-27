@@ -74,6 +74,8 @@ export interface Order {
   payment_method: string;
   order_status?: string;
   subtotal: number;
+  discount_amount?: number;
+  coupon_code?: string;
   delivery_charge: number;
   total: number;
   notes?: string;

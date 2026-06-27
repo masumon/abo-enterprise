@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { X, Minus, Plus, Trash2, ShoppingBag, ArrowRight, Tag } from "lucide-react";
 import Image from "next/image";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
-import { formatPrice, generateWhatsAppOrderMessage, WHATSAPP_NUMBER } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import CheckoutModal from "./CheckoutModal";
 
 const COUPONS: Record<string, number> = { ABO10: 0.1, WELCOME: 0.05 };
 
@@ -16,7 +16,7 @@ export default function CartDrawer() {
   const { items, isOpen, closeCart, updateQuantity, removeItem, total } = useCartStore();
   const { lang } = useLanguageStore();
   const t = useT();
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const router = useRouter();
   const [coupon, setCoupon] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
@@ -166,7 +166,10 @@ export default function CartDrawer() {
                 <span className="text-2xl font-bold text-accent-500">{formatPrice(cartTotal)}</span>
               </div>
             </div>
-            <button onClick={() => { closeCart(); setCheckoutOpen(true); }} className="btn btn-primary btn-lg w-full btn-ripple">
+            <button
+              onClick={() => { closeCart(); router.push("/checkout"); }}
+              className="btn btn-primary btn-lg w-full btn-ripple"
+            >
               {lang === "bn" ? "অর্ডার করুন" : "Checkout"}
               <ArrowRight className="w-5 h-5" />
             </button>
@@ -174,12 +177,6 @@ export default function CartDrawer() {
         )}
       </aside>
 
-      {checkoutOpen && (
-        <CheckoutModal
-          isOpen={checkoutOpen}
-          onClose={() => setCheckoutOpen(false)}
-        />
-      )}
     </>
   );
 }
