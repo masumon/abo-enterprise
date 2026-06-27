@@ -165,6 +165,27 @@ export interface PaginatedResponse<T = unknown> {
   meta?: PaginatedMeta;
 }
 
+export interface BlogPost {
+  id: string;
+  slug: string;
+  title_en: string;
+  title_bn?: string;
+  content_en: string;
+  content_bn?: string;
+  excerpt_en?: string;
+  excerpt_bn?: string;
+  featured_image_url?: string;
+  category?: string;
+  tags?: string[];
+  author_name: string;
+  status: "draft" | "published";
+  is_featured?: boolean;
+  sort_order?: number;
+  published_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface AdminUser {
   id: string;
   email: string;

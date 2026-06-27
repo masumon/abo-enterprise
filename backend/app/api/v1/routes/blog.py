@@ -1,0 +1,227 @@
+import uuid
+from datetime import datetime, timezone
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func, and_
+from app.core.database import get_db
+from app.core.security import require_admin
+from app.models.models import BlogPost, ActivityLog, AdminUser
+from app.schemas.schemas import (
+    BlogPostOut,
+    BlogPostCreate,
+    BlogPostUpdate,
+    PaginatedResponse,
+    PaginatedMeta,
+    ApiResponse,
+)
+
+router = APIRouter(prefix="/blog", tags=["blog"])
+
+
+# ==================== PUBLIC ENDPOINTS ====================
+
+@router.get("", response_model=PaginatedResponse)
+async def list_posts(
+    db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(10, ge=1, le=50),
+    category: str | None = None,
+    featured: bool | None = None,
+):
+    """List published blog posts (public)"""
+    base_filter = and_(BlogPost.is_deleted == False, BlogPost.status == "published")
+    query = select(BlogPost).where(base_filter)
+
+    if category:
+        query = query.where(BlogPost.category == category)
+    if featured is not None:
+        query = query.where(BlogPost.is_featured == featured)
+
+    count_result = await db.execute(
+        select(func.count(BlogPost.id)).where(base_filter)
+    )
+    total = count_result.scalar() or 0
+    total_pages = max(1, (total + per_page - 1) // per_page)
+
+    query = (
+        query.order_by(BlogPost.published_at.desc(), BlogPost.sort_order)
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+    )
+    result = await db.execute(query)
+    posts = result.scalars().all()
+
+    return PaginatedResponse(
+        data=[BlogPostOut.model_validate(p).model_dump() for p in posts],
+        message="Posts fetched successfully",
+        meta=PaginatedMeta(page=page, per_page=per_page, total=total, total_pages=total_pages),
+    )
+
+
+@router.get("/{slug}", response_model=ApiResponse)
+async def get_post(slug: str, db: AsyncSession = Depends(get_db)):
+    """Get published blog post by slug (public)"""
+    result = await db.execute(
+        select(BlogPost).where(
+            and_(BlogPost.slug == slug, BlogPost.is_deleted == False, BlogPost.status == "published")
+        )
+    )
+    post = result.scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    return ApiResponse(data=BlogPostOut.model_validate(post).model_dump(), message="Post fetched successfully")
+
+
+# ==================== ADMIN ENDPOINTS ====================
+
+@router.get("/admin/posts", response_model=PaginatedResponse)
+async def list_posts_admin(
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    status: str | None = None,
+):
+    """List all blog posts (admin)"""
+    query = select(BlogPost).where(BlogPost.is_deleted == False)
+    count_query = select(func.count(BlogPost.id)).where(BlogPost.is_deleted == False)
+
+    if status:
+        query = query.where(BlogPost.status == status)
+        count_query = count_query.where(BlogPost.status == status)
+
+    total = (await db.execute(count_query)).scalar() or 0
+    total_pages = max(1, (total + per_page - 1) // per_page)
+
+    query = (
+        query.order_by(BlogPost.updated_at.desc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+    )
+    result = await db.execute(query)
+    posts = result.scalars().all()
+
+    return PaginatedResponse(
+        data=[BlogPostOut.model_validate(p).model_dump() for p in posts],
+        message="Posts fetched successfully",
+        meta=PaginatedMeta(page=page, per_page=per_page, total=total, total_pages=total_pages),
+    )
+
+
+@router.post("/admin/posts", response_model=ApiResponse)
+async def create_post(
+    payload: BlogPostCreate,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create blog post (admin only)"""
+    existing = await db.execute(select(BlogPost).where(BlogPost.slug == payload.slug))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Slug already exists")
+
+    data = payload.model_dump()
+    if data.get("status") == "published" and not data.get("published_at"):
+        data["published_at"] = datetime.now(timezone.utc)
+
+    post = BlogPost(**data)
+    db.add(post)
+    await db.commit()
+    await db.refresh(post)
+
+    log = ActivityLog(
+        admin_id=uuid.UUID(admin_id),
+        action="create",
+        entity_type="blog_post",
+        entity_id=post.id,
+        new_values={"slug": post.slug, "title_en": post.title_en},
+    )
+    db.add(log)
+    await db.commit()
+
+    return ApiResponse(data=BlogPostOut.model_validate(post).model_dump(), message="Post created successfully")
+
+
+@router.get("/admin/posts/{post_id}", response_model=ApiResponse)
+async def get_post_admin(
+    post_id: uuid.UUID,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get any blog post (admin)"""
+    result = await db.execute(
+        select(BlogPost).where(and_(BlogPost.id == post_id, BlogPost.is_deleted == False))
+    )
+    post = result.scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    return ApiResponse(data=BlogPostOut.model_validate(post).model_dump(), message="Post fetched successfully")
+
+
+@router.put("/admin/posts/{post_id}", response_model=ApiResponse)
+async def update_post(
+    post_id: uuid.UUID,
+    payload: BlogPostUpdate,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update blog post (admin only)"""
+    result = await db.execute(
+        select(BlogPost).where(and_(BlogPost.id == post_id, BlogPost.is_deleted == False))
+    )
+    post = result.scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    update_data = payload.model_dump(exclude_unset=True)
+
+    if update_data.get("status") == "published" and not post.published_at and not update_data.get("published_at"):
+        update_data["published_at"] = datetime.now(timezone.utc)
+
+    for field, value in update_data.items():
+        setattr(post, field, value)
+
+    await db.commit()
+    await db.refresh(post)
+
+    log = ActivityLog(
+        admin_id=uuid.UUID(admin_id),
+        action="update",
+        entity_type="blog_post",
+        entity_id=post.id,
+        new_values=update_data,
+    )
+    db.add(log)
+    await db.commit()
+
+    return ApiResponse(data=BlogPostOut.model_validate(post).model_dump(), message="Post updated successfully")
+
+
+@router.delete("/admin/posts/{post_id}", response_model=ApiResponse)
+async def delete_post(
+    post_id: uuid.UUID,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Soft delete blog post (admin only)"""
+    result = await db.execute(
+        select(BlogPost).where(and_(BlogPost.id == post_id, BlogPost.is_deleted == False))
+    )
+    post = result.scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+
+    post.is_deleted = True
+    await db.commit()
+
+    log = ActivityLog(
+        admin_id=uuid.UUID(admin_id),
+        action="delete",
+        entity_type="blog_post",
+        entity_id=post.id,
+    )
+    db.add(log)
+    await db.commit()
+
+    return ApiResponse(message="Post deleted successfully")

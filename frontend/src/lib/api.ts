@@ -115,6 +115,14 @@ export const reviewsApi = {
     api.post<ApiResponse<import("@/types").Review>>("/api/v1/reviews", data),
 };
 
+export const blogApi = {
+  list: (params?: { category?: string; featured?: boolean; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<import("@/types").BlogPost>>("/api/v1/blog", { params }),
+
+  getBySlug: (slug: string) =>
+    api.get<ApiResponse<import("@/types").BlogPost>>(`/api/v1/blog/${slug}`),
+};
+
 export const adminApi = {
   stats: () =>
     api.get<ApiResponse<{

@@ -506,6 +506,30 @@ class AdminSetting(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class BlogPost(Base):
+    __tablename__ = "blog_posts"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    title_en: Mapped[str] = mapped_column(String(500), nullable=False)
+    title_bn: Mapped[str | None] = mapped_column(String(500))
+    content_en: Mapped[str] = mapped_column(Text, nullable=False)
+    content_bn: Mapped[str | None] = mapped_column(Text)
+    excerpt_en: Mapped[str | None] = mapped_column(Text)
+    excerpt_bn: Mapped[str | None] = mapped_column(Text)
+    featured_image_url: Mapped[str | None] = mapped_column(Text)
+    category: Mapped[str | None] = mapped_column(String(100), index=True)
+    tags: Mapped[list] = mapped_column(JSON, default=list)
+    author_name: Mapped[str] = mapped_column(String(255), default="ABO Enterprise")
+    status: Mapped[str] = mapped_column(String(20), default="draft", index=True)
+    is_featured: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class LeadFormField(Base):
     __tablename__ = "lead_form_fields"
 
