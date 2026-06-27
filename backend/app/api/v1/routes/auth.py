@@ -47,8 +47,9 @@ async def get_me(
 
 
 @router.post("/setup", include_in_schema=False)
+@router.get("/setup", include_in_schema=False)
 async def setup_admin(db: AsyncSession = Depends(get_db)):
-    """One-time admin setup. Disable after first use."""
+    """One-time admin setup — creates or resets admin from env vars."""
     if not settings.ADMIN_PASSWORD:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -56,12 +57,19 @@ async def setup_admin(db: AsyncSession = Depends(get_db)):
         )
 
     existing = await db.execute(select(AdminUser).where(AdminUser.email == settings.ADMIN_EMAIL))
-    if existing.scalar_one_or_none():
-        return {"message": "Admin already exists"}
+    user = existing.scalar_one_or_none()
+
+    new_hash = hash_password(settings.ADMIN_PASSWORD)
+
+    if user:
+        user.password_hash = new_hash
+        user.is_active = True
+        await db.commit()
+        return {"message": "Admin password reset", "email": settings.ADMIN_EMAIL}
 
     admin = AdminUser(
         email=settings.ADMIN_EMAIL,
-        password_hash=hash_password(settings.ADMIN_PASSWORD),
+        password_hash=new_hash,
         name=settings.ADMIN_NAME,
         role="super_admin",
     )
