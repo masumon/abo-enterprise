@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { BlogPost } from "@/types";
 import { SITE_URL } from "@/lib/tokens";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = getApiBaseUrl();
 
 export const metadata: Metadata = {
   title: "Blog | ABO Enterprise",

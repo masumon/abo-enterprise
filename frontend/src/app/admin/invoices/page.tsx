@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Loader2, FileText, X, Trash2, Download, ChevronDown } from "lucide-react";
 import api from "@/lib/api";
+import { getApiBaseUrl } from "@/lib/apiBase";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
@@ -92,7 +93,7 @@ export default function AdminInvoicesPage() {
     }
   };
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
+  const apiBase = getApiBaseUrl();
 
   return (
     <div className="space-y-6 max-w-6xl">

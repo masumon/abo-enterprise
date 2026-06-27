@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import type { Product } from "@/types";
 import ProductsClient from "./ProductsClient";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = getApiBaseUrl();
 
 export const metadata: Metadata = {
   title: "Products — Mobile Accessories & Gadgets",

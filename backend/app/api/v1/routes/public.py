@@ -56,7 +56,7 @@ async def get_public_stats(db: AsyncSession = Depends(get_db)):
     )).scalar() or 0
 
     total_reviews = (await db.execute(
-        select(func.count(Review.id)).where(Review.is_deleted == False)  # noqa: E712
+        select(func.count(Review.id)).where(Review.is_active == True)  # noqa: E712
     )).scalar() or 0
 
     first_order = (await db.execute(

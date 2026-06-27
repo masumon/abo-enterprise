@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api from "@/lib/api";
+import { getApiBaseUrl } from "@/lib/apiBase";
 import { TrendingUp, ShoppingCart, Calendar, Users, Download, RefreshCw } from "lucide-react";
 
 interface Overview {
@@ -13,7 +14,7 @@ interface Overview {
 
 interface ChartDay { date: string; orders: number; bookings: number; total: number }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = getApiBaseUrl();
 
 export default function AnalyticsPage() {
   const [days, setDays] = useState(30);

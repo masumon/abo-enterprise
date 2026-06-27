@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Props {
   params: { slug: string };
@@ -8,7 +9,7 @@ interface Props {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "https://abo-enterprise-api.onrender.com";
+    const apiUrl = getApiBaseUrl();
     const res = await fetch(`${apiUrl}/api/v1/products/${params.slug}`, {
       next: { revalidate: 3600 },
     });

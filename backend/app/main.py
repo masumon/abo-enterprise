@@ -18,8 +18,9 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 async def _init_db_and_bootstrap() -> None:
-    """Create any missing tables then bootstrap the admin account."""
+    """Create any missing tables, sync columns, then bootstrap the admin account."""
     from app.core.database import engine, Base
+    from app.core.schema_sync import sync_schema
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -27,6 +28,10 @@ async def _init_db_and_bootstrap() -> None:
     except Exception as exc:
         logger.error("Database table creation failed: %s", exc, exc_info=exc)
         return
+    try:
+        await sync_schema(engine)
+    except Exception as exc:
+        logger.error("Schema sync failed: %s", exc, exc_info=exc)
     await bootstrap_admin()
 
 
