@@ -169,6 +169,7 @@ DEFAULT_FLAGS = {
     "feature_guest_checkout": True,
     "feature_newsletter": True,
     "feature_infinite_scroll": True,
+    "feature_assistant_chat": True,
 }
 
 

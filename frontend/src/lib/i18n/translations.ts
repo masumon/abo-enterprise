@@ -87,6 +87,10 @@ const translations = {
     profile_support: "Support Tickets",
     profile_settings: "Account Settings",
     profile_coming_soon: "Coming soon",
+    assistant_title: "ABO Assistant",
+    assistant_welcome: "Ask about products, services, orders, or contact info — in English or Bangla.",
+    assistant_placeholder: "Type your message...",
+    assistant_error: "Sorry, something went wrong. Please try again.",
   },
   bn: {
     nav_products: "পণ্য",
@@ -163,6 +167,10 @@ const translations = {
     profile_support: "সাপোর্ট টিকেট",
     profile_settings: "অ্যাকাউন্ট সেটিংস",
     profile_coming_soon: "শীঘ্রই আসছে",
+    assistant_title: "ABO সহকারী",
+    assistant_welcome: "পণ্য, সেবা, অর্ডার বা যোগাযোগ সম্পর্কে জিজ্ঞাসা করুন — ইংরেজি বা বাংলায়।",
+    assistant_placeholder: "আপনার বার্তা লিখুন...",
+    assistant_error: "দুঃখিত, কিছু ভুল হয়েছে। আবার চেষ্টা করুন।",
   },
 } as const;
 

@@ -569,6 +569,51 @@ class BlogPost(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class AssistantConversation(Base):
+    __tablename__ = "assistant_conversations"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    customer_name: Mapped[str | None] = mapped_column(String(255))
+    customer_phone: Mapped[str | None] = mapped_column(String(20), index=True)
+    customer_email: Mapped[str | None] = mapped_column(String(255))
+    language: Mapped[str] = mapped_column(String(10), default="en")
+    last_intent: Mapped[str | None] = mapped_column(String(50))
+    context: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    messages: Mapped[list["AssistantMessage"]] = relationship(back_populates="conversation")
+
+
+class AssistantMessage(Base):
+    __tablename__ = "assistant_messages"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    conversation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("assistant_conversations.id"), nullable=False, index=True)
+    role: Mapped[str] = mapped_column(String(20), nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    intent: Mapped[str | None] = mapped_column(String(50))
+    meta: Mapped[dict] = mapped_column("metadata", JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    conversation: Mapped["AssistantConversation"] = relationship(back_populates="messages")
+
+
+class AssistantActionLog(Base):
+    __tablename__ = "assistant_action_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    session_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    intent: Mapped[str | None] = mapped_column(String(50))
+    action: Mapped[str] = mapped_column(String(100), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), nullable=False)
+    details: Mapped[dict] = mapped_column(JSON, default=dict)
+    admin_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("admin_users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class LeadFormField(Base):
     __tablename__ = "lead_form_fields"
 

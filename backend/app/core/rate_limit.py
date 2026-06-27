@@ -12,6 +12,7 @@ RATE_LIMITS = {
     "/api/v1/leads":        (10, 60),
     "/api/v1/bookings":     (10, 60),
     "/api/v1/orders":       (20, 60),
+    "/api/v1/assistant/chat": (30, 60),
     "default":              (100, 60),
 }
 

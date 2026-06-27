@@ -371,4 +371,32 @@ export const publicApi = {
     api.get<ApiResponse<Record<string, boolean | string>>>("/api/v1/public/feature-flags"),
 };
 
+export const assistantApi = {
+  chat: (data: {
+    message: string;
+    session_id?: string;
+    customer_name?: string;
+    customer_phone?: string;
+    customer_email?: string;
+    language?: string;
+  }) =>
+    api.post<ApiResponse<{
+      message: string;
+      intent: string;
+      language: string;
+      session_id: string;
+      data?: Record<string, unknown>;
+      suggestions?: string[];
+    }>>("/api/v1/assistant/chat", data),
+
+  history: (sessionId: string, limit = 20) =>
+    api.get<ApiResponse<{ role: string; content: string; intent?: string }[]>>(
+      `/api/v1/assistant/conversations/${sessionId}/history`,
+      { params: { limit } }
+    ),
+
+  health: () =>
+    api.get<ApiResponse<{ status: string; module: string }>>("/api/v1/assistant/health"),
+};
+
 export default api;
