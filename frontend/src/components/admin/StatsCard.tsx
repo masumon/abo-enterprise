@@ -8,6 +8,7 @@ interface Props {
   icon: LucideIcon;
   color?: "brand" | "accent" | "green" | "amber";
   loading?: boolean;
+  alert?: boolean;
 }
 
 const COLOR_MAP = {
@@ -41,13 +42,16 @@ const COLOR_MAP = {
   },
 };
 
-export default function StatsCard({ title, value, sub, icon: Icon, color = "brand", loading }: Props) {
+export default function StatsCard({ title, value, sub, icon: Icon, color = "brand", loading, alert }: Props) {
   const c = COLOR_MAP[color];
   return (
     <div className="admin-card p-5 group hover:-translate-y-0.5 transition-all duration-200">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">{title}</p>
+          <div className="flex items-center gap-1.5 mb-2">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{title}</p>
+            {alert && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />}
+          </div>
           {loading ? (
             <div className="h-8 w-20 bg-gray-100 rounded-lg animate-pulse" />
           ) : (
