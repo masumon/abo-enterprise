@@ -79,24 +79,26 @@ _COLUMNS: list[tuple[str, str, str]] = [
 
 async def run_column_migrations(engine: AsyncEngine) -> None:
     """Add any missing columns to existing tables. Safe to run on every boot."""
+    from sqlalchemy import text
     added = 0
-    skipped = 0
     errors = 0
 
-    async with engine.begin() as conn:
-        for table, column, definition in _COLUMNS:
-            sql = (
-                f"ALTER TABLE IF EXISTS {table} "
-                f"ADD COLUMN IF NOT EXISTS {column} {definition};"
-            )
-            try:
-                await conn.execute(__import__("sqlalchemy").text(sql))
-                added += 1
-            except Exception as exc:
-                logger.warning("Migration skipped %s.%s: %s", table, column, exc)
-                errors += 1
+    for table, column, definition in _COLUMNS:
+        sql = (
+            f"ALTER TABLE IF EXISTS {table} "
+            f"ADD COLUMN IF NOT EXISTS {column} {definition};"
+        )
+        try:
+            # Each column gets its own transaction so one failure cannot
+            # abort the rest (PostgreSQL aborts the whole txn on error).
+            async with engine.begin() as conn:
+                await conn.execute(text(sql))
+            added += 1
+        except Exception as exc:
+            logger.warning("Migration skipped %s.%s: %s", table, column, exc)
+            errors += 1
 
     logger.info(
-        "Column migrations complete — %d statements executed, %d errors",
+        "Column migrations complete — %d applied, %d errors",
         added, errors,
     )

@@ -1,8 +1,16 @@
 import axios from "axios";
 import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier } from "@/types";
 
+// In production (Vercel) fall back to the Render service URL if the env var
+// wasn't baked in at build time. For local dev the var should be set to
+// http://localhost:8000 via .env.local.
+const _prodFallback = "https://abo-enterprise.onrender.com";
+const baseURL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NODE_ENV === "production" ? _prodFallback : "http://localhost:8000");
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
+  baseURL,
   headers: { "Content-Type": "application/json" },
   timeout: 60000, // 60s — Render free tier cold start can take 30-50s
 });
@@ -153,7 +161,7 @@ export const blogApi = {
     api.get<ApiResponse<import("@/types").BlogPost>>(`/api/v1/blog/${slug}`),
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = baseURL;
 
 export async function downloadCsv(path: string, filename: string): Promise<void> {
   const token = typeof window !== "undefined" ? localStorage.getItem("abo_admin_token") : null;

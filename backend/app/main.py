@@ -1,4 +1,3 @@
-import asyncio
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -19,8 +18,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 async def _init_db_and_bootstrap() -> None:
-    """Create all DB tables (idempotent) then bootstrap the admin account.
-    Runs as a background task so the server starts immediately."""
+    """Create tables, run column migrations, bootstrap admin — all before serving traffic."""
     from app.core.database import engine, Base
     from app.core.migrations import run_column_migrations
     try:
@@ -28,9 +26,8 @@ async def _init_db_and_bootstrap() -> None:
             await conn.run_sync(Base.metadata.create_all)
         logger.info("Database tables verified/created.")
     except Exception as exc:
-        logger.error("Database table creation failed — login will fail: %s", exc, exc_info=exc)
+        logger.error("Database table creation failed: %s", exc, exc_info=exc)
         return
-    # Add any new columns to existing tables (create_all never ALTERs).
     await run_column_migrations(engine)
     await bootstrap_admin()
 
@@ -38,9 +35,8 @@ async def _init_db_and_bootstrap() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME}")
-    # Runs in background: create tables first, then bootstrap admin.
-    # Server responds to health-check immediately while DB initialises.
-    asyncio.create_task(_init_db_and_bootstrap())
+    # Await synchronously so all migrations complete before the first request.
+    await _init_db_and_bootstrap()
     yield
     logger.info(f"Shutting down {settings.APP_NAME}")
 
