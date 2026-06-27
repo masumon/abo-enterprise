@@ -65,6 +65,7 @@ export default function AdminLoginPage() {
       const token = res.data.data?.access_token;
       if (!token) throw new Error("No token received");
       localStorage.setItem("abo_admin_token", token);
+      document.cookie = `abo_admin_token=${token}; path=/; max-age=86400; SameSite=Lax`;
       router.replace("/admin");
     } catch (e: unknown) {
       setErrorInfo(getErrorInfo(e));

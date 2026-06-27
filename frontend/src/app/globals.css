@@ -18,6 +18,8 @@
     --surface: #fafbff;
     --surface-secondary: #f0f4ff;
     --navy: #0a1628;
+    --navbar-offset: 6.25rem;
+    --announcement-height: 2.25rem;
   }
 
   .dark {
@@ -49,6 +51,23 @@
     background-image:
       radial-gradient(ellipse at 20% 50%, rgba(30,91,168,0.08) 0%, transparent 60%),
       radial-gradient(ellipse at 80% 20%, rgba(233,30,99,0.05) 0%, transparent 50%);
+  }
+
+  .dark .input {
+    @apply bg-white/5 border-white/10 text-gray-100 placeholder-gray-500 focus:bg-white/10;
+  }
+
+  .dark .card {
+    background: rgba(15,23,42,0.75);
+    border-color: rgba(255,255,255,0.08);
+  }
+
+  .dark .btn-outline {
+    @apply border-brand-700 text-brand-300 hover:bg-brand-900/40;
+  }
+
+  .dark .btn-ghost {
+    @apply text-gray-300 hover:bg-white/10 hover:text-white;
   }
 
   h1,h2,h3,h4,h5,h6 { line-height: 1.2; font-weight: 700; }

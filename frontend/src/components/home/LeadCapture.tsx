@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Send, CheckCircle, Bot, Code, Cog } from "lucide-react";
-import { leadsApi } from "@/lib/api";
+import { serviceLeadsApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 
@@ -19,6 +19,14 @@ const schema = z.object({
 });
 
 type FormData = z.infer<typeof schema>;
+
+const LEAD_TYPE_MAP: Record<FormData["lead_type"], string> = {
+  software_development: "software",
+  ai_solutions: "ai",
+  automation: "automation",
+  erp: "erp",
+  general: "general",
+};
 
 const LEAD_TYPES = [
   { value: "software_development", label: { en: "Custom Software", bn: "কাস্টম সফটওয়্যার" }, icon: Code },
@@ -50,7 +58,14 @@ export default function LeadCapture() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      await leadsApi.create({ ...data, email: data.email || undefined, source: "website" } as Parameters<typeof leadsApi.create>[0]);
+      await serviceLeadsApi.create({
+        lead_type: LEAD_TYPE_MAP[data.lead_type],
+        name: data.name,
+        phone: data.phone,
+        email: data.email || undefined,
+        company: data.company || undefined,
+        project_description: data.project_description,
+      });
       setIsSubmitted(true);
     } catch {
       setSubmitError(
@@ -73,10 +88,15 @@ export default function LeadCapture() {
                 ? "AI, সফটওয়্যার বা অটোমেশন দরকার?"
                 : "Need AI, Software or Automation?"}
             </h2>
-            <p className="text-white/70">
+            <p className="text-white/70 mb-2">
               {lang === "bn"
                 ? "আপনার প্রজেক্টের বিবরণ দিন — ২৪ ঘণ্টার মধ্যে বিস্তারিত প্রস্তাব পাবেন।"
                 : "Describe your project and get a detailed proposal within 24 hours."}
+            </p>
+            <p className="text-white/50 text-sm">
+              {lang === "bn"
+                ? "✓ বিনামূল্যে পরামর্শ  ✓ কোনো বাধ্যবাধকতা নেই  ✓ ২৪ ঘণ্টার প্রতিশ্রুতি"
+                : "✓ Free consultation  ✓ No obligation  ✓ 24-hour response guarantee"}
             </p>
           </div>
 

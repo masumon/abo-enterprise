@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { BlogPost } from "@/types";
 
+import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 async function fetchPost(slug: string): Promise<BlogPost | null> {
@@ -28,8 +30,8 @@ export async function generateMetadata({
 
   const title = post.seo_title ?? `${post.title_en} | ABO Enterprise Blog`;
   const description = post.seo_description ?? post.excerpt_en ?? post.content_en.slice(0, 160);
-  const url = post.canonical_url ?? `https://aboenterprise.vercel.app/blog/${post.slug}`;
-  const ogImg = post.og_image ?? post.featured_image_url;
+  const url = post.canonical_url ?? `${SITE_URL}/blog/${post.slug}`;
+  const ogImg = post.og_image ?? post.featured_image_url ?? DEFAULT_OG_IMAGE;
 
   return {
     title,
@@ -60,7 +62,7 @@ function buildArticleJsonLd(post: BlogPost) {
     "@type": "Article",
     headline: post.title_en,
     description: post.excerpt_en ?? post.content_en.slice(0, 160),
-    url: `https://aboenterprise.vercel.app/blog/${post.slug}`,
+    url: `${SITE_URL}/blog/${post.slug}`,
     image: post.featured_image_url ? [post.featured_image_url] : undefined,
     datePublished: post.published_at ?? post.created_at,
     dateModified: post.updated_at ?? post.published_at ?? post.created_at,
@@ -71,15 +73,15 @@ function buildArticleJsonLd(post: BlogPost) {
     publisher: {
       "@type": "Organization",
       name: "ABO Enterprise",
-      url: "https://aboenterprise.vercel.app",
+      url: SITE_URL,
       logo: {
         "@type": "ImageObject",
-        url: "https://aboenterprise.vercel.app/icons/icon-512.png",
+        url: DEFAULT_OG_IMAGE,
       },
     },
     mainEntityOfPage: {
       "@type": "WebPage",
-      "@id": `https://aboenterprise.vercel.app/blog/${post.slug}`,
+      "@id": `${SITE_URL}/blog/${post.slug}`,
     },
     ...(post.tags && post.tags.length > 0 ? { keywords: post.tags.join(", ") } : {}),
   };

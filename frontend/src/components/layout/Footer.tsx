@@ -50,7 +50,7 @@ export default function Footer() {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-full border-2 border-white/20 bg-white/10 flex items-center justify-center overflow-hidden">
-                <Image src="https://i.ibb.co.com/pjY3wvG9/1769284089412.png" alt="ABO Enterprise" width={48} height={48} className="object-cover" />
+                <Image src="/logo.jpg" alt="ABO Enterprise" width={48} height={48} className="object-cover" />
               </div>
               <div>
                 <h3 className="text-white font-bold text-lg">ABO Enterprise</h3>

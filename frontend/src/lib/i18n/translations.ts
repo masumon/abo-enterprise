@@ -7,6 +7,8 @@ const translations = {
     // Nav
     nav_products: "Products",
     nav_services: "Services",
+    nav_blog: "Blog",
+    nav_solutions: "Solutions",
     nav_projects: "Projects",
     nav_about: "About",
     nav_contact: "Contact",
@@ -89,6 +91,8 @@ const translations = {
   bn: {
     nav_products: "পণ্য",
     nav_services: "সেবা",
+    nav_blog: "ব্লগ",
+    nav_solutions: "সমাধান",
     nav_projects: "প্রজেক্ট",
     nav_about: "আমাদের সম্পর্কে",
     nav_contact: "যোগাযোগ",

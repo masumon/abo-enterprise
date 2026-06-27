@@ -24,7 +24,7 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <AnnouncementBar />
       <OfflineBanner />
       <Navbar />
-      <main className="flex-1 pt-[6.25rem] pb-20 lg:pb-0 min-h-screen bg-[var(--surface)] dark:bg-[var(--navy)]">
+      <main className="flex-1 pt-[var(--navbar-offset)] pb-20 lg:pb-0 min-h-screen bg-[var(--surface)] dark:bg-[var(--navy)]">
         {children}
       </main>
       <Footer />

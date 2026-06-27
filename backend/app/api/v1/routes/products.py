@@ -78,6 +78,51 @@ async def suggest_products(
     ])
 
 
+@router.post("/validate-stock", response_model=ApiResponse)
+async def validate_stock(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+):
+    """Validate cart items against current stock levels (public)."""
+    items = payload.get("items", [])
+    issues = []
+    for item in items:
+        product_id = item.get("product_id")
+        quantity = int(item.get("quantity", 1))
+        if not product_id:
+            continue
+        try:
+            product_uuid = UUID(str(product_id))
+        except (ValueError, TypeError):
+            result = await db.execute(
+                select(Product).where(Product.slug == str(product_id), Product.is_deleted == False)  # noqa: E712
+            )
+        else:
+            result = await db.execute(
+                select(Product).where(Product.id == product_uuid, Product.is_deleted == False)  # noqa: E712
+            )
+        product = result.scalar_one_or_none()
+        if not product:
+            issues.append({"product_id": product_id, "error": "not_found", "available": 0})
+        elif product.stock_quantity < quantity:
+            issues.append({
+                "product_id": str(product.id),
+                "slug": product.slug,
+                "name_en": product.name_en,
+                "error": "insufficient_stock",
+                "available": product.stock_quantity,
+                "requested": quantity,
+            })
+        else:
+            issues.append({
+                "product_id": str(product.id),
+                "slug": product.slug,
+                "available": product.stock_quantity,
+                "valid": True,
+            })
+    return ApiResponse(data={"valid": all(i.get("valid") for i in issues if "error" not in i), "items": issues})
+
+
 @router.get("/{slug}/related", response_model=ApiResponse)
 async def related_products(slug: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(

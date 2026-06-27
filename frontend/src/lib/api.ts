@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier } from "@/types";
+import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier, BookingV2, LeadV2, Review, BlogPost, ServiceBookingFormField } from "@/types";
 
 // In production (Vercel) fall back to the Render service URL if the env var
 // wasn't baked in at build time. For local dev the var should be set to
@@ -26,6 +26,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401 && typeof window !== "undefined") {
       localStorage.removeItem("abo_admin_token");
+      document.cookie = "abo_admin_token=; path=/; max-age=0";
       // Only redirect if not already on login page (prevent redirect loop)
       if (!window.location.pathname.includes("/admin/login")) {
         window.location.href = "/admin/login";
@@ -47,6 +48,9 @@ export const productsApi = {
 
   suggest: (q: string) =>
     api.get<ApiResponse<{ slug: string; name_en: string; name_bn: string; price: number; image_url?: string }[]>>("/api/v1/products/suggest", { params: { q } }),
+
+  validateStock: (items: { product_id: string; quantity: number }[]) =>
+    api.post<ApiResponse<{ valid: boolean; items: { product_id: string; error?: string; available?: number; valid?: boolean }[] }>>("/api/v1/products/validate-stock", { items }),
 
   create: (data: Partial<Product>) =>
     api.post<ApiResponse<Product>>("/api/v1/products", data),
@@ -112,18 +116,32 @@ export const leadsApi = {
 
 export const serviceBookingsAdminApi = {
   list: (params?: { status?: string; payment_status?: string; page?: number; per_page?: number }) =>
-    api.get<PaginatedResponse<import("@/types").BookingV2>>("/api/v1/service-bookings/admin/bookings", { params }),
+    api.get<PaginatedResponse<BookingV2>>("/api/v1/service-bookings/admin/bookings", { params }),
 
   updateStatus: (id: string, status: string) =>
-    api.patch<ApiResponse<import("@/types").BookingV2>>(`/api/v1/service-bookings/admin/bookings/${id}/status`, { status }),
+    api.patch<ApiResponse<BookingV2>>(`/api/v1/service-bookings/admin/bookings/${id}/status`, { status }),
+};
+
+export const serviceLeadsApi = {
+  create: (data: {
+    lead_type: string;
+    name: string;
+    phone: string;
+    email?: string;
+    company?: string;
+    project_description?: string;
+    requirements?: string;
+    budget_range?: string;
+  }) =>
+    api.post<ApiResponse<LeadV2>>("/api/v1/service-leads", data),
 };
 
 export const serviceLeadsAdminApi = {
   list: (params?: { status?: string; lead_type?: string; min_score?: number; page?: number; per_page?: number }) =>
-    api.get<PaginatedResponse<import("@/types").LeadV2>>("/api/v1/service-leads/admin/leads", { params }),
+    api.get<PaginatedResponse<LeadV2>>("/api/v1/service-leads/admin/leads", { params }),
 
   updateStatus: (id: string, status: string, reason_lost?: string) =>
-    api.patch<ApiResponse<import("@/types").LeadV2>>(`/api/v1/service-leads/admin/leads/${id}/status`, { status, reason_lost }),
+    api.patch<ApiResponse<LeadV2>>(`/api/v1/service-leads/admin/leads/${id}/status`, { status, reason_lost }),
 };
 
 export const authApi = {
@@ -147,18 +165,18 @@ export const servicesApi = {
 
 export const reviewsApi = {
   list: (params?: { featured?: boolean; product_id?: string; page?: number; per_page?: number }) =>
-    api.get<PaginatedResponse<import("@/types").Review>>("/api/v1/reviews", { params }),
+    api.get<PaginatedResponse<Review>>("/api/v1/reviews", { params }),
 
-  create: (data: Partial<import("@/types").Review>) =>
-    api.post<ApiResponse<import("@/types").Review>>("/api/v1/reviews", data),
+  create: (data: Partial<Review>) =>
+    api.post<ApiResponse<Review>>("/api/v1/reviews", data),
 };
 
 export const blogApi = {
   list: (params?: { category?: string; featured?: boolean; page?: number; per_page?: number }) =>
-    api.get<PaginatedResponse<import("@/types").BlogPost>>("/api/v1/blog", { params }),
+    api.get<PaginatedResponse<BlogPost>>("/api/v1/blog", { params }),
 
   getBySlug: (slug: string) =>
-    api.get<ApiResponse<import("@/types").BlogPost>>(`/api/v1/blog/${slug}`),
+    api.get<ApiResponse<BlogPost>>(`/api/v1/blog/${slug}`),
 };
 
 const API_BASE = baseURL;
@@ -180,16 +198,16 @@ export async function downloadCsv(path: string, filename: string): Promise<void>
 
 export const adminBlogApi = {
   list: (params?: { status?: string; page?: number; per_page?: number }) =>
-    api.get<PaginatedResponse<import("@/types").BlogPost>>("/api/v1/blog/admin/posts", { params }),
+    api.get<PaginatedResponse<BlogPost>>("/api/v1/blog/admin/posts", { params }),
 
   get: (id: string) =>
-    api.get<ApiResponse<import("@/types").BlogPost>>(`/api/v1/blog/admin/posts/${id}`),
+    api.get<ApiResponse<BlogPost>>(`/api/v1/blog/admin/posts/${id}`),
 
-  create: (data: Partial<import("@/types").BlogPost>) =>
-    api.post<ApiResponse<import("@/types").BlogPost>>("/api/v1/blog/admin/posts", data),
+  create: (data: Partial<BlogPost>) =>
+    api.post<ApiResponse<BlogPost>>("/api/v1/blog/admin/posts", data),
 
-  update: (id: string, data: Partial<import("@/types").BlogPost>) =>
-    api.put<ApiResponse<import("@/types").BlogPost>>(`/api/v1/blog/admin/posts/${id}`, data),
+  update: (id: string, data: Partial<BlogPost>) =>
+    api.put<ApiResponse<BlogPost>>(`/api/v1/blog/admin/posts/${id}`, data),
 
   delete: (id: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/blog/admin/posts/${id}`),
@@ -220,11 +238,11 @@ export const servicesAdminApi = {
   deleteTier: (serviceId: string, tierId: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/services/admin/services/${serviceId}/tiers/${tierId}`),
 
-  createFormField: (serviceId: string, data: Partial<import("@/types").ServiceBookingFormField>) =>
-    api.post<ApiResponse<import("@/types").ServiceBookingFormField>>(`/api/v1/services/admin/services/${serviceId}/form-fields`, data),
+  createFormField: (serviceId: string, data: Partial<ServiceBookingFormField>) =>
+    api.post<ApiResponse<ServiceBookingFormField>>(`/api/v1/services/admin/services/${serviceId}/form-fields`, data),
 
-  updateFormField: (serviceId: string, fieldId: string, data: Partial<import("@/types").ServiceBookingFormField>) =>
-    api.put<ApiResponse<import("@/types").ServiceBookingFormField>>(`/api/v1/services/admin/services/${serviceId}/form-fields/${fieldId}`, data),
+  updateFormField: (serviceId: string, fieldId: string, data: Partial<ServiceBookingFormField>) =>
+    api.put<ApiResponse<ServiceBookingFormField>>(`/api/v1/services/admin/services/${serviceId}/form-fields/${fieldId}`, data),
 
   deleteFormField: (serviceId: string, fieldId: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/services/admin/services/${serviceId}/form-fields/${fieldId}`),
@@ -325,6 +343,28 @@ export const paymentsApi = {
     api.get<ApiResponse<{ id: string; status: string; amount: number }>>("/api/v1/payments/transaction/" + transaction_id, {
       params: { gateway },
     }),
+};
+
+export const publicApi = {
+  stats: () =>
+    api.get<ApiResponse<{
+      orders: number;
+      products: number;
+      services: number;
+      clients: number;
+      projects: number;
+      years: number;
+      reviews: number;
+    }>>("/api/v1/public/stats"),
+
+  activity: () =>
+    api.get<ApiResponse<{
+      type: string;
+      icon: string;
+      text_en: string;
+      text_bn: string;
+      time: string;
+    }[]>>("/api/v1/public/activity"),
 };
 
 export default api;
