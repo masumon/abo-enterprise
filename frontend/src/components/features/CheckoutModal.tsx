@@ -9,7 +9,7 @@ import { z } from "zod";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
 import { formatPrice, generateWhatsAppOrderMessage, WHATSAPP_NUMBER } from "@/lib/utils";
-import { ordersApi } from "@/lib/api";
+import { ordersApi, paymentsApi } from "@/lib/api";
 import type { PaymentMethod } from "@/types";
 import { cn } from "@/lib/utils";
 
@@ -20,14 +20,15 @@ const schema = z.object({
     .regex(/^0[13-9]\d{8}$/, "সঠিক বাংলাদেশি নম্বর দিন (01XXXXXXXXX)"),
   customer_email: z.string().email("সঠিক ইমেইল দিন").optional().or(z.literal("")),
   delivery_address: z.string().min(10, "সম্পূর্ণ ঠিকানা দিন"),
-  payment_method: z.enum(["bkash", "rocket", "bank", "cod"] as const),
+  payment_method: z.enum(["bkash", "nagad", "rocket", "bank", "cod"] as const),
   notes: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
 const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; detail: string }[] = [
-  { value: "bkash", label: "bKash", detail: "01825007977" },
+  { value: "bkash", label: "bKash", detail: "অনলাইন পেমেন্ট" },
+  { value: "nagad", label: "Nagad", detail: "অনলাইন পেমেন্ট" },
   { value: "rocket", label: "Rocket", detail: "01825007977" },
   { value: "bank", label: "BRAC Bank", detail: "A/C: 1075869070001" },
   { value: "cod", label: "Cash on Delivery", detail: "ডেলিভারির সময়" },
@@ -84,9 +85,27 @@ export default function CheckoutModal({ isOpen, onClose }: Props) {
         total: cartTotal,
       });
 
-      const num = (orderRes.data.data as { order_number?: string } | undefined)?.order_number ?? null;
+      const resData = orderRes.data.data as { order_number?: string; id?: string } | undefined;
+      const num = resData?.order_number ?? null;
+      const orderId = resData?.id ?? null;
       setOrderNumber(num);
 
+      // bKash / Nagad → redirect to payment gateway
+      if ((data.payment_method === "bkash" || data.payment_method === "nagad") && orderId) {
+        clearCart();
+        const payRes =
+          data.payment_method === "bkash"
+            ? await paymentsApi.initiateBkash(orderId)
+            : await paymentsApi.initiateNagad(orderId);
+        const payUrl = payRes.data.data?.payment_url;
+        if (payUrl) {
+          window.location.href = payUrl;
+          return;
+        }
+        // If no payment URL, fall through to WhatsApp confirmation
+      }
+
+      // COD / Bank / Rocket (and bKash/Nagad fallback) → WhatsApp
       const waItems = items.map((i) => ({
         name: lang === "bn" ? i.name_bn : i.name_en,
         price: i.price,

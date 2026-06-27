@@ -4,7 +4,7 @@ export type Language = "en" | "bn";
 
 export type ProductCategory = "accessories" | "gadgets" | "electronics" | "computer";
 
-export type PaymentMethod = "bkash" | "rocket" | "bank" | "cod";
+export type PaymentMethod = "bkash" | "nagad" | "rocket" | "bank" | "cod";
 
 export interface Product {
   id?: string;
