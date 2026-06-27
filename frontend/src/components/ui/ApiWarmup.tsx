@@ -3,10 +3,9 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ||
-  (process.env.NODE_ENV === "production" ? "https://abo-enterprise.onrender.com" : "http://localhost:8000");
+const API_BASE = getApiBaseUrl();
 
 let warmed = false;
 

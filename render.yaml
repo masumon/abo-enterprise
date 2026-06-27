@@ -12,7 +12,7 @@ services:
       - key: APP_ENV
         value: production
       - key: ALLOWED_ORIGINS
-        value: "https://aboenterprise.com,https://www.aboenterprise.com,https://aboenterprise.vercel.app,https://abo-enterprise.vercel.app,https://abo-enterprise-git-main.vercel.app"
+        value: "https://aboenterprise.com,https://www.aboenterprise.com,https://aboenterprise.vercel.app,https://abo-enterprise.vercel.app,https://enterprise.vercel.app,https://abo-enterprise-git-main.vercel.app"
       - key: DATABASE_URL
         sync: false
       - key: SECRET_KEY

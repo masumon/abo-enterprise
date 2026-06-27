@@ -3,8 +3,9 @@ import type { Metadata } from "next";
 import type { Service } from "@/types";
 import ServiceDetailClient from "./ServiceDetailClient";
 import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = getApiBaseUrl();
 
 async function fetchService(slug: string): Promise<Service | null> {
   try {

@@ -4,8 +4,9 @@ import Link from "next/link";
 import type { BlogPost } from "@/types";
 
 import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_BASE = getApiBaseUrl();
 
 async function fetchPost(slug: string): Promise<BlogPost | null> {
   try {

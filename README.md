@@ -30,7 +30,18 @@ cdn/dns     → Cloudflare
 
 1. Create a new Supabase project
 2. Go to SQL Editor
-3. Run `backend/migrations/001_initial_schema.sql`
+3. Run migrations **in order** from `backend/migrations/`:
+   - `001_initial_schema.sql`
+   - `002_settings_table.sql`
+   - `003_product_service_extensions.sql`
+   - `004_services_system.sql`
+   - `005_bookings_leads_payments.sql`
+   - `006_admin_settings_logging.sql`
+   - `007_reviews.sql` (and optionally `007_reviews_seed.sql`)
+   - `008_analytics_rbac.sql`
+   - `009_feature_flags_newsletter.sql`
+
+> **Note:** The backend also auto-syncs missing product/service columns on startup (`app/core/schema_sync.py`), but running the full migration set is recommended for new deployments.
 
 ### 2. Backend Setup
 

@@ -1,5 +1,6 @@
 import { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/tokens";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 const BASE = SITE_URL;
 
@@ -16,7 +17,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${BASE}/track`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
   ];
 
-  const apiBase = process.env.NEXT_PUBLIC_API_URL ?? "";
+  const apiBase = getApiBaseUrl();
 
   try {
     const [servicesRes, blogRes, productsRes] = await Promise.all([

@@ -1,13 +1,8 @@
 import axios from "axios";
 import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier, BookingV2, LeadV2, Review, BlogPost, ServiceBookingFormField } from "@/types";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-// In production (Vercel) fall back to the Render service URL if the env var
-// wasn't baked in at build time. For local dev the var should be set to
-// http://localhost:8000 via .env.local.
-const _prodFallback = "https://abo-enterprise.onrender.com";
-const baseURL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  (process.env.NODE_ENV === "production" ? _prodFallback : "http://localhost:8000");
+const baseURL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL,
