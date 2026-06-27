@@ -1,10 +1,12 @@
 import uuid
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.config import settings
+from app.core.email import send_email, lead_notification_html, customer_lead_confirmation_html
 from app.models.models import LeadV2, ActivityLog, AdminUser
 from app.schemas.schemas import (
     LeadV2Out,
@@ -74,6 +76,7 @@ def calculate_lead_score(lead: LeadV2) -> int:
 @router.post("", response_model=ApiResponse)
 async def create_lead(
     payload: LeadV2Create,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
     """Submit a lead inquiry (public)"""
@@ -94,8 +97,40 @@ async def create_lead(
     await db.commit()
     await db.refresh(lead)
 
-    # TODO: Send confirmation email to lead
-    # TODO: Notify admin of new lead with score
+    budget_display = payload.budget_range or (
+        f"৳{payload.budget_min:,.0f}–৳{payload.budget_max:,.0f}"
+        if payload.budget_min and payload.budget_max
+        else "Not specified"
+    )
+
+    if settings.ADMIN_NOTIFY_EMAIL:
+        html = lead_notification_html(
+            payload.name,
+            payload.phone,
+            payload.lead_type,
+            payload.project_description or "",
+            budget_display,
+        )
+        background_tasks.add_task(
+            send_email,
+            settings.ADMIN_NOTIFY_EMAIL,
+            f"New Lead {lead.lead_number} (Score: {lead.qualification_score}) — ABO Enterprise",
+            html,
+        )
+
+    if payload.email:
+        html = customer_lead_confirmation_html(
+            lead.lead_number,
+            payload.name,
+            payload.lead_type,
+            settings.WHATSAPP_NUMBER,
+        )
+        background_tasks.add_task(
+            send_email,
+            payload.email,
+            f"We received your inquiry #{lead.lead_number} — ABO Enterprise",
+            html,
+        )
 
     return ApiResponse(
         data=LeadV2Out.model_validate(lead).model_dump(),
