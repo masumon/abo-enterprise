@@ -16,7 +16,7 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 async def _ensure_admin_exists():
-    """Create default admin on first startup if ADMIN_PASSWORD is set and no admin exists."""
+    """Create default admin after startup if ADMIN_PASSWORD is set and no admin exists."""
     if not settings.ADMIN_PASSWORD:
         return
     import asyncio
@@ -24,6 +24,8 @@ async def _ensure_admin_exists():
     from app.models.models import AdminUser
     from app.core.security import hash_password
     from sqlalchemy import select
+
+    await asyncio.sleep(15)  # wait for network to be ready after startup
 
     for attempt in range(5):
         try:
@@ -51,8 +53,9 @@ async def _ensure_admin_exists():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    import asyncio
     logger.info(f"Starting {settings.APP_NAME}")
-    await _ensure_admin_exists()
+    asyncio.create_task(_ensure_admin_exists())  # non-blocking background task
     yield
     # Shutdown
     logger.info(f"Shutting down {settings.APP_NAME}")
