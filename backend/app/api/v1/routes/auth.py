@@ -3,8 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
-from app.core.security import verify_password, create_access_token, require_admin, hash_password
-from app.core.config import settings
+from app.core.security import verify_password, create_access_token, require_admin
 from app.models.models import AdminUser
 from app.schemas.schemas import LoginRequest, TokenResponse, ApiResponse
 
@@ -44,34 +43,3 @@ async def get_me(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return ApiResponse(data={"id": str(user.id), "email": user.email, "name": user.name, "role": user.role})
-
-
-@router.post("/setup", include_in_schema=False)
-async def setup_admin(db: AsyncSession = Depends(get_db)):
-    """One-time admin setup — creates or resets admin from env vars."""
-    if not settings.ADMIN_PASSWORD:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="ADMIN_PASSWORD environment variable is not set",
-        )
-
-    existing = await db.execute(select(AdminUser).where(AdminUser.email == settings.ADMIN_EMAIL))
-    user = existing.scalar_one_or_none()
-
-    new_hash = hash_password(settings.ADMIN_PASSWORD)
-
-    if user:
-        user.password_hash = new_hash
-        user.is_active = True
-        await db.commit()
-        return {"message": "Admin password reset", "email": settings.ADMIN_EMAIL}
-
-    admin = AdminUser(
-        email=settings.ADMIN_EMAIL,
-        password_hash=new_hash,
-        name=settings.ADMIN_NAME,
-        role="super_admin",
-    )
-    db.add(admin)
-    await db.commit()
-    return {"message": "Admin created", "email": settings.ADMIN_EMAIL}
