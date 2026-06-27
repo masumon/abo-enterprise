@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { ShoppingCart, Briefcase, Users, Package, Clock, TrendingUp, AlertCircle } from "lucide-react";
+import {
+  ShoppingCart, Briefcase, Users, Package,
+  Clock, TrendingUp, AlertCircle, RefreshCw,
+} from "lucide-react";
 import { adminApi } from "@/lib/api";
 import StatsCard from "@/components/admin/StatsCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice } from "@/lib/utils";
+import { useAlertStore } from "@/store/alerts";
 
 interface Stats {
   total_orders: number;
@@ -29,23 +33,58 @@ interface Stats {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
+  const { lastUpdated } = useAlertStore();
 
-  useEffect(() => {
-    adminApi.stats()
-      .then((r) => {
-        setStats(r.data.data as Stats);
-        setError(false);
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+  const fetchStats = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
+    else setRefreshing(true);
+    try {
+      const r = await adminApi.stats();
+      setStats(r.data.data as Stats);
+      setError(false);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, []);
+
+  // Initial load
+  useEffect(() => { fetchStats(); }, [fetchStats]);
+
+  // Re-fetch when polling detects changes (lastUpdated changes)
+  useEffect(() => {
+    if (lastUpdated) fetchStats(true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastUpdated]);
+
+  const updatedLabel = lastUpdated
+    ? `Updated ${lastUpdated.toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" })}`
+    : null;
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500 text-sm mt-1">ABO Enterprise — Admin Overview</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-500 text-sm mt-1">ABO Enterprise — Admin Overview</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {updatedLabel && (
+            <span className="text-xs text-gray-400">{updatedLabel}</span>
+          )}
+          <button
+            onClick={() => fetchStats(true)}
+            disabled={refreshing}
+            className="p-2 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors disabled:opacity-40"
+            title="Refresh"
+          >
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -64,6 +103,7 @@ export default function AdminDashboard() {
           icon={ShoppingCart}
           color="brand"
           loading={loading}
+          alert={!!stats?.pending_orders}
         />
         <StatsCard
           title="Service Bookings"
@@ -72,6 +112,7 @@ export default function AdminDashboard() {
           icon={Briefcase}
           color="accent"
           loading={loading}
+          alert={!!stats?.pending_bookings}
         />
         <StatsCard
           title="Project Leads"
@@ -80,6 +121,7 @@ export default function AdminDashboard() {
           icon={Users}
           color="green"
           loading={loading}
+          alert={!!stats?.new_leads}
         />
         <StatsCard
           title="Products"

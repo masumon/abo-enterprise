@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAdmin } from "@/hooks/useAdmin";
+import { useAdminPolling } from "@/hooks/useAdminPolling";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import { Loader2, Menu } from "lucide-react";
 
@@ -10,6 +11,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const { user, loading, logout } = useAdmin(pathname !== "/admin/login");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Start global 30s polling once authenticated (no-op on login page)
+  useAdminPolling();
 
   if (pathname === "/admin/login") {
     return <>{children}</>;

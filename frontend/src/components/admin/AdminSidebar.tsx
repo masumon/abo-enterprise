@@ -1,23 +1,35 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Package, ShoppingCart, Briefcase, Users,
-  LogOut, ExternalLink, BarChart2, Settings, Wrench, FileText, Star,
+  LogOut, ExternalLink, BarChart2, Settings, Wrench, FileText, Star, BookOpen,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAlertStore } from "@/store/alerts";
 
-const NAV = [
+interface NavItem {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  exact?: boolean;
+  external?: boolean;
+  badge?: "orders" | "bookings" | "leads";
+}
+
+const NAV: NavItem[] = [
   { href: "/admin",            icon: LayoutDashboard, label: "Dashboard",  exact: true },
-  { href: "/admin/orders",     icon: ShoppingCart,    label: "Orders" },
-  { href: "/admin/bookings",   icon: Briefcase,       label: "Bookings" },
+  { href: "/admin/orders",     icon: ShoppingCart,    label: "Orders",     badge: "orders" },
+  { href: "/admin/bookings",   icon: Briefcase,       label: "Bookings",   badge: "bookings" },
   { href: "/admin/products",   icon: Package,         label: "Products" },
-  { href: "/admin/leads",      icon: Users,           label: "Leads" },
+  { href: "/admin/leads",      icon: Users,           label: "Leads",      badge: "leads" },
   { href: "/admin/services",   icon: Wrench,          label: "Services" },
   { href: "/admin/invoices",   icon: FileText,        label: "Invoices" },
   { href: "/admin/reviews",    icon: Star,            label: "Reviews" },
-  { href: "/projects",         icon: ExternalLink,    label: "Projects", external: true },
+  { href: "/admin/blog",       icon: BookOpen,        label: "Blog" },
+  { href: "/projects",         icon: ExternalLink,    label: "Projects",   external: true },
   { href: "/admin/analytics",  icon: BarChart2,       label: "Analytics" },
   { href: "/admin/settings",   icon: Settings,        label: "Settings" },
   { href: "/admin/users",      icon: Users,           label: "Users" },
@@ -33,6 +45,14 @@ interface Props {
 
 export default function AdminSidebar({ onLogout, adminName = "Admin", mobileOpen = false, onClose }: Props) {
   const pathname = usePathname();
+  const { pendingOrders, pendingBookings, newLeads } = useAlertStore();
+
+  const badgeCount = (key?: string) => {
+    if (key === "orders")   return pendingOrders;
+    if (key === "bookings") return pendingBookings;
+    if (key === "leads")    return newLeads;
+    return 0;
+  };
 
   const isActive = (href: string, exact?: boolean) =>
     exact ? pathname === href : pathname.startsWith(href);
@@ -66,27 +86,42 @@ export default function AdminSidebar({ onLogout, adminName = "Admin", mobileOpen
 
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {NAV.map(({ href, icon: Icon, label, exact, external }) => {
+        {NAV.map(({ href, icon: Icon, label, exact, external, badge }) => {
           const active = !external && isActive(href, exact);
-          const className = cn(
+          const count = badgeCount(badge);
+          const linkClass = cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150",
             active
               ? "bg-brand-600/90 text-white shadow-lg shadow-brand-900/30"
               : "text-gray-400 hover:bg-white/[0.07] hover:text-gray-200"
           );
+
           if (external) {
             return (
-              <a key={href} href={href} target="_blank" rel="noopener noreferrer" className={className}>
+              <a key={href} href={href} target="_blank" rel="noopener noreferrer" className={linkClass}>
                 <Icon className="w-4 h-4 flex-shrink-0" />
                 {label}
               </a>
             );
           }
+
           return (
-            <Link key={href} href={href} onClick={onClose} className={className}>
+            <Link key={href} href={href} onClick={onClose} className={linkClass}>
               <Icon className={cn("w-4 h-4 flex-shrink-0 transition-transform duration-150", active ? "scale-110" : "")} />
-              {label}
-              {active && <span className="ml-auto w-1.5 h-1.5 bg-white/60 rounded-full" />}
+              <span className="flex-1">{label}</span>
+              {count > 0 && !active && (
+                <span className="ml-auto min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-red-500 text-white text-[10px] font-bold leading-none">
+                  {count > 99 ? "99+" : count}
+                </span>
+              )}
+              {active && count > 0 && (
+                <span className="ml-auto min-w-[18px] h-[18px] px-1 flex items-center justify-center rounded-full bg-white/20 text-white text-[10px] font-bold leading-none">
+                  {count > 99 ? "99+" : count}
+                </span>
+              )}
+              {active && count === 0 && (
+                <span className="ml-auto w-1.5 h-1.5 bg-white/60 rounded-full" />
+              )}
             </Link>
           );
         })}
