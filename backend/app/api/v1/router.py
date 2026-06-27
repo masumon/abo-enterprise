@@ -17,6 +17,7 @@ from app.api.v1.routes import (
     bulk,
     reviews,
     blog,
+    public,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -38,3 +39,4 @@ api_router.include_router(admin.router)
 api_router.include_router(admin_settings.router)
 api_router.include_router(reviews.router)
 api_router.include_router(blog.router)
+api_router.include_router(public.router)

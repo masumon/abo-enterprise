@@ -1,32 +1,30 @@
 import type { Metadata } from "next";
+import dynamic from "next/dynamic";
 import Hero from "@/components/home/Hero";
-import Stats from "@/components/home/Stats";
-import ServicesOverview from "@/components/home/ServicesOverview";
-import FeaturedProducts from "@/components/home/FeaturedProducts";
-import WhyChooseUs from "@/components/home/WhyChooseUs";
-import SoftwareSolutions from "@/components/home/SoftwareSolutions";
-import Industries from "@/components/home/Industries";
-import Portfolio from "@/components/home/Portfolio";
-import CustomerReviews from "@/components/home/CustomerReviews";
-import FAQ from "@/components/home/FAQ";
-import LeadCapture from "@/components/home/LeadCapture";
-import ContactSection from "@/components/home/ContactSection";
+import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, BRAND_TAGLINE } from "@/lib/tokens";
+
+const Stats = dynamic(() => import("@/components/home/Stats"), { loading: () => <SectionSkeleton /> });
+const ServicesOverview = dynamic(() => import("@/components/home/ServicesOverview"), { loading: () => <SectionSkeleton /> });
+const FeaturedProducts = dynamic(() => import("@/components/home/FeaturedProducts"), { loading: () => <SectionSkeleton /> });
+const CustomerReviews = dynamic(() => import("@/components/home/CustomerReviews"), { loading: () => <SectionSkeleton /> });
+const LeadCapture = dynamic(() => import("@/components/home/LeadCapture"), { loading: () => <SectionSkeleton /> });
 
 export const metadata: Metadata = {
   title: "ABO Enterprise — বাংলাদেশের সম্পূর্ণ টেকনোলজি ইকোসিস্টেম",
-  description:
-    "মোবাইল এক্সেসরিজ, গ্যাজেট, প্রিন্টিং, আইনি সেবা, AI সমাধান এবং কাস্টম সফটওয়্যার — একটি প্ল্যাটফর্মে।",
-  alternates: { canonical: "https://aboenterprise.vercel.app" },
+  description: BRAND_TAGLINE.bn,
+  alternates: { canonical: SITE_URL },
+  openGraph: {
+    images: [{ url: DEFAULT_OG_IMAGE, width: 512, height: 512, alt: "ABO Enterprise" }],
+  },
 };
 
 const organizationJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   name: "ABO Enterprise",
-  url: "https://aboenterprise.vercel.app",
-  logo: "https://aboenterprise.vercel.app/icons/icon-512.png",
-  description:
-    "Bangladesh's complete technology ecosystem — mobile accessories, printing, legal assistance, software development, AI solutions.",
+  url: SITE_URL,
+  logo: DEFAULT_OG_IMAGE,
+  description: BRAND_TAGLINE.en,
   address: {
     "@type": "PostalAddress",
     addressLocality: "Sylhet",
@@ -38,23 +36,27 @@ const organizationJsonLd = {
     contactType: "customer service",
     availableLanguage: ["Bengali", "English"],
   },
-  sameAs: [],
+  sameAs: [...SOCIAL_PROFILES],
 };
 
 const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
   name: "ABO Enterprise",
-  url: "https://aboenterprise.vercel.app",
+  url: SITE_URL,
   potentialAction: {
     "@type": "SearchAction",
     target: {
       "@type": "EntryPoint",
-      urlTemplate: "https://aboenterprise.vercel.app/products?search={search_term_string}",
+      urlTemplate: `${SITE_URL}/products?search={search_term_string}`,
     },
     "query-input": "required name=search_term_string",
   },
 };
+
+function SectionSkeleton() {
+  return <div className="py-16 animate-pulse bg-gray-50/50" aria-hidden />;
+}
 
 export default function HomePage() {
   return (
@@ -71,14 +73,8 @@ export default function HomePage() {
       <Stats />
       <ServicesOverview />
       <FeaturedProducts />
-      <WhyChooseUs />
-      <SoftwareSolutions />
-      <Industries />
-      <Portfolio />
       <CustomerReviews />
-      <FAQ />
       <LeadCapture />
-      <ContactSection />
     </>
   );
 }

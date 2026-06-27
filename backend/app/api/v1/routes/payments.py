@@ -112,6 +112,8 @@ async def verify_bkash_payment(
             order = order_result.scalar_one_or_none()
             if order:
                 order.payment_status = "completed"
+                if order.order_status == "pending":
+                    order.order_status = "confirmed"
                 await db.commit()
 
         return {
@@ -203,6 +205,8 @@ async def verify_nagad_payment(
         order = order_result.scalar_one_or_none()
         if order:
             order.payment_status = "completed"
+            if order.order_status == "pending":
+                order.order_status = "confirmed"
             await db.commit()
 
         return {

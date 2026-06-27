@@ -17,7 +17,8 @@ import { cn } from "@/lib/utils";
 const NAV_LINKS = [
   { href: "/products", key: "nav_products" as const },
   { href: "/services", key: "nav_services" as const },
-  { href: "/projects", key: "nav_projects" as const },
+  { href: "/blog", key: "nav_blog" as const },
+  { href: "/projects", key: "nav_solutions" as const },
   { href: "/about", key: "nav_about" as const },
   { href: "/contact", key: "nav_contact" as const },
 ];
@@ -59,7 +60,7 @@ export default function Navbar() {
   return (
     <header
       className={cn(
-        "fixed top-9 left-0 right-0 z-50 transition-all duration-500",
+        "fixed top-[var(--announcement-height)] left-0 right-0 z-50 transition-all duration-500",
         isScrolled
           ? "glass border-b border-white/40 shadow-glass py-0"
           : "bg-transparent py-0"

@@ -3,6 +3,9 @@ import "./globals.css";
 import StoreHydration from "@/components/providers/StoreHydration";
 import PublicShell from "@/components/layout/PublicShell";
 import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
+import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
+import UtmTracker from "@/lib/utm";
+import { DEFAULT_OG_IMAGE, SITE_URL } from "@/lib/tokens";
 
 export const metadata: Metadata = {
   title: {
@@ -26,7 +29,7 @@ export const metadata: Metadata = {
   authors: [{ name: "Mumain Ahmed (Sumon)", url: "https://mumain.dev" }],
   creator: "Mumain Ahmed (Sumon) | Mumain.dev",
   publisher: "ABO Enterprise",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://aboenterprise.com"),
+  metadataBase: new URL(SITE_URL),
   openGraph: {
     type: "website",
     locale: "bn_BD",
@@ -34,6 +37,7 @@ export const metadata: Metadata = {
     siteName: "ABO Enterprise",
     title: "ABO Enterprise — বাংলাদেশের সম্পূর্ণ টেকনোলজি ইকোসিস্টেম",
     description: "মোবাইল এক্সেসরিজ থেকে AI সমাধান — সব একজায়গায়।",
+    images: [{ url: DEFAULT_OG_IMAGE, width: 512, height: 512, alt: "ABO Enterprise" }],
   },
   twitter: {
     card: "summary_large_image",
@@ -73,7 +77,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
       <body className="min-h-screen flex flex-col">
+        <GoogleAnalytics />
         <StoreHydration />
+        <UtmTracker />
         <PublicShell>{children}</PublicShell>
         <PWAInstallPrompt />
       </body>

@@ -1,6 +1,7 @@
 import secrets
+import uuid
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
@@ -9,7 +10,7 @@ from app.core.database import get_db
 from app.core.security import require_admin
 from app.core.config import settings
 from app.core.email import send_email, order_notification_html, customer_order_confirmation_html
-from app.models.models import Order, OrderItem
+from app.models.models import Order, OrderItem, Product, ActivityLog
 from app.schemas.schemas import OrderCreate, OrderOut, OrderStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 
 router = APIRouter(prefix="/orders", tags=["orders"])
@@ -20,12 +21,44 @@ def generate_order_number() -> str:
     return f"ABO-{now.year}{now.month:02d}-{secrets.token_hex(3).upper()}"
 
 
+async def _validate_and_reserve_stock(db: AsyncSession, items: list) -> None:
+    """Validate stock availability and decrement quantities atomically."""
+    for item_data in items:
+        if not item_data.product_id:
+            continue
+        try:
+            product_uuid = UUID(str(item_data.product_id))
+        except (ValueError, TypeError):
+            continue
+        result = await db.execute(
+            select(Product).where(
+                Product.id == product_uuid,
+                Product.is_deleted == False,  # noqa: E712
+                Product.is_active == True,  # noqa: E712
+            )
+        )
+        product = result.scalar_one_or_none()
+        if not product:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Product not found: {item_data.product_name}",
+            )
+        if product.stock_quantity < item_data.quantity:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Insufficient stock for {product.name_en}. Available: {product.stock_quantity}",
+            )
+        product.stock_quantity -= item_data.quantity
+
+
 @router.post("", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
 async def create_order(
     payload: OrderCreate,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
+    await _validate_and_reserve_stock(db, payload.items)
+
     order = Order(
         order_number=generate_order_number(),
         customer_name=payload.customer_name,
@@ -201,7 +234,7 @@ async def update_order_status(
     order_id: UUID,
     payload: OrderStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    admin_id: str = Depends(require_admin),
 ):
     valid_statuses = {"pending", "confirmed", "processing", "shipped", "delivered", "cancelled"}
     if payload.status not in valid_statuses:
@@ -212,5 +245,30 @@ async def update_order_status(
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    old_status = order.order_status
     order.order_status = payload.status
+
+    # Auto-confirm paid orders when moving to processing
+    if payload.status == "processing" and order.payment_status == "completed":
+        order.order_status = "processing"
+
+    if payload.status == "cancelled" and old_status != "cancelled":
+        for item in order.items:
+            if item.product_id:
+                prod_result = await db.execute(select(Product).where(Product.id == item.product_id))
+                product = prod_result.scalar_one_or_none()
+                if product:
+                    product.stock_quantity += item.quantity
+
+    log = ActivityLog(
+        admin_id=uuid.UUID(admin_id),
+        action="update",
+        entity_type="order",
+        entity_id=order.id,
+        old_values={"order_status": old_status},
+        new_values={"order_status": order.order_status},
+    )
+    db.add(log)
+    await db.commit()
+    await db.refresh(order)
     return ApiResponse(data=OrderOut.model_validate(order), message="Order status updated")

@@ -21,6 +21,7 @@ export interface Product {
   images?: string[];
   stock_quantity?: number;
   rating?: number;
+  review_count?: number;
   is_active?: boolean;
   is_featured?: boolean;
   sort_order?: number;
@@ -71,6 +72,7 @@ export interface CartItem {
   price: number;
   quantity: number;
   image_url?: string;
+  stock_quantity?: number;
 }
 
 export interface OrderItem {

@@ -79,6 +79,7 @@ export function useAdmin(redirectOnFail = true) {
   const logout = useCallback(() => {
     clearCache();
     localStorage.removeItem("abo_admin_token");
+    document.cookie = "abo_admin_token=; path=/; max-age=0";
     router.replace("/admin/login");
   }, [router]);
 

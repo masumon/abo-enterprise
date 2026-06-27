@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import type { Product } from "@/types";
 import ProductDetailClient from "./ProductDetailClient";
 
+import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 async function fetchProduct(slug: string): Promise<Product | null> {
@@ -33,8 +35,8 @@ export async function generateMetadata({
     product.seo_description ??
     product.description_en ??
     `Buy ${product.name_en} at the best price in Bangladesh. Fast delivery from ABO Enterprise, Sylhet.`;
-  const url = product.canonical_url ?? `https://aboenterprise.vercel.app/products/${product.slug}`;
-  const ogImg = product.og_image ?? product.image_url;
+  const url = product.canonical_url ?? `${SITE_URL}/products/${product.slug}`;
+  const ogImg = product.og_image ?? product.image_url ?? DEFAULT_OG_IMAGE;
 
   return {
     title,
@@ -63,7 +65,7 @@ function buildJsonLd(product: Product) {
     "@type": "Product",
     name: product.name_en,
     description: product.description_en ?? product.name_en,
-    url: `https://aboenterprise.vercel.app/products/${product.slug}`,
+    url: `${SITE_URL}/products/${product.slug}`,
     brand: {
       "@type": "Brand",
       name: "ABO Enterprise",
@@ -79,7 +81,7 @@ function buildJsonLd(product: Product) {
       seller: {
         "@type": "Organization",
         name: "ABO Enterprise",
-        url: "https://aboenterprise.vercel.app",
+        url: SITE_URL,
       },
     },
   };
