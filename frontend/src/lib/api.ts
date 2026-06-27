@@ -99,6 +99,22 @@ export const leadsApi = {
     api.patch<ApiResponse<Lead>>(`/api/v1/leads/${id}/status`, { status }),
 };
 
+export const serviceBookingsAdminApi = {
+  list: (params?: { status?: string; payment_status?: string; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<import("@/types").BookingV2>>("/api/v1/service-bookings/admin/bookings", { params }),
+
+  updateStatus: (id: string, status: string) =>
+    api.patch<ApiResponse<import("@/types").BookingV2>>(`/api/v1/service-bookings/admin/bookings/${id}/status`, { status }),
+};
+
+export const serviceLeadsAdminApi = {
+  list: (params?: { status?: string; lead_type?: string; min_score?: number; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<import("@/types").LeadV2>>("/api/v1/service-leads/admin/leads", { params }),
+
+  updateStatus: (id: string, status: string, reason_lost?: string) =>
+    api.patch<ApiResponse<import("@/types").LeadV2>>(`/api/v1/service-leads/admin/leads/${id}/status`, { status, reason_lost }),
+};
+
 export const authApi = {
   login: (email: string, password: string) =>
     api.post<ApiResponse<{ access_token: string; token_type: string }>>("/api/v1/auth/login", {

@@ -226,6 +226,59 @@ export interface AdminUser {
   created_at?: string;
 }
 
+export interface BookingV2 {
+  id: string;
+  booking_number: string;
+  service_id: string;
+  service_name: string;
+  service_tier?: string | null;
+  customer_name: string;
+  customer_phone: string;
+  customer_email?: string | null;
+  customer_company?: string | null;
+  booking_date?: string | null;
+  estimated_completion_date?: string | null;
+  pricing_type: string;
+  quoted_price?: number | null;
+  final_price?: number | null;
+  hours_worked?: number | null;
+  details?: string | null;
+  requirements?: string | null;
+  status: string;
+  payment_status: string;
+  payment_method?: string | null;
+  notes?: string | null;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string | null;
+}
+
+export interface LeadV2 {
+  id: string;
+  lead_number: string;
+  service_id?: string | null;
+  lead_type: string;
+  source: string;
+  name: string;
+  email?: string | null;
+  phone: string;
+  company?: string | null;
+  job_title?: string | null;
+  company_size?: string | null;
+  project_description?: string | null;
+  requirements?: string | null;
+  budget_range?: string | null;
+  budget_min?: number | null;
+  budget_max?: number | null;
+  timeline?: string | null;
+  qualification_score: number;
+  status: string;
+  assigned_to?: string | null;
+  created_at: string;
+  updated_at: string;
+  converted_at?: string | null;
+}
+
 export interface DashboardStats {
   total_orders: number;
   pending_orders: number;
