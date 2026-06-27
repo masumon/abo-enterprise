@@ -93,11 +93,18 @@ async def health():
 @app.get("/api/v1/auth/ping", include_in_schema=False)
 async def auth_ping():
     """Diagnostic: check DB connectivity and admin existence."""
+    import bcrypt
+    from urllib.parse import urlparse
+    try:
+        parsed = urlparse(settings.DATABASE_URL)
+        db_host = f"{parsed.hostname}:{parsed.port or 5432}"
+    except Exception:
+        db_host = "unknown"
+
     try:
         from app.core.database import AsyncSessionLocal
         from app.models.models import AdminUser
         from sqlalchemy import select, func
-        import bcrypt
         async with AsyncSessionLocal() as db:
             count_result = await db.execute(select(func.count()).select_from(AdminUser))
             admin_count = count_result.scalar()
@@ -107,10 +114,11 @@ async def auth_ping():
             active_count = active_result.scalar()
         return {
             "db": "connected",
+            "db_host": db_host,
             "admin_total": admin_count,
             "admin_active": active_count,
             "bcrypt_version": bcrypt.__version__,
             "status": "ok" if active_count > 0 else "no_active_admin",
         }
     except Exception as e:
-        return {"db": "error", "detail": str(e), "status": "error"}
+        return {"db": "error", "db_host": db_host, "detail": str(e), "status": "error"}
