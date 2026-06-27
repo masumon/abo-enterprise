@@ -25,6 +25,18 @@ export interface Product {
   is_featured?: boolean;
   sort_order?: number;
   specifications?: Record<string, string>;
+  sku?: string;
+  barcode?: string;
+  brand?: string;
+  sub_category?: string;
+  tags?: string[];
+  weight?: number;
+  warranty_info?: string;
+  delivery_info?: string;
+  is_flash_sale?: boolean;
+  flash_sale_price?: number;
+  low_stock_threshold?: number;
+  is_best_seller?: boolean;
   seo_title?: string;
   seo_description?: string;
   seo_keywords?: string;

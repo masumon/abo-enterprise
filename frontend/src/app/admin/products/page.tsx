@@ -29,11 +29,25 @@ const schema = z.object({
   is_active: z.boolean(),
   is_featured: z.boolean(),
   image_url: z.string().optional(),
+  // SEO fields (Sprint A)
   seo_title: z.string().optional(),
   seo_description: z.string().optional(),
   seo_keywords: z.string().optional(),
   canonical_url: z.string().optional(),
   og_image: z.string().optional(),
+  // Extended fields (Sprint D)
+  sku: z.string().optional(),
+  barcode: z.string().optional(),
+  brand: z.string().optional(),
+  sub_category: z.string().optional(),
+  tags: z.string().optional(),
+  weight: z.coerce.number().optional(),
+  warranty_info: z.string().optional(),
+  delivery_info: z.string().optional(),
+  is_flash_sale: z.boolean().optional(),
+  flash_sale_price: z.coerce.number().optional(),
+  low_stock_threshold: z.coerce.number().min(0).optional(),
+  is_best_seller: z.boolean().optional(),
 });
 type FormData = z.infer<typeof schema>;
 
@@ -49,22 +63,25 @@ export default function AdminProductsPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [seoOpen, setSeoOpen] = useState(false);
+  const [extOpen, setExtOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const modalRef = useFocusTrap(showModal);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { is_active: true, is_featured: false, stock_quantity: 0 },
+    defaultValues: { is_active: true, is_featured: false, stock_quantity: 0, low_stock_threshold: 5, is_flash_sale: false, is_best_seller: false },
   });
 
   const currentImage = watch("image_url");
 
-  const load = async (pageNum = page) => {
+  const load = async (pageNum = page, search?: string) => {
     setLoading(true);
     setActionError(null);
     try {
-      const r = await productsApi.list({ page: pageNum, per_page: 20 });
+      const r = await productsApi.list({ page: pageNum, per_page: 20, search: search || undefined });
       setProducts(r.data.data ?? []);
       setTotal(r.data.meta?.total ?? 0);
     } catch {
@@ -76,11 +93,22 @@ export default function AdminProductsPage() {
 
   useEffect(() => { load(page); }, [page]);
 
+  const handleSearchChange = (v: string) => {
+    setSearchInput(v);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => { setPage(1); load(1, v); }, 400);
+  };
+
   const openCreate = () => {
     setEditing(null);
-    reset({ is_active: true, is_featured: false, stock_quantity: 0, image_url: "", seo_title: "", seo_description: "", seo_keywords: "", canonical_url: "", og_image: "" });
+    reset({
+      is_active: true, is_featured: false, stock_quantity: 0, image_url: "",
+      seo_title: "", seo_description: "", seo_keywords: "", canonical_url: "", og_image: "",
+      low_stock_threshold: 5, is_flash_sale: false, is_best_seller: false,
+    });
     setImageUrl("");
     setSeoOpen(false);
+    setExtOpen(false);
     setShowModal(true);
   };
 
@@ -105,9 +133,22 @@ export default function AdminProductsPage() {
       seo_keywords: p.seo_keywords ?? "",
       canonical_url: p.canonical_url ?? "",
       og_image: p.og_image ?? "",
+      sku: p.sku ?? "",
+      barcode: p.barcode ?? "",
+      brand: p.brand ?? "",
+      sub_category: p.sub_category ?? "",
+      tags: p.tags?.join(", ") ?? "",
+      weight: p.weight ?? undefined,
+      warranty_info: p.warranty_info ?? "",
+      delivery_info: p.delivery_info ?? "",
+      is_flash_sale: p.is_flash_sale ?? false,
+      flash_sale_price: p.flash_sale_price ?? undefined,
+      low_stock_threshold: p.low_stock_threshold ?? 5,
+      is_best_seller: p.is_best_seller ?? false,
     });
     setImageUrl(p.image_url ?? "");
     setSeoOpen(false);
+    setExtOpen(false);
     setShowModal(true);
   };
 
@@ -130,7 +171,11 @@ export default function AdminProductsPage() {
   const onSubmit = async (data: FormData) => {
     setSaving(true);
     try {
-      const payload = { ...data } as Partial<Product>;
+      const { tags: tagsStr, ...rest } = data;
+      const payload: Partial<Product> = {
+        ...rest,
+        tags: tagsStr ? tagsStr.split(",").map((t) => t.trim()).filter(Boolean) : [],
+      } as Partial<Product>;
       if (editing) {
         await productsApi.update(editing.id!, payload);
       } else {
@@ -158,14 +203,25 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Products</h1>
           <p className="text-gray-500 text-sm mt-1">{total} items</p>
         </div>
-        <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add Product
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              value={searchInput}
+              onChange={e => handleSearchChange(e.target.value)}
+              placeholder="Search products…"
+              className="input pl-9 text-sm w-52"
+            />
+          </div>
+          <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Add Product
+          </button>
+        </div>
       </div>
 
       {actionError && (
@@ -329,6 +385,71 @@ export default function AdminProductsPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Description (বাংলা)</label>
                 <textarea {...register("description_bn")} rows={2} className="input resize-none" placeholder="পণ্যের বিবরণ..." />
+              </div>
+
+              {/* Extended Details */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button type="button" onClick={() => setExtOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+                  <span className="text-sm font-medium text-gray-700">Extended Details</span>
+                  <ChevronDown className={cn("w-4 h-4 text-gray-400 transition-transform", extOpen && "rotate-180")} />
+                </button>
+                {extOpen && (
+                  <div className="px-4 py-4 space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">SKU</label>
+                        <input {...register("sku")} className="input" placeholder="SKU-001" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Barcode</label>
+                        <input {...register("barcode")} className="input" placeholder="8901234567890" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Brand</label>
+                        <input {...register("brand")} className="input" placeholder="Samsung, Apple..." />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Sub-category</label>
+                        <input {...register("sub_category")} className="input" placeholder="Cables, Cases..." />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Weight (kg)</label>
+                        <input {...register("weight")} type="number" step="0.001" className="input" placeholder="0.250" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Low Stock Alert</label>
+                        <input {...register("low_stock_threshold")} type="number" className="input" placeholder="5" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Tags <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+                      <input {...register("tags")} className="input" placeholder="phone, accessories, black..." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Warranty Info</label>
+                      <textarea {...register("warranty_info")} rows={2} className="input resize-none text-sm" placeholder="6 months manufacturer warranty..." />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Delivery Info</label>
+                      <textarea {...register("delivery_info")} rows={2} className="input resize-none text-sm" placeholder="Delivered within 2-3 business days..." />
+                    </div>
+                    <div className="flex items-center gap-6">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input {...register("is_flash_sale")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                        <span className="text-xs text-gray-700">Flash Sale</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input {...register("is_best_seller")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                        <span className="text-xs text-gray-700">Best Seller</span>
+                      </label>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Flash Sale Price (৳)</label>
+                      <input {...register("flash_sale_price")} type="number" className="input" placeholder="Leave blank if no flash sale" />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* SEO Section */}
