@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
+from fastapi import APIRouter
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
-from app.core.database import get_db
+from app.core.database import AsyncSessionLocal
 from datetime import datetime, timezone
 
 router = APIRouter(tags=["health"])
@@ -18,19 +18,21 @@ async def health_check():
 
 
 @router.get("/health/db")
-async def db_health(db: Session = Depends(get_db)):
+async def db_health():
     try:
-        db.execute(text("SELECT 1"))
+        async with AsyncSessionLocal() as db:
+            await db.execute(text("SELECT 1"))
         return {"status": "ok", "database": "connected"}
     except Exception as e:
         return {"status": "error", "database": str(e)}
 
 
 @router.get("/health/ready")
-async def readiness(db: Session = Depends(get_db)):
-    """Kubernetes-style readiness probe"""
+async def readiness():
+    """Kubernetes-style readiness probe."""
     try:
-        db.execute(text("SELECT 1"))
+        async with AsyncSessionLocal() as db:
+            await db.execute(text("SELECT 1"))
         return {"ready": True}
     except Exception:
         from fastapi import status

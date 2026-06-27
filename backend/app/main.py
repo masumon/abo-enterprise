@@ -18,12 +18,26 @@ logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
 
+async def _init_db_and_bootstrap() -> None:
+    """Create all DB tables (idempotent) then bootstrap the admin account.
+    Runs as a background task so the server starts immediately."""
+    from app.core.database import engine, Base
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables verified/created.")
+    except Exception as exc:
+        logger.error("Database table creation failed — login will fail: %s", exc, exc_info=exc)
+        return
+    await bootstrap_admin()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME}")
-    # Bootstrap runs in background so Render health-check passes immediately.
-    # The admin account will be created within seconds of startup.
-    asyncio.create_task(bootstrap_admin())
+    # Runs in background: create tables first, then bootstrap admin.
+    # Server responds to health-check immediately while DB initialises.
+    asyncio.create_task(_init_db_and_bootstrap())
     yield
     logger.info(f"Shutting down {settings.APP_NAME}")
 
@@ -40,10 +54,15 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+_EXTRA_ORIGINS = [
+    "https://aboenterprise.vercel.app",   # production (no hyphen)
+    "https://abo-enterprise.vercel.app",  # alternative slug
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins_list,
-    allow_origin_regex=r"https://.*\.vercel\.app",  # allow all Vercel preview & production URLs
+    allow_origins=list(set(settings.allowed_origins_list + _EXTRA_ORIGINS)),
+    allow_origin_regex=r"https://.*\.vercel\.app",  # all Vercel preview & production URLs
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
