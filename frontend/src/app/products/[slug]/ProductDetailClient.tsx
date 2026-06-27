@@ -105,7 +105,7 @@ export default function ProductDetailClient({ product }: Props) {
   const savings = product.original_price ? product.original_price - product.price : 0;
 
   return (
-    <main className="min-h-screen py-8 px-4 pb-28">
+    <main className="min-h-screen py-8 px-4 pb-[calc(var(--mobile-chrome-bottom)+5rem)] lg:pb-8">
       <div className="max-w-6xl mx-auto">
         <button type="button" onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-brand-600 mb-6">
           <ChevronLeft className="w-4 h-4" aria-hidden />
@@ -225,10 +225,10 @@ export default function ProductDetailClient({ product }: Props) {
       </div>
 
       {showStickyBar && (product.stock_quantity ?? 0) > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 px-4 py-3 flex items-center gap-3 shadow-lg pb-safe" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }}>
+        <div className="fixed bottom-mobile-nav left-0 right-0 z-40 surface-card backdrop-blur-md border-t px-4 py-3 flex items-center gap-3 shadow-lg lg:hidden">
           <div className="flex-1 min-w-0">
             <p className="font-bold text-accent-600">{formatPrice(product.price)}</p>
-            <p className="text-xs text-gray-500 truncate">{name}</p>
+            <p className="text-xs text-muted truncate">{name}</p>
           </div>
           <button type="button" onClick={handleAdd} className="btn btn-outline btn-sm flex-shrink-0">{t("add_to_cart")}</button>
           <button type="button" onClick={handleBuyNow} className="btn btn-primary btn-sm flex-shrink-0">{t("buy_now")}</button>

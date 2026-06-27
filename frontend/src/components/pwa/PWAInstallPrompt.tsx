@@ -93,15 +93,14 @@ export default function PWAInstallPrompt() {
       />
 
       {/* Bottom Sheet */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 animate-slide-up">
-        <div className="bg-white rounded-t-3xl shadow-2xl px-6 pt-5 pb-8 max-w-lg mx-auto">
-          {/* Handle bar */}
-          <div className="w-10 h-1 bg-gray-200 rounded-full mx-auto mb-5" />
+      <div className="fixed bottom-0 left-0 right-0 z-[70] animate-slide-up pb-mobile-nav lg:pb-0">
+        <div className="surface-card rounded-t-3xl shadow-2xl px-6 pt-5 pb-8 max-w-lg mx-auto border-b-0">
+          <div className="w-10 h-1 bg-gray-200 dark:bg-white/20 rounded-full mx-auto mb-5" />
 
           {/* Close */}
           <button
             onClick={handleDismiss}
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200"
+            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/20"
             aria-label="বন্ধ করুন"
           >
             <X className="w-4 h-4" />
@@ -113,8 +112,8 @@ export default function PWAInstallPrompt() {
               <Image src="/icons/icon-192.png" alt="ABO Enterprise" width={64} height={64} />
             </div>
             <div>
-              <p className="font-bold text-gray-900 text-lg leading-tight">ABO Enterprise</p>
-              <p className="text-sm text-gray-500 mt-0.5">{SITE_HOST}</p>
+              <p className="font-bold text-heading text-lg leading-tight">ABO Enterprise</p>
+              <p className="text-sm text-muted mt-0.5">{SITE_HOST}</p>
               <div className="flex items-center gap-1 mt-1">
                 {[1,2,3,4,5].map(i => (
                   <svg key={i} className="w-3 h-3 text-yellow-400 fill-current" viewBox="0 0 20 20">
@@ -133,30 +132,30 @@ export default function PWAInstallPrompt() {
               { icon: "🔔", title: "নোটিফিকেশন", desc: "অর্ডার আপডেট পান" },
               { icon: "📱", title: "অ্যাপ অভিজ্ঞতা", desc: "ফুলস্ক্রিন মোড" },
             ].map((b) => (
-              <div key={b.title} className="text-center bg-brand-50 rounded-2xl p-3">
+              <div key={b.title} className="text-center bg-brand-50 dark:bg-brand-900/30 rounded-2xl p-3">
                 <div className="text-2xl mb-1">{b.icon}</div>
-                <p className="text-xs font-semibold text-brand-700">{b.title}</p>
-                <p className="text-[10px] text-gray-500 mt-0.5">{b.desc}</p>
+                <p className="text-xs font-semibold text-brand-700 dark:text-brand-200">{b.title}</p>
+                <p className="text-[10px] text-muted mt-0.5">{b.desc}</p>
               </div>
             ))}
           </div>
 
           {/* iOS instructions */}
           {platform === "ios" ? (
-            <div className="bg-blue-50 rounded-2xl p-4 mb-4">
-              <p className="text-sm font-semibold text-gray-800 mb-3">iPhone-এ ইনস্টল করুন:</p>
+            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-4 mb-4">
+              <p className="text-sm font-semibold text-heading mb-3">iPhone-এ ইনস্টল করুন:</p>
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Share className="w-3.5 h-3.5 text-blue-600" />
+                  <div className="w-7 h-7 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Share className="w-3.5 h-3.5 text-blue-600 dark:text-blue-300" />
                   </div>
-                  <p className="text-sm text-gray-700">নিচের <strong>Share</strong> বাটন চাপুন</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-200">নিচের <strong>Share</strong> বাটন চাপুন</p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Plus className="w-3.5 h-3.5 text-blue-600" />
+                  <div className="w-7 h-7 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Plus className="w-3.5 h-3.5 text-blue-600 dark:text-blue-300" />
                   </div>
-                  <p className="text-sm text-gray-700"><strong>"Add to Home Screen"</strong> সিলেক্ট করুন</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-200"><strong>"Add to Home Screen"</strong> সিলেক্ট করুন</p>
                 </div>
               </div>
             </div>
@@ -173,7 +172,7 @@ export default function PWAInstallPrompt() {
 
           <button
             onClick={handleDismiss}
-            className="w-full text-center text-sm text-gray-400 py-1"
+            className="w-full text-center text-sm text-muted py-1"
           >
             এখন নয়
           </button>

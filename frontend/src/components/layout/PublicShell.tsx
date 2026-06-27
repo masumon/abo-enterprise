@@ -25,9 +25,9 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <AnnouncementBar />
       <OfflineBanner />
       <Navbar />
-      <main className="flex-1 pt-[var(--navbar-offset)] pb-20 lg:pb-0 min-h-screen bg-[var(--surface)] dark:bg-[var(--navy)]">
+      <div id="page-content" className="flex-1 pt-[var(--navbar-offset)] pb-mobile-nav lg:pb-0 min-h-screen page-surface">
         {children}
-      </main>
+      </div>
       <Footer />
       <CartDrawer />
       <CompareBar />

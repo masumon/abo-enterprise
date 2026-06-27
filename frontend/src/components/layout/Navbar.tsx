@@ -76,7 +76,7 @@ export default function Navbar() {
           <div className="w-9 h-9 rounded-full border-2 border-brand-200 bg-white flex items-center justify-center overflow-hidden shadow-sm">
             <Image src="/logo.jpg" alt="ABO Enterprise" width={36} height={36} className="object-cover" />
           </div>
-          <span className="font-bold text-lg tracking-tight hidden sm:block text-brand-800">
+          <span className="font-bold text-lg tracking-tight hidden sm:block text-brand-800 dark:text-white">
             ABO Enterprise
           </span>
         </Link>
@@ -86,7 +86,7 @@ export default function Navbar() {
             <li key={link.href}>
               <Link
                 href={link.href}
-                className="px-3.5 py-2 rounded-xl text-sm font-medium text-gray-700 hover:text-brand-700 hover:bg-brand-50/80 transition-all"
+                className="px-3.5 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-brand-700 dark:hover:text-brand-300 hover:bg-brand-50/80 dark:hover:bg-white/10 transition-all"
               >
                 {t(link.key)}
               </Link>
@@ -117,14 +117,14 @@ export default function Navbar() {
             </form>
           ) : (
             <button type="button" onClick={() => setSearchOpen(true)}
-              className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-600 hover:bg-brand-50 transition-colors"
+              className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-600 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-white/10 transition-colors"
               aria-label={t("nav_search")}>
               <Search className="w-[18px] h-[18px]" />
             </button>
           )}
 
           <button type="button" onClick={toggleTheme}
-            className="hidden sm:flex w-9 h-9 items-center justify-center rounded-xl text-gray-600 hover:bg-brand-50 dark:text-gray-300 dark:hover:bg-white/10"
+            className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-600 hover:bg-brand-50 dark:text-gray-300 dark:hover:bg-white/10"
             aria-label="Toggle dark mode">
             {theme === "dark" ? <Sun className="w-[18px] h-[18px]" /> : <Moon className="w-[18px] h-[18px]" />}
           </button>
@@ -153,7 +153,7 @@ export default function Navbar() {
           </Link>
 
           <button type="button" onClick={() => setMobileOpen((v) => !v)}
-            className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl text-gray-700 hover:bg-gray-100"
+            className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/10"
             aria-label={mobileOpen ? "Close menu" : "Open menu"}>
             {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -161,7 +161,7 @@ export default function Navbar() {
       </nav>
 
       {mobileOpen && (
-        <div className="lg:hidden glass border-t border-white/40 mx-2 mb-2 rounded-2xl shadow-glass animate-slide-up">
+        <div className="lg:hidden glass border-t border-white/40 dark:border-white/10 mx-2 mb-2 rounded-2xl shadow-glass animate-slide-up">
           <div className="px-4 pt-4">
             <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -177,26 +177,33 @@ export default function Navbar() {
             {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2.5 rounded-xl text-gray-800 font-medium hover:bg-brand-50 text-sm">
+                  className="block px-3 py-2.5 rounded-xl text-gray-800 dark:text-gray-100 font-medium hover:bg-brand-50 dark:hover:bg-white/10 text-sm">
                   {t(link.key)}
                 </Link>
               </li>
             ))}
             <li>
               <Link href="/track" onClick={() => setMobileOpen(false)}
-                className="block px-3 py-2.5 rounded-xl text-gray-600 hover:bg-brand-50 text-sm">
+                className="block px-3 py-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-white/10 text-sm">
                 {t("nav_track")}
               </Link>
             </li>
           </ul>
           <div className="px-4 pb-4 flex gap-2">
             <button type="button" onClick={() => { toggle(); setMobileOpen(false); }}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-200 text-brand-700 text-sm font-medium">
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-brand-200 dark:border-brand-700 text-brand-700 dark:text-brand-300 text-sm font-medium">
               <Globe className="w-4 h-4" />
               {lang === "en" ? "বাংলা" : "English"}
             </button>
+            <button type="button" onClick={() => { toggleTheme(); setMobileOpen(false); }}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-200 text-sm font-medium">
+              {theme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {theme === "dark" ? (lang === "bn" ? "লাইট" : "Light") : (lang === "bn" ? "ডার্ক" : "Dark")}
+            </button>
+          </div>
+          <div className="px-4 pb-4">
             <Link href="/projects" onClick={() => setMobileOpen(false)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent-500 text-white text-sm font-medium">
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent-500 text-white text-sm font-medium">
               <Briefcase className="w-4 h-4" />
               {t("nav_get_quote")}
             </Link>

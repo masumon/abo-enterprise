@@ -12,7 +12,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:e2e": "jest --testPathPattern=__tests__"
+    "test:e2e": "jest --testPathPattern=__tests__",
+    "generate-icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.6.0",
