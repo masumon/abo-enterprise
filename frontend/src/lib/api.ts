@@ -222,6 +222,9 @@ export const adminApi = {
   updateSetting: (key: string, data: { value: string; is_editable?: boolean }) =>
     api.put<ApiResponse<{ key: string; value: string }>>(`/api/v1/settings/${key}`, data),
 
+  upsertSettings: (items: { key: string; value: string; data_type?: string; description?: string }[]) =>
+    api.post<ApiResponse<{ key: string; value: string }[]>>("/api/v1/settings/upsert", items),
+
   listUsers: (page = 1) =>
     api.get<PaginatedResponse<{ id: string; email: string; name: string; role: string; is_active: boolean; last_login: string | null }>>("/api/v1/admin/users", { params: { page } }),
 
