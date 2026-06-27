@@ -22,6 +22,7 @@ async def _init_db_and_bootstrap() -> None:
     """Create all DB tables (idempotent) then bootstrap the admin account.
     Runs as a background task so the server starts immediately."""
     from app.core.database import engine, Base
+    from app.core.migrations import run_column_migrations
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -29,6 +30,8 @@ async def _init_db_and_bootstrap() -> None:
     except Exception as exc:
         logger.error("Database table creation failed — login will fail: %s", exc, exc_info=exc)
         return
+    # Add any new columns to existing tables (create_all never ALTERs).
+    await run_column_migrations(engine)
     await bootstrap_admin()
 
 
