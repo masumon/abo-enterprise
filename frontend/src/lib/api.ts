@@ -1,5 +1,5 @@
 import axios from "axios";
-import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead } from "@/types";
+import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service } from "@/types";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000",
@@ -105,6 +105,14 @@ export const authApi = {
 
   getMe: () =>
     api.get<ApiResponse<{ id: string; email: string; name: string; role: string }>>("/api/v1/auth/me"),
+};
+
+export const servicesApi = {
+  list: (params?: { category?: string; featured?: boolean; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<Service>>("/api/v1/services", { params }),
+
+  getBySlug: (slug: string) =>
+    api.get<ApiResponse<Service>>(`/api/v1/services/${slug}`),
 };
 
 export const reviewsApi = {
