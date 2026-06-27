@@ -21,7 +21,7 @@ __pycache__/
 .env
 .env.local
 .env.*.local
-.env.production
+# .env.production is tracked — contains only NEXT_PUBLIC_* (non-secret, browser-visible)
 
 # Logs
 *.log
