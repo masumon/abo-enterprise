@@ -232,6 +232,34 @@ export const adminApi = {
     api.get<PaginatedResponse<{ id: string; action: string; entity_type: string; entity_id: string | null; created_at: string }>>("/api/v1/admin/audit-logs", { params: { page } }),
 };
 
+export interface PaymentMethodRecord {
+  id: string;
+  payment_gateway: string;
+  is_active: boolean;
+  account_identifier: string | null;
+  commission_percentage: number;
+  min_amount: number | null;
+  max_amount: number | null;
+  description: string | null;
+  sort_order: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const paymentMethodsAdminApi = {
+  list: () =>
+    api.get<ApiResponse<PaymentMethodRecord[]>>("/api/v1/admin/payment-methods"),
+
+  create: (data: Omit<PaymentMethodRecord, "id" | "created_at" | "updated_at">) =>
+    api.post<ApiResponse<PaymentMethodRecord>>("/api/v1/admin/payment-methods", data),
+
+  update: (id: string, data: Partial<Omit<PaymentMethodRecord, "id" | "created_at" | "updated_at">>) =>
+    api.put<ApiResponse<PaymentMethodRecord>>(`/api/v1/admin/payment-methods/${id}`, data),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/admin/payment-methods/${id}`),
+};
+
 export const paymentsApi = {
   initiateBkash: (order_id: string) =>
     api.post<ApiResponse<{ success: boolean; payment_url?: string; transaction_id?: string; payment_gateway: string }>>("/api/v1/payments/bkash/initiate", {
