@@ -150,4 +150,35 @@ export const adminApi = {
     api.get<PaginatedResponse<{ id: string; action: string; entity_type: string; entity_id: string | null; created_at: string }>>("/api/v1/admin/audit-logs", { params: { page } }),
 };
 
+export const paymentsApi = {
+  initiateBkash: (order_id: string) =>
+    api.post<ApiResponse<{ success: boolean; payment_url?: string; transaction_id?: string; payment_gateway: string }>>("/api/v1/payments/bkash/initiate", {
+      order_id,
+      payment_gateway: "bkash",
+    }),
+
+  initiateNagad: (order_id: string) =>
+    api.post<ApiResponse<{ success: boolean; payment_url?: string; transaction_id?: string; payment_gateway: string }>>("/api/v1/payments/nagad/initiate", {
+      order_id,
+      payment_gateway: "nagad",
+    }),
+
+  verifyBkash: (payment_id: string) =>
+    api.post<ApiResponse<{ success: boolean; status?: string; transaction_id?: string; payment_gateway: string }>>("/api/v1/payments/bkash/verify", {
+      payment_id,
+      payment_gateway: "bkash",
+    }),
+
+  verifyNagad: (payment_id: string) =>
+    api.post<ApiResponse<{ success: boolean; status?: string; transaction_id?: string; payment_gateway: string }>>("/api/v1/payments/nagad/verify", {
+      payment_id,
+      payment_gateway: "nagad",
+    }),
+
+  getTransaction: (transaction_id: string, gateway: "bkash" | "nagad") =>
+    api.get<ApiResponse<{ id: string; status: string; amount: number }>>("/api/v1/payments/transaction/" + transaction_id, {
+      params: { gateway },
+    }),
+};
+
 export default api;
