@@ -6,6 +6,14 @@ import { X, Zap } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 
 const STORAGE_KEY = "abo-announcement-dismissed";
+const ANNOUNCEMENT_HEIGHT = "2.25rem";
+
+function setAnnouncementHeight(visible: boolean) {
+  document.documentElement.style.setProperty(
+    "--announcement-height",
+    visible ? ANNOUNCEMENT_HEIGHT : "0px"
+  );
+}
 
 const ANNOUNCEMENTS = [
   {
@@ -31,9 +39,9 @@ export default function AnnouncementBar() {
   const { lang } = useLanguageStore();
 
   useEffect(() => {
-    if (localStorage.getItem(STORAGE_KEY) === "1") {
-      setVisible(false);
-    }
+    const dismissed = localStorage.getItem(STORAGE_KEY) === "1";
+    setVisible(!dismissed);
+    setAnnouncementHeight(!dismissed);
   }, []);
 
   useEffect(() => {
@@ -46,6 +54,7 @@ export default function AnnouncementBar() {
 
   const dismiss = () => {
     setVisible(false);
+    setAnnouncementHeight(false);
     localStorage.setItem(STORAGE_KEY, "1");
   };
 

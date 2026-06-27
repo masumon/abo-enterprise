@@ -76,23 +76,23 @@ function TrackContent() {
   const isCancelled = result?.order_status === "cancelled";
 
   return (
-    <main className="min-h-screen bg-gray-50 py-16 px-4">
+    <main className="min-h-screen page-surface py-16 px-4 pb-mobile-nav lg:pb-16">
       <div className="max-w-xl mx-auto">
         <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-brand-100 rounded-2xl mb-4">
-            <Package className="w-7 h-7 text-brand-600" />
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-brand-100 dark:bg-brand-900/40 rounded-2xl mb-4">
+            <Package className="w-7 h-7 text-brand-600 dark:text-brand-300" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-heading mb-2">
             {lang === "bn" ? "অর্ডার ট্র্যাক করুন" : "Track Your Order"}
           </h1>
-          <p className="text-gray-500">
+          <p className="text-muted">
             {lang === "bn"
               ? "অর্ডার নম্বর দিয়ে বর্তমান অবস্থা দেখুন"
               : "Enter your order number to see the current status"}
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+        <div className="surface-card rounded-2xl shadow-sm p-6 mb-6">
           <div className="flex gap-3">
             <input
               type="text"
@@ -114,18 +114,18 @@ function TrackContent() {
           </div>
 
           {error && (
-            <p role="alert" className="mt-3 text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2">{error}</p>
+            <p role="alert" className="mt-3 text-sm text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-900/20 rounded-lg px-4 py-2">{error}</p>
           )}
         </div>
 
         {result && (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
+          <div className="surface-card rounded-2xl shadow-sm p-6 space-y-6">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
                   {lang === "bn" ? "অর্ডার নম্বর" : "Order Number"}
                 </p>
-                <p className="text-lg font-bold text-gray-900">{result.order_number}</p>
+                <p className="text-lg font-bold text-heading">{result.order_number}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
@@ -136,22 +136,22 @@ function TrackContent() {
             </div>
 
             <div className="grid grid-cols-3 gap-3 text-sm">
-              <div className="bg-gray-50 rounded-xl p-3 text-center">
+              <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 text-center">
                 <p className="text-xs text-gray-400 mb-1">{lang === "bn" ? "পণ্য" : "Items"}</p>
-                <p className="font-semibold text-gray-800">{result.items_count}</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">{result.items_count}</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-3 text-center">
+              <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 text-center">
                 <p className="text-xs text-gray-400 mb-1">{lang === "bn" ? "পেমেন্ট" : "Payment"}</p>
-                <p className="font-semibold text-gray-800 capitalize">{result.payment_method}</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200 capitalize">{result.payment_method}</p>
               </div>
-              <div className="bg-gray-50 rounded-xl p-3 text-center">
+              <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 text-center">
                 <p className="text-xs text-gray-400 mb-1">{lang === "bn" ? "তারিখ" : "Date"}</p>
-                <p className="font-semibold text-gray-800">{new Date(result.created_at).toLocaleDateString("bn-BD")}</p>
+                <p className="font-semibold text-gray-800 dark:text-gray-200">{new Date(result.created_at).toLocaleDateString("bn-BD")}</p>
               </div>
             </div>
 
             {isCancelled ? (
-              <div className="flex items-center gap-3 bg-red-50 border border-red-100 rounded-xl p-4">
+              <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl p-4">
                 <XCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
                 <div>
                   <p className="font-semibold text-red-700">
@@ -168,7 +168,7 @@ function TrackContent() {
                   {lang === "bn" ? "অর্ডার অগ্রগতি" : "Order Progress"}
                 </p>
                 <div className="relative">
-                  <div className="absolute left-4 top-5 bottom-5 w-0.5 bg-gray-100" />
+                  <div className="absolute left-4 top-5 bottom-5 w-0.5 bg-gray-100 dark:bg-white/10" />
                   <div className="space-y-4">
                     {STATUS_STEPS.map((step, i) => {
                       const done = i <= stepIndex;
@@ -181,12 +181,12 @@ function TrackContent() {
                               ? active
                                 ? "bg-brand-600 text-white"
                                 : "bg-green-500 text-white"
-                              : "bg-gray-100 text-gray-300"
+                              : "bg-gray-100 dark:bg-white/10 text-gray-300 dark:text-gray-600"
                           }`}>
                             {STATUS_ICON[step]}
                           </div>
                           <div>
-                            <p className={`text-sm font-medium ${done ? "text-gray-900" : "text-gray-400"}`}>
+                            <p className={`text-sm font-medium ${done ? "text-heading" : "text-gray-400"}`}>
                               {lang === "bn" ? label.bn : label.en}
                             </p>
                             {active && (

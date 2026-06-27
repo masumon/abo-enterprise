@@ -37,16 +37,16 @@ export default function ApiWarmup() {
 
   return (
     <div
-      className="fixed bottom-20 lg:bottom-4 left-4 right-4 lg:left-auto lg:right-4 lg:max-w-xs z-30 bg-white/95 backdrop-blur-md border border-brand-100 rounded-xl px-4 py-3 shadow-lg flex items-center gap-3"
+      className="fixed bottom-mobile-float lg:bottom-4 left-4 right-4 lg:left-auto lg:right-4 lg:max-w-xs z-30 surface-card backdrop-blur-md rounded-xl px-4 py-3 shadow-lg flex items-center gap-3"
       role="status"
       aria-live="polite"
     >
       <Loader2 className="w-4 h-4 text-brand-500 animate-spin flex-shrink-0" aria-hidden />
       <div>
-        <p className="text-sm font-medium text-gray-800">
+        <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
           {lang === "bn" ? "সার্ভার প্রস্তুত হচ্ছে..." : "Warming up server..."}
         </p>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-muted">
           {lang === "bn" ? "প্রথম লোডে ৩০–৬০ সেকেন্ড লাগতে পারে" : "First load may take 30–60 seconds"}
         </p>
       </div>

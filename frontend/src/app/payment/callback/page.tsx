@@ -62,15 +62,15 @@ function PaymentCallbackContent() {
   }, []);
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md w-full text-center">
+    <main className="min-h-screen flex items-center justify-center px-4 page-surface pb-mobile-nav lg:pb-0">
+      <div className="surface-card rounded-2xl shadow-sm p-8 max-w-md w-full text-center">
         {status === "verifying" && (
           <>
             <Loader2 className="w-14 h-14 text-brand-500 mx-auto mb-5 animate-spin" />
-            <h1 className="text-xl font-bold text-gray-900 mb-2">
+            <h1 className="text-xl font-bold text-heading mb-2">
               {lang === "bn" ? "পেমেন্ট যাচাই হচ্ছে..." : "Verifying payment..."}
             </h1>
-            <p className="text-gray-500 text-sm">
+            <p className="text-muted text-sm">
               {lang === "bn" ? "দয়া করে অপেক্ষা করুন।" : "Please wait a moment."}
             </p>
           </>
@@ -78,23 +78,23 @@ function PaymentCallbackContent() {
 
         {status === "success" && (
           <>
-            <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-5">
+            <div className="w-20 h-20 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center mx-auto mb-5">
               <CheckCircle2 className="w-10 h-10 text-green-500" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-heading mb-2">
               {lang === "bn" ? "পেমেন্ট সফল!" : "Payment Successful!"}
             </h1>
-            <p className="text-gray-500 mb-4">
+            <p className="text-muted mb-4">
               {lang === "bn"
                 ? "আপনার পেমেন্ট নিশ্চিত হয়েছে। রিডাইরেক্ট হচ্ছে..."
                 : "Your payment is confirmed. Redirecting..."}
             </p>
             {orderNumber && (
-              <div className="bg-brand-50 rounded-xl p-3">
-                <p className="text-xs text-brand-600 font-medium mb-0.5">
+              <div className="bg-brand-50 dark:bg-brand-900/30 rounded-xl p-3">
+                <p className="text-xs text-brand-600 dark:text-brand-300 font-medium mb-0.5">
                   {lang === "bn" ? "অর্ডার নম্বর" : "Order Number"}
                 </p>
-                <p className="text-lg font-bold text-brand-700">{orderNumber}</p>
+                <p className="text-lg font-bold text-brand-700 dark:text-brand-200">{orderNumber}</p>
               </div>
             )}
           </>
@@ -102,15 +102,15 @@ function PaymentCallbackContent() {
 
         {(status === "failed" || status === "error") && (
           <>
-            <div className="w-20 h-20 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-5">
+            <div className="w-20 h-20 rounded-full bg-red-50 dark:bg-red-900/30 flex items-center justify-center mx-auto mb-5">
               <XCircle className="w-10 h-10 text-red-500" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl font-bold text-heading mb-2">
               {status === "failed"
                 ? lang === "bn" ? "পেমেন্ট ব্যর্থ" : "Payment Failed"
                 : lang === "bn" ? "সমস্যা হয়েছে" : "Something went wrong"}
             </h1>
-            <p className="text-gray-500 mb-6">
+            <p className="text-muted mb-6">
               {errorMessage ??
                 (lang === "bn"
                   ? "পেমেন্ট সম্পন্ন হয়নি। আবার চেষ্টা করুন।"

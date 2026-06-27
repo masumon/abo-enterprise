@@ -16,30 +16,30 @@ function OrderSuccessContent() {
   }, [params]);
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 bg-gray-50">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 max-w-md w-full text-center">
+    <main className="min-h-screen flex items-center justify-center px-4 page-surface pb-mobile-nav lg:pb-0">
+      <div className="surface-card rounded-2xl shadow-sm p-8 max-w-md w-full text-center">
         <div className="flex justify-center mb-5">
-          <div className="w-20 h-20 rounded-full bg-green-50 flex items-center justify-center">
+          <div className="w-20 h-20 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center">
             <CheckCircle2 className="w-10 h-10 text-green-500" />
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        <h1 className="text-2xl font-bold text-heading mb-2">
           {lang === "bn" ? "অর্ডার হয়েছে!" : "Order Placed!"}
         </h1>
-        <p className="text-gray-500 mb-6">
+        <p className="text-muted mb-6">
           {lang === "bn"
             ? "আপনার অর্ডারের জন্য ধন্যবাদ। নিশ্চিত করতে আমরা শীঘ্রই যোগাযোগ করব।"
             : "Thank you for your order. We'll contact you shortly to confirm."}
         </p>
 
         {orderNumber && (
-          <div className="bg-brand-50 rounded-xl p-4 mb-6">
-            <p className="text-xs text-brand-600 font-medium mb-1">
+          <div className="bg-brand-50 dark:bg-brand-900/30 rounded-xl p-4 mb-6">
+            <p className="text-xs text-brand-600 dark:text-brand-300 font-medium mb-1">
               {lang === "bn" ? "অর্ডার নম্বর" : "Order Number"}
             </p>
-            <p className="text-xl font-bold text-brand-700">{orderNumber}</p>
-            <p className="text-xs text-brand-500 mt-1">
+            <p className="text-xl font-bold text-brand-700 dark:text-brand-200">{orderNumber}</p>
+            <p className="text-xs text-brand-500 dark:text-brand-400 mt-1">
               {lang === "bn" ? "ট্র্যাক করতে সংরক্ষণ করুন" : "Save this to track your order"}
             </p>
           </div>

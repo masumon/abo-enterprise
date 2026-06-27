@@ -12,7 +12,7 @@ export default function CompareBar() {
   if (items.length === 0) return null;
 
   return (
-    <div className="fixed bottom-20 lg:bottom-4 left-4 right-4 z-40 max-w-lg mx-auto">
+    <div className="fixed bottom-mobile-float lg:bottom-4 left-4 right-4 z-40 max-w-lg mx-auto lg:left-auto lg:right-4">
       <div className="glass rounded-2xl p-3 shadow-glass-strong border border-brand-100 dark:border-white/10 flex items-center gap-3">
         <GitCompare className="w-5 h-5 text-brand-600 flex-shrink-0" />
         <div className="flex-1 flex gap-2 overflow-x-auto scrollbar-hide">

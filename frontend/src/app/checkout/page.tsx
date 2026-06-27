@@ -193,29 +193,28 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <div className="min-h-screen page-surface pb-24 lg:pb-8">
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Back link */}
         <Link
           href="/products"
-          className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-brand-600 mb-6 transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-muted hover:text-brand-600 dark:hover:text-brand-300 mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           {lang === "bn" ? "কেনাকাটা চালিয়ে যান" : "Continue Shopping"}
         </Link>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-4">
+        <h1 className="text-2xl font-bold text-heading mb-4">
           {lang === "bn" ? "অর্ডার করুন" : "Checkout"}
         </h1>
 
-        <div className="mb-6 rounded-xl bg-brand-50 border border-brand-100 px-4 py-3 text-sm text-brand-800">
+        <div className="mb-6 rounded-xl bg-brand-50 dark:bg-brand-900/30 border border-brand-100 dark:border-brand-800 px-4 py-3 text-sm text-brand-800 dark:text-brand-200">
           {lang === "bn"
             ? "✓ গেস্ট চেকআউট — অ্যাকাউন্ট তৈরি করতে হবে না। শুধু নাম, ফোন ও ঠিকানা দিন।"
             : "✓ Guest checkout — no account needed. Just provide your name, phone, and address."}
         </div>
 
         {stockIssue && (
-          <div role="alert" className="mb-6 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+          <div role="alert" className="mb-6 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
             {lang === "bn"
               ? "কিছু পণ্যের স্টক সীমিত। কার্টে ফিরে পরিমাণ যাচাই করুন।"
               : "Some items have limited stock. Please review quantities in your cart."}
@@ -225,11 +224,11 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* ── Left: Form ── */}
           <div className="lg:col-span-3">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+            <form id="checkout-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {submitError && (
                 <div
                   role="alert"
-                  className="flex items-start gap-2 bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3"
+                  className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-700 dark:text-red-300 text-sm rounded-xl px-4 py-3"
                 >
                   <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <span>{submitError}</span>
@@ -237,13 +236,13 @@ export default function CheckoutPage() {
               )}
 
               {/* Customer Info */}
-              <section className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <h2 className="font-semibold text-gray-900 mb-4">
+              <section className="surface-card rounded-2xl p-6 shadow-sm">
+                <h2 className="font-semibold text-heading mb-4">
                   {lang === "bn" ? "আপনার তথ্য" : "Customer Information"}
                 </h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {lang === "bn" ? "পুরো নাম *" : "Full Name *"}
                     </label>
                     <input
@@ -260,7 +259,7 @@ export default function CheckoutPage() {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {lang === "bn" ? "মোবাইল নম্বর *" : "Mobile Number *"}
                       </label>
                       <input
@@ -277,7 +276,7 @@ export default function CheckoutPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         {lang === "bn" ? "ইমেইল (ঐচ্ছিক)" : "Email (optional)"}
                       </label>
                       <input
@@ -295,7 +294,7 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {lang === "bn" ? "ডেলিভারি ঠিকানা *" : "Delivery Address *"}
                     </label>
                     <textarea
@@ -316,7 +315,7 @@ export default function CheckoutPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       {lang === "bn" ? "বিশেষ নির্দেশনা (ঐচ্ছিক)" : "Special Instructions (optional)"}
                     </label>
                     <textarea
@@ -334,8 +333,8 @@ export default function CheckoutPage() {
               </section>
 
               {/* Payment Method */}
-              <section className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <h2 className="font-semibold text-gray-900 mb-4">
+              <section className="surface-card rounded-2xl p-6 shadow-sm">
+                <h2 className="font-semibold text-heading mb-4">
                   {lang === "bn" ? "পেমেন্ট পদ্ধতি *" : "Payment Method *"}
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
@@ -345,8 +344,8 @@ export default function CheckoutPage() {
                       className={cn(
                         "flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all",
                         selectedPayment === opt.value
-                          ? "border-brand-500 bg-brand-50"
-                          : "border-gray-200 hover:border-gray-300 bg-white"
+                          ? "border-brand-500 bg-brand-50 dark:bg-brand-900/30"
+                          : "border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 bg-white dark:bg-white/5"
                       )}
                     >
                       <input
@@ -357,8 +356,8 @@ export default function CheckoutPage() {
                       />
                       <span className="text-xl leading-none mt-0.5">{opt.icon}</span>
                       <div>
-                        <p className="font-semibold text-sm text-gray-900">{opt.label}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{opt.detail}</p>
+                        <p className="font-semibold text-sm text-heading">{opt.label}</p>
+                        <p className="text-xs text-muted mt-0.5">{opt.detail}</p>
                       </div>
                       {selectedPayment === opt.value && (
                         <div className="ml-auto w-4 h-4 rounded-full bg-brand-500 flex items-center justify-center flex-shrink-0">
@@ -371,7 +370,7 @@ export default function CheckoutPage() {
               </section>
 
               {/* Trust badges */}
-              <div className="flex items-center gap-6 text-xs text-gray-500">
+              <div className="flex items-center gap-6 text-xs text-muted">
                 <div className="flex items-center gap-1.5">
                   <Shield className="w-4 h-4 text-green-500" />
                   {lang === "bn" ? "নিরাপদ অর্ডার" : "Secure Order"}
@@ -385,7 +384,7 @@ export default function CheckoutPage() {
               <button
                 type="submit"
                 disabled={isSubmitting || stockIssue}
-                className="btn btn-primary btn-lg w-full"
+                className="btn btn-primary btn-lg w-full hidden lg:flex"
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
@@ -404,9 +403,9 @@ export default function CheckoutPage() {
 
           {/* ── Right: Order Summary ── */}
           <div className="lg:col-span-2">
-            <div className="sticky top-6 space-y-4">
-              <section className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <h2 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <div className="lg:sticky lg:top-[calc(var(--navbar-offset)+1rem)] space-y-4">
+              <section className="surface-card rounded-2xl p-6 shadow-sm">
+                <h2 className="font-semibold text-heading mb-4 flex items-center gap-2">
                   <ShoppingBag className="w-4 h-4 text-brand-500" />
                   {lang === "bn" ? "অর্ডার সারসংক্ষেপ" : "Order Summary"}
                   <span className="ml-auto text-xs text-gray-400 font-normal">
@@ -431,14 +430,14 @@ export default function CheckoutPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 truncate">
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
                           {lang === "bn" ? item.name_bn : item.name_en}
                         </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
+                        <p className="text-xs text-muted mt-0.5">
                           {formatPrice(item.price)} × {item.quantity}
                         </p>
                       </div>
-                      <p className="text-sm font-semibold text-gray-900 whitespace-nowrap">
+                      <p className="text-sm font-semibold text-heading whitespace-nowrap">
                         {formatPrice(item.price * item.quantity)}
                       </p>
                     </div>
@@ -446,10 +445,10 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Coupon */}
-                <div className="mt-5 pt-4 border-t border-gray-100">
+                <div className="mt-5 pt-4 border-t border-gray-100 dark:border-white/10">
                   {appliedCoupon ? (
-                    <div className="flex items-center justify-between bg-green-50 rounded-xl px-3 py-2">
-                      <div className="flex items-center gap-2 text-sm text-green-700">
+                    <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 rounded-xl px-3 py-2">
+                      <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
                         <Tag className="w-3.5 h-3.5" />
                         <span className="font-medium">{appliedCoupon}</span>
                         <span className="text-green-600">
@@ -489,24 +488,24 @@ export default function CheckoutPage() {
 
                 {/* Totals */}
                 <div className="mt-4 space-y-2 text-sm">
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-300">
                     <span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span>
                     <span>{formatPrice(subtotal)}</span>
                   </div>
                   {discount > 0 && (
-                    <div className="flex justify-between text-green-600 font-semibold bg-green-50 -mx-2 px-2 py-1 rounded-lg">
+                    <div className="flex justify-between text-green-600 dark:text-green-400 font-semibold bg-green-50 dark:bg-green-900/20 -mx-2 px-2 py-1 rounded-lg">
                       <span>{lang === "bn" ? "🎉 আপনি সাশ্রয় করছেন" : "🎉 You save"}</span>
                       <span>−{formatPrice(discount)}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-gray-600 dark:text-gray-300">
                     <span>{lang === "bn" ? "ডেলিভারি" : "Delivery"}</span>
                     <span className="text-green-600 font-medium">
                       {lang === "bn" ? "বিনামূল্যে" : "FREE"}
                     </span>
                   </div>
-                  <div className="flex justify-between items-center pt-3 border-t border-gray-100 font-bold text-base">
-                    <span>{lang === "bn" ? "মোট" : "Total"}</span>
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-white/10 font-bold text-base">
+                    <span className="text-heading">{lang === "bn" ? "মোট" : "Total"}</span>
                     <span className="text-xl text-accent-500">{formatPrice(cartTotal)}</span>
                   </div>
                 </div>
@@ -515,6 +514,33 @@ export default function CheckoutPage() {
           </div>
         </div>
       </div>
-    </main>
+
+      <div className="fixed bottom-mobile-nav left-0 right-0 z-40 lg:hidden border-t border-gray-100 dark:border-white/10 bg-white/95 dark:bg-[#0f1a2e]/95 backdrop-blur-xl px-4 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)]">
+        <div className="flex items-center gap-3 max-w-6xl mx-auto">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted">{lang === "bn" ? "মোট" : "Total"}</p>
+            <p className="text-lg font-bold text-accent-500">{formatPrice(cartTotal)}</p>
+          </div>
+          <button
+            type="submit"
+            form="checkout-form"
+            disabled={isSubmitting || stockIssue}
+            className="btn btn-primary btn-md flex-shrink-0 min-w-[9rem]"
+          >
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                {lang === "bn" ? "প্রক্রিয়া..." : "Processing..."}
+              </span>
+            ) : (
+              <span className="flex items-center justify-center gap-2">
+                {lang === "bn" ? "অর্ডার করুন" : "Place Order"}
+                <ChevronRight className="w-5 h-5" />
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
