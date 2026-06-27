@@ -123,6 +123,23 @@ export const blogApi = {
     api.get<ApiResponse<import("@/types").BlogPost>>(`/api/v1/blog/${slug}`),
 };
 
+export const adminBlogApi = {
+  list: (params?: { status?: string; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<import("@/types").BlogPost>>("/api/v1/blog/admin/posts", { params }),
+
+  get: (id: string) =>
+    api.get<ApiResponse<import("@/types").BlogPost>>(`/api/v1/blog/admin/posts/${id}`),
+
+  create: (data: Partial<import("@/types").BlogPost>) =>
+    api.post<ApiResponse<import("@/types").BlogPost>>("/api/v1/blog/admin/posts", data),
+
+  update: (id: string, data: Partial<import("@/types").BlogPost>) =>
+    api.put<ApiResponse<import("@/types").BlogPost>>(`/api/v1/blog/admin/posts/${id}`, data),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/blog/admin/posts/${id}`),
+};
+
 export const adminApi = {
   stats: () =>
     api.get<ApiResponse<{
