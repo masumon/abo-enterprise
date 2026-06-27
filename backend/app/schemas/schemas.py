@@ -329,6 +329,9 @@ class ServiceBookingFormBase(BaseModel):
     is_required: bool = True
     placeholder: str | None = None
     options: list[str] | None = None
+    default_value: str | None = None
+    validation_rules: dict | None = None
+    conditional_logic: dict | None = None
     sort_order: int | None = None
     is_active: bool = True
 

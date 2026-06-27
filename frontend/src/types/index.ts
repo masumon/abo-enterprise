@@ -108,6 +108,9 @@ export interface ServiceBookingFormField {
   is_required: boolean;
   placeholder?: string;
   options?: string[];
+  default_value?: string | null;
+  validation_rules?: Record<string, unknown> | null;
+  conditional_logic?: Record<string, unknown> | null;
   sort_order?: number;
   is_active?: boolean;
 }
