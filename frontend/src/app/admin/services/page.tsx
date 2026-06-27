@@ -41,6 +41,7 @@ export default function AdminServicesPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [extOpen, setExtOpen] = useState(false);
   // Pricing tier sub-state (when editing)
   const [newTier, setNewTier] = useState<Partial<ServicePricingTier>>(EMPTY_TIER);
   const [addingTier, setAddingTier] = useState(false);
@@ -62,7 +63,7 @@ export default function AdminServicesPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const openNew = () => { setEditing({ ...EMPTY_SERVICE }); setIsNew(true); setTierFormOpen(false); setNewTier(EMPTY_TIER); };
+  const openNew = () => { setEditing({ ...EMPTY_SERVICE }); setIsNew(true); setTierFormOpen(false); setNewTier(EMPTY_TIER); setExtOpen(false); };
 
   const openEdit = async (s: Service) => {
     try {
@@ -74,6 +75,7 @@ export default function AdminServicesPage() {
     setIsNew(false);
     setTierFormOpen(false);
     setNewTier(EMPTY_TIER);
+    setExtOpen(false);
   };
 
   const closeEditor = () => { setEditing(null); setIsNew(false); };
@@ -375,6 +377,95 @@ export default function AdminServicesPage() {
                   <label className="form-label">Full Description (বাংলা)</label>
                   <textarea value={editing.description_bn ?? ""} onChange={f("description_bn")} rows={4} placeholder="বিস্তারিত বিবরণ…" className="input w-full resize-y text-sm" dir="auto" />
                 </div>
+              </section>
+
+              {/* ── Extended Details ────────────────────── */}
+              <section className="border border-gray-100 rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setExtOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
+                >
+                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Extended Details</span>
+                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${extOpen ? "rotate-180" : ""}`} />
+                </button>
+                {extOpen && (
+                  <div className="px-4 py-4 space-y-4">
+                    {/* Process Steps */}
+                    <div>
+                      <label className="form-label">Process Steps (JSON lines: step|title|description)</label>
+                      <textarea
+                        rows={4}
+                        className="input w-full resize-y text-sm font-mono"
+                        placeholder={"1|Discovery|We analyze your requirements\n2|Design|We create a solution plan"}
+                        value={(editing.process_steps ?? []).map((s: { step: number; title: string; description: string }) => `${s.step}|${s.title}|${s.description}`).join("\n")}
+                        onChange={e => {
+                          const steps = e.target.value.split("\n").filter(Boolean).map(line => {
+                            const [step, title, ...rest] = line.split("|");
+                            return { step: Number(step) || 1, title: title ?? "", description: rest.join("|") ?? "" };
+                          });
+                          setEditing(prev => prev ? { ...prev, process_steps: steps } : prev);
+                        }}
+                      />
+                      <p className="text-[11px] text-gray-400 mt-1">One step per line: number|title|description</p>
+                    </div>
+
+                    {/* Benefits */}
+                    <div>
+                      <label className="form-label">Benefits (one per line)</label>
+                      <textarea
+                        rows={4}
+                        className="input w-full resize-y text-sm"
+                        placeholder={"Fast delivery\n24/7 support\nMoney-back guarantee"}
+                        value={(editing.benefits ?? []).join("\n")}
+                        onChange={e => setEditing(prev => prev ? { ...prev, benefits: e.target.value.split("\n").filter(Boolean) } : prev)}
+                      />
+                    </div>
+
+                    {/* Requirements */}
+                    <div>
+                      <label className="form-label">Requirements (one per line)</label>
+                      <textarea
+                        rows={3}
+                        className="input w-full resize-y text-sm"
+                        placeholder={"Active internet connection\nValid email address"}
+                        value={(editing.requirements ?? []).join("\n")}
+                        onChange={e => setEditing(prev => prev ? { ...prev, requirements: e.target.value.split("\n").filter(Boolean) } : prev)}
+                      />
+                    </div>
+
+                    {/* Required Documents */}
+                    <div>
+                      <label className="form-label">Required Documents (one per line)</label>
+                      <textarea
+                        rows={3}
+                        className="input w-full resize-y text-sm"
+                        placeholder={"National ID\nTrade License"}
+                        value={(editing.required_documents ?? []).join("\n")}
+                        onChange={e => setEditing(prev => prev ? { ...prev, required_documents: e.target.value.split("\n").filter(Boolean) } : prev)}
+                      />
+                    </div>
+
+                    {/* FAQ */}
+                    <div>
+                      <label className="form-label">FAQ (JSON lines: question|answer)</label>
+                      <textarea
+                        rows={4}
+                        className="input w-full resize-y text-sm font-mono"
+                        placeholder={"How long does it take?|Usually 3-5 business days\nDo you offer refunds?|Yes, within 7 days"}
+                        value={(editing.faq ?? []).map((f: { question: string; answer: string }) => `${f.question}|${f.answer}`).join("\n")}
+                        onChange={e => {
+                          const faq = e.target.value.split("\n").filter(Boolean).map(line => {
+                            const [question, ...rest] = line.split("|");
+                            return { question: question ?? "", answer: rest.join("|") ?? "" };
+                          });
+                          setEditing(prev => prev ? { ...prev, faq } : prev);
+                        }}
+                      />
+                      <p className="text-[11px] text-gray-400 mt-1">One FAQ per line: question|answer</p>
+                    </div>
+                  </div>
+                )}
               </section>
 
               {/* ── Pricing ─────────────────────────────── */}

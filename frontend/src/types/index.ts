@@ -140,6 +140,11 @@ export interface Service {
   tags?: string[];
   sort_order?: number;
   lead_priority?: number;
+  process_steps?: { step: number; title: string; description: string }[];
+  benefits?: string[];
+  requirements?: string[];
+  required_documents?: string[];
+  faq?: { question: string; answer: string }[];
   created_at?: string;
   updated_at?: string;
 }

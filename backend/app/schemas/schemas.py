@@ -371,6 +371,11 @@ class ServiceBase(BaseModel):
     lead_priority: int = 5
     lead_qualification_score: int = 0
     tags: list[str] = []
+    process_steps: list[dict] = []
+    benefits: list[str] = []
+    requirements: list[str] = []
+    required_documents: list[str] = []
+    faq: list[dict] = []
 
 
 class ServiceCreate(ServiceBase):
@@ -382,12 +387,29 @@ class ServiceUpdate(BaseModel):
     name_bn: str | None = None
     description_en: str | None = None
     description_bn: str | None = None
+    short_description_en: str | None = None
+    short_description_bn: str | None = None
+    long_description_en: str | None = None
+    long_description_bn: str | None = None
     category: str | None = None
     pricing_type: str | None = None
     base_price: float | None = None
+    min_price: float | None = None
+    max_price: float | None = None
+    hourly_rate: float | None = None
     is_active: bool | None = None
     is_featured: bool | None = None
     lead_priority: int | None = None
+    sort_order: int | None = None
+    icon_url: str | None = None
+    featured_image_url: str | None = None
+    icon_color: str | None = None
+    tags: list[str] | None = None
+    process_steps: list[dict] | None = None
+    benefits: list[str] | None = None
+    requirements: list[str] | None = None
+    required_documents: list[str] | None = None
+    faq: list[dict] | None = None
 
 
 class ServiceOut(ServiceBase):
