@@ -135,9 +135,7 @@ export interface Service {
   icon_url?: string;
   icon_color?: string;
   image_url?: string;
-  icon_url?: string;
   featured_image_url?: string;
-  icon_color?: string;
   category?: string;
   tags?: string[];
   sort_order?: number;
