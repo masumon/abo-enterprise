@@ -1,5 +1,5 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -8,6 +8,7 @@ from slowapi.errors import RateLimitExceeded
 import logging
 from app.core.config import settings
 from app.core.exceptions import ABOException, to_http_exception
+from app.core.security import require_admin
 from app.api.v1.router import api_router
 
 logger = logging.getLogger(__name__)
@@ -91,8 +92,8 @@ async def health():
 
 
 @app.get("/api/v1/auth/ping", include_in_schema=False)
-async def auth_ping():
-    """Diagnostic: check DB connectivity and admin existence."""
+async def auth_ping(admin_id: str = Depends(require_admin)):
+    """Diagnostic: check DB connectivity and admin existence. Requires admin auth."""
     import bcrypt
     from urllib.parse import urlparse
     try:

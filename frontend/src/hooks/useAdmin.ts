@@ -11,10 +11,29 @@ interface AdminUser {
   role: string;
 }
 
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+let cachedUser: AdminUser | null = null;
+let cacheExpiry = 0;
+
+function getCached(): AdminUser | null {
+  if (cachedUser && Date.now() < cacheExpiry) return cachedUser;
+  return null;
+}
+
+function setCache(user: AdminUser) {
+  cachedUser = user;
+  cacheExpiry = Date.now() + CACHE_TTL_MS;
+}
+
+function clearCache() {
+  cachedUser = null;
+  cacheExpiry = 0;
+}
+
 export function useAdmin(redirectOnFail = true) {
   const router = useRouter();
-  const [user, setUser] = useState<AdminUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<AdminUser | null>(getCached);
+  const [loading, setLoading] = useState(!getCached());
 
   const checkAuth = useCallback(async () => {
     const token = localStorage.getItem("abo_admin_token");
@@ -23,10 +42,21 @@ export function useAdmin(redirectOnFail = true) {
       setLoading(false);
       return;
     }
+
+    const cached = getCached();
+    if (cached) {
+      setUser(cached);
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await authApi.getMe();
-      setUser(res.data.data as AdminUser);
+      const adminUser = res.data.data as AdminUser;
+      setCache(adminUser);
+      setUser(adminUser);
     } catch {
+      clearCache();
       localStorage.removeItem("abo_admin_token");
       if (redirectOnFail) router.replace("/admin/login");
     } finally {
@@ -39,6 +69,7 @@ export function useAdmin(redirectOnFail = true) {
   }, [checkAuth]);
 
   const logout = useCallback(() => {
+    clearCache();
     localStorage.removeItem("abo_admin_token");
     router.replace("/admin/login");
   }, [router]);

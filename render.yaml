@@ -3,7 +3,7 @@ runtime: python-3.11
 plan: starter
 buildCommand: pip install -r requirements.txt
 startCommand: |
-  uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 2
+  uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
 
 envVars:
   - key: ENVIRONMENT
@@ -14,15 +14,17 @@ envVars:
     value: "https://aboenterprise.com,https://www.aboenterprise.com,https://abo-enterprise.vercel.app,https://abo-enterprise-git-main.vercel.app"
   - key: DATABASE_URL
     syncWithPostgres: aboenterprise-postgres
-  - key: REDIS_URL
-    scope: all
   - key: SECRET_KEY
     scope: all
     isPrivate: true
+  - key: ADMIN_EMAIL
+    scope: all
   - key: ADMIN_PASSWORD
     scope: all
     isPrivate: true
-  - key: ALGORITHM
+  - key: ADMIN_NAME
+    scope: all
+  - key: JWT_ALGORITHM
     value: HS256
   - key: ACCESS_TOKEN_EXPIRE_MINUTES
     value: "1440"
@@ -30,18 +32,46 @@ envVars:
     value: smtp.sendgrid.net
   - key: SMTP_PORT
     value: "587"
-  - key: SMTP_USERNAME
+  - key: SMTP_USER
     value: apikey
   - key: SMTP_PASSWORD
     scope: all
     isPrivate: true
-  - key: FROM_EMAIL
+  - key: SMTP_FROM
     value: noreply@aboenterprise.com
+  - key: SMTP_TLS
+    value: "true"
+  - key: EMAIL_SENDER_NAME
+    value: ABO Enterprise
+  - key: ADMIN_NOTIFY_EMAIL
+    scope: all
+  - key: BUSINESS_EMAIL
+    scope: all
+  - key: WHATSAPP_NUMBER
+    scope: all
   - key: CLOUDINARY_CLOUD_NAME
     scope: all
   - key: CLOUDINARY_API_KEY
     scope: all
   - key: CLOUDINARY_API_SECRET
+    scope: all
+    isPrivate: true
+  - key: BKASH_APP_KEY
+    scope: all
+    isPrivate: true
+  - key: BKASH_APP_SECRET
+    scope: all
+    isPrivate: true
+  - key: BKASH_USERNAME
+    scope: all
+    isPrivate: true
+  - key: BKASH_PASSWORD
+    scope: all
+    isPrivate: true
+  - key: NAGAD_MERCHANT_ID
+    scope: all
+    isPrivate: true
+  - key: NAGAD_MERCHANT_PRIVATE_KEY
     scope: all
     isPrivate: true
 

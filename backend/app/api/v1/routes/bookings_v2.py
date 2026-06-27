@@ -23,7 +23,7 @@ from app.schemas.schemas import (
 import random
 import string
 
-router = APIRouter(prefix="/bookings", tags=["bookings"])
+router = APIRouter(prefix="/service-bookings", tags=["service-bookings"])
 
 
 def generate_booking_number():
