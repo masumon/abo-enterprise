@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Loader2, Briefcase, ChevronDown, X } from "lucide-react";
 import { bookingsApi } from "@/lib/api";
 import type { Booking } from "@/types";
@@ -25,7 +25,7 @@ export default function AdminBookingsPage() {
   const [detail, setDetail] = useState<AdminBooking | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const r = await bookingsApi.list({ service_type: typeFilter || undefined, status: statusFilter || undefined, page });
@@ -34,9 +34,9 @@ export default function AdminBookingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [typeFilter, statusFilter, page]);
 
-  useEffect(() => { load(); }, [typeFilter, statusFilter, page]);
+  useEffect(() => { load(); }, [load]);
 
   const updateStatus = async (id: string, status: string) => {
     setUpdatingId(id);

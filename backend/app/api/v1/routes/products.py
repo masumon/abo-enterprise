@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
-from app.core.security import require_admin
+from app.core.security import require_admin, require_role
 from app.models.models import Product
 from app.schemas.schemas import ProductCreate, ProductUpdate, ProductOut, ApiResponse, PaginatedResponse, PaginatedMeta
 
@@ -116,7 +116,7 @@ async def get_product(slug: str, db: AsyncSession = Depends(get_db)):
 async def create_product(
     payload: ProductCreate,
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("products.write")),
 ):
     existing = await db.execute(select(Product).where(Product.slug == payload.slug))
     if existing.scalar_one_or_none():
@@ -133,7 +133,7 @@ async def update_product(
     product_id: UUID,
     payload: ProductUpdate,
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("products.write")),
 ):
     result = await db.execute(select(Product).where(Product.id == product_id, Product.is_deleted == False))  # noqa: E712
     product = result.scalar_one_or_none()
@@ -150,7 +150,7 @@ async def update_product(
 async def delete_product(
     product_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("products.delete")),
 ):
     result = await db.execute(select(Product).where(Product.id == product_id))
     product = result.scalar_one_or_none()

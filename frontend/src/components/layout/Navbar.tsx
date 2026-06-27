@@ -73,7 +73,7 @@ export default function Navbar() {
       >
         <Link href="/" className="flex items-center gap-2.5 flex-shrink-0">
           <div className="w-9 h-9 rounded-full border-2 border-brand-200 bg-white flex items-center justify-center overflow-hidden shadow-sm">
-            <Image src="https://i.ibb.co.com/pjY3wvG9/1769284089412.png" alt="ABO" width={36} height={36} className="object-cover" />
+            <Image src="/logo.jpg" alt="ABO Enterprise" width={36} height={36} className="object-cover" />
           </div>
           <span className="font-bold text-lg tracking-tight hidden sm:block text-brand-800">
             ABO Enterprise

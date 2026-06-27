@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Loader2, ShoppingCart, ChevronDown, X, Package } from "lucide-react";
 import { ordersApi } from "@/lib/api";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -26,7 +26,7 @@ export default function AdminOrdersPage() {
   const [detail, setDetail] = useState<AdminOrder | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const r = await ordersApi.list({ order_status: filter || undefined, page });
@@ -35,9 +35,9 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filter, page]);
 
-  useEffect(() => { load(); }, [filter, page]);
+  useEffect(() => { load(); }, [load]);
 
   const updateStatus = async (id: string, status: string) => {
     setUpdatingId(id);
