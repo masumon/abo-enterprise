@@ -19,26 +19,33 @@ async def _ensure_admin_exists():
     """Create default admin on first startup if ADMIN_PASSWORD is set and no admin exists."""
     if not settings.ADMIN_PASSWORD:
         return
-    try:
-        from app.core.database import AsyncSessionLocal
-        from app.models.models import AdminUser
-        from app.core.security import hash_password
-        from sqlalchemy import select
-        async with AsyncSessionLocal() as db:
-            existing = await db.execute(select(AdminUser).limit(1))
-            if existing.scalar_one_or_none():
+    import asyncio
+    from app.core.database import AsyncSessionLocal
+    from app.models.models import AdminUser
+    from app.core.security import hash_password
+    from sqlalchemy import select
+
+    for attempt in range(5):
+        try:
+            async with AsyncSessionLocal() as db:
+                existing = await db.execute(select(AdminUser).limit(1))
+                if existing.scalar_one_or_none():
+                    return
+                admin = AdminUser(
+                    email=settings.ADMIN_EMAIL,
+                    password_hash=hash_password(settings.ADMIN_PASSWORD),
+                    name=settings.ADMIN_NAME,
+                    role="super_admin",
+                )
+                db.add(admin)
+                await db.commit()
+                logger.info(f"Default admin created: {settings.ADMIN_EMAIL}")
                 return
-            admin = AdminUser(
-                email=settings.ADMIN_EMAIL,
-                password_hash=hash_password(settings.ADMIN_PASSWORD),
-                name=settings.ADMIN_NAME,
-                role="super_admin",
-            )
-            db.add(admin)
-            await db.commit()
-            logger.info(f"Default admin created: {settings.ADMIN_EMAIL}")
-    except Exception as e:
-        logger.error(f"Failed to create default admin: {e}")
+        except Exception as e:
+            wait = 2 ** attempt
+            logger.warning(f"Admin setup attempt {attempt + 1} failed: {e} — retrying in {wait}s")
+            await asyncio.sleep(wait)
+    logger.error("Failed to create default admin after 5 attempts")
 
 
 @asynccontextmanager
