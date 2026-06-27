@@ -15,47 +15,10 @@ logger = logging.getLogger(__name__)
 limiter = Limiter(key_func=get_remote_address)
 
 
-async def _ensure_admin_exists():
-    """Create default admin after startup if ADMIN_PASSWORD is set and no admin exists."""
-    if not settings.ADMIN_PASSWORD:
-        return
-    import asyncio
-    from app.core.database import AsyncSessionLocal
-    from app.models.models import AdminUser
-    from app.core.security import hash_password
-    from sqlalchemy import select
-
-    await asyncio.sleep(15)  # wait for network to be ready after startup
-
-    for attempt in range(5):
-        try:
-            async with AsyncSessionLocal() as db:
-                existing = await db.execute(select(AdminUser).limit(1))
-                if existing.scalar_one_or_none():
-                    return
-                admin = AdminUser(
-                    email=settings.ADMIN_EMAIL,
-                    password_hash=hash_password(settings.ADMIN_PASSWORD),
-                    name=settings.ADMIN_NAME,
-                    role="super_admin",
-                )
-                db.add(admin)
-                await db.commit()
-                logger.info(f"Default admin created: {settings.ADMIN_EMAIL}")
-                return
-        except Exception as e:
-            wait = 2 ** attempt
-            logger.warning(f"Admin setup attempt {attempt + 1} failed: {e} — retrying in {wait}s")
-            await asyncio.sleep(wait)
-    logger.error("Failed to create default admin after 5 attempts")
-
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    import asyncio
     logger.info(f"Starting {settings.APP_NAME}")
-    asyncio.create_task(_ensure_admin_exists())  # non-blocking background task
     yield
     # Shutdown
     logger.info(f"Shutting down {settings.APP_NAME}")
