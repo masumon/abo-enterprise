@@ -263,3 +263,36 @@ def customer_booking_confirmation_html(
       </div>
     </div>
     """
+
+
+def customer_lead_confirmation_html(
+    lead_number: str,
+    customer_name: str,
+    lead_type: str,
+    whatsapp_number: str,
+) -> str:
+    whatsapp_link = f"https://wa.me/{whatsapp_number.replace('+', '')}?text=My inquiry reference is {lead_number}"
+
+    return f"""
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9fafb">
+      <div style="background:white;border-radius:8px;padding:24px">
+        <h2 style="color:#1e5ba8;margin:0 0 16px">Thank You for Your Inquiry!</h2>
+        <p style="color:#555;margin:0 0 16px">Dear {customer_name},</p>
+        <p style="color:#666">We have received your project inquiry and our team will review it shortly. We typically respond within 24 hours.</p>
+
+        <div style="background:#f0f8ff;padding:16px;border-left:4px solid #1e5ba8;margin:16px 0">
+          <p style="margin:0;color:#1e5ba8;font-weight:600">Reference Number: {lead_number}</p>
+          <p style="margin:8px 0 0;color:#555;font-size:14px">Service Type: {lead_type.replace("_", " ").title()}</p>
+        </div>
+
+        <p style="color:#666">Want to discuss your project immediately?</p>
+        <a href="{whatsapp_link}" style="display:inline-block;margin-top:8px;background:#25d366;color:white;padding:12px 24px;text-decoration:none;border-radius:4px;font-weight:600">
+          Chat on WhatsApp
+        </a>
+
+        <p style="color:#999;font-size:12px;margin-top:24px;border-top:1px solid #eee;padding-top:16px">
+          Thank you for considering ABO Enterprise. We look forward to working with you!
+        </p>
+      </div>
+    </div>
+    """

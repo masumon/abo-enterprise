@@ -1,10 +1,16 @@
 import uuid
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.config import settings
+from app.core.email import (
+    send_email,
+    booking_notification_html,
+    customer_booking_confirmation_html,
+)
 from app.models.models import (
     BookingV2,
     Service,
@@ -38,6 +44,7 @@ def generate_booking_number():
 @router.post("", response_model=ApiResponse)
 async def create_booking(
     payload: BookingV2Create,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
     """Create new booking (public)"""
@@ -63,8 +70,38 @@ async def create_booking(
     await db.commit()
     await db.refresh(booking)
 
-    # TODO: Send confirmation email to customer
-    # TODO: Notify admin of new booking
+    if settings.ADMIN_NOTIFY_EMAIL:
+        html = booking_notification_html(
+            booking.booking_number,
+            payload.customer_name,
+            payload.customer_phone,
+            service.name_en,
+            payload.details or "",
+        )
+        background_tasks.add_task(
+            send_email,
+            settings.ADMIN_NOTIFY_EMAIL,
+            f"New Booking {booking.booking_number} — ABO Enterprise",
+            html,
+        )
+
+    if payload.customer_email:
+        estimated = (
+            f"৳{payload.quoted_price:,.0f}" if payload.quoted_price else "Quote upon confirmation"
+        )
+        html = customer_booking_confirmation_html(
+            booking.booking_number,
+            payload.customer_name,
+            service.name_en,
+            estimated,
+            settings.WHATSAPP_NUMBER,
+        )
+        background_tasks.add_task(
+            send_email,
+            payload.customer_email,
+            f"Booking Confirmation #{booking.booking_number} — ABO Enterprise",
+            html,
+        )
 
     return ApiResponse(
         data=BookingV2Out.model_validate(booking).model_dump(),
