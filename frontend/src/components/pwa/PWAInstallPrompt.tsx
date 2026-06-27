@@ -1,5 +1,7 @@
 "use client";
 
+import { SITE_URL } from "@/lib/tokens";
+
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { X, Download, Share, Plus } from "lucide-react";
@@ -29,6 +31,7 @@ function isInStandaloneMode(): boolean {
 
 const DISMISSED_KEY = "pwa_prompt_dismissed";
 const DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const SITE_HOST = new URL(SITE_URL).hostname;
 
 export default function PWAInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -111,7 +114,7 @@ export default function PWAInstallPrompt() {
             </div>
             <div>
               <p className="font-bold text-gray-900 text-lg leading-tight">ABO Enterprise</p>
-              <p className="text-sm text-gray-500 mt-0.5">aboenterprise.vercel.app</p>
+              <p className="text-sm text-gray-500 mt-0.5">{SITE_HOST}</p>
               <div className="flex items-center gap-1 mt-1">
                 {[1,2,3,4,5].map(i => (
                   <svg key={i} className="w-3 h-3 text-yellow-400 fill-current" viewBox="0 0 20 20">

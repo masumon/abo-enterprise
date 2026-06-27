@@ -20,13 +20,7 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-const LEAD_TYPE_MAP: Record<FormData["lead_type"], string> = {
-  software_development: "software",
-  ai_solutions: "ai",
-  automation: "automation",
-  erp: "erp",
-  general: "general",
-};
+import { toLeadV2Type } from "@/lib/leadTypes";
 
 const LEAD_TYPES = [
   { value: "software_development", label: { en: "Custom Software", bn: "কাস্টম সফটওয়্যার" }, icon: Code },
@@ -59,7 +53,7 @@ export default function LeadCapture() {
     setSubmitError(null);
     try {
       await serviceLeadsApi.create({
-        lead_type: LEAD_TYPE_MAP[data.lead_type],
+        lead_type: toLeadV2Type(data.lead_type),
         name: data.name,
         phone: data.phone,
         email: data.email || undefined,

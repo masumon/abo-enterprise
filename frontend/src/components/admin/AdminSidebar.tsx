@@ -33,6 +33,7 @@ const NAV: NavItem[] = [
   { href: "/blog",           icon: BookOpen,        label: "Blog" },
   { href: "/projects",       icon: ExternalLink,    label: "Solutions", external: true },
   { href: "/admin/analytics",  icon: BarChart2,       label: "Analytics" },
+  { href: "/admin/revenue",    icon: BarChart2,       label: "Revenue" },
   { href: "/admin/settings",   icon: Settings,        label: "Settings" },
   { href: "/admin/users",      icon: Users,           label: "Users" },
   { href: "/admin/audit",      icon: BarChart2,       label: "Audit Logs" },

@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Phone, Mail, MapPin, MessageSquare, Send, Loader2, CheckCircle, Clock } from "lucide-react";
-import { leadsApi } from "@/lib/api";
+import { serviceLeadsApi } from "@/lib/api";
+import { toLeadV2Type } from "@/lib/leadTypes";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
@@ -37,8 +38,8 @@ export default function ContactPage() {
     setLoading(true);
     setSubmitError(null);
     try {
-      await leadsApi.create({
-        lead_type: "general",
+      await serviceLeadsApi.create({
+        lead_type: toLeadV2Type("general"),
         name: data.name,
         phone: data.phone,
         email: data.email || undefined,

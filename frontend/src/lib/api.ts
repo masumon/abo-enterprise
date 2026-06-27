@@ -132,6 +132,9 @@ export const serviceLeadsApi = {
     project_description?: string;
     requirements?: string;
     budget_range?: string;
+    budget_min?: number;
+    budget_max?: number;
+    timeline?: string;
   }) =>
     api.post<ApiResponse<LeadV2>>("/api/v1/service-leads", data),
 };

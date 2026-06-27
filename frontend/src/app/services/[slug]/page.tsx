@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { Service } from "@/types";
 import ServiceDetailClient from "./ServiceDetailClient";
+import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -34,8 +35,8 @@ export async function generateMetadata({
     service.short_description_en ??
     service.description_en ??
     `Professional ${service.name_en} service by ABO Enterprise, Bangladesh.`;
-  const url = service.canonical_url ?? `https://aboenterprise.vercel.app/services/${service.slug}`;
-  const ogImg = service.og_image ?? service.featured_image_url;
+  const url = service.canonical_url ?? `${SITE_URL}/services/${service.slug}`;
+  const ogImg = service.og_image ?? service.featured_image_url ?? DEFAULT_OG_IMAGE;
 
   return {
     title,
@@ -77,12 +78,12 @@ function buildJsonLd(service: Service) {
       service.description_en ??
       service.short_description_en ??
       service.name_en,
-    url: `https://aboenterprise.vercel.app/services/${service.slug}`,
+    url: `${SITE_URL}/services/${service.slug}`,
     image: service.featured_image_url ?? undefined,
     provider: {
       "@type": "Organization",
       name: "ABO Enterprise",
-      url: "https://aboenterprise.vercel.app",
+      url: SITE_URL,
       telephone: "+8801825007977",
       address: {
         "@type": "PostalAddress",
