@@ -25,6 +25,11 @@ export interface Product {
   is_featured?: boolean;
   sort_order?: number;
   specifications?: Record<string, string>;
+  seo_title?: string;
+  seo_description?: string;
+  seo_keywords?: string;
+  canonical_url?: string;
+  og_image?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -140,6 +145,11 @@ export interface Service {
   tags?: string[];
   sort_order?: number;
   lead_priority?: number;
+  seo_title?: string;
+  seo_description?: string;
+  seo_keywords?: string;
+  canonical_url?: string;
+  og_image?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -213,6 +223,11 @@ export interface BlogPost {
   is_featured?: boolean;
   sort_order?: number;
   published_at?: string;
+  seo_title?: string;
+  seo_description?: string;
+  seo_keywords?: string;
+  canonical_url?: string;
+  og_image?: string;
   created_at?: string;
   updated_at?: string;
 }

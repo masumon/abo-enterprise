@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff } from "lucide-react";
+import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
 import { adminBlogApi } from "@/lib/api";
 import type { BlogPost } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -43,6 +43,7 @@ export default function AdminBlogPage() {
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [seoOpen, setSeoOpen] = useState(false);
   const toast = useToastStore((s) => s.push);
 
   const load = useCallback(async () => {
@@ -61,11 +62,13 @@ export default function AdminBlogPage() {
   const openNew = () => {
     setEditing({ ...EMPTY_FORM });
     setIsNew(true);
+    setSeoOpen(false);
   };
 
   const openEdit = (post: BlogPost) => {
     setEditing({ ...post });
     setIsNew(false);
+    setSeoOpen(false);
   };
 
   const closeEditor = () => {
@@ -391,6 +394,39 @@ export default function AdminBlogPage() {
                   className="input w-full resize-y text-sm leading-relaxed"
                   dir="auto"
                 />
+              </div>
+
+              {/* SEO Section */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button type="button" onClick={() => setSeoOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">SEO Settings</span>
+                  {seoOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                </button>
+                {seoOpen && (
+                  <div className="px-4 py-4 space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">SEO Title <span className="text-gray-400 font-normal">(defaults to post title)</span></label>
+                      <input value={editing.seo_title ?? ""} onChange={e => setEditing(prev => prev ? { ...prev, seo_title: e.target.value } : prev)} placeholder="Custom SEO title..." className="input w-full text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">SEO Description <span className="text-gray-400 font-normal">(max 160 chars)</span></label>
+                      <textarea value={editing.seo_description ?? ""} onChange={e => setEditing(prev => prev ? { ...prev, seo_description: e.target.value } : prev)} rows={2} maxLength={160} placeholder="Meta description for search engines..." className="input w-full resize-none text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Keywords <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+                      <input value={editing.seo_keywords ?? ""} onChange={e => setEditing(prev => prev ? { ...prev, seo_keywords: e.target.value } : prev)} placeholder="blog, technology, bangladesh..." className="input w-full text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Canonical URL <span className="text-gray-400 font-normal">(leave blank for default)</span></label>
+                      <input value={editing.canonical_url ?? ""} onChange={e => setEditing(prev => prev ? { ...prev, canonical_url: e.target.value } : prev)} placeholder="https://..." className="input w-full text-sm" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">OG Image URL <span className="text-gray-400 font-normal">(defaults to featured image)</span></label>
+                      <input value={editing.og_image ?? ""} onChange={e => setEditing(prev => prev ? { ...prev, og_image: e.target.value } : prev)} placeholder="https://..." className="input w-full text-sm" />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
