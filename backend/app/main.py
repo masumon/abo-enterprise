@@ -18,9 +18,8 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 async def _init_db_and_bootstrap() -> None:
-    """Create tables, run column migrations, bootstrap admin — all before serving traffic."""
+    """Create any missing tables then bootstrap the admin account."""
     from app.core.database import engine, Base
-    from app.core.migrations import run_column_migrations
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -28,14 +27,12 @@ async def _init_db_and_bootstrap() -> None:
     except Exception as exc:
         logger.error("Database table creation failed: %s", exc, exc_info=exc)
         return
-    await run_column_migrations(engine)
     await bootstrap_admin()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME}")
-    # Await synchronously so all migrations complete before the first request.
     await _init_db_and_bootstrap()
     yield
     logger.info(f"Shutting down {settings.APP_NAME}")
