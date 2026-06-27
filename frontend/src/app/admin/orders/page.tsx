@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { Loader2, ShoppingCart, ChevronDown, X, Package } from "lucide-react";
-import { ordersApi } from "@/lib/api";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { Loader2, ShoppingCart, ChevronDown, X, Package, Search, Download, CheckSquare, Square, ChevronRight } from "lucide-react";
+import { ordersApi, downloadCsv } from "@/lib/api";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice } from "@/lib/utils";
+import { useToastStore } from "@/store/toast";
 
 interface AdminOrderItem { product_name: string; quantity: number; product_price: number; subtotal: number; }
 interface AdminOrder {
@@ -20,24 +21,40 @@ export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [detail, setDetail] = useState<AdminOrder | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState("");
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [csvLoading, setCsvLoading] = useState(false);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const toast = useToastStore((s) => s.push);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setSelected(new Set());
     try {
-      const r = await ordersApi.list({ order_status: filter || undefined, page });
+      const r = await ordersApi.list({ order_status: filter || undefined, search: search || undefined, page });
       setOrders((r.data.data ?? []) as unknown as AdminOrder[]);
       setTotal(r.data.meta?.total ?? 0);
     } finally {
       setLoading(false);
     }
-  }, [filter, page]);
+  }, [filter, search, page]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Debounce search input
+  const handleSearchChange = (v: string) => {
+    setSearchInput(v);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => { setSearch(v); setPage(1); }, 400);
+  };
 
   const updateStatus = async (id: string, status: string) => {
     setUpdatingId(id);
@@ -47,6 +64,33 @@ export default function AdminOrdersPage() {
       if (detail?.id === id) setDetail(prev => prev ? { ...prev, order_status: status } : prev);
     } finally {
       setUpdatingId(null);
+    }
+  };
+
+  const handleBulkUpdate = async () => {
+    if (!bulkStatus || selected.size === 0) return;
+    setBulkLoading(true);
+    try {
+      const r = await ordersApi.bulkUpdateStatus(Array.from(selected), bulkStatus);
+      const updated = (r.data.data as { updated: number })?.updated ?? 0;
+      toast("success", `${updated} orders updated to "${bulkStatus}"`);
+      setBulkStatus("");
+      await load();
+    } catch {
+      toast("error", "Bulk update failed");
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleCsvExport = async () => {
+    setCsvLoading(true);
+    try {
+      await downloadCsv("/api/v1/admin/bulk/export/orders?days=90", "orders_90days.csv");
+    } catch {
+      toast("error", "CSV export failed");
+    } finally {
+      setCsvLoading(false);
     }
   };
 
@@ -60,18 +104,85 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === orders.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(orders.map(o => o.id)));
+    }
+  };
+
+  const allSelected = orders.length > 0 && selected.size === orders.length;
+
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
           <p className="text-gray-500 text-sm mt-1">{total} total orders</p>
         </div>
-        <select value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} className="input w-auto text-sm">
-          <option value="">All Status</option>
-          {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
-        </select>
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            <input
+              value={searchInput}
+              onChange={e => handleSearchChange(e.target.value)}
+              placeholder="Search name, phone, order#…"
+              className="input pl-9 text-sm w-56"
+            />
+          </div>
+          {/* Status filter */}
+          <select value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} className="input w-auto text-sm">
+            <option value="">All Status</option>
+            {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
+          </select>
+          {/* CSV export */}
+          <button
+            onClick={handleCsvExport}
+            disabled={csvLoading}
+            className="btn btn-outline btn-sm gap-1.5"
+            title="Export last 90 days to CSV"
+          >
+            {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            CSV
+          </button>
+        </div>
       </div>
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="flex items-center gap-3 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">
+          <span className="text-sm font-medium text-brand-800">{selected.size} selected</span>
+          <select
+            value={bulkStatus}
+            onChange={e => setBulkStatus(e.target.value)}
+            className="input w-auto text-sm py-1"
+          >
+            <option value="">Set status…</option>
+            {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
+          </select>
+          <button
+            onClick={handleBulkUpdate}
+            disabled={!bulkStatus || bulkLoading}
+            className="btn btn-primary btn-sm gap-1"
+          >
+            {bulkLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ChevronRight className="w-3.5 h-3.5" />}
+            Apply
+          </button>
+          <button onClick={() => setSelected(new Set())} className="btn btn-ghost btn-sm ml-auto">
+            Clear
+          </button>
+        </div>
+      )}
 
       <div className="admin-card overflow-hidden">
         {loading ? (
@@ -85,6 +196,11 @@ export default function AdminOrdersPage() {
           <table className="table-premium">
             <thead>
               <tr>
+                <th className="px-4 py-3 w-8">
+                  <button onClick={toggleAll} className="text-gray-400 hover:text-brand-600">
+                    {allSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                  </button>
+                </th>
                 <th>Order</th>
                 <th>Customer</th>
                 <th>Payment</th>
@@ -95,12 +211,17 @@ export default function AdminOrdersPage() {
             </thead>
             <tbody>
               {orders.map((o) => (
-                <tr key={o.id} className="cursor-pointer" onClick={() => openDetail(o.id)}>
-                  <td className="px-5 py-3">
+                <tr key={o.id} className={selected.has(o.id) ? "bg-brand-50/40" : ""}>
+                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    <button onClick={() => toggleSelect(o.id)} className="text-gray-400 hover:text-brand-600">
+                      {selected.has(o.id) ? <CheckSquare className="w-4 h-4 text-brand-600" /> : <Square className="w-4 h-4" />}
+                    </button>
+                  </td>
+                  <td className="px-5 py-3 cursor-pointer" onClick={() => openDetail(o.id)}>
                     <p className="font-medium text-gray-900">{o.order_number}</p>
                     <p className="text-xs text-gray-400">{o.items?.length ?? 0} items</p>
                   </td>
-                  <td className="px-5 py-3">
+                  <td className="px-5 py-3 cursor-pointer" onClick={() => openDetail(o.id)}>
                     <p className="text-gray-900">{o.customer_name}</p>
                     <p className="text-xs text-gray-400">{o.customer_phone}</p>
                   </td>
@@ -152,7 +273,6 @@ export default function AdminOrdersPage() {
               <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
             ) : detail ? (
               <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
-                {/* Status */}
                 <div className="flex items-center justify-between">
                   <StatusBadge status={detail.order_status} />
                   <select
@@ -165,7 +285,6 @@ export default function AdminOrdersPage() {
                   </select>
                 </div>
 
-                {/* Customer */}
                 <div className="bg-gray-50 rounded-xl p-4 space-y-2">
                   <h3 className="font-semibold text-gray-900 text-sm">Customer Info</h3>
                   <div className="grid grid-cols-2 gap-2 text-sm">
@@ -176,7 +295,6 @@ export default function AdminOrdersPage() {
                   </div>
                 </div>
 
-                {/* Items */}
                 <div>
                   <h3 className="font-semibold text-gray-900 text-sm mb-3">Items</h3>
                   <div className="space-y-2">
@@ -195,7 +313,6 @@ export default function AdminOrdersPage() {
                   </div>
                 </div>
 
-                {/* Totals */}
                 <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
                   <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{formatPrice(detail.subtotal)}</span></div>
                   <div className="flex justify-between"><span className="text-gray-500">Delivery</span><span>{formatPrice(detail.delivery_charge)}</span></div>

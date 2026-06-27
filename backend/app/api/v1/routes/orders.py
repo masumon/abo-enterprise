@@ -3,7 +3,7 @@ from uuid import UUID
 from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.security import require_admin
@@ -149,6 +149,7 @@ async def orders_by_phone(
 @router.get("", response_model=PaginatedResponse)
 async def list_orders(
     order_status: str | None = Query(None),
+    search: str | None = Query(None),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -157,6 +158,13 @@ async def list_orders(
     conditions = [Order.is_deleted == False]  # noqa: E712
     if order_status:
         conditions.append(Order.order_status == order_status)
+    if search:
+        q = f"%{search}%"
+        conditions.append(or_(
+            Order.customer_name.ilike(q),
+            Order.customer_phone.ilike(q),
+            Order.order_number.ilike(q),
+        ))
 
     total = (await db.execute(select(func.count(Order.id)).where(and_(*conditions)))).scalar_one()
     result = await db.execute(
