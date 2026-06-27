@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import StoreHydration from "@/components/providers/StoreHydration";
 import PublicShell from "@/components/layout/PublicShell";
+import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
 
 export const metadata: Metadata = {
   title: {
@@ -42,8 +43,14 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
   manifest: "/manifest.json",
   icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/icon-192.png",
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+    shortcut: "/icons/icon-192.png",
   },
   appleWebApp: {
     capable: true,
@@ -68,6 +75,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen flex flex-col">
         <StoreHydration />
         <PublicShell>{children}</PublicShell>
+        <PWAInstallPrompt />
       </body>
     </html>
   );

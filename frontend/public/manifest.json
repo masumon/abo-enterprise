@@ -1,14 +1,16 @@
 {
-  "name": "ABO Enterprise - Digital Business Ecosystem",
-  "short_name": "ABO Enterprise",
-  "description": "Bangladesh's complete technology platform for products, services & projects",
+  "name": "ABO Enterprise",
+  "short_name": "ABO",
+  "description": "মোবাইল এক্সেসরিজ, প্রিন্টিং, আইনি সেবা, সফটওয়্যার — সব এক জায়গায়",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "theme_color": "#1e5ba8",
-  "background_color": "#ffffff",
-  "categories": ["business", "productivity"],
+  "background_color": "#1e5ba8",
+  "categories": ["business", "productivity", "shopping"],
+  "lang": "bn",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -33,29 +35,35 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "shortcuts": [
     {
-      "name": "Browse Services",
+      "name": "পণ্য দেখুন",
+      "short_name": "Products",
+      "description": "সকল পণ্য ব্রাউজ করুন",
+      "url": "/products",
+      "icons": [{ "src": "/icons/services-icon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "সেবা বুক করুন",
       "short_name": "Services",
-      "description": "Browse our service catalog",
+      "description": "প্রিন্টিং, আইনি ও সফটওয়্যার সেবা",
       "url": "/services",
-      "icons": [{"src": "/icons/services-icon.png", "sizes": "192x192"}]
+      "icons": [{ "src": "/icons/projects-icon.png", "sizes": "192x192" }]
     },
     {
-      "name": "Submit Project Inquiry",
-      "short_name": "Projects",
-      "description": "Get a custom quote for your project",
-      "url": "/projects",
-      "icons": [{"src": "/icons/projects-icon.png", "sizes": "192x192"}]
-    },
-    {
-      "name": "Track Order",
+      "name": "অর্ডার ট্র্যাক করুন",
       "short_name": "Track",
-      "description": "Track your order status",
+      "description": "আপনার অর্ডারের অবস্থান দেখুন",
       "url": "/track",
-      "icons": [{"src": "/icons/bookings-icon.png", "sizes": "192x192"}]
+      "icons": [{ "src": "/icons/bookings-icon.png", "sizes": "192x192" }]
     }
   ]
 }
