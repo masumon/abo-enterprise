@@ -9,6 +9,7 @@ import logging
 from app.core.config import settings
 from app.core.exceptions import ABOException, to_http_exception
 from app.core.security import require_admin
+from app.core.bootstrap import bootstrap_admin
 from app.api.v1.router import api_router
 
 logger = logging.getLogger(__name__)
@@ -19,6 +20,7 @@ limiter = Limiter(key_func=get_remote_address)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME}")
+    await bootstrap_admin()
     yield
     logger.info(f"Shutting down {settings.APP_NAME}")
 
