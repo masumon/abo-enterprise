@@ -728,6 +728,55 @@ class PaymentReconciliationOut(BaseModel):
     pending_count: int
     reconciliation_status: str
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
+
+
+# ==================== BLOG SCHEMAS ====================
+
+class BlogPostBase(BaseModel):
+    slug: str
+    title_en: str
+    title_bn: str | None = None
+    content_en: str
+    content_bn: str | None = None
+    excerpt_en: str | None = None
+    excerpt_bn: str | None = None
+    featured_image_url: str | None = None
+    category: str | None = None
+    tags: list[str] = []
+    author_name: str = "ABO Enterprise"
+    status: str = "draft"
+    is_featured: bool = False
+    sort_order: int = 0
+    published_at: datetime | None = None
+
+
+class BlogPostCreate(BlogPostBase):
+    pass
+
+
+class BlogPostUpdate(BaseModel):
+    title_en: str | None = None
+    title_bn: str | None = None
+    content_en: str | None = None
+    content_bn: str | None = None
+    excerpt_en: str | None = None
+    excerpt_bn: str | None = None
+    featured_image_url: str | None = None
+    category: str | None = None
+    tags: list[str] | None = None
+    author_name: str | None = None
+    status: str | None = None
+    is_featured: bool | None = None
+    sort_order: int | None = None
+    published_at: datetime | None = None
+
+
+class BlogPostOut(BlogPostBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
