@@ -132,6 +132,9 @@ export const serviceLeadsApi = {
     project_description?: string;
     requirements?: string;
     budget_range?: string;
+    budget_min?: number;
+    budget_max?: number;
+    timeline?: string;
   }) =>
     api.post<ApiResponse<LeadV2>>("/api/v1/service-leads", data),
 };
@@ -365,6 +368,12 @@ export const publicApi = {
       text_bn: string;
       time: string;
     }[]>>("/api/v1/public/activity"),
+
+  newsletter: (email: string) =>
+    api.post<ApiResponse<{ subscribed: boolean; total: number }>>("/api/v1/public/newsletter", { email }),
+
+  featureFlags: () =>
+    api.get<ApiResponse<Record<string, boolean | string>>>("/api/v1/public/feature-flags"),
 };
 
 export default api;

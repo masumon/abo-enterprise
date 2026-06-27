@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { BlogPost } from "@/types";
+import { SITE_URL } from "@/lib/tokens";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
   title: "Blog | ABO Enterprise",
   description:
     "Tech tips, business insights, and updates from ABO Enterprise — Bangladesh's complete technology ecosystem.",
-  alternates: { canonical: "https://aboenterprise.vercel.app/blog" },
+  alternates: { canonical: `${SITE_URL}/blog` },
 };
 
 async function fetchPosts(page = 1): Promise<{ posts: BlogPost[]; total: number; total_pages: number }> {

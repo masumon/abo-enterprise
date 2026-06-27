@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import {
-  Package, Calendar, Heart, FileText, MapPin, Headphones, Settings, LogOut,
+  Package, Calendar, Heart, FileText, MapPin, Headphones, Settings, LogOut, Search,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
@@ -10,7 +10,8 @@ import { useWishlistStore } from "@/store/wishlist";
 import GlassCard from "@/components/ui/GlassCard";
 
 const PORTAL_ITEMS = [
-  { href: "/login", icon: Package, labelKey: "profile_orders" as const, live: true },
+  { href: "/orders", icon: Package, labelKey: "profile_orders" as const, live: true },
+  { href: "/track", icon: Search, labelKey: "nav_track" as const, live: true },
   { href: "/services", icon: Calendar, labelKey: "profile_bookings" as const, live: true },
   { href: "/profile/wishlist", icon: Heart, labelKey: "profile_wishlist" as const, live: true },
   { href: "/profile", icon: FileText, labelKey: "profile_invoices" as const, live: false },

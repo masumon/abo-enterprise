@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import api from "@/lib/api";
+import { serviceLeadsApi } from "@/lib/api";
+import { toLeadV2Type } from "@/lib/leadTypes";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
 const bdPhoneRegex = /^0[13-9]\d{8}$/;
@@ -66,9 +67,20 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
     try {
       setSubmitting(true);
 
-      const response = await api.post("/leads", data);
+      const response = await serviceLeadsApi.create({
+        lead_type: toLeadV2Type(data.lead_type),
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
+        company: data.company,
+        project_description: data.project_description,
+        requirements: data.requirements,
+        budget_min: data.budget_min,
+        budget_max: data.budget_max,
+        timeline: data.timeline,
+      });
 
-      if (response.status === 200) {
+      if (response.status === 200 || response.status === 201) {
         setSuccess(true);
         reset();
         setTimeout(() => {

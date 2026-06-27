@@ -10,6 +10,7 @@ import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import { productsApi } from "@/lib/api";
 import type { Product } from "@/types";
 import CountdownTimer, { getWeeklySaleEnd } from "@/components/ui/CountdownTimer";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 export default function FeaturedProducts() {
   const { lang } = useLanguageStore();
@@ -17,6 +18,7 @@ export default function FeaturedProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const flashSaleEnabled = useFeatureFlag("feature_flash_sale");
 
   useEffect(() => {
     productsApi.list({ featured: true, per_page: 8 } as Parameters<typeof productsApi.list>[0])
@@ -32,9 +34,11 @@ export default function FeaturedProducts() {
     <section id="products" className="py-16 gradient-surface">
       <div className="container mx-auto px-4">
         <div className="section-title text-center mb-10">
-          <div className="flex flex-col items-center gap-2 mb-2">
-            <CountdownTimer endDate={getWeeklySaleEnd()} label={lang === "bn" ? "ফ্ল্যাশ সেল" : "Flash Sale"} />
-          </div>
+          {flashSaleEnabled && (
+            <div className="flex flex-col items-center gap-2 mb-2">
+              <CountdownTimer endDate={getWeeklySaleEnd()} label={lang === "bn" ? "ফ্ল্যাশ সেল" : "Flash Sale"} />
+            </div>
+          )}
           <h2>{lang === "bn" ? "জনপ্রিয় পণ্য" : "Featured Products"}</h2>
           <div className="section-divider" />
           <p className="text-gray-500 text-sm max-w-md mx-auto">

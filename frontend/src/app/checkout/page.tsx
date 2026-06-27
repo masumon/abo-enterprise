@@ -19,7 +19,7 @@ import {
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
 import { formatPrice, generateWhatsAppOrderMessage, WHATSAPP_NUMBER } from "@/lib/utils";
-import { ordersApi } from "@/lib/api";
+import { ordersApi, productsApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { PaymentMethod } from "@/types";
 
@@ -47,7 +47,7 @@ const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; detail: string; ic
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, total, clearCart } = useCartStore();
+  const { items, total, clearCart, setStockWarnings } = useCartStore();
   const { lang } = useLanguageStore();
 
   const [hydrated, setHydrated] = useState(false);
@@ -56,6 +56,7 @@ export default function CheckoutPage() {
   const [couponError, setCouponError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [stockIssue, setStockIssue] = useState(false);
 
   const {
     register,
@@ -79,6 +80,26 @@ export default function CheckoutPage() {
       router.replace("/products");
     }
   }, [hydrated, items.length, router]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const coupon = params.get("coupon")?.trim().toUpperCase();
+    if (coupon && COUPONS[coupon]) {
+      setAppliedCoupon(coupon);
+      setCouponInput(coupon);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated || items.length === 0) return;
+    productsApi.validateStock(items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })))
+      .then((r) => {
+        const issues = (r.data.data?.items ?? []).filter((i) => i.error);
+        setStockIssue(issues.length > 0);
+        setStockWarnings(issues.map((i) => i.product_id));
+      })
+      .catch(() => {});
+  }, [hydrated, items, setStockWarnings]);
 
   const subtotal = total();
   const discountRate = appliedCoupon ? (COUPONS[appliedCoupon] ?? 0) : 0;
@@ -183,9 +204,23 @@ export default function CheckoutPage() {
           {lang === "bn" ? "কেনাকাটা চালিয়ে যান" : "Continue Shopping"}
         </Link>
 
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-4">
           {lang === "bn" ? "অর্ডার করুন" : "Checkout"}
         </h1>
+
+        <div className="mb-6 rounded-xl bg-brand-50 border border-brand-100 px-4 py-3 text-sm text-brand-800">
+          {lang === "bn"
+            ? "✓ গেস্ট চেকআউট — অ্যাকাউন্ট তৈরি করতে হবে না। শুধু নাম, ফোন ও ঠিকানা দিন।"
+            : "✓ Guest checkout — no account needed. Just provide your name, phone, and address."}
+        </div>
+
+        {stockIssue && (
+          <div role="alert" className="mb-6 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+            {lang === "bn"
+              ? "কিছু পণ্যের স্টক সীমিত। কার্টে ফিরে পরিমাণ যাচাই করুন।"
+              : "Some items have limited stock. Please review quantities in your cart."}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* ── Left: Form ── */}
@@ -349,7 +384,7 @@ export default function CheckoutPage() {
 
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={isSubmitting || stockIssue}
                 className="btn btn-primary btn-lg w-full"
               >
                 {isSubmitting ? (
@@ -459,8 +494,8 @@ export default function CheckoutPage() {
                     <span>{formatPrice(subtotal)}</span>
                   </div>
                   {discount > 0 && (
-                    <div className="flex justify-between text-green-600">
-                      <span>{lang === "bn" ? "ছাড়" : "Discount"}</span>
+                    <div className="flex justify-between text-green-600 font-semibold bg-green-50 -mx-2 px-2 py-1 rounded-lg">
+                      <span>{lang === "bn" ? "🎉 আপনি সাশ্রয় করছেন" : "🎉 You save"}</span>
                       <span>−{formatPrice(discount)}</span>
                     </div>
                   )}

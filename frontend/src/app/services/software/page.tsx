@@ -5,7 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CheckCircle, Code, Bot, Cog, Globe, MonitorSmartphone, Database } from "lucide-react";
-import { leadsApi } from "@/lib/api";
+import { serviceLeadsApi } from "@/lib/api";
+import { toLeadV2Type } from "@/lib/leadTypes";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 
@@ -111,7 +112,15 @@ export default function SoftwarePage() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     try {
-      await leadsApi.create({ ...data, source: "website" } as Parameters<typeof leadsApi.create>[0]).catch(() => null);
+      await serviceLeadsApi.create({
+        lead_type: toLeadV2Type(data.lead_type),
+        name: data.name,
+        phone: data.phone,
+        email: data.email || undefined,
+        company: data.company || undefined,
+        project_description: data.project_description,
+        budget_range: data.budget_range,
+      });
       setIsSuccess(true);
     } finally {
       setIsSubmitting(false);

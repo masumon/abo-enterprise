@@ -4,9 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   ShoppingCart, Briefcase, Users, Package,
-  Clock, TrendingUp, AlertCircle, RefreshCw,
+  Clock, TrendingUp, AlertCircle, RefreshCw, DollarSign,
 } from "lucide-react";
 import { adminApi } from "@/lib/api";
+import api from "@/lib/api";
 import StatsCard from "@/components/admin/StatsCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice } from "@/lib/utils";
@@ -32,6 +33,7 @@ interface Stats {
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [revenueTotal, setRevenueTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
@@ -41,8 +43,13 @@ export default function AdminDashboard() {
     if (!silent) setLoading(true);
     else setRefreshing(true);
     try {
-      const r = await adminApi.stats();
-      setStats(r.data.data as Stats);
+      const [statsRes, analyticsRes] = await Promise.all([
+        adminApi.stats(),
+        api.get("/api/v1/admin/analytics/overview?days=30").catch(() => null),
+      ]);
+      setStats(statsRes.data.data as Stats);
+      const rev = analyticsRes?.data?.data?.revenue?.total;
+      setRevenueTotal(typeof rev === "number" ? rev : null);
       setError(false);
     } catch {
       setError(true);
@@ -95,7 +102,17 @@ export default function AdminDashboard() {
       )}
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {revenueTotal !== null && (
+          <StatsCard
+            title="Revenue (30d)"
+            value={`৳${revenueTotal.toLocaleString()}`}
+            sub="orders + bookings"
+            icon={DollarSign}
+            color="brand"
+            loading={loading}
+          />
+        )}
         <StatsCard
           title="Total Orders"
           value={stats?.total_orders ?? 0}

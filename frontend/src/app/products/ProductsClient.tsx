@@ -11,6 +11,7 @@ import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { cn } from "@/lib/utils";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 const CATEGORIES: { value: string; label: { en: string; bn: string } }[] = [
   { value: "", label: { en: "All", bn: "সব" } },
@@ -45,6 +46,7 @@ export default function ProductsClient({
   const [total, setTotal] = useState(initialTotal);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const { openCart } = useCartStore();
+  const infiniteScroll = useFeatureFlag("feature_infinite_scroll");
   const sentinelRef = useRef<HTMLDivElement>(null);
   const isFirstLoad = useRef(true);
 
@@ -85,6 +87,7 @@ export default function ProductsClient({
   }, [load]);
 
   useEffect(() => {
+    if (!infiniteScroll) return;
     const el = sentinelRef.current;
     if (!el || loading || loadingMore) return;
     const observer = new IntersectionObserver(
@@ -97,7 +100,9 @@ export default function ProductsClient({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [load, page, products.length, total, loading, loadingMore]);
+  }, [load, page, products.length, total, loading, loadingMore, infiniteScroll]);
+
+  const totalPages = Math.ceil(total / 20);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -184,12 +189,19 @@ export default function ProductsClient({
               <ProductCard key={p.id ?? p.slug} product={p} onAddToCart={openCart} layout={viewMode} />
             ))}
           </div>
-          {loadingMore && (
+          {loadingMore && infiniteScroll && (
             <div className="flex justify-center py-8" aria-live="polite">
               <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
             </div>
           )}
-          <div ref={sentinelRef} className="h-4" aria-hidden />
+          {infiniteScroll && <div ref={sentinelRef} className="h-4" aria-hidden />}
+          {!infiniteScroll && totalPages > 1 && (
+            <div className="flex justify-center gap-3 mt-10">
+              <button type="button" disabled={page === 1} onClick={() => load(page - 1)} className="btn btn-outline btn-md">{lang === "bn" ? "আগে" : "Previous"}</button>
+              <span className="px-4 py-2 text-sm text-gray-600 self-center">{lang === "bn" ? "পৃষ্ঠা" : "Page"} {page} / {totalPages}</span>
+              <button type="button" disabled={page >= totalPages} onClick={() => load(page + 1)} className="btn btn-outline btn-md">{lang === "bn" ? "পরে" : "Next"}</button>
+            </div>
+          )}
         </>
       )}
     </div>
