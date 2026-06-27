@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Package, ShoppingCart, Briefcase, Users,
-  LogOut, ExternalLink, BarChart2, Settings, Wrench, FileText, Star, BookOpen,
+  LogOut, ExternalLink, BarChart2, Settings, Wrench, FileText, Star, BookOpen, CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAlertStore } from "@/store/alerts";
@@ -29,6 +29,7 @@ const NAV: NavItem[] = [
   { href: "/admin/invoices",   icon: FileText,        label: "Invoices" },
   { href: "/admin/reviews",    icon: Star,            label: "Reviews" },
   { href: "/admin/blog",       icon: BookOpen,        label: "Blog" },
+  { href: "/admin/payments",   icon: CreditCard,      label: "Payments" },
   { href: "/projects",         icon: ExternalLink,    label: "Projects",   external: true },
   { href: "/admin/analytics",  icon: BarChart2,       label: "Analytics" },
   { href: "/admin/settings",   icon: Settings,        label: "Settings" },
