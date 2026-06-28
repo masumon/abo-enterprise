@@ -82,7 +82,7 @@ export default function AssistantWidget() {
     if (!footer) return;
     const obs = new IntersectionObserver(
       ([entry]) => setFooterNear(entry.isIntersecting),
-      { threshold: 0.15, rootMargin: "0px 0px -2rem 0px" }
+      { threshold: 0.15, rootMargin: "0px 0px -32px 0px" }
     );
     obs.observe(footer);
     return () => obs.disconnect();
