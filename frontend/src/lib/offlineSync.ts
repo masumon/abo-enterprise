@@ -17,10 +17,11 @@ const STORES = {
 
 class OfflineDataSync {
   private db: IDBDatabase | null = null;
-  private isOnline: boolean = navigator.onLine;
+  private isOnline = true;
 
   constructor() {
     if (typeof window !== "undefined") {
+      this.isOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
       window.addEventListener("online", () => this.onOnline());
       window.addEventListener("offline", () => this.onOffline());
     }
