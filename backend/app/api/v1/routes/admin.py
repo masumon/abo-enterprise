@@ -92,27 +92,43 @@ async def get_stats(
 
 
 @router.post("/upload", response_model=ApiResponse)
-async def upload_image(
+async def upload_media(
     file: UploadFile = File(...),
+    folder: str = Query("abo-enterprise/uploads"),
     _: dict = Depends(require_admin),
 ):
-    if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="File must be an image")
+    content_type = file.content_type or ""
+    is_image = content_type.startswith("image/")
+    is_video = content_type.startswith("video/")
 
-    if file.size and file.size > 5 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="Image must be under 5MB")
+    if not is_image and not is_video:
+        raise HTTPException(status_code=400, detail="File must be an image or video")
+
+    max_size = 50 * 1024 * 1024 if is_video else 5 * 1024 * 1024
+    if file.size and file.size > max_size:
+        limit = "50MB" if is_video else "5MB"
+        raise HTTPException(status_code=400, detail=f"File must be under {limit}")
 
     content = await file.read()
-    result = cloudinary.uploader.upload(
-        content,
-        folder="abo-enterprise/products",
-        allowed_formats=["jpg", "jpeg", "png", "webp"],
-        transformation=[{"quality": "auto", "fetch_format": "auto"}],
-    )
+    safe_folder = folder.strip("/").replace("..", "") or "abo-enterprise/uploads"
+
+    upload_opts: dict = {"folder": safe_folder}
+    if is_image:
+        upload_opts["allowed_formats"] = ["jpg", "jpeg", "png", "webp", "gif", "svg"]
+        upload_opts["transformation"] = [{"quality": "auto", "fetch_format": "auto"}]
+    else:
+        upload_opts["resource_type"] = "video"
+        upload_opts["allowed_formats"] = ["mp4", "webm", "mov", "avi"]
+
+    result = cloudinary.uploader.upload(content, **upload_opts)
 
     return ApiResponse(
-        data={"url": result["secure_url"], "public_id": result["public_id"]},
-        message="Image uploaded",
+        data={
+            "url": result["secure_url"],
+            "public_id": result["public_id"],
+            "resource_type": "video" if is_video else "image",
+        },
+        message="File uploaded",
     )
 
 

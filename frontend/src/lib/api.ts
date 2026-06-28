@@ -35,6 +35,9 @@ export const productsApi = {
   list: (params?: { category?: string; featured?: boolean; search?: string; sort_by?: string; page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<Product>>("/api/v1/products", { params }),
 
+  adminList: (params?: { category?: string; search?: string; is_active?: boolean; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<Product>>("/api/v1/products/admin", { params }),
+
   get: (slug: string) =>
     api.get<ApiResponse<Product>>(`/api/v1/products/${slug}`),
 
@@ -115,6 +118,9 @@ export const serviceBookingsAdminApi = {
 
   updateStatus: (id: string, status: string) =>
     api.patch<ApiResponse<BookingV2>>(`/api/v1/service-bookings/admin/bookings/${id}/status`, { status }),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/service-bookings/admin/bookings/${id}`),
 };
 
 export const serviceLeadsApi = {
@@ -140,6 +146,9 @@ export const serviceLeadsAdminApi = {
 
   updateStatus: (id: string, status: string, reason_lost?: string) =>
     api.patch<ApiResponse<LeadV2>>(`/api/v1/service-leads/admin/leads/${id}/status`, { status, reason_lost }),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/service-leads/admin/leads/${id}`),
 };
 
 export const authApi = {
@@ -260,12 +269,24 @@ export const adminApi = {
       recent_leads: unknown[];
     }>>("/api/v1/admin/stats"),
 
-  uploadImage: (file: File) => {
+  uploadImage: (file: File, folder = "abo-enterprise/uploads") => {
     const form = new FormData();
     form.append("file", file);
-    return api.post<ApiResponse<{ url: string; public_id: string }>>("/api/v1/admin/upload", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    return api.post<ApiResponse<{ url: string; public_id: string; resource_type?: string }>>(
+      "/api/v1/admin/upload",
+      form,
+      { headers: { "Content-Type": "multipart/form-data" }, params: { folder } }
+    );
+  },
+
+  uploadMedia: (file: File, folder = "abo-enterprise/uploads") => {
+    const form = new FormData();
+    form.append("file", file);
+    return api.post<ApiResponse<{ url: string; public_id: string; resource_type?: string }>>(
+      "/api/v1/admin/upload",
+      form,
+      { headers: { "Content-Type": "multipart/form-data" }, params: { folder } }
+    );
   },
 
   getSettings: () =>

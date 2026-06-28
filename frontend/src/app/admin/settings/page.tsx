@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api";
+import ImageUpload from "@/components/admin/ImageUpload";
 import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 
@@ -13,6 +14,8 @@ interface SettingField {
   placeholder?: string;
   type?: "text" | "url" | "email" | "tel" | "number" | "textarea";
   hint?: string;
+  upload?: boolean;
+  accept?: "image" | "video" | "both";
 }
 
 interface Section {
@@ -30,8 +33,8 @@ const SECTIONS: Section[] = [
     fields: [
       { key: "site_name", label: "Site Name", placeholder: "ABO Enterprise" },
       { key: "site_tagline", label: "Site Tagline", placeholder: "Your one-stop shop in Sylhet" },
-      { key: "logo_url", label: "Logo URL", type: "url", placeholder: "https://..." },
-      { key: "favicon_url", label: "Favicon URL", type: "url", placeholder: "https://.../favicon.ico" },
+      { key: "logo_url", label: "Logo", type: "url", upload: true, placeholder: "https://..." },
+      { key: "favicon_url", label: "Favicon", type: "url", upload: true, placeholder: "https://.../favicon.ico" },
       { key: "contact_phone", label: "Contact Phone", type: "tel", placeholder: "01825007977" },
       { key: "contact_email", label: "Contact Email", type: "email", placeholder: "info@aboenterprise.com" },
       { key: "contact_address", label: "Business Address", type: "textarea", placeholder: "Sylhet, Bangladesh" },
@@ -48,7 +51,7 @@ const SECTIONS: Section[] = [
       { key: "hero_subtitle_bn", label: "Hero Subtitle (বাংলা)", type: "textarea", placeholder: "সিলেটের বিশ্বস্ত টেক ও প্রিন্টিং পার্টনার" },
       { key: "hero_cta_text", label: "CTA Button Text", placeholder: "Shop Now" },
       { key: "hero_cta_url", label: "CTA Button URL", type: "url", placeholder: "/products" },
-      { key: "hero_image_url", label: "Hero Background Image URL", type: "url", placeholder: "https://..." },
+      { key: "hero_image_url", label: "Hero Background Image", type: "url", upload: true, placeholder: "https://..." },
     ],
   },
   {
@@ -137,7 +140,14 @@ function SectionCard({
             <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
               {field.label}
             </label>
-            {field.type === "textarea" ? (
+            {field.upload ? (
+              <ImageUpload
+                value={values[field.key] ?? ""}
+                onChange={(url) => onChange(field.key, url)}
+                folder="abo-enterprise/settings"
+                accept={field.accept ?? "image"}
+              />
+            ) : field.type === "textarea" ? (
               <textarea
                 value={values[field.key] ?? ""}
                 onChange={(e) => onChange(field.key, e.target.value)}

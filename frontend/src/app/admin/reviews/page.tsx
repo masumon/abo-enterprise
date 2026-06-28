@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, Star, CheckCircle, XCircle, Trash2, Shield, ShieldCheck, Pencil, X, MessageSquare } from "lucide-react";
-import api from "@/lib/api";
+import { Loader2, Star, CheckCircle, XCircle, Trash2, Shield, ShieldCheck, Pencil, X, MessageSquare, Plus } from "lucide-react";
+import api, { reviewsApi } from "@/lib/api";
+import ImageUpload from "@/components/admin/ImageUpload";
 import { useToastStore } from "@/store/toast";
 
 interface AdminReview {
@@ -31,6 +32,7 @@ export default function AdminReviewsPage() {
   const [total, setTotal] = useState(0);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editing, setEditing] = useState<AdminReview | null>(null);
+  const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState<Partial<AdminReview>>({});
   const [saving, setSaving] = useState(false);
 
@@ -62,7 +64,25 @@ export default function AdminReviewsPage() {
     }
   };
 
+  const openCreate = () => {
+    setCreating(true);
+    setEditing(null);
+    setDraft({
+      customer_name: "",
+      company: "",
+      rating: 5,
+      review_en: "",
+      review_bn: "",
+      photo_url: "",
+      source: "direct",
+      is_active: true,
+      is_featured: false,
+      is_verified: false,
+    });
+  };
+
   const openEdit = (r: AdminReview) => {
+    setCreating(false);
     setEditing(r);
     setDraft({
       customer_name: r.customer_name,
@@ -76,9 +96,45 @@ export default function AdminReviewsPage() {
     });
   };
 
-  const closeEdit = () => { setEditing(null); setDraft({}); };
+  const closeEdit = () => { setEditing(null); setCreating(false); setDraft({}); };
 
   const handleSave = async () => {
+    if (creating) {
+      if (!draft.customer_name?.trim() || !draft.review_en?.trim()) {
+        toast("error", "Customer name and review text are required");
+        return;
+      }
+      setSaving(true);
+      try {
+        const res = await reviewsApi.create({
+          customer_name: draft.customer_name,
+          company: draft.company || undefined,
+          rating: draft.rating ?? 5,
+          review_en: draft.review_en,
+          review_bn: draft.review_bn || undefined,
+          photo_url: draft.photo_url || undefined,
+          source: draft.source ?? "direct",
+        });
+        let created = res.data.data as AdminReview;
+        const flags: Partial<AdminReview> = {};
+        if (draft.is_active === false) flags.is_active = false;
+        if (draft.is_featured) flags.is_featured = true;
+        if (draft.is_verified) flags.is_verified = true;
+        if (Object.keys(flags).length > 0) {
+          const patchRes = await api.patch(`/api/v1/reviews/${created.id}`, flags);
+          created = patchRes.data.data as AdminReview;
+        }
+        setReviews((prev) => [created, ...prev]);
+        setTotal((t) => t + 1);
+        toast("success", "Review created");
+        closeEdit();
+      } catch {
+        toast("error", "Create failed");
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
     if (!editing) return;
     setSaving(true);
     try {
@@ -116,9 +172,14 @@ export default function AdminReviewsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Reviews</h1>
-        <p className="text-gray-500 text-sm mt-1">{total} total reviews</p>
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Reviews</h1>
+          <p className="text-gray-500 text-sm mt-1">{total} total reviews</p>
+        </div>
+        <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
+          <Plus className="w-4 h-4" /> Add Review
+        </button>
       </div>
 
       <div className="admin-card overflow-hidden">
@@ -273,12 +334,12 @@ export default function AdminReviewsPage() {
         </div>
       )}
 
-      {/* Edit / Reply slide-in panel */}
-      {editing && (
+      {/* Edit / Create slide-in panel */}
+      {(editing || creating) && (
         <div className="fixed inset-0 z-50 flex" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
           <div className="ml-auto w-full max-w-lg h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
-              <h2 className="text-lg font-semibold text-gray-900">Edit Review</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{creating ? "New Review" : "Edit Review"}</h2>
               <button onClick={closeEdit} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
 
@@ -330,12 +391,12 @@ export default function AdminReviewsPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="form-label">Photo URL</label>
-                  <input
+                  <label className="form-label">Photo</label>
+                  <ImageUpload
                     value={draft.photo_url ?? ""}
-                    onChange={e => setDraft(d => ({ ...d, photo_url: e.target.value }))}
-                    placeholder="https://…"
-                    className="input w-full text-sm"
+                    onChange={(url) => setDraft(d => ({ ...d, photo_url: url }))}
+                    folder="abo-enterprise/reviews"
+                    previewSize="sm"
                   />
                 </div>
               </section>
@@ -365,11 +426,12 @@ export default function AdminReviewsPage() {
               </section>
 
               {/* Admin Reply */}
+              {!creating && (
               <section className="space-y-3">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
                   <MessageSquare className="w-3.5 h-3.5" /> Admin Reply
                 </h3>
-                {editing.admin_reply_at && (
+                {editing?.admin_reply_at && (
                   <p className="text-xs text-gray-400">
                     Last replied: {new Date(editing.admin_reply_at).toLocaleString("en-BD")}
                   </p>
@@ -383,13 +445,14 @@ export default function AdminReviewsPage() {
                 />
                 <p className="text-[11px] text-gray-400">Leave empty to remove the existing reply.</p>
               </section>
+              )}
             </div>
 
             <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-gray-50/50">
               <button onClick={closeEdit} className="btn btn-outline btn-sm">Cancel</button>
               <button onClick={handleSave} disabled={saving} className="btn btn-primary btn-sm gap-1.5">
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                Save Changes
+                {creating ? "Create Review" : "Save Changes"}
               </button>
             </div>
           </div>

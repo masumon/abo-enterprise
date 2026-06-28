@@ -1,8 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import api from "@/lib/api";
-import { getApiBaseUrl } from "@/lib/apiBase";
+import api, { downloadCsv } from "@/lib/api";
 import { TrendingUp, ShoppingCart, Calendar, Users, Download, RefreshCw } from "lucide-react";
 
 interface Overview {
@@ -14,14 +13,24 @@ interface Overview {
 
 interface ChartDay { date: string; orders: number; bookings: number; total: number }
 
-const API_BASE = getApiBaseUrl();
-
 export default function AnalyticsPage() {
   const [days, setDays] = useState(30);
   const [overview, setOverview] = useState<Overview | null>(null);
   const [chart, setChart] = useState<ChartDay[]>([]);
   const [funnel, setFunnel] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState<string | null>(null);
+
+  async function handleExport(path: string, filename: string, key: string) {
+    setExporting(key);
+    try {
+      await downloadCsv(path, filename);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setExporting(null);
+    }
+  }
 
   useEffect(() => { fetchAll(); }, [days]);
 
@@ -93,9 +102,14 @@ export default function AnalyticsPage() {
       <div className="bg-white rounded-xl border border-gray-100 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-bold text-gray-900">Revenue ({days}d)</h2>
-          <a href={`${API_BASE}/api/v1/admin/bulk/export/orders?days=${days}`} className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700">
-            <Download className="w-3.5 h-3.5" /> Export CSV
-          </a>
+          <button
+            type="button"
+            onClick={() => handleExport(`/api/v1/admin/bulk/export/orders?days=${days}`, `orders-${days}d.csv`, "chart-orders")}
+            disabled={exporting === "chart-orders"}
+            className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50"
+          >
+            <Download className="w-3.5 h-3.5" /> {exporting === "chart-orders" ? "Exporting…" : "Export CSV"}
+          </button>
         </div>
         {loading ? (
           <div className="h-40 flex items-center justify-center text-gray-400">Loading...</div>
@@ -151,18 +165,20 @@ export default function AnalyticsPage() {
         <h2 className="font-bold text-gray-900 mb-4">Export Data</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { label: "Export Products CSV", href: `${API_BASE}/api/v1/admin/bulk/export/products` },
-            { label: "Export Orders CSV",   href: `${API_BASE}/api/v1/admin/bulk/export/orders?days=${days}` },
-            { label: "Export Leads CSV",    href: `${API_BASE}/api/v1/admin/bulk/export/leads` },
+            { label: "Export Products CSV", path: "/api/v1/admin/bulk/export/products", filename: "products.csv", key: "products" },
+            { label: "Export Orders CSV",   path: `/api/v1/admin/bulk/export/orders?days=${days}`, filename: `orders-${days}d.csv`, key: "orders" },
+            { label: "Export Leads CSV",    path: "/api/v1/admin/bulk/export/leads", filename: "leads.csv", key: "leads" },
           ].map(btn => (
-            <a
+            <button
               key={btn.label}
-              href={btn.href}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+              type="button"
+              onClick={() => handleExport(btn.path, btn.filename, btn.key)}
+              disabled={exporting === btn.key}
+              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               <Download className="w-4 h-4" />
-              {btn.label}
-            </a>
+              {exporting === btn.key ? "Exporting…" : btn.label}
+            </button>
           ))}
         </div>
       </div>

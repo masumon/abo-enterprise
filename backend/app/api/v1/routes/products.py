@@ -54,6 +54,43 @@ async def list_products(
     )
 
 
+@router.get("/admin", response_model=PaginatedResponse)
+async def admin_list_products(
+    category: str | None = Query(None),
+    search: str | None = Query(None),
+    is_active: bool | None = Query(None),
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    _admin: dict = Depends(require_admin),
+):
+    conditions = [Product.is_deleted == False]  # noqa: E712
+    if category:
+        conditions.append(Product.category == category)
+    if is_active is not None:
+        conditions.append(Product.is_active == is_active)
+    if search:
+        term = f"%{search}%"
+        conditions.append(or_(Product.name_en.ilike(term), Product.name_bn.ilike(term), Product.slug.ilike(term)))
+
+    total_result = await db.execute(select(func.count(Product.id)).where(and_(*conditions)))
+    total = total_result.scalar_one()
+
+    result = await db.execute(
+        select(Product)
+        .where(and_(*conditions))
+        .order_by(Product.sort_order.asc(), Product.created_at.desc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
+    )
+    products = result.scalars().all()
+
+    return PaginatedResponse(
+        data=[ProductOut.model_validate(p) for p in products],
+        meta=PaginatedMeta(page=page, per_page=per_page, total=total, total_pages=max(1, -(-total // per_page))),
+    )
+
+
 @router.get("/suggest", response_model=ApiResponse)
 async def suggest_products(
     q: str = Query(..., min_length=1),
