@@ -130,53 +130,61 @@ export default function AdminUsersPage() {
         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>
       ) : (
         <div className="admin-card overflow-hidden">
-          <table className="table-premium">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Last Login</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id}>
-                  <td className="font-medium">{u.name}</td>
-                  <td>{u.email}</td>
-                  <td><span className="badge bg-brand-50 text-brand-700 capitalize">{u.role}</span></td>
-                  <td>
-                    <button
-                      onClick={() => toggleActive(u)}
-                      disabled={busyId === u.id}
-                      className={u.is_active ? "text-green-600 hover:underline" : "text-red-500 hover:underline"}
-                    >
-                      {u.is_active ? "Active" : "Inactive"}
-                    </button>
-                  </td>
-                  <td className="text-gray-500 text-xs">{u.last_login ? new Date(u.last_login).toLocaleString() : "—"}</td>
-                  <td className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => openEdit(u)} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50">
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      {u.is_active && (
-                        <button
-                          onClick={() => handleDeactivate(u)}
-                          disabled={busyId === u.id}
-                          className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-40"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="table-premium min-w-[500px]">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th className="hidden sm:table-cell">Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th className="hidden lg:table-cell">Last Login</th>
+                  <th />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id} onClick={() => openEdit(u)} className="cursor-pointer hover:bg-brand-50/40 transition-colors">
+                    <td className="font-medium">
+                      <div>
+                        <p>{u.name}</p>
+                        <p className="text-xs text-gray-400 sm:hidden">{u.email}</p>
+                      </div>
+                    </td>
+                    <td className="hidden sm:table-cell">{u.email}</td>
+                    <td><span className="badge bg-brand-50 text-brand-700 capitalize">{u.role.replace(/_/g, " ")}</span></td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => toggleActive(u)}
+                        disabled={busyId === u.id}
+                        className={`text-sm font-medium ${u.is_active ? "text-green-600 hover:underline" : "text-red-500 hover:underline"}`}
+                      >
+                        {u.is_active ? "Active" : "Inactive"}
+                      </button>
+                    </td>
+                    <td className="text-gray-500 text-xs hidden lg:table-cell">{u.last_login ? new Date(u.last_login).toLocaleString() : "—"}</td>
+                    <td className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1">
+                        <button onClick={() => openEdit(u)} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50" title="Edit / Change Role">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        {u.is_active && (
+                          <button
+                            onClick={() => handleDeactivate(u)}
+                            disabled={busyId === u.id}
+                            className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-40"
+                            title="Deactivate"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           {users.length === 0 && <p className="p-8 text-center text-gray-500">No users found</p>}
         </div>
       )}
@@ -205,8 +213,13 @@ export default function AdminUsersPage() {
               <div>
                 <label className="form-label">Role</label>
                 <select value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))} className="input w-full">
-                  {ROLES.map((r) => <option key={r} value={r} className="capitalize">{r}</option>)}
+                  {ROLES.map((r) => <option key={r} value={r} className="capitalize">{r.replace(/_/g, " ")}</option>)}
                 </select>
+                <p className="text-xs text-gray-400 mt-1">
+                  {form.role === "admin" && "Full access except user management"}
+                  {form.role === "editor" && "Can manage blog, products, services only"}
+                  {form.role === "viewer" && "Read-only access to all sections"}
+                </p>
               </div>
               <div>
                 <label className="form-label">{modal === "create" ? "Password" : "New Password (optional)"}</label>

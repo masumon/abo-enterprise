@@ -143,47 +143,49 @@ export default function AdminEmailTemplatesPage() {
         ) : templates.length === 0 ? (
           <div className="p-12 text-center text-gray-400">No email templates yet</div>
         ) : (
-          <table className="table-premium">
-            <thead>
-              <tr>
-                <th>Template</th>
-                <th>Subject (EN)</th>
-                <th>Variables</th>
-                <th>Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {templates.map((t) => (
-                <tr key={t.id}>
-                  <td className="font-mono text-sm">{t.template_name}</td>
-                  <td className="text-gray-700 max-w-xs truncate">{t.subject_en}</td>
-                  <td className="text-xs text-gray-400">{(t.variables ?? []).join(", ") || "—"}</td>
-                  <td>
-                    <button onClick={() => toggleActive(t)} title={t.is_active ? "Deactivate" : "Activate"}>
-                      {t.is_active
-                        ? <CheckCircle className="w-5 h-5 text-green-500" />
-                        : <XCircle className="w-5 h-5 text-gray-300" />}
-                    </button>
-                  </td>
-                  <td className="text-right">
-                    <div className="flex justify-end gap-1">
-                      <button onClick={() => openEdit(t)} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50">
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(t.id, t.template_name)}
-                        disabled={deletingId === t.id}
-                        className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-40"
-                      >
-                        {deletingId === t.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="table-premium min-w-[560px]">
+              <thead>
+                <tr>
+                  <th>Template</th>
+                  <th>Subject (EN)</th>
+                  <th className="hidden sm:table-cell">Variables</th>
+                  <th>Status</th>
+                  <th />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {templates.map((t) => (
+                  <tr key={t.id} onClick={() => openEdit(t)} className="cursor-pointer hover:bg-brand-50/40 transition-colors">
+                    <td className="font-mono text-sm">{t.template_name}</td>
+                    <td className="text-gray-700 max-w-xs truncate">{t.subject_en}</td>
+                    <td className="text-xs text-gray-400 hidden sm:table-cell">{(t.variables ?? []).join(", ") || "—"}</td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => toggleActive(t)} title={t.is_active ? "Deactivate" : "Activate"}>
+                        {t.is_active
+                          ? <CheckCircle className="w-5 h-5 text-green-500" />
+                          : <XCircle className="w-5 h-5 text-gray-300" />}
+                      </button>
+                    </td>
+                    <td className="text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex justify-end gap-1">
+                        <button onClick={() => openEdit(t)} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(t.id, t.template_name)}
+                          disabled={deletingId === t.id}
+                          className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-40"
+                        >
+                          {deletingId === t.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
