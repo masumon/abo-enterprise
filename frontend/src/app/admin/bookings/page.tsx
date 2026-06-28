@@ -153,7 +153,7 @@ export default function AdminBookingsPage() {
                   value={searchInput}
                   onChange={e => handleSearchChange(e.target.value)}
                   placeholder="Search name, phone, booking#…"
-                  className="input pl-9 text-sm w-56"
+                  className="input pl-9 text-sm w-full sm:w-56"
                 />
               </div>
               <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="input w-auto text-sm">
@@ -217,48 +217,50 @@ export default function AdminBookingsPage() {
               <p className="text-gray-400 font-medium">No bookings found</p>
             </div>
           ) : (
-            <table className="table-premium">
-              <thead>
-                <tr>
-                  <th>Booking</th>
-                  <th>Customer</th>
-                  <th>Service</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bookings.map((b) => (
-                  <tr key={b.id} className="cursor-pointer" onClick={() => openDetail(b.id!)}>
-                    <td className="px-5 py-3">
-                      <p className="font-medium text-gray-900">{b.booking_number}</p>
-                      {b.service_subtype && <p className="text-xs text-gray-400">{b.service_subtype.replace(/_/g, " ")}</p>}
-                    </td>
-                    <td className="px-5 py-3">
-                      <p className="text-gray-900">{b.customer_name}</p>
-                      <p className="text-xs text-gray-400">{b.customer_phone}</p>
-                    </td>
-                    <td className="px-5 py-3 text-gray-600 capitalize">{b.service_type.replace(/_/g, " ")}</td>
-                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap">
-                      {new Date(b.created_at).toLocaleDateString("en-BD")}
-                    </td>
-                    <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
-                      <div className="relative">
-                        <select
-                          value={b.status ?? "pending"}
-                          disabled={updatingId === b.id}
-                          onChange={(e) => updateStatus(b.id!, e.target.value)}
-                          className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
-                        >
-                          {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-                        </select>
-                        <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="table-premium min-w-[500px]">
+                <thead>
+                  <tr>
+                    <th>Booking</th>
+                    <th>Customer</th>
+                    <th className="hidden sm:table-cell">Service</th>
+                    <th className="hidden md:table-cell">Date</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {bookings.map((b) => (
+                    <tr key={b.id} className="cursor-pointer" onClick={() => openDetail(b.id!)}>
+                      <td className="px-5 py-3">
+                        <p className="font-medium text-gray-900">{b.booking_number}</p>
+                        {b.service_subtype && <p className="text-xs text-gray-400">{b.service_subtype.replace(/_/g, " ")}</p>}
+                      </td>
+                      <td className="px-5 py-3">
+                        <p className="text-gray-900">{b.customer_name}</p>
+                        <p className="text-xs text-gray-400">{b.customer_phone}</p>
+                      </td>
+                      <td className="px-5 py-3 text-gray-600 capitalize hidden sm:table-cell">{b.service_type.replace(/_/g, " ")}</td>
+                      <td className="px-5 py-3 text-gray-500 whitespace-nowrap hidden md:table-cell">
+                        {new Date(b.created_at).toLocaleDateString("en-BD")}
+                      </td>
+                      <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+                        <div className="relative">
+                          <select
+                            value={b.status ?? "pending"}
+                            disabled={updatingId === b.id}
+                            onChange={(e) => updateStatus(b.id!, e.target.value)}
+                            className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
+                          >
+                            {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                          </select>
+                          <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
@@ -274,76 +276,78 @@ export default function AdminBookingsPage() {
               <p className="text-gray-400 font-medium">No service bookings found</p>
             </div>
           ) : (
-            <table className="table-premium">
-              <thead>
-                <tr>
-                  <th>Booking</th>
-                  <th>Customer</th>
-                  <th>Service</th>
-                  <th>Pricing</th>
-                  <th>Payment</th>
-                  <th>Status</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {bookingsV2.map((b) => (
-                  <tr key={b.id} className="cursor-pointer" onClick={() => setDetailV2(b)}>
-                    <td className="px-5 py-3">
-                      <p className="font-medium text-gray-900">{b.booking_number}</p>
-                      <p className="text-xs text-gray-400">{new Date(b.created_at).toLocaleDateString("en-BD")}</p>
-                    </td>
-                    <td className="px-5 py-3">
-                      <p className="text-gray-900">{b.customer_name}</p>
-                      <p className="text-xs text-gray-400">{b.customer_phone}</p>
-                    </td>
-                    <td className="px-5 py-3">
-                      <p className="text-gray-800">{b.service_name}</p>
-                      {b.service_tier && <p className="text-xs text-gray-400">{b.service_tier}</p>}
-                    </td>
-                    <td className="px-5 py-3 text-gray-600">
-                      <p className="capitalize text-xs">{b.pricing_type}</p>
-                      <p className="font-medium text-gray-900">
-                        {b.final_price != null ? `৳${b.final_price.toLocaleString()}` : b.quoted_price != null ? `৳${b.quoted_price.toLocaleString()}` : "—"}
-                      </p>
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        b.payment_status === "paid" ? "bg-green-100 text-green-700" :
-                        b.payment_status === "partial" ? "bg-yellow-100 text-yellow-700" :
-                        b.payment_status === "refunded" ? "bg-purple-100 text-purple-700" :
-                        "bg-gray-100 text-gray-600"
-                      }`}>
-                        {b.payment_status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
-                      <div className="flex items-center gap-2">
-                        <div className="relative">
-                          <select
-                            value={b.status}
-                            disabled={updatingIdV2 === b.id}
-                            onChange={(e) => updateStatusV2(b.id, e.target.value)}
-                            className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
-                          >
-                            {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-                          </select>
-                          <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        </div>
-                        <button
-                          onClick={() => handleDeleteV2(b.id, b.booking_number)}
-                          disabled={updatingIdV2 === b.id}
-                          title="Delete booking"
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="table-premium min-w-[620px]">
+                <thead>
+                  <tr>
+                    <th>Booking</th>
+                    <th>Customer</th>
+                    <th className="hidden sm:table-cell">Service</th>
+                    <th className="hidden md:table-cell">Pricing</th>
+                    <th className="hidden sm:table-cell">Payment</th>
+                    <th>Status</th>
+                    <th />
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {bookingsV2.map((b) => (
+                    <tr key={b.id} className="cursor-pointer" onClick={() => setDetailV2(b)}>
+                      <td className="px-5 py-3">
+                        <p className="font-medium text-gray-900">{b.booking_number}</p>
+                        <p className="text-xs text-gray-400">{new Date(b.created_at).toLocaleDateString("en-BD")}</p>
+                      </td>
+                      <td className="px-5 py-3">
+                        <p className="text-gray-900">{b.customer_name}</p>
+                        <p className="text-xs text-gray-400">{b.customer_phone}</p>
+                      </td>
+                      <td className="px-5 py-3 hidden sm:table-cell">
+                        <p className="text-gray-800">{b.service_name}</p>
+                        {b.service_tier && <p className="text-xs text-gray-400">{b.service_tier}</p>}
+                      </td>
+                      <td className="px-5 py-3 text-gray-600 hidden md:table-cell">
+                        <p className="capitalize text-xs">{b.pricing_type}</p>
+                        <p className="font-medium text-gray-900">
+                          {b.final_price != null ? `৳${b.final_price.toLocaleString()}` : b.quoted_price != null ? `৳${b.quoted_price.toLocaleString()}` : "—"}
+                        </p>
+                      </td>
+                      <td className="px-5 py-3 hidden sm:table-cell">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                          b.payment_status === "paid" ? "bg-green-100 text-green-700" :
+                          b.payment_status === "partial" ? "bg-yellow-100 text-yellow-700" :
+                          b.payment_status === "refunded" ? "bg-purple-100 text-purple-700" :
+                          "bg-gray-100 text-gray-600"
+                        }`}>
+                          {b.payment_status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-2">
+                          <div className="relative">
+                            <select
+                              value={b.status}
+                              disabled={updatingIdV2 === b.id}
+                              onChange={(e) => updateStatusV2(b.id, e.target.value)}
+                              className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
+                            >
+                              {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                            </select>
+                            <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          </div>
+                          <button
+                            onClick={() => handleDeleteV2(b.id, b.booking_number)}
+                            disabled={updatingIdV2 === b.id}
+                            title="Delete booking"
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}

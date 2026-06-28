@@ -157,7 +157,7 @@ export default function AdminLeadsPage() {
                   value={searchInput}
                   onChange={e => handleSearchChange(e.target.value)}
                   placeholder="Search name, phone, company…"
-                  className="input pl-9 text-sm w-56"
+                  className="input pl-9 text-sm w-full sm:w-56"
                 />
               </div>
               <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="input w-auto text-sm">
@@ -221,45 +221,48 @@ export default function AdminLeadsPage() {
               <p className="text-gray-400 font-medium">No leads found</p>
             </div>
           ) : (
-            <table className="table-premium">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Type</th>
-                  <th>Budget</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {leads.map((l) => (
-                  <tr key={l.id} className="cursor-pointer" onClick={() => openDetail(l.id!)}>
-                    <td className="px-5 py-3">
-                      <p className="font-medium text-gray-900">{l.name}</p>
-                      <p className="text-xs text-gray-400">{l.phone}{l.company ? ` · ${l.company}` : ""}</p>
-                    </td>
-                    <td className="px-5 py-3 text-gray-600 capitalize">{l.lead_type.replace(/_/g, " ")}</td>
-                    <td className="px-5 py-3 text-gray-600">{l.budget_range ?? "—"}</td>
-                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap">
-                      {new Date(l.created_at).toLocaleDateString("en-BD")}
-                    </td>
-                    <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
-                      <div className="relative">
-                        <select
-                          value={l.status ?? "new"}
-                          disabled={updatingId === l.id}
-                          onChange={(e) => updateStatus(l.id!, e.target.value)}
-                          className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
-                        >
-                          {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-                        </select>
-                        <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="table-premium min-w-[480px]">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th className="hidden sm:table-cell">Type</th>
+                    <th className="hidden md:table-cell">Budget</th>
+                    <th className="hidden md:table-cell">Date</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {leads.map((l) => (
+                    <tr key={l.id} className="cursor-pointer" onClick={() => openDetail(l.id!)}>
+                      <td className="px-5 py-3">
+                        <p className="font-medium text-gray-900">{l.name}</p>
+                        <p className="text-xs text-gray-400">{l.phone}{l.company ? ` · ${l.company}` : ""}</p>
+                        <p className="text-xs text-gray-400 sm:hidden capitalize">{l.lead_type.replace(/_/g, " ")}</p>
+                      </td>
+                      <td className="px-5 py-3 text-gray-600 capitalize hidden sm:table-cell">{l.lead_type.replace(/_/g, " ")}</td>
+                      <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{l.budget_range ?? "—"}</td>
+                      <td className="px-5 py-3 text-gray-500 whitespace-nowrap hidden md:table-cell">
+                        {new Date(l.created_at).toLocaleDateString("en-BD")}
+                      </td>
+                      <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+                        <div className="relative">
+                          <select
+                            value={l.status ?? "new"}
+                            disabled={updatingId === l.id}
+                            onChange={(e) => updateStatus(l.id!, e.target.value)}
+                            className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
+                          >
+                            {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                          </select>
+                          <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}
@@ -275,66 +278,68 @@ export default function AdminLeadsPage() {
               <p className="text-gray-400 font-medium">No service leads found</p>
             </div>
           ) : (
-            <table className="table-premium">
-              <thead>
-                <tr>
-                  <th>Lead</th>
-                  <th>Type</th>
-                  <th>Budget</th>
-                  <th>Score</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {leadsV2.map((l) => (
-                  <tr key={l.id} className="cursor-pointer" onClick={() => setDetailV2(l)}>
-                    <td className="px-5 py-3">
-                      <p className="font-medium text-gray-900">{l.name}</p>
-                      <p className="text-xs text-gray-400">{l.phone}{l.company ? ` · ${l.company}` : ""}</p>
-                    </td>
-                    <td className="px-5 py-3 text-gray-600 capitalize">{l.lead_type.replace(/_/g, " ")}</td>
-                    <td className="px-5 py-3 text-gray-600 text-sm">
-                      {l.budget_min != null || l.budget_max != null
-                        ? `৳${(l.budget_min ?? 0).toLocaleString()}–${(l.budget_max ?? 0).toLocaleString()}`
-                        : l.budget_range ?? "—"}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${scoreColor(l.qualification_score)}`}>
-                        {l.qualification_score}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap">
-                      {new Date(l.created_at).toLocaleDateString("en-BD")}
-                    </td>
-                    <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
-                      <div className="flex items-center gap-2">
-                        <div className="relative">
-                          <select
-                            value={l.status}
-                            disabled={updatingIdV2 === l.id}
-                            onChange={(e) => updateStatusV2(l.id, e.target.value)}
-                            className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
-                          >
-                            {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-                          </select>
-                          <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        </div>
-                        <button
-                          onClick={() => handleDeleteV2(l.id, l.name)}
-                          disabled={updatingIdV2 === l.id}
-                          title="Delete lead"
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="table-premium min-w-[560px]">
+                <thead>
+                  <tr>
+                    <th>Lead</th>
+                    <th className="hidden sm:table-cell">Type</th>
+                    <th className="hidden md:table-cell">Budget</th>
+                    <th className="hidden sm:table-cell">Score</th>
+                    <th className="hidden md:table-cell">Date</th>
+                    <th>Status</th>
+                    <th />
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {leadsV2.map((l) => (
+                    <tr key={l.id} className="cursor-pointer" onClick={() => setDetailV2(l)}>
+                      <td className="px-5 py-3">
+                        <p className="font-medium text-gray-900">{l.name}</p>
+                        <p className="text-xs text-gray-400">{l.phone}{l.company ? ` · ${l.company}` : ""}</p>
+                      </td>
+                      <td className="px-5 py-3 text-gray-600 capitalize hidden sm:table-cell">{l.lead_type.replace(/_/g, " ")}</td>
+                      <td className="px-5 py-3 text-gray-600 text-sm hidden md:table-cell">
+                        {l.budget_min != null || l.budget_max != null
+                          ? `৳${(l.budget_min ?? 0).toLocaleString()}–${(l.budget_max ?? 0).toLocaleString()}`
+                          : l.budget_range ?? "—"}
+                      </td>
+                      <td className="px-5 py-3 hidden sm:table-cell">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${scoreColor(l.qualification_score)}`}>
+                          {l.qualification_score}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3 text-gray-500 whitespace-nowrap hidden md:table-cell">
+                        {new Date(l.created_at).toLocaleDateString("en-BD")}
+                      </td>
+                      <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-2">
+                          <div className="relative">
+                            <select
+                              value={l.status}
+                              disabled={updatingIdV2 === l.id}
+                              onChange={(e) => updateStatusV2(l.id, e.target.value)}
+                              className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
+                            >
+                              {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                            </select>
+                            <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          </div>
+                          <button
+                            onClick={() => handleDeleteV2(l.id, l.name)}
+                            disabled={updatingIdV2 === l.id}
+                            title="Delete lead"
+                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       )}

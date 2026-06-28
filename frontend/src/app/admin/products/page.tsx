@@ -207,7 +207,7 @@ export default function AdminProductsPage() {
               value={searchInput}
               onChange={e => handleSearchChange(e.target.value)}
               placeholder="Search products…"
-              className="input pl-9 text-sm w-52"
+              className="input pl-9 text-sm w-full sm:w-52"
             />
           </div>
           <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
@@ -233,55 +233,58 @@ export default function AdminProductsPage() {
             <p className="text-gray-400 font-medium">No products yet</p>
           </div>
         ) : (
-          <table className="table-premium">
-            <thead>
-              <tr>
-                <th>Product</th>
-                <th>Category</th>
-                <th>Price</th>
-                <th>Stock</th>
-                <th>Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((p) => (
-                <tr key={p.id}>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      {p.image_url ? (
-                        <Image src={p.image_url} alt={p.name_en} width={40} height={40} className="w-10 h-10 rounded-lg object-cover border border-gray-100" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center">
-                          <Package className="w-4 h-4 text-gray-400" />
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-medium text-gray-900">{p.name_en}</p>
-                        <p className="text-xs text-gray-400">{p.slug}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3 text-gray-600 capitalize">{p.category}</td>
-                  <td className="px-5 py-3 font-semibold text-gray-900">৳{p.price}</td>
-                  <td className="px-5 py-3 text-gray-600">{p.stock_quantity}</td>
-                  <td className="px-5 py-3">
-                    <StatusBadge status={p.is_active ? "active" : "inactive"} />
-                  </td>
-                  <td className="px-5 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => setDeleteId(p.id ?? null)} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="table-premium min-w-[480px]">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th className="hidden sm:table-cell">Category</th>
+                  <th>Price</th>
+                  <th className="hidden md:table-cell">Stock</th>
+                  <th>Status</th>
+                  <th />
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {products.map((p) => (
+                  <tr key={p.id} onClick={() => openEdit(p)} className="cursor-pointer hover:bg-brand-50/30 transition-colors">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        {p.image_url ? (
+                          <Image src={p.image_url} alt={p.name_en} width={40} height={40} className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                            <Package className="w-4 h-4 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-medium text-gray-900 truncate">{p.name_en}</p>
+                          <p className="text-xs text-gray-400 truncate">{p.slug}</p>
+                          <p className="text-xs text-gray-400 sm:hidden capitalize">{p.category}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-gray-600 capitalize hidden sm:table-cell">{p.category}</td>
+                    <td className="px-5 py-3 font-semibold text-gray-900">৳{p.price}</td>
+                    <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{p.stock_quantity}</td>
+                    <td className="px-5 py-3">
+                      <StatusBadge status={p.is_active ? "active" : "inactive"} />
+                    </td>
+                    <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => setDeleteId(p.id ?? null)} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -352,7 +355,7 @@ export default function AdminProductsPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
                   <input {...register("slug")} className={cn("input", errors.slug && "input-error")} placeholder="phone-case-black" />
