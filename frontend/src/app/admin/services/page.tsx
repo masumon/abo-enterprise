@@ -6,6 +6,7 @@ import {
   ToggleLeft, ToggleRight, Star, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { servicesAdminApi } from "@/lib/api";
+import ImageUpload from "@/components/admin/ImageUpload";
 import type { Service, ServicePricingTier, ServiceBookingFormField } from "@/types";
 import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
@@ -403,15 +404,20 @@ export default function AdminServicesPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">Icon URL</label>
-                    <input value={editing.icon_url ?? ""} onChange={f("icon_url")} placeholder="https://…" className="input w-full text-sm" />
-                  </div>
-                  <div>
-                    <label className="form-label">Featured Image URL</label>
-                    <input value={editing.featured_image_url ?? ""} onChange={f("featured_image_url")} placeholder="https://…" className="input w-full text-sm" />
-                  </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <ImageUpload
+                    label="Icon"
+                    value={editing.icon_url ?? ""}
+                    onChange={(url) => setEditing(prev => prev ? { ...prev, icon_url: url } : prev)}
+                    folder="abo-enterprise/services"
+                    previewSize="sm"
+                  />
+                  <ImageUpload
+                    label="Featured Image"
+                    value={editing.featured_image_url ?? ""}
+                    onChange={(url) => setEditing(prev => prev ? { ...prev, featured_image_url: url } : prev)}
+                    folder="abo-enterprise/services"
+                  />
                 </div>
               </section>
 
@@ -735,8 +741,13 @@ export default function AdminServicesPage() {
                       <input value={editing.canonical_url ?? ""} onChange={f("canonical_url")} placeholder="https://..." className="input w-full text-sm" />
                     </div>
                     <div>
-                      <label className="form-label text-xs">OG Image URL <span className="text-gray-400 font-normal">(defaults to featured image)</span></label>
-                      <input value={editing.og_image ?? ""} onChange={f("og_image")} placeholder="https://..." className="input w-full text-sm" />
+                      <label className="form-label text-xs">OG Image <span className="text-gray-400 font-normal">(defaults to featured image)</span></label>
+                      <ImageUpload
+                        value={editing.og_image ?? ""}
+                        onChange={(url) => setEditing(prev => prev ? { ...prev, og_image: url } : prev)}
+                        folder="abo-enterprise/services"
+                        previewSize="sm"
+                      />
                     </div>
                   </div>
                 )}

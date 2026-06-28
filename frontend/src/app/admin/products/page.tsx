@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Plus, Pencil, Trash2, Upload, X, Loader2, Package, ChevronDown, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Search } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
-import { productsApi, adminApi } from "@/lib/api";
+import { productsApi } from "@/lib/api";
+import ImageUpload from "@/components/admin/ImageUpload";
 import type { Product } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { cn } from "@/lib/utils";
@@ -61,13 +62,12 @@ export default function AdminProductsPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [seoOpen, setSeoOpen] = useState(false);
   const [extOpen, setExtOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
   const modalRef = useFocusTrap(showModal);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormData>({
@@ -81,7 +81,7 @@ export default function AdminProductsPage() {
     setLoading(true);
     setActionError(null);
     try {
-      const r = await productsApi.list({ page: pageNum, per_page: 20, search: search || undefined });
+      const r = await productsApi.adminList({ page: pageNum, per_page: 20, search: search || undefined });
       setProducts(r.data.data ?? []);
       setTotal(r.data.meta?.total ?? 0);
     } catch {
@@ -107,6 +107,7 @@ export default function AdminProductsPage() {
       low_stock_threshold: 5, is_flash_sale: false, is_best_seller: false,
     });
     setImageUrl("");
+    setGalleryImages([]);
     setSeoOpen(false);
     setExtOpen(false);
     setShowModal(true);
@@ -147,25 +148,10 @@ export default function AdminProductsPage() {
       is_best_seller: p.is_best_seller ?? false,
     });
     setImageUrl(p.image_url ?? "");
+    setGalleryImages(p.images ?? []);
     setSeoOpen(false);
     setExtOpen(false);
     setShowModal(true);
-  };
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    try {
-      const r = await adminApi.uploadImage(file);
-      const url = r.data.data?.url ?? "";
-      setValue("image_url", url);
-      setImageUrl(url);
-    } catch {
-      setActionError("Image upload failed");
-    } finally {
-      setUploading(false);
-    }
   };
 
   const onSubmit = async (data: FormData) => {
@@ -175,6 +161,7 @@ export default function AdminProductsPage() {
       const payload: Partial<Product> = {
         ...rest,
         tags: tagsStr ? tagsStr.split(",").map((t) => t.trim()).filter(Boolean) : [],
+        images: galleryImages.filter(Boolean),
       } as Partial<Product>;
       if (editing) {
         await productsApi.update(editing.id!, payload);
@@ -313,24 +300,51 @@ export default function AdminProductsPage() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
-              {/* Image */}
+              <ImageUpload
+                label="Product Image"
+                value={currentImage || imageUrl}
+                onChange={(url) => { setValue("image_url", url); setImageUrl(url); }}
+                folder="abo-enterprise/products"
+                previewSize="md"
+              />
+
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Image</label>
-                <div className="flex items-center gap-4">
-                  {(currentImage || imageUrl) ? (
-                    <Image src={currentImage || imageUrl} alt="Preview" width={64} height={64} className="w-16 h-16 rounded-xl object-cover border border-gray-200" />
-                  ) : (
-                    <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center border border-gray-200">
-                      <Package className="w-6 h-6 text-gray-300" />
-                    </div>
-                  )}
-                  <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading}
-                    className="btn btn-outline btn-sm flex items-center gap-2">
-                    {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                    {uploading ? "Uploading..." : "Upload Image"}
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Gallery Images</label>
+                  <button
+                    type="button"
+                    onClick={() => setGalleryImages((imgs) => [...imgs, ""])}
+                    className="text-xs text-brand-600 hover:text-brand-700 font-medium"
+                  >
+                    + Add image
                   </button>
-                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
                 </div>
+                {galleryImages.length === 0 ? (
+                  <p className="text-xs text-gray-400">No gallery images. Click &quot;Add image&quot; to upload more photos.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {galleryImages.map((url, idx) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <div className="flex-1">
+                          <ImageUpload
+                            value={url}
+                            onChange={(v) => setGalleryImages((imgs) => imgs.map((u, i) => (i === idx ? v : u)))}
+                            folder="abo-enterprise/products"
+                            previewSize="sm"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setGalleryImages((imgs) => imgs.filter((_, i) => i !== idx))}
+                          className="p-2 text-gray-400 hover:text-red-500 mt-1"
+                          title="Remove"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -478,8 +492,14 @@ export default function AdminProductsPage() {
                       <input {...register("canonical_url")} className="input" placeholder="https://..." />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">OG Image URL <span className="text-gray-400 font-normal">(defaults to product image)</span></label>
-                      <input {...register("og_image")} className="input" placeholder="https://..." />
+                      <label className="block text-xs font-medium text-gray-600 mb-1">OG Image <span className="text-gray-400 font-normal">(defaults to product image)</span></label>
+                      <ImageUpload
+                        value={watch("og_image") ?? ""}
+                        onChange={(url) => setValue("og_image", url)}
+                        folder="abo-enterprise/products"
+                        previewSize="sm"
+                        showUrlInput
+                      />
                     </div>
                   </div>
                 )}

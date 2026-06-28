@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Loader2, Briefcase, ChevronDown, X, Search, Download } from "lucide-react";
+import { Loader2, Briefcase, ChevronDown, X, Search, Download, Trash2 } from "lucide-react";
 import { bookingsApi, serviceBookingsAdminApi, downloadCsv } from "@/lib/api";
 import type { Booking, BookingV2 } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -106,6 +106,22 @@ export default function AdminBookingsPage() {
       await serviceBookingsAdminApi.updateStatus(id, status);
       await loadV2();
       if (detailV2?.id === id) setDetailV2(prev => prev ? { ...prev, status } : prev);
+    } finally {
+      setUpdatingIdV2(null);
+    }
+  };
+
+  const handleDeleteV2 = async (id: string, bookingNumber: string) => {
+    if (!confirm(`Delete booking ${bookingNumber}? This cannot be undone.`)) return;
+    setUpdatingIdV2(id);
+    try {
+      await serviceBookingsAdminApi.delete(id);
+      setBookingsV2((prev) => prev.filter((b) => b.id !== id));
+      setTotalV2((t) => t - 1);
+      if (detailV2?.id === id) setDetailV2(null);
+      toast("success", "Booking deleted");
+    } catch {
+      toast("error", "Delete failed");
     } finally {
       setUpdatingIdV2(null);
     }
@@ -267,6 +283,7 @@ export default function AdminBookingsPage() {
                   <th>Pricing</th>
                   <th>Payment</th>
                   <th>Status</th>
+                  <th />
                 </tr>
               </thead>
               <tbody>
@@ -301,16 +318,26 @@ export default function AdminBookingsPage() {
                       </span>
                     </td>
                     <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
-                      <div className="relative">
-                        <select
-                          value={b.status}
+                      <div className="flex items-center gap-2">
+                        <div className="relative">
+                          <select
+                            value={b.status}
+                            disabled={updatingIdV2 === b.id}
+                            onChange={(e) => updateStatusV2(b.id, e.target.value)}
+                            className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
+                          >
+                            {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                          </select>
+                          <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        </div>
+                        <button
+                          onClick={() => handleDeleteV2(b.id, b.booking_number)}
                           disabled={updatingIdV2 === b.id}
-                          onChange={(e) => updateStatusV2(b.id, e.target.value)}
-                          className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
+                          title="Delete booking"
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
                         >
-                          {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-                        </select>
-                        <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>

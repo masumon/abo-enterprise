@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
 import { adminBlogApi } from "@/lib/api";
+import ImageUpload from "@/components/admin/ImageUpload";
 import type { BlogPost } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
@@ -334,15 +335,12 @@ export default function AdminBlogPage() {
               </div>
 
               {/* Featured Image */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Featured Image URL</label>
-                <input
-                  value={editing.featured_image_url ?? ""}
-                  onChange={e => setEditing(prev => prev ? { ...prev, featured_image_url: e.target.value } : prev)}
-                  placeholder="https://..."
-                  className="input w-full text-sm"
-                />
-              </div>
+              <ImageUpload
+                label="Featured Image"
+                value={editing.featured_image_url ?? ""}
+                onChange={(url) => setEditing(prev => prev ? { ...prev, featured_image_url: url } : prev)}
+                folder="abo-enterprise/blog"
+              />
 
               {/* Excerpt EN */}
               <div>
@@ -422,8 +420,13 @@ export default function AdminBlogPage() {
                       <input value={editing.canonical_url ?? ""} onChange={e => setEditing(prev => prev ? { ...prev, canonical_url: e.target.value } : prev)} placeholder="https://..." className="input w-full text-sm" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">OG Image URL <span className="text-gray-400 font-normal">(defaults to featured image)</span></label>
-                      <input value={editing.og_image ?? ""} onChange={e => setEditing(prev => prev ? { ...prev, og_image: e.target.value } : prev)} placeholder="https://..." className="input w-full text-sm" />
+                      <label className="block text-xs font-medium text-gray-600 mb-1">OG Image <span className="text-gray-400 font-normal">(defaults to featured image)</span></label>
+                      <ImageUpload
+                        value={editing.og_image ?? ""}
+                        onChange={(url) => setEditing(prev => prev ? { ...prev, og_image: url } : prev)}
+                        folder="abo-enterprise/blog"
+                        previewSize="sm"
+                      />
                     </div>
                   </div>
                 )}

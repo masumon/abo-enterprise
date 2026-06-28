@@ -35,6 +35,9 @@ export const productsApi = {
   list: (params?: { category?: string; featured?: boolean; search?: string; sort_by?: string; page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<Product>>("/api/v1/products", { params }),
 
+  adminList: (params?: { category?: string; search?: string; is_active?: boolean; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<Product>>("/api/v1/products/admin", { params }),
+
   get: (slug: string) =>
     api.get<ApiResponse<Product>>(`/api/v1/products/${slug}`),
 
@@ -115,6 +118,9 @@ export const serviceBookingsAdminApi = {
 
   updateStatus: (id: string, status: string) =>
     api.patch<ApiResponse<BookingV2>>(`/api/v1/service-bookings/admin/bookings/${id}/status`, { status }),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/service-bookings/admin/bookings/${id}`),
 };
 
 export const serviceLeadsApi = {
@@ -140,6 +146,9 @@ export const serviceLeadsAdminApi = {
 
   updateStatus: (id: string, status: string, reason_lost?: string) =>
     api.patch<ApiResponse<LeadV2>>(`/api/v1/service-leads/admin/leads/${id}/status`, { status, reason_lost }),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/service-leads/admin/leads/${id}`),
 };
 
 export const authApi = {
@@ -260,12 +269,24 @@ export const adminApi = {
       recent_leads: unknown[];
     }>>("/api/v1/admin/stats"),
 
-  uploadImage: (file: File) => {
+  uploadImage: (file: File, folder = "abo-enterprise/uploads") => {
     const form = new FormData();
     form.append("file", file);
-    return api.post<ApiResponse<{ url: string; public_id: string }>>("/api/v1/admin/upload", form, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    return api.post<ApiResponse<{ url: string; public_id: string; resource_type?: string }>>(
+      "/api/v1/admin/upload",
+      form,
+      { headers: { "Content-Type": "multipart/form-data" }, params: { folder } }
+    );
+  },
+
+  uploadMedia: (file: File, folder = "abo-enterprise/uploads") => {
+    const form = new FormData();
+    form.append("file", file);
+    return api.post<ApiResponse<{ url: string; public_id: string; resource_type?: string }>>(
+      "/api/v1/admin/upload",
+      form,
+      { headers: { "Content-Type": "multipart/form-data" }, params: { folder } }
+    );
   },
 
   getSettings: () =>
@@ -278,10 +299,94 @@ export const adminApi = {
     api.post<ApiResponse<{ key: string; value: string }[]>>("/api/v1/settings/upsert", items),
 
   listUsers: (page = 1) =>
-    api.get<PaginatedResponse<{ id: string; email: string; name: string; role: string; is_active: boolean; last_login: string | null }>>("/api/v1/admin/users", { params: { page } }),
+    api.get<PaginatedResponse<{ id: string; email: string; name: string; role: string; is_active: boolean; last_login: string | null; created_at?: string }>>("/api/v1/admin/users", { params: { page } }),
+
+  createUser: (data: { email: string; password: string; name: string; role?: string }) =>
+    api.post<ApiResponse<{ id: string; email: string; name: string; role: string; is_active: boolean }>>("/api/v1/admin/users", data),
+
+  updateUser: (id: string, data: { name?: string; role?: string; is_active?: boolean; password?: string }) =>
+    api.put<ApiResponse<{ id: string; email: string; name: string; role: string; is_active: boolean }>>(`/api/v1/admin/users/${id}`, data),
+
+  deactivateUser: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/admin/users/${id}`),
+
+  listPaymentTransactions: (params?: { gateway?: string; status?: string; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<{
+      id: string;
+      gateway: string;
+      reference_id: string;
+      payment_id: string | null;
+      order_id: string | null;
+      amount: number;
+      status: string;
+      created_at: string;
+    }>>("/api/v1/admin/payment-transactions", { params }),
+
+  listPaymentReconciliation: (page = 1) =>
+    api.get<PaginatedResponse<{
+      id: string;
+      reconciliation_date: string;
+      payment_gateway: string;
+      total_transactions: number;
+      total_amount: number;
+      successful_count: number;
+      failed_count: number;
+      pending_count: number;
+      reconciliation_status: string;
+      notes: string | null;
+      created_at: string;
+    }>>("/api/v1/admin/payment-reconciliation", { params: { page } }),
 
   listAuditLogs: (page = 1) =>
     api.get<PaginatedResponse<{ id: string; action: string; entity_type: string; entity_id: string | null; created_at: string }>>("/api/v1/admin/audit-logs", { params: { page } }),
+};
+
+export interface EmailTemplateRecord {
+  id: string;
+  template_name: string;
+  subject_en: string;
+  subject_bn: string;
+  body_en: string;
+  body_bn: string;
+  variables: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export const emailTemplatesAdminApi = {
+  list: (page = 1) =>
+    api.get<PaginatedResponse<EmailTemplateRecord>>("/api/v1/admin/email-templates", { params: { page } }),
+
+  get: (id: string) =>
+    api.get<ApiResponse<EmailTemplateRecord>>(`/api/v1/admin/email-templates/${id}`),
+
+  create: (data: Omit<EmailTemplateRecord, "id" | "created_at" | "updated_at">) =>
+    api.post<ApiResponse<EmailTemplateRecord>>("/api/v1/admin/email-templates", data),
+
+  update: (id: string, data: Partial<Omit<EmailTemplateRecord, "id" | "template_name" | "created_at" | "updated_at">>) =>
+    api.put<ApiResponse<EmailTemplateRecord>>(`/api/v1/admin/email-templates/${id}`, data),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/admin/email-templates/${id}`),
+};
+
+export const invoicesAdminApi = {
+  list: (params?: { payment_status?: string; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<unknown>>("/api/v1/invoices/admin/invoices", { params }),
+
+  create: (data: {
+    customer_name: string;
+    customer_email?: string;
+    customer_phone?: string;
+    items: { name: string; quantity: number; price: number }[];
+    subtotal: number;
+    tax?: number;
+    total: number;
+    payment_method?: string;
+    notes?: string;
+  }) =>
+    api.post<ApiResponse<unknown>>("/api/v1/invoices", data),
 };
 
 export interface PaymentMethodRecord {
