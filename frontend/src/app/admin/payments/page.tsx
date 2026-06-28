@@ -225,30 +225,32 @@ export default function AdminPaymentsPage() {
           ) : transactions.length === 0 ? (
             <div className="p-12 text-center text-gray-400">No transactions found</div>
           ) : (
-            <table className="table-premium">
-              <thead>
-                <tr>
-                  <th>Gateway</th>
-                  <th>Reference</th>
-                  <th>Order</th>
-                  <th>Amount</th>
-                  <th>Status</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((t) => (
-                  <tr key={`${t.gateway}-${t.id}`}>
-                    <td className="capitalize font-medium">{t.gateway}</td>
-                    <td className="font-mono text-xs text-gray-600">{t.reference_id}</td>
-                    <td className="text-xs text-gray-500">{t.order_id ? t.order_id.slice(0, 8) + "…" : "—"}</td>
-                    <td className="font-semibold">৳{t.amount.toLocaleString()}</td>
-                    <td><span className="badge bg-gray-100 text-gray-700 capitalize">{t.status}</span></td>
-                    <td className="text-xs text-gray-500">{new Date(t.created_at).toLocaleString("en-BD")}</td>
+            <div className="overflow-x-auto">
+              <table className="table-premium min-w-[520px]">
+                <thead>
+                  <tr>
+                    <th>Gateway</th>
+                    <th className="hidden sm:table-cell">Reference</th>
+                    <th className="hidden md:table-cell">Order</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                    <th className="hidden sm:table-cell">Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {transactions.map((t) => (
+                    <tr key={`${t.gateway}-${t.id}`}>
+                      <td className="capitalize font-medium">{t.gateway}</td>
+                      <td className="font-mono text-xs text-gray-600 hidden sm:table-cell">{t.reference_id}</td>
+                      <td className="text-xs text-gray-500 hidden md:table-cell">{t.order_id ? t.order_id.slice(0, 8) + "…" : "—"}</td>
+                      <td className="font-semibold">৳{t.amount.toLocaleString()}</td>
+                      <td><span className="badge bg-gray-100 text-gray-700 capitalize">{t.status}</span></td>
+                      <td className="text-xs text-gray-500 hidden sm:table-cell">{new Date(t.created_at).toLocaleString("en-BD")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
           {txTotal > 20 && (
             <div className="flex justify-center gap-2 py-4 border-t">

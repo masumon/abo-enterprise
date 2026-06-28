@@ -138,7 +138,7 @@ export default function AdminOrdersPage() {
               value={searchInput}
               onChange={e => handleSearchChange(e.target.value)}
               placeholder="Search name, phone, order#…"
-              className="input pl-9 text-sm w-56"
+              className="input pl-9 text-sm w-full sm:w-56"
             />
           </div>
           {/* Status filter */}
@@ -207,60 +207,62 @@ export default function AdminOrdersPage() {
             <p className="text-gray-400 font-medium">No orders found</p>
           </div>
         ) : (
-          <table className="table-premium">
-            <thead>
-              <tr>
-                <th className="px-4 py-3 w-8">
-                  <button onClick={toggleAll} className="text-gray-400 hover:text-brand-600">
-                    {allSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
-                  </button>
-                </th>
-                <th>Order</th>
-                <th>Customer</th>
-                <th>Payment</th>
-                <th>Total</th>
-                <th>Date</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {orders.map((o) => (
-                <tr key={o.id} className={selected.has(o.id) ? "bg-brand-50/40" : ""}>
-                  <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => toggleSelect(o.id)} className="text-gray-400 hover:text-brand-600">
-                      {selected.has(o.id) ? <CheckSquare className="w-4 h-4 text-brand-600" /> : <Square className="w-4 h-4" />}
+          <div className="overflow-x-auto">
+            <table className="table-premium min-w-[580px]">
+              <thead>
+                <tr>
+                  <th className="px-4 py-3 w-8">
+                    <button onClick={toggleAll} className="text-gray-400 hover:text-brand-600">
+                      {allSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                     </button>
-                  </td>
-                  <td className="px-5 py-3 cursor-pointer" onClick={() => openDetail(o.id)}>
-                    <p className="font-medium text-gray-900">{o.order_number}</p>
-                    <p className="text-xs text-gray-400">{o.items?.length ?? 0} items</p>
-                  </td>
-                  <td className="px-5 py-3 cursor-pointer" onClick={() => openDetail(o.id)}>
-                    <p className="text-gray-900">{o.customer_name}</p>
-                    <p className="text-xs text-gray-400">{o.customer_phone}</p>
-                  </td>
-                  <td className="px-5 py-3 text-gray-600 capitalize">{o.payment_method}</td>
-                  <td className="px-5 py-3 font-semibold text-gray-900">{formatPrice(o.total)}</td>
-                  <td className="px-5 py-3 text-gray-500 whitespace-nowrap">
-                    {new Date(o.created_at).toLocaleDateString("en-BD")}
-                  </td>
-                  <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
-                    <div className="relative">
-                      <select
-                        value={o.order_status}
-                        disabled={updatingId === o.id}
-                        onChange={(e) => updateStatus(o.id, e.target.value)}
-                        className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
-                      >
-                        {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
-                      </select>
-                      <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
-                  </td>
+                  </th>
+                  <th>Order</th>
+                  <th>Customer</th>
+                  <th className="hidden sm:table-cell">Payment</th>
+                  <th>Total</th>
+                  <th className="hidden md:table-cell">Date</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {orders.map((o) => (
+                  <tr key={o.id} className={selected.has(o.id) ? "bg-brand-50/40" : ""}>
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => toggleSelect(o.id)} className="text-gray-400 hover:text-brand-600">
+                        {selected.has(o.id) ? <CheckSquare className="w-4 h-4 text-brand-600" /> : <Square className="w-4 h-4" />}
+                      </button>
+                    </td>
+                    <td className="px-5 py-3 cursor-pointer" onClick={() => openDetail(o.id)}>
+                      <p className="font-medium text-gray-900">{o.order_number}</p>
+                      <p className="text-xs text-gray-400">{o.items?.length ?? 0} items</p>
+                    </td>
+                    <td className="px-5 py-3 cursor-pointer" onClick={() => openDetail(o.id)}>
+                      <p className="text-gray-900">{o.customer_name}</p>
+                      <p className="text-xs text-gray-400">{o.customer_phone}</p>
+                    </td>
+                    <td className="px-5 py-3 text-gray-600 capitalize hidden sm:table-cell">{o.payment_method}</td>
+                    <td className="px-5 py-3 font-semibold text-gray-900">{formatPrice(o.total)}</td>
+                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap hidden md:table-cell">
+                      {new Date(o.created_at).toLocaleDateString("en-BD")}
+                    </td>
+                    <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+                      <div className="relative">
+                        <select
+                          value={o.order_status}
+                          disabled={updatingId === o.id}
+                          onChange={(e) => updateStatus(o.id, e.target.value)}
+                          className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
+                        >
+                          {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
+                        </select>
+                        <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 

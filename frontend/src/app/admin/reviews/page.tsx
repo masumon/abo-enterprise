@@ -194,14 +194,14 @@ export default function AdminReviewsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[640px]">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/60">
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Rating</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Review</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Source</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Review</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Source</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Date</th>
                   <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Active</th>
                   <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Featured</th>
                   <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Verified</th>
@@ -232,7 +232,7 @@ export default function AdminReviewsPage() {
                         <div className="flex items-center gap-0.5">{stars(r.rating)}</div>
                         <p className="text-xs text-gray-400 mt-0.5">{r.rating}/5</p>
                       </td>
-                      <td className="px-5 py-3 max-w-xs">
+                      <td className="px-5 py-3 max-w-xs hidden sm:table-cell">
                         <p className="text-sm text-gray-700 line-clamp-2">{r.review_en}</p>
                         {r.review_bn && <p className="text-xs text-gray-400 truncate mt-0.5">{r.review_bn}</p>}
                         {r.admin_reply && (
@@ -242,12 +242,12 @@ export default function AdminReviewsPage() {
                           </p>
                         )}
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3 hidden md:table-cell">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 capitalize">
                           {r.source}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs">
+                      <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs hidden md:table-cell">
                         {new Date(r.created_at).toLocaleDateString("en-BD")}
                       </td>
                       <td className="px-5 py-3 text-center">

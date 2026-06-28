@@ -391,7 +391,7 @@ export default function AdminServicesPage() {
                   <input value={editing.slug ?? ""} onChange={f("slug")} placeholder="url-friendly-slug" className="input w-full font-mono text-sm" />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="form-label">Category <span className="text-red-400">*</span></label>
                     <select value={editing.category ?? ""} onChange={f("category")} className="input w-full text-sm">
@@ -534,7 +534,7 @@ export default function AdminServicesPage() {
               {/* ── Pricing ─────────────────────────────── */}
               <section className="space-y-4">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pricing</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="form-label">Pricing Type <span className="text-red-400">*</span></label>
                     <select value={editing.pricing_type ?? "fixed"} onChange={f("pricing_type")} className="input w-full text-sm">
@@ -546,7 +546,7 @@ export default function AdminServicesPage() {
                     <input type="number" min={1} max={10} value={editing.lead_priority ?? 5} onChange={fNum("lead_priority")} className="input w-full" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="form-label">Base Price (BDT)</label>
                     <input type="number" value={editing.base_price ?? ""} onChange={fNum("base_price")} placeholder="0" className="input w-full" />
@@ -556,7 +556,7 @@ export default function AdminServicesPage() {
                     <input type="number" value={editing.hourly_rate ?? ""} onChange={fNum("hourly_rate")} placeholder="0" className="input w-full" />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="form-label">Min Price (BDT)</label>
                     <input type="number" value={editing.min_price ?? ""} onChange={fNum("min_price")} placeholder="0" className="input w-full" />
@@ -609,7 +609,7 @@ export default function AdminServicesPage() {
                   {/* New field form */}
                   {fieldFormOpen && (
                     <div className="border border-brand-100 rounded-xl p-4 space-y-3 bg-brand-50/30">
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="form-label text-[11px]">Field Name (machine) <span className="text-red-400">*</span></label>
                           <input
@@ -630,7 +630,7 @@ export default function AdminServicesPage() {
                           </select>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="form-label text-[11px]">Label (EN) <span className="text-red-400">*</span></label>
                           <input
@@ -651,7 +651,7 @@ export default function AdminServicesPage() {
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="form-label text-[11px]">Placeholder</label>
                           <input
@@ -681,7 +681,7 @@ export default function AdminServicesPage() {
                           />
                         </div>
                       )}
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="form-label text-[11px]">Sort Order</label>
                           <input
@@ -792,7 +792,7 @@ export default function AdminServicesPage() {
                   {/* New tier form */}
                   {tierFormOpen && (
                     <div className="border border-brand-100 rounded-xl p-4 space-y-3 bg-brand-50/30">
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="form-label text-[11px]">Tier Name <span className="text-red-400">*</span></label>
                           <input
@@ -813,7 +813,7 @@ export default function AdminServicesPage() {
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="form-label text-[11px]">Duration (days)</label>
                           <input

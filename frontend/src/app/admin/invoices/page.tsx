@@ -303,7 +303,7 @@ export default function AdminInvoicesPage() {
               {/* Customer */}
               <div className="bg-gray-50 rounded-xl p-4 space-y-2">
                 <h3 className="font-semibold text-gray-900 text-sm">Customer</h3>
-                <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                   <div>
                     <span className="text-xs text-gray-400 block">Name</span>
                     <p className="font-medium text-gray-900">{detail.customer_name}</p>
@@ -373,7 +373,7 @@ export default function AdminInvoicesPage() {
 
               {/* Dates */}
               {(detail.issued_date || detail.due_date || detail.paid_date) && (
-                <div className="grid grid-cols-3 gap-3 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                   {detail.issued_date && (
                     <div className="bg-gray-50 rounded-xl p-3">
                       <span className="text-xs text-gray-400 block mb-1">Issued</span>
@@ -425,7 +425,7 @@ export default function AdminInvoicesPage() {
                 <label className="form-label">Customer Name *</label>
                 <input value={createForm.customer_name} onChange={(e) => setCreateForm((f) => ({ ...f, customer_name: e.target.value }))} className="input w-full" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="form-label">Email</label>
                   <input type="email" value={createForm.customer_email} onChange={(e) => setCreateForm((f) => ({ ...f, customer_email: e.target.value }))} className="input w-full text-sm" />
@@ -483,7 +483,7 @@ export default function AdminInvoicesPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="form-label">Tax (৳)</label>
                   <input type="number" min={0} value={createForm.tax} onChange={(e) => setCreateForm((f) => ({ ...f, tax: Number(e.target.value) }))} className="input w-full" />
