@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp, ExternalLink, Globe } from "lucide-react";
+import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp, ExternalLink, Globe, Copy } from "lucide-react";
 import { adminBlogApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
 import type { BlogPost } from "@/types";
@@ -127,6 +127,28 @@ export default function AdminBlogPage() {
       if (isNew || !prev.slug) updates.slug = slugify(v);
       return { ...prev, ...updates };
     });
+  };
+
+  const handleClone = async (p: BlogPost) => {
+    const clone: Partial<BlogPost> = {
+      ...EMPTY_FORM,
+      title_en: `${p.title_en} (Copy)`,
+      title_bn: p.title_bn ? `${p.title_bn} (কপি)` : "",
+      slug: `${p.slug}-copy`,
+      content_en: p.content_en,
+      content_bn: p.content_bn,
+      excerpt_en: p.excerpt_en,
+      excerpt_bn: p.excerpt_bn,
+      category: p.category,
+      author_name: p.author_name,
+      featured_image_url: p.featured_image_url,
+      status: "draft",
+      is_featured: false,
+    };
+    setEditing(clone);
+    setIsNew(true);
+    setSeoOpen(false);
+    toast("info", "Cloned as draft — edit and save to publish");
   };
 
   const handleTranslate = async (field: "title" | "excerpt" | "content" | "all") => {
@@ -301,6 +323,13 @@ export default function AdminBlogPage() {
                           </a>
                         )}
                         <button
+                          onClick={(e) => { e.stopPropagation(); handleClone(p); }}
+                          className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                          title="Clone / Duplicate"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </button>
+                        <button
                           onClick={(e) => { e.stopPropagation(); openEdit(p); }}
                           className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
                           title="Edit"
@@ -361,6 +390,18 @@ export default function AdminBlogPage() {
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
                   </select>
+                  {editing.status === "published" && (
+                    <div className="mt-2">
+                      <label className="block text-xs text-gray-500 mb-1">Publish Date</label>
+                      <input
+                        type="datetime-local"
+                        value={editing.published_at ? editing.published_at.slice(0, 16) : ""}
+                        onChange={e => setEditing(prev => prev ? { ...prev, published_at: e.target.value || undefined } : prev)}
+                        className="input w-full text-sm"
+                      />
+                      <p className="text-xs text-gray-400 mt-0.5">Leave blank to use current time</p>
+                    </div>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 pt-5">
                   <button
@@ -571,8 +612,13 @@ export default function AdminBlogPage() {
                       <input value={editing.seo_title ?? ""} onChange={e => setEditing(prev => prev ? { ...prev, seo_title: e.target.value } : prev)} placeholder="Custom SEO title..." className="input w-full text-sm" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">SEO Description <span className="text-gray-400 font-normal">(max 160 chars)</span></label>
-                      <textarea value={editing.seo_description ?? ""} onChange={e => setEditing(prev => prev ? { ...prev, seo_description: e.target.value } : prev)} rows={2} maxLength={160} placeholder="Meta description for search engines..." className="input w-full resize-none text-sm" />
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-medium text-gray-600">SEO Description</label>
+                        <span className={`text-xs ${(editing.seo_description?.length ?? 0) > 155 ? "text-red-500" : "text-gray-400"}`}>
+                          {editing.seo_description?.length ?? 0}/160
+                        </span>
+                      </div>
+                      <textarea value={editing.seo_description ?? ""} onChange={e => setEditing(prev => prev ? { ...prev, seo_description: e.target.value.slice(0, 160) } : prev)} rows={2} maxLength={160} placeholder="Meta description for search engines..." className="input w-full resize-none text-sm" />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-600 mb-1">Keywords <span className="text-gray-400 font-normal">(comma-separated)</span></label>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Search, Copy } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -23,7 +23,7 @@ const schema = z.object({
   description_en: z.string().optional(),
   description_bn: z.string().optional(),
   price: z.coerce.number().min(1, "Required"),
-  original_price: z.coerce.number().optional(),
+  original_price: z.coerce.number().min(0).optional(),
   category: z.string().min(1, "Required"),
   badge: z.string().optional(),
   stock_quantity: z.coerce.number().min(0),
@@ -50,7 +50,13 @@ const schema = z.object({
   flash_sale_ends_at: z.string().optional(),
   low_stock_threshold: z.coerce.number().min(0).optional(),
   is_best_seller: z.boolean().optional(),
-});
+}).refine(
+  (d) => !d.original_price || d.original_price >= d.price,
+  { message: "Original price must be ≥ sale price", path: ["original_price"] }
+).refine(
+  (d) => !d.flash_sale_price || d.flash_sale_price < d.price,
+  { message: "Flash sale price must be less than regular price", path: ["flash_sale_price"] }
+);
 type FormData = z.infer<typeof schema>;
 
 export default function AdminProductsPage() {
@@ -153,6 +159,37 @@ export default function AdminProductsPage() {
     });
     setImageUrl(p.image_url ?? "");
     setGalleryImages(p.images ?? []);
+    setSeoOpen(false);
+    setExtOpen(false);
+    setShowModal(true);
+  };
+
+  const openClone = (p: Product) => {
+    setEditing(null);
+    reset({
+      slug: `${p.slug}-copy`,
+      name_en: `${p.name_en} (Copy)`,
+      name_bn: p.name_bn,
+      description_en: p.description_en ?? "",
+      description_bn: p.description_bn ?? "",
+      price: p.price,
+      original_price: p.original_price ?? undefined,
+      category: p.category,
+      badge: p.badge ?? "",
+      stock_quantity: 0,
+      is_active: false,
+      is_featured: false,
+      image_url: p.image_url ?? "",
+      seo_title: "", seo_description: "", seo_keywords: "", canonical_url: "", og_image: "",
+      sku: "", barcode: "", brand: p.brand ?? "", sub_category: p.sub_category ?? "",
+      tags: p.tags?.join(", ") ?? "",
+      weight: p.weight ?? undefined,
+      warranty_info: p.warranty_info ?? "", delivery_info: p.delivery_info ?? "",
+      is_flash_sale: false, flash_sale_price: undefined, flash_sale_ends_at: "",
+      low_stock_threshold: p.low_stock_threshold ?? 5, is_best_seller: false,
+    });
+    setImageUrl(p.image_url ?? "");
+    setGalleryImages([]);
     setSeoOpen(false);
     setExtOpen(false);
     setShowModal(true);
@@ -272,10 +309,13 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
+                        <button onClick={() => openClone(p)} title="Duplicate" className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
+                          <Copy className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => openEdit(p)} title="Edit" className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
                           <Pencil className="w-4 h-4" />
                         </button>
-                        <button onClick={() => setDeleteId(p.id ?? null)} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+                        <button onClick={() => setDeleteId(p.id ?? null)} title="Delete" className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>

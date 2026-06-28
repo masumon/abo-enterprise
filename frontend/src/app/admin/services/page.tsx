@@ -120,6 +120,10 @@ export default function AdminServicesPage() {
     if (!editing.slug?.trim()) { toast("error", "Slug is required"); return; }
     if (!editing.category) { toast("error", "Category is required"); return; }
     if (!editing.pricing_type) { toast("error", "Pricing type is required"); return; }
+    if (editing.min_price != null && editing.max_price != null && editing.min_price > editing.max_price) {
+      toast("error", "Minimum price cannot be greater than maximum price"); return;
+    }
+    if (editing.base_price != null && editing.base_price < 0) { toast("error", "Base price cannot be negative"); return; }
 
     setSaving(true);
     try {

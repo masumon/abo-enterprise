@@ -120,6 +120,9 @@ export default function AdminInvoicesPage() {
     if (validItems.length === 0) {
       toast("error", "Add at least one item with name and price"); return;
     }
+    if ((createForm.tax ?? 0) < 0) {
+      toast("error", "Tax amount cannot be negative"); return;
+    }
     const subtotal = validItems.reduce((s, i) => s + i.qty * i.price, 0);
     const totalAmount = subtotal + (createForm.tax || 0);
     setCreating(true);
