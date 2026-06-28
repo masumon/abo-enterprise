@@ -34,7 +34,7 @@ export const tokens = {
 } as const;
 
 export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://aboenterprise.com";
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://aboenterprise.vercel.app";
 
 export const SOCIAL_PROFILES = [
   "https://www.facebook.com/abo.enterprise",
