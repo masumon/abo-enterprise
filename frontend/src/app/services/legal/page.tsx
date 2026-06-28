@@ -63,22 +63,26 @@ export default function LegalPage() {
         ? `থানা/অফিস: ${data.station}\n\n${data.details}`
         : data.details;
 
+      const selected = LEGAL_SERVICES.find((s) => s.value === data.service_subtype);
       await bookingsApi.create({
         service_type: "legal",
         service_subtype: data.service_subtype,
         customer_name: data.customer_name,
         customer_phone: data.customer_phone,
         details,
-      }).catch(() => null);
+        estimated_price: selected?.price.en,
+      });
 
       const msg = generateWhatsAppBookingMessage(
-        LEGAL_SERVICES.find((s) => s.value === data.service_subtype)?.label.en ?? "Legal Service",
+        selected?.label.en ?? "Legal Service",
         data.customer_name,
         data.customer_phone,
         details
       );
       window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
       setIsSuccess(true);
+    } catch {
+      alert(lang === "bn" ? "বুকিং জমা দিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।" : "Failed to submit booking. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

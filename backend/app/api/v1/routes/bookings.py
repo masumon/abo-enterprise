@@ -1,14 +1,19 @@
 from uuid import UUID
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
+from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
 from app.core.security import require_admin
 from app.core.config import settings
 from app.core.email import send_email, booking_notification_html, customer_booking_confirmation_html
+from app.core.invoice import InvoiceService
 from app.models.models import Booking
 from app.schemas.schemas import BookingCreate, BookingOut, BookingStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -29,7 +34,7 @@ async def create_booking(
         **payload.model_dump(),
     )
     db.add(booking)
-    await db.flush()
+    await db.commit()
     await db.refresh(booking)
 
     # Send admin notification
@@ -57,8 +62,19 @@ async def create_booking(
             f"Booking Confirmation #{booking.booking_number} — ABO Enterprise", html,
         )
 
+    invoice_id = None
+    try:
+        invoice = await InvoiceService(db).create_legacy_booking_invoice(booking)
+        invoice_id = str(invoice.id)
+    except Exception as exc:
+        logger.warning("Auto invoice for booking %s failed: %s", booking.booking_number, exc)
+
     return ApiResponse(
-        data={"booking_id": str(booking.id), "booking_number": booking.booking_number},
+        data={
+            "booking_id": str(booking.id),
+            "booking_number": booking.booking_number,
+            "invoice_id": invoice_id,
+        },
         message="Booking created successfully! Check your email for confirmation."
     )
 
@@ -125,4 +141,6 @@ async def update_booking_status(
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
     booking.status = payload.status
+    await db.commit()
+    await db.refresh(booking)
     return ApiResponse(data=BookingOut.model_validate(booking), message="Status updated")

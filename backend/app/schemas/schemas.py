@@ -243,6 +243,7 @@ class BookingCreate(BaseModel):
     customer_phone: str
     customer_email: str | None = None
     details: str | None = None
+    estimated_price: str | None = None
 
     @field_validator("customer_phone")
     @classmethod

@@ -44,7 +44,6 @@ const nextConfig = {
     return [
       { source: "/home", destination: "/", permanent: true },
       { source: "/shop", destination: "/products", permanent: true },
-      { source: "/book", destination: "/services", permanent: true },
     ];
   },
 };

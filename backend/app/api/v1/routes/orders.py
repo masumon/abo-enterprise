@@ -10,8 +10,13 @@ from app.core.database import get_db
 from app.core.security import require_admin
 from app.core.config import settings
 from app.core.email import send_email, order_notification_html, customer_order_confirmation_html
+from app.core.invoice import InvoiceService
 from app.models.models import Order, OrderItem, Product, ActivityLog
 from app.schemas.schemas import OrderCreate, OrderOut, OrderStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/orders", tags=["orders"])
 
@@ -93,6 +98,7 @@ async def create_order(
         select(Order).options(selectinload(Order.items)).where(Order.id == order.id)
     )
     order = result.scalar_one()
+    await db.commit()
 
     # Send admin notification
     if settings.ADMIN_NOTIFY_EMAIL:
@@ -124,8 +130,19 @@ async def create_order(
             f"Order Confirmation #{order.order_number} — ABO Enterprise", html,
         )
 
+    invoice_id = None
+    try:
+        invoice = await InvoiceService(db).create_order_invoice(order_id=order.id)
+        invoice_id = str(invoice.id)
+    except Exception as exc:
+        logger.warning("Auto invoice for order %s failed: %s", order.order_number, exc)
+
     return ApiResponse(
-        data={"order_id": str(order.id), "order_number": order.order_number},
+        data={
+            "order_id": str(order.id),
+            "order_number": order.order_number,
+            "invoice_id": invoice_id,
+        },
         message="Order placed successfully! Check your email for confirmation."
     )
 

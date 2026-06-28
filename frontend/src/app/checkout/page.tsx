@@ -50,7 +50,9 @@ function buildPaymentOptions(settings: Record<string, string>, lang: "en" | "bn"
   const bkash =
     getSettingValue(settings, "bkash_account") || phone;
   const rocket =
-    getSettingValue(settings, "nagad_account") || phone;
+    getSettingValue(settings, "rocket_account") ||
+    getSettingValue(settings, "nagad_account") ||
+    phone;
   const bank =
     getSettingValue(settings, "bank_account") || DEFAULT_BANK_DETAIL;
 
@@ -74,6 +76,7 @@ export default function CheckoutPage() {
   const { settings } = usePublicSettings([
     "bkash_account",
     "nagad_account",
+    "rocket_account",
     "contact_phone",
     "business_phone",
     "bank_account",

@@ -190,6 +190,7 @@ export interface Booking {
   service_subtype?: string;
   details?: string;
   requirements?: string;
+  estimated_price?: string;
   status?: string;
   created_at?: string;
   updated_at?: string;

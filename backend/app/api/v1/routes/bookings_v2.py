@@ -1,4 +1,7 @@
 import uuid
+import random
+import string
+import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +14,7 @@ from app.core.email import (
     booking_notification_html,
     customer_booking_confirmation_html,
 )
+from app.core.invoice import InvoiceService
 from app.models.models import (
     BookingV2,
     Service,
@@ -26,8 +30,8 @@ from app.schemas.schemas import (
     PaginatedMeta,
     ApiResponse,
 )
-import random
-import string
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/service-bookings", tags=["service-bookings"])
 
@@ -103,8 +107,18 @@ async def create_booking(
             html,
         )
 
+    invoice_id = None
+    try:
+        invoice = await InvoiceService(db).create_booking_invoice(booking_id=booking.id)
+        invoice_id = str(invoice.id)
+    except Exception as exc:
+        logger.warning("Auto invoice for booking %s failed: %s", booking.booking_number, exc)
+
+    data = BookingV2Out.model_validate(booking).model_dump()
+    data["invoice_id"] = invoice_id
+
     return ApiResponse(
-        data=BookingV2Out.model_validate(booking).model_dump(),
+        data=data,
         message="Booking created successfully",
     )
 
@@ -155,9 +169,16 @@ async def list_bookings_admin(
     if payment_status:
         query = query.where(BookingV2.payment_status == payment_status)
 
-    # Count total
+    count_conditions = [BookingV2.is_deleted == False]
+    if status:
+        count_conditions.append(BookingV2.status == status)
+    if service_id:
+        count_conditions.append(BookingV2.service_id == service_id)
+    if payment_status:
+        count_conditions.append(BookingV2.payment_status == payment_status)
+
     count_result = await db.execute(
-        select(func.count(BookingV2.id)).where(BookingV2.is_deleted == False)
+        select(func.count(BookingV2.id)).where(and_(*count_conditions))
     )
     total = count_result.scalar()
 
