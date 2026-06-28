@@ -32,6 +32,7 @@ export default function AdminOrdersPage() {
   const [bulkStatus, setBulkStatus] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
   const [csvLoading, setCsvLoading] = useState(false);
+  const [csvDays, setCsvDays] = useState(30);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useToastStore((s) => s.push);
 
@@ -86,7 +87,7 @@ export default function AdminOrdersPage() {
   const handleCsvExport = async () => {
     setCsvLoading(true);
     try {
-      await downloadCsv("/api/v1/admin/bulk/export/orders?days=90", "orders_90days.csv");
+      await downloadCsv(`/api/v1/admin/bulk/export/orders?days=${csvDays}`, `orders_last${csvDays}days.csv`);
     } catch {
       toast("error", "CSV export failed");
     } finally {
@@ -146,15 +147,28 @@ export default function AdminOrdersPage() {
             {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
           </select>
           {/* CSV export */}
-          <button
-            onClick={handleCsvExport}
-            disabled={csvLoading}
-            className="btn btn-outline btn-sm gap-1.5"
-            title="Export last 90 days to CSV"
-          >
-            {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            CSV
-          </button>
+          <div className="flex items-center gap-1">
+            <select
+              value={csvDays}
+              onChange={(e) => setCsvDays(Number(e.target.value))}
+              className="input w-auto text-sm py-1.5 px-2"
+              title="Export range"
+            >
+              <option value={7}>7d</option>
+              <option value={30}>30d</option>
+              <option value={90}>90d</option>
+              <option value={365}>1yr</option>
+            </select>
+            <button
+              onClick={handleCsvExport}
+              disabled={csvLoading}
+              className="btn btn-outline btn-sm gap-1.5"
+              title={`Export last ${csvDays} days to CSV`}
+            >
+              {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              CSV
+            </button>
+          </div>
         </div>
       </div>
 
@@ -286,7 +300,13 @@ export default function AdminOrdersPage() {
                 </div>
 
                 <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                  <h3 className="font-semibold text-gray-900 text-sm">Customer Info</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 text-sm">Customer Info</h3>
+                    <div className="flex gap-2">
+                      <a href={`tel:${detail.customer_phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>
+                      {detail.customer_email && <a href={`mailto:${detail.customer_email}`} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</a>}
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div><span className="text-gray-500">Name</span><p className="font-medium">{detail.customer_name}</p></div>
                     <div><span className="text-gray-500">Phone</span><p className="font-medium">{detail.customer_phone}</p></div>

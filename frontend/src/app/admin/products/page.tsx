@@ -47,6 +47,7 @@ const schema = z.object({
   delivery_info: z.string().optional(),
   is_flash_sale: z.boolean().optional(),
   flash_sale_price: z.coerce.number().optional(),
+  flash_sale_ends_at: z.string().optional(),
   low_stock_threshold: z.coerce.number().min(0).optional(),
   is_best_seller: z.boolean().optional(),
 });
@@ -144,6 +145,9 @@ export default function AdminProductsPage() {
       delivery_info: p.delivery_info ?? "",
       is_flash_sale: p.is_flash_sale ?? false,
       flash_sale_price: p.flash_sale_price ?? undefined,
+      flash_sale_ends_at: p.flash_sale_ends_at
+        ? new Date(p.flash_sale_ends_at).toISOString().slice(0, 16)
+        : "",
       low_stock_threshold: p.low_stock_threshold ?? 5,
       is_best_seller: p.is_best_seller ?? false,
     });
@@ -157,11 +161,12 @@ export default function AdminProductsPage() {
   const onSubmit = async (data: FormData) => {
     setSaving(true);
     try {
-      const { tags: tagsStr, ...rest } = data;
+      const { tags: tagsStr, flash_sale_ends_at, ...rest } = data;
       const payload: Partial<Product> = {
         ...rest,
         tags: tagsStr ? tagsStr.split(",").map((t) => t.trim()).filter(Boolean) : [],
         images: galleryImages.filter(Boolean),
+        flash_sale_ends_at: flash_sale_ends_at ? new Date(flash_sale_ends_at).toISOString() : null,
       } as Partial<Product>;
       if (editing) {
         await productsApi.update(editing.id!, payload);
@@ -461,6 +466,10 @@ export default function AdminProductsPage() {
                     <div>
                       <label className="block text-xs font-medium text-gray-600 mb-1">Flash Sale Price (৳)</label>
                       <input {...register("flash_sale_price")} type="number" className="input" placeholder="Leave blank if no flash sale" />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Flash Sale Ends At</label>
+                      <input {...register("flash_sale_ends_at")} type="datetime-local" className="input text-sm" />
                     </div>
                   </div>
                 )}

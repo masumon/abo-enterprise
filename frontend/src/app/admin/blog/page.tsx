@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { adminBlogApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -9,6 +9,7 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
 
 const CATEGORIES = ["technology", "business", "tips", "news", "case-study", "announcement"];
+const DRAFT_KEY = "admin_blog_new_draft";
 
 const EMPTY_FORM: Partial<BlogPost> = {
   slug: "",
@@ -46,6 +47,7 @@ export default function AdminBlogPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [seoOpen, setSeoOpen] = useState(false);
   const toast = useToastStore((s) => s.push);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -62,8 +64,28 @@ export default function AdminBlogPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (!isNew || !editing) return;
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+    autoSaveTimer.current = setTimeout(() => {
+      try { localStorage.setItem(DRAFT_KEY, JSON.stringify(editing)); } catch { /* storage full */ }
+    }, 1000);
+    return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
+  }, [editing, isNew]);
+
   const openNew = () => {
-    setEditing({ ...EMPTY_FORM });
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Partial<BlogPost>;
+        setEditing(parsed);
+        toast("info", "Draft restored from last session");
+      } else {
+        setEditing({ ...EMPTY_FORM });
+      }
+    } catch {
+      setEditing({ ...EMPTY_FORM });
+    }
     setIsNew(true);
     setSeoOpen(false);
   };
@@ -74,7 +96,10 @@ export default function AdminBlogPage() {
     setSeoOpen(false);
   };
 
-  const closeEditor = () => {
+  const closeEditor = (discardDraft = false) => {
+    if (discardDraft && isNew) {
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
+    }
     setEditing(null);
     setIsNew(false);
   };
@@ -98,6 +123,7 @@ export default function AdminBlogPage() {
     try {
       if (isNew) {
         await adminBlogApi.create(editing);
+        try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
         toast("success", "Post created successfully");
       } else {
         await adminBlogApi.update(editing.id!, editing);
@@ -250,7 +276,7 @@ export default function AdminBlogPage() {
               <h2 className="text-lg font-semibold text-gray-900">
                 {isNew ? "New Post" : "Edit Post"}
               </h2>
-              <button onClick={closeEditor} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => closeEditor(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -456,7 +482,10 @@ export default function AdminBlogPage() {
                 }
               </div>
               <div className="flex items-center gap-2">
-                <button onClick={closeEditor} className="btn btn-outline btn-sm">Cancel</button>
+                {isNew && (
+                  <button onClick={() => closeEditor(true)} className="btn btn-outline btn-sm text-red-500 border-red-200 hover:bg-red-50">Discard Draft</button>
+                )}
+                <button onClick={() => closeEditor(false)} className="btn btn-outline btn-sm">Cancel</button>
                 <button
                   onClick={handleSave}
                   disabled={saving}

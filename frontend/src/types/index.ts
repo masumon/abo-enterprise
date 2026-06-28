@@ -36,6 +36,7 @@ export interface Product {
   delivery_info?: string;
   is_flash_sale?: boolean;
   flash_sale_price?: number;
+  flash_sale_ends_at?: string | null;
   low_stock_threshold?: number;
   is_best_seller?: boolean;
   seo_title?: string;

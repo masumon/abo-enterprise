@@ -411,6 +411,12 @@ export default function AdminLeadsPage() {
                       <p className="text-sm text-gray-800 whitespace-pre-wrap">{detail.requirements}</p>
                     </div>
                   )}
+                  {(detail as { reason_lost?: string }).reason_lost && (
+                    <div className="pt-3 border-t border-red-100 mt-3">
+                      <p className="text-red-500 text-xs mb-1 font-medium">Reason Lost</p>
+                      <p className="text-sm text-red-800 bg-red-50 rounded-lg px-3 py-2 whitespace-pre-wrap">{(detail as { reason_lost?: string }).reason_lost}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : null}
@@ -481,6 +487,12 @@ export default function AdminLeadsPage() {
                   <div className="pt-3 border-t border-gray-200 mt-3">
                     <p className="text-gray-500 text-xs mb-1">Requirements</p>
                     <p className="text-sm text-gray-800 whitespace-pre-wrap">{detailV2.requirements}</p>
+                  </div>
+                )}
+                {(detailV2 as unknown as { reason_lost?: string }).reason_lost && (
+                  <div className="pt-3 border-t border-red-100 mt-3">
+                    <p className="text-red-500 text-xs mb-1 font-medium">Reason Lost</p>
+                    <p className="text-sm text-red-800 bg-red-50 rounded-lg px-3 py-2 whitespace-pre-wrap">{(detailV2 as unknown as { reason_lost?: string }).reason_lost}</p>
                   </div>
                 )}
               </div>
