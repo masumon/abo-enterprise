@@ -220,10 +220,24 @@ export default function AdminSettingsPage() {
     setValues((prev) => ({ ...prev, [key]: val }));
   };
 
+  const validateUrls = (section: Section): string | null => {
+    for (const f of section.fields) {
+      if (f.type === "url" && !f.upload) {
+        const val = (values[f.key] ?? "").trim();
+        if (!val) continue;
+        try { new URL(val); } catch { return `${f.label}: invalid URL`; }
+      }
+    }
+    return null;
+  };
+
   const handleSaveAll = async () => {
     setSaving("__all__");
     let anyFailed = false;
     for (const section of SECTIONS) {
+      const urlErr = validateUrls(section);
+      if (urlErr) { toast("error", urlErr); anyFailed = true; continue; }
+
       try {
         const items = section.fields.map((f) => ({
           key: f.key,
@@ -247,6 +261,8 @@ export default function AdminSettingsPage() {
   const handleSave = async (sectionId: string) => {
     const section = SECTIONS.find((s) => s.id === sectionId);
     if (!section) return;
+    const urlErr = validateUrls(section);
+    if (urlErr) { toast("error", urlErr); return; }
 
     setSaving(sectionId);
     try {

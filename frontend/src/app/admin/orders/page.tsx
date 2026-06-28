@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Loader2, ShoppingCart, ChevronDown, X, Package, Search, Download, CheckSquare, Square, ChevronRight } from "lucide-react";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { ordersApi, downloadCsv } from "@/lib/api";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice } from "@/lib/utils";
@@ -33,6 +34,7 @@ export default function AdminOrdersPage() {
   const [bulkLoading, setBulkLoading] = useState(false);
   const [csvLoading, setCsvLoading] = useState(false);
   const [csvDays, setCsvDays] = useState(30);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useToastStore((s) => s.push);
 
@@ -68,8 +70,17 @@ export default function AdminOrdersPage() {
     }
   };
 
-  const handleBulkUpdate = async () => {
+  const handleBulkUpdate = () => {
     if (!bulkStatus || selected.size === 0) return;
+    setConfirmState({
+      title: `Update ${selected.size} order${selected.size > 1 ? "s" : ""} to "${bulkStatus}"?`,
+      message: `This will change the status of ${selected.size} selected order${selected.size > 1 ? "s" : ""}. This action cannot be undone.`,
+      action: doBulkUpdate,
+    });
+  };
+
+  const doBulkUpdate = async () => {
+    setConfirmState(null);
     setBulkLoading(true);
     try {
       const r = await ordersApi.bulkUpdateStatus(Array.from(selected), bulkStatus);
@@ -355,6 +366,16 @@ export default function AdminOrdersPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ""}
+        message={confirmState?.message ?? ""}
+        confirmLabel="Update"
+        variant="warning"
+        onConfirm={() => confirmState?.action()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }
