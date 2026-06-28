@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Loader2, Briefcase, ChevronDown, X, Search, Download, Trash2 } from "lucide-react";
-import { bookingsApi, serviceBookingsAdminApi, downloadCsv } from "@/lib/api";
+import { bookingsApi, serviceBookingsAdminApi, downloadCsv, downloadPdf } from "@/lib/api";
 import type { Booking, BookingV2 } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
@@ -48,6 +48,7 @@ export default function AdminBookingsPage() {
 
   const toast = useToastStore((s) => s.push);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
+  const [pdfLoading, setPdfLoading] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -88,6 +89,21 @@ export default function AdminBookingsPage() {
       toast("error", "CSV export failed");
     } finally {
       setCsvLoading(false);
+    }
+  };
+
+  const handleDownloadPdf = async (id: string, bookingNumber: string, version: "v1" | "v2") => {
+    setPdfLoading(id);
+    try {
+      const path =
+        version === "v2"
+          ? `/api/v1/invoices/admin/bookings-v2/${id}/pdf`
+          : `/api/v1/invoices/admin/bookings-v1/${id}/pdf`;
+      await downloadPdf(path, `receipt-${bookingNumber}.pdf`);
+    } catch {
+      toast("error", "PDF download failed");
+    } finally {
+      setPdfLoading(null);
     }
   };
 
@@ -391,16 +407,27 @@ export default function AdminBookingsPage() {
               <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
             ) : detail ? (
               <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <StatusBadge status={detail.status ?? "pending"} />
-                  <select
-                    value={detail.status ?? "pending"}
-                    disabled={updatingId === detail.id}
-                    onChange={(e) => updateStatus(detail.id!, e.target.value)}
-                    className="input w-auto text-sm"
-                  >
-                    {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadPdf(detail.id!, detail.booking_number, "v1")}
+                      disabled={pdfLoading === detail.id}
+                      className="btn btn-outline btn-sm gap-1.5"
+                    >
+                      {pdfLoading === detail.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                      Receipt PDF
+                    </button>
+                    <select
+                      value={detail.status ?? "pending"}
+                      disabled={updatingId === detail.id}
+                      onChange={(e) => updateStatus(detail.id!, e.target.value)}
+                      className="input w-auto text-sm"
+                    >
+                      {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="bg-gray-50 rounded-xl p-4 space-y-2">
@@ -445,16 +472,27 @@ export default function AdminBookingsPage() {
               <button onClick={() => setDetailV2(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <StatusBadge status={detailV2.status} />
-                <select
-                  value={detailV2.status}
-                  disabled={updatingIdV2 === detailV2.id}
-                  onChange={(e) => updateStatusV2(detailV2.id, e.target.value)}
-                  className="input w-auto text-sm"
-                >
-                  {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-                </select>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadPdf(detailV2.id, detailV2.booking_number, "v2")}
+                    disabled={pdfLoading === detailV2.id}
+                    className="btn btn-outline btn-sm gap-1.5"
+                  >
+                    {pdfLoading === detailV2.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                    Receipt PDF
+                  </button>
+                  <select
+                    value={detailV2.status}
+                    disabled={updatingIdV2 === detailV2.id}
+                    onChange={(e) => updateStatusV2(detailV2.id, e.target.value)}
+                    className="input w-auto text-sm"
+                  >
+                    {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                  </select>
+                </div>
               </div>
 
               <div className="bg-gray-50 rounded-xl p-4">

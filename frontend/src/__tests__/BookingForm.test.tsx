@@ -1,15 +1,15 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import BookingForm from "@/components/booking/BookingForm";
-import { bookingsApi } from "@/lib/api";
+import { serviceBookingsApi } from "@/lib/api";
 
 jest.mock("@/lib/api", () => ({
-  bookingsApi: {
+  serviceBookingsApi: {
     create: jest.fn(),
   },
 }));
 
-const mockCreate = bookingsApi.create as jest.Mock;
+const mockCreate = serviceBookingsApi.create as jest.Mock;
 
 describe("Booking Form", () => {
   const mockService = {

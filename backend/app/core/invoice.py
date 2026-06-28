@@ -5,9 +5,11 @@ from io import BytesIO
 from typing import Optional, List, Dict, Any
 import random
 import string
+import re
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.models.models import Invoice, Order, BookingV2
+from sqlalchemy.orm import selectinload
+from app.models.models import Invoice, Order, BookingV2, Booking
 
 
 def generate_invoice_number():
@@ -23,6 +25,46 @@ class InvoiceService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    @staticmethod
+    def _parse_price(value: str | None) -> float:
+        if not value:
+            return 0.0
+        match = re.search(r"[\d,.]+", value.replace(",", ""))
+        if not match:
+            return 0.0
+        try:
+            return float(match.group())
+        except ValueError:
+            return 0.0
+
+    async def get_by_booking_v2_id(self, booking_id: uuid.UUID) -> Invoice | None:
+        result = await self.db.execute(
+            select(Invoice).where(
+                Invoice.booking_id == booking_id,
+                Invoice.is_deleted == False,  # noqa: E712
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_legacy_booking_id(self, booking_id: uuid.UUID) -> Invoice | None:
+        marker = f"legacy_booking_id:{booking_id}"
+        result = await self.db.execute(
+            select(Invoice).where(
+                Invoice.notes.ilike(f"%{marker}%"),
+                Invoice.is_deleted == False,  # noqa: E712
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_by_order_id(self, order_id: uuid.UUID) -> Invoice | None:
+        result = await self.db.execute(
+            select(Invoice).where(
+                Invoice.order_id == order_id,
+                Invoice.is_deleted == False,  # noqa: E712
+            )
+        )
+        return result.scalar_one_or_none()
+
     async def create_order_invoice(
         self,
         order_id: uuid.UUID,
@@ -30,20 +72,18 @@ class InvoiceService:
         notes: Optional[str] = None,
     ) -> Invoice:
         """Create invoice for an order"""
-        # Get order
-        result = await self.db.execute(select(Order).where(Order.id == order_id))
+        existing = await self.get_by_order_id(order_id)
+        if existing:
+            return existing
+
+        result = await self.db.execute(
+            select(Order).options(selectinload(Order.items)).where(Order.id == order_id)
+        )
         order = result.scalar_one_or_none()
 
         if not order:
             raise ValueError("Order not found")
 
-        # Get order items
-        result = await self.db.execute(
-            select(Order).where(Order.id == order_id)
-        )
-        order = result.scalar_one_or_none()
-
-        # Prepare items
         items = []
         for item in order.items:
             items.append({
@@ -78,6 +118,51 @@ class InvoiceService:
 
         return invoice
 
+    async def create_legacy_booking_invoice(
+        self,
+        booking: Booking,
+        payment_method: Optional[str] = None,
+    ) -> Invoice:
+        """Create invoice/receipt for a legacy v1 booking."""
+        existing = await self.get_by_legacy_booking_id(booking.id)
+        if existing:
+            return existing
+
+        service_label = booking.service_type.replace("_", " ").title()
+        if booking.service_subtype:
+            service_label = f"{service_label} — {booking.service_subtype.replace('_', ' ').title()}"
+
+        amount = self._parse_price(booking.estimated_price)
+        items = [{
+            "name": service_label,
+            "quantity": 1,
+            "price": amount,
+            "subtotal": amount,
+        }]
+
+        invoice = Invoice(
+            invoice_number=generate_invoice_number(),
+            customer_name=booking.customer_name,
+            customer_email=booking.customer_email,
+            customer_phone=booking.customer_phone,
+            items=items,
+            subtotal=amount,
+            tax=0,
+            total=amount,
+            payment_method=payment_method or "pending",
+            payment_status="pending",
+            issued_date=datetime.now(timezone.utc).date(),
+            notes=(
+                f"Service booking receipt for {booking.booking_number}. "
+                f"legacy_booking_id:{booking.id}"
+            ),
+        )
+
+        self.db.add(invoice)
+        await self.db.commit()
+        await self.db.refresh(invoice)
+        return invoice
+
     async def create_booking_invoice(
         self,
         booking_id: uuid.UUID,
@@ -85,7 +170,10 @@ class InvoiceService:
         notes: Optional[str] = None,
     ) -> Invoice:
         """Create invoice for a booking"""
-        # Get booking
+        existing = await self.get_by_booking_v2_id(booking_id)
+        if existing:
+            return existing
+
         result = await self.db.execute(
             select(BookingV2).where(BookingV2.id == booking_id)
         )
@@ -120,7 +208,7 @@ class InvoiceService:
             payment_status="completed" if booking.payment_status == "completed" else "pending",
             issued_date=datetime.now(timezone.utc).date(),
             due_date=None,
-            notes=notes,
+            notes=f"Service booking receipt for {booking.booking_number}.",
         )
 
         self.db.add(invoice)

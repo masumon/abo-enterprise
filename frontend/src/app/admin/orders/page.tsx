@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Loader2, ShoppingCart, ChevronDown, X, Package, Search, Download, CheckSquare, Square, ChevronRight } from "lucide-react";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
-import { ordersApi, downloadCsv } from "@/lib/api";
+import { ordersApi, downloadCsv, downloadPdf } from "@/lib/api";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
@@ -35,6 +35,7 @@ export default function AdminOrdersPage() {
   const [csvLoading, setCsvLoading] = useState(false);
   const [csvDays, setCsvDays] = useState(30);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
+  const [pdfLoading, setPdfLoading] = useState<string | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useToastStore((s) => s.push);
 
@@ -103,6 +104,20 @@ export default function AdminOrdersPage() {
       toast("error", "CSV export failed");
     } finally {
       setCsvLoading(false);
+    }
+  };
+
+  const handleDownloadPdf = async (order: AdminOrder) => {
+    setPdfLoading(order.id);
+    try {
+      await downloadPdf(
+        `/api/v1/invoices/admin/orders/${order.id}/pdf`,
+        `invoice-${order.order_number}.pdf`
+      );
+    } catch {
+      toast("error", "PDF download failed");
+    } finally {
+      setPdfLoading(null);
     }
   };
 
@@ -300,16 +315,27 @@ export default function AdminOrdersPage() {
               <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
             ) : detail ? (
               <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <StatusBadge status={detail.order_status} />
-                  <select
-                    value={detail.order_status}
-                    disabled={updatingId === detail.id}
-                    onChange={(e) => updateStatus(detail.id, e.target.value)}
-                    className="input w-auto text-sm"
-                  >
-                    {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadPdf(detail)}
+                      disabled={pdfLoading === detail.id}
+                      className="btn btn-outline btn-sm gap-1.5"
+                    >
+                      {pdfLoading === detail.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                      Invoice PDF
+                    </button>
+                    <select
+                      value={detail.order_status}
+                      disabled={updatingId === detail.id}
+                      onChange={(e) => updateStatus(detail.id, e.target.value)}
+                      className="input w-auto text-sm"
+                    >
+                      {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
                 </div>
 
                 <div className="bg-gray-50 rounded-xl p-4 space-y-2">

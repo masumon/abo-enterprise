@@ -2,8 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { Loader2, FileText, X, Trash2, Download, ChevronDown, Plus } from "lucide-react";
-import api, { invoicesAdminApi } from "@/lib/api";
-import { getApiBaseUrl } from "@/lib/apiBase";
+import api, { invoicesAdminApi, downloadPdf } from "@/lib/api";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
@@ -52,6 +51,7 @@ export default function AdminInvoicesPage() {
   const [createItems, setCreateItems] = useState([{ name: "", qty: 1, price: 0 }]);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,6 +112,20 @@ export default function AdminInvoicesPage() {
     });
   };
 
+  const handleDownloadPdf = async (invoice: AdminInvoice) => {
+    setPdfLoading(invoice.id);
+    try {
+      await downloadPdf(
+        `/api/v1/invoices/${invoice.id}/pdf`,
+        `${invoice.invoice_number}.pdf`
+      );
+    } catch {
+      toast("error", "PDF download failed");
+    } finally {
+      setPdfLoading(null);
+    }
+  };
+
   const handleCreate = async () => {
     if (!createForm.customer_name.trim()) {
       toast("error", "Customer name is required"); return;
@@ -151,8 +165,6 @@ export default function AdminInvoicesPage() {
       setCreating(false);
     }
   };
-
-  const apiBase = getApiBaseUrl();
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -291,15 +303,19 @@ export default function AdminInvoicesPage() {
                   </select>
                   <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
-                <a
-                  href={`${apiBase}/api/v1/invoices/${detail.id}/pdf`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                <button
+                  type="button"
+                  onClick={() => handleDownloadPdf(detail)}
+                  disabled={pdfLoading === detail.id}
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  {pdfLoading === detail.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Download className="w-3.5 h-3.5" />
+                  )}
                   PDF
-                </a>
+                </button>
                 <button
                   onClick={() => handleDelete(detail)}
                   disabled={deleting}

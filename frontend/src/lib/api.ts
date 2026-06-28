@@ -122,6 +122,26 @@ export const serviceBookingsAdminApi = {
     api.delete<ApiResponse<null>>(`/api/v1/service-bookings/admin/bookings/${id}`),
 };
 
+export const serviceBookingsApi = {
+  create: (data: {
+    service_id: string;
+    service_tier?: string;
+    customer_name: string;
+    customer_phone: string;
+    customer_email?: string;
+    customer_company?: string;
+    booking_date?: string;
+    pricing_type: string;
+    quoted_price?: number;
+    details?: string;
+    requirements?: string;
+  }) =>
+    api.post<ApiResponse<BookingV2 & { invoice_id?: string | null }>>("/api/v1/service-bookings", data),
+
+  get: (id: string) =>
+    api.get<ApiResponse<BookingV2>>(`/api/v1/service-bookings/${id}`),
+};
+
 export const serviceLeadsApi = {
   create: (data: {
     lead_type: string;
@@ -198,6 +218,21 @@ export async function downloadCsv(path: string, filename: string): Promise<void>
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export async function downloadPdf(path: string, filename: string): Promise<void> {
+  const token = getAdminToken();
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new Error(`PDF download failed: ${res.statusText}`);
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename.endsWith(".pdf") ? filename : `${filename}.pdf`;
   a.click();
   URL.revokeObjectURL(url);
 }
