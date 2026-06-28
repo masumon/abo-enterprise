@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAdminPolling } from "@/hooks/useAdminPolling";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import ToastProvider from "@/components/ui/ToastProvider";
 import { Loader2, Menu } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -64,6 +65,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
         <main className="min-h-screen p-4 md:p-6 lg:p-8">{children}</main>
       </div>
+      <ToastProvider />
     </div>
   );
 }

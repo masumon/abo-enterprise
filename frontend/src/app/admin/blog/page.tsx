@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
 import { adminBlogApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
 import type { BlogPost } from "@/types";
@@ -53,6 +53,8 @@ export default function AdminBlogPage() {
       const r = await adminBlogApi.list({ status: statusFilter || undefined, page, per_page: 20 });
       setPosts((r.data.data ?? []) as unknown as BlogPost[]);
       setTotal(r.data.meta?.total ?? 0);
+    } catch {
+      toast("error", "Failed to load posts. Check your connection.");
     } finally {
       setLoading(false);
     }
@@ -96,15 +98,16 @@ export default function AdminBlogPage() {
     try {
       if (isNew) {
         await adminBlogApi.create(editing);
-        toast("success", "Post created");
+        toast("success", "Post created successfully");
       } else {
         await adminBlogApi.update(editing.id!, editing);
-        toast("success", "Post updated");
+        toast("success", "Post updated successfully");
       }
       closeEditor();
       await load();
-    } catch {
-      toast("error", isNew ? "Failed to create post" : "Failed to update post");
+    } catch (err: unknown) {
+      const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+      toast("error", detail ?? (isNew ? "Failed to create post" : "Failed to update post"));
     } finally {
       setSaving(false);
     }
@@ -195,6 +198,17 @@ export default function AdminBlogPage() {
                   <td className="px-5 py-3"><StatusBadge status={p.status} /></td>
                   <td className="px-5 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
+                      {p.status === "published" && (
+                        <a
+                          href={`/blog/${p.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="View on site"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
                       <button
                         onClick={() => openEdit(p)}
                         className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
