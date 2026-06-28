@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp, ExternalLink, Globe } from "lucide-react";
 import { adminBlogApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
 import type { BlogPost } from "@/types";
@@ -26,6 +26,19 @@ const EMPTY_FORM: Partial<BlogPost> = {
   author_name: "ABO Enterprise",
 };
 
+async function translateText(text: string, from = "bn", to = "en"): Promise<string> {
+  if (!text.trim()) return "";
+  try {
+    const res = await fetch(
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`
+    );
+    const data = await res.json();
+    return (data?.responseData?.translatedText as string) ?? text;
+  } catch {
+    return text;
+  }
+}
+
 function slugify(text: string) {
   return text
     .toLowerCase()
@@ -46,6 +59,7 @@ export default function AdminBlogPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [seoOpen, setSeoOpen] = useState(false);
+  const [translating, setTranslating] = useState<string | null>(null);
   const toast = useToastStore((s) => s.push);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -111,6 +125,40 @@ export default function AdminBlogPage() {
       if (isNew || !prev.slug) updates.slug = slugify(v);
       return { ...prev, ...updates };
     });
+  };
+
+  const handleTranslate = async (field: "title" | "excerpt" | "content" | "all") => {
+    if (!editing) return;
+    setTranslating(field);
+    try {
+      const updates: Partial<BlogPost> = {};
+      if (field === "title" || field === "all") {
+        const bn = editing.title_bn?.trim();
+        if (bn) {
+          const translated = await translateText(bn);
+          updates.title_en = translated;
+          if (isNew || !editing.slug) updates.slug = slugify(translated);
+        }
+      }
+      if (field === "excerpt" || field === "all") {
+        const bn = editing.excerpt_bn?.trim();
+        if (bn) updates.excerpt_en = await translateText(bn);
+      }
+      if (field === "content" || field === "all") {
+        const bn = editing.content_bn?.trim();
+        if (bn) updates.content_en = await translateText(bn);
+      }
+      if (Object.keys(updates).length > 0) {
+        setEditing(prev => prev ? { ...prev, ...updates } : prev);
+        toast("success", "Translation complete");
+      } else {
+        toast("info", "Nothing to translate — fill Bengali fields first");
+      }
+    } catch {
+      toast("error", "Translation failed. Try again.");
+    } finally {
+      setTranslating(null);
+    }
   };
 
   const handleSave = async () => {
@@ -322,28 +370,57 @@ export default function AdminBlogPage() {
                 </div>
               </div>
 
+              {/* Translate All button */}
+              <div className="flex items-center justify-between p-3 bg-brand-50 border border-brand-100 rounded-xl">
+                <div className="flex items-center gap-2 text-xs text-brand-700">
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Write in Bengali — auto-translate to English</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleTranslate("all")}
+                  disabled={translating !== null}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-brand-600 hover:bg-brand-700 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {translating === "all" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Globe className="w-3 h-3" />}
+                  Translate All
+                </button>
+              </div>
+
+              {/* Title BN — primary */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Title (বাংলা)</label>
+                  <button
+                    type="button"
+                    onClick={() => handleTranslate("title")}
+                    disabled={!editing.title_bn?.trim() || translating !== null}
+                    className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 disabled:opacity-40"
+                  >
+                    {translating === "title" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Globe className="w-3 h-3" />}
+                    → English
+                  </button>
+                </div>
+                <input
+                  value={editing.title_bn ?? ""}
+                  onChange={e => setEditing(prev => prev ? { ...prev, title_bn: e.target.value } : prev)}
+                  placeholder="বাংলায় শিরোনাম লিখুন"
+                  className="input w-full"
+                  dir="auto"
+                />
+              </div>
+
               {/* Title EN */}
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                   Title (English) <span className="text-red-400">*</span>
+                  <span className="ml-1 text-gray-400 font-normal normal-case">(auto-filled on translate)</span>
                 </label>
                 <input
                   value={editing.title_en ?? ""}
                   onChange={e => handleTitleChange(e.target.value)}
                   placeholder="Post title in English"
                   className="input w-full"
-                />
-              </div>
-
-              {/* Title BN */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Title (বাংলা)</label>
-                <input
-                  value={editing.title_bn ?? ""}
-                  onChange={e => setEditing(prev => prev ? { ...prev, title_bn: e.target.value } : prev)}
-                  placeholder="বাংলায় শিরোনাম"
-                  className="input w-full"
-                  dir="auto"
                 />
               </div>
 
@@ -392,9 +469,36 @@ export default function AdminBlogPage() {
                 folder="abo-enterprise/blog"
               />
 
+              {/* Excerpt BN — primary */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Excerpt (বাংলা)</label>
+                  <button
+                    type="button"
+                    onClick={() => handleTranslate("excerpt")}
+                    disabled={!editing.excerpt_bn?.trim() || translating !== null}
+                    className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 disabled:opacity-40"
+                  >
+                    {translating === "excerpt" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Globe className="w-3 h-3" />}
+                    → English
+                  </button>
+                </div>
+                <textarea
+                  value={editing.excerpt_bn ?? ""}
+                  onChange={e => setEditing(prev => prev ? { ...prev, excerpt_bn: e.target.value } : prev)}
+                  placeholder="সংক্ষিপ্ত বিবরণ লিখুন..."
+                  rows={2}
+                  className="input w-full resize-none text-sm"
+                  dir="auto"
+                />
+              </div>
+
               {/* Excerpt EN */}
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Excerpt (English)</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                  Excerpt (English)
+                  <span className="ml-1 text-gray-400 font-normal normal-case">(auto-filled on translate)</span>
+                </label>
                 <textarea
                   value={editing.excerpt_en ?? ""}
                   onChange={e => setEditing(prev => prev ? { ...prev, excerpt_en: e.target.value } : prev)}
@@ -404,15 +508,28 @@ export default function AdminBlogPage() {
                 />
               </div>
 
-              {/* Excerpt BN */}
+              {/* Content BN — primary */}
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Excerpt (বাংলা)</label>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Content (বাংলা)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleTranslate("content")}
+                    disabled={!editing.content_bn?.trim() || translating !== null}
+                    className="inline-flex items-center gap-1 text-xs text-brand-600 hover:text-brand-700 disabled:opacity-40"
+                  >
+                    {translating === "content" ? <Loader2 className="w-3 h-3 animate-spin" /> : <Globe className="w-3 h-3" />}
+                    → English
+                  </button>
+                </div>
                 <textarea
-                  value={editing.excerpt_bn ?? ""}
-                  onChange={e => setEditing(prev => prev ? { ...prev, excerpt_bn: e.target.value } : prev)}
-                  placeholder="সংক্ষিপ্ত বিবরণ..."
-                  rows={2}
-                  className="input w-full resize-none text-sm"
+                  value={editing.content_bn ?? ""}
+                  onChange={e => setEditing(prev => prev ? { ...prev, content_bn: e.target.value } : prev)}
+                  placeholder="বাংলায় পূর্ণ নিবন্ধ লিখুন..."
+                  rows={10}
+                  className="input w-full resize-y text-sm leading-relaxed"
                   dir="auto"
                 />
               </div>
@@ -421,26 +538,14 @@ export default function AdminBlogPage() {
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                   Content (English) <span className="text-red-400">*</span>
+                  <span className="ml-1 text-gray-400 font-normal normal-case">(auto-filled on translate)</span>
                 </label>
                 <textarea
                   value={editing.content_en ?? ""}
                   onChange={e => setEditing(prev => prev ? { ...prev, content_en: e.target.value } : prev)}
-                  placeholder="Full article content (Markdown or plain text)..."
-                  rows={10}
-                  className="input w-full resize-y text-sm font-mono leading-relaxed"
-                />
-              </div>
-
-              {/* Content BN */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Content (বাংলা)</label>
-                <textarea
-                  value={editing.content_bn ?? ""}
-                  onChange={e => setEditing(prev => prev ? { ...prev, content_bn: e.target.value } : prev)}
-                  placeholder="পূর্ণ নিবন্ধ বিষয়বস্তু..."
+                  placeholder="Full article content (auto-translated or manual)..."
                   rows={8}
-                  className="input w-full resize-y text-sm leading-relaxed"
-                  dir="auto"
+                  className="input w-full resize-y text-sm font-mono leading-relaxed"
                 />
               </div>
 

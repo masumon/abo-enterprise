@@ -5,6 +5,7 @@ import type { BlogPost } from "@/types";
 
 import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import BlogPostActions from "./BlogPostActions";
 
 const API_BASE = getApiBaseUrl();
 
@@ -116,11 +117,12 @@ export default async function BlogPostPage({
       <main className="min-h-screen">
         {/* Hero */}
         {post.featured_image_url ? (
-          <div className="w-full aspect-[2/1] max-h-[480px] overflow-hidden bg-gray-100">
+          <div className="w-full overflow-hidden bg-gray-900" style={{ maxHeight: "480px" }}>
             <img
               src={post.featured_image_url}
               alt={post.title_en}
-              className="w-full h-full object-cover"
+              className="w-full object-cover object-top"
+              style={{ maxHeight: "480px" }}
             />
           </div>
         ) : (
@@ -150,16 +152,8 @@ export default async function BlogPostPage({
             </span>
           )}
 
-          {/* Title */}
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-4">
-            {post.title_en}
-          </h1>
-          {post.title_bn && (
-            <p className="text-xl text-gray-600 mb-4">{post.title_bn}</p>
-          )}
-
           {/* Meta */}
-          <div className="flex items-center gap-4 text-sm text-gray-400 mb-8 pb-6 border-b border-gray-100">
+          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-6 pb-6 border-b border-gray-100">
             <span className="font-medium text-gray-600">{post.author_name}</span>
             <span>·</span>
             <time dateTime={post.published_at ?? post.created_at}>
@@ -179,17 +173,13 @@ export default async function BlogPostPage({
             )}
           </div>
 
-          {/* Content */}
-          <article className="prose prose-gray max-w-none leading-relaxed whitespace-pre-line text-gray-700">
-            {post.content_en}
-          </article>
-
-          {/* Bengali content */}
-          {post.content_bn && (
-            <article className="mt-10 prose prose-gray max-w-none leading-relaxed whitespace-pre-line text-gray-700 border-t border-gray-100 pt-8">
-              {post.content_bn}
-            </article>
-          )}
+          {/* Title + Content + Print/Translate (client interactive) */}
+          <BlogPostActions
+            titleEn={post.title_en}
+            titleBn={post.title_bn ?? null}
+            contentEn={post.content_en}
+            contentBn={post.content_bn ?? null}
+          />
 
           {/* Back link */}
           <div className="mt-12 pt-6 border-t border-gray-100">
