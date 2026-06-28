@@ -37,9 +37,13 @@ async def list_posts(
     if featured is not None:
         query = query.where(BlogPost.is_featured == featured)
 
-    count_result = await db.execute(
-        select(func.count(BlogPost.id)).where(base_filter)
-    )
+    count_query = select(func.count(BlogPost.id)).where(base_filter)
+    if category:
+        count_query = count_query.where(BlogPost.category == category)
+    if featured is not None:
+        count_query = count_query.where(BlogPost.is_featured == featured)
+
+    count_result = await db.execute(count_query)
     total = count_result.scalar() or 0
     total_pages = max(1, (total + per_page - 1) // per_page)
 

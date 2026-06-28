@@ -10,6 +10,7 @@ from app.core.config import settings
 from app.core.exceptions import ABOException, to_http_exception
 from app.core.security import require_admin
 from app.core.bootstrap import bootstrap_admin
+from app.core.content_bootstrap import bootstrap_content
 from app.api.v1.router import api_router
 
 logger = logging.getLogger(__name__)
@@ -33,6 +34,7 @@ async def _init_db_and_bootstrap() -> None:
     except Exception as exc:
         logger.error("Schema sync failed: %s", exc, exc_info=exc)
     await bootstrap_admin()
+    await bootstrap_content()
 
 
 @asynccontextmanager

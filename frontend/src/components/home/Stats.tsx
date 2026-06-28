@@ -7,13 +7,25 @@ import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import GlassCard from "@/components/ui/GlassCard";
 import { publicApi } from "@/lib/api";
 
-const FALLBACK = [
-  { icon: Users, end: 500, suffix: "+", key: "trust_clients" as const },
-  { icon: Briefcase, end: 50, suffix: "+", key: "trust_projects" as const },
-  { icon: Package, end: 200, suffix: "+", key: "trust_products" as const },
-  { icon: Clock, end: 5, suffix: "+", key: "trust_years" as const },
-  { icon: Headphones, end: 24, suffix: "/7", key: "trust_support" as const },
+import { MARKETING_STATS } from "@/lib/siteDefaults";
+
+import type { LucideIcon } from "lucide-react";
+import type { TranslationKey } from "@/lib/i18n/translations";
+
+type StatItem = { icon: LucideIcon; end: number; suffix: string; key: TranslationKey };
+
+const FALLBACK: StatItem[] = [
+  { icon: Users, end: MARKETING_STATS.clients, suffix: "+", key: "trust_clients" },
+  { icon: Briefcase, end: MARKETING_STATS.projects, suffix: "+", key: "trust_projects" },
+  { icon: Package, end: MARKETING_STATS.products, suffix: "+", key: "trust_products" },
+  { icon: Clock, end: MARKETING_STATS.years, suffix: "+", key: "trust_years" },
+  { icon: Headphones, end: 24, suffix: "/7", key: "trust_support" },
 ];
+
+function statValue(actual: number | undefined, floor: number): number {
+  if (!actual || actual <= 0) return floor;
+  return actual;
+}
 
 export default function Stats() {
   const t = useT();
@@ -24,10 +36,10 @@ export default function Stats() {
       const d = r.data.data;
       if (!d) return;
       setStats([
-        { icon: Users, end: Math.max(d.clients ?? 500, 1), suffix: "+", key: "trust_clients" },
-        { icon: Briefcase, end: Math.max(d.projects ?? 50, 1), suffix: "+", key: "trust_projects" },
-        { icon: Package, end: Math.max(d.products ?? 200, 1), suffix: "+", key: "trust_products" },
-        { icon: Clock, end: Math.max(d.years ?? 5, 1), suffix: "+", key: "trust_years" },
+        { icon: Users, end: statValue(d.clients, MARKETING_STATS.clients), suffix: "+", key: "trust_clients" },
+        { icon: Briefcase, end: statValue(d.projects, MARKETING_STATS.projects), suffix: "+", key: "trust_projects" },
+        { icon: Package, end: statValue(d.products, MARKETING_STATS.products), suffix: "+", key: "trust_products" },
+        { icon: Clock, end: statValue(d.years, MARKETING_STATS.years), suffix: "+", key: "trust_years" },
         { icon: Headphones, end: 24, suffix: "/7", key: "trust_support" },
       ]);
     }).catch(() => {});

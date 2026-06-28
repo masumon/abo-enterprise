@@ -12,11 +12,18 @@ import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
 import GlassCard from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
 
 export default function ContactPage() {
   const { lang } = useLanguageStore();
   const t = useT();
   const toast = useToastStore((s) => s.push);
+  const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address"]);
+  const mapsEmbed = getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED);
+  const phone = getSettingValue(settings, "contact_phone", "01825007977");
+  const email = getSettingValue(settings, "contact_email", "abo.enterprise@gmail.com");
+  const address = getSettingValue(settings, "contact_address", lang === "bn" ? "হাজি বাহার উদ্দিন মার্কেট, সিলেট-৩১৭০" : "Hazi Bahar Uddin Market, Sylhet-3170");
 
   const schema = z.object({
     name: z.string().min(2, lang === "bn" ? "নাম দিন" : "Name is required"),
@@ -56,9 +63,9 @@ export default function ContactPage() {
   };
 
   const contactInfo = [
-    { icon: Phone, label: lang === "bn" ? "ফোন / WhatsApp" : "Phone / WhatsApp", value: "+880 1825-007977", href: "tel:+8801825007977" },
-    { icon: Mail, label: lang === "bn" ? "ইমেইল" : "Email", value: "abo.enterprise@gmail.com", href: "mailto:abo.enterprise@gmail.com" },
-    { icon: MapPin, label: lang === "bn" ? "ঠিকানা" : "Location", value: lang === "bn" ? "হাজি বাহার উদ্দিন মার্কেট, সিলেট-৩১৭০" : "Hazi Bahar Uddin Market, Sylhet-3170", href: "https://maps.google.com/?q=Sylhet" },
+    { icon: Phone, label: lang === "bn" ? "ফোন / WhatsApp" : "Phone / WhatsApp", value: `+880 ${phone.slice(0, 4)}-${phone.slice(4)}`, href: `tel:+880${phone}` },
+    { icon: Mail, label: lang === "bn" ? "ইমেইল" : "Email", value: email, href: `mailto:${email}` },
+    { icon: MapPin, label: lang === "bn" ? "ঠিকানা" : "Location", value: address, href: "https://maps.google.com/?q=Hazi+Bahar+Uddin+Market+Sylhet" },
     { icon: MessageSquare, label: "WhatsApp", value: lang === "bn" ? "সরাসরি চ্যাট করুন" : "Chat with us directly", href: "https://wa.me/8801825007977" },
   ];
 
@@ -97,9 +104,11 @@ export default function ContactPage() {
             <GlassCard className="overflow-hidden p-0">
               <iframe
                 title="ABO Enterprise Location"
-                src="https://maps.google.com/maps?q=Sylhet%20Bangladesh&output=embed"
-                className="w-full h-48 border-0"
+                src={mapsEmbed}
+                className="w-full h-56 border-0"
                 loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
               />
             </GlassCard>
           </div>

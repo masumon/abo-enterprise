@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Printer, Scale, Code2, Bot, Cog, Smartphone, ArrowRight, CheckCircle } from "lucide-react";
+import { Printer, Scale, Code2, Megaphone, Briefcase, Building2, ArrowRight, CheckCircle, Bot, Cog, Smartphone } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 
 const SERVICES = [
@@ -41,7 +41,51 @@ const SERVICES = [
     },
     cta: { en: "Discuss Your Project", bn: "প্রজেক্ট আলোচনা করুন" },
   },
+  {
+    icon: Megaphone,
+    title: { en: "Digital Marketing", bn: "ডিজিটাল মার্কেটিং" },
+    subtitle: { en: "Social media, SEO & online growth", bn: "সোশ্যাল মিডিয়া, SEO ও অনলাইন প্রচার" },
+    href: "/contact",
+    color: "orange",
+    features: {
+      en: ["Social media management", "SEO & Google ranking", "Facebook & Instagram ads", "Content creation", "Brand strategy", "Analytics & reporting"],
+      bn: ["সোশ্যাল মিডিয়া ম্যানেজমেন্ট", "SEO ও গুগল র‍্যাঙ্কিং", "ফেসবুক ও ইনস্টাগ্রাম বিজ্ঞাপন", "কন্টেন্ট তৈরি", "ব্র্যান্ড কৌশল", "অ্যানালিটিক্স ও রিপোর্ট"],
+    },
+    cta: { en: "Grow Your Business", bn: "ব্যবসা বাড়ান" },
+  },
+  {
+    icon: Briefcase,
+    title: { en: "Business Consulting", bn: "ব্যবসায়িক পরামর্শ" },
+    subtitle: { en: "Strategy, planning & digital transformation", bn: "কৌশল, পরিকল্পনা ও ডিজিটাল রূপান্তর" },
+    href: "/contact",
+    color: "indigo",
+    features: {
+      en: ["Business strategy", "Digital transformation", "Process optimization", "Market analysis", "Startup guidance", "Growth planning"],
+      bn: ["ব্যবসায়িক কৌশল", "ডিজিটাল রূপান্তর", "প্রক্রিয়া অপ্টিমাইজেশন", "বাজার বিশ্লেষণ", "স্টার্টআপ গাইডেন্স", "প্রবৃদ্ধি পরিকল্পনা"],
+    },
+    cta: { en: "Book Consultation", bn: "পরামর্শ বুক করুন" },
+  },
+  {
+    icon: Building2,
+    title: { en: "Enterprise Solutions", bn: "এন্টারপ্রাইজ সমাধান" },
+    subtitle: { en: "ERP, POS, CRM & custom systems", bn: "ERP, POS, CRM ও কাস্টম সিস্টেম" },
+    href: "/projects",
+    color: "brand",
+    features: {
+      en: ["Custom ERP systems", "POS for retail & restaurants", "CRM & lead management", "Inventory management", "AI automation", "Cloud deployment"],
+      bn: ["কাস্টম ERP সিস্টেম", "রিটেইল ও রেস্টুরেন্ট POS", "CRM ও লিড ম্যানেজমেন্ট", "ইনভেন্টরি ম্যানেজমেন্ট", "AI অটোমেশন", "ক্লাউড ডিপ্লয়মেন্ট"],
+    },
+    cta: { en: "Explore Solutions", bn: "সমাধান দেখুন" },
+  },
 ];
+
+const COLOR_MAP: Record<string, string> = {
+  brand: "bg-brand-600",
+  accent: "bg-accent-500",
+  green: "bg-green-600",
+  orange: "bg-orange-500",
+  indigo: "bg-indigo-600",
+};
 
 export default function ServicesPage() {
   const { lang } = useLanguageStore();
@@ -63,7 +107,7 @@ export default function ServicesPage() {
           {SERVICES.map(({ icon: Icon, title, subtitle, href, color, features, cta }) => (
             <div key={title.en} className="card overflow-hidden">
               <div className="grid md:grid-cols-5 gap-0">
-                <div className={`md:col-span-2 p-8 ${color === "brand" ? "bg-brand-600" : color === "accent" ? "bg-accent-500" : "bg-green-600"} text-white`}>
+                <div className={`md:col-span-2 p-8 ${COLOR_MAP[color] ?? "bg-brand-600"} text-white`}>
                   <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mb-5">
                     <Icon className="w-7 h-7 text-white" />
                   </div>

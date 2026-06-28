@@ -4,9 +4,16 @@ import Link from "next/link";
 import { MapPin, Phone, Mail, Clock, Facebook, MessageCircle } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import GlassCard from "@/components/ui/GlassCard";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
 
 export default function ContactSection() {
   const { lang } = useLanguageStore();
+  const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address"]);
+  const mapsEmbed = getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED);
+  const phone = getSettingValue(settings, "contact_phone", "01825007977");
+  const email = getSettingValue(settings, "contact_email", "abo.enterprise@gmail.com");
+  const address = getSettingValue(settings, "contact_address", lang === "bn" ? "হাজি বাহার উদ্দিন মার্কেট, সিলেট-৩১৭০" : "Hazi Bahar Uddin Market, Sylhet-3170");
 
   return (
     <section id="contact" className="py-16 gradient-surface">
@@ -23,9 +30,9 @@ export default function ContactSection() {
             </h3>
             <div className="space-y-3">
               {[
-                { icon: MapPin, label: lang === "bn" ? "হাজি বাহার উদ্দিন মার্কেট, সিলেট-৩১৭০" : "Hazi Bahar Uddin Market, Sylhet-3170", href: "https://maps.google.com/?q=Sylhet" },
-                { icon: Phone, label: "+880 1825 007977", href: "tel:+8801825007977" },
-                { icon: Mail, label: "abo.enterprise@gmail.com", href: "mailto:abo.enterprise@gmail.com" },
+                { icon: MapPin, label: address, href: "https://maps.google.com/?q=Hazi+Bahar+Uddin+Market+Sylhet" },
+                { icon: Phone, label: `+880 ${phone.slice(0, 4)} ${phone.slice(4)}`, href: `tel:+880${phone}` },
+                { icon: Mail, label: email, href: `mailto:${email}` },
                 { icon: Clock, label: lang === "bn" ? "শনি–বৃহঃ, সকাল ৯টা–রাত ৮টা" : "Sat–Thu, 9:00 AM – 8:00 PM", href: null },
               ].map(({ icon: Icon, label, href }) => (
                 <div key={label} className="flex items-start gap-3">
@@ -53,9 +60,11 @@ export default function ContactSection() {
           <GlassCard className="overflow-hidden p-0 lg:col-span-2">
             <iframe
               title="ABO Enterprise Map"
-              src="https://maps.google.com/maps?q=Hazi+Bahar+Uddin+Market+Sylhet&output=embed"
+              src={mapsEmbed}
               className="w-full h-64 lg:h-full min-h-[16rem] border-0"
               loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              allowFullScreen
             />
           </GlassCard>
         </div>

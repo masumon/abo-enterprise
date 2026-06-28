@@ -75,6 +75,18 @@ function TypingIndicator({ label }: { label: string }) {
 
 export default function AssistantWidget() {
   const flagEnabled = useFeatureFlag("feature_assistant_chat", true);
+  const [footerNear, setFooterNear] = useState(false);
+
+  useEffect(() => {
+    const footer = document.querySelector("footer");
+    if (!footer) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setFooterNear(entry.isIntersecting),
+      { threshold: 0.15, rootMargin: "0px 0px -2rem 0px" }
+    );
+    obs.observe(footer);
+    return () => obs.disconnect();
+  }, []);
   const t = useT();
   const { lang } = useLanguageStore();
   const [config, setConfig] = useState<AssistantConfig>(DEFAULT_CONFIG);
@@ -434,7 +446,10 @@ export default function AssistantWidget() {
         </div>
       )}
 
-      <div className="fixed bottom-mobile-float right-4 lg:bottom-6 lg:right-6 z-50">
+      <div className={cn(
+        "fixed bottom-mobile-float right-4 lg:bottom-6 lg:right-6 z-50 transition-all duration-300",
+        footerNear && !open && "opacity-0 pointer-events-none translate-y-4"
+      )}>
         {open && (
           <button
             type="button"
