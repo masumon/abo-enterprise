@@ -43,13 +43,11 @@ export default function AdminInvoicesPage() {
     customer_name: "",
     customer_email: "",
     customer_phone: "",
-    item_name: "",
-    item_qty: 1,
-    item_price: 0,
     tax: 0,
     payment_method: "",
     notes: "",
   });
+  const [createItems, setCreateItems] = useState([{ name: "", qty: 1, price: 0 }]);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -107,11 +105,14 @@ export default function AdminInvoicesPage() {
   };
 
   const handleCreate = async () => {
-    if (!createForm.customer_name.trim() || !createForm.item_name.trim() || createForm.item_price <= 0) {
-      toast("error", "Customer name, item name and price are required");
-      return;
+    if (!createForm.customer_name.trim()) {
+      toast("error", "Customer name is required"); return;
     }
-    const subtotal = createForm.item_qty * createForm.item_price;
+    const validItems = createItems.filter((i) => i.name.trim() && i.price > 0);
+    if (validItems.length === 0) {
+      toast("error", "Add at least one item with name and price"); return;
+    }
+    const subtotal = validItems.reduce((s, i) => s + i.qty * i.price, 0);
     const totalAmount = subtotal + (createForm.tax || 0);
     setCreating(true);
     try {
@@ -119,7 +120,7 @@ export default function AdminInvoicesPage() {
         customer_name: createForm.customer_name,
         customer_email: createForm.customer_email || undefined,
         customer_phone: createForm.customer_phone || undefined,
-        items: [{ name: createForm.item_name, quantity: createForm.item_qty, price: createForm.item_price }],
+        items: validItems.map((i) => ({ name: i.name, quantity: i.qty, price: i.price })),
         subtotal,
         tax: createForm.tax || 0,
         total: totalAmount,
@@ -130,10 +131,8 @@ export default function AdminInvoicesPage() {
       setInvoices((prev) => [created, ...prev]);
       setTotal((t) => t + 1);
       setShowCreate(false);
-      setCreateForm({
-        customer_name: "", customer_email: "", customer_phone: "",
-        item_name: "", item_qty: 1, item_price: 0, tax: 0, payment_method: "", notes: "",
-      });
+      setCreateForm({ customer_name: "", customer_email: "", customer_phone: "", tax: 0, payment_method: "", notes: "" });
+      setCreateItems([{ name: "", qty: 1, price: 0 }]);
       toast("success", "Invoice created");
     } catch {
       toast("error", "Failed to create invoice");
@@ -436,35 +435,72 @@ export default function AdminInvoicesPage() {
                   <input value={createForm.customer_phone} onChange={(e) => setCreateForm((f) => ({ ...f, customer_phone: e.target.value }))} className="input w-full text-sm" />
                 </div>
               </div>
+
+              {/* Line items */}
               <div>
-                <label className="form-label">Item Name *</label>
-                <input value={createForm.item_name} onChange={(e) => setCreateForm((f) => ({ ...f, item_name: e.target.value }))} className="input w-full" placeholder="Service / Product name" />
+                <div className="flex items-center justify-between mb-2">
+                  <label className="form-label mb-0">Items *</label>
+                  <button
+                    type="button"
+                    onClick={() => setCreateItems((prev) => [...prev, { name: "", qty: 1, price: 0 }])}
+                    className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Add item
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {createItems.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <input
+                        value={item.name}
+                        onChange={(e) => setCreateItems((prev) => prev.map((it, i) => i === idx ? { ...it, name: e.target.value } : it))}
+                        className="input flex-1 text-sm"
+                        placeholder="Item / Service name"
+                      />
+                      <input
+                        type="number" min={1} value={item.qty}
+                        onChange={(e) => setCreateItems((prev) => prev.map((it, i) => i === idx ? { ...it, qty: Number(e.target.value) } : it))}
+                        className="input w-14 text-sm text-center"
+                        title="Qty"
+                      />
+                      <input
+                        type="number" min={0} value={item.price}
+                        onChange={(e) => setCreateItems((prev) => prev.map((it, i) => i === idx ? { ...it, price: Number(e.target.value) } : it))}
+                        className="input w-24 text-sm"
+                        placeholder="৳ Price"
+                      />
+                      {createItems.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setCreateItems((prev) => prev.filter((_, i) => i !== idx))}
+                          className="text-red-400 hover:text-red-600 p-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="form-label">Qty</label>
-                  <input type="number" min={1} value={createForm.item_qty} onChange={(e) => setCreateForm((f) => ({ ...f, item_qty: Number(e.target.value) }))} className="input w-full" />
-                </div>
-                <div>
-                  <label className="form-label">Price (৳)</label>
-                  <input type="number" min={0} value={createForm.item_price} onChange={(e) => setCreateForm((f) => ({ ...f, item_price: Number(e.target.value) }))} className="input w-full" />
-                </div>
+
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="form-label">Tax (৳)</label>
                   <input type="number" min={0} value={createForm.tax} onChange={(e) => setCreateForm((f) => ({ ...f, tax: Number(e.target.value) }))} className="input w-full" />
                 </div>
-              </div>
-              <div>
-                <label className="form-label">Payment Method</label>
-                <input value={createForm.payment_method} onChange={(e) => setCreateForm((f) => ({ ...f, payment_method: e.target.value }))} className="input w-full text-sm" placeholder="bkash, cash, bank..." />
+                <div>
+                  <label className="form-label">Payment Method</label>
+                  <input value={createForm.payment_method} onChange={(e) => setCreateForm((f) => ({ ...f, payment_method: e.target.value }))} className="input w-full text-sm" placeholder="bkash, cash, bank..." />
+                </div>
               </div>
               <div>
                 <label className="form-label">Notes</label>
                 <textarea rows={2} value={createForm.notes} onChange={(e) => setCreateForm((f) => ({ ...f, notes: e.target.value }))} className="input w-full resize-none text-sm" />
               </div>
-              <p className="text-sm font-semibold text-gray-700">
-                Total: ৳{((createForm.item_qty * createForm.item_price) + (createForm.tax || 0)).toLocaleString()}
-              </p>
+              <div className="bg-gray-50 rounded-xl p-3 text-sm font-semibold text-gray-800 flex justify-between">
+                <span>Total</span>
+                <span>৳{(createItems.reduce((s, i) => s + i.qty * i.price, 0) + (createForm.tax || 0)).toLocaleString()}</span>
+              </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
               <button onClick={() => setShowCreate(false)} className="btn btn-outline btn-md">Cancel</button>
