@@ -18,7 +18,7 @@ interface AdminBooking extends Booking {
 }
 
 export default function AdminBookingsPage() {
-  const [tab, setTab] = useState<"v1" | "v2">("v1");
+  const [tab, setTab] = useState<"v1" | "v2">("v2");
 
   // V1 state
   const [bookings, setBookings] = useState<AdminBooking[]>([]);

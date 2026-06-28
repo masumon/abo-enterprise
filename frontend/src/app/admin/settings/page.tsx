@@ -33,7 +33,6 @@ const SECTIONS: Section[] = [
       { key: "logo_url", label: "Logo URL", type: "url", placeholder: "https://..." },
       { key: "favicon_url", label: "Favicon URL", type: "url", placeholder: "https://.../favicon.ico" },
       { key: "contact_phone", label: "Contact Phone", type: "tel", placeholder: "01825007977" },
-      { key: "whatsapp_number", label: "WhatsApp Number", type: "tel", placeholder: "8801825007977 (with country code)" },
       { key: "contact_email", label: "Contact Email", type: "email", placeholder: "info@aboenterprise.com" },
       { key: "contact_address", label: "Business Address", type: "textarea", placeholder: "Sylhet, Bangladesh" },
     ],
