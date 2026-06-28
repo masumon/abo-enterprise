@@ -1,6 +1,7 @@
 import axios from "axios";
 import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier, BookingV2, LeadV2, Review, BlogPost, ServiceBookingFormField } from "@/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { clearAdminToken, getAdminToken, isAdminProtectedPath } from "@/lib/adminAuth";
 
 const baseURL = getApiBaseUrl();
 
@@ -11,7 +12,7 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = typeof window !== "undefined" ? localStorage.getItem("abo_admin_token") : null;
+  const token = getAdminToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -20,10 +21,8 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 && typeof window !== "undefined") {
-      localStorage.removeItem("abo_admin_token");
-      document.cookie = "abo_admin_token=; path=/; max-age=0";
-      // Only redirect if not already on login page (prevent redirect loop)
-      if (!window.location.pathname.includes("/admin/login")) {
+      clearAdminToken();
+      if (isAdminProtectedPath(window.location.pathname)) {
         window.location.href = "/admin/login";
       }
     }
@@ -189,7 +188,7 @@ export const blogApi = {
 const API_BASE = baseURL;
 
 export async function downloadCsv(path: string, filename: string): Promise<void> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("abo_admin_token") : null;
+  const token = getAdminToken();
   const res = await fetch(`${API_BASE}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });

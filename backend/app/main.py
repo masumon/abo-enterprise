@@ -112,12 +112,6 @@ async def global_exception_handler(request: Request, exc: Exception):
 async def root():
     return {"name": settings.APP_NAME, "version": "1.0.0", "status": "ok"}
 
-
-@app.get("/health", include_in_schema=False)
-async def health():
-    return {"status": "healthy", "service": settings.APP_NAME, "version": "1.0.0"}
-
-
 @app.get("/api/v1/auth/ping", include_in_schema=False)
 async def auth_ping(admin_id: str = Depends(require_admin)):
     """Diagnostic: check DB connectivity and admin existence. Requires admin auth."""

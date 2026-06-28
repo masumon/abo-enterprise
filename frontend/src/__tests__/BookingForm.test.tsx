@@ -5,11 +5,13 @@ import { bookingsApi } from "@/lib/api";
 
 jest.mock("@/lib/api", () => ({
   bookingsApi: {
-    create: jest.fn().mockResolvedValue({ status: 201, data: { data: {} } }),
+    create: jest.fn(),
   },
 }));
 
-describe("Booking Form E2E", () => {
+const mockCreate = bookingsApi.create as jest.Mock;
+
+describe("Booking Form", () => {
   const mockService = {
     id: "1",
     name_en: "Web Development",
@@ -30,6 +32,7 @@ describe("Booking Form E2E", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockCreate.mockResolvedValue({ status: 201, data: { data: {} } });
   });
 
   it("should render booking form with service info", () => {
@@ -40,8 +43,7 @@ describe("Booking Form E2E", () => {
 
   it("should validate required fields", async () => {
     render(<BookingForm service={mockService} />);
-    const submitBtn = screen.getByText(/Book This Service/i);
-    await userEvent.click(submitBtn);
+    await userEvent.click(screen.getByText(/Book This Service/i));
 
     await waitFor(() => {
       expect(screen.getByText(/Name must be at least/i)).toBeInTheDocument();
@@ -52,11 +54,8 @@ describe("Booking Form E2E", () => {
     const user = userEvent.setup();
     render(<BookingForm service={mockService} />);
 
-    const phoneInput = screen.getByPlaceholderText(/01XXXXXXXXX/);
-    await user.type(phoneInput, "12345678");
-
-    const submitBtn = screen.getByText(/Book This Service/i);
-    await user.click(submitBtn);
+    await user.type(screen.getByPlaceholderText(/01XXXXXXXXX/), "12345678");
+    await user.click(screen.getByText(/Book This Service/i));
 
     await waitFor(() => {
       expect(screen.getByText(/Invalid Bangladesh phone number/i)).toBeInTheDocument();
@@ -64,23 +63,20 @@ describe("Booking Form E2E", () => {
   });
 
   it("should submit booking with valid data", async () => {
-    const mockOnSuccess = jest.fn();
     const user = userEvent.setup();
-    render(<BookingForm service={mockService} onSuccess={mockOnSuccess} />);
+    render(<BookingForm service={mockService} />);
 
     await user.type(screen.getByPlaceholderText(/Your full name/), "John Doe");
-    await user.type(screen.getByPlaceholderText(/01XXXXXXXXX/), "01712345678");
+    await user.type(screen.getByPlaceholderText(/01XXXXXXXXX/), "0171234567");
     await user.type(screen.getByPlaceholderText(/your@email.com/), "john@example.com");
     await user.type(
-      screen.getByPlaceholderText(/Please describe your requirements/),
+      screen.getByPlaceholderText(/Please describe your requirements in detail/),
       "I need a custom web application for my e-commerce business"
     );
-
-    const submitBtn = screen.getByText(/Book This Service/i);
-    await user.click(submitBtn);
+    await user.click(screen.getByText(/Book This Service/i));
 
     await waitFor(() => {
-      expect(bookingsApi.create).toHaveBeenCalled();
+      expect(mockCreate).toHaveBeenCalled();
       expect(screen.getByText(/submitted successfully/i)).toBeInTheDocument();
     });
   });
