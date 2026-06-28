@@ -12,6 +12,7 @@ import {
   type AssistantActionLog,
 } from "@/lib/api";
 import { useToastStore } from "@/store/toast";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import StatusBadge from "@/components/admin/StatusBadge";
 
 type Tab = "settings" | "conversations" | "logs" | "faq";
@@ -38,6 +39,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 export default function AdminAssistantPage() {
   const [tab, setTab] = useState<Tab>("settings");
   const toast = useToastStore((s) => s.push);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
 
   // Settings
   const [config, setConfig] = useState({
@@ -160,33 +162,45 @@ export default function AdminAssistantPage() {
     }
   };
 
-  const deleteConversation = async (id: string) => {
-    if (!confirm("Delete this conversation? This cannot be undone.")) return;
-    setDeletingConvId(id);
-    try {
-      await assistantAdminApi.deleteConversation(id);
-      toast("success", "Conversation deleted");
-      if (convDetail?.conversation.id === id) setConvDetail(null);
-      await loadConversations();
-    } catch {
-      toast("error", "Failed to delete conversation");
-    } finally {
-      setDeletingConvId(null);
-    }
+  const deleteConversation = (id: string) => {
+    setConfirmState({
+      title: "Delete this conversation?",
+      message: "All messages in this conversation will be permanently removed.",
+      action: async () => {
+        setConfirmState(null);
+        setDeletingConvId(id);
+        try {
+          await assistantAdminApi.deleteConversation(id);
+          toast("success", "Conversation deleted");
+          if (convDetail?.conversation.id === id) setConvDetail(null);
+          await loadConversations();
+        } catch {
+          toast("error", "Failed to delete conversation");
+        } finally {
+          setDeletingConvId(null);
+        }
+      },
+    });
   };
 
-  const deleteLog = async (id: string) => {
-    if (!confirm("Delete this automation log?")) return;
-    setDeletingLogId(id);
-    try {
-      await assistantAdminApi.deleteLog(id);
-      toast("success", "Log deleted");
-      await loadLogs();
-    } catch {
-      toast("error", "Failed to delete log");
-    } finally {
-      setDeletingLogId(null);
-    }
+  const deleteLog = (id: string) => {
+    setConfirmState({
+      title: "Delete this automation log?",
+      message: "This log entry will be permanently removed.",
+      action: async () => {
+        setConfirmState(null);
+        setDeletingLogId(id);
+        try {
+          await assistantAdminApi.deleteLog(id);
+          toast("success", "Log deleted");
+          await loadLogs();
+        } catch {
+          toast("error", "Failed to delete log");
+        } finally {
+          setDeletingLogId(null);
+        }
+      },
+    });
   };
 
   const openNewFaq = () => {
@@ -229,18 +243,24 @@ export default function AdminAssistantPage() {
     }
   };
 
-  const deleteFaq = async (key: string) => {
-    if (!confirm(`Delete FAQ "${key}"?`)) return;
-    setDeletingFaqKey(key);
-    try {
-      await assistantAdminApi.deleteFaq(key);
-      toast("success", "FAQ deleted");
-      await loadFaq();
-    } catch {
-      toast("error", "Failed to delete FAQ");
-    } finally {
-      setDeletingFaqKey(null);
-    }
+  const deleteFaq = (key: string) => {
+    setConfirmState({
+      title: `Delete FAQ "${key}"?`,
+      message: "This FAQ entry will be permanently removed from the assistant's knowledge base.",
+      action: async () => {
+        setConfirmState(null);
+        setDeletingFaqKey(key);
+        try {
+          await assistantAdminApi.deleteFaq(key);
+          toast("success", "FAQ deleted");
+          await loadFaq();
+        } catch {
+          toast("error", "Failed to delete FAQ");
+        } finally {
+          setDeletingFaqKey(null);
+        }
+      },
+    });
   };
 
   const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -621,6 +641,16 @@ export default function AdminAssistantPage() {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ""}
+        message={confirmState?.message ?? ""}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => confirmState?.action()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

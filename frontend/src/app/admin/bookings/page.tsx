@@ -6,6 +6,7 @@ import { bookingsApi, serviceBookingsAdminApi, downloadCsv } from "@/lib/api";
 import type { Booking, BookingV2 } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 const STATUSES_V1 = ["pending", "contacted", "in_progress", "completed", "cancelled"];
 const STATUSES_V2 = ["pending", "in_progress", "completed", "cancelled", "on_hold"];
@@ -46,6 +47,7 @@ export default function AdminBookingsPage() {
   const [detailV2, setDetailV2] = useState<BookingV2 | null>(null);
 
   const toast = useToastStore((s) => s.push);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -111,20 +113,26 @@ export default function AdminBookingsPage() {
     }
   };
 
-  const handleDeleteV2 = async (id: string, bookingNumber: string) => {
-    if (!confirm(`Delete booking ${bookingNumber}? This cannot be undone.`)) return;
-    setUpdatingIdV2(id);
-    try {
-      await serviceBookingsAdminApi.delete(id);
-      setBookingsV2((prev) => prev.filter((b) => b.id !== id));
-      setTotalV2((t) => t - 1);
-      if (detailV2?.id === id) setDetailV2(null);
-      toast("success", "Booking deleted");
-    } catch {
-      toast("error", "Delete failed");
-    } finally {
-      setUpdatingIdV2(null);
-    }
+  const handleDeleteV2 = (id: string, bookingNumber: string) => {
+    setConfirmState({
+      title: `Delete booking ${bookingNumber}?`,
+      message: "This action cannot be undone.",
+      action: async () => {
+        setConfirmState(null);
+        setUpdatingIdV2(id);
+        try {
+          await serviceBookingsAdminApi.delete(id);
+          setBookingsV2((prev) => prev.filter((b) => b.id !== id));
+          setTotalV2((t) => t - 1);
+          if (detailV2?.id === id) setDetailV2(null);
+          toast("success", "Booking deleted");
+        } catch {
+          toast("error", "Delete failed");
+        } finally {
+          setUpdatingIdV2(null);
+        }
+      },
+    });
   };
 
   const openDetail = async (id: string) => {
@@ -488,6 +496,16 @@ export default function AdminBookingsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ""}
+        message={confirmState?.message ?? ""}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => confirmState?.action()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

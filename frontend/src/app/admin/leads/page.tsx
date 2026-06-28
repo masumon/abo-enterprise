@@ -6,6 +6,7 @@ import { leadsApi, serviceLeadsAdminApi, downloadCsv } from "@/lib/api";
 import type { Lead, LeadV2 } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 const STATUSES_V1 = ["new", "contacted", "qualified", "proposal_sent", "negotiation", "won", "lost"];
 const STATUSES_V2 = ["new", "contacted", "qualified", "proposal_sent", "negotiation", "won", "lost", "archived"];
@@ -45,6 +46,7 @@ export default function AdminLeadsPage() {
   const [detailV2, setDetailV2] = useState<LeadV2 | null>(null);
 
   const toast = useToastStore((s) => s.push);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -110,20 +112,26 @@ export default function AdminLeadsPage() {
     }
   };
 
-  const handleDeleteV2 = async (id: string, name: string) => {
-    if (!confirm(`Delete lead "${name}"? This cannot be undone.`)) return;
-    setUpdatingIdV2(id);
-    try {
-      await serviceLeadsAdminApi.delete(id);
-      setLeadsV2((prev) => prev.filter((l) => l.id !== id));
-      setTotalV2((t) => t - 1);
-      if (detailV2?.id === id) setDetailV2(null);
-      toast("success", "Lead deleted");
-    } catch {
-      toast("error", "Delete failed");
-    } finally {
-      setUpdatingIdV2(null);
-    }
+  const handleDeleteV2 = (id: string, name: string) => {
+    setConfirmState({
+      title: `Delete lead "${name}"?`,
+      message: "This action cannot be undone.",
+      action: async () => {
+        setConfirmState(null);
+        setUpdatingIdV2(id);
+        try {
+          await serviceLeadsAdminApi.delete(id);
+          setLeadsV2((prev) => prev.filter((l) => l.id !== id));
+          setTotalV2((t) => t - 1);
+          if (detailV2?.id === id) setDetailV2(null);
+          toast("success", "Lead deleted");
+        } catch {
+          toast("error", "Delete failed");
+        } finally {
+          setUpdatingIdV2(null);
+        }
+      },
+    });
   };
 
   const openDetail = async (id: string) => {
@@ -505,6 +513,16 @@ export default function AdminLeadsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ""}
+        message={confirmState?.message ?? ""}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => confirmState?.action()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

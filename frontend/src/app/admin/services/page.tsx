@@ -10,6 +10,7 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import type { Service, ServicePricingTier, ServiceBookingFormField } from "@/types";
 import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 const CATEGORIES = ["printing", "legal", "web_development", "ai_solutions", "automation", "software", "general"];
 const PRICING_TYPES = ["fixed", "hourly", "package", "custom"] as const;
@@ -69,6 +70,7 @@ export default function AdminServicesPage() {
   const [savingField, setSavingField] = useState(false);
   const [deletingFieldId, setDeletingFieldId] = useState<string | null>(null);
   const toast = useToastStore((s) => s.push);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -137,18 +139,24 @@ export default function AdminServicesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this service? This cannot be undone.")) return;
-    setDeletingId(id);
-    try {
-      await servicesAdminApi.delete(id);
-      toast("success", "Service deleted");
-      await load();
-    } catch {
-      toast("error", "Failed to delete service");
-    } finally {
-      setDeletingId(null);
-    }
+  const handleDelete = (id: string) => {
+    setConfirmState({
+      title: "Delete this service?",
+      message: "This action cannot be undone. All pricing tiers and booking forms for this service will also be deleted.",
+      action: async () => {
+        setConfirmState(null);
+        setDeletingId(id);
+        try {
+          await servicesAdminApi.delete(id);
+          toast("success", "Service deleted");
+          await load();
+        } catch {
+          toast("error", "Failed to delete service");
+        } finally {
+          setDeletingId(null);
+        }
+      },
+    });
   };
 
   const toggleActive = async (s: Service) => {
@@ -181,19 +189,25 @@ export default function AdminServicesPage() {
     }
   };
 
-  const handleDeleteTier = async (tierId: string) => {
+  const handleDeleteTier = (tierId: string) => {
     if (!editing?.id) return;
-    if (!confirm("Remove this pricing tier?")) return;
-    setDeletingTierId(tierId);
-    try {
-      await servicesAdminApi.deleteTier(editing.id, tierId);
-      setEditing(prev => prev ? { ...prev, pricing_tiers: prev.pricing_tiers?.filter(t => t.id !== tierId) } : prev);
-      toast("success", "Tier removed");
-    } catch {
-      toast("error", "Failed to remove tier");
-    } finally {
-      setDeletingTierId(null);
-    }
+    setConfirmState({
+      title: "Remove this pricing tier?",
+      message: "Customers with this tier selected in active bookings may be affected.",
+      action: async () => {
+        setConfirmState(null);
+        setDeletingTierId(tierId);
+        try {
+          await servicesAdminApi.deleteTier(editing!.id!, tierId);
+          setEditing(prev => prev ? { ...prev, pricing_tiers: prev.pricing_tiers?.filter(t => t.id !== tierId) } : prev);
+          toast("success", "Tier removed");
+        } catch {
+          toast("error", "Failed to remove tier");
+        } finally {
+          setDeletingTierId(null);
+        }
+      },
+    });
   };
 
   const handleAddField = async () => {
@@ -216,19 +230,25 @@ export default function AdminServicesPage() {
     }
   };
 
-  const handleDeleteField = async (fieldId: string) => {
+  const handleDeleteField = (fieldId: string) => {
     if (!editing?.id) return;
-    if (!confirm("Remove this form field?")) return;
-    setDeletingFieldId(fieldId);
-    try {
-      await servicesAdminApi.deleteFormField(editing.id, fieldId);
-      setEditing(prev => prev ? { ...prev, booking_forms: prev.booking_forms?.filter(f => f.id !== fieldId) } : prev);
-      toast("success", "Field removed");
-    } catch {
-      toast("error", "Failed to remove field");
-    } finally {
-      setDeletingFieldId(null);
-    }
+    setConfirmState({
+      title: "Remove this form field?",
+      message: "Existing booking data for this field will not be deleted, but it won't appear in new bookings.",
+      action: async () => {
+        setConfirmState(null);
+        setDeletingFieldId(fieldId);
+        try {
+          await servicesAdminApi.deleteFormField(editing!.id!, fieldId);
+          setEditing(prev => prev ? { ...prev, booking_forms: prev.booking_forms?.filter(f => f.id !== fieldId) } : prev);
+          toast("success", "Field removed");
+        } catch {
+          toast("error", "Failed to remove field");
+        } finally {
+          setDeletingFieldId(null);
+        }
+      },
+    });
   };
 
   const f = (field: keyof Service) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -878,6 +898,16 @@ export default function AdminServicesPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ""}
+        message={confirmState?.message ?? ""}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => confirmState?.action()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

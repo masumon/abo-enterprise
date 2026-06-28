@@ -7,6 +7,7 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import type { BlogPost } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 const CATEGORIES = ["technology", "business", "tips", "news", "case-study", "announcement"];
 const DRAFT_KEY = "admin_blog_new_draft";
@@ -60,6 +61,7 @@ export default function AdminBlogPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [seoOpen, setSeoOpen] = useState(false);
   const [translating, setTranslating] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const toast = useToastStore((s) => s.push);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -187,18 +189,24 @@ export default function AdminBlogPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this post? This cannot be undone.")) return;
-    setDeletingId(id);
-    try {
-      await adminBlogApi.delete(id);
-      toast("success", "Post deleted");
-      await load();
-    } catch {
-      toast("error", "Failed to delete post");
-    } finally {
-      setDeletingId(null);
-    }
+  const handleDelete = (id: string) => {
+    setConfirmState({
+      title: "Delete this post?",
+      message: "This action cannot be undone. The post will be permanently removed.",
+      action: async () => {
+        setConfirmState(null);
+        setDeletingId(id);
+        try {
+          await adminBlogApi.delete(id);
+          toast("success", "Post deleted");
+          await load();
+        } catch {
+          toast("error", "Failed to delete post");
+        } finally {
+          setDeletingId(null);
+        }
+      },
+    });
   };
 
   return (
@@ -614,6 +622,16 @@ export default function AdminBlogPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ""}
+        message={confirmState?.message ?? ""}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => confirmState?.action()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

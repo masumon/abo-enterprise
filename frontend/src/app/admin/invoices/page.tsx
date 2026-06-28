@@ -7,6 +7,7 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 interface AdminInvoice {
   id: string;
@@ -31,6 +32,7 @@ const PAYMENT_STATUSES = ["pending", "paid", "overdue", "cancelled", "refunded"]
 
 export default function AdminInvoicesPage() {
   const toast = useToastStore((s) => s.push);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const [invoices, setInvoices] = useState<AdminInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
@@ -88,20 +90,26 @@ export default function AdminInvoicesPage() {
     }
   };
 
-  const handleDelete = async (invoice: AdminInvoice) => {
-    if (!confirm(`Delete invoice ${invoice.invoice_number}? This action cannot be undone.`)) return;
-    setDeleting(true);
-    try {
-      await api.delete(`/api/v1/invoices/admin/invoices/${invoice.id}`);
-      setInvoices((prev) => prev.filter((i) => i.id !== invoice.id));
-      setTotal((t) => t - 1);
-      setDetail(null);
-      toast("success", "Invoice deleted");
-    } catch {
-      toast("error", "Delete failed");
-    } finally {
-      setDeleting(false);
-    }
+  const handleDelete = (invoice: AdminInvoice) => {
+    setConfirmState({
+      title: `Delete invoice ${invoice.invoice_number}?`,
+      message: "This action cannot be undone.",
+      action: async () => {
+        setConfirmState(null);
+        setDeleting(true);
+        try {
+          await api.delete(`/api/v1/invoices/admin/invoices/${invoice.id}`);
+          setInvoices((prev) => prev.filter((i) => i.id !== invoice.id));
+          setTotal((t) => t - 1);
+          setDetail(null);
+          toast("success", "Invoice deleted");
+        } catch {
+          toast("error", "Delete failed");
+        } finally {
+          setDeleting(false);
+        }
+      },
+    });
   };
 
   const handleCreate = async () => {
@@ -511,6 +519,16 @@ export default function AdminInvoicesPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ""}
+        message={confirmState?.message ?? ""}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => confirmState?.action()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

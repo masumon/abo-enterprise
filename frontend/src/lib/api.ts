@@ -337,8 +337,8 @@ export const adminApi = {
       created_at: string;
     }>>("/api/v1/admin/payment-reconciliation", { params: { page } }),
 
-  listAuditLogs: (page = 1) =>
-    api.get<PaginatedResponse<{ id: string; action: string; entity_type: string; entity_id: string | null; created_at: string }>>("/api/v1/admin/audit-logs", { params: { page } }),
+  listAuditLogs: (params: { page?: number; per_page?: number } = {}) =>
+    api.get<PaginatedResponse<{ id: string; action: string; entity_type: string; entity_id: string | null; created_at: string; admin_email?: string }>>("/api/v1/admin/audit-logs", { params }),
 };
 
 export interface EmailTemplateRecord {

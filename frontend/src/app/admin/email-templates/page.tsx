@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Loader2, Mail, Plus, Pencil, Trash2, X, CheckCircle, XCircle, Eye, Code } from "lucide-react";
 import { emailTemplatesAdminApi, type EmailTemplateRecord } from "@/lib/api";
 import { useToastStore } from "@/store/toast";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 const EMPTY: Omit<EmailTemplateRecord, "id" | "created_at" | "updated_at"> = {
   template_name: "",
@@ -23,6 +24,7 @@ export default function AdminEmailTemplatesPage() {
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const [varsInput, setVarsInput] = useState("");
   const [previewMode, setPreviewMode] = useState(false);
 
@@ -99,18 +101,24 @@ export default function AdminEmailTemplatesPage() {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete template "${name}"?`)) return;
-    setDeletingId(id);
-    try {
-      await emailTemplatesAdminApi.delete(id);
-      setTemplates((prev) => prev.filter((t) => t.id !== id));
-      toast("success", "Template deleted");
-    } catch {
-      toast("error", "Delete failed");
-    } finally {
-      setDeletingId(null);
-    }
+  const handleDelete = (id: string, name: string) => {
+    setConfirmState({
+      title: `Delete template "${name}"?`,
+      message: "This action cannot be undone. Emails using this template will stop working.",
+      action: async () => {
+        setConfirmState(null);
+        setDeletingId(id);
+        try {
+          await emailTemplatesAdminApi.delete(id);
+          setTemplates((prev) => prev.filter((t) => t.id !== id));
+          toast("success", "Template deleted");
+        } catch {
+          toast("error", "Delete failed");
+        } finally {
+          setDeletingId(null);
+        }
+      },
+    });
   };
 
   const toggleActive = async (t: EmailTemplateRecord) => {
@@ -302,6 +310,16 @@ export default function AdminEmailTemplatesPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ""}
+        message={confirmState?.message ?? ""}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => confirmState?.action()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
-import { Loader2, Users, Shield, Plus, Pencil, Trash2, X } from "lucide-react";
+import { Loader2, Users, Shield, Plus, Pencil, Trash2, X, Search } from "lucide-react";
 import { useToastStore } from "@/store/toast";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 interface AdminUser {
   id: string;
@@ -16,16 +17,19 @@ interface AdminUser {
 }
 
 const ROLES = ["admin", "editor", "viewer"];
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function AdminUsersPage() {
   const toast = useToastStore((s) => s.push);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<AdminUser | null>(null);
   const [form, setForm] = useState({ email: "", password: "", name: "", role: "admin" });
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<{ title: string; message: string; action: () => void } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -57,9 +61,10 @@ export default function AdminUsersPage() {
 
   const handleSave = async () => {
     if (!form.name.trim()) { toast("error", "Name is required"); return; }
-    if (modal === "create" && (!form.email.trim() || !form.password.trim())) {
-      toast("error", "Email and password are required");
-      return;
+    if (modal === "create") {
+      if (!form.email.trim() || !form.password.trim()) { toast("error", "Email and password are required"); return; }
+      if (!EMAIL_RE.test(form.email)) { toast("error", "Enter a valid email address"); return; }
+      if (form.password.length < 6) { toast("error", "Password must be at least 6 characters"); return; }
     }
     setSaving(true);
     try {
@@ -67,10 +72,7 @@ export default function AdminUsersPage() {
         await adminApi.createUser(form);
         toast("success", "User created");
       } else if (editing) {
-        const payload: { name: string; role: string; password?: string } = {
-          name: form.name,
-          role: form.role,
-        };
+        const payload: { name: string; role: string; password?: string } = { name: form.name, role: form.role };
         if (form.password.trim()) payload.password = form.password;
         await adminApi.updateUser(editing.id, payload);
         toast("success", "User updated");
@@ -84,32 +86,34 @@ export default function AdminUsersPage() {
     }
   };
 
-  const handleDeactivate = async (u: AdminUser) => {
-    if (!confirm(`Deactivate "${u.name}"? They will no longer be able to log in.`)) return;
-    setBusyId(u.id);
-    try {
-      await adminApi.deactivateUser(u.id);
-      toast("success", "User deactivated");
-      await load();
-    } catch {
-      toast("error", "Deactivate failed");
-    } finally {
-      setBusyId(null);
-    }
+  const handleToggleActive = (u: AdminUser) => {
+    const action = u.is_active ? "deactivate" : "activate";
+    setConfirm({
+      title: `${u.is_active ? "Deactivate" : "Activate"} "${u.name}"?`,
+      message: u.is_active
+        ? "This user will no longer be able to log in."
+        : "This user will regain access to the admin panel.",
+      action: async () => {
+        setConfirm(null);
+        setBusyId(u.id);
+        try {
+          await adminApi.updateUser(u.id, { is_active: !u.is_active });
+          setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, is_active: !u.is_active } : x)));
+          toast("success", u.is_active ? "User deactivated" : "User activated");
+        } catch {
+          toast("error", `Failed to ${action} user`);
+        } finally {
+          setBusyId(null);
+        }
+      },
+    });
   };
 
-  const toggleActive = async (u: AdminUser) => {
-    setBusyId(u.id);
-    try {
-      await adminApi.updateUser(u.id, { is_active: !u.is_active });
-      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, is_active: !u.is_active } : x)));
-      toast("success", u.is_active ? "User deactivated" : "User activated");
-    } catch {
-      toast("error", "Update failed");
-    } finally {
-      setBusyId(null);
-    }
-  };
+  const filtered = users.filter((u) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.role.toLowerCase().includes(q);
+  });
 
   return (
     <div className="space-y-6 max-w-5xl">
@@ -121,9 +125,21 @@ export default function AdminUsersPage() {
             <p className="text-gray-500 text-sm">{users.length} admin accounts</p>
           </div>
         </div>
-        <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add User
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search users…"
+              className="input pl-8 text-sm w-full sm:w-52"
+              aria-label="Search users"
+            />
+          </div>
+          <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Add User
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -143,7 +159,7 @@ export default function AdminUsersPage() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((u) => (
+                {filtered.map((u) => (
                   <tr key={u.id} onClick={() => openEdit(u)} className="cursor-pointer hover:bg-brand-50/40 transition-colors">
                     <td className="font-medium">
                       <div>
@@ -155,29 +171,34 @@ export default function AdminUsersPage() {
                     <td><span className="badge bg-brand-50 text-brand-700 capitalize">{u.role.replace(/_/g, " ")}</span></td>
                     <td onClick={(e) => e.stopPropagation()}>
                       <button
-                        onClick={() => toggleActive(u)}
+                        onClick={() => handleToggleActive(u)}
                         disabled={busyId === u.id}
-                        className={`text-sm font-medium ${u.is_active ? "text-green-600 hover:underline" : "text-red-500 hover:underline"}`}
+                        aria-label={u.is_active ? "Deactivate user" : "Activate user"}
+                        className={`text-sm font-medium disabled:opacity-40 ${u.is_active ? "text-green-600 hover:underline" : "text-red-500 hover:underline"}`}
                       >
-                        {u.is_active ? "Active" : "Inactive"}
+                        {busyId === u.id ? <Loader2 className="w-3.5 h-3.5 animate-spin inline" /> : u.is_active ? "Active" : "Inactive"}
                       </button>
                     </td>
-                    <td className="text-gray-500 text-xs hidden lg:table-cell">{u.last_login ? new Date(u.last_login).toLocaleString() : "—"}</td>
+                    <td className="text-gray-500 text-xs hidden lg:table-cell">
+                      {u.last_login ? new Date(u.last_login).toLocaleString("en-BD") : "—"}
+                    </td>
                     <td className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => openEdit(u)} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50" title="Edit / Change Role">
+                        <button
+                          onClick={() => openEdit(u)}
+                          aria-label={`Edit ${u.name}`}
+                          className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50"
+                        >
                           <Pencil className="w-4 h-4" />
                         </button>
-                        {u.is_active && (
-                          <button
-                            onClick={() => handleDeactivate(u)}
-                            disabled={busyId === u.id}
-                            className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-40"
-                            title="Deactivate"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        )}
+                        <button
+                          onClick={() => handleToggleActive(u)}
+                          disabled={busyId === u.id}
+                          aria-label={u.is_active ? `Deactivate ${u.name}` : `Activate ${u.name}`}
+                          className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-40"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -185,34 +206,61 @@ export default function AdminUsersPage() {
               </tbody>
             </table>
           </div>
-          {users.length === 0 && <p className="p-8 text-center text-gray-500">No users found</p>}
+          {filtered.length === 0 && (
+            <p className="p-8 text-center text-gray-500">{search ? "No users match your search" : "No users found"}</p>
+          )}
         </div>
       )}
 
+      {/* Create / Edit Modal */}
       {modal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={modal === "create" ? "Create user" : "Edit user"}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
+        >
           <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Shield className="w-5 h-5 text-brand-600" />
                 {modal === "create" ? "New Admin User" : "Edit User"}
               </h2>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <button onClick={closeModal} aria-label="Close" className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-4">
               {modal === "create" && (
                 <div>
-                  <label className="form-label">Email</label>
-                  <input type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} className="input w-full" />
+                  <label className="form-label" htmlFor="user-email">Email</label>
+                  <input
+                    id="user-email"
+                    type="email"
+                    autoComplete="email"
+                    value={form.email}
+                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                    className="input w-full"
+                  />
                 </div>
               )}
               <div>
-                <label className="form-label">Name</label>
-                <input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} className="input w-full" />
+                <label className="form-label" htmlFor="user-name">Name</label>
+                <input
+                  id="user-name"
+                  value={form.name}
+                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  className="input w-full"
+                />
               </div>
               <div>
-                <label className="form-label">Role</label>
-                <select value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))} className="input w-full">
+                <label className="form-label" htmlFor="user-role">Role</label>
+                <select
+                  id="user-role"
+                  value={form.role}
+                  onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+                  className="input w-full"
+                >
                   {ROLES.map((r) => <option key={r} value={r} className="capitalize">{r.replace(/_/g, " ")}</option>)}
                 </select>
                 <p className="text-xs text-gray-400 mt-1">
@@ -222,8 +270,19 @@ export default function AdminUsersPage() {
                 </p>
               </div>
               <div>
-                <label className="form-label">{modal === "create" ? "Password" : "New Password (optional)"}</label>
-                <input type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} className="input w-full" placeholder={modal === "edit" ? "Leave blank to keep current" : ""} />
+                <label className="form-label" htmlFor="user-password">
+                  {modal === "create" ? "Password" : "New Password"}
+                  {modal === "edit" && <span className="text-gray-400 font-normal ml-1">(leave blank to keep current)</span>}
+                </label>
+                <input
+                  id="user-password"
+                  type="password"
+                  autoComplete={modal === "create" ? "new-password" : "off"}
+                  value={form.password}
+                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                  className="input w-full"
+                  placeholder={modal === "edit" ? "Leave blank to keep current" : "Min. 6 characters"}
+                />
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
@@ -235,6 +294,16 @@ export default function AdminUsersPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirm}
+        title={confirm?.title ?? ""}
+        message={confirm?.message ?? ""}
+        confirmLabel={confirm?.title.startsWith("Deactivate") ? "Deactivate" : "Confirm"}
+        variant={confirm?.title.startsWith("Deactivate") ? "danger" : "warning"}
+        onConfirm={() => confirm?.action()}
+        onCancel={() => setConfirm(null)}
+      />
     </div>
   );
 }
