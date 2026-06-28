@@ -158,6 +158,7 @@ function SectionCard({
             ) : (
               <input
                 type={field.type ?? "text"}
+                min={field.type === "number" ? 0 : undefined}
                 value={values[field.key] ?? ""}
                 onChange={(e) => onChange(field.key, e.target.value)}
                 placeholder={field.placeholder}

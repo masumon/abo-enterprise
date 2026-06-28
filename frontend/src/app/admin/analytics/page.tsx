@@ -114,8 +114,8 @@ export default function AnalyticsPage() {
         {loading ? (
           <div className="h-40 flex items-center justify-center text-gray-400">Loading...</div>
         ) : (
-          <div className="flex items-end gap-1 h-40 overflow-hidden">
-            {chart.slice(-30).map((d, i) => (
+          <div className="flex items-end gap-0.5 h-40 overflow-hidden">
+            {chart.map((d, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-0.5 group relative">
                 <div
                   className="w-full bg-blue-500 rounded-t-sm opacity-80 hover:opacity-100 transition-all min-h-[2px]"
