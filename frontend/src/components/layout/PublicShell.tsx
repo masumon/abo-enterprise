@@ -6,7 +6,6 @@ import Footer from "@/components/layout/Footer";
 import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import CartDrawer from "@/components/features/CartDrawer";
-import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import AssistantWidget from "@/components/ui/AssistantWidget";
 import CompareBar from "@/components/ui/CompareBar";
 import OfflineBanner from "@/components/ui/OfflineBanner";
@@ -32,7 +31,6 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <Footer />
       <CartDrawer />
       <CompareBar />
-      <WhatsAppButton />
       <AssistantWidget />
       <ApiWarmup />
       <MobileBottomNav />

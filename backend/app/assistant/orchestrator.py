@@ -55,6 +55,7 @@ class AssistantOrchestrator:
 
         # 2. Load conversation
         conv, ctx = await self.conversation_mgr.get_or_create_session(db, session_id, customer_phone)
+        await self.knowledge.load_faq_from_db(db)
         ctx = self.context_mgr.merge(
             ctx, conv.session_id,
             customer_name=customer_name or ctx.customer_name,

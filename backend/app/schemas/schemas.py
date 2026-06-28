@@ -927,3 +927,47 @@ class AssistantActionLogOut(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class AssistantConversationOut(BaseModel):
+    id: UUID
+    session_id: str
+    customer_name: str | None
+    customer_phone: str | None
+    customer_email: str | None
+    language: str
+    last_intent: str | None
+    created_at: datetime
+    updated_at: datetime
+    message_count: int = 0
+
+    model_config = {"from_attributes": True}
+
+
+class AssistantConfigOut(BaseModel):
+    feature_assistant_chat: bool = True
+    feature_assistant_whatsapp: bool = True
+    whatsapp_number: str = ""
+    assistant_welcome_en: str = ""
+    assistant_welcome_bn: str = ""
+
+
+class AssistantConfigUpdate(BaseModel):
+    feature_assistant_chat: bool | None = None
+    feature_assistant_whatsapp: bool | None = None
+    whatsapp_number: str | None = None
+    assistant_welcome_en: str | None = None
+    assistant_welcome_bn: str | None = None
+
+
+class AssistantFaqEntry(BaseModel):
+    key: str
+    topic: str = ""
+    answer_en: str
+    answer_bn: str = ""
+
+
+class AssistantFaqUpdate(BaseModel):
+    topic: str | None = None
+    answer_en: str | None = None
+    answer_bn: str | None = None

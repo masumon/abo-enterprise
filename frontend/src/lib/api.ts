@@ -372,6 +372,15 @@ export const publicApi = {
 };
 
 export const assistantApi = {
+  config: () =>
+    api.get<ApiResponse<{
+      enabled: boolean;
+      whatsapp_enabled: boolean;
+      whatsapp_number: string;
+      welcome_en: string;
+      welcome_bn: string;
+    }>>("/api/v1/assistant/config"),
+
   chat: (data: {
     message: string;
     session_id?: string;
@@ -397,6 +406,86 @@ export const assistantApi = {
 
   health: () =>
     api.get<ApiResponse<{ status: string; module: string }>>("/api/v1/assistant/health"),
+};
+
+export interface AssistantFaqEntry {
+  key: string;
+  topic: string;
+  answer_en: string;
+  answer_bn: string;
+}
+
+export interface AssistantConversation {
+  id: string;
+  session_id: string;
+  customer_name: string | null;
+  customer_phone: string | null;
+  customer_email: string | null;
+  language: string;
+  last_intent: string | null;
+  created_at: string;
+  updated_at: string;
+  message_count: number;
+}
+
+export interface AssistantActionLog {
+  id: string;
+  session_id: string | null;
+  intent: string | null;
+  action: string;
+  status: string;
+  details: Record<string, unknown>;
+  created_at: string;
+}
+
+export const assistantAdminApi = {
+  getConfig: () =>
+    api.get<ApiResponse<{
+      feature_assistant_chat: boolean;
+      feature_assistant_whatsapp: boolean;
+      whatsapp_number: string;
+      assistant_welcome_en: string;
+      assistant_welcome_bn: string;
+    }>>("/api/v1/assistant/admin/config"),
+
+  updateConfig: (data: {
+    feature_assistant_chat?: boolean;
+    feature_assistant_whatsapp?: boolean;
+    whatsapp_number?: string;
+    assistant_welcome_en?: string;
+    assistant_welcome_bn?: string;
+  }) =>
+    api.put<ApiResponse<null>>("/api/v1/assistant/admin/config", data),
+
+  listConversations: (params?: { page?: number; per_page?: number; search?: string }) =>
+    api.get<PaginatedResponse<AssistantConversation>>("/api/v1/assistant/admin/conversations", { params }),
+
+  getConversation: (id: string) =>
+    api.get<ApiResponse<{
+      conversation: AssistantConversation;
+      messages: { role: string; content: string; intent?: string }[];
+    }>>(`/api/v1/assistant/admin/conversations/${id}`),
+
+  deleteConversation: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/assistant/admin/conversations/${id}`),
+
+  listLogs: (params?: { page?: number; per_page?: number; session_id?: string }) =>
+    api.get<PaginatedResponse<AssistantActionLog>>("/api/v1/assistant/admin/logs", { params }),
+
+  deleteLog: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/assistant/admin/logs/${id}`),
+
+  listFaq: () =>
+    api.get<ApiResponse<AssistantFaqEntry[]>>("/api/v1/assistant/admin/faq"),
+
+  createFaq: (data: { key: string; answer_en: string; answer_bn?: string }) =>
+    api.post<ApiResponse<{ key: string }>>("/api/v1/assistant/admin/faq", data),
+
+  updateFaq: (key: string, data: { answer_en?: string; answer_bn?: string }) =>
+    api.put<ApiResponse<null>>(`/api/v1/assistant/admin/faq/${key}`, data),
+
+  deleteFaq: (key: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/assistant/admin/faq/${key}`),
 };
 
 export default api;

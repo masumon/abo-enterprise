@@ -1,0 +1,626 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import {
+  Bot, Loader2, Save, RefreshCw, Check, Trash2, Plus, Pencil, X,
+  MessageSquare, Zap, BookOpen, Settings2, Eye,
+} from "lucide-react";
+import {
+  assistantAdminApi,
+  type AssistantFaqEntry,
+  type AssistantConversation,
+  type AssistantActionLog,
+} from "@/lib/api";
+import { useToastStore } from "@/store/toast";
+import StatusBadge from "@/components/admin/StatusBadge";
+
+type Tab = "settings" | "conversations" | "logs" | "faq";
+
+const EMPTY_FAQ = { key: "", topic: "", answer_en: "", answer_bn: "" };
+
+function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <label className="flex items-center justify-between gap-4 py-3 cursor-pointer">
+      <span className="text-sm text-gray-700">{label}</span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={() => onChange(!checked)}
+        className={`relative w-11 h-6 rounded-full transition-colors ${checked ? "bg-brand-600" : "bg-gray-300"}`}
+      >
+        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${checked ? "translate-x-5" : ""}`} />
+      </button>
+    </label>
+  );
+}
+
+export default function AdminAssistantPage() {
+  const [tab, setTab] = useState<Tab>("settings");
+  const toast = useToastStore((s) => s.push);
+
+  // Settings
+  const [config, setConfig] = useState({
+    feature_assistant_chat: true,
+    feature_assistant_whatsapp: true,
+    whatsapp_number: "",
+    assistant_welcome_en: "",
+    assistant_welcome_bn: "",
+  });
+  const [configLoading, setConfigLoading] = useState(true);
+  const [configSaving, setConfigSaving] = useState(false);
+  const [configSaved, setConfigSaved] = useState(false);
+
+  // Conversations
+  const [conversations, setConversations] = useState<AssistantConversation[]>([]);
+  const [convLoading, setConvLoading] = useState(false);
+  const [convPage, setConvPage] = useState(1);
+  const [convTotal, setConvTotal] = useState(0);
+  const [convSearch, setConvSearch] = useState("");
+  const [convDetail, setConvDetail] = useState<{
+    conversation: AssistantConversation;
+    messages: { role: string; content: string; intent?: string }[];
+  } | null>(null);
+  const [convDetailLoading, setConvDetailLoading] = useState(false);
+  const [deletingConvId, setDeletingConvId] = useState<string | null>(null);
+
+  // Logs
+  const [logs, setLogs] = useState<AssistantActionLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsPage, setLogsPage] = useState(1);
+  const [logsTotal, setLogsTotal] = useState(0);
+  const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
+
+  // FAQ
+  const [faqList, setFaqList] = useState<AssistantFaqEntry[]>([]);
+  const [faqLoading, setFaqLoading] = useState(false);
+  const [faqEditing, setFaqEditing] = useState<AssistantFaqEntry | null>(null);
+  const [faqIsNew, setFaqIsNew] = useState(false);
+  const [faqSaving, setFaqSaving] = useState(false);
+  const [deletingFaqKey, setDeletingFaqKey] = useState<string | null>(null);
+
+  const loadConfig = useCallback(async () => {
+    setConfigLoading(true);
+    try {
+      const r = await assistantAdminApi.getConfig();
+      if (r.data.data) setConfig(r.data.data);
+    } catch {
+      toast("error", "Failed to load assistant settings");
+    } finally {
+      setConfigLoading(false);
+    }
+  }, [toast]);
+
+  const loadConversations = useCallback(async () => {
+    setConvLoading(true);
+    try {
+      const r = await assistantAdminApi.listConversations({ page: convPage, per_page: 20, search: convSearch || undefined });
+      setConversations(r.data.data ?? []);
+      setConvTotal(r.data.meta?.total ?? 0);
+    } catch {
+      toast("error", "Failed to load conversations");
+    } finally {
+      setConvLoading(false);
+    }
+  }, [convPage, convSearch, toast]);
+
+  const loadLogs = useCallback(async () => {
+    setLogsLoading(true);
+    try {
+      const r = await assistantAdminApi.listLogs({ page: logsPage, per_page: 20 });
+      setLogs(r.data.data ?? []);
+      setLogsTotal(r.data.meta?.total ?? 0);
+    } catch {
+      toast("error", "Failed to load automation logs");
+    } finally {
+      setLogsLoading(false);
+    }
+  }, [logsPage, toast]);
+
+  const loadFaq = useCallback(async () => {
+    setFaqLoading(true);
+    try {
+      const r = await assistantAdminApi.listFaq();
+      setFaqList(r.data.data ?? []);
+    } catch {
+      toast("error", "Failed to load FAQ knowledge");
+    } finally {
+      setFaqLoading(false);
+    }
+  }, [toast]);
+
+  useEffect(() => { loadConfig(); }, [loadConfig]);
+  useEffect(() => { if (tab === "conversations") loadConversations(); }, [tab, loadConversations]);
+  useEffect(() => { if (tab === "logs") loadLogs(); }, [tab, loadLogs]);
+  useEffect(() => { if (tab === "faq") loadFaq(); }, [tab, loadFaq]);
+
+  const saveConfig = async () => {
+    setConfigSaving(true);
+    try {
+      await assistantAdminApi.updateConfig(config);
+      setConfigSaved(true);
+      setTimeout(() => setConfigSaved(false), 2500);
+      toast("success", "Assistant settings saved");
+    } catch {
+      toast("error", "Failed to save settings");
+    } finally {
+      setConfigSaving(false);
+    }
+  };
+
+  const viewConversation = async (id: string) => {
+    setConvDetailLoading(true);
+    try {
+      const r = await assistantAdminApi.getConversation(id);
+      setConvDetail(r.data.data ?? null);
+    } catch {
+      toast("error", "Failed to load conversation");
+    } finally {
+      setConvDetailLoading(false);
+    }
+  };
+
+  const deleteConversation = async (id: string) => {
+    if (!confirm("Delete this conversation? This cannot be undone.")) return;
+    setDeletingConvId(id);
+    try {
+      await assistantAdminApi.deleteConversation(id);
+      toast("success", "Conversation deleted");
+      if (convDetail?.conversation.id === id) setConvDetail(null);
+      await loadConversations();
+    } catch {
+      toast("error", "Failed to delete conversation");
+    } finally {
+      setDeletingConvId(null);
+    }
+  };
+
+  const deleteLog = async (id: string) => {
+    if (!confirm("Delete this automation log?")) return;
+    setDeletingLogId(id);
+    try {
+      await assistantAdminApi.deleteLog(id);
+      toast("success", "Log deleted");
+      await loadLogs();
+    } catch {
+      toast("error", "Failed to delete log");
+    } finally {
+      setDeletingLogId(null);
+    }
+  };
+
+  const openNewFaq = () => {
+    setFaqEditing({ ...EMPTY_FAQ });
+    setFaqIsNew(true);
+  };
+
+  const openEditFaq = (entry: AssistantFaqEntry) => {
+    setFaqEditing({ ...entry });
+    setFaqIsNew(false);
+  };
+
+  const saveFaq = async () => {
+    if (!faqEditing) return;
+    if (!faqEditing.key.trim()) { toast("error", "FAQ key is required"); return; }
+    if (!faqEditing.answer_en.trim()) { toast("error", "English answer is required"); return; }
+
+    setFaqSaving(true);
+    try {
+      if (faqIsNew) {
+        await assistantAdminApi.createFaq({
+          key: faqEditing.key,
+          answer_en: faqEditing.answer_en,
+          answer_bn: faqEditing.answer_bn || undefined,
+        });
+        toast("success", "FAQ entry created");
+      } else {
+        await assistantAdminApi.updateFaq(faqEditing.key, {
+          answer_en: faqEditing.answer_en,
+          answer_bn: faqEditing.answer_bn,
+        });
+        toast("success", "FAQ entry updated");
+      }
+      setFaqEditing(null);
+      await loadFaq();
+    } catch {
+      toast("error", faqIsNew ? "Failed to create FAQ" : "Failed to update FAQ");
+    } finally {
+      setFaqSaving(false);
+    }
+  };
+
+  const deleteFaq = async (key: string) => {
+    if (!confirm(`Delete FAQ "${key}"?`)) return;
+    setDeletingFaqKey(key);
+    try {
+      await assistantAdminApi.deleteFaq(key);
+      toast("success", "FAQ deleted");
+      await loadFaq();
+    } catch {
+      toast("error", "Failed to delete FAQ");
+    } finally {
+      setDeletingFaqKey(null);
+    }
+  };
+
+  const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: "settings", label: "Settings", icon: Settings2 },
+    { id: "conversations", label: "Conversations", icon: MessageSquare },
+    { id: "logs", label: "Automation Logs", icon: Zap },
+    { id: "faq", label: "FAQ Knowledge", icon: BookOpen },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Bot className="w-7 h-7 text-brand-600" />
+            <h1 className="text-2xl font-bold text-gray-900">AI Assistant</h1>
+          </div>
+          <p className="text-gray-500 text-sm mt-1">
+            Manage automation assistant, WhatsApp integration, conversations and knowledge base
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-1">
+        {tabs.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-medium transition-colors ${
+              tab === id
+                ? "bg-brand-600 text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Icon className="w-4 h-4" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Settings Tab */}
+      {tab === "settings" && (
+        <div className="max-w-2xl">
+          {configLoading ? (
+            <div className="h-64 bg-gray-100 rounded-2xl animate-pulse" />
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                <h2 className="text-sm font-semibold text-gray-800">Assistant & WhatsApp Settings</h2>
+                <button
+                  onClick={saveConfig}
+                  disabled={configSaving}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    configSaved ? "bg-green-500 text-white" : "bg-brand-600 text-white hover:bg-brand-700"
+                  } disabled:opacity-60`}
+                >
+                  {configSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : configSaved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+                  {configSaving ? "Saving…" : configSaved ? "Saved!" : "Save"}
+                </button>
+              </div>
+              <div className="divide-y divide-gray-50 px-6">
+                <Toggle
+                  label="Enable AI Assistant Chat Widget"
+                  checked={config.feature_assistant_chat}
+                  onChange={(v) => setConfig((c) => ({ ...c, feature_assistant_chat: v }))}
+                />
+                <Toggle
+                  label="Show WhatsApp option inside Assistant (replaces floating button)"
+                  checked={config.feature_assistant_whatsapp}
+                  onChange={(v) => setConfig((c) => ({ ...c, feature_assistant_whatsapp: v }))}
+                />
+                <div className="py-4">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                    WhatsApp Number (with country code)
+                  </label>
+                  <input
+                    type="tel"
+                    value={config.whatsapp_number}
+                    onChange={(e) => setConfig((c) => ({ ...c, whatsapp_number: e.target.value }))}
+                    placeholder="8801825007977"
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">Used for WhatsApp chat inside the AI assistant widget</p>
+                </div>
+                <div className="py-4">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                    Welcome Message (English)
+                  </label>
+                  <textarea
+                    value={config.assistant_welcome_en}
+                    onChange={(e) => setConfig((c) => ({ ...c, assistant_welcome_en: e.target.value }))}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 resize-none"
+                  />
+                </div>
+                <div className="py-4">
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                    Welcome Message (বাংলা)
+                  </label>
+                  <textarea
+                    value={config.assistant_welcome_bn}
+                    onChange={(e) => setConfig((c) => ({ ...c, assistant_welcome_bn: e.target.value }))}
+                    rows={2}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 resize-none"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Conversations Tab */}
+      {tab === "conversations" && (
+        <div className="space-y-4">
+          <div className="flex gap-3">
+            <input
+              type="text"
+              value={convSearch}
+              onChange={(e) => setConvSearch(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && loadConversations()}
+              placeholder="Search by session, name or phone…"
+              className="flex-1 max-w-sm px-3 py-2 border border-gray-200 rounded-lg text-sm"
+            />
+            <button onClick={loadConversations} className="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">
+              <RefreshCw className={`w-4 h-4 ${convLoading ? "animate-spin" : ""}`} />
+            </button>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            {convLoading ? (
+              <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-600" /></div>
+            ) : conversations.length === 0 ? (
+              <p className="text-center text-gray-500 py-16 text-sm">No conversations yet</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <tr>
+                      <th className="text-left px-4 py-3">Session</th>
+                      <th className="text-left px-4 py-3">Customer</th>
+                      <th className="text-left px-4 py-3">Intent</th>
+                      <th className="text-left px-4 py-3">Messages</th>
+                      <th className="text-left px-4 py-3">Updated</th>
+                      <th className="text-right px-4 py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {conversations.map((c) => (
+                      <tr key={c.id} className="hover:bg-gray-50/50">
+                        <td className="px-4 py-3 font-mono text-xs">{c.session_id.slice(0, 12)}…</td>
+                        <td className="px-4 py-3">
+                          <div>{c.customer_name || "—"}</div>
+                          <div className="text-xs text-gray-400">{c.customer_phone || ""}</div>
+                        </td>
+                        <td className="px-4 py-3">{c.last_intent ? <StatusBadge status={c.last_intent} /> : "—"}</td>
+                        <td className="px-4 py-3">{c.message_count}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500">{new Date(c.updated_at).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button onClick={() => viewConversation(c.id)} className="p-1.5 rounded-lg hover:bg-brand-50 text-brand-600" title="View">
+                              <Eye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => deleteConversation(c.id)}
+                              disabled={deletingConvId === c.id}
+                              className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"
+                              title="Delete"
+                            >
+                              {deletingConvId === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {convTotal > 20 && (
+            <div className="flex justify-center gap-2">
+              <button disabled={convPage <= 1} onClick={() => setConvPage((p) => p - 1)} className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40">Prev</button>
+              <span className="text-sm text-gray-500 py-1">Page {convPage}</span>
+              <button disabled={convPage * 20 >= convTotal} onClick={() => setConvPage((p) => p + 1)} className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40">Next</button>
+            </div>
+          )}
+
+          {(convDetail || convDetailLoading) && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setConvDetail(null)}>
+              <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-5 py-4 border-b">
+                  <h3 className="font-semibold">Conversation Detail</h3>
+                  <button onClick={() => setConvDetail(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
+                </div>
+                <div className="flex-1 overflow-y-auto p-5 space-y-3">
+                  {convDetailLoading ? (
+                    <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-brand-600" /></div>
+                  ) : convDetail?.messages.map((m, i) => (
+                    <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                      <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm ${
+                        m.role === "user" ? "bg-brand-600 text-white" : "bg-gray-100 text-gray-800"
+                      }`}>
+                        {m.content}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Automation Logs Tab */}
+      {tab === "logs" && (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <button onClick={loadLogs} className="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">
+              <RefreshCw className={`w-4 h-4 ${logsLoading ? "animate-spin" : ""}`} />
+            </button>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            {logsLoading ? (
+              <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-600" /></div>
+            ) : logs.length === 0 ? (
+              <p className="text-center text-gray-500 py-16 text-sm">No automation logs yet</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
+                    <tr>
+                      <th className="text-left px-4 py-3">Action</th>
+                      <th className="text-left px-4 py-3">Intent</th>
+                      <th className="text-left px-4 py-3">Status</th>
+                      <th className="text-left px-4 py-3">Session</th>
+                      <th className="text-left px-4 py-3">Time</th>
+                      <th className="text-right px-4 py-3">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {logs.map((log) => (
+                      <tr key={log.id} className="hover:bg-gray-50/50">
+                        <td className="px-4 py-3 font-medium">{log.action}</td>
+                        <td className="px-4 py-3">{log.intent || "—"}</td>
+                        <td className="px-4 py-3"><StatusBadge status={log.status} /></td>
+                        <td className="px-4 py-3 font-mono text-xs">{log.session_id?.slice(0, 10) || "—"}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500">{new Date(log.created_at).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={() => deleteLog(log.id)}
+                            disabled={deletingLogId === log.id}
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"
+                          >
+                            {deletingLogId === log.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
+          {logsTotal > 20 && (
+            <div className="flex justify-center gap-2">
+              <button disabled={logsPage <= 1} onClick={() => setLogsPage((p) => p - 1)} className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40">Prev</button>
+              <span className="text-sm text-gray-500 py-1">Page {logsPage}</span>
+              <button disabled={logsPage * 20 >= logsTotal} onClick={() => setLogsPage((p) => p + 1)} className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40">Next</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* FAQ Tab */}
+      {tab === "faq" && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <p className="text-sm text-gray-500">{faqList.length} knowledge entries</p>
+            <button onClick={openNewFaq} className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700">
+              <Plus className="w-4 h-4" /> Add FAQ
+            </button>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            {faqLoading ? (
+              <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-600" /></div>
+            ) : faqList.length === 0 ? (
+              <p className="text-center text-gray-500 py-16 text-sm">No FAQ entries. Add your first one.</p>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {faqList.map((entry) => (
+                  <div key={entry.key} className="px-6 py-4 hover:bg-gray-50/50">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-mono bg-gray-100 px-2 py-0.5 rounded">{entry.key}</span>
+                          <span className="text-sm font-semibold text-gray-800">{entry.topic}</span>
+                        </div>
+                        <p className="text-sm text-gray-600 line-clamp-2">{entry.answer_en}</p>
+                        {entry.answer_bn && (
+                          <p className="text-sm text-gray-400 line-clamp-1 mt-1">{entry.answer_bn}</p>
+                        )}
+                      </div>
+                      <div className="flex gap-1 flex-shrink-0">
+                        <button onClick={() => openEditFaq(entry)} className="p-1.5 rounded-lg hover:bg-brand-50 text-brand-600">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => deleteFaq(entry.key)}
+                          disabled={deletingFaqKey === entry.key}
+                          className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"
+                        >
+                          {deletingFaqKey === entry.key ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {faqEditing && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setFaqEditing(null)}>
+              <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-5 py-4 border-b">
+                  <h3 className="font-semibold">{faqIsNew ? "Add FAQ Entry" : `Edit: ${faqEditing.key}`}</h3>
+                  <button onClick={() => setFaqEditing(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
+                </div>
+                <div className="p-5 space-y-4">
+                  {faqIsNew && (
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Key (e.g. delivery, warranty)</label>
+                      <input
+                        value={faqEditing.key}
+                        onChange={(e) => setFaqEditing((f) => f && { ...f, key: e.target.value })}
+                        placeholder="delivery"
+                        className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Answer (English)</label>
+                    <textarea
+                      value={faqEditing.answer_en}
+                      onChange={(e) => setFaqEditing((f) => f && { ...f, answer_en: e.target.value })}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Answer (বাংলা)</label>
+                    <textarea
+                      value={faqEditing.answer_bn}
+                      onChange={(e) => setFaqEditing((f) => f && { ...f, answer_bn: e.target.value })}
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <button onClick={() => setFaqEditing(null)} className="px-4 py-2 border border-gray-200 rounded-lg text-sm">Cancel</button>
+                    <button
+                      onClick={saveFaq}
+                      disabled={faqSaving}
+                      className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium disabled:opacity-60"
+                    >
+                      {faqSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                      {faqIsNew ? "Create" : "Update"}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

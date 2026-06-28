@@ -11,6 +11,7 @@ import {
   Truck,
   Phone,
   Minus,
+  MessageCircle,
 } from "lucide-react";
 import { assistantApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -24,7 +25,22 @@ interface ChatMessage {
   content: string;
 }
 
+interface AssistantConfig {
+  enabled: boolean;
+  whatsapp_enabled: boolean;
+  whatsapp_number: string;
+  welcome_en: string;
+  welcome_bn: string;
+}
+
 const SESSION_KEY = "abo_assistant_session";
+const DEFAULT_CONFIG: AssistantConfig = {
+  enabled: true,
+  whatsapp_enabled: true,
+  whatsapp_number: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "8801825007977",
+  welcome_en: "",
+  welcome_bn: "",
+};
 
 function formatMessageContent(text: string) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
@@ -58,34 +74,80 @@ function TypingIndicator({ label }: { label: string }) {
 }
 
 export default function AssistantWidget() {
-  const enabled = useFeatureFlag("feature_assistant_chat", true);
+  const flagEnabled = useFeatureFlag("feature_assistant_chat", true);
   const t = useT();
   const { lang } = useLanguageStore();
+  const [config, setConfig] = useState<AssistantConfig>(DEFAULT_CONFIG);
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const trapRef = useFocusTrap(open);
 
-  const quickActions = useMemo(
-    () => [
+  const enabled = flagEnabled && config.enabled;
+
+  const welcomeText = useMemo(() => {
+    const custom = lang === "bn" ? config.welcome_bn : config.welcome_en;
+    return custom || t("assistant_welcome");
+  }, [config.welcome_bn, config.welcome_en, lang, t]);
+
+  const whatsappUrl = useMemo(() => {
+    const number = config.whatsapp_number.replace(/\D/g, "");
+    const text = lang === "bn"
+      ? "হ্যালো ABO Enterprise, আমার সাহায্য দরকার।"
+      : "Hello ABO Enterprise, I need help.";
+    return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
+  }, [config.whatsapp_number, lang]);
+
+  const quickActions = useMemo(() => {
+    const actions = [
       { icon: Package, label: t("assistant_quick_products"), message: lang === "bn" ? "পণ্য দেখান" : "Show products" },
       { icon: Briefcase, label: t("assistant_quick_services"), message: lang === "bn" ? "সেবা সম্পর্কে জানুন" : "Tell me about services" },
       { icon: Truck, label: t("assistant_quick_track"), message: lang === "bn" ? "অর্ডার ট্র্যাক করতে চাই" : "I want to track my order" },
       { icon: Phone, label: t("assistant_quick_contact"), message: lang === "bn" ? "যোগাযোগের তথ্য দিন" : "Contact information" },
-    ],
-    [t, lang]
-  );
+    ];
+    if (config.whatsapp_enabled) {
+      actions.push({
+        icon: MessageCircle,
+        label: t("assistant_quick_whatsapp"),
+        message: "__whatsapp__",
+      });
+    }
+    return actions;
+  }, [t, lang, config.whatsapp_enabled]);
+
+  useEffect(() => {
+    assistantApi.config()
+      .then((r) => {
+        if (r.data.data) setConfig({ ...DEFAULT_CONFIG, ...r.data.data });
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
       setSessionId(localStorage.getItem(SESSION_KEY));
     }
   }, []);
+
+  useEffect(() => {
+    if (!sessionId || !enabled) return;
+    setHistoryLoading(true);
+    assistantApi.history(sessionId, 30)
+      .then((r) => {
+        const history = r.data.data ?? [];
+        if (history.length > 0) {
+          setMessages(history.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })));
+        }
+      })
+      .catch(() => {})
+      .finally(() => setHistoryLoading(false));
+  }, [sessionId, enabled]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -108,6 +170,11 @@ export default function AssistantWidget() {
 
   const sendText = useCallback(
     async (text: string) => {
+      if (text === "__whatsapp__") {
+        window.open(whatsappUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
+
       const trimmed = text.trim();
       if (!trimmed || loading) return;
 
@@ -140,7 +207,7 @@ export default function AssistantWidget() {
         setLoading(false);
       }
     },
-    [loading, sessionId, lang, t]
+    [loading, sessionId, lang, t, whatsappUrl]
   );
 
   const sendMessage = useCallback(() => sendText(input), [input, sendText]);
@@ -149,7 +216,6 @@ export default function AssistantWidget() {
 
   return (
     <>
-      {/* Backdrop */}
       {open && (
         <div
           className="fixed inset-0 z-40 animate-fade-in lg:bg-transparent"
@@ -159,7 +225,6 @@ export default function AssistantWidget() {
         />
       )}
 
-      {/* Chat panel */}
       {open && (
         <div
           ref={trapRef}
@@ -175,7 +240,6 @@ export default function AssistantWidget() {
             lang === "bn" && "font-bangla"
           )}
         >
-          {/* Header */}
           <div className="relative flex-shrink-0 gradient-brand px-4 py-4 overflow-hidden">
             <div
               className="absolute inset-0 opacity-30"
@@ -217,16 +281,15 @@ export default function AssistantWidget() {
             </div>
           </div>
 
-          {/* Messages */}
           <div className="flex-1 overflow-y-auto assistant-chat-bg px-4 py-4 space-y-4 scrollbar-hide">
-            {messages.length === 0 && (
+            {messages.length === 0 && !historyLoading && (
               <div className="animate-fade-in space-y-4 pt-2">
                 <div className="text-center px-2">
                   <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl gradient-brand shadow-lg shadow-brand-500/25 mb-3">
                     <Sparkles className="w-7 h-7 text-white" />
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed max-w-[280px] mx-auto">
-                    {t("assistant_welcome")}
+                    {welcomeText}
                   </p>
                 </div>
 
@@ -241,11 +304,22 @@ export default function AssistantWidget() {
                         "flex flex-col items-start gap-2 p-3 rounded-2xl text-left transition-all duration-200",
                         "bg-white/80 dark:bg-white/5 border border-gray-100/80 dark:border-white/10",
                         "hover:border-brand-200 dark:hover:border-brand-500/30 hover:shadow-md hover:-translate-y-0.5",
-                        "disabled:opacity-50 disabled:pointer-events-none"
+                        "disabled:opacity-50 disabled:pointer-events-none",
+                        message === "__whatsapp__" && "border-green-200/80 hover:border-green-300"
                       )}
                     >
-                      <span className="w-8 h-8 rounded-xl bg-brand-50 dark:bg-brand-900/40 flex items-center justify-center">
-                        <Icon className="w-4 h-4 text-brand-600 dark:text-brand-300" />
+                      <span className={cn(
+                        "w-8 h-8 rounded-xl flex items-center justify-center",
+                        message === "__whatsapp__"
+                          ? "bg-green-50 dark:bg-green-900/40"
+                          : "bg-brand-50 dark:bg-brand-900/40"
+                      )}>
+                        <Icon className={cn(
+                          "w-4 h-4",
+                          message === "__whatsapp__"
+                            ? "text-green-600 dark:text-green-300"
+                            : "text-brand-600 dark:text-brand-300"
+                        )} />
                       </span>
                       <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 leading-snug">
                         {label}
@@ -253,6 +327,12 @@ export default function AssistantWidget() {
                     </button>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {historyLoading && (
+              <div className="flex justify-center py-8">
+                <TypingIndicator label={t("assistant_typing")} />
               </div>
             )}
 
@@ -302,8 +382,18 @@ export default function AssistantWidget() {
             <div ref={bottomRef} />
           </div>
 
-          {/* Input */}
           <div className="flex-shrink-0 p-3 border-t border-gray-100/80 dark:border-white/10 bg-white/60 dark:bg-[#0a1628]/60 backdrop-blur-md">
+            {config.whatsapp_enabled && (
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full mb-2 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-semibold transition-colors"
+              >
+                <MessageCircle className="w-4 h-4" />
+                {t("assistant_quick_whatsapp")}
+              </a>
+            )}
             <div className="flex items-center gap-2">
               <input
                 ref={inputRef}
@@ -344,8 +434,7 @@ export default function AssistantWidget() {
         </div>
       )}
 
-      {/* FAB */}
-      <div className="fixed bottom-mobile-float right-[4.75rem] lg:bottom-6 lg:right-24 z-50">
+      <div className="fixed bottom-mobile-float right-4 lg:bottom-6 lg:right-6 z-50">
         {open && (
           <button
             type="button"

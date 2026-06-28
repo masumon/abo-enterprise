@@ -17,7 +17,7 @@ interface AdminLead extends Lead {
 }
 
 export default function AdminLeadsPage() {
-  const [tab, setTab] = useState<"v1" | "v2">("v1");
+  const [tab, setTab] = useState<"v1" | "v2">("v2");
 
   // V1 state
   const [leads, setLeads] = useState<AdminLead[]>([]);

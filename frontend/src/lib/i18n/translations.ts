@@ -98,6 +98,7 @@ const translations = {
     assistant_quick_services: "Our services",
     assistant_quick_track: "Track order",
     assistant_quick_contact: "Contact us",
+    assistant_quick_whatsapp: "Chat on WhatsApp",
     assistant_powered: "Powered by ABO Automation",
   },
   bn: {
@@ -186,6 +187,7 @@ const translations = {
     assistant_quick_services: "আমাদের সেবা",
     assistant_quick_track: "অর্ডার ট্র্যাক",
     assistant_quick_contact: "যোগাযোগ",
+    assistant_quick_whatsapp: "WhatsApp এ চ্যাট",
     assistant_powered: "ABO Automation দ্বারা পরিচালিত",
   },
 } as const;
