@@ -22,8 +22,13 @@ export default function FeaturedProducts() {
 
   useEffect(() => {
     productsApi.list({ featured: true, per_page: 8 } as Parameters<typeof productsApi.list>[0])
-      .then((r) => {
-        setProducts(r.data.data ?? []);
+      .then(async (r) => {
+        let data = r.data.data ?? [];
+        if (data.length === 0) {
+          const fallback = await productsApi.list({ per_page: 8 });
+          data = fallback.data.data ?? [];
+        }
+        setProducts(data);
         setError(false);
       })
       .catch(() => setError(true))

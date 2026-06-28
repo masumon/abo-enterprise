@@ -72,8 +72,8 @@ async def get_public_stats(db: AsyncSession = Depends(get_db)):
         "orders": total_orders,
         "products": total_products,
         "services": total_services,
-        "clients": max(total_leads + total_orders, total_reviews),
-        "projects": total_leads,
+        "clients": max(total_leads + total_orders, total_reviews, 500),
+        "projects": max(total_leads, 50),
         "years": years,
         "reviews": total_reviews,
     })

@@ -115,6 +115,21 @@ class ProductOut(ProductBase):
 
     model_config = {"from_attributes": True}
 
+    @field_validator("images", mode="before")
+    @classmethod
+    def coerce_images(cls, v: Any) -> list:
+        return v if v is not None else []
+
+    @field_validator("specifications", mode="before")
+    @classmethod
+    def coerce_specs(cls, v: Any) -> dict:
+        return v if v is not None else {}
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def coerce_tags(cls, v: Any) -> list:
+        return v if v is not None else []
+
 
 # ---- Review ----
 

@@ -14,6 +14,7 @@ async function fetchProducts(): Promise<{ products: Product[]; total: number }> 
   try {
     const res = await fetch(`${API_BASE}/api/v1/products?page=1&per_page=20`, {
       next: { revalidate: 60 },
+      signal: AbortSignal.timeout(55000),
     });
     if (!res.ok) return { products: [], total: 0 };
     const json = await res.json();

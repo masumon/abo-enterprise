@@ -18,18 +18,24 @@ export default function AnimatedCounter({
   duration = 2000,
   className,
 }: AnimatedCounterProps) {
-  const [value, setValue] = useState(0);
+  const [value, setValue] = useState(end);
   const ref = useRef<HTMLSpanElement>(null);
   const started = useRef(false);
 
   useEffect(() => {
+    setValue(end);
+    started.current = false;
+  }, [end]);
+
+  useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    if (!el || end <= 0) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting && !started.current) {
           started.current = true;
+          setValue(0);
           const start = performance.now();
           const tick = (now: number) => {
             const progress = Math.min((now - start) / duration, 1);

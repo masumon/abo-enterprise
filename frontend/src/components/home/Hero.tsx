@@ -9,6 +9,8 @@ import { useT } from "@/lib/i18n/useT";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import { publicApi } from "@/lib/api";
 import { ABO_ACRONYM } from "@/lib/tokens";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { MARKETING_STATS } from "@/lib/siteDefaults";
 
 interface ActivityItem {
   icon: string;
@@ -24,26 +26,44 @@ interface StatsData {
   projects: number;
 }
 
-const FALLBACK_STATS: StatsData = { orders: 0, services: 12, clients: 500, projects: 50 };
+const FALLBACK_STATS: StatsData = {
+  orders: MARKETING_STATS.orders,
+  services: MARKETING_STATS.services,
+  clients: MARKETING_STATS.clients,
+  projects: MARKETING_STATS.projects,
+};
 const FALLBACK_ACTIVITY: ActivityItem[] = [
   { icon: "🛒", text_en: "New order received", text_bn: "নতুন অর্ডার", time: "—" },
   { icon: "📅", text_en: "Booking confirmed", text_bn: "বুকিং নিশ্চিত", time: "—" },
 ];
 
+function displayStat(actual: number, floor: number): number {
+  return actual > 0 ? actual : floor;
+}
+
 export default function Hero() {
   const { lang } = useLanguageStore();
   const t = useT();
+  const { settings } = usePublicSettings(["hero_image_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn"]);
   const [stats, setStats] = useState<StatsData>(FALLBACK_STATS);
   const [activity, setActivity] = useState<ActivityItem[]>(FALLBACK_ACTIVITY);
+
+  const heroImage = getSettingValue(settings, "hero_image_url");
+  const heroTitle = lang === "bn"
+    ? getSettingValue(settings, "hero_title_bn") || t("hero_title_2")
+    : getSettingValue(settings, "hero_title_en");
+  const heroSubtitle = lang === "bn"
+    ? getSettingValue(settings, "hero_subtitle_bn") || t("hero_sub")
+    : getSettingValue(settings, "hero_subtitle_en") || t("hero_sub");
 
   useEffect(() => {
     publicApi.stats().then((r) => {
       const d = r.data.data;
       if (d) setStats({
-        orders: d.orders ?? 0,
-        services: d.services ?? 12,
-        clients: d.clients ?? 500,
-        projects: d.projects ?? 50,
+        orders: displayStat(d.orders ?? 0, MARKETING_STATS.orders),
+        services: displayStat(d.services ?? 0, MARKETING_STATS.services),
+        clients: displayStat(d.clients ?? 0, MARKETING_STATS.clients),
+        projects: displayStat(d.projects ?? 0, MARKETING_STATS.projects),
       });
     }).catch(() => {});
     publicApi.activity().then((r) => {
@@ -53,7 +73,14 @@ export default function Hero() {
   }, []);
 
   return (
-    <section className="gradient-hero min-h-[92vh] flex items-center relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-offset)]">
+    <section
+      className="gradient-hero min-h-[92vh] flex items-center relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-offset)]"
+      style={heroImage ? {
+        backgroundImage: `linear-gradient(135deg, rgba(21,101,192,0.92) 0%, rgba(13,71,161,0.88) 50%, rgba(233,30,99,0.75) 100%), url(${heroImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      } : undefined}
+    >
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-accent-500/10 rounded-full blur-3xl" />
@@ -68,13 +95,19 @@ export default function Hero() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight text-balance">
-              {t("hero_title_1")}<br />
-              <span className="text-yellow-300">{t("hero_title_2")}</span><br />
-              {t("hero_title_3")}
+              {heroTitle ? (
+                <span>{heroTitle}</span>
+              ) : (
+                <>
+                  {t("hero_title_1")}<br />
+                  <span className="text-yellow-300">{t("hero_title_2")}</span><br />
+                  {t("hero_title_3")}
+                </>
+              )}
             </h1>
 
             <p className="text-white/80 text-lg max-w-lg leading-relaxed">
-              {t("hero_sub")}
+              {heroSubtitle}
             </p>
 
             <p className="text-white/60 text-xs max-w-lg">
@@ -121,7 +154,7 @@ export default function Hero() {
 
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   {[
-                    { label: lang === "bn" ? "অর্ডার" : "Orders", end: stats.orders || 1, suffix: "+", icon: "📦" },
+                    { label: lang === "bn" ? "অর্ডার" : "Orders", end: stats.orders, suffix: "+", icon: "📦" },
                     { label: lang === "bn" ? "সেবা" : "Services", end: stats.services, suffix: "+", icon: "⚙️" },
                     { label: lang === "bn" ? "গ্রাহক" : "Clients", end: stats.clients, suffix: "+", icon: "👥" },
                     { label: lang === "bn" ? "প্রজেক্ট" : "Projects", end: stats.projects, suffix: "+", icon: "🚀" },
