@@ -3,9 +3,9 @@
 import { useEffect, useState, useCallback } from "react";
 import {
   Loader2, Plus, Pencil, Trash2, X, ToggleLeft, ToggleRight,
-  CreditCard, Check, AlertCircle,
+  CreditCard, Check, AlertCircle, Receipt,
 } from "lucide-react";
-import { paymentMethodsAdminApi, type PaymentMethodRecord } from "@/lib/api";
+import { paymentMethodsAdminApi, adminApi, type PaymentMethodRecord } from "@/lib/api";
 import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
 
@@ -56,8 +56,17 @@ const EMPTY_FORM: Partial<PaymentMethodRecord> = {
 };
 
 export default function AdminPaymentsPage() {
+  const [tab, setTab] = useState<"gateways" | "transactions">("gateways");
   const [methods, setMethods] = useState<PaymentMethodRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [transactions, setTransactions] = useState<{
+    id: string; gateway: string; reference_id: string; payment_id: string | null;
+    order_id: string | null; amount: number; status: string; created_at: string;
+  }[]>([]);
+  const [txLoading, setTxLoading] = useState(false);
+  const [txGateway, setTxGateway] = useState("all");
+  const [txPage, setTxPage] = useState(1);
+  const [txTotal, setTxTotal] = useState(0);
   const [editing, setEditing] = useState<Partial<PaymentMethodRecord> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -77,7 +86,22 @@ export default function AdminPaymentsPage() {
     }
   }, [toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (tab === "gateways") load(); }, [load, tab]);
+
+  const loadTransactions = useCallback(async () => {
+    setTxLoading(true);
+    try {
+      const r = await adminApi.listPaymentTransactions({ gateway: txGateway, page: txPage, per_page: 20 });
+      setTransactions(r.data.data ?? []);
+      setTxTotal(r.data.meta?.total ?? 0);
+    } catch {
+      toast("error", "Failed to load transactions");
+    } finally {
+      setTxLoading(false);
+    }
+  }, [txGateway, txPage, toast]);
+
+  useEffect(() => { if (tab === "transactions") loadTransactions(); }, [loadTransactions, tab]);
 
   const openNew = (gateway?: string) => {
     setEditing({ ...EMPTY_FORM, payment_gateway: gateway ?? "" });
@@ -153,18 +177,88 @@ export default function AdminPaymentsPage() {
   const configured = new Set(methods.map((m) => m.payment_gateway));
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-5xl">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Payment Gateways</h1>
-          <p className="text-gray-500 text-sm mt-1">Configure which payment methods are available at checkout</p>
+          <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
+          <p className="text-gray-500 text-sm mt-1">
+            {tab === "gateways" ? "Configure checkout payment methods" : "View bKash & Nagad transactions"}
+          </p>
         </div>
-        <button onClick={() => openNew()} className="btn btn-primary btn-sm gap-1.5">
-          <Plus className="w-4 h-4" /> Add Gateway
-        </button>
+        {tab === "gateways" && (
+          <button onClick={() => openNew()} className="btn btn-primary btn-sm gap-1.5">
+            <Plus className="w-4 h-4" /> Add Gateway
+          </button>
+        )}
       </div>
 
-      {loading ? (
+      <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+        {(["gateways", "transactions"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
+              tab === t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {t === "gateways" ? "Gateways" : "Transactions"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "transactions" ? (
+        <div className="admin-card overflow-hidden">
+          <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3">
+            <Receipt className="w-4 h-4 text-gray-400" />
+            <select
+              value={txGateway}
+              onChange={(e) => { setTxGateway(e.target.value); setTxPage(1); }}
+              className="border border-gray-200 rounded-lg text-sm px-3 py-1.5"
+            >
+              <option value="all">All Gateways</option>
+              <option value="bkash">bKash</option>
+              <option value="nagad">Nagad</option>
+            </select>
+          </div>
+          {txLoading ? (
+            <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
+          ) : transactions.length === 0 ? (
+            <div className="p-12 text-center text-gray-400">No transactions found</div>
+          ) : (
+            <table className="table-premium">
+              <thead>
+                <tr>
+                  <th>Gateway</th>
+                  <th>Reference</th>
+                  <th>Order</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map((t) => (
+                  <tr key={`${t.gateway}-${t.id}`}>
+                    <td className="capitalize font-medium">{t.gateway}</td>
+                    <td className="font-mono text-xs text-gray-600">{t.reference_id}</td>
+                    <td className="text-xs text-gray-500">{t.order_id ? t.order_id.slice(0, 8) + "…" : "—"}</td>
+                    <td className="font-semibold">৳{t.amount.toLocaleString()}</td>
+                    <td><span className="badge bg-gray-100 text-gray-700 capitalize">{t.status}</span></td>
+                    <td className="text-xs text-gray-500">{new Date(t.created_at).toLocaleString("en-BD")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {txTotal > 20 && (
+            <div className="flex justify-center gap-2 py-4 border-t">
+              <button disabled={txPage === 1} onClick={() => setTxPage((p) => p - 1)} className="btn btn-outline btn-sm">Previous</button>
+              <span className="px-3 py-1 text-sm text-gray-600">Page {txPage}</span>
+              <button disabled={txPage * 20 >= txTotal} onClick={() => setTxPage((p) => p + 1)} className="btn btn-outline btn-sm">Next</button>
+            </div>
+          )}
+        </div>
+      ) : loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[1, 2, 3, 4, 5].map((i) => (
             <div key={i} className="h-28 bg-gray-100 rounded-2xl animate-pulse" />
@@ -287,7 +381,7 @@ export default function AdminPaymentsPage() {
         </>
       )}
 
-      {/* SSLCommerz Info */}
+      {tab === "gateways" && (
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
         <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">SSLCommerz Integration</p>
         <p className="text-sm text-blue-600">
@@ -296,6 +390,7 @@ export default function AdminPaymentsPage() {
           <code className="bg-blue-100 px-1 rounded font-mono">SSLCOMMERZ_STORE_PASS</code>, <code className="bg-blue-100 px-1 rounded font-mono">SSLCOMMERZ_SANDBOX</code>.
         </p>
       </div>
+      )}
 
       {/* Edit/Create Panel */}
       {editing !== null && (

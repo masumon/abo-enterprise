@@ -65,6 +65,7 @@ export default function AdminProductsPage() {
   const [seoOpen, setSeoOpen] = useState(false);
   const [extOpen, setExtOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalRef = useFocusTrap(showModal);
@@ -106,6 +107,7 @@ export default function AdminProductsPage() {
       low_stock_threshold: 5, is_flash_sale: false, is_best_seller: false,
     });
     setImageUrl("");
+    setGalleryImages([]);
     setSeoOpen(false);
     setExtOpen(false);
     setShowModal(true);
@@ -146,6 +148,7 @@ export default function AdminProductsPage() {
       is_best_seller: p.is_best_seller ?? false,
     });
     setImageUrl(p.image_url ?? "");
+    setGalleryImages(p.images ?? []);
     setSeoOpen(false);
     setExtOpen(false);
     setShowModal(true);
@@ -158,6 +161,7 @@ export default function AdminProductsPage() {
       const payload: Partial<Product> = {
         ...rest,
         tags: tagsStr ? tagsStr.split(",").map((t) => t.trim()).filter(Boolean) : [],
+        images: galleryImages.filter(Boolean),
       } as Partial<Product>;
       if (editing) {
         await productsApi.update(editing.id!, payload);
@@ -303,6 +307,45 @@ export default function AdminProductsPage() {
                 folder="abo-enterprise/products"
                 previewSize="md"
               />
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-gray-700">Gallery Images</label>
+                  <button
+                    type="button"
+                    onClick={() => setGalleryImages((imgs) => [...imgs, ""])}
+                    className="text-xs text-brand-600 hover:text-brand-700 font-medium"
+                  >
+                    + Add image
+                  </button>
+                </div>
+                {galleryImages.length === 0 ? (
+                  <p className="text-xs text-gray-400">No gallery images. Click &quot;Add image&quot; to upload more photos.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {galleryImages.map((url, idx) => (
+                      <div key={idx} className="flex items-start gap-2">
+                        <div className="flex-1">
+                          <ImageUpload
+                            value={url}
+                            onChange={(v) => setGalleryImages((imgs) => imgs.map((u, i) => (i === idx ? v : u)))}
+                            folder="abo-enterprise/products"
+                            previewSize="sm"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setGalleryImages((imgs) => imgs.filter((_, i) => i !== idx))}
+                          className="p-2 text-gray-400 hover:text-red-500 mt-1"
+                          title="Remove"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

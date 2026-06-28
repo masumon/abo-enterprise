@@ -87,6 +87,7 @@ class ProductUpdate(BaseModel):
     is_featured: bool | None = None
     badge: str | None = None
     image_url: str | None = None
+    images: list[str] | None = None
     sort_order: int | None = None
     seo_title: str | None = None
     seo_description: str | None = None
@@ -288,6 +289,20 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class AdminUserCreate(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+    role: str = "admin"
+
+
+class AdminUserUpdate(BaseModel):
+    name: str | None = None
+    role: str | None = None
+    is_active: bool | None = None
+    password: str | None = None
 
 
 # ---- Dashboard ----

@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, FileText, X, Trash2, Download, ChevronDown } from "lucide-react";
-import api from "@/lib/api";
+import { Loader2, FileText, X, Trash2, Download, ChevronDown, Plus } from "lucide-react";
+import api, { invoicesAdminApi } from "@/lib/api";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice } from "@/lib/utils";
@@ -37,6 +37,19 @@ export default function AdminInvoicesPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [detail, setDetail] = useState<AdminInvoice | null>(null);
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    customer_name: "",
+    customer_email: "",
+    customer_phone: "",
+    item_name: "",
+    item_qty: 1,
+    item_price: 0,
+    tax: 0,
+    payment_method: "",
+    notes: "",
+  });
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
@@ -93,25 +106,66 @@ export default function AdminInvoicesPage() {
     }
   };
 
+  const handleCreate = async () => {
+    if (!createForm.customer_name.trim() || !createForm.item_name.trim() || createForm.item_price <= 0) {
+      toast("error", "Customer name, item name and price are required");
+      return;
+    }
+    const subtotal = createForm.item_qty * createForm.item_price;
+    const totalAmount = subtotal + (createForm.tax || 0);
+    setCreating(true);
+    try {
+      const r = await invoicesAdminApi.create({
+        customer_name: createForm.customer_name,
+        customer_email: createForm.customer_email || undefined,
+        customer_phone: createForm.customer_phone || undefined,
+        items: [{ name: createForm.item_name, quantity: createForm.item_qty, price: createForm.item_price }],
+        subtotal,
+        tax: createForm.tax || 0,
+        total: totalAmount,
+        payment_method: createForm.payment_method || undefined,
+        notes: createForm.notes || undefined,
+      });
+      const created = r.data.data as AdminInvoice;
+      setInvoices((prev) => [created, ...prev]);
+      setTotal((t) => t + 1);
+      setShowCreate(false);
+      setCreateForm({
+        customer_name: "", customer_email: "", customer_phone: "",
+        item_name: "", item_qty: 1, item_price: 0, tax: 0, payment_method: "", notes: "",
+      });
+      toast("success", "Invoice created");
+    } catch {
+      toast("error", "Failed to create invoice");
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const apiBase = getApiBaseUrl();
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
           <p className="text-gray-500 text-sm mt-1">{total} total invoices</p>
         </div>
-        <select
-          value={filter}
-          onChange={(e) => { setFilter(e.target.value); setPage(1); }}
-          className="border border-gray-200 rounded-lg text-sm px-3 py-2 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-        >
-          <option value="">All Status</option>
-          {PAYMENT_STATUSES.map((s) => (
-            <option key={s} value={s} className="capitalize">{s}</option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setShowCreate(true)} className="btn btn-brand btn-md flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Create Invoice
+          </button>
+          <select
+            value={filter}
+            onChange={(e) => { setFilter(e.target.value); setPage(1); }}
+            className="border border-gray-200 rounded-lg text-sm px-3 py-2 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+          >
+            <option value="">All Status</option>
+            {PAYMENT_STATUSES.map((s) => (
+              <option key={s} value={s} className="capitalize">{s}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
@@ -355,6 +409,68 @@ export default function AdminInvoicesPage() {
                   <p className="text-sm text-amber-900">{detail.notes}</p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCreate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-semibold">Create Invoice</h2>
+              <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="form-label">Customer Name *</label>
+                <input value={createForm.customer_name} onChange={(e) => setCreateForm((f) => ({ ...f, customer_name: e.target.value }))} className="input w-full" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="form-label">Email</label>
+                  <input type="email" value={createForm.customer_email} onChange={(e) => setCreateForm((f) => ({ ...f, customer_email: e.target.value }))} className="input w-full text-sm" />
+                </div>
+                <div>
+                  <label className="form-label">Phone</label>
+                  <input value={createForm.customer_phone} onChange={(e) => setCreateForm((f) => ({ ...f, customer_phone: e.target.value }))} className="input w-full text-sm" />
+                </div>
+              </div>
+              <div>
+                <label className="form-label">Item Name *</label>
+                <input value={createForm.item_name} onChange={(e) => setCreateForm((f) => ({ ...f, item_name: e.target.value }))} className="input w-full" placeholder="Service / Product name" />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="form-label">Qty</label>
+                  <input type="number" min={1} value={createForm.item_qty} onChange={(e) => setCreateForm((f) => ({ ...f, item_qty: Number(e.target.value) }))} className="input w-full" />
+                </div>
+                <div>
+                  <label className="form-label">Price (৳)</label>
+                  <input type="number" min={0} value={createForm.item_price} onChange={(e) => setCreateForm((f) => ({ ...f, item_price: Number(e.target.value) }))} className="input w-full" />
+                </div>
+                <div>
+                  <label className="form-label">Tax (৳)</label>
+                  <input type="number" min={0} value={createForm.tax} onChange={(e) => setCreateForm((f) => ({ ...f, tax: Number(e.target.value) }))} className="input w-full" />
+                </div>
+              </div>
+              <div>
+                <label className="form-label">Payment Method</label>
+                <input value={createForm.payment_method} onChange={(e) => setCreateForm((f) => ({ ...f, payment_method: e.target.value }))} className="input w-full text-sm" placeholder="bkash, cash, bank..." />
+              </div>
+              <div>
+                <label className="form-label">Notes</label>
+                <textarea rows={2} value={createForm.notes} onChange={(e) => setCreateForm((f) => ({ ...f, notes: e.target.value }))} className="input w-full resize-none text-sm" />
+              </div>
+              <p className="text-sm font-semibold text-gray-700">
+                Total: ৳{((createForm.item_qty * createForm.item_price) + (createForm.tax || 0)).toLocaleString()}
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button onClick={() => setShowCreate(false)} className="btn btn-outline btn-md">Cancel</button>
+              <button onClick={handleCreate} disabled={creating} className="btn btn-brand btn-md">
+                {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Invoice"}
+              </button>
             </div>
           </div>
         </div>
