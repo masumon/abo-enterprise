@@ -2,6 +2,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
+from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.security import require_admin, require_role
 from app.models.models import Service, ServicePricingTier, ServiceBookingForm, ActivityLog, AdminUser
@@ -36,7 +37,7 @@ async def list_services(
             Service.is_deleted == False,
             Service.is_active == True,
         )
-    )
+    ).options(selectinload(Service.pricing_tiers), selectinload(Service.booking_forms))
 
     if category:
         query = query.where(Service.category == category)
@@ -81,7 +82,7 @@ async def get_service(
     result = await db.execute(
         select(Service).where(
             and_(Service.slug == slug, Service.is_deleted == False, Service.is_active == True)
-        )
+        ).options(selectinload(Service.pricing_tiers), selectinload(Service.booking_forms))
     )
     service = result.scalar_one_or_none()
 
@@ -138,7 +139,6 @@ async def create_service(
     service = Service(**payload.model_dump())
     db.add(service)
     await db.commit()
-    await db.refresh(service)
 
     # Log activity
     log = ActivityLog(
@@ -150,6 +150,12 @@ async def create_service(
     )
     db.add(log)
     await db.commit()
+
+    result = await db.execute(
+        select(Service).where(Service.id == service.id)
+        .options(selectinload(Service.pricing_tiers), selectinload(Service.booking_forms))
+    )
+    service = result.scalar_one()
 
     return ApiResponse(
         data=ServiceOut.model_validate(service).model_dump(),
@@ -165,7 +171,9 @@ async def list_services_admin(
     per_page: int = Query(10, ge=1, le=100),
 ):
     """List all services (admin)"""
-    query = select(Service).where(Service.is_deleted == False)
+    query = select(Service).where(Service.is_deleted == False).options(
+        selectinload(Service.pricing_tiers), selectinload(Service.booking_forms)
+    )
 
     # Count total
     count_result = await db.execute(
@@ -203,7 +211,7 @@ async def get_service_admin(
     result = await db.execute(
         select(Service).where(
             and_(Service.id == service_id, Service.is_deleted == False)
-        )
+        ).options(selectinload(Service.pricing_tiers), selectinload(Service.booking_forms))
     )
     service = result.scalar_one_or_none()
 
@@ -247,7 +255,6 @@ async def update_service(
         setattr(service, field, value)
 
     await db.commit()
-    await db.refresh(service)
 
     # Log activity
     log = ActivityLog(
@@ -260,6 +267,12 @@ async def update_service(
     )
     db.add(log)
     await db.commit()
+
+    result = await db.execute(
+        select(Service).where(Service.id == service_id)
+        .options(selectinload(Service.pricing_tiers), selectinload(Service.booking_forms))
+    )
+    service = result.scalar_one()
 
     return ApiResponse(
         data=ServiceOut.model_validate(service).model_dump(),
