@@ -91,27 +91,30 @@ async def get_revenue_chart(
 ):
     since = datetime.now(timezone.utc) - timedelta(days=days)
 
-    order_rows = (await db.execute(
-        select(
-            cast(Order.created_at, Date).label("day"),
-            func.sum(Order.total).label("revenue"),
-        ).where(
-            Order.created_at >= since,
-            Order.payment_status == "completed",
-            Order.is_deleted == False,  # noqa: E712
-        ).group_by(cast(Order.created_at, Date))
-    )).all()
-
-    booking_rows = (await db.execute(
-        select(
-            cast(BookingV2.created_at, Date).label("day"),
-            func.sum(BookingV2.final_price).label("revenue"),
-        ).where(
-            BookingV2.created_at >= since,
-            BookingV2.payment_status == "completed",
-            BookingV2.is_deleted == False,  # noqa: E712
-        ).group_by(cast(BookingV2.created_at, Date))
-    )).all()
+    order_result, booking_result = await asyncio.gather(
+        db.execute(
+            select(
+                cast(Order.created_at, Date).label("day"),
+                func.sum(Order.total).label("revenue"),
+            ).where(
+                Order.created_at >= since,
+                Order.payment_status == "completed",
+                Order.is_deleted == False,  # noqa: E712
+            ).group_by(cast(Order.created_at, Date))
+        ),
+        db.execute(
+            select(
+                cast(BookingV2.created_at, Date).label("day"),
+                func.sum(BookingV2.final_price).label("revenue"),
+            ).where(
+                BookingV2.created_at >= since,
+                BookingV2.payment_status == "completed",
+                BookingV2.is_deleted == False,  # noqa: E712
+            ).group_by(cast(BookingV2.created_at, Date))
+        ),
+    )
+    order_rows = order_result.all()
+    booking_rows = booking_result.all()
 
     order_by_day = {r.day.isoformat(): float(r.revenue or 0) for r in order_rows}
     booking_by_day = {r.day.isoformat(): float(r.revenue or 0) for r in booking_rows}
