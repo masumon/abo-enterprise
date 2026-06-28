@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/lib/api";
+import { clearAdminToken, getAdminToken } from "@/lib/adminAuth";
 
 interface AdminUser {
   id: string;
@@ -37,7 +38,7 @@ export function useAdmin(redirectOnFail = true) {
   const redirectedRef = useRef(false);
 
   const checkAuth = useCallback(async () => {
-    const token = localStorage.getItem("abo_admin_token");
+    const token = getAdminToken();
     if (!token) {
       if (redirectOnFail && !redirectedRef.current) {
         redirectedRef.current = true;
@@ -62,7 +63,7 @@ export function useAdmin(redirectOnFail = true) {
       setLoading(false);
     } catch {
       clearCache();
-      localStorage.removeItem("abo_admin_token");
+      clearAdminToken();
       if (redirectOnFail && !redirectedRef.current) {
         redirectedRef.current = true;
         router.replace("/admin/login");
@@ -78,8 +79,7 @@ export function useAdmin(redirectOnFail = true) {
 
   const logout = useCallback(() => {
     clearCache();
-    localStorage.removeItem("abo_admin_token");
-    document.cookie = "abo_admin_token=; path=/; max-age=0";
+    clearAdminToken();
     router.replace("/admin/login");
   }, [router]);
 

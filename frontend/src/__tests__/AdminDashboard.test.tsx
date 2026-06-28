@@ -1,16 +1,22 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import AdminDashboard from "@/app/admin/page";
-import { adminApi } from "@/lib/api";
+
+const mockStats = jest.fn();
+const mockGet = jest.fn();
 
 jest.mock("@/lib/api", () => ({
+  __esModule: true,
+  default: {
+    get: (...args: unknown[]) => mockGet(...args),
+  },
   adminApi: {
-    stats: jest.fn(),
+    stats: (...args: unknown[]) => mockStats(...args),
   },
 }));
 
-describe("Admin Dashboard E2E", () => {
-  const mockStats = {
+describe("Admin Dashboard", () => {
+  const statsPayload = {
     total_orders: 45,
     pending_orders: 8,
     total_bookings: 23,
@@ -25,37 +31,25 @@ describe("Admin Dashboard E2E", () => {
         customer_name: "Test Customer",
         total: 5000,
         order_status: "completed",
-        items: [],
-        customer_phone: "01712345678",
-        payment_method: "bkash",
-        payment_status: "completed",
-        order_status: "completed",
-        subtotal: 5000,
-        delivery_charge: 100,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       },
     ],
     recent_leads: [
       {
         id: "1",
-        lead_number: "LF-2024-001",
         name: "Test Lead",
-        qualification_score: 75,
-        status: "contacted",
-        phone: "01712345678",
         lead_type: "project",
-        source: "website",
-        attachments: [],
+        phone: "01712345678",
+        status: "contacted",
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
       },
     ],
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (adminApi.stats as jest.Mock).mockResolvedValue({ data: { data: mockStats } });
+    mockStats.mockResolvedValue({ data: { data: statsPayload } });
+    mockGet.mockResolvedValue({ data: { data: { revenue: { total: 12000 } } } });
   });
 
   it("should display dashboard stats", async () => {

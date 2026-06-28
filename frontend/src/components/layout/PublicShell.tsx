@@ -14,7 +14,7 @@ import ToastProvider from "@/components/ui/ToastProvider";
 
 export default function PublicShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAdmin = pathname.startsWith("/admin");
+  const isAdmin = pathname?.startsWith("/admin") ?? false;
 
   if (isAdmin) {
     return <>{children}</>;

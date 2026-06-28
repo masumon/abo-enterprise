@@ -5,13 +5,13 @@ import { useToastStore } from "@/store/toast";
 
 const POLL_INTERVAL = 30_000; // 30 seconds
 
-export function useAdminPolling() {
+export function useAdminPolling(enabled = true) {
   const setAlerts = useAlertStore((s) => s.set);
   const toast = useToastStore((s) => s.push);
-  // Track previous counts to detect new items between polls
   const prev = useRef({ pendingOrders: -1, pendingBookings: -1, newLeads: -1 });
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
 
     async function poll() {
@@ -57,5 +57,5 @@ export function useAdminPolling() {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [setAlerts, toast]);
+  }, [enabled, setAlerts, toast]);
 }

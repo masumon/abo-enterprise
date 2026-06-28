@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Bot, Eye, EyeOff, AlertCircle, Wifi, WifiOff, Loader2 } from "lucide-react";
 import { authApi } from "@/lib/api";
+import { setAdminToken } from "@/lib/adminAuth";
 import { cn } from "@/lib/utils";
 
 const schema = z.object({
@@ -64,8 +65,7 @@ export default function AdminLoginPage() {
       const res = await authApi.login(data.email, data.password);
       const token = res.data.data?.access_token;
       if (!token) throw new Error("No token received");
-      localStorage.setItem("abo_admin_token", token);
-      document.cookie = `abo_admin_token=${token}; path=/; max-age=86400; SameSite=Lax`;
+      setAdminToken(token);
       router.replace("/admin");
     } catch (e: unknown) {
       setErrorInfo(getErrorInfo(e));

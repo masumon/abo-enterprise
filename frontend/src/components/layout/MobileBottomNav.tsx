@@ -17,7 +17,7 @@ export default function MobileBottomNav() {
   const pathname = usePathname();
   const { lang } = useLanguageStore();
 
-  if (pathname.startsWith("/admin")) return null;
+  if (pathname?.startsWith("/admin")) return null;
 
   return (
     <nav

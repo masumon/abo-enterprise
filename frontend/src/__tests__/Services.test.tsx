@@ -2,58 +2,26 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ServicesPage from "@/app/services/page";
 
-jest.mock("@/lib/api");
+jest.mock("@/store/language", () => ({
+  useLanguageStore: () => ({ lang: "en" }),
+}));
 
-describe("Services Page E2E", () => {
-  const mockServices = [
-    {
-      id: "1",
-      name_en: "Web Development",
-      slug: "web-development",
-      description_en: "Custom web solutions",
-      pricing_type: "fixed",
-      base_price: 50000,
-      category: "development",
-      is_active: true,
-      is_featured: true,
-      sort_order: 1,
-      lead_priority: 1,
-      lead_qualification_score: 70,
-      tags: ["react", "nextjs"],
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    },
-  ];
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    global.fetch = jest.fn(() =>
-      Promise.resolve({
-        json: () => Promise.resolve({ data: mockServices }),
-      })
-    ) as jest.Mock;
+describe("Services Page", () => {
+  it("should display core service categories", () => {
+    render(<ServicesPage />);
+    expect(screen.getByText("Printing Services")).toBeInTheDocument();
+    expect(screen.getByText("Software Development")).toBeInTheDocument();
+    expect(screen.getByText("Legal Assistance")).toBeInTheDocument();
   });
 
-  it("should display services list", async () => {
+  it("should link to software services page", async () => {
     render(<ServicesPage />);
-    await waitFor(() => {
-      expect(screen.getByText("Web Development")).toBeInTheDocument();
-    });
+    const link = screen.getByRole("link", { name: /Discuss Your Project/i });
+    expect(link).toHaveAttribute("href", "/services/software");
   });
 
-  it("should filter services by category", async () => {
+  it("should show technology section", () => {
     render(<ServicesPage />);
-    const filterBtn = screen.getByText("development");
-    await userEvent.click(filterBtn);
-    await waitFor(() => {
-      expect(screen.getByText("Web Development")).toBeInTheDocument();
-    });
-  });
-
-  it("should navigate to service detail page", async () => {
-    render(<ServicesPage />);
-    const serviceLink = screen.getByText("Web Development");
-    await userEvent.click(serviceLink);
-    expect(window.location.href).toContain("/services/web-development");
+    expect(screen.getByText("Powered by Modern Technology")).toBeInTheDocument();
   });
 });

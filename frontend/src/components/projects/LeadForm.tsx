@@ -18,8 +18,14 @@ const leadSchema = z.object({
   company: z.string().optional(),
   project_description: z.string().min(20, "Please describe your project (minimum 20 characters)"),
   requirements: z.string().min(10, "Please provide your requirements"),
-  budget_min: z.number().optional(),
-  budget_max: z.number().optional(),
+  budget_min: z.preprocess(
+    (val) => (val === "" || val === null || (typeof val === "number" && Number.isNaN(val)) ? undefined : val),
+    z.number().optional()
+  ),
+  budget_max: z.preprocess(
+    (val) => (val === "" || val === null || (typeof val === "number" && Number.isNaN(val)) ? undefined : val),
+    z.number().optional()
+  ),
   timeline: z.string().optional(),
 });
 

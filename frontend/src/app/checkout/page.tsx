@@ -21,6 +21,7 @@ import { useLanguageStore } from "@/store/language";
 import { formatPrice, generateWhatsAppOrderMessage, WHATSAPP_NUMBER } from "@/lib/utils";
 import { ordersApi, productsApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import type { PaymentMethod } from "@/types";
 
 const COUPONS: Record<string, number> = { ABO10: 0.1, WELCOME: 0.05 };
@@ -38,17 +39,46 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-const PAYMENT_OPTIONS: { value: PaymentMethod; label: string; detail: string; icon: string }[] = [
-  { value: "bkash", label: "bKash", detail: "01825007977", icon: "💳" },
-  { value: "rocket", label: "Rocket", detail: "01825007977", icon: "🚀" },
-  { value: "bank", label: "BRAC Bank", detail: "A/C: 1075869070001", icon: "🏦" },
-  { value: "cod", label: "Cash on Delivery", detail: "ডেলিভারির সময়", icon: "💵" },
-];
+const DEFAULT_PAYMENT_PHONE = "01825007977";
+const DEFAULT_BANK_DETAIL = "A/C: 1075869070001";
+
+function buildPaymentOptions(settings: Record<string, string>, lang: "en" | "bn") {
+  const phone =
+    getSettingValue(settings, "contact_phone") ||
+    getSettingValue(settings, "business_phone").replace(/\D/g, "").slice(-11) ||
+    DEFAULT_PAYMENT_PHONE;
+  const bkash =
+    getSettingValue(settings, "bkash_account") || phone;
+  const rocket =
+    getSettingValue(settings, "nagad_account") || phone;
+  const bank =
+    getSettingValue(settings, "bank_account") || DEFAULT_BANK_DETAIL;
+
+  return [
+    { value: "bkash" as PaymentMethod, label: "bKash", detail: bkash, icon: "💳" },
+    { value: "rocket" as PaymentMethod, label: "Rocket", detail: rocket, icon: "🚀" },
+    { value: "bank" as PaymentMethod, label: "BRAC Bank", detail: bank, icon: "🏦" },
+    {
+      value: "cod" as PaymentMethod,
+      label: "Cash on Delivery",
+      detail: lang === "bn" ? "ডেলিভারির সময়" : "On delivery",
+      icon: "💵",
+    },
+  ];
+}
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, total, clearCart, setStockWarnings } = useCartStore();
   const { lang } = useLanguageStore();
+  const { settings } = usePublicSettings([
+    "bkash_account",
+    "nagad_account",
+    "contact_phone",
+    "business_phone",
+    "bank_account",
+  ]);
+  const paymentOptions = buildPaymentOptions(settings, lang);
 
   const [hydrated, setHydrated] = useState(false);
   const [couponInput, setCouponInput] = useState("");
@@ -159,7 +189,7 @@ export default function CheckoutPage() {
       }));
 
       const paymentLabel =
-        PAYMENT_OPTIONS.find((p) => p.value === data.payment_method)?.label ?? data.payment_method;
+        paymentOptions.find((p) => p.value === data.payment_method)?.label ?? data.payment_method;
 
       const msg = generateWhatsAppOrderMessage(
         data.customer_name,
@@ -338,7 +368,7 @@ export default function CheckoutPage() {
                   {lang === "bn" ? "পেমেন্ট পদ্ধতি *" : "Payment Method *"}
                 </h2>
                 <div className="grid grid-cols-2 gap-3">
-                  {PAYMENT_OPTIONS.map((opt) => (
+                  {paymentOptions.map((opt) => (
                     <label
                       key={opt.value}
                       className={cn(

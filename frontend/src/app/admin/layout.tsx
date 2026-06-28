@@ -13,7 +13,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { user, loading, logout } = useAdmin(pathname !== "/admin/login");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   // Start global 30s polling once authenticated (no-op on login page)
-  useAdminPolling();
+  useAdminPolling(pathname !== "/admin/login");
 
   if (pathname === "/admin/login") {
     return <>{children}</>;
