@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, Star, CheckCircle, XCircle, Trash2, Shield, ShieldCheck, Pencil, X, MessageSquare, Plus } from "lucide-react";
+import { Loader2, Star, CheckCircle, XCircle, Trash2, Shield, ShieldCheck, Pencil, X, MessageSquare, Plus, Search } from "lucide-react";
 import api, { reviewsApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { useToastStore } from "@/store/toast";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 interface AdminReview {
   id: string;
@@ -35,6 +36,9 @@ export default function AdminReviewsPage() {
   const [creating, setCreating] = useState(false);
   const [draft, setDraft] = useState<Partial<AdminReview>>({});
   const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+  const [ratingFilter, setRatingFilter] = useState("");
+  const [confirm, setConfirm] = useState<{ title: string; message: string; action: () => void } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -150,25 +154,40 @@ export default function AdminReviewsPage() {
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete review from "${name}"? This cannot be undone.`)) return;
-    setBusyId(id);
-    try {
-      await api.delete(`/api/v1/reviews/${id}`);
-      setReviews((prev) => prev.filter((r) => r.id !== id));
-      setTotal((t) => t - 1);
-      toast("success", "Review deleted");
-    } catch {
-      toast("error", "Delete failed");
-    } finally {
-      setBusyId(null);
-    }
+  const handleDelete = (id: string, name: string) => {
+    setConfirm({
+      title: `Delete review from "${name}"?`,
+      message: "This action cannot be undone. The review will be permanently removed.",
+      action: async () => {
+        setConfirm(null);
+        setBusyId(id);
+        try {
+          await api.delete(`/api/v1/reviews/${id}`);
+          setReviews((prev) => prev.filter((r) => r.id !== id));
+          setTotal((t) => t - 1);
+          toast("success", "Review deleted");
+        } catch {
+          toast("error", "Delete failed");
+        } finally {
+          setBusyId(null);
+        }
+      },
+    });
   };
 
   const stars = (n: number) =>
     Array.from({ length: 5 }, (_, i) => (
       <Star key={i} className={`w-3.5 h-3.5 ${i < n ? "fill-amber-400 text-amber-400" : "text-gray-200"}`} />
     ));
+
+  const filteredReviews = reviews.filter((r) => {
+    if (ratingFilter && String(r.rating) !== ratingFilter) return false;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      return r.customer_name.toLowerCase().includes(q) || r.review_en.toLowerCase().includes(q) || (r.company ?? "").toLowerCase().includes(q);
+    }
+    return true;
+  });
 
   return (
     <div className="space-y-6 max-w-6xl">
@@ -177,9 +196,30 @@ export default function AdminReviewsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Reviews</h1>
           <p className="text-gray-500 text-sm mt-1">{total} total reviews</p>
         </div>
-        <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add Review
-        </button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search reviews…"
+              aria-label="Search reviews"
+              className="input pl-8 text-sm w-full sm:w-48"
+            />
+          </div>
+          <select
+            value={ratingFilter}
+            onChange={(e) => setRatingFilter(e.target.value)}
+            aria-label="Filter by rating"
+            className="input text-sm w-auto"
+          >
+            <option value="">All Ratings</option>
+            {[5,4,3,2,1].map(n => <option key={n} value={n}>{n} Star{n !== 1 ? "s" : ""}</option>)}
+          </select>
+          <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Add Review
+          </button>
+        </div>
       </div>
 
       <div className="admin-card overflow-hidden">
@@ -191,6 +231,11 @@ export default function AdminReviewsPage() {
           <div className="p-12 text-center">
             <Star className="w-10 h-10 text-gray-200 mx-auto mb-3" />
             <p className="text-gray-400 font-medium">No reviews found</p>
+          </div>
+        ) : filteredReviews.length === 0 ? (
+          <div className="p-12 text-center">
+            <Star className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-400 font-medium">{search || ratingFilter ? "No reviews match your filter" : "No reviews found"}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -209,7 +254,7 @@ export default function AdminReviewsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {reviews.map((r) => {
+                {filteredReviews.map((r) => {
                   const busy = busyId === r.id;
                   return (
                     <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
@@ -223,7 +268,14 @@ export default function AdminReviewsPage() {
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="font-medium text-gray-900 truncate">{r.customer_name}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-medium text-gray-900 truncate">{r.customer_name}</p>
+                              {r.admin_reply && (
+                                <span title="Admin replied" className="flex-shrink-0">
+                                  <MessageSquare className="w-3.5 h-3.5 text-brand-500" />
+                                </span>
+                              )}
+                            </div>
                             {r.company && <p className="text-xs text-gray-400 truncate">{r.company}</p>}
                           </div>
                         </div>
@@ -254,7 +306,9 @@ export default function AdminReviewsPage() {
                         <button
                           onClick={() => patch(r, { is_active: !r.is_active })}
                           disabled={busy}
-                          title={r.is_active ? "Hide review" : "Show review"}
+                          role="switch"
+                          aria-checked={r.is_active}
+                          aria-label={r.is_active ? "Hide review" : "Show review"}
                           className="disabled:opacity-40 transition-colors"
                         >
                           {r.is_active
@@ -267,7 +321,9 @@ export default function AdminReviewsPage() {
                         <button
                           onClick={() => patch(r, { is_featured: !r.is_featured })}
                           disabled={busy}
-                          title={r.is_featured ? "Remove from featured" : "Mark as featured"}
+                          role="switch"
+                          aria-checked={r.is_featured}
+                          aria-label={r.is_featured ? "Remove from featured" : "Mark as featured"}
                           className="disabled:opacity-40 transition-colors"
                         >
                           <Star className={`w-5 h-5 mx-auto ${r.is_featured ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />
@@ -277,7 +333,9 @@ export default function AdminReviewsPage() {
                         <button
                           onClick={() => patch(r, { is_verified: !r.is_verified })}
                           disabled={busy}
-                          title={r.is_verified ? "Remove verification" : "Mark as verified"}
+                          role="switch"
+                          aria-checked={r.is_verified}
+                          aria-label={r.is_verified ? "Remove verification" : "Mark as verified"}
                           className="disabled:opacity-40 transition-colors"
                         >
                           {r.is_verified
@@ -334,6 +392,16 @@ export default function AdminReviewsPage() {
         </div>
       )}
 
+      <ConfirmDialog
+        open={!!confirm}
+        title={confirm?.title ?? ""}
+        message={confirm?.message ?? ""}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => confirm?.action()}
+        onCancel={() => setConfirm(null)}
+      />
+
       {/* Edit / Create slide-in panel */}
       {(editing || creating) && (
         <div className="fixed inset-0 z-50 flex" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
@@ -367,15 +435,23 @@ export default function AdminReviewsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="form-label">Rating (1–5)</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={5}
-                      value={draft.rating ?? 5}
-                      onChange={e => setDraft(d => ({ ...d, rating: Number(e.target.value) }))}
-                      className="input w-full text-sm"
-                    />
+                    <label className="form-label">Rating</label>
+                    <div className="flex items-center gap-1 mt-1" role="radiogroup" aria-label="Rating 1 to 5 stars">
+                      {[1,2,3,4,5].map((n) => (
+                        <button
+                          key={n}
+                          type="button"
+                          role="radio"
+                          aria-checked={draft.rating === n}
+                          aria-label={`${n} star${n !== 1 ? "s" : ""}`}
+                          onClick={() => setDraft(d => ({ ...d, rating: n }))}
+                          className="focus:outline-none"
+                        >
+                          <Star className={`w-6 h-6 transition-colors ${(draft.rating ?? 5) >= n ? "fill-amber-400 text-amber-400" : "text-gray-200 hover:text-amber-300"}`} />
+                        </button>
+                      ))}
+                      <span className="text-sm text-gray-500 ml-2">{draft.rating ?? 5}/5</span>
+                    </div>
                   </div>
                   <div>
                     <label className="form-label">Source</label>

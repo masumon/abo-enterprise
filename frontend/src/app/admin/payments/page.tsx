@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { paymentMethodsAdminApi, adminApi, type PaymentMethodRecord } from "@/lib/api";
 import { useToastStore } from "@/store/toast";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { cn } from "@/lib/utils";
 
 const GATEWAY_LABELS: Record<string, string> = {
@@ -73,6 +74,7 @@ export default function AdminPaymentsPage() {
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const toast = useToastStore((s) => s.push);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -127,23 +129,36 @@ export default function AdminPaymentsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this payment method? This cannot be undone.")) return;
-    setDeletingId(id);
-    try {
-      await paymentMethodsAdminApi.delete(id);
-      toast("success", "Payment method deleted");
-      await load();
-    } catch {
-      toast("error", "Failed to delete");
-    } finally {
-      setDeletingId(null);
-    }
+  const handleDelete = (id: string) => {
+    setConfirmState({
+      title: "Delete this payment method?",
+      message: "This action cannot be undone. Any associated transactions will remain in history.",
+      action: async () => {
+        setConfirmState(null);
+        setDeletingId(id);
+        try {
+          await paymentMethodsAdminApi.delete(id);
+          toast("success", "Payment method deleted");
+          await load();
+        } catch {
+          toast("error", "Failed to delete");
+        } finally {
+          setDeletingId(null);
+        }
+      },
+    });
   };
 
   const handleSave = async () => {
     if (!editing) return;
     if (!editing.payment_gateway?.trim()) { toast("error", "Gateway name is required"); return; }
+    const comm = editing.commission_percentage ?? 0;
+    if (comm < 0 || comm > 100) { toast("error", "Commission must be between 0% and 100%"); return; }
+    const minAmt = editing.min_amount ?? null;
+    const maxAmt = editing.max_amount ?? null;
+    if (minAmt !== null && maxAmt !== null && minAmt > maxAmt) {
+      toast("error", "Minimum amount cannot exceed maximum amount"); return;
+    }
 
     setSaving(true);
     try {
@@ -520,6 +535,16 @@ export default function AdminPaymentsPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ""}
+        message={confirmState?.message ?? ""}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => confirmState?.action()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }

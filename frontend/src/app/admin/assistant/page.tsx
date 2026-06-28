@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Bot, Loader2, Save, RefreshCw, Check, Trash2, Plus, Pencil, X,
-  MessageSquare, Zap, BookOpen, Settings2, Eye,
+  MessageSquare, Zap, BookOpen, Settings2, Eye, Search,
 } from "lucide-react";
 import {
   assistantAdminApi,
@@ -12,6 +12,7 @@ import {
   type AssistantActionLog,
 } from "@/lib/api";
 import { useToastStore } from "@/store/toast";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import StatusBadge from "@/components/admin/StatusBadge";
 
 type Tab = "settings" | "conversations" | "logs" | "faq";
@@ -38,6 +39,7 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
 export default function AdminAssistantPage() {
   const [tab, setTab] = useState<Tab>("settings");
   const toast = useToastStore((s) => s.push);
+  const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
 
   // Settings
   const [config, setConfig] = useState({
@@ -78,6 +80,7 @@ export default function AdminAssistantPage() {
   const [faqIsNew, setFaqIsNew] = useState(false);
   const [faqSaving, setFaqSaving] = useState(false);
   const [deletingFaqKey, setDeletingFaqKey] = useState<string | null>(null);
+  const [faqSearch, setFaqSearch] = useState("");
 
   const loadConfig = useCallback(async () => {
     setConfigLoading(true);
@@ -160,33 +163,45 @@ export default function AdminAssistantPage() {
     }
   };
 
-  const deleteConversation = async (id: string) => {
-    if (!confirm("Delete this conversation? This cannot be undone.")) return;
-    setDeletingConvId(id);
-    try {
-      await assistantAdminApi.deleteConversation(id);
-      toast("success", "Conversation deleted");
-      if (convDetail?.conversation.id === id) setConvDetail(null);
-      await loadConversations();
-    } catch {
-      toast("error", "Failed to delete conversation");
-    } finally {
-      setDeletingConvId(null);
-    }
+  const deleteConversation = (id: string) => {
+    setConfirmState({
+      title: "Delete this conversation?",
+      message: "All messages in this conversation will be permanently removed.",
+      action: async () => {
+        setConfirmState(null);
+        setDeletingConvId(id);
+        try {
+          await assistantAdminApi.deleteConversation(id);
+          toast("success", "Conversation deleted");
+          if (convDetail?.conversation.id === id) setConvDetail(null);
+          await loadConversations();
+        } catch {
+          toast("error", "Failed to delete conversation");
+        } finally {
+          setDeletingConvId(null);
+        }
+      },
+    });
   };
 
-  const deleteLog = async (id: string) => {
-    if (!confirm("Delete this automation log?")) return;
-    setDeletingLogId(id);
-    try {
-      await assistantAdminApi.deleteLog(id);
-      toast("success", "Log deleted");
-      await loadLogs();
-    } catch {
-      toast("error", "Failed to delete log");
-    } finally {
-      setDeletingLogId(null);
-    }
+  const deleteLog = (id: string) => {
+    setConfirmState({
+      title: "Delete this automation log?",
+      message: "This log entry will be permanently removed.",
+      action: async () => {
+        setConfirmState(null);
+        setDeletingLogId(id);
+        try {
+          await assistantAdminApi.deleteLog(id);
+          toast("success", "Log deleted");
+          await loadLogs();
+        } catch {
+          toast("error", "Failed to delete log");
+        } finally {
+          setDeletingLogId(null);
+        }
+      },
+    });
   };
 
   const openNewFaq = () => {
@@ -229,18 +244,24 @@ export default function AdminAssistantPage() {
     }
   };
 
-  const deleteFaq = async (key: string) => {
-    if (!confirm(`Delete FAQ "${key}"?`)) return;
-    setDeletingFaqKey(key);
-    try {
-      await assistantAdminApi.deleteFaq(key);
-      toast("success", "FAQ deleted");
-      await loadFaq();
-    } catch {
-      toast("error", "Failed to delete FAQ");
-    } finally {
-      setDeletingFaqKey(null);
-    }
+  const deleteFaq = (key: string) => {
+    setConfirmState({
+      title: `Delete FAQ "${key}"?`,
+      message: "This FAQ entry will be permanently removed from the assistant's knowledge base.",
+      action: async () => {
+        setConfirmState(null);
+        setDeletingFaqKey(key);
+        try {
+          await assistantAdminApi.deleteFaq(key);
+          toast("success", "FAQ deleted");
+          await loadFaq();
+        } catch {
+          toast("error", "Failed to delete FAQ");
+        } finally {
+          setDeletingFaqKey(null);
+        }
+      },
+    });
   };
 
   const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
@@ -521,8 +542,17 @@ export default function AdminAssistantPage() {
       {/* FAQ Tab */}
       {tab === "faq" && (
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <p className="text-sm text-gray-500">{faqList.length} knowledge entries</p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <input
+                value={faqSearch}
+                onChange={(e) => setFaqSearch(e.target.value)}
+                placeholder="Search FAQ entries…"
+                className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400"
+              />
+            </div>
+            <p className="text-sm text-gray-500">{faqList.length} entries</p>
             <button onClick={openNewFaq} className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700">
               <Plus className="w-4 h-4" /> Add FAQ
             </button>
@@ -535,7 +565,11 @@ export default function AdminAssistantPage() {
               <p className="text-center text-gray-500 py-16 text-sm">No FAQ entries. Add your first one.</p>
             ) : (
               <div className="divide-y divide-gray-50">
-                {faqList.map((entry) => (
+                {faqList.filter((entry) => {
+                  if (!faqSearch.trim()) return true;
+                  const q = faqSearch.toLowerCase();
+                  return entry.key.toLowerCase().includes(q) || entry.answer_en.toLowerCase().includes(q) || (entry.topic ?? "").toLowerCase().includes(q);
+                }).map((entry) => (
                   <div key={entry.key} className="px-6 py-4 hover:bg-gray-50/50">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1 min-w-0">
@@ -621,6 +655,16 @@ export default function AdminAssistantPage() {
           )}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ""}
+        message={confirmState?.message ?? ""}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => confirmState?.action()}
+        onCancel={() => setConfirmState(null)}
+      />
     </div>
   );
 }
