@@ -189,73 +189,83 @@ export default function AdminBlogPage() {
             </button>
           </div>
         ) : (
-          <table className="table-premium">
-            <thead>
-              <tr>
-                <th>Title</th>
-                <th>Category</th>
-                <th>Author</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th className="text-right pr-5">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {posts.map((p) => (
-                <tr key={p.id}>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-2">
-                      {p.is_featured && <Star className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
-                      <div>
-                        <p className="font-medium text-gray-900 truncate max-w-[280px]">{p.title_en}</p>
-                        <p className="text-xs text-gray-400">{p.slug}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3 text-gray-600 capitalize">{p.category ?? "—"}</td>
-                  <td className="px-5 py-3 text-gray-600">{p.author_name}</td>
-                  <td className="px-5 py-3 text-gray-500 whitespace-nowrap">
-                    {p.published_at
-                      ? new Date(p.published_at).toLocaleDateString("en-BD")
-                      : p.created_at
-                        ? new Date(p.created_at).toLocaleDateString("en-BD")
-                        : "—"}
-                  </td>
-                  <td className="px-5 py-3"><StatusBadge status={p.status} /></td>
-                  <td className="px-5 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {p.status === "published" && (
-                        <a
-                          href={`/blog/${p.slug}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          title="View on site"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                        </a>
-                      )}
-                      <button
-                        onClick={() => openEdit(p)}
-                        className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
-                        title="Edit"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(p.id!)}
-                        disabled={deletingId === p.id}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete"
-                      >
-                        {deletingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="table-premium min-w-[640px]">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th className="hidden sm:table-cell">Category</th>
+                  <th className="hidden md:table-cell">Author</th>
+                  <th className="hidden md:table-cell">Date</th>
+                  <th>Status</th>
+                  <th className="text-right pr-5">Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {posts.map((p) => (
+                  <tr key={p.id} onClick={() => openEdit(p)} className="cursor-pointer hover:bg-brand-50/40 transition-colors">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        {p.is_featured && <Star className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
+                        <div>
+                          <p className="font-medium text-gray-900 truncate max-w-[200px] sm:max-w-[280px]">{p.title_en}</p>
+                          <p className="text-xs text-gray-400">{p.slug}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-gray-600 capitalize hidden sm:table-cell">{p.category ?? "—"}</td>
+                    <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{p.author_name}</td>
+                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap hidden md:table-cell">
+                      {p.published_at
+                        ? new Date(p.published_at).toLocaleDateString("en-BD")
+                        : p.created_at
+                          ? new Date(p.created_at).toLocaleDateString("en-BD")
+                          : "—"}
+                    </td>
+                    <td className="px-5 py-3"><StatusBadge status={p.status} /></td>
+                    <td className="px-5 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1">
+                        {p.status === "draft" && (
+                          <button
+                            onClick={async (e) => { e.stopPropagation(); await adminBlogApi.update(p.id!, { status: "published" }); toast("success", "Published!"); load(); }}
+                            className="px-2 py-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 whitespace-nowrap transition-colors"
+                            title="Publish now"
+                          >Publish</button>
+                        )}
+                        {p.status === "published" && (
+                          <a
+                            href={`/blog/${p.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            title="View on site"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        )}
+                        <button
+                          onClick={(e) => { e.stopPropagation(); openEdit(p); }}
+                          className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(p.id!); }}
+                          disabled={deletingId === p.id}
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Delete"
+                        >
+                          {deletingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
