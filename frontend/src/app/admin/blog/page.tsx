@@ -190,6 +190,7 @@ export default function AdminBlogPage() {
     if (!editing.title_en?.trim()) { toast("error", "Title (EN) is required"); return; }
     if (!editing.slug?.trim()) { toast("error", "Slug is required"); return; }
     if (!editing.content_en?.trim()) { toast("error", "Content (EN) is required"); return; }
+    if (!editing.category?.trim()) { toast("error", "Category is required"); return; }
 
     setSaving(true);
     try {

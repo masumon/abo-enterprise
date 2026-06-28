@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
-import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check } from "lucide-react";
+import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 
 type SettingValues = Record<string, string>;
@@ -77,7 +77,7 @@ const SECTIONS: Section[] = [
       { key: "delivery_charge_dhaka", label: "Delivery Charge — Dhaka (৳)", type: "number", placeholder: "60" },
       { key: "delivery_charge_outside", label: "Delivery Charge — Outside Dhaka (৳)", type: "number", placeholder: "120" },
       { key: "min_order_amount", label: "Minimum Order Amount (৳)", type: "number", placeholder: "200" },
-      { key: "maintenance_mode", label: "Maintenance Mode", placeholder: "false", hint: "Set to 'true' to enable maintenance mode" },
+      { key: "maintenance_mode", label: "Maintenance Mode", type: "text" as const, hint: "Toggle to put site in maintenance mode", placeholder: "false" },
     ],
   },
   {
@@ -147,6 +147,21 @@ function SectionCard({
                 folder="abo-enterprise/settings"
                 accept={field.accept ?? "image"}
               />
+            ) : field.key === "maintenance_mode" ? (
+              <label className="flex items-center gap-3 cursor-pointer">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={values[field.key] === "true"}
+                  onClick={() => onChange(field.key, values[field.key] === "true" ? "false" : "true")}
+                  className={`relative inline-flex w-11 h-6 rounded-full transition-colors ${values[field.key] === "true" ? "bg-red-500" : "bg-gray-200"}`}
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${values[field.key] === "true" ? "translate-x-5" : "translate-x-0"}`} />
+                </button>
+                <span className={`text-sm font-medium ${values[field.key] === "true" ? "text-red-600" : "text-gray-500"}`}>
+                  {values[field.key] === "true" ? "Enabled — site is in maintenance" : "Disabled — site is live"}
+                </span>
+              </label>
             ) : field.type === "textarea" ? (
               <textarea
                 value={values[field.key] ?? ""}
@@ -205,6 +220,30 @@ export default function AdminSettingsPage() {
     setValues((prev) => ({ ...prev, [key]: val }));
   };
 
+  const handleSaveAll = async () => {
+    setSaving("__all__");
+    let anyFailed = false;
+    for (const section of SECTIONS) {
+      try {
+        const items = section.fields.map((f) => ({
+          key: f.key,
+          value: values[f.key] ?? "",
+          data_type: f.type === "number" ? "number" : "string",
+        }));
+        await adminApi.upsertSettings(items);
+      } catch {
+        anyFailed = true;
+        toast("error", `Failed to save ${section.title}`);
+      }
+    }
+    if (!anyFailed) {
+      setSavedId("__all__");
+      setTimeout(() => setSavedId(null), 2500);
+      toast("success", "All settings saved");
+    }
+    setSaving(null);
+  };
+
   const handleSave = async (sectionId: string) => {
     const section = SECTIONS.find((s) => s.id === sectionId);
     if (!section) return;
@@ -234,14 +273,33 @@ export default function AdminSettingsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
           <p className="text-gray-500 text-sm mt-1">Configure business, branding and site settings</p>
         </div>
-        <button
-          onClick={load}
-          disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={load}
+            disabled={loading}
+            className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
+          <button
+            onClick={handleSaveAll}
+            disabled={saving !== null || loading}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+              savedId === "__all__"
+                ? "bg-green-500 text-white"
+                : "bg-brand-600 text-white hover:bg-brand-700"
+            } disabled:opacity-50`}
+          >
+            {saving === "__all__"
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : savedId === "__all__"
+                ? <Check className="w-4 h-4" />
+                : <SaveAll className="w-4 h-4" />
+            }
+            {saving === "__all__" ? "Saving…" : savedId === "__all__" ? "All Saved!" : "Save All"}
+          </button>
+        </div>
       </div>
 
       {loading ? (

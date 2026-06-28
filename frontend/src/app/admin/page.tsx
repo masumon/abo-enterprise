@@ -69,7 +69,13 @@ export default function AdminDashboard() {
   }, [lastUpdated]);
 
   const updatedLabel = lastUpdated
-    ? `Updated ${lastUpdated.toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" })}`
+    ? (() => {
+        const now = new Date();
+        const isToday = lastUpdated.toDateString() === now.toDateString();
+        const time = lastUpdated.toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" });
+        const date = lastUpdated.toLocaleDateString("en-BD", { day: "numeric", month: "short" });
+        return `Updated ${isToday ? time : `${date}, ${time}`}`;
+      })()
     : null;
 
   return (

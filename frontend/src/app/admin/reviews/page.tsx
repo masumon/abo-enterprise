@@ -268,7 +268,14 @@ export default function AdminReviewsPage() {
                             </div>
                           )}
                           <div className="min-w-0">
-                            <p className="font-medium text-gray-900 truncate">{r.customer_name}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-medium text-gray-900 truncate">{r.customer_name}</p>
+                              {r.admin_reply && (
+                                <span title="Admin replied" className="flex-shrink-0">
+                                  <MessageSquare className="w-3.5 h-3.5 text-brand-500" />
+                                </span>
+                              )}
+                            </div>
                             {r.company && <p className="text-xs text-gray-400 truncate">{r.company}</p>}
                           </div>
                         </div>

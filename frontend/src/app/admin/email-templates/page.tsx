@@ -292,6 +292,14 @@ export default function AdminEmailTemplatesPage() {
               <div>
                 <label className="form-label">Variables <span className="text-gray-400 font-normal">(comma-separated)</span></label>
                 <input value={varsInput} onChange={(e) => setVarsInput(e.target.value)} placeholder="customer_name, order_number, total" className="input w-full text-sm" disabled={!isNew} />
+                {varsInput.trim() && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    Use in body:{" "}
+                    {varsInput.split(",").map((v) => v.trim()).filter(Boolean).map((v) => (
+                      <code key={v} className="bg-gray-100 px-1 rounded mr-1">{`{{${v}}}`}</code>
+                    ))}
+                  </p>
+                )}
               </div>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={editing.is_active ?? true} onChange={(e) => setEditing((p) => p ? { ...p, is_active: e.target.checked } : p)} className="rounded border-gray-300 text-brand-600" />

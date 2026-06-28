@@ -152,6 +152,13 @@ export default function AdminPaymentsPage() {
   const handleSave = async () => {
     if (!editing) return;
     if (!editing.payment_gateway?.trim()) { toast("error", "Gateway name is required"); return; }
+    const comm = editing.commission_percentage ?? 0;
+    if (comm < 0 || comm > 100) { toast("error", "Commission must be between 0% and 100%"); return; }
+    const minAmt = editing.min_amount ?? null;
+    const maxAmt = editing.max_amount ?? null;
+    if (minAmt !== null && maxAmt !== null && minAmt > maxAmt) {
+      toast("error", "Minimum amount cannot exceed maximum amount"); return;
+    }
 
     setSaving(true);
     try {
