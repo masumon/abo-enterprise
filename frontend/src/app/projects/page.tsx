@@ -44,20 +44,20 @@ export default function ProjectsPage() {
       />
 
       <section className="max-w-6xl mx-auto px-4 py-16">
-        <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">{t({ en: "How It Works", bn: "কিভাবে কাজ করে" })}</h2>
+        <h2 className="text-3xl font-bold text-heading mb-12 text-center">{t({ en: "How It Works", bn: "কিভাবে কাজ করে" })}</h2>
         <div className="grid md:grid-cols-4 gap-8 mb-12">
           {STEPS.map((s, i) => (
             <div key={i} className="text-center">
               <div className="w-12 h-12 bg-brand-600 text-white rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-4">{i + 1}</div>
-              <h3 className="font-bold text-gray-900 mb-2">{t(s.title)}</h3>
-              <p className="text-sm text-gray-600">{t(s.desc)}</p>
+              <h3 className="font-bold text-heading mb-2">{t(s.title)}</h3>
+              <p className="text-sm text-muted">{t(s.desc)}</p>
             </div>
           ))}
         </div>
       </section>
 
       <section className="max-w-6xl mx-auto px-4 py-12">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+        <h2 className="text-2xl font-bold text-heading mb-6 text-center">
           {t({ en: "Project Gallery", bn: "প্রজেক্ট গ্যালারি" })}
         </h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -103,7 +103,7 @@ export default function ProjectsPage() {
 
       {!showForm && (
         <section className="section-panel border-y py-16 text-center px-4">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">{t({ en: "Ready to start?", bn: "শুরু করতে প্রস্তুত?" })}</h2>
+          <h2 className="text-3xl font-bold text-heading mb-4">{t({ en: "Ready to start?", bn: "শুরু করতে প্রস্তুত?" })}</h2>
           <button type="button" onClick={() => setShowForm(true)} className="btn btn-brand btn-lg">{t({ en: "Get Started", bn: "শুরু করুন" })}</button>
         </section>
       )}
@@ -119,7 +119,7 @@ export default function ProjectsPage() {
             <h3 className="text-xl font-bold mb-4">{t({ en: "Why ABO?", bn: "কেন ABO?" })}</h3>
             <ul className="space-y-2">
               {(lang === "bn" ? WHY.bn : WHY.en).map((p) => (
-                <li key={p} className="flex items-center gap-2 text-gray-700 text-sm"><CheckCircle className="w-4 h-4 text-green-600" />{p}</li>
+                <li key={p} className="flex items-center gap-2 text-muted text-sm"><CheckCircle className="w-4 h-4 text-green-600" />{p}</li>
               ))}
             </ul>
           </div>

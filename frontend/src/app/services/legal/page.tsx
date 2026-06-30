@@ -110,7 +110,7 @@ export default function LegalPage() {
 
       <div className="container mx-auto px-4 max-w-2xl py-12">
         {/* Disclaimer */}
-        <div className="flex gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+        <div className="alert-warning flex gap-3 mb-6">
           <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
           <p className="text-xs text-amber-700">
             {lang === "bn"
@@ -123,7 +123,7 @@ export default function LegalPage() {
           {isSuccess ? (
             <div className="text-center py-8">
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
+              <h2 className="text-xl font-bold text-heading mb-2">
                 {lang === "bn" ? "অনুরোধ গ্রহণ হয়েছে!" : "Request Received!"}
               </h2>
               <p className="text-gray-500 mb-6">
@@ -139,7 +139,7 @@ export default function LegalPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               {/* Service Selector */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="form-label mb-2">
                   {lang === "bn" ? "সেবার ধরন *" : "Service Type *"}
                 </label>
                 <div className="grid grid-cols-1 gap-2">
@@ -154,7 +154,7 @@ export default function LegalPage() {
                       )}
                     >
                       <input type="radio" value={s.value} {...register("service_subtype")} className="sr-only" />
-                      <span className="font-medium text-sm text-gray-900">
+                      <span className="font-medium text-sm text-heading">
                         {lang === "bn" ? s.label.bn : s.label.en}
                       </span>
                       <span className="text-accent-500 font-semibold text-sm">
@@ -167,7 +167,7 @@ export default function LegalPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="form-label">
                     {lang === "bn" ? "আপনার নাম *" : "Full Name *"}
                   </label>
                   <input
@@ -177,7 +177,7 @@ export default function LegalPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  <label className="form-label">
                     {lang === "bn" ? "মোবাইল নম্বর *" : "Mobile *"}
                   </label>
                   <input
@@ -190,7 +190,7 @@ export default function LegalPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="form-label">
                   {lang === "bn" ? "থানা / অফিস (যদি প্রযোজ্য)" : "Police Station / Office (if applicable)"}
                 </label>
                 <input
@@ -201,7 +201,7 @@ export default function LegalPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="form-label">
                   {lang === "bn" ? "ঘটনার বিবরণ *" : "Incident Details *"}
                 </label>
                 <textarea

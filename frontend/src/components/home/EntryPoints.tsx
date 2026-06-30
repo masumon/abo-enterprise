@@ -74,7 +74,7 @@ export default function EntryPoints() {
       <div className="container mx-auto px-4">
         {/* Heading */}
         <div className="text-center mb-10">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+          <h2 className="text-3xl sm:text-4xl font-bold text-heading mb-3">
             {lang === "bn" ? "আপনি কী খুঁজছেন?" : "What are you looking for?"}
           </h2>
           <p className="text-gray-500 max-w-xl mx-auto">
@@ -104,7 +104,7 @@ export default function EntryPoints() {
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <h3 className="text-xl font-bold text-heading mb-2">
                     {lang === "bn" ? entry.title.bn : entry.title.en}
                   </h3>
 

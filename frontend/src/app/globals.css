@@ -84,6 +84,9 @@
   .dark .input {
     @apply bg-white/5 border-white/10 text-gray-100 placeholder-gray-500 focus:bg-white/10;
   }
+  .dark select.input option {
+    @apply bg-[var(--surface-card)] text-gray-100;
+  }
 
   .dark .card {
     background: color-mix(in srgb, var(--surface-card) 94%, transparent);
@@ -227,6 +230,13 @@
   .badge-hot  { @apply bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200/60; }
   .badge-new  { @apply bg-brand-100 text-brand-700 ring-1 ring-brand-200/60; }
   .badge-sale { @apply bg-accent-100 text-accent-700 ring-1 ring-accent-200/60; }
+  .dark .badge-hot  { @apply bg-emerald-900/30 text-emerald-300 ring-emerald-700/40; }
+  .dark .badge-new  { @apply bg-brand-900/30 text-brand-300 ring-brand-700/40; }
+  .dark .badge-sale { @apply bg-accent-900/30 text-accent-300 ring-accent-700/40; }
+  .badge-default  { @apply bg-gray-100 text-gray-700 ring-1 ring-gray-200/60; }
+  .badge-outline  { @apply bg-white/90 text-gray-600 border border-gray-200; }
+  .dark .badge-default { @apply bg-white/10 text-gray-300 ring-white/10; }
+  .dark .badge-outline { @apply bg-white/5 text-gray-300 border-white/15; }
 
   /* ── Section helpers ── */
   .section-title h2 { @apply text-2xl md:text-3xl font-bold text-brand-700 mb-2; }
@@ -241,6 +251,47 @@
   }
   .gradient-surface {
     background: linear-gradient(145deg, #f8faff 0%, #f0f4ff 50%, #faf8ff 100%);
+  }
+  .dark .gradient-surface {
+    background: linear-gradient(145deg, var(--navy) 0%, var(--surface) 50%, var(--surface-secondary) 100%);
+  }
+
+  /* ── Alert panels (forms, checkout, etc.) ── */
+  .alert-error {
+    @apply bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm px-4 py-3;
+  }
+  .dark .alert-error {
+    @apply bg-red-900/20 border-red-800/60 text-red-300;
+  }
+  .alert-success {
+    @apply bg-green-50 border border-green-200 text-green-700 rounded-xl text-sm px-4 py-3;
+  }
+  .dark .alert-success {
+    @apply bg-green-900/20 border-green-800/60 text-green-300;
+  }
+  .alert-warning {
+    @apply bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-sm px-4 py-3;
+  }
+  .dark .alert-warning {
+    @apply bg-amber-900/20 border-amber-800/60 text-amber-200;
+  }
+  .alert-info {
+    @apply bg-brand-50 border border-brand-200 text-brand-800 rounded-xl text-sm px-4 py-3;
+  }
+  .dark .alert-info {
+    @apply bg-brand-900/25 border-brand-700/50 text-brand-200;
+  }
+  .panel-muted {
+    @apply bg-gray-50 border border-gray-100 rounded-xl;
+  }
+  .dark .panel-muted {
+    @apply bg-white/5 border-white/10;
+  }
+  .input-readonly {
+    @apply bg-gray-50;
+  }
+  .dark .input-readonly {
+    @apply bg-white/5 text-gray-200;
   }
 
   /* ── Site Footer (brand blue — not flat black) ── */
@@ -506,20 +557,32 @@
     color: rgb(17 24 39);
   }
   html.dark .surface-card { color: rgb(243 244 246); }
-  .text-muted { @apply text-gray-500 dark:text-gray-400; }
+  .text-muted { color: rgb(107 114 128); }
+  html.dark .text-muted { color: rgb(156 163 175); }
   .text-heading { @apply dark:text-white; color: rgb(17 24 39); }
 
   /* Dark mode: fix hardcoded gray text utilities on surfaces */
   .dark .card .text-gray-900, .dark .card .text-gray-800,
   .dark .enterprise-card .text-gray-900, .dark .enterprise-card .text-gray-800,
-  .dark .page-surface .text-gray-900, .dark .page-surface .text-gray-800 {
+  .dark .page-surface .text-gray-900, .dark .page-surface .text-gray-800,
+  .dark .section-panel .text-gray-900, .dark .section-panel .text-gray-800,
+  .dark .section-panel-alt .text-gray-900, .dark .section-panel-alt .text-gray-800,
+  .dark .surface-card .text-gray-900, .dark .surface-card .text-gray-800,
+  .dark .glass .text-gray-900, .dark .glass .text-gray-800,
+  .dark .glass-dark .text-gray-900, .dark .glass-dark .text-gray-800 {
     --tw-text-opacity: 1;
     color: rgb(243 244 246 / var(--tw-text-opacity));
   }
   .dark .card .text-gray-700, .dark .card .text-gray-600,
   .dark .enterprise-card .text-gray-700, .dark .enterprise-card .text-gray-600,
   .dark .page-surface .text-gray-700, .dark .page-surface .text-gray-600,
-  .dark .card label, .dark .enterprise-card label {
+  .dark .section-panel .text-gray-700, .dark .section-panel .text-gray-600,
+  .dark .section-panel-alt .text-gray-700, .dark .section-panel-alt .text-gray-600,
+  .dark .surface-card .text-gray-700, .dark .surface-card .text-gray-600,
+  .dark .glass .text-gray-700, .dark .glass .text-gray-600,
+  .dark .glass-dark .text-gray-700, .dark .glass-dark .text-gray-600,
+  .dark .card label, .dark .enterprise-card label,
+  .dark .glass label, .dark .glass-dark label {
     --tw-text-opacity: 1;
     color: rgb(209 213 219 / var(--tw-text-opacity));
   }

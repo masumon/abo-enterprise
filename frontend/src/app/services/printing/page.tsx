@@ -95,7 +95,7 @@ export default function PrintingPage() {
           {isSuccess ? (
             <div className="text-center py-8">
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
+              <h2 className="text-xl font-bold text-heading mb-2">
                 {lang === "bn" ? "অর্ডার গ্রহণ হয়েছে!" : "Booking Confirmed!"}
               </h2>
               <p className="text-gray-500 mb-6">
@@ -110,12 +110,12 @@ export default function PrintingPage() {
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               {submitError && (
-                <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2">
+                <p role="alert" className="alert-error">
                   {submitError}
                 </p>
               )}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="form-label mb-2">
                   {lang === "bn" ? "সেবার ধরন *" : "Service Type *"}
                 </label>
                 <select {...register("service_subtype")} className="input">
@@ -128,7 +128,7 @@ export default function PrintingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="form-label">
                   {lang === "bn" ? "আপনার নাম *" : "Full Name *"}
                 </label>
                 <input
@@ -139,7 +139,7 @@ export default function PrintingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="form-label">
                   {lang === "bn" ? "মোবাইল নম্বর *" : "Mobile Number *"}
                 </label>
                 <input
@@ -156,7 +156,7 @@ export default function PrintingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="form-label">
                   {lang === "bn" ? "বিস্তারিত তথ্য *" : "Details / Requirements *"}
                 </label>
                 <textarea

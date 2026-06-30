@@ -60,23 +60,23 @@ export default function AboutPage() {
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-start">
           <div>
             <div className="section-title"><h2>{t({ en: "Our Story", bn: "আমাদের গল্প" })}</h2></div>
-            <p className="text-gray-600 leading-relaxed mt-4">
+            <p className="text-muted leading-relaxed mt-4">
               {t({
                 en: "ABO Enterprise began in Sylhet as a trusted mobile accessories retailer. Today we are Bangladesh's complete technology ecosystem — combining quality products, professional printing, legal document assistance, custom software development, and AI-powered business solutions under one roof.",
                 bn: "ABO Enterprise সিলেটে একটি বিশ্বস্ত মোবাইল এক্সেসরিজ রিটেইলার হিসেবে শুরু হয়। আজ আমরা বাংলাদেশের সম্পূর্ণ টেকনোলজি ইকোসিস্টেম — মানসম্মত পণ্য, পেশাদার প্রিন্টিং, আইনি ডকুমেন্ট সহায়তা, কাস্টম সফটওয়্যার ও AI-চালিত ব্যবসায়িক সমাধান এক ছাদের নিচে।",
               })}
             </p>
-            <p className="text-gray-600 leading-relaxed mt-4">
+            <p className="text-muted leading-relaxed mt-4">
               {t({
                 en: "From shop owners needing POS systems to businesses requiring ERP, CRM, or e-commerce — we deliver affordable, reliable technology that grows with you.",
                 bn: "POS সিস্টেম প্রয়োজনীয় দোকানদার থেকে ERP, CRM বা ই-কমার্স চাওয়া ব্যবসায়ীদের — আমরা সাশ্রয়ী, নির্ভরযোগ্য প্রযুক্তি দিই যা আপনার সাথে বাড়ে।",
               })}
             </p>
           </div>
-          <div className="card p-6 bg-gradient-to-br from-brand-50 to-white">
+          <div className="card p-6 bg-gradient-to-br from-brand-50 to-white dark:from-brand-900/30 dark:to-[var(--surface-card)]">
             <Eye className="w-8 h-8 text-brand-600 mb-3" />
             <h3 className="font-bold text-lg mb-2">{t({ en: "Our Vision", bn: "আমাদের ভিশন" })}</h3>
-            <p className="text-gray-600 text-sm leading-relaxed">{t({ en: "To become Bangladesh's most trusted integrated technology provider — empowering every business with affordable, world-class digital tools.", bn: "বাংলাদেশের সবচেয়ে বিশ্বস্ত ইন্টিগ্রেটেড টেক প্রদানকারী হওয়া — সাশ্রয়ী, বিশ্বমানের ডিজিটাল সরঞ্জামে প্রতিটি ব্যবসাকে ক্ষমতায়ন করা।" })}</p>
+            <p className="text-muted text-sm leading-relaxed">{t({ en: "To become Bangladesh's most trusted integrated technology provider — empowering every business with affordable, world-class digital tools.", bn: "বাংলাদেশের সবচেয়ে বিশ্বস্ত ইন্টিগ্রেটেড টেক প্রদানকারী হওয়া — সাশ্রয়ী, বিশ্বমানের ডিজিটাল সরঞ্জামে প্রতিটি ব্যবসাকে ক্ষমতায়ন করা।" })}</p>
           </div>
         </div>
       </section>

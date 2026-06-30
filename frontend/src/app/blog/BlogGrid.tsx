@@ -46,7 +46,7 @@ export default function BlogGrid({ posts, page, totalPages }: Props) {
             <Link
               key={post.id}
               href={`/blog/${post.slug}`}
-              className="group flex flex-col bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md hover:border-brand-200 transition-all"
+              className="group flex flex-col enterprise-card overflow-hidden shadow-sm hover:shadow-md hover:border-brand-200 dark:hover:border-brand-500/30 transition-all"
             >
               {post.featured_image_url ? (
                 <div className="relative aspect-video overflow-hidden bg-gray-100">
@@ -71,13 +71,13 @@ export default function BlogGrid({ posts, page, totalPages }: Props) {
                     {post.category}
                   </span>
                 )}
-                <h2 className="font-bold text-gray-900 text-base leading-snug mb-2 group-hover:text-brand-600 transition-colors line-clamp-2">
+                <h2 className="font-bold text-heading text-base leading-snug mb-2 group-hover:text-brand-600 dark:group-hover:text-brand-300 transition-colors line-clamp-2">
                   {title}
                 </h2>
                 {excerpt && (
-                  <p className="text-sm text-gray-500 line-clamp-3 flex-1">{excerpt}</p>
+                  <p className="text-sm text-muted line-clamp-3 flex-1">{excerpt}</p>
                 )}
-                <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-50 text-xs text-gray-400">
+                <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-50 dark:border-white/10 text-xs text-muted">
                   <span>{post.author_name}</span>
                   <span>{formatDate(post.published_at ?? post.created_at, lang)}</span>
                 </div>

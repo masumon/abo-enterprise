@@ -89,14 +89,14 @@ export default function ContactPage() {
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid lg:grid-cols-5 gap-8">
           <div className="lg:col-span-2 space-y-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">{t("contact_get_in_touch")}</h2>
+            <h2 className="text-xl font-bold text-heading mb-4">{t("contact_get_in_touch")}</h2>
             {contactInfo.map(({ icon: Icon, label, value, href }) => (
               <GlassCard key={label} className="p-4 flex gap-4">
                 <div className="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Icon className="w-5 h-5 text-brand-600" />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 font-medium">{label}</p>
+                  <p className="text-xs text-muted font-medium">{label}</p>
                   <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
                     className="text-sm font-medium text-brand-600 hover:underline">{value}</a>
                 </div>
@@ -105,8 +105,8 @@ export default function ContactPage() {
             <GlassCard className="p-4 flex gap-3">
               <Clock className="w-5 h-5 text-brand-600 flex-shrink-0" />
               <div>
-                <p className="text-sm font-medium text-gray-900">{t("contact_hours")}</p>
-                <p className="text-sm text-gray-500 mt-1">{t("contact_hours_val")}</p>
+                <p className="text-sm font-medium text-heading">{t("contact_hours")}</p>
+                <p className="text-sm text-muted mt-1">{t("contact_hours_val")}</p>
               </div>
             </GlassCard>
             <GlassCard className="overflow-hidden p-0">
@@ -123,36 +123,36 @@ export default function ContactPage() {
             {submitted ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <CheckCircle className="w-14 h-14 text-green-500 mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                <h3 className="text-xl font-bold text-heading mb-2">
                   {lang === "bn" ? "বার্তা পাঠানো হয়েছে!" : "Message Sent!"}
                 </h3>
-                <p className="text-gray-500">
+                <p className="text-muted">
                   {lang === "bn" ? "২৪ ঘণ্টার মধ্যে যোগাযোগ করা হবে।" : "We will get back to you within 24 hours."}
                 </p>
               </div>
             ) : (
               <>
-                <h2 className="text-xl font-bold text-gray-900 mb-6">{t("contact_send_message")}</h2>
-                {submitError && <p role="alert" className="mb-4 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2">{submitError}</p>}
+                <h2 className="text-xl font-bold text-heading mb-6">{t("contact_send_message")}</h2>
+                {submitError && <p role="alert" className="mb-4 alert-error">{submitError}</p>}
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t("contact_name")} *</label>
+                      <label className="form-label">{t("contact_name")} *</label>
                       <input {...register("name")} className={cn("input", errors.name && "input-error")} />
                       {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t("contact_phone")} *</label>
+                      <label className="form-label">{t("contact_phone")} *</label>
                       <input {...register("phone")} className={cn("input", errors.phone && "input-error")} placeholder="01XXXXXXXXX" />
                       {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t("contact_email")}</label>
+                    <label className="form-label">{t("contact_email")}</label>
                     <input {...register("email")} type="email" className="input" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t("contact_message")} *</label>
+                    <label className="form-label">{t("contact_message")} *</label>
                     <textarea {...register("project_description")} rows={5} className={cn("input resize-none", errors.project_description && "input-error")} />
                     {errors.project_description && <p className="text-red-500 text-xs mt-1">{errors.project_description.message}</p>}
                   </div>

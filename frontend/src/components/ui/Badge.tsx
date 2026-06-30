@@ -12,8 +12,8 @@ const VARIANT_CLASSES: Record<BadgeVariant, string> = {
   hot: "badge-hot",
   new: "badge-new",
   sale: "badge-sale",
-  default: "bg-gray-100 text-gray-700 ring-1 ring-gray-200/60",
-  outline: "bg-white/90 text-gray-600 border border-gray-200",
+  default: "badge-default",
+  outline: "badge-outline",
 };
 
 export default function Badge({ children, variant = "default", className }: BadgeProps) {

@@ -61,7 +61,7 @@ export default function BookPageClient({ serviceSlug, tierId }: BookPageClientPr
   if (!service || error) {
     return (
       <div className="container mx-auto px-4 py-16 max-w-lg text-center">
-        <p className="text-gray-600 mb-6">{error ?? (lang === "bn" ? "সেবা পাওয়া যায়নি।" : "Service not found.")}</p>
+        <p className="text-muted mb-6">{error ?? (lang === "bn" ? "সেবা পাওয়া যায়নি।" : "Service not found.")}</p>
         <Link href="/services" className="btn btn-brand btn-md inline-flex items-center gap-2">
           <ArrowLeft className="w-4 h-4" />
           {lang === "bn" ? "সেবাসমূহ" : "Browse Services"}
@@ -74,10 +74,10 @@ export default function BookPageClient({ serviceSlug, tierId }: BookPageClientPr
     return (
       <div className="container mx-auto px-4 py-16 max-w-lg text-center">
         <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+        <h1 className="text-2xl font-bold text-heading mb-2">
           {lang === "bn" ? "বুকিং নিশ্চিত!" : "Booking Confirmed!"}
         </h1>
-        <p className="text-gray-500 mb-6">
+        <p className="text-muted mb-6">
           {lang === "bn"
             ? "আমরা শীঘ্রই আপনার সাথে যোগাযোগ করব। ইমেইল চেক করুন।"
             : "We'll contact you soon. Check your email for confirmation."}

@@ -24,7 +24,7 @@ export default function SoftwareSolutions() {
           <span className="inline-block text-xs font-semibold text-brand-600 bg-brand-50 border border-brand-100 px-3 py-1 rounded-full mb-3">
             {lang === "bn" ? "💼 ব্যবসায়িক সমাধান" : "💼 Business Solutions"}
           </span>
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+          <h2 className="text-3xl sm:text-4xl font-bold text-heading mb-3">
             {lang === "bn" ? "এন্টারপ্রাইজ সেবা" : "Enterprise Services"}
           </h2>
           <p className="text-gray-500 max-w-lg mx-auto text-sm">
@@ -40,7 +40,7 @@ export default function SoftwareSolutions() {
               <GlassCard hover className="p-5 h-full flex items-start gap-3 group">
                 <span className="text-2xl flex-shrink-0">{s.emoji}</span>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-gray-900 group-hover:text-brand-700 transition-colors">
+                  <h3 className="font-semibold text-heading group-hover:text-brand-700 dark:group-hover:text-brand-300 transition-colors">
                     {lang === "bn" ? s.title.bn : s.title.en}
                   </h3>
                   <p className="text-gray-500 text-xs mt-1">{lang === "bn" ? s.desc.bn : s.desc.en}</p>
