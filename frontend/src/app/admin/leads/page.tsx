@@ -82,7 +82,7 @@ export default function AdminLeadsPage() {
   const handleCsvExport = async () => {
     setCsvLoading(true);
     try {
-      await downloadCsv("/api/v1/admin/bulk/export/leads", "leads.csv");
+      await downloadCsv("/api/v1/admin/bulk/export/leads", "service-leads.csv");
     } catch {
       toast("error", "CSV export failed");
     } finally {

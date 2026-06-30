@@ -9,7 +9,7 @@ from app.core.database import get_db
 from app.core.security import require_admin, hash_password
 from app.core.config import settings
 from app.models.models import (
-    Order, Booking, Lead, Product, AdminUser, ActivityLog,
+    Order, BookingV2, LeadV2, Product, AdminUser, ActivityLog,
     BkashTransaction, NagadTransaction, PaymentReconciliation,
 )
 from app.schemas.schemas import (
@@ -35,13 +35,13 @@ async def get_stats(
     pending_orders = await db.scalar(
         select(func.count(Order.id)).where(Order.is_deleted == False, Order.order_status == "pending")
     )
-    total_bookings = await db.scalar(select(func.count(Booking.id)).where(Booking.is_deleted == False))
+    total_bookings = await db.scalar(select(func.count(BookingV2.id)).where(BookingV2.is_deleted == False))
     pending_bookings = await db.scalar(
-        select(func.count(Booking.id)).where(Booking.is_deleted == False, Booking.status == "pending")
+        select(func.count(BookingV2.id)).where(BookingV2.is_deleted == False, BookingV2.status == "pending")
     )
-    total_leads = await db.scalar(select(func.count(Lead.id)).where(Lead.is_deleted == False))
+    total_leads = await db.scalar(select(func.count(LeadV2.id)).where(LeadV2.is_deleted == False))
     new_leads = await db.scalar(
-        select(func.count(Lead.id)).where(Lead.is_deleted == False, Lead.status == "new")
+        select(func.count(LeadV2.id)).where(LeadV2.is_deleted == False, LeadV2.status == "new")
     )
     total_products = await db.scalar(
         select(func.count(Product.id)).where(Product.is_deleted == False, Product.is_active == True)
@@ -56,9 +56,9 @@ async def get_stats(
     recent_orders = recent_orders_result.scalars().all()
 
     recent_leads_result = await db.execute(
-        select(Lead)
-        .where(Lead.is_deleted == False)
-        .order_by(Lead.created_at.desc())
+        select(LeadV2)
+        .where(LeadV2.is_deleted == False)
+        .order_by(LeadV2.created_at.desc())
         .limit(5)
     )
     recent_leads = recent_leads_result.scalars().all()

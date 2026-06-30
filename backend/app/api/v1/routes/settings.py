@@ -31,6 +31,8 @@ async def upsert_settings(payload: list[SettingCreate], db: AsyncSession = Depen
     """Create or update multiple settings at once (admin only)"""
     results = []
     for item in payload:
+        if item.value == "***HIDDEN***":
+            continue
         result = await db.execute(
             select(Setting).where((Setting.key == item.key) & (Setting.is_deleted == False))
         )
