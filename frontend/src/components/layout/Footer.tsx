@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
   Facebook,
   MessageCircle,
@@ -25,7 +24,8 @@ import { useToastStore } from "@/store/toast";
 import { publicApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
-import { mapsPlaceUrl } from "@/lib/maps";
+import { resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
+import BrandLogo from "@/components/ui/BrandLogo";
 import { cn } from "@/lib/utils";
 
 const SERVICES = [
@@ -78,7 +78,7 @@ function FooterLink({
   external?: boolean;
 }) {
   const className =
-    "footer-link group inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors duration-200";
+    "footer-link group inline-flex items-center gap-1.5 text-sm text-white/75 transition-colors duration-200";
 
   if (external) {
     return (
@@ -119,6 +119,7 @@ export default function Footer() {
     "contact_phone",
     "contact_email",
     "contact_address",
+    "google_maps_embed",
     "site_tagline",
     "facebook_url",
     "instagram_url",
@@ -132,8 +133,9 @@ export default function Footer() {
   const address = getSettingValue(
     settings,
     "contact_address",
-    lang === "bn" ? "হাজি বাহার উদ্দিন মার্কেট, সিলেট-৩১৭০" : "Hazi Bahar Uddin Market, Sylhet-3170"
+    lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN
   );
+  const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
   const whatsappDigits = normalizePhoneDigits(getSettingValue(settings, "whatsapp_number", phoneRaw));
   const phoneDigits = normalizePhoneDigits(phoneRaw);
   const phoneDisplay = formatPhoneDisplay(phoneRaw);
@@ -212,13 +214,14 @@ export default function Footer() {
   };
 
   return (
-    <footer className="site-footer relative text-gray-300 overflow-hidden">
+    <footer className="site-footer relative text-white/85 overflow-hidden">
+      <div className="site-footer-accent relative z-10" aria-hidden />
       <div className="footer-glow pointer-events-none" aria-hidden />
 
       <div className="relative z-10 border-b border-white/[0.06]">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
               {lang === "bn" ? "দ্রুত লিংক" : "Quick links"}
             </p>
             <div className="flex flex-wrap gap-2.5">
@@ -237,26 +240,17 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-10 xl:gap-8">
           <div className="sm:col-span-2 xl:col-span-4">
             <div className="flex items-center gap-3.5 mb-5">
-              <div className="relative w-14 h-14 rounded-2xl border border-white/15 bg-white/5 p-0.5 shadow-lg shadow-black/20">
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-brand-500/20 to-accent-500/10" />
-                <Image
-                  src="/logo.jpg"
-                  alt="ABO Enterprise"
-                  width={52}
-                  height={52}
-                  className="relative rounded-[14px] object-cover w-full h-full"
-                />
-              </div>
+              <BrandLogo size="lg" href={false} variant="light" />
               <div>
                 <h3 className="text-white font-bold text-xl tracking-tight">ABO Enterprise</h3>
-                <p className="text-brand-300/90 text-xs font-medium mt-0.5">
+                <p className="text-brand-100 text-xs font-medium mt-0.5">
                   {getSettingValue(settings, "site_tagline") ||
                     (lang === "bn" ? "ডিজিটাল ভবিষ্যৎ গড়ি" : "Powering Digital Future")}
                 </p>
               </div>
             </div>
 
-            <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-md">
+            <p className="text-sm text-white/75 leading-relaxed mb-6 max-w-md">
               {lang === "bn"
                 ? "মোবাইল এক্সেসরিজ থেকে AI সমাধান — বাংলাদেশের সম্পূর্ণ টেকনোলজি ইকোসিস্টেম।"
                 : "From mobile accessories to AI solutions — Bangladesh's complete technology ecosystem."}
@@ -341,10 +335,10 @@ export default function Footer() {
                 <ul className="space-y-3 text-sm">
                   <li>
                     <a
-                      href={mapsPlaceUrl(address)}
+                      href={mapsLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-start gap-3 text-gray-400 hover:text-white transition-colors group"
+                      className="flex items-start gap-3 text-white/75 hover:text-white transition-colors group"
                     >
                       <span className="footer-contact-icon">
                         <MapPin className="w-4 h-4" />
@@ -355,7 +349,7 @@ export default function Footer() {
                   <li>
                     <a
                       href={`tel:+${phoneDigits}`}
-                      className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors"
+                      className="flex items-center gap-3 text-white/75 hover:text-white transition-colors"
                     >
                       <span className="footer-contact-icon">
                         <Phone className="w-4 h-4" />
@@ -363,7 +357,7 @@ export default function Footer() {
                       {phoneDisplay}
                     </a>
                   </li>
-                  <li className="flex items-center gap-3 text-gray-400">
+                  <li className="flex items-center gap-3 text-white/75">
                     <span className="footer-contact-icon">
                       <Clock className="w-4 h-4" />
                     </span>
@@ -391,36 +385,30 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="relative z-10 border-t border-white/[0.06] bg-black/20">
+      <div className="relative z-10 footer-bottom-bar">
         <div className="container mx-auto px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
-          <div className="text-xs text-gray-500 space-y-1">
+          <div className="text-xs text-white/60 space-y-1">
             <p>
               &copy; {new Date().getFullYear()} ABO Enterprise.{" "}
               {lang === "bn" ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
             </p>
             {tradeLicense && (
-              <p className="text-gray-600">
+              <p className="text-white/50">
                 {lang === "bn" ? "ট্রেড লাইসেন্স:" : "Trade License:"}{" "}
-                <span className="text-gray-500">{tradeLicense}</span>
+                <span className="text-white/65">{tradeLicense}</span>
               </p>
             )}
           </div>
-          <p className="text-xs text-gray-600">
-            {lang === "bn" ? "তৈরি করেছেন" : "Built by"}{" "}
+          <p className="text-xs text-white/55 flex items-center justify-center md:justify-end gap-1.5">
+            <span>{lang === "bn" ? "তৈরি করেছেন" : "Built by"}</span>
             <a
-              href="https://mumain.dev"
+              href="https://mumainsumon.netlify.app"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-brand-400 hover:text-brand-300 font-medium transition-colors"
+              className="inline-flex items-center px-2.5 py-0.5 rounded-md font-bold tracking-wide text-white bg-white/10 border border-white/20 hover:bg-white/20 hover:border-white/35 transition-all duration-200"
             >
-              Mumain.dev
+              SUMON
             </a>
-            <span className="mx-2 text-gray-700" aria-hidden>
-              ·
-            </span>
-            <Link href="/admin/login" className="text-gray-500 hover:text-gray-300 transition-colors">
-              {lang === "bn" ? "এডমিন" : "Admin"}
-            </Link>
           </p>
         </div>
       </div>

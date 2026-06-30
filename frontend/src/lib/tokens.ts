@@ -50,6 +50,6 @@ export const BRAND_TAGLINE = {
 } as const;
 
 export const ABO_ACRONYM = {
-  en: "ABO — Ahmed Brothers Organization: Sylhet's trusted enterprise for products, services & software.",
-  bn: "ABO — Ahmed Brothers Organization: পণ্য, সেবা ও সফটওয়্যারের বিশ্বস্ত এন্টারপ্রাইজ।",
+  en: "ABO — Sumon Brothers Organization: Trusted enterprise for products, services & software.",
+  bn: "ABO — Sumon Brothers Organization: পণ্য, সেবা ও সফটওয়্যারের বিশ্বস্ত এন্টারপ্রাইজ।",
 } as const;

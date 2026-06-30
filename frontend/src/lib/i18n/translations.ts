@@ -31,6 +31,8 @@ const translations = {
     compare: "Compare",
     // Hero
     hero_badge: "Bangladesh's Complete Tech Ecosystem",
+    hero_brand: "ABO ENTERPRISE",
+    hero_tagline: "Trusted enterprise for products, services & software.",
     hero_title_1: "Everything Your",
     hero_title_2: "Business Needs",
     hero_title_3: "In One Place",
@@ -126,6 +128,8 @@ const translations = {
     wishlist: "উইশলিস্ট",
     compare: "তুলনা",
     hero_badge: "বাংলাদেশের সম্পূর্ণ টেক ইকোসিস্টেম",
+    hero_brand: "ABO ENTERPRISE",
+    hero_tagline: "পণ্য, সেবা ও সফটওয়্যারের বিশ্বস্ত এন্টারপ্রাইজ।",
     hero_title_1: "আপনার ব্যবসার",
     hero_title_2: "সব সমাধান",
     hero_title_3: "এক জায়গায়",

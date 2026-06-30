@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { Calendar, ShoppingBag, ArrowRight, Zap } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
@@ -12,6 +11,7 @@ import { ABO_ACRONYM } from "@/lib/tokens";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { MARKETING_STATS } from "@/lib/siteDefaults";
 import { resolveHomeBannerImage } from "@/lib/pageBanners";
+import BrandLogo from "@/components/ui/BrandLogo";
 
 interface ActivityItem {
   icon: string;
@@ -50,8 +50,8 @@ export default function Hero() {
   const [activity, setActivity] = useState<ActivityItem[]>(FALLBACK_ACTIVITY);
 
   const heroImage = resolveHomeBannerImage(settings);
-  const heroTitle = lang === "bn"
-    ? getSettingValue(settings, "hero_title_bn") || t("hero_title_2")
+  const heroTitleOverride = lang === "bn"
+    ? getSettingValue(settings, "hero_title_bn")
     : getSettingValue(settings, "hero_title_en");
   const heroSubtitle = lang === "bn"
     ? getSettingValue(settings, "hero_subtitle_bn") || t("hero_sub")
@@ -106,13 +106,17 @@ export default function Hero() {
             </div>
 
             <h1 className="text-[1.75rem] sm:text-4xl lg:text-[2.625rem] font-bold leading-tight text-balance">
-              {heroTitle ? (
-                <span>{heroTitle}</span>
+              {heroTitleOverride ? (
+                <span>{heroTitleOverride}</span>
               ) : (
                 <>
-                  {t("hero_title_1")}<br />
-                  <span className="text-yellow-300">{t("hero_title_2")}</span><br />
-                  {t("hero_title_3")}
+                  <span className="block text-yellow-300 font-extrabold tracking-[0.06em] sm:tracking-[0.08em] drop-shadow-sm">
+                    {t("hero_brand")}
+                  </span>
+                  <span className="block mt-2 sm:mt-3 text-white font-bold leading-snug">
+                    <span className="text-white/80 font-semibold">: </span>
+                    {t("hero_tagline")}
+                  </span>
                 </>
               )}
             </h1>
@@ -143,13 +147,7 @@ export default function Hero() {
               <div className="glass-panel rounded-3xl p-6 shadow-2xl border border-white/20">
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
-                    <Image
-                      src="/logo.jpg"
-                      alt="ABO Enterprise"
-                      width={40}
-                      height={40}
-                      className="rounded-full border-2 border-white/30"
-                    />
+                    <BrandLogo size="md" href={false} variant="glass" />
                     <div>
                       <p className="text-white font-semibold text-sm">ABO Enterprise</p>
                       <p className="text-white/60 text-xs">

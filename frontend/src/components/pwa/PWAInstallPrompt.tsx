@@ -1,27 +1,24 @@
 "use client";
 
-import { SITE_URL } from "@/lib/tokens";
-
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import { X, Download, Share, Plus } from "lucide-react";
+import { BrandAppIcon } from "@/components/ui/BrandLogo";
+import { X, Download, ChevronUp, Smartphone } from "lucide-react";
+import { SITE_URL } from "@/lib/tokens";
+import { useLanguageStore } from "@/store/language";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-type Platform = "android" | "ios" | "desktop" | null;
+const REMIND_KEY = "pwa_remind_until";
+const INSTALLED_KEY = "pwa_installed";
+const MINIMIZED_KEY = "pwa_minimized_session";
+const REMIND_DAYS = 7;
+const SHOW_DELAY_MS = 3500;
+const SITE_HOST = new URL(SITE_URL).hostname;
 
-function detectPlatform(): Platform {
-  if (typeof navigator === "undefined") return null;
-  const ua = navigator.userAgent;
-  if (/iPhone|iPad|iPod/.test(ua)) return "ios";
-  if (/Android/.test(ua)) return "android";
-  return "desktop";
-}
-
-function isInStandaloneMode(): boolean {
+function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
@@ -29,33 +26,30 @@ function isInStandaloneMode(): boolean {
   );
 }
 
-const DISMISSED_KEY = "pwa_prompt_dismissed";
-const NEVER_KEY = "pwa_prompt_never";
-const VISIT_KEY = "pwa_visit_count";
-const DISMISS_DAYS = 90;
-const MIN_VISITS = 4;
-const SITE_HOST = new URL(SITE_URL).hostname;
+function isIOS(): boolean {
+  return typeof navigator !== "undefined" && /iPhone|iPad|iPod/.test(navigator.userAgent);
+}
 
 export default function PWAInstallPrompt() {
+  const { lang } = useLanguageStore();
+  const bn = lang === "bn";
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [show, setShow] = useState(false);
-  const [platform, setPlatform] = useState<Platform>(null);
+  const [mode, setMode] = useState<"hidden" | "full" | "minimized">("hidden");
   const [installing, setInstalling] = useState(false);
+  const [isIos, setIsIos] = useState(false);
 
   useEffect(() => {
-    if (isInStandaloneMode()) return;
-    if (localStorage.getItem(NEVER_KEY) === "1") return;
+    if (isStandalone()) {
+      localStorage.setItem(INSTALLED_KEY, "1");
+      return;
+    }
+    if (localStorage.getItem(INSTALLED_KEY) === "1") return;
 
-    const dismissed = localStorage.getItem(DISMISSED_KEY);
-    if (dismissed && Date.now() - parseInt(dismissed, 10) < DISMISS_DAYS * 86400000) return;
+    const remindUntil = parseInt(localStorage.getItem(REMIND_KEY) ?? "0", 10);
+    if (remindUntil > Date.now()) return;
 
-    const visits = parseInt(localStorage.getItem(VISIT_KEY) ?? "0", 10) + 1;
-    localStorage.setItem(VISIT_KEY, String(visits));
-    if (visits < MIN_VISITS) return;
-
-    const p = detectPlatform();
-    setPlatform(p);
-    if (p === "ios") return;
+    const ios = isIOS();
+    setIsIos(ios);
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -63,9 +57,10 @@ export default function PWAInstallPrompt() {
     };
     window.addEventListener("beforeinstallprompt", handler);
 
+    const minimized = sessionStorage.getItem(MINIMIZED_KEY) === "1";
     const timer = setTimeout(() => {
-      if (localStorage.getItem(NEVER_KEY) !== "1") setShow(true);
-    }, 12000);
+      setMode(minimized ? "minimized" : "full");
+    }, SHOW_DELAY_MS);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
@@ -73,77 +68,119 @@ export default function PWAInstallPrompt() {
     };
   }, []);
 
+  const hide = () => setMode("hidden");
+
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
-    setInstalling(true);
-    await deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") {
-      localStorage.setItem(NEVER_KEY, "1");
-      setShow(false);
-    } else {
+    if (deferredPrompt) {
+      setInstalling(true);
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === "accepted") localStorage.setItem(INSTALLED_KEY, "1");
+      setDeferredPrompt(null);
       setInstalling(false);
+      hide();
+      return;
     }
-    setDeferredPrompt(null);
+    if (isIos) {
+      hide();
+    }
   };
 
-  const handleDismiss = () => {
-    setShow(false);
-    localStorage.setItem(DISMISSED_KEY, Date.now().toString());
+  const handleNotNow = () => {
+    sessionStorage.setItem(MINIMIZED_KEY, "1");
+    setMode("minimized");
   };
 
-  const handleNever = () => {
-    setShow(false);
-    localStorage.setItem(NEVER_KEY, "1");
+  const handleRemindLater = () => {
+    localStorage.setItem(REMIND_KEY, String(Date.now() + REMIND_DAYS * 86400000));
+    hide();
   };
 
-  if (!show || platform === "ios") return null;
+  if (mode === "hidden") return null;
+
+  const labels = {
+    title: bn ? "ABO Enterprise অ্যাপ" : "ABO Enterprise App",
+    sub: bn ? "হোম স্ক্রিনে যোগ করুন — দ্রুত অ্যাক্সেস" : "Add to home screen for quick access",
+    install: bn ? "ইনস্টল করুন" : "Install",
+    notNow: bn ? "এখন নয়" : "Not now",
+    remind: bn ? "পরবর্তীতে মনে করিয়ে দিন" : "Remind me later",
+    iosHint: bn ? "Share → Add to Home Screen" : "Share → Add to Home Screen",
+    chip: bn ? "অ্যাপ ইনস্টল" : "Install app",
+    installing: bn ? "ইনস্টল হচ্ছে…" : "Installing…",
+  };
+
+  if (mode === "minimized") {
+    return (
+      <button
+        type="button"
+        onClick={() => setMode("full")}
+        className="fixed bottom-[calc(var(--mobile-chrome-bottom)+0.5rem)] left-4 z-[65] flex items-center gap-2 px-3.5 py-2 rounded-full bg-brand-600 text-white text-xs font-semibold shadow-lg shadow-brand-900/30 hover:bg-brand-500 transition-colors lg:bottom-6"
+        aria-label={labels.chip}
+      >
+        <Smartphone className="w-3.5 h-3.5" />
+        {labels.chip}
+        <ChevronUp className="w-3.5 h-3.5 opacity-80" />
+      </button>
+    );
+  }
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/40 z-50 backdrop-blur-sm" onClick={handleDismiss} aria-hidden="true" />
+      <div className="fixed inset-0 bg-black/35 z-[64] backdrop-blur-[2px]" onClick={handleNotNow} aria-hidden />
 
-      <div className="fixed bottom-0 left-0 right-0 z-[70] animate-slide-up pb-mobile-nav lg:pb-4">
-        <div className="surface-card rounded-t-3xl shadow-2xl px-6 pt-5 pb-8 max-w-lg mx-auto mx-4 sm:mx-auto border-b-0">
+      <div
+        role="dialog"
+        aria-labelledby="pwa-prompt-title"
+        className="fixed bottom-0 left-0 right-0 z-[70] animate-slide-up pb-mobile-nav lg:pb-4 px-4"
+      >
+        <div className="surface-card rounded-t-2xl shadow-2xl px-5 pt-4 pb-6 max-w-md mx-auto relative border border-brand-100/20">
           <button
-            onClick={handleDismiss}
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500"
-            aria-label="Close"
+            type="button"
+            onClick={handleNotNow}
+            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-gray-700"
+            aria-label={labels.notNow}
           >
             <X className="w-4 h-4" />
           </button>
 
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-lg flex-shrink-0">
-              <Image src="/icons/icon-192.png" alt="ABO" width={56} height={56} />
-            </div>
+          <div className="flex items-center gap-3 mb-3 pr-8">
+            <BrandAppIcon size={48} className="!rounded-xl ring-2 ring-brand-100" />
             <div>
-              <p className="font-bold text-heading">ABO Enterprise App</p>
-              <p className="text-sm text-muted">{SITE_HOST}</p>
+              <p id="pwa-prompt-title" className="font-bold text-heading text-sm">
+                {labels.title}
+              </p>
+              <p className="text-xs text-muted">{SITE_HOST} · {labels.sub}</p>
             </div>
           </div>
 
-          {deferredPrompt ? (
+          {(deferredPrompt || isIos) && (
             <button
+              type="button"
               onClick={handleInstall}
               disabled={installing}
-              className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3.5 rounded-2xl flex items-center justify-center gap-2 mb-2"
+              className="w-full btn btn-brand btn-md mb-3"
             >
-              <Download className="w-5 h-5" />
-              {installing ? "Installing…" : "Install App"}
+              <Download className="w-4 h-4" />
+              {installing ? labels.installing : labels.install}
             </button>
-          ) : (
-            <p className="text-sm text-muted mb-3 text-center">
-              Browser menu → &quot;Install app&quot; or &quot;Add to Home Screen&quot;
+          )}
+
+          {isIos && !deferredPrompt && (
+            <p className="text-xs text-center text-muted mb-3">{labels.iosHint}</p>
+          )}
+
+          {!deferredPrompt && !isIos && (
+            <p className="text-xs text-center text-muted mb-3">
+              {bn ? "ব্রাউজার মেনু → Install app / Add to Home Screen" : 'Browser menu → "Install app"'}
             </p>
           )}
 
-          <div className="flex gap-2">
-            <button onClick={handleDismiss} className="flex-1 text-center text-sm text-muted py-2">
-              Later
+          <div className="grid grid-cols-2 gap-2">
+            <button type="button" onClick={handleNotNow} className="btn btn-ghost btn-sm text-muted">
+              {labels.notNow}
             </button>
-            <button onClick={handleNever} className="flex-1 text-center text-sm text-gray-400 py-2">
-              Don&apos;t ask again
+            <button type="button" onClick={handleRemindLater} className="btn btn-outline btn-sm border-brand-200 text-brand-700">
+              {labels.remind}
             </button>
           </div>
         </div>

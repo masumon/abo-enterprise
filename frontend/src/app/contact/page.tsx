@@ -14,7 +14,7 @@ import GlassCard from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
-import { mapsPlaceUrl, resolveGoogleMapsEmbed } from "@/lib/maps";
+import { resolveGoogleMapsEmbed, resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
 import MapEmbed from "@/components/common/MapEmbed";
 import PageHero from "@/components/ui/PageHero";
 
@@ -26,7 +26,8 @@ export default function ContactPage() {
   const mapsEmbed = resolveGoogleMapsEmbed(getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED));
   const phone = getSettingValue(settings, "contact_phone", "01825007977");
   const email = getSettingValue(settings, "contact_email", "abo.enterprise@gmail.com");
-  const address = getSettingValue(settings, "contact_address", lang === "bn" ? "হাজি বাহার উদ্দিন মার্কেট, সিলেট-৩১৭০" : "Hazi Bahar Uddin Market, Sylhet-3170");
+  const address = getSettingValue(settings, "contact_address", lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN);
+  const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
 
   const schema = z.object({
     name: z.string().min(2, lang === "bn" ? "নাম দিন" : "Name is required"),
@@ -68,7 +69,7 @@ export default function ContactPage() {
   const contactInfo = [
     { icon: Phone, label: lang === "bn" ? "ফোন / WhatsApp" : "Phone / WhatsApp", value: `+880 ${phone.slice(0, 4)}-${phone.slice(4)}`, href: `tel:+880${phone}` },
     { icon: Mail, label: lang === "bn" ? "ইমেইল" : "Email", value: email, href: `mailto:${email}` },
-    { icon: MapPin, label: lang === "bn" ? "ঠিকানা" : "Location", value: address, href: mapsPlaceUrl(address) },
+    { icon: MapPin, label: lang === "bn" ? "ঠিকানা" : "Location", value: address, href: mapsLink },
     { icon: MessageSquare, label: "WhatsApp", value: lang === "bn" ? "সরাসরি চ্যাট করুন" : "Chat with us directly", href: "https://wa.me/8801825007977" },
   ];
 

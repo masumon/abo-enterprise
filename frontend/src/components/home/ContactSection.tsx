@@ -6,7 +6,7 @@ import { useLanguageStore } from "@/store/language";
 import GlassCard from "@/components/ui/GlassCard";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
-import { mapsPlaceUrl, resolveGoogleMapsEmbed } from "@/lib/maps";
+import { mapsPlaceUrl, resolveGoogleMapsEmbed, resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
 import MapEmbed from "@/components/common/MapEmbed";
 
 export default function ContactSection() {
@@ -15,7 +15,8 @@ export default function ContactSection() {
   const mapsEmbed = resolveGoogleMapsEmbed(getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED));
   const phone = getSettingValue(settings, "contact_phone", "01825007977");
   const email = getSettingValue(settings, "contact_email", "abo.enterprise@gmail.com");
-  const address = getSettingValue(settings, "contact_address", lang === "bn" ? "হাজি বাহার উদ্দিন মার্কেট, সিলেট-৩১৭০" : "Hazi Bahar Uddin Market, Sylhet-3170");
+  const address = getSettingValue(settings, "contact_address", lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN);
+  const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
 
   return (
     <section id="contact" className="py-16 gradient-surface">
@@ -32,7 +33,7 @@ export default function ContactSection() {
             </h3>
             <div className="space-y-3">
               {[
-                { icon: MapPin, label: address, href: mapsPlaceUrl(address) },
+                { icon: MapPin, label: address, href: mapsLink },
                 { icon: Phone, label: `+880 ${phone.slice(0, 4)} ${phone.slice(4)}`, href: `tel:+880${phone}` },
                 { icon: Mail, label: email, href: `mailto:${email}` },
                 { icon: Clock, label: lang === "bn" ? "শনি–বৃহঃ, সকাল ৯টা–রাত ৮টা" : "Sat–Thu, 9:00 AM – 8:00 PM", href: null },

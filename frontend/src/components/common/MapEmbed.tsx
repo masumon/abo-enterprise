@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ExternalLink, MapPin } from "lucide-react";
-import { mapsDirectionsUrl, mapsPlaceUrl } from "@/lib/maps";
+import { mapsDirectionsUrl, resolveGoogleMapsLink } from "@/lib/maps";
 import { cn } from "@/lib/utils";
 
 interface MapEmbedProps {
@@ -21,7 +21,7 @@ export default function MapEmbed({
   minHeight = "16rem",
 }: MapEmbedProps) {
   const [status, setStatus] = useState<"loading" | "loaded" | "failed">("loading");
-  const placeUrl = mapsPlaceUrl(address);
+  const placeUrl = resolveGoogleMapsLink(embedSrc, address);
   const directionsUrl = mapsDirectionsUrl(address);
 
   useEffect(() => {
