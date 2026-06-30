@@ -33,8 +33,8 @@ class Intent(str, Enum):
     CUSTOMER_SUPPORT = "customer_support"
     COMPLAINT = "complaint"
     LEAD_CREATION = "lead_creation"
-    REVIEW_REQUEST = "review_request"
-    UNKNOWN = "unknown"
+    COUPON = "coupon"
+    BUSINESS_HOURS = "business_hours"
 
 
 class EntityType(str, Enum):

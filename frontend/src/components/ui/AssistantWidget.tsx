@@ -11,6 +11,7 @@ import {
   Truck,
   Phone,
   Minus,
+  ExternalLink,
 } from "lucide-react";
 import { assistantApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -18,10 +19,19 @@ import { useT } from "@/lib/i18n/useT";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import Link from "next/link";
 
 interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  links?: AssistantLink[];
+}
+
+interface AssistantLink {
+  label: string;
+  label_bn?: string;
+  url: string;
+  type?: string;
 }
 
 interface AssistantConfig {
@@ -121,6 +131,14 @@ export default function AssistantWidget() {
     { icon: Phone, label: t("assistant_quick_contact"), message: lang === "bn" ? "যোগাযোগের তথ্য দিন" : "Contact information" },
   ], [t, lang]);
 
+  const parseLinks = (data?: Record<string, unknown>): AssistantLink[] => {
+    const raw = data?.links;
+    if (!Array.isArray(raw)) return [];
+    return raw.filter((l): l is AssistantLink =>
+      typeof l === "object" && l !== null && "url" in l && typeof (l as AssistantLink).url === "string"
+    );
+  };
+
   useEffect(() => {
     assistantApi.config()
       .then((r) => {
@@ -192,7 +210,11 @@ export default function AssistantWidget() {
         if (data?.suggestions?.length) {
           setSuggestions(data.suggestions);
         }
-        setMessages((prev) => [...prev, { role: "assistant", content: data?.message ?? "" }]);
+        const links = parseLinks(data?.data as Record<string, unknown> | undefined);
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: data?.message ?? "", links: links.length ? links : undefined },
+        ]);
       } catch {
         setMessages((prev) => [
           ...prev,
@@ -333,6 +355,21 @@ export default function AssistantWidget() {
                   )}
                 >
                   {formatMessageContent(msg.content)}
+                  {msg.role === "assistant" && msg.links && msg.links.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-gray-100/80 dark:border-white/10">
+                      {msg.links.map((link) => (
+                        <Link
+                          key={link.url}
+                          href={link.url}
+                          onClick={() => setOpen(false)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors"
+                        >
+                          {lang === "bn" && link.label_bn ? link.label_bn : link.label}
+                          <ExternalLink className="w-3 h-3 opacity-70" />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

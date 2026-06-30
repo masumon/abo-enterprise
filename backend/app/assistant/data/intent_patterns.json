@@ -148,5 +148,15 @@
     "keywords_en": ["review", "feedback", "rating", "testimonial"],
     "keywords_bn": ["রিভিউ", "মতামত", "রেটিং"],
     "synonyms": []
+  },
+  "coupon": {
+    "keywords_en": ["coupon", "discount code", "promo code", "promo", "discount", "offer code", "voucher"],
+    "keywords_bn": ["কুপন", "ডিসকাউন্ট", "ছাড়", "প্রোমো কোড", "অফার"],
+    "synonyms": ["promo", "disc"]
+  },
+  "business_hours": {
+    "keywords_en": ["business hours", "opening hours", "open time", "when open", "office hours", "working hours"],
+    "keywords_bn": ["খোলার সময়", "অফিস সময়", "কখন খোলা", "ব্যবসার সময়"],
+    "synonyms": ["hours", "timing"]
   }
 }
