@@ -233,6 +233,41 @@
     @apply bg-white rounded-2xl border border-gray-100/60 overflow-hidden;
     box-shadow: 0 2px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03);
   }
+
+  /* ── Enterprise design system ── */
+  .enterprise-card {
+    @apply rounded-2xl border border-gray-100/80 dark:border-white/10 transition-all duration-300;
+    background: rgba(255,255,255,0.88);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 4px 24px rgba(30,91,168,0.06), 0 1px 4px rgba(0,0,0,0.04);
+  }
+  .dark .enterprise-card {
+    background: rgba(15,23,42,0.82);
+    color: rgb(243 244 246);
+  }
+  .enterprise-card-hover {
+    @apply enterprise-card hover:-translate-y-1 hover:shadow-card-hover;
+  }
+  .enterprise-section {
+    @apply py-14 md:py-20;
+  }
+  .enterprise-section-alt {
+    @apply enterprise-section bg-gray-50/80 dark:bg-white/[0.02];
+  }
+  .sticky-cta-bar {
+    @apply fixed bottom-0 left-0 right-0 z-40 lg:hidden;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(30,91,168,0.08);
+    box-shadow: 0 -4px 24px rgba(30,91,168,0.08);
+  }
+  .dark .sticky-cta-bar {
+    background: rgba(10,22,40,0.94);
+    border-top-color: rgba(255,255,255,0.08);
+  }
 }
 
 @layer utilities {

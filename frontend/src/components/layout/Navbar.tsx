@@ -32,7 +32,7 @@ export default function Navbar() {
   const router = useRouter();
   const t = useT();
 
-  const { itemCount, openCart } = useCartStore();
+  const { itemCount } = useCartStore();
   const { lang, toggle } = useLanguageStore();
   const { theme, toggle: toggleTheme } = useThemeStore();
   const count = itemCount();
@@ -136,16 +136,14 @@ export default function Navbar() {
             {lang === "en" ? "বাং" : "EN"}
           </button>
 
-          <button type="button" onClick={openCart}
-            className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-brand-600 text-white hover:bg-brand-700 transition-all shadow-md shadow-brand-500/20"
-            aria-label={`${t("nav_cart")} (${count})`}>
+          <Link href="/cart" className="relative w-10 h-10 flex items-center justify-center rounded-xl bg-brand-600 text-white hover:bg-brand-700 transition-all shadow-md shadow-brand-500/20" aria-label={`${t("nav_cart")} (${count})`}>
             <ShoppingCart className="w-[18px] h-[18px]" />
             {count > 0 && (
               <span className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-accent-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                 {count > 9 ? "9+" : count}
               </span>
             )}
-          </button>
+          </Link>
 
           <Link href="/projects" className="hidden md:inline-flex btn btn-primary btn-sm btn-ripple">
             <Briefcase className="w-4 h-4" />
