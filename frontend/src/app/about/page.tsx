@@ -55,7 +55,7 @@ export default function AboutPage() {
           <div className="w-20 h-20 rounded-full border-4 border-white/30 overflow-hidden shadow-xl mb-3">
             <Image src="/logo.jpg" alt="ABO Enterprise" width={80} height={80} className="object-cover w-full h-full" />
           </div>
-          <p className="text-sm text-white/80">Ahmed Brothers Organization</p>
+          <p className="text-sm text-white/80">Sumon Brothers Organization</p>
         </div>
       </PageHero>
 
