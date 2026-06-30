@@ -6,6 +6,7 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll } from "lucide-react";
 import { useToastStore } from "@/store/toast";
+import { parseGoogleMapsEmbedInput } from "@/lib/maps";
 
 type SettingValues = Record<string, string>;
 
@@ -21,11 +22,18 @@ function apiErrorMessage(e: unknown, fallback: string): string {
 
 function buildSaveItems(section: Section, values: SettingValues) {
   return section.fields
-    .map((f) => ({
-      key: f.key,
-      value: values[f.key] ?? "",
-      data_type: f.type === "number" ? "number" : "string",
-    }))
+    .map((f) => {
+      let value = values[f.key] ?? "";
+      if (f.key === "google_maps_embed" && value.trim()) {
+        const parsed = parseGoogleMapsEmbedInput(value);
+        if (parsed) value = parsed;
+      }
+      return {
+        key: f.key,
+        value,
+        data_type: f.type === "number" ? "number" : "string",
+      };
+    })
     .filter((item) => item.value !== HIDDEN_PLACEHOLDER);
 }
 
@@ -106,7 +114,7 @@ const SECTIONS: Section[] = [
     title: "Map & Location",
     icon: <MapPin className="w-4 h-4" />,
     fields: [
-      { key: "google_maps_embed", label: "Google Maps Embed URL", type: "textarea", placeholder: "https://www.google.com/maps/embed?pb=...", hint: "Paste the embed URL from Google Maps → Share → Embed a map" },
+      { key: "google_maps_embed", label: "Google Maps Embed URL", type: "textarea", placeholder: "Paste embed URL or full <iframe> code from Google Maps", hint: "Google Maps → Share → Embed a map — paste the URL or entire iframe HTML" },
       { key: "google_maps_api_key", label: "Google Maps API Key (optional)", placeholder: "AIza...", hint: "Only needed if using the JS Maps API" },
     ],
   },
@@ -320,13 +328,8 @@ export default function AdminSettingsPage() {
         try { new URL(val); } catch { return `${f.label}: invalid URL`; }
       }
       if (f.key === "google_maps_embed") {
-        try {
-          const url = new URL(val);
-          if (!url.hostname.includes("google.com")) {
-            return `${f.label}: use a Google Maps embed URL (Share → Embed a map)`;
-          }
-        } catch {
-          return `${f.label}: invalid embed URL`;
+        if (!parseGoogleMapsEmbedInput(val)) {
+          return `${f.label}: paste a Google Maps embed URL or full iframe code (Share → Embed a map)`;
         }
       }
     }
