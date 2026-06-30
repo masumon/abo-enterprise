@@ -21,6 +21,10 @@ const SERVICES = [
 const COMPANY = [
   { href: "/about", label: { en: "About Us", bn: "আমাদের সম্পর্কে" } },
   { href: "/projects", label: { en: "Projects", bn: "প্রজেক্ট" } },
+  { href: "/gallery", label: { en: "Gallery", bn: "গ্যালারি" } },
+  { href: "/testimonials", label: { en: "Testimonials", bn: "পর্যালোচনা" } },
+  { href: "/career", label: { en: "Careers", bn: "ক্যারিয়ার" } },
+  { href: "/faq", label: { en: "FAQ", bn: "প্রশ্নোত্তর" } },
   { href: "/contact", label: { en: "Contact", bn: "যোগাযোগ" } },
   { href: "/track", label: { en: "Track Order", bn: "অর্ডার ট্র্যাক" } },
 ];
@@ -29,6 +33,7 @@ const LEGAL = [
   { href: "/legal/privacy", labelKey: "footer_privacy" as const },
   { href: "/legal/terms", labelKey: "footer_terms" as const },
   { href: "/legal/refund", labelKey: "footer_refund" as const },
+  { href: "/shipping", label: { en: "Shipping", bn: "শিপিং" } },
 ];
 
 export default function Footer() {
@@ -131,7 +136,7 @@ export default function Footer() {
               {LEGAL.map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className="text-sm text-gray-400 hover:text-white transition-colors">
-                    {t(link.labelKey)}
+                    {"labelKey" in link && link.labelKey ? t(link.labelKey) : lang === "bn" ? link.label!.bn : link.label!.en}
                   </Link>
                 </li>
               ))}

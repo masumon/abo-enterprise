@@ -72,6 +72,11 @@ export default function CustomerReviews() {
             ))}
           </div>
         )}
+        <div className="text-center mt-8">
+          <Link href="/testimonials" className="btn btn-outline btn-sm">
+            {lang === "bn" ? "সব রিভিউ দেখুন" : "View All Reviews"}
+          </Link>
+        </div>
       </div>
     </section>
   );

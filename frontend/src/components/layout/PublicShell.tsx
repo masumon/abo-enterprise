@@ -11,6 +11,9 @@ import CompareBar from "@/components/ui/CompareBar";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 import ApiWarmup from "@/components/ui/ApiWarmup";
 import ToastProvider from "@/components/ui/ToastProvider";
+import WhatsAppButton from "@/components/ui/WhatsAppButton";
+import BackToTop from "@/components/ui/BackToTop";
+import CookieConsent from "@/components/ui/CookieConsent";
 
 export default function PublicShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -32,6 +35,9 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <CartDrawer />
       <CompareBar />
       <AssistantWidget />
+      <WhatsAppButton />
+      <BackToTop />
+      <CookieConsent />
       <ApiWarmup />
       <MobileBottomNav />
       <ToastProvider />

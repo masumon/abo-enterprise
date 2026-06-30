@@ -70,7 +70,7 @@ export default function EntryPoints() {
   const { lang } = useLanguageStore();
 
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="enterprise-section-alt">
       <div className="container mx-auto px-4">
         {/* Heading */}
         <div className="text-center mb-10">
