@@ -1,5 +1,7 @@
 "use client";
 
+import { cn } from "@/lib/utils";
+
 interface Category {
   id: string | null;
   label: string;
@@ -18,16 +20,19 @@ export default function ServiceFilters({
   onCategoryChange,
 }: ServiceFiltersProps) {
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap gap-2" role="group" aria-label="Filter services by category">
       {categories.map((category) => (
         <button
-          key={category.id}
+          key={category.id ?? "all"}
+          type="button"
           onClick={() => onCategoryChange(category.id)}
-          className={`px-4 py-2 rounded-lg font-medium transition-all ${
+          className={cn(
+            "px-4 py-2 rounded-xl text-sm font-medium transition-all",
             selectedCategory === category.id
-              ? "bg-blue-600 text-white shadow-lg"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-          }`}
+              ? "bg-brand-600 text-white shadow-md"
+              : "enterprise-card text-muted hover:text-heading"
+          )}
+          aria-pressed={selectedCategory === category.id}
         >
           {category.label}
         </button>

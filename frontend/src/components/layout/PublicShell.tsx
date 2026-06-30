@@ -14,6 +14,8 @@ import ToastProvider from "@/components/ui/ToastProvider";
 import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import BackToTop from "@/components/ui/BackToTop";
 import CookieConsent from "@/components/ui/CookieConsent";
+import SkipToContent from "@/components/ui/SkipToContent";
+import StickyCTA from "@/components/ui/StickyCTA";
 
 export default function PublicShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,6 +27,7 @@ export default function PublicShell({ children }: { children: React.ReactNode })
 
   return (
     <>
+      <SkipToContent />
       <AnnouncementBar />
       <OfflineBanner />
       <Navbar />
@@ -36,6 +39,7 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <CompareBar />
       <AssistantWidget />
       <WhatsAppButton />
+      <StickyCTA />
       <BackToTop />
       <CookieConsent />
       <ApiWarmup />

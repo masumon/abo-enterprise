@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import type { Product } from "@/types";
+import Link from "next/link";
 import ProductsClient from "./ProductsClient";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { pageMeta } from "@/lib/metadata";
 
 const API_BASE = getApiBaseUrl();
 
-export const metadata: Metadata = {
-  title: "Products — Mobile Accessories & Gadgets",
-  description: "Browse quality mobile accessories, gadgets and electronics at the best prices in Bangladesh.",
-};
+export const metadata: Metadata = pageMeta(
+  "Products — Mobile Accessories & Gadgets",
+  "Browse quality mobile accessories, gadgets and electronics at the best prices in Bangladesh.",
+  "/products"
+);
 
 async function fetchProducts(): Promise<{ products: Product[]; total: number }> {
   try {
@@ -32,8 +35,13 @@ export default async function ProductsPage() {
 
   return (
     <main className="min-h-screen">
-      <section className="gradient-brand text-white py-16 px-4">
-        <div className="max-w-6xl mx-auto text-center">
+      <section className="gradient-brand text-white py-14 md:py-16 px-4 -mt-[var(--navbar-offset)] pt-[calc(var(--navbar-offset)+3.5rem)]">
+        <div className="max-w-6xl mx-auto">
+          <nav aria-label="Breadcrumb" className="flex items-center flex-wrap gap-1 text-xs sm:text-sm mb-4 text-white/70">
+            <Link href="/" className="hover:text-white">Home</Link>
+            <span>/</span>
+            <span className="text-white">Products</span>
+          </nav>
           <h1 className="text-3xl md:text-4xl font-bold mb-3">Our Products</h1>
           <p className="text-brand-100 text-lg">Quality accessories & electronics at the best prices</p>
         </div>

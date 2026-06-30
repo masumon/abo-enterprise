@@ -16,7 +16,10 @@ const customJestConfig = {
     "!src/**/*.stories.{js,jsx,ts,tsx}",
     "!src/**/__tests__/**",
   ],
-  testMatch: ["<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}"],
+  testMatch: [
+    "<rootDir>/src/**/__tests__/**/*.test.{js,jsx,ts,tsx}",
+    "<rootDir>/src/**/__tests__/**/*.spec.{js,jsx,ts,tsx}",
+  ],
 };
 
 module.exports = createJestConfig(customJestConfig);

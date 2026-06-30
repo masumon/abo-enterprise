@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import type { BlogPost } from "@/types";
 import { useLanguageStore } from "@/store/language";
 
@@ -48,11 +49,13 @@ export default function BlogGrid({ posts, page, totalPages }: Props) {
               className="group flex flex-col bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-md hover:border-brand-200 transition-all"
             >
               {post.featured_image_url ? (
-                <div className="aspect-video overflow-hidden bg-gray-100">
-                  <img
+                <div className="relative aspect-video overflow-hidden bg-gray-100">
+                  <Image
                     src={post.featured_image_url}
                     alt={title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="(max-width: 768px) 100vw, 33vw"
                   />
                 </div>
               ) : (

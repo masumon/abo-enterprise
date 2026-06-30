@@ -155,7 +155,7 @@ export default function PWAInstallPrompt() {
                   <div className="w-7 h-7 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center flex-shrink-0">
                     <Plus className="w-3.5 h-3.5 text-blue-600 dark:text-blue-300" />
                   </div>
-                  <p className="text-sm text-gray-700 dark:text-gray-200"><strong>"Add to Home Screen"</strong> সিলেক্ট করুন</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-200"><strong>&quot;Add to Home Screen&quot;</strong> সিলেক্ট করুন</p>
                 </div>
               </div>
             </div>

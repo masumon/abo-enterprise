@@ -12,12 +12,12 @@ import GlassCard from "@/components/ui/GlassCard";
 const PORTAL_ITEMS = [
   { href: "/orders", icon: Package, labelKey: "profile_orders" as const, live: true },
   { href: "/track", icon: Search, labelKey: "nav_track" as const, live: true },
-  { href: "/services", icon: Calendar, labelKey: "profile_bookings" as const, live: true },
+  { href: "/book", icon: Calendar, labelKey: "profile_bookings" as const, live: true },
   { href: "/profile/wishlist", icon: Heart, labelKey: "profile_wishlist" as const, live: true },
-  { href: "/profile", icon: FileText, labelKey: "profile_invoices" as const, live: false },
-  { href: "/profile", icon: MapPin, labelKey: "profile_addresses" as const, live: false },
+  { href: "/profile/invoices", icon: FileText, labelKey: "profile_invoices" as const, live: true },
+  { href: "/profile/addresses", icon: MapPin, labelKey: "profile_addresses" as const, live: true },
   { href: "/contact", icon: Headphones, labelKey: "profile_support" as const, live: true },
-  { href: "/profile", icon: Settings, labelKey: "profile_settings" as const, live: false },
+  { href: "/profile/settings", icon: Settings, labelKey: "profile_settings" as const, live: true },
 ];
 
 export default function ProfilePage() {
@@ -47,10 +47,7 @@ export default function ProfilePage() {
                     <Icon className="w-5 h-5 text-brand-600" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900">{t(item.labelKey)}</p>
-                    {!item.live && (
-                      <p className="text-[10px] text-accent-500 font-medium">{t("profile_coming_soon")}</p>
-                    )}
+                    <p className="font-semibold text-gray-900 dark:text-gray-100">{t(item.labelKey)}</p>
                   </div>
                   {badge && (
                     <span className="w-6 h-6 bg-accent-500 text-white text-xs font-bold rounded-full flex items-center justify-center">{badge}</span>

@@ -6,6 +6,7 @@ import { useCartStore } from "@/store/cart";
 import { useWishlistStore } from "@/store/wishlist";
 import { useCompareStore } from "@/store/compare";
 import { useCustomerStore } from "@/store/customer";
+import { useCustomerProfileStore } from "@/store/customerProfile";
 import { useThemeStore, applyTheme } from "@/store/theme";
 
 export default function StoreHydration() {
@@ -18,6 +19,7 @@ export default function StoreHydration() {
     useWishlistStore.persist.rehydrate();
     useCompareStore.persist.rehydrate();
     useCustomerStore.persist.rehydrate();
+    useCustomerProfileStore.persist.rehydrate();
     useThemeStore.persist.rehydrate();
   }, []);
 

@@ -1,87 +1,78 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Service } from "@/types";
+import type { Language } from "@/types";
 import { ArrowRight, Star } from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 interface ServiceCardProps {
   service: Service;
+  lang?: Language;
 }
 
-export default function ServiceCard({ service }: ServiceCardProps) {
+export default function ServiceCard({ service, lang = "en" }: ServiceCardProps) {
+  const name = lang === "bn" && service.name_bn ? service.name_bn : service.name_en;
+  const description =
+    (lang === "bn" ? service.short_description_bn || service.description_bn : null) ||
+    service.short_description_en ||
+    service.description_en;
+
   return (
-    <Link href={`/services/${service.slug}`}>
-      <div className="h-full bg-white rounded-lg border border-gray-200 hover:shadow-lg transition-shadow overflow-hidden cursor-pointer group">
-        {/* Image */}
+    <Link href={`/services/${service.slug}`} className="block h-full group">
+      <article className="h-full enterprise-card-hover overflow-hidden">
         {service.featured_image_url && (
-          <div className="relative h-48 bg-gray-100 overflow-hidden">
-            <img
+          <div className="relative h-44 bg-gray-100 overflow-hidden">
+            <Image
               src={service.featured_image_url}
-              alt={service.name_en}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              alt={name}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              sizes="(max-width: 768px) 100vw, 33vw"
             />
           </div>
         )}
 
-        {/* Content */}
-        <div className="p-6">
-          {/* Category Badge */}
-          <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full mb-3">
-            {service.category}
-          </span>
-
-          {/* Title */}
-          <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-            {service.name_en}
-          </h3>
-
-          {/* Description */}
-          <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-            {service.description_en || service.short_description_en}
-          </p>
-
-          {/* Pricing */}
-          <div className="mb-4">
-            {service.pricing_type === "fixed" && service.base_price && (
-              <div className="text-2xl font-bold text-blue-600">
-                ৳{service.base_price.toLocaleString()}
-              </div>
-            )}
-            {service.pricing_type === "hourly" && service.hourly_rate && (
-              <div className="text-sm text-gray-600">
-                From <span className="text-lg font-bold text-blue-600">৳{service.hourly_rate}</span>/hour
-              </div>
-            )}
-            {service.pricing_type === "package" && (
-              <div className="text-sm text-gray-600">
-                <span className="font-semibold">Tiered Pricing</span>
-              </div>
-            )}
-            {service.pricing_type === "custom_quote" && (
-              <div className="text-sm text-gray-600 font-semibold">
-                Custom Quote Available
-              </div>
-            )}
-          </div>
-
-          {/* Features */}
-          {service.tags && service.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {service.tags.slice(0, 2).map((tag) => (
-                <span key={tag} className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-                  {tag}
-                </span>
-              ))}
-            </div>
+        <div className="p-5">
+          {service.category && (
+            <span className="inline-block px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 text-xs font-semibold rounded-full mb-2">
+              {service.category}
+            </span>
           )}
 
-          {/* CTA Button */}
-          <div className="flex items-center justify-between pt-4 border-t">
-            <span className="text-sm font-semibold text-blue-600 flex items-center gap-1">
-              Learn More <ArrowRight className="w-3 h-3" />
+          <h3 className="text-lg font-bold text-heading mb-2 group-hover:text-brand-600 transition-colors line-clamp-2">
+            {name}
+          </h3>
+
+          {description && (
+            <p className="text-sm text-muted mb-4 line-clamp-2">{description}</p>
+          )}
+
+          <div className="mb-4">
+            {service.pricing_type === "fixed" && service.base_price != null && (
+              <div className="text-xl font-bold text-brand-600">{formatPrice(service.base_price)}</div>
+            )}
+            {service.pricing_type === "hourly" && service.hourly_rate != null && (
+              <div className="text-sm text-muted">
+                {lang === "bn" ? "শুরু " : "From "}
+                <span className="text-lg font-bold text-brand-600">{formatPrice(service.hourly_rate)}</span>
+                {lang === "bn" ? "/ঘণ্টা" : "/hr"}
+              </div>
+            )}
+            {(service.pricing_type === "custom_quote" || service.pricing_type === "custom") && (
+              <div className="text-sm font-semibold text-muted">
+                {lang === "bn" ? "কাস্টম কোট" : "Custom Quote"}
+              </div>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-white/10">
+            <span className="text-sm font-semibold text-brand-600 flex items-center gap-1">
+              {lang === "bn" ? "বিস্তারিত" : "Learn More"} <ArrowRight className="w-3 h-3" />
             </span>
-            {service.is_featured && <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />}
+            {service.is_featured && <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" aria-hidden />}
           </div>
         </div>
-      </div>
+      </article>
     </Link>
   );
 }

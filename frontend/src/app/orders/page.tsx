@@ -79,7 +79,7 @@ export default function OrdersPage() {
         ) : (
           <div className="space-y-3">
             {orders.map((o) => (
-              <Link key={o.order_number} href={`/track?number=${encodeURIComponent(o.order_number)}`}>
+              <Link key={o.order_number} href={`/orders/${encodeURIComponent(o.order_number)}`}>
                 <GlassCard hover className="p-4 flex items-center gap-4">
                   <div className="w-11 h-11 bg-brand-50 rounded-xl flex items-center justify-center">
                     <Package className="w-5 h-5 text-brand-600" />

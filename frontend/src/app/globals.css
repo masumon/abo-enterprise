@@ -40,12 +40,15 @@
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
   }
 
   body {
     font-family: 'Inter', 'Hind Siliguri', system-ui, sans-serif;
     @apply bg-slate-50 text-gray-900;
     line-height: 1.6;
+    overflow-x: hidden;
+    max-width: 100vw;
     background-image:
       radial-gradient(ellipse at 20% 50%, rgba(30,91,168,0.04) 0%, transparent 60%),
       radial-gradient(ellipse at 80% 20%, rgba(233,30,99,0.03) 0%, transparent 50%);
