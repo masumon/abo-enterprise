@@ -3,9 +3,10 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, Package, ArrowRight, MessageCircle, Share2 } from "lucide-react";
+import { CheckCircle2, Package, ArrowRight, Share2, Download, Loader2 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { trackPurchase } from "@/components/analytics/FacebookPixel";
+import { downloadPublicOrderInvoice } from "@/lib/api";
 import PageHero from "@/components/ui/PageHero";
 
 function ConfettiBurst() {
@@ -39,11 +40,15 @@ function OrderSuccessContent() {
   const params = useSearchParams();
   const { lang } = useLanguageStore();
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [phone, setPhone] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(true);
 
   useEffect(() => {
     const order = params.get("order");
+    const ph = params.get("phone");
     setOrderNumber(order);
+    setPhone(ph);
     if (order) trackPurchase(0, order);
     const t = setTimeout(() => setShowConfetti(false), 3000);
     return () => clearTimeout(t);
@@ -51,8 +56,19 @@ function OrderSuccessContent() {
 
   const shareText = orderNumber
     ? encodeURIComponent(lang === "bn" ? `আমার ABO অর্ডার: ${orderNumber}` : `My ABO order: ${orderNumber}`)
-    : "";
-  const waShare = shareText ? `https://wa.me/?text=${shareText}` : null;
+    : null;
+
+  const handleDownloadInvoice = async () => {
+    if (!orderNumber || !phone) return;
+    setPdfLoading(true);
+    try {
+      await downloadPublicOrderInvoice(orderNumber, phone);
+    } catch {
+      /* user can retry */
+    } finally {
+      setPdfLoading(false);
+    }
+  };
 
   const handleShare = async () => {
     const text = orderNumber
@@ -60,8 +76,6 @@ function OrderSuccessContent() {
       : window.location.href;
     if (navigator.share) {
       await navigator.share({ title: "ABO Enterprise", text });
-    } else if (waShare) {
-      window.open(waShare, "_blank");
     }
   };
 
@@ -108,6 +122,17 @@ function OrderSuccessContent() {
         )}
 
         <div className="space-y-3">
+          {orderNumber && phone && (
+            <button
+              type="button"
+              onClick={handleDownloadInvoice}
+              disabled={pdfLoading}
+              className="btn btn-brand btn-md w-full flex items-center justify-center gap-2"
+            >
+              {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              {lang === "bn" ? "ইনভয়েস PDF ডাউনলোড" : "Download Invoice PDF"}
+            </button>
+          )}
           {orderNumber && (
             <Link
               href={`/track?order=${orderNumber}`}
@@ -116,12 +141,6 @@ function OrderSuccessContent() {
               <Package className="w-4 h-4" />
               {lang === "bn" ? "অর্ডার ট্র্যাক করুন" : "Track Order"}
             </Link>
-          )}
-          {waShare && (
-            <a href={waShare} target="_blank" rel="noopener noreferrer" className="btn btn-success btn-md w-full flex items-center justify-center gap-2">
-              <MessageCircle className="w-4 h-4" />
-              {lang === "bn" ? "WhatsApp এ শেয়ার" : "Share on WhatsApp"}
-            </a>
           )}
           <button type="button" onClick={handleShare} className="btn btn-outline btn-md w-full flex items-center justify-center gap-2">
             <Share2 className="w-4 h-4" />

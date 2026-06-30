@@ -249,6 +249,20 @@ export async function downloadCsv(path: string, filename: string): Promise<void>
   URL.revokeObjectURL(url);
 }
 
+export async function downloadPublicOrderInvoice(orderNumber: string, phone: string): Promise<void> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/invoices/public/order/${encodeURIComponent(orderNumber)}/pdf?phone=${encodeURIComponent(phone)}`
+  );
+  if (!res.ok) throw new Error("Invoice not available");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `invoice-${orderNumber}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export async function downloadPdf(path: string, filename: string): Promise<void> {
   const token = getAdminToken();
   const res = await fetch(`${API_BASE}${path}`, {

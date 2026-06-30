@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import {
-  Bot,
   Send,
   X,
   Sparkles,
@@ -11,7 +11,6 @@ import {
   Truck,
   Phone,
   Minus,
-  MessageCircle,
 } from "lucide-react";
 import { assistantApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -36,7 +35,7 @@ interface AssistantConfig {
 const SESSION_KEY = "abo_assistant_session";
 const DEFAULT_CONFIG: AssistantConfig = {
   enabled: true,
-  whatsapp_enabled: true,
+  whatsapp_enabled: false,
   whatsapp_number: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "8801825007977",
   welcome_en: "",
   welcome_bn: "",
@@ -56,11 +55,23 @@ function formatMessageContent(text: string) {
   });
 }
 
+function AssistantAvatar({ size = 32, className }: { size?: number; className?: string }) {
+  return (
+    <Image
+      src="/logo.jpg"
+      alt="ABO Enterprise"
+      width={size}
+      height={size}
+      className={cn("rounded-xl object-cover shadow-sm", className)}
+    />
+  );
+}
+
 function TypingIndicator({ label }: { label: string }) {
   return (
     <div className="flex items-end gap-2.5 animate-fade-in" aria-live="polite" aria-label={label}>
-      <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center shadow-md shadow-brand-500/20 flex-shrink-0">
-        <Bot className="w-4 h-4 text-white" />
+      <div className="w-8 h-8 rounded-xl overflow-hidden flex-shrink-0 ring-2 ring-brand-200/50">
+        <AssistantAvatar size={32} className="w-full h-full" />
       </div>
       <div className="px-4 py-3 rounded-2xl rounded-bl-md bg-white/90 dark:bg-white/10 border border-gray-100/80 dark:border-white/10 shadow-sm">
         <div className="flex items-center gap-1.5 h-4">
@@ -103,35 +114,12 @@ export default function AssistantWidget() {
 
   const enabled = flagEnabled && config.enabled;
 
-  const welcomeText = useMemo(() => {
-    const custom = lang === "bn" ? config.welcome_bn : config.welcome_en;
-    return custom || t("assistant_welcome");
-  }, [config.welcome_bn, config.welcome_en, lang, t]);
-
-  const whatsappUrl = useMemo(() => {
-    const number = config.whatsapp_number.replace(/\D/g, "");
-    const text = lang === "bn"
-      ? "হ্যালো ABO Enterprise, আমার সাহায্য দরকার।"
-      : "Hello ABO Enterprise, I need help.";
-    return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
-  }, [config.whatsapp_number, lang]);
-
-  const quickActions = useMemo(() => {
-    const actions = [
-      { icon: Package, label: t("assistant_quick_products"), message: lang === "bn" ? "পণ্য দেখান" : "Show products" },
-      { icon: Briefcase, label: t("assistant_quick_services"), message: lang === "bn" ? "সেবা সম্পর্কে জানুন" : "Tell me about services" },
-      { icon: Truck, label: t("assistant_quick_track"), message: lang === "bn" ? "অর্ডার ট্র্যাক করতে চাই" : "I want to track my order" },
-      { icon: Phone, label: t("assistant_quick_contact"), message: lang === "bn" ? "যোগাযোগের তথ্য দিন" : "Contact information" },
-    ];
-    if (config.whatsapp_enabled) {
-      actions.push({
-        icon: MessageCircle,
-        label: t("assistant_quick_whatsapp"),
-        message: "__whatsapp__",
-      });
-    }
-    return actions;
-  }, [t, lang, config.whatsapp_enabled]);
+  const quickActions = useMemo(() => [
+    { icon: Package, label: t("assistant_quick_products"), message: lang === "bn" ? "পণ্য দেখান" : "Show products" },
+    { icon: Briefcase, label: t("assistant_quick_services"), message: lang === "bn" ? "সেবা সম্পর্কে জানুন" : "Tell me about services" },
+    { icon: Truck, label: t("assistant_quick_track"), message: lang === "bn" ? "অর্ডার ট্র্যাক করতে চাই" : "I want to track my order" },
+    { icon: Phone, label: t("assistant_quick_contact"), message: lang === "bn" ? "যোগাযোগের তথ্য দিন" : "Contact information" },
+  ], [t, lang]);
 
   useEffect(() => {
     assistantApi.config()
@@ -182,11 +170,6 @@ export default function AssistantWidget() {
 
   const sendText = useCallback(
     async (text: string) => {
-      if (text === "__whatsapp__") {
-        window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-        return;
-      }
-
       const trimmed = text.trim();
       if (!trimmed || loading) return;
 
@@ -219,7 +202,7 @@ export default function AssistantWidget() {
         setLoading(false);
       }
     },
-    [loading, sessionId, lang, t, whatsappUrl]
+    [loading, sessionId, lang, t]
   );
 
   const sendMessage = useCallback(() => sendText(input), [input, sendText]);
@@ -263,8 +246,8 @@ export default function AssistantWidget() {
             <div className="relative flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="relative flex-shrink-0">
-                  <div className="w-11 h-11 rounded-2xl glass-panel flex items-center justify-center shadow-lg">
-                    <Bot className="w-5 h-5 text-white" />
+                  <div className="w-11 h-11 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-lg">
+                    <AssistantAvatar size={44} className="w-full h-full" />
                   </div>
                   <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-brand-700 rounded-full" />
                 </div>
@@ -296,15 +279,6 @@ export default function AssistantWidget() {
           <div className="flex-1 overflow-y-auto assistant-chat-bg px-4 py-4 space-y-4 scrollbar-hide">
             {messages.length === 0 && !historyLoading && (
               <div className="animate-fade-in space-y-4 pt-2">
-                <div className="text-center px-2">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl gradient-brand shadow-lg shadow-brand-500/25 mb-3">
-                    <Sparkles className="w-7 h-7 text-white" />
-                  </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed max-w-[280px] mx-auto">
-                    {welcomeText}
-                  </p>
-                </div>
-
                 <div className="grid grid-cols-2 gap-2">
                   {quickActions.map(({ icon: Icon, label, message }) => (
                     <button
@@ -316,22 +290,11 @@ export default function AssistantWidget() {
                         "flex flex-col items-start gap-2 p-3 rounded-2xl text-left transition-all duration-200",
                         "bg-white/80 dark:bg-white/5 border border-gray-100/80 dark:border-white/10",
                         "hover:border-brand-200 dark:hover:border-brand-500/30 hover:shadow-md hover:-translate-y-0.5",
-                        "disabled:opacity-50 disabled:pointer-events-none",
-                        message === "__whatsapp__" && "border-green-200/80 hover:border-green-300"
+                        "disabled:opacity-50 disabled:pointer-events-none"
                       )}
                     >
-                      <span className={cn(
-                        "w-8 h-8 rounded-xl flex items-center justify-center",
-                        message === "__whatsapp__"
-                          ? "bg-green-50 dark:bg-green-900/40"
-                          : "bg-brand-50 dark:bg-brand-900/40"
-                      )}>
-                        <Icon className={cn(
-                          "w-4 h-4",
-                          message === "__whatsapp__"
-                            ? "text-green-600 dark:text-green-300"
-                            : "text-brand-600 dark:text-brand-300"
-                        )} />
+                      <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-brand-50 dark:bg-brand-900/40">
+                        <Icon className="w-4 h-4 text-brand-600 dark:text-brand-300" />
                       </span>
                       <span className="text-xs font-semibold text-gray-700 dark:text-gray-200 leading-snug">
                         {label}
@@ -357,8 +320,8 @@ export default function AssistantWidget() {
                 )}
               >
                 {msg.role === "assistant" && (
-                  <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center shadow-md shadow-brand-500/20 flex-shrink-0 mt-0.5">
-                    <Bot className="w-4 h-4 text-white" />
+                  <div className="w-8 h-8 rounded-xl overflow-hidden flex-shrink-0 mt-0.5 ring-1 ring-brand-100">
+                    <AssistantAvatar size={32} className="w-full h-full" />
                   </div>
                 )}
                 <div
@@ -395,17 +358,6 @@ export default function AssistantWidget() {
           </div>
 
           <div className="flex-shrink-0 p-3 border-t border-gray-100/80 dark:border-white/10 bg-white/60 dark:bg-[#0a1628]/60 backdrop-blur-md">
-            {config.whatsapp_enabled && (
-              <a
-                href={whatsappUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full mb-2 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white text-sm font-semibold transition-colors"
-              >
-                <MessageCircle className="w-4 h-4" />
-                {t("assistant_quick_whatsapp")}
-              </a>
-            )}
             <div className="flex items-center gap-2">
               <input
                 ref={inputRef}
@@ -465,30 +417,19 @@ export default function AssistantWidget() {
           type="button"
           onClick={() => setOpen((v) => !v)}
           className={cn(
-            "relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300",
-            "bg-gradient-to-br from-brand-500 via-brand-600 to-brand-700 text-white",
-            "shadow-lg shadow-brand-500/30 hover:shadow-xl hover:shadow-brand-500/40",
-            open ? "scale-95 rotate-0" : "hover:scale-110",
+            "relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
+            "ring-2 ring-brand-400/40 shadow-lg shadow-brand-500/30",
+            open ? "scale-95" : "hover:scale-110",
             !open && "assistant-fab-ring"
           )}
-          style={
-            !open
-              ? {
-                  boxShadow:
-                    "0 0 0 0 rgba(30, 91, 168, 0.4), 0 8px 24px rgba(30, 91, 168, 0.35)",
-                }
-              : undefined
-          }
           aria-label={open ? "Close assistant" : "Open assistant"}
           aria-expanded={open}
         >
-          {!open && (
-            <span
-              className="absolute inset-0 rounded-full border-2 border-brand-400/50 assistant-fab-ring pointer-events-none"
-              aria-hidden="true"
-            />
+          {open ? (
+            <X className="w-6 h-6 text-white absolute z-10 bg-brand-600/90 rounded-full p-0.5" />
+          ) : (
+            <AssistantAvatar size={56} className="w-full h-full rounded-full" />
           )}
-          {open ? <X className="w-6 h-6" /> : <Bot className="w-6 h-6" />}
         </button>
       </div>
     </>

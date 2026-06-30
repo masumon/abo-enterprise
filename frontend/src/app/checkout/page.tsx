@@ -260,7 +260,9 @@ export default function CheckoutPage() {
       else if (actions.mailto) window.location.href = actions.mailto;
 
       clearCart();
-      router.push(`/order-success${orderNumber ? `?order=${orderNumber}` : ""}`);
+      router.push(
+        `/order-success${orderNumber ? `?order=${orderNumber}&phone=${encodeURIComponent(data.customer_phone)}` : ""}`
+      );
     } catch {
       setSubmitError(
         lang === "bn"

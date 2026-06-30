@@ -8,12 +8,15 @@ from app.assistant.constants import Intent
 class ResponseGenerator:
     def greeting(self, language: str, name: str | None = None) -> str:
         if language == "bn":
-            base = f"নমস্কার{', ' + name if name else ''}! ABO Enterprise-এ স্বাগতম।"
-            return base + " আমি আপনাকে পণ্য, সেবা, অর্ডার ও অন্যান্য বিষয়ে সাহায্য করতে পারি।"
+            return "আমি ABO Enterprise সহকারী। পণ্য, সেবা, অর্ডার ট্র্যাকিং বা যোগাযোগ — জিজ্ঞাসা করুন।"
         return (
-            f"Hello{', ' + name if name else ''}! Welcome to ABO Enterprise. "
-            "I can help with products, services, orders, and more. How can I assist you?"
+            "I'm the ABO Enterprise assistant. Ask about products, services, order tracking, or contact info."
         )
+
+    def web_enriched(self, language: str, summary: str) -> str:
+        if language == "bn":
+            return f"আমি আমাদের ডাটাবেস ও ওয়েব থেকে পেলাম:\n\n{summary}"
+        return f"From our catalog and web search:\n\n{summary}"
 
     def unknown(self, language: str) -> str:
         if language == "bn":

@@ -11,7 +11,6 @@ import CompareBar from "@/components/ui/CompareBar";
 import OfflineBanner from "@/components/ui/OfflineBanner";
 import ApiWarmup from "@/components/ui/ApiWarmup";
 import ToastProvider from "@/components/ui/ToastProvider";
-import WhatsAppButton from "@/components/ui/WhatsAppButton";
 import BackToTop from "@/components/ui/BackToTop";
 import CookieConsent from "@/components/ui/CookieConsent";
 import SkipToContent from "@/components/ui/SkipToContent";
@@ -46,7 +45,6 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <DelayedMount delayMs={5000}>
         <AssistantWidget />
       </DelayedMount>
-      <WhatsAppButton />
       <FacebookPixel />
       <StickyCTA />
       <BackToTop />

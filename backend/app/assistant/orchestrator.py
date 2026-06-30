@@ -152,6 +152,23 @@ class AssistantOrchestrator:
             return self.response.greeting(lang, ctx.customer_name), {}
 
         if intent == Intent.UNKNOWN:
+            query = preprocessed["normalized"] or message.strip()
+            found = await self.knowledge.search_products(db, query, limit=3)
+            if found:
+                product_dicts = [
+                    {"name_en": p.name_en, "name_bn": p.name_bn, "price": float(p.price),
+                     "stock_quantity": p.stock_quantity, "slug": p.slug}
+                    for p in found
+                ]
+                return self.response.product_list(lang, product_dicts), {"products": product_dicts}
+            svcs = await self.knowledge.search_services(db, query, limit=3)
+            if svcs:
+                svc_dicts = [{"name_en": s.name_en, "name_bn": s.name_bn, "slug": s.slug} for s in svcs]
+                return self.response.service_list(lang, svc_dicts), {"services": svc_dicts}
+            from app.assistant.web_search import search_web
+            web = await search_web(query)
+            if web:
+                return self.response.web_enriched(lang, web), {"web_search": True}
             return self.response.unknown(lang), {}
 
         if intent == Intent.CONTACT:

@@ -36,19 +36,32 @@ class KnowledgeBase:
         return self._faq.get(f"{key}{suffix}") or self._faq.get(f"{key}_en")
 
     async def get_contact_info(self, db: AsyncSession) -> dict:
+        keys = [
+            "contact_phone", "contact_email", "contact_address", "whatsapp_number",
+            "business_phone", "business_email", "business_address", "site_name",
+        ]
         result = await db.execute(
             select(Setting).where(
-                Setting.key.in_(["business_phone", "business_email", "business_address", "whatsapp_number"]),
+                Setting.key.in_(keys),
                 Setting.is_deleted == False,  # noqa: E712
             )
         )
         data = {s.key: s.value for s in result.scalars().all()}
         return {
-            "phone": data.get("business_phone") or settings.WHATSAPP_NUMBER,
-            "email": data.get("business_email") or settings.BUSINESS_EMAIL,
+            "phone": data.get("contact_phone") or data.get("business_phone") or settings.WHATSAPP_NUMBER,
+            "email": data.get("contact_email") or data.get("business_email") or settings.BUSINESS_EMAIL,
             "whatsapp": data.get("whatsapp_number") or settings.WHATSAPP_NUMBER,
-            "address": data.get("business_address", ""),
+            "address": data.get("contact_address") or data.get("business_address", ""),
+            "site_name": data.get("site_name", "ABO Enterprise"),
         }
+
+    async def get_site_settings(self, db: AsyncSession, keys: list[str]) -> dict[str, str]:
+        if not keys:
+            return {}
+        result = await db.execute(
+            select(Setting).where(Setting.key.in_(keys), Setting.is_deleted == False)  # noqa: E712
+        )
+        return {s.key: s.value for s in result.scalars().all() if not s.is_secret}
 
     async def search_products(
         self, db: AsyncSession, query: str, limit: int = 5, category: str | None = None, brand: str | None = None

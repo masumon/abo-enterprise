@@ -31,6 +31,34 @@ async def _pdf_response(invoice: Invoice, db: AsyncSession) -> Response:
     )
 
 
+# ==================== PUBLIC CUSTOMER PDF ====================
+
+@router.get("/public/order/{order_number}/pdf")
+async def public_order_invoice_pdf(
+    order_number: str,
+    phone: str = Query(..., min_length=11, max_length=11),
+    db: AsyncSession = Depends(get_db),
+):
+    """Download order invoice PDF — requires matching customer phone."""
+    from app.models.models import Order
+
+    result = await db.execute(
+        select(Order).where(
+            Order.order_number == order_number,
+            Order.is_deleted == False,  # noqa: E712
+        )
+    )
+    order = result.scalar_one_or_none()
+    if not order or order.customer_phone != phone:
+        raise HTTPException(status_code=404, detail="Order not found")
+
+    invoice_service = InvoiceService(db)
+    invoice = await invoice_service.get_by_order_id(order.id)
+    if not invoice:
+        invoice = await invoice_service.create_order_invoice(order_id=order.id)
+    return await _pdf_response(invoice, db)
+
+
 # ==================== INVOICE CRUD ====================
 
 @router.post("", response_model=ApiResponse)
