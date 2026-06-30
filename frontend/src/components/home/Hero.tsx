@@ -50,8 +50,8 @@ export default function Hero() {
   const [activity, setActivity] = useState<ActivityItem[]>(FALLBACK_ACTIVITY);
 
   const heroImage = resolveHomeBannerImage(settings);
-  const heroTitle = lang === "bn"
-    ? getSettingValue(settings, "hero_title_bn") || t("hero_title_2")
+  const heroTitleOverride = lang === "bn"
+    ? getSettingValue(settings, "hero_title_bn")
     : getSettingValue(settings, "hero_title_en");
   const heroSubtitle = lang === "bn"
     ? getSettingValue(settings, "hero_subtitle_bn") || t("hero_sub")
@@ -106,13 +106,17 @@ export default function Hero() {
             </div>
 
             <h1 className="text-[1.75rem] sm:text-4xl lg:text-[2.625rem] font-bold leading-tight text-balance">
-              {heroTitle ? (
-                <span>{heroTitle}</span>
+              {heroTitleOverride ? (
+                <span>{heroTitleOverride}</span>
               ) : (
                 <>
-                  {t("hero_title_1")}<br />
-                  <span className="text-yellow-300">{t("hero_title_2")}</span><br />
-                  {t("hero_title_3")}
+                  <span className="block text-yellow-300 font-extrabold tracking-[0.06em] sm:tracking-[0.08em] drop-shadow-sm">
+                    {t("hero_brand")}
+                  </span>
+                  <span className="block mt-2 sm:mt-3 text-white font-bold leading-snug">
+                    <span className="text-white/80 font-semibold">: </span>
+                    {t("hero_tagline")}
+                  </span>
                 </>
               )}
             </h1>

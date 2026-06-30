@@ -77,7 +77,7 @@ const SECTIONS: Section[] = [
     fields: [
       { key: "hero_title_en", label: "Hero Title (English)", placeholder: "Welcome to ABO Enterprise" },
       { key: "hero_subtitle_en", label: "Hero Subtitle (English)", type: "textarea", placeholder: "Your trusted tech & printing partner in Sylhet" },
-      { key: "hero_title_bn", label: "Hero Title (বাংলা)", placeholder: "ABO Enterprise এ স্বাগতম" },
+      { key: "hero_title_bn", label: "Hero Title (বাংলা)", placeholder: "ABO ENTERPRISE: পণ্য, সেবা ও সফটওয়্যারের বিশ্বস্ত এন্টারপ্রাইজ।" },
       { key: "hero_subtitle_bn", label: "Hero Subtitle (বাংলা)", type: "textarea", placeholder: "সিলেটের বিশ্বস্ত টেক ও প্রিন্টিং পার্টনার" },
       { key: "hero_cta_text", label: "CTA Button Text", placeholder: "Shop Now" },
       { key: "hero_cta_url", label: "CTA Button URL", type: "url", placeholder: "/products" },
