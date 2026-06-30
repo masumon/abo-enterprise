@@ -7,13 +7,13 @@ export const DEFAULT_ADDRESS_EN =
 export const BUSINESS_LOCATION = {
   name: "ABO Enterprise",
   address: DEFAULT_ADDRESS_EN,
-  lat: 24.897,
-  lng: 91.8705,
+  lat: 24.8531558,
+  lng: 92.1548483,
 } as const;
 
-/** Google Maps embed URL (no API key required) */
+/** Google Maps embed — ABO Enterprise, Beanibazar (admin can override) */
 export const DEFAULT_MAPS_EMBED =
-  "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d7241.5!2d91.8705!3d24.897!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x375029b0c9e5f0a5%3A0x8dfd1bd2e54e9c5!2sHazi%20Bahar%20Uddin%20Market%2C%20Ambarkhana%2C%20Sylhet!5e0!3m2!1sen!2sbd!4v1719590400000!5m2!1sen!2sbd";
+  "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d14481.252168680774!2d92.1548483!3d24.8531558!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3751cb8f6e28ada5%3A0xaa987532ec744f22!2zQUJPIEVudGVycHJpc2Ug4KaP4Kas4Ka_4KaTIOCmj-CmqOCnjeCmn-CmvuCmsOCmquCnjeCmsOCmvuCmh-CmnA!5e0!3m2!1sen!2sbd!4v1782852750035!5m2!1sen!2sbd";
 
 const IFRAME_SRC_RE = /<iframe[^>]+src=["']([^"']+)["']/i;
 const GOOGLE_MAPS_HOSTS = ["google.com", "www.google.com", "maps.google.com"];
@@ -61,14 +61,16 @@ export function mapsViewUrlFromEmbed(raw: string | undefined): string | null {
   return parsed.replace("/maps/embed", "/maps");
 }
 
-/** Prefer admin embed location; fallback to address search. */
+/** Prefer admin embed → default embed pin → address text search. */
 export function resolveGoogleMapsLink(
   embedRaw: string | undefined,
   address: string = BUSINESS_LOCATION.address
 ): string {
-  return mapsViewUrlFromEmbed(embedRaw) ?? mapsPlaceUrl(address);
+  const embed = resolveGoogleMapsEmbed(embedRaw);
+  return embed.replace("/maps/embed", "/maps") || mapsPlaceUrl(address);
 }
 
-export function mapsDirectionsUrl(query: string = BUSINESS_LOCATION.address): string {
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(query)}`;
+export function mapsDirectionsUrl(_query: string = BUSINESS_LOCATION.address): string {
+  const { lat, lng } = BUSINESS_LOCATION;
+  return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 }
