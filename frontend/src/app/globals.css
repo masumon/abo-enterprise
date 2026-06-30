@@ -61,6 +61,14 @@
     background-attachment: fixed;
   }
 
+  html[lang="bn"] body {
+    font-family: 'Hind Siliguri', 'Inter', system-ui, sans-serif;
+  }
+
+  html[lang="en"] body {
+    font-family: 'Inter', 'Hind Siliguri', system-ui, sans-serif;
+  }
+
   html.dark body {
     @apply text-gray-100;
     background-color: var(--navy);
@@ -357,6 +365,11 @@
   .admin-shell {
     background: linear-gradient(160deg, #eef2ff 0%, #f8faff 45%, #f5f3ff 100%);
     min-height: 100dvh;
+    color: rgb(17 24 39);
+  }
+
+  .dark .admin-shell {
+    color: rgb(17 24 39);
   }
 
   .admin-auth-loading {
@@ -467,20 +480,49 @@
 
 @layer utilities {
   .text-balance { text-wrap: balance; }
-  .page-surface { @apply bg-[var(--surface)] dark:bg-transparent; }
+  .page-surface {
+    @apply bg-[var(--surface)] dark:bg-transparent;
+    color: rgb(17 24 39);
+  }
+  html.dark .page-surface { color: rgb(243 244 246); }
   .page-gradient {
     @apply bg-gradient-to-b from-gray-50 to-white;
   }
   .dark .page-gradient {
     background: linear-gradient(180deg, var(--navy) 0%, var(--surface) 100%);
   }
-  .section-panel { @apply bg-white dark:bg-[var(--surface-secondary)]; }
-  .section-panel-alt { @apply bg-gray-50 dark:bg-[var(--surface)]; }
-  .surface-card {
-    @apply bg-white dark:bg-[var(--surface-card)] border border-gray-100 dark:border-brand-400/15 text-gray-900 dark:text-gray-100;
+  .section-panel {
+    @apply bg-white dark:bg-[var(--surface-secondary)];
+    color: rgb(17 24 39);
   }
+  html.dark .section-panel { color: rgb(243 244 246); }
+  .section-panel-alt {
+    @apply bg-gray-50 dark:bg-[var(--surface)];
+    color: rgb(17 24 39);
+  }
+  html.dark .section-panel-alt { color: rgb(243 244 246); }
+  .surface-card {
+    @apply bg-white dark:bg-[var(--surface-card)] border border-gray-100 dark:border-brand-400/15;
+    color: rgb(17 24 39);
+  }
+  html.dark .surface-card { color: rgb(243 244 246); }
   .text-muted { @apply text-gray-500 dark:text-gray-400; }
-  .text-heading { @apply text-gray-900 dark:text-white; }
+  .text-heading { @apply dark:text-white; color: rgb(17 24 39); }
+
+  /* Dark mode: fix hardcoded gray text utilities on surfaces */
+  .dark .card .text-gray-900, .dark .card .text-gray-800,
+  .dark .enterprise-card .text-gray-900, .dark .enterprise-card .text-gray-800,
+  .dark .page-surface .text-gray-900, .dark .page-surface .text-gray-800 {
+    --tw-text-opacity: 1;
+    color: rgb(243 244 246 / var(--tw-text-opacity));
+  }
+  .dark .card .text-gray-700, .dark .card .text-gray-600,
+  .dark .enterprise-card .text-gray-700, .dark .enterprise-card .text-gray-600,
+  .dark .page-surface .text-gray-700, .dark .page-surface .text-gray-600,
+  .dark .card label, .dark .enterprise-card label {
+    --tw-text-opacity: 1;
+    color: rgb(209 213 219 / var(--tw-text-opacity));
+  }
   .pb-mobile-nav {
     padding-bottom: var(--mobile-chrome-bottom);
   }

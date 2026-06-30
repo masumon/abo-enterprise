@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { useLanguageStore } from "@/store/language";
 import { useCartStore } from "@/store/cart";
 import { useWishlistStore } from "@/store/wishlist";
@@ -11,8 +12,10 @@ import { useThemeStore, applyTheme } from "@/store/theme";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
 
 export default function StoreHydration() {
+  const pathname = usePathname();
   const lang = useLanguageStore((s) => s.lang);
   const theme = useThemeStore((s) => s.theme);
+  const isAdmin = pathname?.startsWith("/admin") ?? false;
   usePublicSettings();
 
   useEffect(() => {
@@ -30,8 +33,8 @@ export default function StoreHydration() {
   }, [lang]);
 
   useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+    applyTheme(isAdmin ? "light" : theme);
+  }, [theme, isAdmin]);
 
   return null;
 }
