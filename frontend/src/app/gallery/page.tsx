@@ -29,6 +29,7 @@ export default function GalleryPage() {
   return (
     <main>
       <PageHero
+        pageKey="gallery"
         title={lang === "bn" ? "গ্যালারি" : "Gallery"}
         subtitle={lang === "bn" ? "আমাদের কাজ ও অফিসের ছবি" : "Our work, office and project showcase"}
         breadcrumbs={[{ label: lang === "bn" ? "গ্যালারি" : "Gallery" }]}

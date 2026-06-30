@@ -8,6 +8,7 @@ import { formatPrice } from "@/lib/utils";
 import { useLanguageStore } from "@/store/language";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
 import { buildCourierTrackingUrl } from "@/lib/courierTracking";
+import PageHero from "@/components/ui/PageHero";
 
 interface TrackResult {
   order_number: string;
@@ -85,22 +86,23 @@ function TrackContent() {
     : null;
 
   return (
-    <main className="min-h-screen page-surface py-16 px-4 pb-mobile-nav lg:pb-16">
-      <div className="max-w-xl mx-auto">
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-brand-100 dark:bg-brand-900/40 rounded-2xl mb-4">
-            <Package className="w-7 h-7 text-brand-600 dark:text-brand-300" />
-          </div>
-          <h1 className="text-3xl font-bold text-heading mb-2">
-            {lang === "bn" ? "অর্ডার ট্র্যাক করুন" : "Track Your Order"}
-          </h1>
-          <p className="text-muted">
-            {lang === "bn"
-              ? "অর্ডার নম্বর দিয়ে বর্তমান অবস্থা দেখুন"
-              : "Enter your order number to see the current status"}
-          </p>
-        </div>
+    <main className="min-h-screen page-surface pb-mobile-nav lg:pb-16">
+      <PageHero
+        pageKey="track"
+        align="center"
+        title={lang === "bn" ? "অর্ডার ট্র্যাক করুন" : "Track Your Order"}
+        subtitle={
+          lang === "bn"
+            ? "অর্ডার নম্বর দিয়ে বর্তমান অবস্থা দেখুন"
+            : "Enter your order number to see the current status"
+        }
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "ট্র্যাক" : "Track" },
+        ]}
+      />
 
+      <div className="max-w-xl mx-auto px-4 py-10">
         <div className="surface-card rounded-2xl shadow-sm p-6 mb-6">
           <div className="flex gap-3">
             <input

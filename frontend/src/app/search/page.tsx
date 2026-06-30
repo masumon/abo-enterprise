@@ -82,6 +82,7 @@ function SearchResults() {
   return (
     <main className="min-h-screen page-surface">
       <PageHero
+        pageKey="search"
         title={title}
         subtitle={q ? (lang === "bn" ? `${results.length}টি ফলাফল` : `${results.length} results found`) : (lang === "bn" ? "পণ্য ও সেবা খুঁজুন" : "Find products and services")}
         breadcrumbs={[

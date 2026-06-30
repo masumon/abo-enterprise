@@ -26,6 +26,7 @@ export default function ShippingPage() {
   return (
     <main>
       <PageHero
+        pageKey="shipping"
         title={lang === "bn" ? "শিপিং ও ডেলিভারি" : "Shipping & Delivery"}
         subtitle={lang === "bn" ? "কভারেজ, চার্জ ও ডেলিভারি সময়সূচি" : "Coverage, charges and delivery timeline"}
         breadcrumbs={[{ label: lang === "bn" ? "শিপিং" : "Shipping" }]}

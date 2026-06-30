@@ -6,6 +6,7 @@ import { ArrowLeft, Loader2, CheckCircle } from "lucide-react";
 import { servicesApi } from "@/lib/api";
 import type { Service } from "@/types";
 import BookingForm from "@/components/booking/BookingForm";
+import PageHero from "@/components/ui/PageHero";
 import { useLanguageStore } from "@/store/language";
 
 interface BookPageClientProps {
@@ -91,8 +92,21 @@ export default function BookPageClient({ serviceSlug, tierId }: BookPageClientPr
   const name = lang === "bn" && service.name_bn ? service.name_bn : service.name_en;
 
   return (
-    <div className="min-h-screen py-12 bg-gray-50">
-      <div className="container mx-auto px-4 max-w-2xl">
+    <div className="min-h-screen bg-gray-50">
+      <PageHero
+        pageKey="book"
+        imageUrl={service.featured_image_url || undefined}
+        title={lang === "bn" ? "বুকিং করুন" : "Book Service"}
+        subtitle={name}
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "সেবা" : "Services", href: "/services" },
+          { label: name, href: `/services/${service.slug}` },
+          { label: lang === "bn" ? "বুকিং" : "Book" },
+        ]}
+      />
+
+      <div className="container mx-auto px-4 max-w-2xl py-12">
         <Link
           href={`/services/${service.slug}`}
           className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-brand-600 mb-6"
@@ -100,13 +114,6 @@ export default function BookPageClient({ serviceSlug, tierId }: BookPageClientPr
           <ArrowLeft className="w-4 h-4" />
           {lang === "bn" ? "ফিরে যান" : "Back"}
         </Link>
-
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {lang === "bn" ? "বুকিং করুন" : "Book Service"}
-          </h1>
-          <p className="text-gray-500">{name}</p>
-        </div>
 
         <div className="card p-6 md:p-8">
           <BookingForm

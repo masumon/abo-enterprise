@@ -54,6 +54,7 @@ export default function OrdersPage() {
   return (
     <main className="min-h-screen">
       <PageHero
+        pageKey="orders"
         title={lang === "bn" ? "আমার অর্ডার" : "My Orders"}
         subtitle={session ? `${session.name} · ${session.phone}` : undefined}
         breadcrumbs={[

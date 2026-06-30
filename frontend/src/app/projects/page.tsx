@@ -6,6 +6,7 @@ import Image from "next/image";
 import LeadForm from "@/components/projects/LeadForm";
 import { CheckCircle, ArrowRight } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
+import PageHero from "@/components/ui/PageHero";
 import { PROJECTS } from "@/lib/data/projects";
 import GlassCard from "@/components/ui/GlassCard";
 
@@ -28,14 +29,17 @@ export default function ProjectsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      <section className="gradient-brand text-white py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">{t({ en: "Custom Projects", bn: "কাস্টম প্রজেক্ট" })}</h1>
-          <p className="text-xl text-brand-100 max-w-2xl mx-auto">
-            {t({ en: "Need a bespoke solution? Tell us your vision.", bn: "কাস্টম সমাধান দরকার? আপনার ভিশন জানান।" })}
-          </p>
-        </div>
-      </section>
+      <PageHero
+        pageKey="projects"
+        align="center"
+        title={t({ en: "Custom Projects", bn: "কাস্টম প্রজেক্ট" })}
+        subtitle={t({ en: "Need a bespoke solution? Tell us your vision.", bn: "কাস্টম সমাধান দরকার? আপনার ভিশন জানান।" })}
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "প্রজেক্ট" : "Projects" },
+        ]}
+        badge={lang === "bn" ? "এন্টারপ্রাইজ সমাধান" : "Enterprise Solutions"}
+      />
 
       <section className="max-w-6xl mx-auto px-4 py-16">
         <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">{t({ en: "How It Works", bn: "কিভাবে কাজ করে" })}</h2>

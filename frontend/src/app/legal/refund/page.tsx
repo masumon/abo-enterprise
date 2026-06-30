@@ -50,9 +50,10 @@ export default function RefundPage() {
   return (
     <main>
       <PageHero
+        pageKey="refund"
+        variant="light"
         title={isBn ? "রিফান্ড নীতি" : "Refund Policy"}
         breadcrumbs={[{ label: isBn ? "রিফান্ড" : "Refund" }]}
-        variant="light"
       />
       <LegalPageLayout title={isBn ? "রিফান্ড নীতি" : "Refund Policy"} sections={sections} showTitle={false} />
     </main>

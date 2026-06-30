@@ -17,6 +17,7 @@ export default function BlogPageClient({ posts, page, totalPages }: Props) {
   return (
     <main className="min-h-screen">
       <PageHero
+        pageKey="blog"
         title="Blog"
         subtitle={
           lang === "bn"

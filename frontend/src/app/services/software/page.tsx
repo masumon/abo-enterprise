@@ -9,6 +9,7 @@ import { serviceLeadsApi } from "@/lib/api";
 import { toLeadV2Type } from "@/lib/leadTypes";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
+import PageHero from "@/components/ui/PageHero";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -129,19 +130,22 @@ export default function SoftwarePage() {
 
   return (
     <div className="min-h-screen">
-      {/* Hero */}
-      <div className="gradient-brand py-16 text-center text-white">
-        <div className="container mx-auto px-4">
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">
-            {lang === "bn" ? "সফটওয়্যার, AI ও অটোমেশন" : "Software, AI & Automation"}
-          </h1>
-          <p className="text-white/75 max-w-xl mx-auto">
-            {lang === "bn"
-              ? "ছোট ব্যবসা থেকে বড় প্রতিষ্ঠান — আপনার ব্যবসার জন্য কাস্টম প্রযুক্তি সমাধান।"
-              : "From small businesses to enterprises — custom technology solutions for your needs."}
-          </p>
-        </div>
-      </div>
+      <PageHero
+        pageKey="software"
+        align="center"
+        title={lang === "bn" ? "সফটওয়্যার, AI ও অটোমেশন" : "Software, AI & Automation"}
+        subtitle={
+          lang === "bn"
+            ? "ছোট ব্যবসা থেকে বড় প্রতিষ্ঠান — আপনার ব্যবসার জন্য কাস্টম প্রযুক্তি সমাধান।"
+            : "From small businesses to enterprises — custom technology solutions for your needs."
+        }
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "সেবা" : "Services", href: "/services" },
+          { label: lang === "bn" ? "সফটওয়্যার" : "Software" },
+        ]}
+        badge={lang === "bn" ? "কাস্টম ডেভেলপমেন্ট" : "Custom Development"}
+      />
 
       <div className="container mx-auto px-4 py-12">
         {/* Service Cards */}

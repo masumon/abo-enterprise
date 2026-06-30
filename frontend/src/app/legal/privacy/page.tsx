@@ -39,9 +39,10 @@ export default function PrivacyPage() {
   return (
     <main>
       <PageHero
+        pageKey="privacy"
+        variant="light"
         title={isBn ? "গোপনীয়তা নীতি" : "Privacy Policy"}
         breadcrumbs={[{ label: isBn ? "গোপনীয়তা" : "Privacy" }]}
-        variant="light"
       />
       <LegalPageLayout title={isBn ? "গোপনীয়তা নীতি" : "Privacy Policy"} sections={sections} showTitle={false} />
     </main>

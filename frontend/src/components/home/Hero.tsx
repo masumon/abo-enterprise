@@ -11,6 +11,7 @@ import { publicApi } from "@/lib/api";
 import { ABO_ACRONYM } from "@/lib/tokens";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { MARKETING_STATS } from "@/lib/siteDefaults";
+import { resolveHomeBannerImage } from "@/lib/pageBanners";
 
 interface ActivityItem {
   icon: string;
@@ -44,17 +45,19 @@ function displayStat(actual: number, floor: number): number {
 export default function Hero() {
   const { lang } = useLanguageStore();
   const t = useT();
-  const { settings } = usePublicSettings(["hero_image_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "free_delivery_min_amount"]);
+  const { settings } = usePublicSettings(["hero_image_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "free_delivery_min_amount"]);
   const [stats, setStats] = useState<StatsData>(FALLBACK_STATS);
   const [activity, setActivity] = useState<ActivityItem[]>(FALLBACK_ACTIVITY);
 
-  const heroImage = getSettingValue(settings, "hero_image_url");
+  const heroImage = resolveHomeBannerImage(settings);
   const heroTitle = lang === "bn"
     ? getSettingValue(settings, "hero_title_bn") || t("hero_title_2")
     : getSettingValue(settings, "hero_title_en");
   const heroSubtitle = lang === "bn"
     ? getSettingValue(settings, "hero_subtitle_bn") || t("hero_sub")
     : getSettingValue(settings, "hero_subtitle_en") || t("hero_sub");
+  const heroCtaText = getSettingValue(settings, "hero_cta_text");
+  const heroCtaUrl = getSettingValue(settings, "hero_cta_url", "/products");
 
   useEffect(() => {
     publicApi.stats().then((r) => {
@@ -75,11 +78,11 @@ export default function Hero() {
   return (
     <section
       className="gradient-hero min-h-[92vh] flex items-center relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-offset)]"
-      style={heroImage ? {
+      style={{
         backgroundImage: `linear-gradient(135deg, rgba(21,101,192,0.92) 0%, rgba(13,71,161,0.88) 50%, rgba(233,30,99,0.75) 100%), url(${heroImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
-      } : undefined}
+      }}
     >
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-float" />
@@ -128,9 +131,9 @@ export default function Hero() {
                 {t("hero_cta_services")}
                 <ArrowRight className="w-4 h-4" aria-hidden />
               </Link>
-              <Link href="/products" className="btn btn-lg btn-outline border-white/40 text-white hover:bg-white/10 btn-ripple">
+              <Link href={heroCtaUrl.startsWith("/") ? heroCtaUrl : "/products"} className="btn btn-lg btn-outline border-white/40 text-white hover:bg-white/10 btn-ripple">
                 <ShoppingBag className="w-5 h-5" aria-hidden />
-                {t("hero_cta_products")}
+                {heroCtaText || t("hero_cta_products")}
               </Link>
             </div>
           </div>

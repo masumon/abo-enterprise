@@ -75,6 +75,7 @@ export default function ContactPage() {
   return (
     <main className="min-h-screen">
       <PageHero
+        pageKey="contact"
         title={t("contact_title")}
         subtitle={t("contact_sub")}
         breadcrumbs={[

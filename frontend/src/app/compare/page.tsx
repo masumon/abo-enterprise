@@ -8,6 +8,7 @@ import { useLanguageStore } from "@/store/language";
 import { useCartStore } from "@/store/cart";
 import { formatPrice } from "@/lib/utils";
 import GlassCard from "@/components/ui/GlassCard";
+import PageHero from "@/components/ui/PageHero";
 
 export default function ComparePage() {
   const { items, remove, clear } = useCompareStore();
@@ -16,10 +17,17 @@ export default function ComparePage() {
 
   if (items.length === 0) {
     return (
-      <main className="min-h-screen py-16 text-center px-4">
-        <GitCompare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-2">{lang === "bn" ? "তুলনা খালি" : "Compare is empty"}</h1>
-        <Link href="/products" className="btn btn-brand btn-md mt-4 inline-flex">{lang === "bn" ? "পণ্য দেখুন" : "Browse Products"}</Link>
+      <main className="min-h-screen">
+        <PageHero
+          pageKey="compare"
+          align="center"
+          title={lang === "bn" ? "তুলনা খালি" : "Compare is empty"}
+          subtitle={lang === "bn" ? "পণ্য যোগ করে তুলনা শুরু করুন" : "Add products to start comparing"}
+        />
+        <div className="text-center py-12 px-4">
+          <GitCompare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <Link href="/products" className="btn btn-brand btn-md mt-4 inline-flex">{lang === "bn" ? "পণ্য দেখুন" : "Browse Products"}</Link>
+        </div>
       </main>
     );
   }
@@ -27,13 +35,18 @@ export default function ComparePage() {
   const specs = Array.from(new Set(items.flatMap((p) => Object.keys(p.specifications ?? {}))));
 
   return (
-    <main className="min-h-screen py-8 px-4">
-      <div className="container mx-auto max-w-5xl">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <GitCompare className="w-6 h-6 text-brand-600" />
-            {lang === "bn" ? "পণ্য তুলনা" : "Compare Products"}
-          </h1>
+    <main className="min-h-screen">
+      <PageHero
+        pageKey="compare"
+        title={lang === "bn" ? "পণ্য তুলনা" : "Compare Products"}
+        subtitle={lang === "bn" ? `${items.length}টি পণ্য তুলনায়` : `${items.length} products in comparison`}
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "তুলনা" : "Compare" },
+        ]}
+      />
+      <div className="container mx-auto max-w-5xl py-8 px-4">
+        <div className="flex items-center justify-end mb-6">
           <button type="button" onClick={clear} className="text-sm text-red-500 hover:underline">{lang === "bn" ? "সব মুছুন" : "Clear all"}</button>
         </div>
         <div className="overflow-x-auto">

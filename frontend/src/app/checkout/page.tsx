@@ -286,6 +286,7 @@ export default function CheckoutPage() {
   return (
     <div className="min-h-screen page-surface pb-24 lg:pb-8">
       <PageHero
+        pageKey="checkout"
         title={lang === "bn" ? "অর্ডার করুন" : "Checkout"}
         subtitle={lang === "bn" ? "গেস্ট চেকআউট — দ্রুত ও নিরাপদ" : "Guest checkout — fast & secure"}
         breadcrumbs={[

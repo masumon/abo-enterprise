@@ -83,6 +83,7 @@ function OrderSuccessContent() {
     <main className="min-h-screen page-surface pb-mobile-nav lg:pb-0">
       {showConfetti && <ConfettiBurst />}
       <PageHero
+        pageKey="orders"
         title={lang === "bn" ? "অর্ডার হয়েছে!" : "Order Placed!"}
         subtitle={
           lang === "bn"

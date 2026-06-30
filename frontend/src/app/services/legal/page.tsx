@@ -9,6 +9,7 @@ import { bookingsApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { generateWhatsAppBookingMessage, WHATSAPP_NUMBER } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import PageHero from "@/components/ui/PageHero";
 
 const schema = z.object({
   customer_name: z.string().min(2),
@@ -89,23 +90,25 @@ export default function LegalPage() {
   };
 
   return (
-    <div className="min-h-screen py-12 bg-gray-50">
-      <div className="container mx-auto px-4 max-w-2xl">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Scale className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {lang === "bn" ? "আইনি কেস রাইটিং" : "Legal Case Writing"}
-          </h1>
-          <p className="text-gray-500">
-            {lang === "bn"
-              ? "পেশাদার সহায়তায় জিডি, এফআইআর ও আইনি আবেদন লেখার সেবা।"
-              : "Professional GD, FIR, and legal application writing service."}
-          </p>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <PageHero
+        pageKey="legal"
+        align="center"
+        title={lang === "bn" ? "আইনি কেস রাইটিং" : "Legal Case Writing"}
+        subtitle={
+          lang === "bn"
+            ? "পেশাদার সহায়তায় জিডি, এফআইআর ও আইনি আবেদন লেখার সেবা।"
+            : "Professional GD, FIR, and legal application writing service."
+        }
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "সেবা" : "Services", href: "/services" },
+          { label: lang === "bn" ? "আইনি" : "Legal" },
+        ]}
+        badge={lang === "bn" ? "বিশ্বস্ত সহায়তা" : "Trusted Support"}
+      />
 
+      <div className="container mx-auto px-4 max-w-2xl py-12">
         {/* Disclaimer */}
         <div className="flex gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
           <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />

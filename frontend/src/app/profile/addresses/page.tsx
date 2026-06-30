@@ -35,6 +35,7 @@ export default function AddressesPage() {
   return (
     <main>
       <PageHero
+        pageKey="profile"
         title={lang === "bn" ? "ঠিকানা" : "Addresses"}
         subtitle={lang === "bn" ? "ডেলিভারি ঠিকানা সংরক্ষণ করুন" : "Save delivery addresses for faster checkout"}
         breadcrumbs={[

@@ -40,6 +40,7 @@ export default function AboutPage() {
   return (
     <main className="min-h-screen">
       <PageHero
+        pageKey="about"
         title="ABO Enterprise"
         subtitle={t({
           en: "Products, printing, legal help & software — one trusted platform for Bangladesh.",

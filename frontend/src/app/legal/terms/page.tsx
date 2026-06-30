@@ -34,9 +34,10 @@ export default function TermsPage() {
   return (
     <main>
       <PageHero
+        pageKey="terms"
+        variant="light"
         title={isBn ? "সেবার শর্তাবলী" : "Terms of Service"}
         breadcrumbs={[{ label: isBn ? "শর্তাবলী" : "Terms" }]}
-        variant="light"
       />
       <LegalPageLayout title={isBn ? "সেবার শর্তাবলী" : "Terms of Service"} sections={sections} showTitle={false} />
     </main>

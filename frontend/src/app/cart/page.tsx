@@ -56,6 +56,7 @@ export default function CartPage() {
   return (
     <main>
       <PageHero
+        pageKey="cart"
         title={lang === "bn" ? "শপিং কার্ট" : "Shopping Cart"}
         subtitle={lang === "bn" ? `${items.length}টি পণ্য` : `${items.length} items`}
         breadcrumbs={[{ label: lang === "bn" ? "কার্ট" : "Cart" }]}

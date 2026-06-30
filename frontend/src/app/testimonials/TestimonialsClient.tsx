@@ -51,6 +51,7 @@ export default function TestimonialsClient() {
   return (
     <main>
       <PageHero
+        pageKey="testimonials"
         title={lang === "bn" ? "গ্রাহক পর্যালোচনা" : "Customer Testimonials"}
         subtitle={lang === "bn" ? "আমাদের গ্রাহকরা কী বলছেন" : "What our clients say about us"}
         breadcrumbs={[{ label: lang === "bn" ? "পর্যালোচনা" : "Testimonials" }]}
