@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,101 +8,81 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
-  ShoppingBag,
-  Tag,
-  AlertCircle,
-  ArrowLeft,
-  Truck,
-  Shield,
-  ChevronRight,
+  ShoppingBag, Tag, AlertCircle, ArrowLeft, Truck, Shield, ChevronRight, Copy, Check,
 } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
-import { formatPrice, generateWhatsAppOrderMessage, WHATSAPP_NUMBER } from "@/lib/utils";
-import { ordersApi, productsApi } from "@/lib/api";
+import { formatPrice } from "@/lib/utils";
+import { ordersApi, productsApi, customerOtpApi, paymentsApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
-import type { PaymentMethod } from "@/types";
+import { usePaymentMethods } from "@/hooks/usePaymentMethods";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { mapPaymentMethods } from "@/lib/paymentDisplay";
+import { BD_DISTRICTS } from "@/lib/bdDistricts";
+import { buildOrderConfirmActions, calcDeliveryCharge } from "@/lib/checkoutHelpers";
+import { validateCoupon, type AppliedCoupon } from "@/lib/coupons";
 import PageHero from "@/components/ui/PageHero";
 
-const COUPONS: Record<string, number> = { ABO10: 0.1, WELCOME: 0.05 };
-
 const schema = z.object({
-  customer_name: z.string().min(2, "নাম দিন (কমপক্ষে ২ অক্ষর)"),
-  customer_phone: z
-    .string()
-    .regex(/^0[13-9]\d{8}$/, "সঠিক বাংলাদেশি নম্বর দিন (01XXXXXXXXX)"),
-  customer_email: z.string().email("সঠিক ইমেইল দিন").optional().or(z.literal("")),
-  delivery_address: z.string().min(10, "সম্পূর্ণ ঠিকানা দিন"),
-  payment_method: z.enum(["bkash", "rocket", "bank", "cod"] as const),
+  customer_name: z.string().min(2, "Name required (min 2 chars)"),
+  customer_phone: z.string().regex(/^0[13-9]\d{8}$/, "Valid BD number: 01XXXXXXXXX"),
+  customer_email: z.string().email("Invalid email").optional().or(z.literal("")),
+  district: z.string().min(1, "Select district"),
+  street_address: z.string().min(5, "Enter full street/area address"),
+  payment_gateway: z.string().min(1, "Select payment method"),
+  payment_trx_id: z.string().optional(),
+  otp_code: z.string().optional(),
   notes: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
 
-const DEFAULT_PAYMENT_PHONE = "01825007977";
-const DEFAULT_BANK_DETAIL = "A/C: 1075869070001";
-
-function buildPaymentOptions(settings: Record<string, string>, lang: "en" | "bn") {
-  const phone =
-    getSettingValue(settings, "contact_phone") ||
-    getSettingValue(settings, "business_phone").replace(/\D/g, "").slice(-11) ||
-    DEFAULT_PAYMENT_PHONE;
-  const bkash =
-    getSettingValue(settings, "bkash_account") || phone;
-  const rocket =
-    getSettingValue(settings, "rocket_account") ||
-    getSettingValue(settings, "nagad_account") ||
-    phone;
-  const bank =
-    getSettingValue(settings, "bank_account") || DEFAULT_BANK_DETAIL;
-
-  return [
-    { value: "bkash" as PaymentMethod, label: "bKash", detail: bkash, icon: "💳" },
-    { value: "rocket" as PaymentMethod, label: "Rocket", detail: rocket, icon: "🚀" },
-    { value: "bank" as PaymentMethod, label: "BRAC Bank", detail: bank, icon: "🏦" },
-    {
-      value: "cod" as PaymentMethod,
-      label: "Cash on Delivery",
-      detail: lang === "bn" ? "ডেলিভারির সময়" : "On delivery",
-      icon: "💵",
-    },
-  ];
-}
-
 export default function CheckoutPage() {
   const router = useRouter();
   const { items, total, clearCart, setStockWarnings } = useCartStore();
   const { lang } = useLanguageStore();
+  const { methods: paymentMethods } = usePaymentMethods();
+  const paymentOptions = useMemo(() => mapPaymentMethods(paymentMethods, lang), [paymentMethods, lang]);
+
   const { settings } = usePublicSettings([
-    "bkash_account",
-    "nagad_account",
-    "rocket_account",
-    "contact_phone",
-    "business_phone",
-    "bank_account",
+    "delivery_charge_dhaka", "delivery_charge_outside", "delivery_charge_sylhet",
+    "free_delivery_min_amount", "checkout_confirm_channel", "checkout_otp_required",
+    "whatsapp_number", "contact_phone", "contact_email",
   ]);
-  const paymentOptions = buildPaymentOptions(settings, lang);
+  const couponsEnabled = useFeatureFlag("feature_coupons", true);
+
+  const otpRequired = getSettingValue(settings, "checkout_otp_required") === "true";
 
   const [hydrated, setHydrated] = useState(false);
   const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [stockIssue, setStockIssue] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [copiedAcct, setCopiedAcct] = useState(false);
 
   const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
+    register, handleSubmit, watch, setValue, formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { payment_method: "bkash" },
+    defaultValues: { payment_gateway: "bkash", district: "Sylhet" },
   });
 
-  const selectedPayment = watch("payment_method");
+  const selectedGateway = watch("payment_gateway");
+  const selectedDistrict = watch("district");
+  const selectedPhone = watch("customer_phone");
+  const selectedPayment = paymentOptions.find((p) => p.gateway === selectedGateway) ?? paymentOptions[0];
+
+  useEffect(() => {
+    if (paymentOptions.length && !paymentOptions.some((p) => p.gateway === selectedGateway)) {
+      setValue("payment_gateway", paymentOptions[0].gateway);
+    }
+  }, [paymentOptions, selectedGateway, setValue]);
 
   useEffect(() => {
     useCartStore.persist.rehydrate();
@@ -110,19 +90,17 @@ export default function CheckoutPage() {
   }, []);
 
   useEffect(() => {
-    if (hydrated && items.length === 0) {
-      router.replace("/products");
-    }
+    if (hydrated && items.length === 0) router.replace("/products");
   }, [hydrated, items.length, router]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const coupon = params.get("coupon")?.trim().toUpperCase();
-    if (coupon && COUPONS[coupon]) {
-      setAppliedCoupon(coupon);
+    const coupon = new URLSearchParams(window.location.search).get("coupon")?.trim();
+    if (coupon && couponsEnabled) {
       setCouponInput(coupon);
+      validateCoupon(coupon, total()).then(setAppliedCoupon).catch(() => {});
     }
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [couponsEnabled]);
 
   useEffect(() => {
     if (!hydrated || items.length === 0) return;
@@ -136,30 +114,74 @@ export default function CheckoutPage() {
   }, [hydrated, items, setStockWarnings]);
 
   const subtotal = total();
-  const discountRate = appliedCoupon ? (COUPONS[appliedCoupon] ?? 0) : 0;
-  const discount = Math.round(subtotal * discountRate);
-  const cartTotal = subtotal - discount;
+  const discount = appliedCoupon?.discountAmount ?? 0;
+  const afterDiscount = subtotal - discount;
+  const deliveryCharge = calcDeliveryCharge(selectedDistrict || "Sylhet", afterDiscount, settings);
+  const cartTotal = afterDiscount + deliveryCharge;
 
-  const applyCoupon = () => {
-    const code = couponInput.trim().toUpperCase();
-    if (COUPONS[code]) {
-      setAppliedCoupon(code);
-      setCouponError(null);
-    } else {
-      setCouponError(lang === "bn" ? "কুপন কোড সঠিক নয়" : "Invalid coupon code");
+  const applyCoupon = async () => {
+    if (!couponsEnabled) return;
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponError(null);
+    try {
+      const result = await validateCoupon(code, subtotal);
+      setAppliedCoupon(result);
+    } catch {
+      setCouponError(lang === "bn" ? "কুপন সঠিক নয়" : "Invalid coupon");
     }
   };
 
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponInput("");
-    setCouponError(null);
+  const sendOtp = async () => {
+    if (!/^0[13-9]\d{8}$/.test(selectedPhone)) return;
+    setOtpLoading(true);
+    try {
+      await customerOtpApi.send(selectedPhone);
+      setOtpSent(true);
+      setOtpVerified(false);
+    } catch {
+      setSubmitError(lang === "bn" ? "OTP পাঠানো যায়নি" : "Could not send OTP");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const verifyOtp = async (code: string) => {
+    if (!code || code.length < 4) return;
+    setOtpLoading(true);
+    try {
+      await customerOtpApi.verify(selectedPhone, code);
+      setOtpVerified(true);
+    } catch {
+      setOtpVerified(false);
+      setSubmitError(lang === "bn" ? "OTP সঠিক নয়" : "Invalid OTP");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const copyAccount = () => {
+    if (selectedPayment?.detail) {
+      navigator.clipboard.writeText(selectedPayment.detail);
+      setCopiedAcct(true);
+      setTimeout(() => setCopiedAcct(false), 2000);
+    }
   };
 
   const onSubmit = async (data: FormData) => {
+    if (otpRequired && !otpVerified) {
+      setSubmitError(lang === "bn" ? "ফোন ভেরিফাই করুন" : "Please verify your phone");
+      return;
+    }
+    if (selectedPayment?.requiresTrxId && !data.payment_trx_id?.trim()) {
+      setSubmitError(lang === "bn" ? "TrxID / রেফারেন্স নম্বর দিন" : "Enter TrxID / reference number");
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitError(null);
     try {
+      const fullAddress = `${data.street_address}, ${data.district}, Bangladesh`;
       const orderItems = items.map((i) => ({
         product_id: i.product_id,
         product_name: i.name_en,
@@ -172,19 +194,46 @@ export default function CheckoutPage() {
         customer_name: data.customer_name,
         customer_phone: data.customer_phone,
         customer_email: data.customer_email || undefined,
-        delivery_address: data.delivery_address,
-        payment_method: data.payment_method,
+        delivery_address: fullAddress,
+        payment_method: data.payment_gateway,
+        payment_number: data.payment_trx_id?.trim() || undefined,
         notes: data.notes,
         items: orderItems,
         subtotal,
         discount_amount: discount,
-        coupon_code: appliedCoupon ?? undefined,
-        delivery_charge: 0,
+        coupon_code: appliedCoupon?.code,
+        delivery_charge: deliveryCharge,
         total: cartTotal,
       });
 
-      const orderNumber =
-        (orderRes.data.data as { order_number?: string } | undefined)?.order_number ?? null;
+      const orderData = orderRes.data.data as { order_id?: string; order_number?: string } | undefined;
+      const orderNumber = orderData?.order_number ?? null;
+      const orderId = orderData?.order_id;
+
+      const tryGatewayRedirect = async (): Promise<boolean> => {
+        if (!orderId) return false;
+        const gw = data.payment_gateway;
+        const canAuto =
+          gw === "sslcommerz" ||
+          (["bkash", "nagad"].includes(gw) && (!selectedPayment?.isManual || !selectedPayment?.requiresTrxId));
+        if (!canAuto) return false;
+        try {
+          const pay =
+            gw === "sslcommerz"
+              ? await paymentsApi.initiateSslcommerz(orderId)
+              : gw === "nagad"
+                ? await paymentsApi.initiateNagad(orderId)
+                : await paymentsApi.initiateBkash(orderId);
+          if (pay.data.data?.payment_url) {
+            clearCart();
+            window.location.href = pay.data.data.payment_url;
+            return true;
+          }
+        } catch { /* fall through to manual confirm */ }
+        return false;
+      };
+
+      if (await tryGatewayRedirect()) return;
 
       const waItems = items.map((i) => ({
         name: lang === "bn" ? i.name_bn : i.name_en,
@@ -192,27 +241,31 @@ export default function CheckoutPage() {
         qty: i.quantity,
       }));
 
-      const paymentLabel =
-        paymentOptions.find((p) => p.value === data.payment_method)?.label ?? data.payment_method;
+      const actions = buildOrderConfirmActions({
+        settings,
+        lang,
+        customerName: data.customer_name,
+        customerPhone: data.customer_phone,
+        customerEmail: data.customer_email,
+        deliveryAddress: data.street_address,
+        district: data.district,
+        items: waItems,
+        total: cartTotal,
+        paymentLabel: selectedPayment?.label ?? data.payment_gateway,
+        trxId: data.payment_trx_id,
+        orderNumber,
+      });
 
-      const msg = generateWhatsAppOrderMessage(
-        data.customer_name,
-        data.customer_phone,
-        data.delivery_address,
-        waItems,
-        cartTotal,
-        paymentLabel
-      );
-
-      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+      if (actions.openWhatsApp) window.open(actions.openWhatsApp, "_blank");
+      else if (actions.mailto) window.location.href = actions.mailto;
 
       clearCart();
       router.push(`/order-success${orderNumber ? `?order=${orderNumber}` : ""}`);
     } catch {
       setSubmitError(
         lang === "bn"
-          ? "অর্ডার জমা দেওয়া যায়নি। আবার চেষ্টা করুন বা WhatsApp-এ যোগাযোগ করুন।"
-          : "Could not submit order. Please try again or contact us on WhatsApp."
+          ? "অর্ডার জমা দেওয়া যায়নি। আবার চেষ্টা করুন।"
+          : "Could not submit order. Please try again."
       );
       setIsSubmitting(false);
     }
@@ -226,15 +279,13 @@ export default function CheckoutPage() {
     );
   }
 
+  const ctaLabel = lang === "bn" ? "অর্ডার নিশ্চিত করুন" : "Confirm Order";
+
   return (
     <div className="min-h-screen page-surface pb-24 lg:pb-8">
       <PageHero
         title={lang === "bn" ? "অর্ডার করুন" : "Checkout"}
-        subtitle={
-          lang === "bn"
-            ? "গেস্ট চেকআউট — অ্যাকাউন্ট ছাড়াই অর্ডার করুন"
-            : "Guest checkout — order without creating an account"
-        }
+        subtitle={lang === "bn" ? "গেস্ট চেকআউট — দ্রুত ও নিরাপদ" : "Guest checkout — fast & secure"}
         breadcrumbs={[
           { label: lang === "bn" ? "হোম" : "Home", href: "/" },
           { label: lang === "bn" ? "কার্ট" : "Cart", href: "/cart" },
@@ -242,309 +293,194 @@ export default function CheckoutPage() {
         ]}
         variant="light"
       />
+
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <Link
-          href="/cart"
-          className="inline-flex items-center gap-2 text-sm text-muted hover:text-brand-600 dark:hover:text-brand-300 mb-6 transition-colors"
-        >
+        <Link href="/cart" className="inline-flex items-center gap-2 text-sm text-muted hover:text-brand-600 mb-6">
           <ArrowLeft className="w-4 h-4" />
           {lang === "bn" ? "কার্টে ফিরুন" : "Back to Cart"}
         </Link>
 
         {stockIssue && (
-          <div role="alert" className="mb-6 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">
-            {lang === "bn"
-              ? "কিছু পণ্যের স্টক সীমিত। কার্টে ফিরে পরিমাণ যাচাই করুন।"
-              : "Some items have limited stock. Please review quantities in your cart."}
+          <div role="alert" className="mb-6 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+            {lang === "bn" ? "কিছু পণ্যের স্টক সীমিত — কার্ট যাচাই করুন।" : "Limited stock — review your cart."}
           </div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-          {/* ── Left: Form ── */}
           <div className="lg:col-span-3">
             <form id="checkout-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {submitError && (
-                <div
-                  role="alert"
-                  className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-700 dark:text-red-300 text-sm rounded-xl px-4 py-3"
-                >
+                <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">
                   <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <span>{submitError}</span>
                 </div>
               )}
 
-              {/* Customer Info */}
-              <section className="surface-card rounded-2xl p-6 shadow-sm">
-                <h2 className="font-semibold text-heading mb-4">
-                  {lang === "bn" ? "আপনার তথ্য" : "Customer Information"}
-                </h2>
+              <section className="enterprise-card p-6">
+                <h2 className="font-semibold text-heading mb-4">{lang === "bn" ? "আপনার তথ্য" : "Your Details"}</h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {lang === "bn" ? "পুরো নাম *" : "Full Name *"}
-                    </label>
-                    <input
-                      {...register("customer_name")}
-                      className={cn("input", errors.customer_name && "input-error")}
-                      placeholder={lang === "bn" ? "আপনার পুরো নাম" : "Your full name"}
-                    />
-                    {errors.customer_name && (
-                      <p role="alert" className="text-red-500 text-xs mt-1">
-                        {errors.customer_name.message}
-                      </p>
-                    )}
+                    <label className="form-label">{lang === "bn" ? "পুরো নাম *" : "Full Name *"}</label>
+                    <input {...register("customer_name")} className={cn("input", errors.customer_name && "input-error")} />
+                    {errors.customer_name && <p className="text-red-500 text-xs mt-1">{errors.customer_name.message}</p>}
                   </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        {lang === "bn" ? "মোবাইল নম্বর *" : "Mobile Number *"}
-                      </label>
-                      <input
-                        {...register("customer_phone")}
-                        type="tel"
-                        className={cn("input", errors.customer_phone && "input-error")}
-                        placeholder="01XXXXXXXXX"
-                      />
-                      {errors.customer_phone && (
-                        <p role="alert" className="text-red-500 text-xs mt-1">
-                          {errors.customer_phone.message}
-                        </p>
-                      )}
+                      <label className="form-label">{lang === "bn" ? "মোবাইল *" : "Mobile *"}</label>
+                      <input {...register("customer_phone")} type="tel" className={cn("input", errors.customer_phone && "input-error")} placeholder="01XXXXXXXXX" />
+                      {errors.customer_phone && <p className="text-red-500 text-xs mt-1">{errors.customer_phone.message}</p>}
                     </div>
-
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        {lang === "bn" ? "ইমেইল (ঐচ্ছিক)" : "Email (optional)"}
-                      </label>
-                      <input
-                        {...register("customer_email")}
-                        type="email"
-                        className={cn("input", errors.customer_email && "input-error")}
-                        placeholder="your@email.com"
-                      />
-                      {errors.customer_email && (
-                        <p role="alert" className="text-red-500 text-xs mt-1">
-                          {errors.customer_email.message}
-                        </p>
-                      )}
+                      <label className="form-label">{lang === "bn" ? "ইমেইল" : "Email"}</label>
+                      <input {...register("customer_email")} type="email" className="input" placeholder="your@email.com" />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {lang === "bn" ? "ডেলিভারি ঠিকানা *" : "Delivery Address *"}
-                    </label>
-                    <textarea
-                      {...register("delivery_address")}
-                      rows={3}
-                      className={cn("input resize-none", errors.delivery_address && "input-error")}
-                      placeholder={
-                        lang === "bn"
-                          ? "রোড, এলাকা, জেলা — বিস্তারিত ঠিকানা"
-                          : "Street, Area, District — detailed address"
-                      }
-                    />
-                    {errors.delivery_address && (
-                      <p role="alert" className="text-red-500 text-xs mt-1">
-                        {errors.delivery_address.message}
+                  {otpRequired && (
+                    <div className="rounded-xl bg-brand-50 border border-brand-100 p-4 space-y-3">
+                      <p className="text-sm font-medium text-brand-800">
+                        {lang === "bn" ? "ফোন ভেরিফিকেশন" : "Phone Verification"}
                       </p>
-                    )}
-                  </div>
+                      <div className="flex gap-2">
+                        <input {...register("otp_code")} className="input flex-1" placeholder="4-digit OTP" maxLength={4}
+                          onChange={(e) => { register("otp_code").onChange(e); if (e.target.value.length === 4) verifyOtp(e.target.value); }} />
+                        <button type="button" onClick={sendOtp} disabled={otpLoading || otpVerified} className="btn btn-outline btn-sm">
+                          {otpVerified ? (lang === "bn" ? "✓" : "✓") : otpSent ? (lang === "bn" ? "আবার" : "Resend") : (lang === "bn" ? "OTP" : "OTP")}
+                        </button>
+                      </div>
+                      {otpVerified && <p className="text-xs text-green-600">{lang === "bn" ? "ভেরিফাই হয়েছে" : "Verified"}</p>}
+                    </div>
+                  )}
 
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="form-label">{lang === "bn" ? "জেলা *" : "District *"}</label>
+                      <select {...register("district")} className={cn("input", errors.district && "input-error")}>
+                        {BD_DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
+                      </select>
+                      {errors.district && <p className="text-red-500 text-xs mt-1">{errors.district.message}</p>}
+                    </div>
+                    <div>
+                      <label className="form-label">{lang === "bn" ? "ডেলিভারি চার্জ" : "Delivery"}</label>
+                      <div className="input bg-gray-50 flex items-center text-sm font-semibold">
+                        {deliveryCharge === 0
+                          ? (lang === "bn" ? "🎉 বিনামূল্যে" : "🎉 FREE")
+                          : formatPrice(deliveryCharge)}
+                      </div>
+                    </div>
+                  </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      {lang === "bn" ? "বিশেষ নির্দেশনা (ঐচ্ছিক)" : "Special Instructions (optional)"}
-                    </label>
-                    <textarea
-                      {...register("notes")}
-                      rows={2}
-                      className="input resize-none"
-                      placeholder={
-                        lang === "bn"
-                          ? "কোনো বিশেষ নির্দেশনা থাকলে লিখুন"
-                          : "Any special notes for delivery"
-                      }
-                    />
+                    <label className="form-label">{lang === "bn" ? "বিস্তারিত ঠিকানা *" : "Street Address *"}</label>
+                    <textarea {...register("street_address")} rows={2} className={cn("input resize-none", errors.street_address && "input-error")}
+                      placeholder={lang === "bn" ? "রোড, এলাকা, ইউনিয়ন..." : "Road, area, union..."} />
+                    {errors.street_address && <p className="text-red-500 text-xs mt-1">{errors.street_address.message}</p>}
+                  </div>
+                  <div>
+                    <label className="form-label">{lang === "bn" ? "নোট" : "Notes"}</label>
+                    <textarea {...register("notes")} rows={2} className="input resize-none" />
                   </div>
                 </div>
               </section>
 
-              {/* Payment Method */}
-              <section className="surface-card rounded-2xl p-6 shadow-sm">
-                <h2 className="font-semibold text-heading mb-4">
-                  {lang === "bn" ? "পেমেন্ট পদ্ধতি *" : "Payment Method *"}
-                </h2>
-                <div className="grid grid-cols-2 gap-3">
+              <section className="enterprise-card p-6">
+                <h2 className="font-semibold text-heading mb-4">{lang === "bn" ? "পেমেন্ট পদ্ধতি *" : "Payment Method *"}</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {paymentOptions.map((opt) => (
-                    <label
-                      key={opt.value}
-                      className={cn(
-                        "flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all",
-                        selectedPayment === opt.value
-                          ? "border-brand-500 bg-brand-50 dark:bg-brand-900/30"
-                          : "border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20 bg-white dark:bg-white/5"
-                      )}
-                    >
-                      <input
-                        type="radio"
-                        value={opt.value}
-                        {...register("payment_method")}
-                        className="sr-only"
-                      />
-                      <span className="text-xl leading-none mt-0.5">{opt.icon}</span>
-                      <div>
-                        <p className="font-semibold text-sm text-heading">{opt.label}</p>
-                        <p className="text-xs text-muted mt-0.5">{opt.detail}</p>
+                    <label key={opt.id} className={cn(
+                      "flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all enterprise-card-hover",
+                      selectedGateway === opt.gateway ? "border-brand-500 bg-brand-50" : "border-gray-200 hover:border-gray-300"
+                    )}>
+                      <input type="radio" value={opt.gateway} {...register("payment_gateway")} className="sr-only" />
+                      <span className="text-xl">{opt.icon}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm">{opt.label}</p>
+                        <p className="text-xs text-muted mt-0.5 truncate">{opt.detail}</p>
                       </div>
-                      {selectedPayment === opt.value && (
-                        <div className="ml-auto w-4 h-4 rounded-full bg-brand-500 flex items-center justify-center flex-shrink-0">
+                      {selectedGateway === opt.gateway && (
+                        <div className="w-4 h-4 rounded-full bg-brand-500 flex items-center justify-center">
                           <div className="w-1.5 h-1.5 rounded-full bg-white" />
                         </div>
                       )}
                     </label>
                   ))}
                 </div>
+
+                {selectedPayment && selectedPayment.requiresTrxId && selectedPayment.gateway !== "cod" && (
+                  <div className="mt-4 p-4 rounded-xl bg-gray-50 border border-gray-100 space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium">
+                        {lang === "bn" ? "এই নম্বরে Send Money করুন:" : "Send Money to:"}
+                        <span className="ml-2 font-bold text-brand-700">{selectedPayment.detail}</span>
+                      </p>
+                      <button type="button" onClick={copyAccount} className="btn btn-ghost btn-sm">
+                        {copiedAcct ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <div>
+                      <label className="form-label">{lang === "bn" ? "TrxID / রেফারেন্স *" : "TrxID / Reference *"}</label>
+                      <input {...register("payment_trx_id")} className="input" placeholder={lang === "bn" ? "পেমেন্ট TrxID" : "Payment TrxID"} />
+                    </div>
+                  </div>
+                )}
               </section>
 
-              {/* Trust badges */}
               <div className="flex items-center gap-6 text-xs text-muted">
-                <div className="flex items-center gap-1.5">
-                  <Shield className="w-4 h-4 text-green-500" />
-                  {lang === "bn" ? "নিরাপদ অর্ডার" : "Secure Order"}
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Truck className="w-4 h-4 text-brand-500" />
-                  {lang === "bn" ? "বিনামূল্যে ডেলিভারি" : "Free Delivery"}
-                </div>
+                <div className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-green-500" />{lang === "bn" ? "নিরাপদ" : "Secure"}</div>
+                <div className="flex items-center gap-1.5"><Truck className="w-4 h-4 text-brand-500" />{lang === "bn" ? "দেশwide ডেলিভারি" : "Nationwide delivery"}</div>
               </div>
 
-              <button
-                type="submit"
-                disabled={isSubmitting || stockIssue}
-                className="btn btn-primary btn-lg w-full hidden lg:flex"
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    {lang === "bn" ? "প্রক্রিয়া হচ্ছে..." : "Processing..."}
-                  </span>
-                ) : (
-                  <span className="flex items-center justify-center gap-2">
-                    {lang === "bn" ? "WhatsApp-এ অর্ডার করুন" : "Order via WhatsApp"}
-                    <ChevronRight className="w-5 h-5" />
-                  </span>
-                )}
+              <button type="submit" disabled={isSubmitting || stockIssue} className="btn btn-success btn-lg w-full hidden lg:flex">
+                {isSubmitting ? (lang === "bn" ? "প্রক্রিয়া..." : "Processing...") : ctaLabel}
+                <ChevronRight className="w-5 h-5" />
               </button>
             </form>
           </div>
 
-          {/* ── Right: Order Summary ── */}
           <div className="lg:col-span-2">
-            <div className="lg:sticky lg:top-[calc(var(--navbar-offset)+1rem)] space-y-4">
-              <section className="surface-card rounded-2xl p-6 shadow-sm">
+            <div className="lg:sticky lg:top-[calc(var(--navbar-offset)+1rem)]">
+              <section className="enterprise-card p-6">
                 <h2 className="font-semibold text-heading mb-4 flex items-center gap-2">
                   <ShoppingBag className="w-4 h-4 text-brand-500" />
-                  {lang === "bn" ? "অর্ডার সারসংক্ষেপ" : "Order Summary"}
-                  <span className="ml-auto text-xs text-gray-400 font-normal">
-                    {items.length} {lang === "bn" ? "টি পণ্য" : "items"}
-                  </span>
+                  {lang === "bn" ? "সারসংক্ষেপ" : "Summary"}
                 </h2>
-
-                <div className="space-y-3 divide-y divide-gray-50">
+                <div className="space-y-3">
                   {items.map((item) => (
-                    <div key={item.product_id} className="flex gap-3 pt-3 first:pt-0">
-                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        {item.image_url ? (
-                          <Image
-                            src={item.image_url}
-                            alt={item.name_en}
-                            width={56}
-                            height={56}
-                            className="object-cover w-full h-full"
-                          />
-                        ) : (
-                          <ShoppingBag className="w-6 h-6 text-brand-300" />
-                        )}
+                    <div key={item.product_id} className="flex gap-3">
+                      <div className="w-14 h-14 rounded-xl bg-brand-50 overflow-hidden flex-shrink-0">
+                        {item.image_url ? <Image src={item.image_url} alt="" width={56} height={56} className="object-cover w-full h-full" /> : <ShoppingBag className="w-6 h-6 text-brand-300 m-auto mt-4" />}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate">
-                          {lang === "bn" ? item.name_bn : item.name_en}
-                        </p>
-                        <p className="text-xs text-muted mt-0.5">
-                          {formatPrice(item.price)} × {item.quantity}
-                        </p>
+                        <p className="text-sm font-medium truncate">{lang === "bn" ? item.name_bn : item.name_en}</p>
+                        <p className="text-xs text-muted">{formatPrice(item.price)} × {item.quantity}</p>
                       </div>
-                      <p className="text-sm font-semibold text-heading whitespace-nowrap">
-                        {formatPrice(item.price * item.quantity)}
-                      </p>
+                      <p className="text-sm font-semibold">{formatPrice(item.price * item.quantity)}</p>
                     </div>
                   ))}
                 </div>
 
-                {/* Coupon */}
-                <div className="mt-5 pt-4 border-t border-gray-100 dark:border-white/10">
-                  {appliedCoupon ? (
-                    <div className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 rounded-xl px-3 py-2">
-                      <div className="flex items-center gap-2 text-sm text-green-700 dark:text-green-300">
-                        <Tag className="w-3.5 h-3.5" />
-                        <span className="font-medium">{appliedCoupon}</span>
-                        <span className="text-green-600">
-                          ({Math.round(discountRate * 100)}% {lang === "bn" ? "ছাড়" : "off"})
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={removeCoupon}
-                        className="text-xs text-gray-400 hover:text-red-500 transition-colors"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex gap-2">
-                      <input
-                        value={couponInput}
-                        onChange={(e) => setCouponInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), applyCoupon())}
-                        placeholder={lang === "bn" ? "কুপন কোড" : "Coupon code"}
-                        className="input flex-1 text-sm py-2"
-                      />
-                      <button
-                        type="button"
-                        onClick={applyCoupon}
-                        className="btn btn-outline btn-sm px-3"
-                      >
-                        <Tag className="w-4 h-4" />
-                      </button>
-                    </div>
+                <div className="mt-4 pt-4 border-t space-y-2 text-sm">
+                  {couponsEnabled && (
+                    <>
+                      {!appliedCoupon ? (
+                        <div className="flex gap-2 mb-3">
+                          <input value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder={lang === "bn" ? "কুপন" : "Coupon"} className="input flex-1 text-sm py-2" />
+                          <button type="button" onClick={applyCoupon} className="btn btn-outline btn-sm"><Tag className="w-4 h-4" /></button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between text-green-600 text-sm mb-2">
+                          <span>{appliedCoupon.code}</span>
+                          <button type="button" onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} className="text-xs text-gray-400">✕</button>
+                        </div>
+                      )}
+                      {couponError && <p className="text-red-500 text-xs">{couponError}</p>}
+                    </>
                   )}
-                  {couponError && (
-                    <p className="text-red-500 text-xs mt-1">{couponError}</p>
-                  )}
-                </div>
-
-                {/* Totals */}
-                <div className="mt-4 space-y-2 text-sm">
-                  <div className="flex justify-between text-gray-600 dark:text-gray-300">
-                    <span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span>
-                    <span>{formatPrice(subtotal)}</span>
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-green-600 dark:text-green-400 font-semibold bg-green-50 dark:bg-green-900/20 -mx-2 px-2 py-1 rounded-lg">
-                      <span>{lang === "bn" ? "🎉 আপনি সাশ্রয় করছেন" : "🎉 You save"}</span>
-                      <span>−{formatPrice(discount)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-gray-600 dark:text-gray-300">
-                    <span>{lang === "bn" ? "ডেলিভারি" : "Delivery"}</span>
-                    <span className="text-green-600 font-medium">
-                      {lang === "bn" ? "বিনামূল্যে" : "FREE"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center pt-3 border-t border-gray-100 dark:border-white/10 font-bold text-base">
-                    <span className="text-heading">{lang === "bn" ? "মোট" : "Total"}</span>
-                    <span className="text-xl text-accent-500">{formatPrice(cartTotal)}</span>
+                  <div className="flex justify-between"><span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span><span>{formatPrice(subtotal)}</span></div>
+                  {discount > 0 && <div className="flex justify-between text-green-600"><span>{lang === "bn" ? "ছাড়" : "Discount"}</span><span>−{formatPrice(discount)}</span></div>}
+                  <div className="flex justify-between"><span>{lang === "bn" ? "ডেলিভারি" : "Delivery"}</span><span>{deliveryCharge === 0 ? (lang === "bn" ? "ফ্রি" : "FREE") : formatPrice(deliveryCharge)}</span></div>
+                  <div className="flex justify-between pt-2 border-t font-bold text-lg">
+                    <span>{lang === "bn" ? "মোট" : "Total"}</span>
+                    <span className="text-green-600">{formatPrice(cartTotal)}</span>
                   </div>
                 </div>
               </section>
@@ -553,29 +489,11 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-mobile-nav left-0 right-0 z-40 lg:hidden border-t border-gray-100 dark:border-white/10 bg-white/95 dark:bg-[#0f1a2e]/95 backdrop-blur-xl px-4 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.08)]">
+      <div className="fixed bottom-mobile-nav left-0 right-0 z-40 lg:hidden border-t bg-white/95 backdrop-blur-xl px-4 py-3">
         <div className="flex items-center gap-3 max-w-6xl mx-auto">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted">{lang === "bn" ? "মোট" : "Total"}</p>
-            <p className="text-lg font-bold text-accent-500">{formatPrice(cartTotal)}</p>
-          </div>
-          <button
-            type="submit"
-            form="checkout-form"
-            disabled={isSubmitting || stockIssue}
-            className="btn btn-primary btn-md flex-shrink-0 min-w-[9rem]"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                {lang === "bn" ? "প্রক্রিয়া..." : "Processing..."}
-              </span>
-            ) : (
-              <span className="flex items-center justify-center gap-2">
-                {lang === "bn" ? "অর্ডার করুন" : "Place Order"}
-                <ChevronRight className="w-5 h-5" />
-              </span>
-            )}
+          <div className="flex-1"><p className="text-xs text-muted">{lang === "bn" ? "মোট" : "Total"}</p><p className="text-lg font-bold text-success-600">{formatPrice(cartTotal)}</p></div>
+          <button type="submit" form="checkout-form" disabled={isSubmitting || stockIssue} className="btn btn-success btn-md min-w-[9rem]">
+            {isSubmitting ? "..." : ctaLabel}
           </button>
         </div>
       </div>

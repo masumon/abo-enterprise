@@ -12,6 +12,7 @@ from app.core.bkash import get_bkash_gateway
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.nagad import get_nagad_gateway
+from app.core.sslcommerz import get_sslcommerz_gateway
 from app.models.models import BkashTransaction, NagadTransaction, Order
 from app.schemas.schemas import (
     PaymentInitiateRequest,
@@ -219,6 +220,49 @@ async def verify_nagad_payment(
         raise
     except Exception as e:
         logger.error("nagad verify error: %s", e, exc_info=e)
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/sslcommerz/initiate", response_model=PaymentResponseModel)
+async def initiate_sslcommerz_payment(
+    request: PaymentInitiateRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        result = await db.execute(select(Order).where(Order.id == request.order_id))
+        order = result.scalar_one_or_none()
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+
+        base = settings.FRONTEND_URL.rstrip("/")
+        success_url = request.success_url or f"{base}/payment/callback?status=success&order={order.order_number}"
+        fail_url = request.fail_url or f"{base}/payment/callback?status=failed&order={order.order_number}"
+        cancel_url = request.cancel_url or f"{base}/payment/callback?status=cancelled&order={order.order_number}"
+
+        session = await get_sslcommerz_gateway().create_session(
+            amount=Decimal(order.total),
+            order_number=order.order_number,
+            customer_name=order.customer_name,
+            customer_phone=order.customer_phone,
+            customer_email=order.customer_email,
+            success_url=success_url,
+            fail_url=fail_url,
+            cancel_url=cancel_url,
+        )
+
+        if not session:
+            raise HTTPException(status_code=400, detail="SSLCommerz not configured or session failed")
+
+        return {
+            "success": True,
+            "payment_url": session.get("payment_url"),
+            "payment_gateway": "sslcommerz",
+            "transaction_id": session.get("session_key"),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("sslcommerz initiate error: %s", e, exc_info=e)
         raise HTTPException(status_code=400, detail=str(e))
 
 

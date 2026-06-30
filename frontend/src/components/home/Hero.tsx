@@ -44,7 +44,7 @@ function displayStat(actual: number, floor: number): number {
 export default function Hero() {
   const { lang } = useLanguageStore();
   const t = useT();
-  const { settings } = usePublicSettings(["hero_image_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn"]);
+  const { settings } = usePublicSettings(["hero_image_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "free_delivery_min_amount"]);
   const [stats, setStats] = useState<StatsData>(FALLBACK_STATS);
   const [activity, setActivity] = useState<ActivityItem[]>(FALLBACK_ACTIVITY);
 
@@ -89,12 +89,20 @@ export default function Hero() {
       <div className="container mx-auto px-4 py-16 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div className="text-white space-y-6 animate-slide-up">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 glass-panel rounded-full text-sm font-medium">
-              <Zap className="w-3.5 h-3.5 text-yellow-300" aria-hidden />
-              {t("hero_badge")}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 glass-panel rounded-full text-sm font-medium">
+                <Zap className="w-3.5 h-3.5 text-yellow-300" aria-hidden />
+                {t("hero_badge")}
+              </div>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-500/25 text-green-100 border border-green-400/30">
+                🚚 {lang === "bn" ? `সিলেটে ফ্রি ডেলিভারি ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+` : `Free Sylhet delivery ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+`}
+              </span>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/90">
+                👥 {lang === "bn" ? `${stats.clients}+ গ্রাহক` : `${stats.clients}+ clients`}
+              </span>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight text-balance">
+            <h1 className="text-[1.75rem] sm:text-4xl lg:text-[2.625rem] font-bold leading-tight text-balance">
               {heroTitle ? (
                 <span>{heroTitle}</span>
               ) : (

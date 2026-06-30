@@ -190,6 +190,8 @@ class OrderCreate(BaseModel):
     payment_number: str | None = None
     items: list[OrderItemCreate]
     subtotal: float
+    discount_amount: float = 0
+    coupon_code: str | None = None
     delivery_charge: float = 0
     total: float
     notes: str | None = None
@@ -202,6 +204,11 @@ class OrderCreate(BaseModel):
 
 class OrderStatusUpdate(BaseModel):
     status: str
+
+
+class OrderCourierUpdate(BaseModel):
+    courier_provider: str | None = None
+    courier_tracking_id: str | None = None
 
 
 class BulkOrderStatusUpdate(BaseModel):
@@ -225,8 +232,12 @@ class OrderOut(BaseModel):
     payment_status: str
     order_status: str
     subtotal: float
+    discount_amount: float = 0
+    coupon_code: str | None = None
     delivery_charge: float
     total: float
+    courier_provider: str | None = None
+    courier_tracking_id: str | None = None
     notes: str | None
     items: list[OrderItemOut]
     created_at: datetime
@@ -761,7 +772,10 @@ from datetime import datetime
 
 class PaymentInitiateRequest(BaseModel):
     order_id: UUID
-    payment_gateway: str = Field(..., pattern="^(bkash|nagad)$")
+    payment_gateway: str = Field(..., pattern="^(bkash|nagad|sslcommerz)$")
+    success_url: str | None = None
+    fail_url: str | None = None
+    cancel_url: str | None = None
     
     class Config:
         from_attributes = True

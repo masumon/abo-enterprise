@@ -12,7 +12,7 @@ from app.core.config import settings
 from app.core.email import send_email, order_notification_html, customer_order_confirmation_html
 from app.core.invoice import InvoiceService
 from app.models.models import Order, OrderItem, Product, ActivityLog
-from app.schemas.schemas import OrderCreate, OrderOut, OrderStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
+from app.schemas.schemas import OrderCreate, OrderOut, OrderStatusUpdate, OrderCourierUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 
 import logging
 
@@ -73,6 +73,8 @@ async def create_order(
         payment_method=payload.payment_method,
         payment_number=payload.payment_number,
         subtotal=payload.subtotal,
+        discount_amount=payload.discount_amount or 0,
+        coupon_code=payload.coupon_code,
         delivery_charge=payload.delivery_charge,
         total=payload.total,
         notes=payload.notes,
@@ -164,9 +166,12 @@ async def track_order(
         "order_number": order.order_number,
         "order_status": order.order_status,
         "payment_method": order.payment_method,
+        "payment_status": order.payment_status,
         "total": float(order.total),
         "items_count": len(order.items),
         "created_at": order.created_at.isoformat(),
+        "courier_provider": order.courier_provider,
+        "courier_tracking_id": order.courier_tracking_id,
     })
 
 
@@ -289,3 +294,39 @@ async def update_order_status(
     await db.commit()
     await db.refresh(order)
     return ApiResponse(data=OrderOut.model_validate(order), message="Order status updated")
+
+
+@router.patch("/{order_id}/courier", response_model=ApiResponse)
+async def update_order_courier(
+    order_id: UUID,
+    payload: OrderCourierUpdate,
+    db: AsyncSession = Depends(get_db),
+    admin_id: str = Depends(require_admin),
+):
+    result = await db.execute(
+        select(Order).options(selectinload(Order.items)).where(Order.id == order_id)
+    )
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if payload.courier_provider is not None:
+        order.courier_provider = payload.courier_provider or None
+    if payload.courier_tracking_id is not None:
+        order.courier_tracking_id = payload.courier_tracking_id or None
+    if order.courier_tracking_id and order.order_status in ("confirmed", "processing"):
+        order.order_status = "shipped"
+    log = ActivityLog(
+        admin_id=uuid.UUID(admin_id),
+        action="update",
+        entity_type="order",
+        entity_id=order.id,
+        old_values={},
+        new_values={
+            "courier_provider": order.courier_provider,
+            "courier_tracking_id": order.courier_tracking_id,
+        },
+    )
+    db.add(log)
+    await db.commit()
+    await db.refresh(order)
+    return ApiResponse(data=OrderOut.model_validate(order), message="Courier info updated")

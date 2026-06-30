@@ -156,8 +156,17 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
           </div>
         )}
         {isOutOfStock && (
-          <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2">
             <span className="bg-black/50 text-white text-xs font-bold px-3 py-1 rounded-full">{t("out_of_stock")}</span>
+            <a
+              href={`https://wa.me/8801825007977?text=${encodeURIComponent(lang === "bn" ? `${product.name_bn} — স্টক এলে জানান` : `Notify when ${product.name_en} is back`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-[10px] bg-green-600 text-white px-2 py-1 rounded-lg relative z-20"
+            >
+              {lang === "bn" ? "নোটিফাই" : "Notify me"}
+            </a>
           </div>
         )}
       </div>
@@ -174,10 +183,22 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
         <h3 className="font-semibold text-gray-800 text-sm leading-snug mb-2 line-clamp-2 min-h-[2.5rem]">
           {lang === "bn" ? product.name_bn : product.name_en}
         </h3>
-        <div className="flex items-baseline gap-2 mb-3 mt-auto">
-          <span className="text-lg font-bold text-accent-600">{formatPrice(product.price)}</span>
+        <div className="flex items-baseline gap-2 mb-2 mt-auto">
+          <span className="text-xl sm:text-2xl font-bold text-green-600">{formatPrice(product.price)}</span>
           {product.original_price && (
             <span className="text-xs text-gray-400 line-through">{formatPrice(product.original_price)}</span>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-1 mb-3">
+          {!isOutOfStock && (
+            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100">
+              {lang === "bn" ? "COD ✓" : "COD ✓"}
+            </span>
+          )}
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-50 text-pink-700 border border-pink-100">bKash</span>
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-100">Nagad</span>
+          {reviewCount > 0 && (
+            <span className="text-[10px] text-gray-400 ml-auto">{reviewCount} {lang === "bn" ? "রিভিউ" : "reviews"}</span>
           )}
         </div>
         <button type="button" onClick={handleAdd} disabled={isOutOfStock} className="btn btn-brand btn-sm w-full relative z-10 btn-ripple">

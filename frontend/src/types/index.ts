@@ -95,10 +95,13 @@ export interface Order {
   customer_email?: string;
   delivery_address: string;
   payment_method: string;
+  payment_number?: string;
   order_status?: string;
   subtotal: number;
   discount_amount?: number;
   coupon_code?: string;
+  courier_provider?: string | null;
+  courier_tracking_id?: string | null;
   delivery_charge: number;
   total: number;
   notes?: string;

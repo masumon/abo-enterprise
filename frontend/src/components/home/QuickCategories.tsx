@@ -3,14 +3,14 @@ import Link from "next/link";
 import { useLanguageStore } from "@/store/language";
 
 const CATEGORIES = [
-  { emoji: "📱", label: { en: "Products",   bn: "পণ্য" },      href: "/products",          bg: "bg-blue-50",   text: "text-blue-700",   border: "border-blue-100" },
-  { emoji: "🖨",  label: { en: "Printing",   bn: "প্রিন্টিং" }, href: "/services/printing", bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-100" },
-  { emoji: "⚖",  label: { en: "Case Writing",bn: "কেস রাইটিং"},href: "/services/legal",    bg: "bg-red-50",    text: "text-red-700",    border: "border-red-100" },
-  { emoji: "💻",  label: { en: "Software",   bn: "সফটওয়্যার" },href: "/services/software", bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-100" },
-  { emoji: "🤖",  label: { en: "AI / ML",    bn: "AI / ML" },   href: "/projects",          bg: "bg-violet-50", text: "text-violet-700", border: "border-violet-100" },
-  { emoji: "⚙️", label: { en: "Automation",  bn: "অটোমেশন" },  href: "/projects",          bg: "bg-gray-50",   text: "text-gray-700",   border: "border-gray-200" },
-  { emoji: "🌐",  label: { en: "Website",    bn: "ওয়েবসাইট" }, href: "/services/software", bg: "bg-cyan-50",   text: "text-cyan-700",   border: "border-cyan-100" },
-  { emoji: "📈",  label: { en: "Marketing",  bn: "মার্কেটিং" }, href: "/projects",          bg: "bg-green-50",  text: "text-green-700",  border: "border-green-100" },
+  { emoji: "📱", label: { en: "Phone Case", bn: "ফোন কেস" }, href: "/products?category=accessories", bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-100" },
+  { emoji: "🔌", label: { en: "Charger", bn: "চার্জার" }, href: "/products?category=accessories", bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-100" },
+  { emoji: "🎧", label: { en: "Earbuds", bn: "ইয়ারবাড" }, href: "/products?category=gadgets", bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-100" },
+  { emoji: "🔋", label: { en: "Power Bank", bn: "পাওয়ার ব্যাংক" }, href: "/products?category=gadgets", bg: "bg-green-50", text: "text-green-700", border: "border-green-100" },
+  { emoji: "🖨", label: { en: "Printing", bn: "প্রিন্টিং" }, href: "/services/printing", bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-100" },
+  { emoji: "⚖", label: { en: "Legal", bn: "আইনি" }, href: "/services/legal", bg: "bg-red-50", text: "text-red-700", border: "border-red-100" },
+  { emoji: "💻", label: { en: "Software", bn: "সফটওয়্যার" }, href: "/services/software", bg: "bg-indigo-50", text: "text-indigo-700", border: "border-indigo-100" },
+  { emoji: "🛒", label: { en: "All Shop", bn: "সব পণ্য" }, href: "/products", bg: "bg-gray-50", text: "text-gray-700", border: "border-gray-200" },
 ];
 
 export default function QuickCategories() {

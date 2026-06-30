@@ -12,21 +12,21 @@ import { formatPrice } from "@/lib/utils";
 import PageHero from "@/components/ui/PageHero";
 import EmptyState from "@/components/ui/EmptyState";
 import { productsApi } from "@/lib/api";
-
-const COUPONS: Record<string, number> = { ABO10: 0.1, WELCOME: 0.05 };
+import { validateCoupon, type AppliedCoupon } from "@/lib/coupons";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, total, stockWarnings, setStockWarnings } = useCartStore();
   const { lang } = useLanguageStore();
   const t = useT();
   const router = useRouter();
+  const couponsEnabled = useFeatureFlag("feature_coupons", true);
   const [coupon, setCoupon] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [validating, setValidating] = useState(false);
 
   const cartSubtotal = total();
-  const discountRate = appliedCoupon ? COUPONS[appliedCoupon] ?? 0 : 0;
-  const discount = Math.round(cartSubtotal * discountRate);
+  const discount = appliedCoupon?.discountAmount ?? 0;
   const cartTotal = cartSubtotal - discount;
 
   useEffect(() => {
@@ -46,9 +46,11 @@ export default function CartPage() {
       .finally(() => setValidating(false));
   }, [items.length, setStockWarnings, updateQuantity]);
 
-  const applyCoupon = () => {
-    const code = coupon.trim().toUpperCase();
-    if (COUPONS[code]) setAppliedCoupon(code);
+  const applyCoupon = async () => {
+    if (!couponsEnabled || !coupon.trim()) return;
+    try {
+      setAppliedCoupon(await validateCoupon(coupon, cartSubtotal));
+    } catch { /* ignore */ }
   };
 
   return (
@@ -124,15 +126,19 @@ export default function CartPage() {
               <div className="enterprise-card p-6 h-fit sticky top-[calc(var(--navbar-offset)+1rem)]">
                 <h2 className="font-bold text-heading mb-4">{lang === "bn" ? "অর্ডার সারাংশ" : "Order Summary"}</h2>
 
-                <div className="flex gap-2 mb-4">
-                  <div className="relative flex-1">
-                    <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                    <input value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder={t("cart_coupon")} className="input pl-9 text-sm py-2" />
-                  </div>
-                  <button type="button" onClick={applyCoupon} className="btn btn-outline btn-sm">{t("cart_apply")}</button>
-                </div>
-                {appliedCoupon && (
-                  <p className="text-xs text-green-600 mb-3">{appliedCoupon} applied ({discountRate * 100}% off)</p>
+                {couponsEnabled && (
+                  <>
+                    <div className="flex gap-2 mb-4">
+                      <div className="relative flex-1">
+                        <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+                        <input value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder={t("cart_coupon")} className="input pl-9 text-sm py-2" disabled={!!appliedCoupon} />
+                      </div>
+                      <button type="button" onClick={applyCoupon} className="btn btn-outline btn-sm">{t("cart_apply")}</button>
+                    </div>
+                    {appliedCoupon && (
+                      <p className="text-xs text-green-600 mb-3">{appliedCoupon.code} — {lang === "bn" ? "আপনি সাশ্রয়" : "You save"} {formatPrice(discount)}</p>
+                    )}
+                  </>
                 )}
 
                 <div className="space-y-2 text-sm border-t border-gray-100 dark:border-white/10 pt-4">
@@ -144,7 +150,7 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                <button type="button" onClick={() => router.push("/checkout")} className="btn btn-primary btn-md w-full mt-6 btn-ripple">
+                <button type="button" onClick={() => router.push(appliedCoupon ? `/checkout?coupon=${appliedCoupon.code}` : "/checkout")} className="btn btn-primary btn-md w-full mt-6 btn-ripple">
                   {lang === "bn" ? "চেকআউট" : "Checkout"}
                   <ArrowRight className="w-4 h-4" />
                 </button>

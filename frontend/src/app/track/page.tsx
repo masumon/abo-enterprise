@@ -2,18 +2,23 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, Package, Loader2, CheckCircle2, Truck, Clock, XCircle } from "lucide-react";
+import { Search, Package, Loader2, CheckCircle2, Truck, Clock, XCircle, ExternalLink } from "lucide-react";
 import { ordersApi } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import { useLanguageStore } from "@/store/language";
+import { usePublicSettings } from "@/hooks/usePublicSettings";
+import { buildCourierTrackingUrl } from "@/lib/courierTracking";
 
 interface TrackResult {
   order_number: string;
   order_status: string;
   payment_method: string;
+  payment_status?: string;
   total: number;
   items_count: number;
   created_at: string;
+  courier_provider?: string | null;
+  courier_tracking_id?: string | null;
 }
 
 const STATUS_STEPS = ["pending", "confirmed", "processing", "shipped", "delivered"];
@@ -38,6 +43,7 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
 function TrackContent() {
   const params = useSearchParams();
   const { lang } = useLanguageStore();
+  const { settings } = usePublicSettings(["courier_pathao_url", "courier_steadfast_url"]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TrackResult | null>(null);
@@ -74,6 +80,9 @@ function TrackContent() {
 
   const stepIndex = result ? STATUS_STEPS.indexOf(result.order_status) : -1;
   const isCancelled = result?.order_status === "cancelled";
+  const courierUrl = result
+    ? buildCourierTrackingUrl(result.courier_provider, result.courier_tracking_id, settings)
+    : null;
 
   return (
     <main className="min-h-screen page-surface py-16 px-4 pb-mobile-nav lg:pb-16">
@@ -143,12 +152,33 @@ function TrackContent() {
               <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 text-center">
                 <p className="text-xs text-gray-400 mb-1">{lang === "bn" ? "পেমেন্ট" : "Payment"}</p>
                 <p className="font-semibold text-gray-800 dark:text-gray-200 capitalize">{result.payment_method}</p>
+                {result.payment_status && (
+                  <p className="text-[10px] text-muted capitalize mt-0.5">{result.payment_status}</p>
+                )}
               </div>
               <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 text-center">
                 <p className="text-xs text-gray-400 mb-1">{lang === "bn" ? "তারিখ" : "Date"}</p>
                 <p className="font-semibold text-gray-800 dark:text-gray-200">{new Date(result.created_at).toLocaleDateString("bn-BD")}</p>
               </div>
             </div>
+
+            {result.courier_tracking_id && (
+              <div className="rounded-xl border border-brand-100 bg-brand-50/50 dark:bg-brand-900/20 p-4">
+                <p className="text-xs text-brand-600 uppercase tracking-wider mb-2">
+                  {lang === "bn" ? "কুরিয়ার ট্র্যাকিং" : "Courier Tracking"}
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold capitalize">{result.courier_provider ?? "Courier"}</span>
+                  <code className="text-sm bg-white dark:bg-black/20 px-2 py-0.5 rounded">{result.courier_tracking_id}</code>
+                  {courierUrl && (
+                    <a href={courierUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm gap-1 ml-auto">
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      {lang === "bn" ? "লাইভ ট্র্যাক" : "Track Live"}
+                    </a>
+                  )}
+                </div>
+              </div>
+            )}
 
             {isCancelled ? (
               <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl p-4">
