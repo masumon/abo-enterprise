@@ -4,29 +4,34 @@ import type { Product } from "@/types";
 import ProductsPageShell from "./ProductsPageShell";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { pageMeta } from "@/lib/metadata";
+import { fetchWithRetry } from "@/lib/fetchRetry";
+import { DEMO_PRODUCTS } from "@/lib/demoContent";
+import { filterDemoProducts } from "@/lib/demoFallback";
 
 const API_BASE = getApiBaseUrl();
 const VALID_CATEGORIES = new Set(["accessories", "gadgets", "electronics", "computer"]);
 
-async function fetchProducts(category?: string): Promise<{ products: Product[]; total: number }> {
+async function fetchProducts(category?: string): Promise<{ products: Product[]; total: number; isDemo: boolean }> {
   const cat = category && VALID_CATEGORIES.has(category) ? category : undefined;
   const qs = new URLSearchParams({ page: "1", per_page: "20" });
   if (cat) qs.set("category", cat);
 
   try {
-    const res = await fetch(`${API_BASE}/api/v1/products?${qs}`, {
+    const res = await fetchWithRetry(`${API_BASE}/api/v1/products?${qs}`, {
       next: { revalidate: 60 },
       signal: AbortSignal.timeout(55000),
     });
-    if (!res.ok) return { products: [], total: 0 };
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
-    return {
-      products: (json.data ?? []) as Product[],
-      total: json.meta?.total ?? 0,
-    };
+    const products = (json.data ?? []) as Product[];
+    if (products.length > 0) {
+      return { products, total: json.meta?.total ?? products.length, isDemo: false };
+    }
   } catch {
-    return { products: [], total: 0 };
+    // fall through to demo
   }
+  const demo = filterDemoProducts(DEMO_PRODUCTS, { category: cat });
+  return { products: demo, total: demo.length, isDemo: true };
 }
 
 export const metadata: Metadata = pageMeta(
@@ -41,7 +46,7 @@ export default async function ProductsPage({
   searchParams: { category?: string };
 }) {
   const category = searchParams.category ?? "";
-  const { products, total } = await fetchProducts(category);
+  const { products, total, isDemo } = await fetchProducts(category);
 
   return (
     <main className="min-h-screen">
@@ -50,6 +55,7 @@ export default async function ProductsPage({
           initialProducts={products}
           initialTotal={total}
           initialCategory={category}
+          initialIsDemo={isDemo}
         />
       </Suspense>
     </main>

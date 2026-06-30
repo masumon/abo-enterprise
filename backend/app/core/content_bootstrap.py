@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select
 
 from app.core.database import AsyncSessionLocal
-from app.models.models import BlogPost, Product, Setting
+from app.models.models import BlogPost, Product, Service, Setting
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,12 @@ DEFAULT_SETTINGS: list[dict] = [
         "data_type": "string",
         "description": "Contact email",
     },
+    {
+        "key": "demo_fallback_enabled",
+        "value": "true",
+        "data_type": "string",
+        "description": "Show demo catalog when API is slow/unavailable",
+    },
 ]
 
 PRODUCT_SEED = [
@@ -51,6 +57,15 @@ PRODUCT_SEED = [
     ("type-c-cable-3m", "Type-C Cable 3M Braided", "টাইপ-সি ব্রেডেড ক্যাবল ৩M", 199, None, "accessories", None, 200, False, 6),
     ("car-holder-magnetic", "Magnetic Car Holder", "ম্যাগনেটিক কার হোল্ডার", 399, None, "accessories", None, 40, False, 7),
     ("bt-speaker-waterproof", "Waterproof BT Speaker", "ওয়াটারপ্রুফ স্পিকার", 1499, 2000, "gadgets", None, 10, False, 8),
+]
+
+SERVICE_SEED = [
+    ("printing", "Printing Services", "প্রিন্টিং সেবা", "printing", "fixed", 500, True, 1),
+    ("legal", "Legal Assistance", "আইনি সহায়তা", "legal", "custom_quote", None, True, 2),
+    ("software", "Software Development", "সফটওয়্যার ডেভেলপমেন্ট", "software", "custom_quote", None, True, 3),
+    ("web-design", "Website Design", "ওয়েবসাইট ডিজাইন", "software", "package", 15000, False, 4),
+    ("mobile-app", "Mobile App Development", "মোবাইল অ্যাপ ডেভেলপমেন্ট", "software", "custom_quote", None, False, 5),
+    ("digital-marketing", "Digital Marketing", "ডিজিটাল মার্কেটিং", "marketing", "package", 8000, False, 6),
 ]
 
 BLOG_SEED = [
@@ -136,6 +151,34 @@ async def bootstrap_content() -> None:
                         tags=[],
                     ))
                 logger.info("Content bootstrap: seeded %d products", len(PRODUCT_SEED))
+
+            service_count = (await db.execute(
+                select(func.count(Service.id)).where(Service.is_deleted == False)  # noqa: E712
+            )).scalar() or 0
+
+            if service_count == 0:
+                for row in SERVICE_SEED:
+                    slug, name_en, name_bn, cat, pricing_type, base_price, featured, sort = row
+                    db.add(Service(
+                        slug=slug,
+                        name_en=name_en,
+                        name_bn=name_bn,
+                        short_description_en=f"Professional {name_en.lower()} from ABO Enterprise.",
+                        short_description_bn=f"ABO Enterprise থেকে পেশাদার {name_bn}।",
+                        category=cat,
+                        pricing_type=pricing_type,
+                        base_price=base_price,
+                        is_active=True,
+                        is_featured=featured,
+                        sort_order=sort,
+                        tags=[],
+                        process_steps=[],
+                        benefits=[],
+                        requirements=[],
+                        required_documents=[],
+                        faq=[],
+                    ))
+                logger.info("Content bootstrap: seeded %d services", len(SERVICE_SEED))
 
             published_count = (await db.execute(
                 select(func.count(BlogPost.id)).where(

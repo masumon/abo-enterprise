@@ -17,12 +17,14 @@ interface Props {
   initialProducts: Product[];
   initialTotal: number;
   initialCategory?: string;
+  initialIsDemo?: boolean;
 }
 
 export default function ProductsPageShell({
   initialProducts,
   initialTotal,
   initialCategory = "",
+  initialIsDemo = false,
 }: Props) {
   const { lang } = useLanguageStore();
   const t = useT();
@@ -42,6 +44,7 @@ export default function ProductsPageShell({
         initialProducts={initialProducts}
         initialTotal={initialTotal}
         initialCategory={category}
+        initialIsDemo={initialIsDemo}
       />
     </>
   );

@@ -14,6 +14,12 @@ import ServiceFilters from "@/components/services/ServiceFilters";
 import PageHero from "@/components/ui/PageHero";
 import { ServiceCardSkeleton } from "@/components/common/Skeletons";
 import { cn } from "@/lib/utils";
+import DemoModeBanner from "@/components/ui/DemoModeBanner";
+import {
+  filterDemoServices,
+  getDemoServices,
+  isDemoFallbackEnabled,
+} from "@/lib/demoFallback";
 
 const FEATURED = [
   {
@@ -42,9 +48,14 @@ const FEATURED = [
 interface Props {
   initialServices: Service[];
   initialTotal: number;
+  initialIsDemo?: boolean;
 }
 
-export default function ServicesPageClient({ initialServices, initialTotal }: Props) {
+export default function ServicesPageClient({
+  initialServices,
+  initialTotal,
+  initialIsDemo = false,
+}: Props) {
   const { lang } = useLanguageStore();
   const t = (o: { en: string; bn: string }) => (lang === "bn" ? o.bn : o.en);
 
@@ -54,11 +65,14 @@ export default function ServicesPageClient({ initialServices, initialTotal }: Pr
   const [category, setCategory] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(initialTotal);
-  const skipInitial = useRef(true);
+  const [usingDemo, setUsingDemo] = useState(initialIsDemo);
+  const skipInitial = useRef(!initialIsDemo && initialServices.length > 0);
 
   const categories = [
     { id: null, label: lang === "bn" ? "সব" : "All", en: "All" },
-    ...Array.from(new Set(initialServices.map((s) => s.category).filter(Boolean))).map((c) => ({
+    ...Array.from(
+      new Set([...initialServices, ...getDemoServices()].map((s) => s.category).filter(Boolean))
+    ).map((c) => ({
       id: c!,
       label: c!,
       en: c!,
@@ -74,11 +88,38 @@ export default function ServicesPageClient({ initialServices, initialTotal }: Pr
         page: pageNum,
         per_page: 12,
       });
-      setServices(res.data.data ?? []);
-      setTotal(res.data.meta?.total ?? 0);
+      const data = res.data.data ?? [];
+      if (data.length > 0) {
+        setServices(data);
+        setTotal(res.data.meta?.total ?? data.length);
+        setUsingDemo(false);
+        setPage(pageNum);
+        return;
+      }
+      if (pageNum === 1 && isDemoFallbackEnabled()) {
+        const demo = filterDemoServices(getDemoServices(), cat);
+        setServices(demo);
+        setTotal(demo.length);
+        setUsingDemo(true);
+        setPage(1);
+        return;
+      }
+      setServices([]);
+      setTotal(0);
+      setUsingDemo(false);
       setPage(pageNum);
     } catch {
-      setError(true);
+      if (pageNum === 1 && isDemoFallbackEnabled()) {
+        const demo = filterDemoServices(getDemoServices(), cat);
+        setServices(demo);
+        setTotal(demo.length);
+        setUsingDemo(true);
+        setError(false);
+        setPage(1);
+      } else {
+        setError(true);
+        setUsingDemo(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -87,10 +128,10 @@ export default function ServicesPageClient({ initialServices, initialTotal }: Pr
   useEffect(() => {
     if (skipInitial.current && category === null) {
       skipInitial.current = false;
-      return;
+      if (!initialIsDemo && initialServices.length > 0) return;
     }
     load(1, category);
-  }, [category, load]);
+  }, [category, load, initialIsDemo, initialServices.length]);
 
   const totalPages = Math.max(1, Math.ceil(total / 12));
 
@@ -130,6 +171,8 @@ export default function ServicesPageClient({ initialServices, initialTotal }: Pr
             <h2 className="text-xl font-bold text-heading">{t({ en: "All Services", bn: "সব সেবা" })}</h2>
             <ServiceFilters categories={categories} selectedCategory={category} onCategoryChange={setCategory} />
           </div>
+
+          <DemoModeBanner show={usingDemo && !loading} />
 
           {loading ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" aria-busy="true">

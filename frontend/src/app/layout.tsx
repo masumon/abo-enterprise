@@ -6,6 +6,9 @@ import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import UtmTracker from "@/lib/utm";
 import { DEFAULT_OG_IMAGE, SITE_URL } from "@/lib/tokens";
+import { getApiBaseUrl } from "@/lib/apiBase";
+
+const API_ORIGIN = getApiBaseUrl();
 
 export const metadata: Metadata = {
   title: {
@@ -76,6 +79,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href={API_ORIGIN} />
+        <link rel="dns-prefetch" href={API_ORIGIN} />
       </head>
       <body className="min-h-screen flex flex-col">
         <GoogleAnalytics />
