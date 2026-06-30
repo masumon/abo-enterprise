@@ -1,7 +1,7 @@
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.security import require_admin, require_role
@@ -30,26 +30,28 @@ async def list_services(
     per_page: int = Query(10, ge=1, le=100),
     category: str | None = None,
     featured: bool | None = None,
+    search: str | None = None,
 ):
     """List all active services (public endpoint)"""
-    query = select(Service).where(
-        and_(
-            Service.is_deleted == False,
-            Service.is_active == True,
-        )
-    ).options(selectinload(Service.pricing_tiers), selectinload(Service.booking_forms))
-
+    conditions = [
+        Service.is_deleted == False,  # noqa: E712
+        Service.is_active == True,  # noqa: E712
+    ]
     if category:
-        query = query.where(Service.category == category)
-
+        conditions.append(Service.category == category)
     if featured is not None:
-        query = query.where(Service.is_featured == featured)
+        conditions.append(Service.is_featured == featured)
+    if search:
+        term = f"%{search}%"
+        conditions.append(or_(Service.name_en.ilike(term), Service.name_bn.ilike(term)))
+
+    query = select(Service).where(and_(*conditions)).options(
+        selectinload(Service.pricing_tiers), selectinload(Service.booking_forms)
+    )
 
     # Count total
     count_result = await db.execute(
-        select(func.count(Service.id)).select_from(Service).where(
-            and_(Service.is_deleted == False, Service.is_active == True)
-        )
+        select(func.count(Service.id)).select_from(Service).where(and_(*conditions))
     )
     total = count_result.scalar()
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -50,6 +50,7 @@ function getErrorInfo(e: unknown): { type: ErrorType; msg: string } {
 
 export default function AdminLoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [errorInfo, setErrorInfo] = useState<{ type: ErrorType; msg: string } | null>(null);
   const [loading, setLoading] = useState(false);
@@ -66,7 +67,12 @@ export default function AdminLoginPage() {
       const token = res.data.data?.access_token;
       if (!token) throw new Error("No token received");
       setAdminToken(token);
-      router.replace("/admin");
+      const redirect = searchParams.get("redirect");
+      const safeRedirect =
+        redirect && redirect.startsWith("/admin") && redirect !== "/admin/login"
+          ? redirect
+          : "/admin";
+      router.replace(safeRedirect);
     } catch (e: unknown) {
       setErrorInfo(getErrorInfo(e));
     } finally {
