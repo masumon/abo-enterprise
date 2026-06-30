@@ -9,6 +9,7 @@ import { bookingsApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { generateWhatsAppBookingMessage, WHATSAPP_NUMBER } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import PageHero from "@/components/ui/PageHero";
 
 const schema = z.object({
   customer_name: z.string().min(2),
@@ -71,23 +72,25 @@ export default function PrintingPage() {
   };
 
   return (
-    <div className="min-h-screen py-12 bg-gray-50">
-      <div className="container mx-auto px-4 max-w-2xl">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Printer className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {lang === "bn" ? "প্রিন্টিং সেবা" : "Printing Services"}
-          </h1>
-          <p className="text-gray-500">
-            {lang === "bn"
-              ? "ভিজিটিং কার্ড, ব্যানার, ব্রোশিওর — সর্বোচ্চ মানে সাশ্রয়ী মূল্যে।"
-              : "Visiting cards, banners, brochures — best quality at the best price."}
-          </p>
-        </div>
+    <div className="min-h-screen bg-gray-50">
+      <PageHero
+        pageKey="printing"
+        align="center"
+        title={lang === "bn" ? "প্রিন্টিং সেবা" : "Printing Services"}
+        subtitle={
+          lang === "bn"
+            ? "ভিজিটিং কার্ড, ব্যানার, ব্রোশিওর — সর্বোচ্চ মানে সাশ্রয়ী মূল্যে।"
+            : "Visiting cards, banners, brochures — best quality at the best price."
+        }
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "সেবা" : "Services", href: "/services" },
+          { label: lang === "bn" ? "প্রিন্টিং" : "Printing" },
+        ]}
+        badge={lang === "bn" ? "দ্রুত ডেলিভারি" : "Fast Turnaround"}
+      />
 
+      <div className="container mx-auto px-4 max-w-2xl py-12">
         <div className="card p-6 md:p-8">
           {isSuccess ? (
             <div className="text-center py-8">

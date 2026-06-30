@@ -40,6 +40,7 @@ export default function OrderDetailPage() {
   return (
     <main>
       <PageHero
+        pageKey="orders"
         title={lang === "bn" ? "অর্ডার বিবরণ" : "Order Details"}
         subtitle={orderNumber}
         breadcrumbs={[

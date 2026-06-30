@@ -51,6 +51,7 @@ export default function CareerPage() {
   return (
     <main>
       <PageHero
+        pageKey="career"
         title={lang === "bn" ? "ক্যারিয়ার" : "Careers"}
         subtitle={lang === "bn" ? "ABO Enterprise-এ যোগ দিন" : "Join the ABO Enterprise team"}
         breadcrumbs={[{ label: lang === "bn" ? "ক্যারিয়ার" : "Careers" }]}

@@ -34,6 +34,7 @@ export default function InvoicesPage() {
   return (
     <main>
       <PageHero
+        pageKey="profile"
         title={lang === "bn" ? "ইনভয়েস" : "Invoices"}
         subtitle={lang === "bn" ? "আপনার অর্ডার ও ইনভয়েস" : "Your orders and invoices"}
         breadcrumbs={[

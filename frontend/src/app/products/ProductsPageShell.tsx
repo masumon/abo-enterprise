@@ -33,6 +33,7 @@ export default function ProductsPageShell({
   return (
     <>
       <PageHero
+        pageKey="products"
         title={t("products_title")}
         subtitle={t("products_sub")}
         breadcrumbs={[

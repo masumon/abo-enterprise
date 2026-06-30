@@ -138,6 +138,7 @@ export default function ServicesPageClient({
   return (
     <main className="min-h-screen">
       <PageHero
+        pageKey="services"
         title={t({ en: "Our Services", bn: "আমাদের সেবা" })}
         subtitle={t({
           en: "From printing to legal help to full-stack software — everything under one roof.",

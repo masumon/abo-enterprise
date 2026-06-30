@@ -44,6 +44,7 @@ export default function SettingsPage() {
   return (
     <main>
       <PageHero
+        pageKey="profile"
         title={lang === "bn" ? "সেটিংস" : "Settings"}
         subtitle={lang === "bn" ? "অ্যাকাউন্ট ও নোটিফিকেশন" : "Account and notification preferences"}
         breadcrumbs={[

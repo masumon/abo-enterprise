@@ -32,6 +32,7 @@ export default function FaqClient() {
   return (
     <main>
       <PageHero
+        pageKey="faq"
         title={lang === "bn" ? "সাধারণ প্রশ্ন ও উত্তর" : "Frequently Asked Questions"}
         subtitle={lang === "bn" ? "আপনার প্রশ্নের উত্তর খুঁজুন" : "Find answers to common questions"}
         breadcrumbs={[{ label: "FAQ" }]}

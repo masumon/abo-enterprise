@@ -31,6 +31,7 @@ export default function ProfilePage() {
   return (
     <main className="min-h-screen">
       <PageHero
+        pageKey="profile"
         title={t("profile_dashboard")}
         subtitle={lang === "bn" ? "ABO Enterprise ক্লায়েন্ট পোর্টাল" : "ABO Enterprise Client Portal"}
         breadcrumbs={[

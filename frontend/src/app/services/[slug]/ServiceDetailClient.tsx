@@ -96,6 +96,8 @@ export default function ServiceDetailClient({ service }: Props) {
   return (
     <div>
       <PageHero
+        pageKey="services"
+        imageUrl={service.featured_image_url || undefined}
         title={name}
         subtitle={shortDesc}
         breadcrumbs={[

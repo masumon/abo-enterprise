@@ -7,6 +7,7 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import { parseGoogleMapsEmbedInput } from "@/lib/maps";
+import { PAGE_BANNER_CONFIG, bannerSettingKey } from "@/lib/pageBanners";
 
 type SettingValues = Record<string, string>;
 
@@ -80,8 +81,21 @@ const SECTIONS: Section[] = [
       { key: "hero_subtitle_bn", label: "Hero Subtitle (বাংলা)", type: "textarea", placeholder: "সিলেটের বিশ্বস্ত টেক ও প্রিন্টিং পার্টনার" },
       { key: "hero_cta_text", label: "CTA Button Text", placeholder: "Shop Now" },
       { key: "hero_cta_url", label: "CTA Button URL", type: "url", placeholder: "/products" },
-      { key: "hero_image_url", label: "Hero Background Image", type: "url", upload: true, placeholder: "https://..." },
+      { key: "hero_image_url", label: "Homepage Banner Image", type: "url", upload: true, placeholder: "https://...", hint: "Leave empty for built-in demo banner. Upload to replace." },
     ],
+  },
+  {
+    id: "page_banners",
+    title: "Page Banners",
+    icon: <ImageIcon className="w-4 h-4" />,
+    fields: PAGE_BANNER_CONFIG.map(({ key, label, hint }) => ({
+      key: bannerSettingKey(key),
+      label: `${label} Banner`,
+      type: "url" as const,
+      upload: true,
+      placeholder: "https://...",
+      hint: hint ?? "Leave empty to use built-in demo. Upload your image to replace.",
+    })),
   },
   {
     id: "social",
