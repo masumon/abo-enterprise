@@ -17,7 +17,7 @@ const storage = createJSONStorage(() => {
   return localStorage;
 });
 
-const MAX = 4;
+const MAX = 3;
 
 export const useCompareStore = create<CompareStore>()(
   persist(

@@ -2,19 +2,15 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import Hero from "@/components/home/Hero";
 import TrustBadges from "@/components/home/TrustBadges";
+import QuickCategories from "@/components/home/QuickCategories";
 import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, BRAND_TAGLINE } from "@/lib/tokens";
 
 const EntryPoints = dynamic(() => import("@/components/home/EntryPoints"), { loading: () => <SectionSkeleton /> });
 const Stats = dynamic(() => import("@/components/home/Stats"), { loading: () => <SectionSkeleton /> });
-const Industries = dynamic(() => import("@/components/home/Industries"), { loading: () => <SectionSkeleton /> });
-const SoftwareSolutions = dynamic(() => import("@/components/home/SoftwareSolutions"), { loading: () => <SectionSkeleton /> });
 const ServicesOverview = dynamic(() => import("@/components/home/ServicesOverview"), { loading: () => <SectionSkeleton /> });
 const FeaturedProducts = dynamic(() => import("@/components/home/FeaturedProducts"), { loading: () => <SectionSkeleton /> });
 const WhyChooseUs = dynamic(() => import("@/components/home/WhyChooseUs"), { loading: () => <SectionSkeleton /> });
-const ProcessTimeline = dynamic(() => import("@/components/home/ProcessTimeline"), { loading: () => <SectionSkeleton /> });
-const Portfolio = dynamic(() => import("@/components/home/Portfolio"), { loading: () => <SectionSkeleton /> });
 const CustomerReviews = dynamic(() => import("@/components/home/CustomerReviews"), { loading: () => <SectionSkeleton /> });
-const ClientLogos = dynamic(() => import("@/components/home/ClientLogos"), { loading: () => <SectionSkeleton /> });
 const FAQ = dynamic(() => import("@/components/home/FAQ"), { loading: () => <SectionSkeleton /> });
 const LeadCapture = dynamic(() => import("@/components/home/LeadCapture"), { loading: () => <SectionSkeleton /> });
 const ContactSection = dynamic(() => import("@/components/home/ContactSection"), { loading: () => <SectionSkeleton /> });
@@ -80,18 +76,14 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
       />
       <Hero />
+      <QuickCategories />
       <TrustBadges />
       <EntryPoints />
       <Stats />
-      <Industries />
-      <SoftwareSolutions />
       <ServicesOverview />
       <FeaturedProducts />
       <WhyChooseUs />
-      <ProcessTimeline />
-      <Portfolio />
       <CustomerReviews />
-      <ClientLogos />
       <FAQ />
       <LeadCapture />
       <ContactSection />

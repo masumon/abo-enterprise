@@ -1,23 +1,37 @@
 "use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, ShoppingBag, Calendar, User } from "lucide-react";
+import { Home, Search, ShoppingBag, Calendar, Package, User } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
+import { useCustomerStore } from "@/store/customer";
 import { cn } from "@/lib/utils";
-
-const NAV_ITEMS = [
-  { href: "/",         icon: Home,        label: { en: "Home",   bn: "হোম" } },
-  { href: "/search",   icon: Search,      label: { en: "Search", bn: "খুঁজুন" } },
-  { href: "/products", icon: ShoppingBag, label: { en: "Shop",   bn: "শপ" } },
-  { href: "/services", icon: Calendar,    label: { en: "Book",   bn: "বুক" } },
-  { href: "/profile",  icon: User,        label: { en: "Profile",bn: "প্রোফাইল" } },
-];
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const { lang } = useLanguageStore();
+  const isLoggedIn = useCustomerStore((s) => s.isLoggedIn());
+
+  useEffect(() => {
+    useCustomerStore.persist.rehydrate();
+  }, []);
 
   if (pathname?.startsWith("/admin")) return null;
+
+  const profileHref = isLoggedIn ? "/profile" : "/track";
+  const profileLabel = isLoggedIn
+    ? { en: "Profile", bn: "প্রোফাইল" }
+    : { en: "Track", bn: "ট্র্যাক" };
+  const ProfileIcon = isLoggedIn ? User : Package;
+
+  const NAV_ITEMS = [
+    { href: "/", icon: Home, label: { en: "Home", bn: "হোম" } },
+    { href: "/search", icon: Search, label: { en: "Search", bn: "খুঁজুন" } },
+    { href: "/products", icon: ShoppingBag, label: { en: "Shop", bn: "শপ" } },
+    { href: "/services", icon: Calendar, label: { en: "Book", bn: "বুক" } },
+    { href: profileHref, icon: ProfileIcon, label: profileLabel },
+  ];
 
   return (
     <nav

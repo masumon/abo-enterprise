@@ -464,6 +464,19 @@ export const paymentMethodsAdminApi = {
     api.delete<ApiResponse<null>>(`/api/v1/admin/payment-methods/${id}`),
 };
 
+export const paymentMethodsPublicApi = {
+  list: () =>
+    api.get<ApiResponse<PaymentMethodRecord[]>>("/api/v1/admin/payment-methods-public"),
+};
+
+export const customerOtpApi = {
+  send: (phone: string) =>
+    api.post<ApiResponse<{ sent: boolean; expires_in: number }>>("/api/v1/customer/send-otp", { phone }),
+
+  verify: (phone: string, code: string) =>
+    api.post<ApiResponse<{ verified: boolean }>>("/api/v1/customer/verify-otp", { phone, code }),
+};
+
 export const paymentsApi = {
   initiateBkash: (order_id: string) =>
     api.post<ApiResponse<{ success: boolean; payment_url?: string; transaction_id?: string; payment_gateway: string }>>("/api/v1/payments/bkash/initiate", {

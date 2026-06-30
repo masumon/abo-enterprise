@@ -16,6 +16,7 @@ import BackToTop from "@/components/ui/BackToTop";
 import CookieConsent from "@/components/ui/CookieConsent";
 import SkipToContent from "@/components/ui/SkipToContent";
 import StickyCTA from "@/components/ui/StickyCTA";
+import DelayedMount from "@/components/ui/DelayedMount";
 
 export default function PublicShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -37,11 +38,15 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <Footer />
       <CartDrawer />
       <CompareBar />
-      <AssistantWidget />
+      <DelayedMount delayMs={5000}>
+        <AssistantWidget />
+      </DelayedMount>
       <WhatsAppButton />
       <StickyCTA />
       <BackToTop />
-      <CookieConsent />
+      <DelayedMount delayMs={4000}>
+        <CookieConsent />
+      </DelayedMount>
       <ApiWarmup />
       <MobileBottomNav />
       <ToastProvider />

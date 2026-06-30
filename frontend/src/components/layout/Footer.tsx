@@ -9,6 +9,7 @@ import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
 import { publicApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 
 const SERVICES = [
   { href: "/products", label: { en: "Mobile Accessories", bn: "মোবাইল এক্সেসরিজ" } },
@@ -43,6 +44,8 @@ export default function Footer() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const newsletterEnabled = useFeatureFlag("feature_newsletter");
+  const { settings } = usePublicSettings(["trade_license", "whatsapp_number"]);
+  const tradeLicense = getSettingValue(settings, "trade_license");
 
   const handleNewsletter = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,6 +168,11 @@ export default function Footer() {
         <div className="container mx-auto px-4 py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-xs text-gray-500">
             &copy; {new Date().getFullYear()} ABO Enterprise. {lang === "bn" ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
+            {tradeLicense && (
+              <span className="block sm:inline sm:ml-2 mt-1 sm:mt-0">
+                {lang === "bn" ? "ট্রেড লাইসেন্স:" : "Trade License:"} {tradeLicense}
+              </span>
+            )}
           </p>
           <p className="text-xs text-gray-600">
             {lang === "bn" ? "তৈরি করেছেন" : "Built by"}{" "}

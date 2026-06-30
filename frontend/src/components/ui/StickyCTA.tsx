@@ -9,20 +9,28 @@ import { useT } from "@/lib/i18n/useT";
 
 const HIDE_ON = ["/checkout", "/cart", "/login", "/register", "/admin"];
 
+const SHOW_ON_PREFIXES = ["/services", "/book", "/projects"];
+
 export default function StickyCTA() {
   const pathname = usePathname();
   const { lang } = useLanguageStore();
   const t = useT();
   const [visible, setVisible] = useState(false);
 
+  const allowed = SHOW_ON_PREFIXES.some(
+    (p) => pathname === p || pathname?.startsWith(`${p}/`)
+  );
+
   useEffect(() => {
+    if (!allowed) return;
     const onScroll = () => setVisible(window.scrollY > 320);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [allowed]);
 
   if (!pathname || pathname.startsWith("/admin")) return null;
+  if (!allowed) return null;
   if (HIDE_ON.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null;
   if (!visible) return null;
 

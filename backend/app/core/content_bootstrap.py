@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from sqlalchemy import func, select
 
 from app.core.database import AsyncSessionLocal
-from app.models.models import BlogPost, Product, Service, Setting
+from app.models.models import BlogPost, PaymentMethod, Product, Service, Setting
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +45,54 @@ DEFAULT_SETTINGS: list[dict] = [
         "value": "true",
         "data_type": "string",
         "description": "Show demo catalog when API is slow/unavailable",
+    },
+    {
+        "key": "checkout_confirm_channel",
+        "value": "whatsapp",
+        "data_type": "string",
+        "description": "Order confirm: whatsapp | email | both | none",
+    },
+    {
+        "key": "checkout_otp_required",
+        "value": "false",
+        "data_type": "string",
+        "description": "Require phone OTP at checkout (true/false)",
+    },
+    {
+        "key": "whatsapp_number",
+        "value": "8801825007977",
+        "data_type": "string",
+        "description": "WhatsApp number for orders (880...)",
+    },
+    {
+        "key": "delivery_charge_sylhet",
+        "value": "0",
+        "data_type": "string",
+        "description": "Delivery charge Sylhet division (BDT)",
+    },
+    {
+        "key": "delivery_charge_dhaka",
+        "value": "60",
+        "data_type": "string",
+        "description": "Delivery charge Dhaka metro (BDT)",
+    },
+    {
+        "key": "delivery_charge_outside",
+        "value": "120",
+        "data_type": "string",
+        "description": "Delivery charge outside Dhaka/Sylhet (BDT)",
+    },
+    {
+        "key": "free_delivery_min_amount",
+        "value": "2000",
+        "data_type": "string",
+        "description": "Free delivery above this subtotal (BDT)",
+    },
+    {
+        "key": "trade_license",
+        "value": "",
+        "data_type": "string",
+        "description": "Trade license / TIN for footer trust",
     },
 ]
 
@@ -197,6 +245,26 @@ async def bootstrap_content() -> None:
                         tags=[],
                     ))
                 logger.info("Content bootstrap: seeded %d blog posts", len(BLOG_SEED))
+
+            pm_count = (await db.execute(select(func.count(PaymentMethod.id)))).scalar() or 0
+            if pm_count == 0:
+                phone = "01825007977"
+                for sort, (gw, acct, desc) in enumerate([
+                    ("bkash", phone, "Send Money to this bKash number"),
+                    ("nagad", phone, "Send Money to this Nagad number"),
+                    ("rocket", phone, "Send Money to this Rocket number"),
+                    ("bank", "A/C: 1075869070001", "BRAC Bank transfer"),
+                    ("cod", "", "Pay when you receive the order"),
+                ]):
+                    db.add(PaymentMethod(
+                        payment_gateway=gw,
+                        is_active=True,
+                        account_identifier=acct or None,
+                        description=desc,
+                        sort_order=sort,
+                        commission_percentage=0,
+                    ))
+                logger.info("Content bootstrap: seeded default payment methods")
 
             await db.commit()
     except Exception as exc:

@@ -95,6 +95,7 @@ export interface Order {
   customer_email?: string;
   delivery_address: string;
   payment_method: string;
+  payment_number?: string;
   order_status?: string;
   subtotal: number;
   discount_amount?: number;
