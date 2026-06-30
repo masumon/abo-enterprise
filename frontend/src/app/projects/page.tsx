@@ -7,8 +7,9 @@ import LeadForm from "@/components/projects/LeadForm";
 import { CheckCircle, ArrowRight } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
-import { PROJECTS } from "@/lib/data/projects";
 import GlassCard from "@/components/ui/GlassCard";
+import { useShowcaseContent } from "@/hooks/useShowcaseContent";
+import { ExternalLink, Play } from "lucide-react";
 
 const STEPS = [
   { title: { en: "Submit Requirements", bn: "প্রয়োজনীয়তা জমা দিন" }, desc: { en: "Tell us about your project, timeline, and budget", bn: "প্রজেক্ট, সময়সীমা ও বাজেট জানান" } },
@@ -24,6 +25,7 @@ const WHY = {
 
 export default function ProjectsPage() {
   const { lang } = useLanguageStore();
+  const { projects } = useShowcaseContent();
   const [showForm, setShowForm] = useState(false);
   const t = (o: { en: string; bn: string }) => (lang === "bn" ? o.bn : o.en);
 
@@ -59,19 +61,42 @@ export default function ProjectsPage() {
           {t({ en: "Project Gallery", bn: "প্রজেক্ট গ্যালারি" })}
         </h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {PROJECTS.map((p) => (
-            <Link key={p.slug} href={`/projects/${p.slug}`}>
-              <GlassCard hover className="overflow-hidden h-full">
+          {projects.map((p) => (
+            <GlassCard key={p.slug} hover className="overflow-hidden h-full">
+              <Link href={`/projects/${p.slug}`} className="block">
                 <div className="relative h-40">
-                  <Image src={p.image} alt={t(p.title)} fill className="object-cover" sizes="(max-width:640px) 100vw, 33vw" />
+                  {p.image ? (
+                    <Image src={p.image} alt={t(p.title)} fill className="object-cover" sizes="(max-width:640px) 100vw, 33vw" />
+                  ) : (
+                    <div className="h-full bg-gradient-to-br from-brand-100 to-brand-200" />
+                  )}
+                  {p.videoUrl && (
+                    <span className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full flex items-center gap-1">
+                      <Play className="w-3 h-3" /> Demo
+                    </span>
+                  )}
                 </div>
                 <div className="p-4">
                   <p className="text-xs text-brand-600 font-semibold">{t(p.category)}</p>
                   <h3 className="font-bold mt-1">{t(p.title)}</h3>
                   <p className="text-xs text-gray-500 mt-2">{p.technologies.join(" · ")}</p>
                 </div>
-              </GlassCard>
-            </Link>
+              </Link>
+              {p.liveUrl && (
+                <div className="px-4 pb-4 -mt-1">
+                  <a
+                    href={p.liveUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:underline"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    {lang === "bn" ? "লাইভ দেখুন" : "View Live"}
+                  </a>
+                </div>
+              )}
+            </GlassCard>
           ))}
         </div>
       </section>

@@ -4,12 +4,15 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { CheckCircle, Code, Bot, Cog, Globe, MonitorSmartphone, Database } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 import { serviceLeadsApi } from "@/lib/api";
 import { toLeadV2Type } from "@/lib/leadTypes";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 import PageHero from "@/components/ui/PageHero";
+import Image from "next/image";
+import { useShowcaseContent } from "@/hooks/useShowcaseContent";
+import { resolveServiceIcon } from "@/lib/showcaseContent";
 
 const schema = z.object({
   name: z.string().min(2),
@@ -23,75 +26,6 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-const SERVICE_CARDS = [
-  {
-    icon: Globe,
-    color: "from-green-500 to-teal-500",
-    title: { en: "Website & Web App", bn: "ওয়েবসাইট ও ওয়েব অ্যাপ" },
-    items: [
-      { en: "Business websites", bn: "ব্যবসায়িক ওয়েবসাইট" },
-      { en: "E-commerce platforms", bn: "ই-কমার্স প্ল্যাটফর্ম" },
-      { en: "Web applications", bn: "ওয়েব অ্যাপ্লিকেশন" },
-      { en: "PWA development", bn: "PWA ডেভেলপমেন্ট" },
-    ],
-  },
-  {
-    icon: Bot,
-    color: "from-orange-500 to-red-500",
-    title: { en: "AI Solutions", bn: "AI সমাধান" },
-    items: [
-      { en: "Custom AI agents", bn: "কাস্টম AI এজেন্ট" },
-      { en: "OCR / Document processing", bn: "OCR / ডকুমেন্ট প্রসেসিং" },
-      { en: "Chatbot integration", bn: "চ্যাটবট ইন্টিগ্রেশন" },
-      { en: "Data extraction & analysis", bn: "ডেটা এক্সট্রাকশন" },
-    ],
-  },
-  {
-    icon: Cog,
-    color: "from-indigo-500 to-purple-500",
-    title: { en: "Python Automation", bn: "পাইথন অটোমেশন" },
-    items: [
-      { en: "Business process automation", bn: "ব্যবসায়িক প্রক্রিয়া স্বয়ংক্রিয়" },
-      { en: "Data scraping & processing", bn: "ডেটা স্ক্র্যাপিং" },
-      { en: "API integrations", bn: "API ইন্টিগ্রেশন" },
-      { en: "Scheduled task automation", bn: "নির্ধারিত কাজ স্বয়ংক্রিয়" },
-    ],
-  },
-  {
-    icon: Database,
-    color: "from-cyan-500 to-blue-500",
-    title: { en: "ERP / POS / CRM", bn: "ERP / POS / CRM" },
-    items: [
-      { en: "Inventory management", bn: "ইনভেন্টরি ম্যানেজমেন্ট" },
-      { en: "POS for retail & restaurant", bn: "রিটেইল ও রেস্টুরেন্ট POS" },
-      { en: "ISP Billing system", bn: "ISP বিলিং সিস্টেম" },
-      { en: "Hospital & school software", bn: "হাসপাতাল ও স্কুল সফটওয়্যার" },
-    ],
-  },
-  {
-    icon: MonitorSmartphone,
-    color: "from-pink-500 to-rose-500",
-    title: { en: "Mobile & Desktop Apps", bn: "মোবাইল ও ডেস্কটপ অ্যাপ" },
-    items: [
-      { en: "Android & iOS apps", bn: "Android ও iOS অ্যাপ" },
-      { en: "Cross-platform apps", bn: "ক্রস-প্ল্যাটফর্ম অ্যাপ" },
-      { en: "Desktop software", bn: "ডেস্কটপ সফটওয়্যার" },
-      { en: "API backend development", bn: "API ব্যাকএন্ড" },
-    ],
-  },
-  {
-    icon: Code,
-    color: "from-violet-500 to-purple-500",
-    title: { en: "DevOps & Cloud", bn: "DevOps ও ক্লাউড" },
-    items: [
-      { en: "Docker & containerization", bn: "Docker কন্টেইনারাইজেশন" },
-      { en: "Cloud deployment (AWS/GCP)", bn: "ক্লাউড ডিপ্লয়মেন্ট" },
-      { en: "CI/CD pipeline setup", bn: "CI/CD পাইপলাইন" },
-      { en: "Hosting & maintenance", bn: "হোস্টিং ও মেইনটেন্যান্স" },
-    ],
-  },
-];
-
 const BUDGET_OPTIONS = [
   { value: "under_10k", label: { en: "Under ৳10,000", bn: "৳১০,০০০ এর নিচে" } },
   { value: "10k_50k", label: { en: "৳10,000–50,000", bn: "৳১০,০০০–৫০,০০০" } },
@@ -102,6 +36,7 @@ const BUDGET_OPTIONS = [
 
 export default function SoftwarePage() {
   const { lang } = useLanguageStore();
+  const { serviceCards } = useShowcaseContent();
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -155,24 +90,35 @@ export default function SoftwarePage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-14">
-          {SERVICE_CARDS.map(({ icon: Icon, color, title, items }) => (
-            <div key={title.en} className="card p-5">
-              <div className={cn("w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-white mb-3", color)}>
-                <Icon className="w-5 h-5" />
+          {serviceCards.map(({ id, icon, color, title, items, image }) => {
+            const Icon = resolveServiceIcon(icon);
+            return (
+              <div key={id} className="card overflow-hidden">
+                {image && (
+                  <div className="relative h-36">
+                    <Image src={image} alt={lang === "bn" ? title.bn : title.en} fill className="object-cover" sizes="(max-width:640px) 100vw, 33vw" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                  </div>
+                )}
+                <div className="p-5">
+                  <div className={cn("w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-white mb-3 shadow-md", color, image && "-mt-8 relative z-10")}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-gray-900 mb-3 text-sm">
+                    {lang === "bn" ? title.bn : title.en}
+                  </h3>
+                  <ul className="space-y-1.5">
+                    {items.map((item) => (
+                      <li key={item.en} className="flex items-center gap-2 text-xs text-gray-500">
+                        <span className="w-1.5 h-1.5 bg-brand-500 rounded-full flex-shrink-0" />
+                        {lang === "bn" ? item.bn : item.en}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-              <h3 className="font-bold text-gray-900 mb-3 text-sm">
-                {lang === "bn" ? title.bn : title.en}
-              </h3>
-              <ul className="space-y-1.5">
-                {items.map((item) => (
-                  <li key={item.en} className="flex items-center gap-2 text-xs text-gray-500">
-                    <span className="w-1.5 h-1.5 bg-brand-500 rounded-full flex-shrink-0" />
-                    {lang === "bn" ? item.bn : item.en}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Lead Form */}
