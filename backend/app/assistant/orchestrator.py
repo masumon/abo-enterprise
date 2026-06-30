@@ -19,6 +19,7 @@ from app.assistant.conversation_manager import ConversationManager
 from app.assistant.response_generator import ResponseGenerator
 from app.assistant.automation_engine import AutomationEngine
 from app.assistant.action_workflow import ActionWorkflowEngine
+from app.assistant.feature_flags import load_feature_flags, is_intent_allowed, is_workflow_allowed, AssistantFeatureFlags
 
 _FOLLOW_UP_PRODUCT = frozenset({
     Intent.PRODUCT_PRICE, Intent.PRODUCT_STOCK, Intent.PRODUCT_AVAILABILITY, Intent.PRODUCT_DETAILS,
@@ -67,6 +68,7 @@ class AssistantOrchestrator:
 
         conv, ctx = await self.conversation_mgr.get_or_create_session(db, session_id, customer_phone)
         await self.knowledge.load_faq_from_db(db)
+        flags = await load_feature_flags(db)
         ctx = self.context_mgr.merge(
             ctx, conv.session_id,
             customer_name=customer_name or ctx.customer_name,
@@ -103,6 +105,12 @@ class AssistantOrchestrator:
 
         # Active multi-turn workflow takes priority
         if self.action_workflow.is_active(ctx):
+            wf_type = ctx.slots.get("workflow", {}).get("type", "")
+            if not is_workflow_allowed(flags, wf_type):
+                self.action_workflow._clear(ctx)
+                text = self.response.feature_disabled(lang, wf_type)
+                await self._finalize_turn(db, conv, ctx, message, text, "feature_disabled", {})
+                return self._build_result(lang, Intent.UNKNOWN, text, conv.session_id)
             wf_result = await self.action_workflow.handle_turn(db, ctx, preprocessed, lang, entities)
             if wf_result:
                 text, action_data, links = wf_result
@@ -115,6 +123,12 @@ class AssistantOrchestrator:
                 return result
 
         ctx.last_intent = intent.value
+
+        if not is_intent_allowed(flags, intent):
+            label = intent.value.replace("_", " ")
+            text = self.response.feature_disabled(lang, label)
+            await self._finalize_turn(db, conv, ctx, message, text, intent.value, {"feature_disabled": True})
+            return self._build_result(lang, intent, text, conv.session_id)
 
         perm = self.permissions.check_public_intent(intent)
         if not perm.allowed:
@@ -147,7 +161,7 @@ class AssistantOrchestrator:
             "confidence": round(confidence, 2),
             "entities": [{"type": e.type.value, "value": e.value} for e in entities.entities],
         }
-        text, action_data, links = await self._handle_intent(db, ctx, intent, entities, preprocessed, lang)
+        text, action_data, links = await self._handle_intent(db, ctx, intent, entities, preprocessed, lang, flags)
         response_data.update(action_data or {})
 
         await self.logging.log_action(
@@ -182,7 +196,7 @@ class AssistantOrchestrator:
 
         return intent
 
-    async def _handle_intent(self, db, ctx, intent, entities, preprocessed, lang):
+    async def _handle_intent(self, db, ctx, intent, entities, preprocessed, lang, flags: AssistantFeatureFlags):
         links: list[dict] = []
 
         if intent == Intent.GREETING:
@@ -190,7 +204,7 @@ class AssistantOrchestrator:
             return self.response.greeting(lang, ctx.customer_name, welcome), {}, links
 
         if intent == Intent.UNKNOWN:
-            return await self._handle_unknown(db, ctx, preprocessed, lang)
+            return await self._handle_unknown(db, ctx, preprocessed, lang, flags)
 
         if intent == Intent.CONTACT or intent == Intent.BUSINESS_HOURS:
             info = await self.knowledge.get_contact_info(db, lang)
@@ -424,36 +438,41 @@ class AssistantOrchestrator:
 
         return self.response.unknown(lang), {}, links
 
-    async def _handle_unknown(self, db, ctx, preprocessed, lang):
+    async def _handle_unknown(self, db, ctx, preprocessed, lang, flags: AssistantFeatureFlags):
         query = preprocessed["normalized"].strip()
         links: list[dict] = []
 
-        faq_hits = self.knowledge.search_faq(query, lang, limit=1)
-        if faq_hits:
-            return self.response.faq_search_results(lang, faq_hits), {"faq": faq_hits}, links
+        if flags.faq:
+            faq_hits = self.knowledge.search_faq(query, lang, limit=1)
+            if faq_hits:
+                return self.response.faq_search_results(lang, faq_hits), {"faq": faq_hits}, links
 
-        posts_raw = await self.knowledge.search_blog_posts(db, query, limit=2)
-        if posts_raw:
-            posts = [{"title_en": p.title_en, "title_bn": p.title_bn, "slug": p.slug} for p in posts_raw]
-            links = self.response.blog_links(posts)
-            return self.response.blog_list(lang, posts), {"posts": posts}, links
+        if flags.blog:
+            posts_raw = await self.knowledge.search_blog_posts(db, query, limit=2)
+            if posts_raw:
+                posts = [{"title_en": p.title_en, "title_bn": p.title_bn, "slug": p.slug} for p in posts_raw]
+                links = self.response.blog_links(posts)
+                return self.response.blog_list(lang, posts), {"posts": posts}, links
 
-        found = await self.knowledge.search_products(db, query, limit=3)
-        if found:
-            product_dicts = [self.knowledge.product_to_dict(p) for p in found]
-            links = self.response.product_links(product_dicts)
-            return self.response.product_list(lang, product_dicts), {"products": product_dicts}, links
+        if flags.product_search:
+            found = await self.knowledge.search_products(db, query, limit=3)
+            if found:
+                product_dicts = [self.knowledge.product_to_dict(p) for p in found]
+                links = self.response.product_links(product_dicts)
+                return self.response.product_list(lang, product_dicts), {"products": product_dicts}, links
 
-        svcs = await self.knowledge.search_services(db, query, limit=3)
-        if svcs:
-            svc_dicts = [self.knowledge.service_to_dict(s) for s in svcs]
-            links = self.response.service_links(svc_dicts)
-            return self.response.service_list(lang, svc_dicts), {"services": svc_dicts}, links
+        if flags.service_info:
+            svcs = await self.knowledge.search_services(db, query, limit=3)
+            if svcs:
+                svc_dicts = [self.knowledge.service_to_dict(s) for s in svcs]
+                links = self.response.service_links(svc_dicts)
+                return self.response.service_list(lang, svc_dicts), {"services": svc_dicts}, links
 
-        from app.assistant.web_search import search_web
-        web = await search_web(query)
-        if web:
-            return self.response.web_enriched(lang, web), {"web_search": True}, links
+        if flags.web_search:
+            from app.assistant.web_search import search_web
+            web = await search_web(query)
+            if web:
+                return self.response.web_enriched(lang, web), {"web_search": True}, links
 
         return self.response.unknown(lang), {}, links
 

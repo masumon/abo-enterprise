@@ -579,6 +579,65 @@ export const publicApi = {
     api.get<ApiResponse<Record<string, boolean | string>>>("/api/v1/public/feature-flags"),
 };
 
+export type AssistantFeatures = {
+  orders: boolean;
+  order_tracking: boolean;
+  bookings: boolean;
+  booking_tracking: boolean;
+  leads: boolean;
+  lead_tracking: boolean;
+  product_search: boolean;
+  service_info: boolean;
+  coupons: boolean;
+  invoices: boolean;
+};
+
+export type AssistantAdminConfig = {
+  feature_assistant_chat: boolean;
+  feature_assistant_whatsapp: boolean;
+  whatsapp_number: string;
+  assistant_welcome_en: string;
+  assistant_welcome_bn: string;
+  assistant_feature_orders: boolean;
+  assistant_feature_order_tracking: boolean;
+  assistant_feature_bookings: boolean;
+  assistant_feature_booking_tracking: boolean;
+  assistant_feature_leads: boolean;
+  assistant_feature_lead_tracking: boolean;
+  assistant_feature_product_search: boolean;
+  assistant_feature_service_info: boolean;
+  assistant_feature_coupons: boolean;
+  assistant_feature_invoices: boolean;
+  assistant_feature_delivery_info: boolean;
+  assistant_feature_faq: boolean;
+  assistant_feature_blog: boolean;
+  assistant_feature_web_search: boolean;
+  assistant_feature_complaints: boolean;
+};
+
+export const ASSISTANT_DEFAULT_CONFIG: AssistantAdminConfig = {
+  feature_assistant_chat: true,
+  feature_assistant_whatsapp: true,
+  whatsapp_number: "",
+  assistant_welcome_en: "",
+  assistant_welcome_bn: "",
+  assistant_feature_orders: true,
+  assistant_feature_order_tracking: true,
+  assistant_feature_bookings: true,
+  assistant_feature_booking_tracking: true,
+  assistant_feature_leads: true,
+  assistant_feature_lead_tracking: true,
+  assistant_feature_product_search: true,
+  assistant_feature_service_info: true,
+  assistant_feature_coupons: true,
+  assistant_feature_invoices: true,
+  assistant_feature_delivery_info: true,
+  assistant_feature_faq: true,
+  assistant_feature_blog: true,
+  assistant_feature_web_search: true,
+  assistant_feature_complaints: true,
+};
+
 export const assistantApi = {
   config: () =>
     api.get<ApiResponse<{
@@ -587,6 +646,7 @@ export const assistantApi = {
       whatsapp_number: string;
       welcome_en: string;
       welcome_bn: string;
+      features?: AssistantFeatures;
     }>>("/api/v1/assistant/config"),
 
   chat: (data: {
@@ -648,21 +708,9 @@ export interface AssistantActionLog {
 
 export const assistantAdminApi = {
   getConfig: () =>
-    api.get<ApiResponse<{
-      feature_assistant_chat: boolean;
-      feature_assistant_whatsapp: boolean;
-      whatsapp_number: string;
-      assistant_welcome_en: string;
-      assistant_welcome_bn: string;
-    }>>("/api/v1/assistant/admin/config"),
+    api.get<ApiResponse<AssistantAdminConfig>>("/api/v1/assistant/admin/config"),
 
-  updateConfig: (data: {
-    feature_assistant_chat?: boolean;
-    feature_assistant_whatsapp?: boolean;
-    whatsapp_number?: string;
-    assistant_welcome_en?: string;
-    assistant_welcome_bn?: string;
-  }) =>
+  updateConfig: (data: Partial<AssistantAdminConfig>) =>
     api.put<ApiResponse<null>>("/api/v1/assistant/admin/config", data),
 
   listConversations: (params?: { page?: number; per_page?: number; search?: string }) =>

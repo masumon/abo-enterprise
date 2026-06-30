@@ -33,19 +33,12 @@ router = APIRouter(prefix="/assistant", tags=["assistant"])
 _orchestrator = AssistantOrchestrator()
 _kb = KnowledgeBase()
 
-ASSISTANT_CONFIG_KEYS = (
-    "feature_assistant_chat",
-    "feature_assistant_whatsapp",
-    "whatsapp_number",
-    "assistant_welcome_en",
-    "assistant_welcome_bn",
+from app.assistant.feature_flags import (
+    ASSISTANT_CONFIG_KEYS,
+    ASSISTANT_BOOLEAN_FEATURES,
+    parse_bool,
+    AssistantFeatureFlags,
 )
-
-
-def _bool_setting(value: str | None, default: bool = True) -> bool:
-    if value is None:
-        return default
-    return value.lower() in ("true", "1", "yes")
 
 
 async def _get_settings_map(db: AsyncSession, keys: tuple[str, ...]) -> dict[str, str]:
@@ -112,13 +105,15 @@ async def chat(
 async def get_public_assistant_config(db: AsyncSession = Depends(get_db)):
     """Public — assistant widget configuration (no secrets)."""
     data = await _get_settings_map(db, ASSISTANT_CONFIG_KEYS)
+    flags = AssistantFeatureFlags.from_settings(data)
     return ApiResponse(
         data={
-            "enabled": _bool_setting(data.get("feature_assistant_chat"), True),
-            "whatsapp_enabled": _bool_setting(data.get("feature_assistant_whatsapp"), True),
+            "enabled": flags.chat_enabled,
+            "whatsapp_enabled": flags.whatsapp_enabled,
             "whatsapp_number": data.get("whatsapp_number") or app_settings.WHATSAPP_NUMBER,
             "welcome_en": data.get("assistant_welcome_en", ""),
             "welcome_bn": data.get("assistant_welcome_bn", ""),
+            "features": flags.public_features(),
         }
     )
 
@@ -154,12 +149,14 @@ async def get_admin_assistant_config(
 ):
     """Admin — get assistant configuration."""
     data = await _get_settings_map(db, ASSISTANT_CONFIG_KEYS)
+    flags = AssistantFeatureFlags.from_settings(data)
     config = AssistantConfigOut(
-        feature_assistant_chat=_bool_setting(data.get("feature_assistant_chat"), True),
-        feature_assistant_whatsapp=_bool_setting(data.get("feature_assistant_whatsapp"), True),
+        feature_assistant_chat=flags.chat_enabled,
+        feature_assistant_whatsapp=flags.whatsapp_enabled,
         whatsapp_number=data.get("whatsapp_number") or app_settings.WHATSAPP_NUMBER,
         assistant_welcome_en=data.get("assistant_welcome_en", ""),
         assistant_welcome_bn=data.get("assistant_welcome_bn", ""),
+        **{k: v for k, v in flags.to_dict().items() if k.startswith("assistant_feature_")},
     )
     return ApiResponse(data=config.model_dump())
 
@@ -172,8 +169,9 @@ async def update_admin_assistant_config(
 ):
     """Admin — update assistant configuration."""
     updates = payload.model_dump(exclude_none=True)
+    bool_keys = set(ASSISTANT_BOOLEAN_FEATURES.keys())
     for key, value in updates.items():
-        if key in ("feature_assistant_chat", "feature_assistant_whatsapp"):
+        if key in bool_keys:
             await _upsert_setting(db, key, "true" if value else "false", "boolean")
         else:
             await _upsert_setting(db, key, str(value))

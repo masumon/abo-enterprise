@@ -462,6 +462,11 @@ class ResponseGenerator:
             return f"✅ অনুরোধ জমা হয়েছে!\nরেফারেন্স: **{ref}**\nশীঘ্রই যোগাযোগ করা হবে।"
         return f"✅ Request submitted!\nReference: **{ref}**\nWe will contact you shortly."
 
+    def feature_disabled(self, language: str, feature: str) -> str:
+        if language == "bn":
+            return f"এই মুহূর্তে **{feature}** সহকারীর মাধ্যমে unavailable। অনুগ্রহ করে সাপোর্টে যোগাযোগ করুন।"
+        return f"**{feature}** is currently unavailable via the assistant. Please contact support."
+
     def format_response(
         self,
         language: str,

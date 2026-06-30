@@ -13,7 +13,7 @@ import {
   Minus,
   ExternalLink,
 } from "lucide-react";
-import { assistantApi } from "@/lib/api";
+import { assistantApi, type AssistantFeatures } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useT } from "@/lib/i18n/useT";
 import { useLanguageStore } from "@/store/language";
@@ -40,7 +40,21 @@ interface AssistantConfig {
   whatsapp_number: string;
   welcome_en: string;
   welcome_bn: string;
+  features?: AssistantFeatures;
 }
+
+const DEFAULT_FEATURES: AssistantFeatures = {
+  orders: true,
+  order_tracking: true,
+  bookings: true,
+  booking_tracking: true,
+  leads: true,
+  lead_tracking: true,
+  product_search: true,
+  service_info: true,
+  coupons: true,
+  invoices: true,
+};
 
 const SESSION_KEY = "abo_assistant_session";
 const DEFAULT_CONFIG: AssistantConfig = {
@@ -49,6 +63,7 @@ const DEFAULT_CONFIG: AssistantConfig = {
   whatsapp_number: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "8801825007977",
   welcome_en: "",
   welcome_bn: "",
+  features: DEFAULT_FEATURES,
 };
 
 function formatMessageContent(text: string) {
@@ -124,12 +139,18 @@ export default function AssistantWidget() {
 
   const enabled = flagEnabled && config.enabled;
 
-  const quickActions = useMemo(() => [
-    { icon: Package, label: lang === "bn" ? "অর্ডার করুন" : "Place order", message: lang === "bn" ? "অর্ডার করতে চাই" : "I want to place an order" },
-    { icon: Briefcase, label: lang === "bn" ? "সেবা বুক" : "Book service", message: lang === "bn" ? "সেবা বুক করতে চাই" : "I want to book a service" },
-    { icon: Truck, label: t("assistant_quick_track"), message: lang === "bn" ? "অর্ডার ট্র্যাক করতে চাই" : "I want to track my order" },
-    { icon: Phone, label: lang === "bn" ? "বুকিং ট্র্যাক" : "Track booking", message: lang === "bn" ? "বুকিং ট্র্যাক করতে চাই" : "Track my booking" },
-  ], [t, lang]);
+  const quickActions = useMemo(() => {
+    const f = config.features ?? DEFAULT_FEATURES;
+    const all = [
+      { icon: Package, label: lang === "bn" ? "অর্ডার করুন" : "Place order", message: lang === "bn" ? "অর্ডার করতে চাই" : "I want to place an order", enabled: f.orders },
+      { icon: Briefcase, label: lang === "bn" ? "সেবা বুক" : "Book service", message: lang === "bn" ? "সেবা বুক করতে চাই" : "I want to book a service", enabled: f.bookings },
+      { icon: Truck, label: t("assistant_quick_track"), message: lang === "bn" ? "অর্ডার ট্র্যাক করতে চাই" : "I want to track my order", enabled: f.order_tracking },
+      { icon: Phone, label: lang === "bn" ? "বুকিং ট্র্যাক" : "Track booking", message: lang === "bn" ? "বুকিং ট্র্যাক করতে চাই" : "Track my booking", enabled: f.booking_tracking },
+      { icon: Package, label: lang === "bn" ? "পণ্য দেখুন" : "Products", message: lang === "bn" ? "পণ্য দেখান" : "Show products", enabled: f.product_search },
+      { icon: Phone, label: lang === "bn" ? "যোগাযোগ" : "Contact", message: lang === "bn" ? "যোগাযোগের তথ্য দিন" : "Contact information", enabled: true },
+    ];
+    return all.filter((a) => a.enabled).slice(0, 4);
+  }, [t, lang, config.features]);
 
   const parseLinks = (data?: Record<string, unknown>): AssistantLink[] => {
     const raw = data?.links;
@@ -142,7 +163,7 @@ export default function AssistantWidget() {
   useEffect(() => {
     assistantApi.config()
       .then((r) => {
-        if (r.data.data) setConfig({ ...DEFAULT_CONFIG, ...r.data.data });
+        if (r.data.data) setConfig({ ...DEFAULT_CONFIG, ...r.data.data, features: { ...DEFAULT_FEATURES, ...r.data.data.features } });
       })
       .catch(() => {});
   }, []);
