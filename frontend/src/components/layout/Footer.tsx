@@ -26,7 +26,7 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
 import BrandLogo from "@/components/ui/BrandLogo";
-import BrandMotto from "@/components/ui/BrandMotto";
+import { BRAND_NAME, BRAND_TAGLINE_BILINGUAL } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 const SERVICES = [
@@ -242,8 +242,8 @@ export default function Footer() {
             <div className="flex items-center gap-3.5 mb-5">
               <BrandLogo size="lg" href={false} variant="light" />
               <div>
-                <h3 className="text-white font-bold text-xl tracking-tight">ABO Enterprise</h3>
-                <BrandMotto lang={lang} className="text-brand-100 text-xs font-semibold mt-0.5" />
+                <h3 className="text-white font-bold text-xl tracking-tight">{BRAND_NAME}</h3>
+                <p className="text-brand-100 text-xs font-semibold mt-0.5">: {BRAND_TAGLINE_BILINGUAL}</p>
               </div>
             </div>
 
