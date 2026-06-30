@@ -1,7 +1,7 @@
 "use client";
 
 import BrandLogo from "@/components/ui/BrandLogo";
-import BrandMotto from "@/components/ui/BrandMotto";
+import { getBrandName, getBrandTagline } from "@/lib/tokens";
 import { formatPrice } from "@/lib/utils";
 import { DEFAULT_ADDRESS_EN } from "@/lib/maps";
 
@@ -34,8 +34,8 @@ export default function InvoicePreviewCard({
         <div className="flex items-center gap-3 min-w-0">
           <BrandLogo size="md" href={false} variant="light" />
           <div className="min-w-0">
-            <p className="font-bold text-white text-lg leading-tight">ABO Enterprise</p>
-            <BrandMotto lang={lang} className="text-white/75 text-xs truncate" />
+            <p className="font-bold text-white text-lg leading-tight">{getBrandName(lang)}</p>
+            <p className="text-white/75 text-xs truncate">: {getBrandTagline(lang)}</p>
           </div>
         </div>
         <div className="text-right flex-shrink-0">

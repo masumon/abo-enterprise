@@ -7,13 +7,13 @@ import { z } from "zod";
 import { Printer, CheckCircle, MessageCircle } from "lucide-react";
 import { bookingsApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
-import { generateWhatsAppBookingMessage, WHATSAPP_NUMBER } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { generateWhatsAppBookingMessage, WHATSAPP_NUMBER, cn } from "@/lib/utils";
+import { BD_PHONE_REGEX } from "@/lib/phone";
 import PageHero from "@/components/ui/PageHero";
 
 const schema = z.object({
   customer_name: z.string().min(2),
-  customer_phone: z.string().regex(/^0[13-9]\d{8}$/),
+  customer_phone: z.string().regex(BD_PHONE_REGEX, "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন"),
   service_subtype: z.string().min(1),
   details: z.string().min(10),
 });
@@ -72,7 +72,7 @@ export default function PrintingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <PageHero
         pageKey="printing"
         align="center"
@@ -95,7 +95,7 @@ export default function PrintingPage() {
           {isSuccess ? (
             <div className="text-center py-8">
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-gray-900 mb-2">
+              <h2 className="text-xl font-bold text-heading mb-2">
                 {lang === "bn" ? "অর্ডার গ্রহণ হয়েছে!" : "Booking Confirmed!"}
               </h2>
               <p className="text-gray-500 mb-6">
@@ -110,12 +110,12 @@ export default function PrintingPage() {
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               {submitError && (
-                <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-2">
+                <p role="alert" className="alert-error">
                   {submitError}
                 </p>
               )}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="form-label mb-2">
                   {lang === "bn" ? "সেবার ধরন *" : "Service Type *"}
                 </label>
                 <select {...register("service_subtype")} className="input">
@@ -128,7 +128,7 @@ export default function PrintingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="form-label">
                   {lang === "bn" ? "আপনার নাম *" : "Full Name *"}
                 </label>
                 <input
@@ -139,7 +139,7 @@ export default function PrintingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="form-label">
                   {lang === "bn" ? "মোবাইল নম্বর *" : "Mobile Number *"}
                 </label>
                 <input
@@ -156,7 +156,7 @@ export default function PrintingPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                <label className="form-label">
                   {lang === "bn" ? "বিস্তারিত তথ্য *" : "Details / Requirements *"}
                 </label>
                 <textarea

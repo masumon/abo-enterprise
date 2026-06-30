@@ -28,7 +28,7 @@ export default function ContactSection() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
           <GlassCard className="p-6 space-y-4 lg:col-span-1">
-            <h3 className="font-bold text-gray-900 text-lg">
+            <h3 className="font-bold text-heading text-lg">
               {lang === "bn" ? "আমাদের তথ্য" : "Our Information"}
             </h3>
             <div className="space-y-3">

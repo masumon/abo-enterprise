@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import { ordersApi, productsApi, customerOtpApi, paymentsApi } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -26,7 +26,7 @@ import PageHero from "@/components/ui/PageHero";
 
 const schema = z.object({
   customer_name: z.string().min(2, "Name required (min 2 chars)"),
-  customer_phone: z.string().regex(/^0[13-9]\d{8}$/, "Valid BD number: 01XXXXXXXXX"),
+  customer_phone: z.string().regex(BD_PHONE_REGEX, BD_PHONE_ERROR_EN),
   customer_email: z.string().email("Invalid email").optional().or(z.literal("")),
   district: z.string().min(1, "Select district"),
   street_address: z.string().min(5, "Enter full street/area address"),
@@ -133,7 +133,7 @@ export default function CheckoutPage() {
   };
 
   const sendOtp = async () => {
-    if (!/^0[13-9]\d{8}$/.test(selectedPhone)) return;
+    if (!BD_PHONE_REGEX.test(selectedPhone)) return;
     setOtpLoading(true);
     try {
       await customerOtpApi.send(selectedPhone);
@@ -304,7 +304,7 @@ export default function CheckoutPage() {
         </Link>
 
         {stockIssue && (
-          <div role="alert" className="mb-6 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800">
+          <div role="alert" className="mb-6 alert-warning">
             {lang === "bn" ? "কিছু পণ্যের স্টক সীমিত — কার্ট যাচাই করুন।" : "Limited stock — review your cart."}
           </div>
         )}
@@ -313,7 +313,7 @@ export default function CheckoutPage() {
           <div className="lg:col-span-3">
             <form id="checkout-form" onSubmit={handleSubmit(onSubmit)} className="space-y-6">
               {submitError && (
-                <div role="alert" className="flex items-start gap-2 bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">
+                <div role="alert" className="alert-error flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <span>{submitError}</span>
                 </div>
@@ -340,8 +340,8 @@ export default function CheckoutPage() {
                   </div>
 
                   {otpRequired && (
-                    <div className="rounded-xl bg-brand-50 border border-brand-100 p-4 space-y-3">
-                      <p className="text-sm font-medium text-brand-800">
+                    <div className="alert-info space-y-3">
+                      <p className="text-sm font-medium text-heading">
                         {lang === "bn" ? "ফোন ভেরিফিকেশন" : "Phone Verification"}
                       </p>
                       <div className="flex gap-2">
@@ -351,7 +351,7 @@ export default function CheckoutPage() {
                           {otpVerified ? (lang === "bn" ? "✓" : "✓") : otpSent ? (lang === "bn" ? "আবার" : "Resend") : (lang === "bn" ? "OTP" : "OTP")}
                         </button>
                       </div>
-                      {otpVerified && <p className="text-xs text-green-600">{lang === "bn" ? "ভেরিফাই হয়েছে" : "Verified"}</p>}
+                      {otpVerified && <p className="text-xs text-green-600 dark:text-green-400">{lang === "bn" ? "ভেরিফাই হয়েছে" : "Verified"}</p>}
                     </div>
                   )}
 
@@ -365,7 +365,7 @@ export default function CheckoutPage() {
                     </div>
                     <div>
                       <label className="form-label">{lang === "bn" ? "ডেলিভারি চার্জ" : "Delivery"}</label>
-                      <div className="input bg-gray-50 flex items-center text-sm font-semibold">
+                      <div className="input input-readonly flex items-center text-sm font-semibold">
                         {deliveryCharge === 0
                           ? (lang === "bn" ? "🎉 বিনামূল্যে" : "🎉 FREE")
                           : formatPrice(deliveryCharge)}
@@ -391,7 +391,7 @@ export default function CheckoutPage() {
                   {paymentOptions.map((opt) => (
                     <label key={opt.id} className={cn(
                       "flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all enterprise-card-hover",
-                      selectedGateway === opt.gateway ? "border-brand-500 bg-brand-50" : "border-gray-200 hover:border-gray-300"
+                      selectedGateway === opt.gateway ? "border-brand-500 bg-brand-50 dark:bg-brand-900/30" : "border-gray-200 dark:border-white/10 hover:border-gray-300 dark:hover:border-white/20"
                     )}>
                       <input type="radio" value={opt.gateway} {...register("payment_gateway")} className="sr-only" />
                       <span className="text-xl">{opt.icon}</span>
@@ -409,7 +409,7 @@ export default function CheckoutPage() {
                 </div>
 
                 {selectedPayment && selectedPayment.requiresTrxId && selectedPayment.gateway !== "cod" && (
-                  <div className="mt-4 p-4 rounded-xl bg-gray-50 border border-gray-100 space-y-3">
+                  <div className="mt-4 p-4 panel-muted space-y-3">
                     <div className="flex items-center justify-between gap-2">
                       <p className="text-sm font-medium">
                         {lang === "bn" ? "এই নম্বরে Send Money করুন:" : "Send Money to:"}
@@ -492,7 +492,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-mobile-nav left-0 right-0 z-40 lg:hidden border-t bg-white/95 backdrop-blur-xl px-4 py-3">
+      <div className="sticky-cta-bar px-4 py-3">
         <div className="flex items-center gap-3 max-w-6xl mx-auto">
           <div className="flex-1"><p className="text-xs text-muted">{lang === "bn" ? "মোট" : "Total"}</p><p className="text-lg font-bold text-success-600">{formatPrice(cartTotal)}</p></div>
           <button type="submit" form="checkout-form" disabled={isSubmitting || stockIssue} className="btn btn-success btn-md min-w-[9rem]">

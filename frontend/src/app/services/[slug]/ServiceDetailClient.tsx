@@ -148,10 +148,10 @@ export default function ServiceDetailClient({ service }: Props) {
         {/* Description */}
         {description && (
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            <h2 className="text-2xl font-bold text-heading mb-4">
               {t("About This Service", "এই সেবা সম্পর্কে")}
             </h2>
-            <div className="prose prose-gray max-w-none text-gray-600 leading-relaxed whitespace-pre-line">
+            <div className="prose prose-gray dark:prose-invert max-w-none text-muted leading-relaxed whitespace-pre-line">
               {description}
             </div>
           </section>
@@ -160,7 +160,7 @@ export default function ServiceDetailClient({ service }: Props) {
         {/* Pricing tiers */}
         {hasTiers && service.pricing_tiers!.length > 0 && (
           <section>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+            <h2 className="text-2xl font-bold text-heading mb-6">
               {t("Pricing Plans", "মূল্য পরিকল্পনা")}
             </h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -178,26 +178,26 @@ export default function ServiceDetailClient({ service }: Props) {
                     className={cn(
                       "text-left p-6 rounded-2xl border-2 transition-all",
                       isActive
-                        ? "border-brand-500 bg-brand-50 shadow-md"
-                        : "border-gray-200 bg-white hover:border-brand-300"
+                        ? "border-brand-500 bg-brand-50 dark:bg-brand-900/30 shadow-md"
+                        : "border-gray-200 dark:border-white/10 bg-white dark:bg-[var(--surface-card)] hover:border-brand-300 dark:hover:border-brand-500/40"
                     )}
                   >
-                    <p className="font-bold text-gray-900 text-lg mb-1">{tier.tier_name}</p>
+                    <p className="font-bold text-heading text-lg mb-1">{tier.tier_name}</p>
                     <p className="text-2xl font-bold text-accent-600 mb-2">
                       {formatPrice(tier.price)}
                     </p>
                     {tier.duration_days && (
-                      <p className="text-xs text-gray-500 mb-2">
+                      <p className="text-xs text-muted mb-2">
                         {tier.duration_days} {t("days delivery", "দিনের মধ্যে ডেলিভারি")}
                       </p>
                     )}
                     {tierDesc && (
-                      <p className="text-sm text-gray-600 mb-3">{tierDesc}</p>
+                      <p className="text-sm text-muted mb-3">{tierDesc}</p>
                     )}
                     {tier.features && tier.features.length > 0 && (
                       <ul className="space-y-1">
                         {tier.features.map((f, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
+                          <li key={i} className="flex items-start gap-2 text-sm text-muted">
                             <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
                             {f}
                           </li>
@@ -238,7 +238,7 @@ export default function ServiceDetailClient({ service }: Props) {
             {service.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm"
+                className="px-3 py-1 bg-gray-100 dark:bg-white/10 text-muted rounded-full text-sm"
               >
                 {tag}
               </span>
@@ -247,11 +247,11 @@ export default function ServiceDetailClient({ service }: Props) {
         )}
 
         {/* Bottom CTA */}
-        <section className="bg-gradient-to-br from-brand-50 to-brand-100 rounded-2xl p-8 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+        <section className="bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-[var(--surface-card)] rounded-2xl p-8 text-center">
+          <h2 className="text-2xl font-bold text-heading mb-2">
             {t("Ready to get started?", "শুরু করতে প্রস্তুত?")}
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-muted mb-6">
             {t(
               "Contact us today and get a free consultation.",
               "আজই যোগাযোগ করুন এবং বিনামূল্যে পরামর্শ নিন।"

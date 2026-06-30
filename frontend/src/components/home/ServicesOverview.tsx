@@ -81,7 +81,7 @@ export default function ServicesOverview() {
                   )}>
                     <Icon className="w-6 h-6" />
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-2">
+                  <h3 className="font-bold text-heading mb-2">
                     {lang === "bn" ? service.title.bn : service.title.en}
                   </h3>
                   <p className="text-gray-500 text-sm mb-4 leading-relaxed">

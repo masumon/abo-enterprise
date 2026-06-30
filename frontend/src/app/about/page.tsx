@@ -5,7 +5,7 @@ import { Target, Eye, Heart, CheckCircle, Users, Briefcase, ShoppingCart, Award,
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import BrandLogo from "@/components/ui/BrandLogo";
-import BrandMotto from "@/components/ui/BrandMotto";
+import { getBrandFullTitle } from "@/lib/tokens";
 
 const VALUES = [
   { icon: Heart, title: { en: "Customer First", bn: "গ্রাহক প্রথম" }, desc: { en: "Every decision starts with what's best for our customers.", bn: "সব সিদ্ধান্ত গ্রাহকের স্বার্থে।" } },
@@ -43,7 +43,7 @@ export default function AboutPage() {
       <PageHero
         pageKey="about"
         title="ABO Enterprise"
-        subtitle={t({ en: "Simple Solution", bn: "সহজ সমাধান" })}
+        subtitle={getBrandFullTitle(lang)}
         breadcrumbs={[
           { label: lang === "bn" ? "হোম" : "Home", href: "/" },
           { label: lang === "bn" ? "আমাদের সম্পর্কে" : "About" },
@@ -51,37 +51,37 @@ export default function AboutPage() {
       >
         <div className="flex flex-col items-center text-center mt-2">
           <BrandLogo size="xl" href={false} variant="light" className="mb-3" />
-          <BrandMotto lang={lang} className="text-sm text-white font-semibold mt-2" />
+          <p className="text-sm text-white font-semibold mt-2">{getBrandFullTitle(lang)}</p>
           <p className="text-sm text-white/70 mt-2">Sumon Brothers Organization</p>
         </div>
       </PageHero>
 
-      <section className="py-16 px-4 bg-white dark:bg-transparent">
+      <section className="py-16 px-4 section-panel">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-start">
           <div>
             <div className="section-title"><h2>{t({ en: "Our Story", bn: "আমাদের গল্প" })}</h2></div>
-            <p className="text-gray-600 leading-relaxed mt-4">
+            <p className="text-muted leading-relaxed mt-4">
               {t({
                 en: "ABO Enterprise began in Sylhet as a trusted mobile accessories retailer. Today we are Bangladesh's complete technology ecosystem — combining quality products, professional printing, legal document assistance, custom software development, and AI-powered business solutions under one roof.",
                 bn: "ABO Enterprise সিলেটে একটি বিশ্বস্ত মোবাইল এক্সেসরিজ রিটেইলার হিসেবে শুরু হয়। আজ আমরা বাংলাদেশের সম্পূর্ণ টেকনোলজি ইকোসিস্টেম — মানসম্মত পণ্য, পেশাদার প্রিন্টিং, আইনি ডকুমেন্ট সহায়তা, কাস্টম সফটওয়্যার ও AI-চালিত ব্যবসায়িক সমাধান এক ছাদের নিচে।",
               })}
             </p>
-            <p className="text-gray-600 leading-relaxed mt-4">
+            <p className="text-muted leading-relaxed mt-4">
               {t({
                 en: "From shop owners needing POS systems to businesses requiring ERP, CRM, or e-commerce — we deliver affordable, reliable technology that grows with you.",
                 bn: "POS সিস্টেম প্রয়োজনীয় দোকানদার থেকে ERP, CRM বা ই-কমার্স চাওয়া ব্যবসায়ীদের — আমরা সাশ্রয়ী, নির্ভরযোগ্য প্রযুক্তি দিই যা আপনার সাথে বাড়ে।",
               })}
             </p>
           </div>
-          <div className="card p-6 bg-gradient-to-br from-brand-50 to-white">
+          <div className="card p-6 bg-gradient-to-br from-brand-50 to-white dark:from-brand-900/30 dark:to-[var(--surface-card)]">
             <Eye className="w-8 h-8 text-brand-600 mb-3" />
             <h3 className="font-bold text-lg mb-2">{t({ en: "Our Vision", bn: "আমাদের ভিশন" })}</h3>
-            <p className="text-gray-600 text-sm leading-relaxed">{t({ en: "To become Bangladesh's most trusted integrated technology provider — empowering every business with affordable, world-class digital tools.", bn: "বাংলাদেশের সবচেয়ে বিশ্বস্ত ইন্টিগ্রেটেড টেক প্রদানকারী হওয়া — সাশ্রয়ী, বিশ্বমানের ডিজিটাল সরঞ্জামে প্রতিটি ব্যবসাকে ক্ষমতায়ন করা।" })}</p>
+            <p className="text-muted text-sm leading-relaxed">{t({ en: "To become Bangladesh's most trusted integrated technology provider — empowering every business with affordable, world-class digital tools.", bn: "বাংলাদেশের সবচেয়ে বিশ্বস্ত ইন্টিগ্রেটেড টেক প্রদানকারী হওয়া — সাশ্রয়ী, বিশ্বমানের ডিজিটাল সরঞ্জামে প্রতিটি ব্যবসাকে ক্ষমতায়ন করা।" })}</p>
           </div>
         </div>
       </section>
 
-      <section className="py-14 px-4 bg-gray-50">
+      <section className="py-14 px-4 section-panel-alt">
         <div className="max-w-5xl mx-auto">
           <div className="section-title text-center"><h2>{t({ en: "Key Achievements", bn: "প্রধান অর্জন" })}</h2></div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
@@ -96,7 +96,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 px-4 bg-white">
+      <section className="py-16 px-4 section-panel">
         <div className="max-w-3xl mx-auto">
           <div className="section-title text-center"><h2>{t({ en: "Our Journey", bn: "আমাদের যাত্রা" })}</h2></div>
           <div className="mt-10 space-y-6">
@@ -117,7 +117,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 px-4 bg-gray-50">
+      <section className="py-16 px-4 section-panel-alt">
         <div className="max-w-4xl mx-auto">
           <div className="section-title text-center"><h2>{t({ en: "Our Values", bn: "আমাদের মূল্যবোধ" })}</h2></div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
@@ -132,7 +132,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 px-4 bg-white">
+      <section className="py-16 px-4 section-panel">
         <div className="max-w-4xl mx-auto">
           <div className="section-title text-center"><h2>{t({ en: "Our Team", bn: "আমাদের দল" })}</h2></div>
           <div className="grid md:grid-cols-3 gap-6 mt-10">

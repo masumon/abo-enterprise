@@ -171,7 +171,7 @@ function TrackContent() {
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-sm font-semibold capitalize">{result.courier_provider ?? "Courier"}</span>
-                  <code className="text-sm bg-white dark:bg-black/20 px-2 py-0.5 rounded">{result.courier_tracking_id}</code>
+                  <code className="text-sm bg-white dark:bg-[var(--surface-card)] px-2 py-0.5 rounded">{result.courier_tracking_id}</code>
                   {courierUrl && (
                     <a href={courierUrl} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm gap-1 ml-auto">
                       <ExternalLink className="w-3.5 h-3.5" />

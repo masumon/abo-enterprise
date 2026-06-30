@@ -75,9 +75,9 @@ const SECTIONS: Section[] = [
     title: "Hero / Banner",
     icon: <ImageIcon className="w-4 h-4" />,
     fields: [
-      { key: "hero_title_en", label: "Hero Title (English)", placeholder: "Welcome to ABO Enterprise" },
+      { key: "hero_title_en", label: "Hero Title (English)", placeholder: "ABO ENTERPRISE : Simple Solution" },
       { key: "hero_subtitle_en", label: "Hero Subtitle (English)", type: "textarea", placeholder: "Simple Solution — products, services, software & AI in one place." },
-      { key: "hero_title_bn", label: "Hero Title (বাংলা)", placeholder: "ABO ENTERPRISE: সহজ সমাধান" },
+      { key: "hero_title_bn", label: "Hero Title (বাংলা)", placeholder: "এবিও এন্টারপ্রাইজ : সহজ সমাধান" },
       { key: "hero_subtitle_bn", label: "Hero Subtitle (বাংলা)", type: "textarea", placeholder: "সহজ সমাধান — পণ্য, সেবা, সফটওয়্যার ও AI এক প্ল্যাটফর্মে।" },
       { key: "hero_cta_text", label: "CTA Button Text", placeholder: "Shop Now" },
       { key: "hero_cta_url", label: "CTA Button URL", type: "url", placeholder: "/products" },

@@ -6,7 +6,7 @@ import re
 
 
 def bd_phone(v: str) -> str:
-    if not re.match(r"^0[13-9]\d{8}$", v):
+    if not re.match(r"^0[13-9]\d{9}$", v):
         raise ValueError("Invalid Bangladesh phone number. Format: 01XXXXXXXXX")
     return v
 

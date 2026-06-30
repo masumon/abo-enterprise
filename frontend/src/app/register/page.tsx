@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { BD_PHONE_REGEX } from "@/lib/phone";
 import { Phone, User, UserPlus, Loader2 } from "lucide-react";
 import { useCustomerStore } from "@/store/customer";
 import { useLanguageStore } from "@/store/language";
@@ -31,7 +32,7 @@ export default function RegisterPage() {
       setError(lang === "bn" ? "শর্তাবলীতে সম্মত হন" : "Please agree to terms");
       return;
     }
-    if (!/^0[13-9]\d{8}$/.test(phone)) {
+    if (!BD_PHONE_REGEX.test(phone)) {
       setError(lang === "bn" ? "সঠিক ফোন নম্বর দিন" : "Enter valid BD phone number");
       return;
     }

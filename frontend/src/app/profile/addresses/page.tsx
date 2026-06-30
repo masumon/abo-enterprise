@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { MapPin, Plus, Trash2, Star } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
+import { BD_PHONE_REGEX } from "@/lib/phone";
 import { useCustomerProfileStore } from "@/store/customerProfile";
 import PageHero from "@/components/ui/PageHero";
 import GlassCard from "@/components/ui/GlassCard";
@@ -20,7 +21,7 @@ export default function AddressesPage() {
 
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!label.trim() || address.trim().length < 10 || !/^0[13-9]\d{8}$/.test(phone)) return;
+    if (!label.trim() || address.trim().length < 10 || !BD_PHONE_REGEX.test(phone)) return;
     addAddress({
       label: label.trim(),
       address: address.trim(),

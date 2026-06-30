@@ -9,6 +9,7 @@ import { serviceLeadsApi } from "@/lib/api";
 import { toLeadV2Type } from "@/lib/leadTypes";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
+import { BD_PHONE_REGEX } from "@/lib/phone";
 import PageHero from "@/components/ui/PageHero";
 import Image from "next/image";
 import { useShowcaseContent } from "@/hooks/useShowcaseContent";
@@ -17,7 +18,7 @@ import { resolveServiceIcon } from "@/lib/showcaseContent";
 const schema = z.object({
   name: z.string().min(2),
   company: z.string().optional(),
-  phone: z.string().regex(/^0[13-9]\d{8}$/),
+  phone: z.string().regex(BD_PHONE_REGEX, "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন"),
   email: z.string().email().optional().or(z.literal("")),
   lead_type: z.enum(["software_development", "ai_solutions", "automation", "erp", "general"]),
   budget_range: z.string().optional(),
@@ -104,7 +105,7 @@ export default function SoftwarePage() {
                   <div className={cn("w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center text-white mb-3 shadow-md", color, image && "-mt-8 relative z-10")}>
                     <Icon className="w-5 h-5" />
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-3 text-sm">
+                  <h3 className="font-bold text-heading mb-3 text-sm">
                     {lang === "bn" ? title.bn : title.en}
                   </h3>
                   <ul className="space-y-1.5">
@@ -124,14 +125,14 @@ export default function SoftwarePage() {
         {/* Lead Form */}
         <div className="max-w-2xl mx-auto">
           <div className="card p-6 md:p-8">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">
+            <h2 className="text-xl font-bold text-heading mb-6 text-center">
               {lang === "bn" ? "বিনামূল্যে পরামর্শ পান" : "Get a Free Consultation"}
             </h2>
 
             {isSuccess ? (
               <div className="text-center py-8">
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                <h3 className="text-xl font-bold text-heading mb-2">
                   {lang === "bn" ? "আপনার বার্তা পেয়েছি!" : "Message Received!"}
                 </h3>
                 <p className="text-gray-500">
@@ -144,14 +145,14 @@ export default function SoftwarePage() {
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="form-label">
                       {lang === "bn" ? "নাম *" : "Name *"}
                     </label>
                     <input {...register("name")} className={cn("input", errors.name && "input-error")}
                       placeholder={lang === "bn" ? "আপনার নাম" : "Your name"} />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="form-label">
                       {lang === "bn" ? "কোম্পানি" : "Company"}
                     </label>
                     <input {...register("company")} className="input"
@@ -161,7 +162,7 @@ export default function SoftwarePage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="form-label">
                       {lang === "bn" ? "মোবাইল *" : "Mobile *"}
                     </label>
                     <input {...register("phone")} type="tel" className={cn("input", errors.phone && "input-error")}
@@ -169,7 +170,7 @@ export default function SoftwarePage() {
                     {errors.phone && <p className="text-red-500 text-xs mt-1">সঠিক নম্বর দিন</p>}
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="form-label">
                       Email
                     </label>
                     <input {...register("email")} type="email" className="input"
@@ -179,7 +180,7 @@ export default function SoftwarePage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="form-label">
                       {lang === "bn" ? "সেবার ধরন *" : "Service Type *"}
                     </label>
                     <select {...register("lead_type")} className="input">
@@ -191,7 +192,7 @@ export default function SoftwarePage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="form-label">
                       {lang === "bn" ? "বাজেট" : "Budget Range"}
                     </label>
                     <select {...register("budget_range")} className="input">
@@ -206,7 +207,7 @@ export default function SoftwarePage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="form-label">
                     {lang === "bn" ? "প্রজেক্টের বিবরণ *" : "Project Description *"}
                   </label>
                   <textarea {...register("project_description")} rows={4} className={cn("input resize-none", errors.project_description && "input-error")}

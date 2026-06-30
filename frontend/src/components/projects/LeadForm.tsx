@@ -8,7 +8,9 @@ import { serviceLeadsApi } from "@/lib/api";
 import { toLeadV2Type } from "@/lib/leadTypes";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
-const bdPhoneRegex = /^0[13-9]\d{8}$/;
+import { BD_PHONE_REGEX } from "@/lib/phone";
+
+const bdPhoneRegex = BD_PHONE_REGEX;
 
 const leadSchema = z.object({
   lead_type: z.string().min(1, "Please select a service"),

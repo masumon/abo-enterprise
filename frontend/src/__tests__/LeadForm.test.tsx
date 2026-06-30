@@ -53,7 +53,7 @@ describe("Lead Form", () => {
     await user.selectOptions(serviceSelect, "software_development");
     await user.type(screen.getByPlaceholderText(/Your full name/), "Jane Smith");
     await user.type(screen.getByPlaceholderText(/your@email.com/), "jane@example.com");
-    await user.type(screen.getByPlaceholderText(/01XXXXXXXXX/), "0191234567");
+    await user.type(screen.getByPlaceholderText(/01XXXXXXXXX/), "01912345678");
     await user.type(
       screen.getByPlaceholderText(/Tell us about your project/),
       "We need a custom CRM system with integration capabilities"

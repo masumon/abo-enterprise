@@ -44,11 +44,29 @@ export const SOCIAL_PROFILES = [
 
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/icons/icon-512.png`;
 
-/** Logo tagline */
+export const BRAND_NAME = {
+  en: "ABO ENTERPRISE",
+  bn: "এবিও এন্টারপ্রাইজ",
+} as const;
+
 export const BRAND_TAGLINE = {
   en: "Simple Solution",
   bn: "সহজ সমাধান",
 } as const;
+
+export type BrandLang = keyof typeof BRAND_NAME;
+
+export function getBrandName(lang: BrandLang): string {
+  return BRAND_NAME[lang];
+}
+
+export function getBrandTagline(lang: BrandLang): string {
+  return BRAND_TAGLINE[lang];
+}
+
+export function getBrandFullTitle(lang: BrandLang): string {
+  return `${BRAND_NAME[lang]} : ${BRAND_TAGLINE[lang]}`;
+}
 
 export const BRAND_MOTTO = BRAND_TAGLINE;
 

@@ -128,7 +128,7 @@ const translations = {
     wishlist: "উইশলিস্ট",
     compare: "তুলনা",
     hero_badge: "সহজ সমাধান",
-    hero_brand: "ABO ENTERPRISE",
+    hero_brand: "এবিও এন্টারপ্রাইজ",
     hero_tagline: "সহজ সমাধান",
     hero_title_1: "আপনার ব্যবসার",
     hero_title_2: "সব সমাধান",

@@ -32,14 +32,14 @@ export default function CustomerReviews() {
   const avg = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : "5.0";
 
   return (
-    <section className="py-16 bg-white dark:bg-transparent">
+    <section className="py-16 section-panel">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-1 mb-3">
             {[1, 2, 3, 4, 5].map((i) => <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />)}
-            <span className="ml-2 font-bold text-gray-900 dark:text-white">{avg}</span>
+            <span className="ml-2 font-bold text-heading">{avg}</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-3">
+          <h2 className="text-3xl sm:text-4xl font-bold text-heading mb-3">
             {lang === "bn" ? "গ্রাহকরা কী বলছেন?" : "Verified Client Reviews"}
           </h2>
         </div>

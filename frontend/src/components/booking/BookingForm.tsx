@@ -7,12 +7,12 @@ import { z } from "zod";
 import { serviceBookingsApi } from "@/lib/api";
 import type { Service } from "@/types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
-
-const bdPhoneRegex = /^0[13-9]\d{8}$/;
+import { cn } from "@/lib/utils";
+import { BD_PHONE_REGEX } from "@/lib/phone";
 
 const bookingSchema = z.object({
   customer_name: z.string().min(2, "Name must be at least 2 characters"),
-  customer_phone: z.string().regex(bdPhoneRegex, "Invalid Bangladesh phone number"),
+  customer_phone: z.string().regex(BD_PHONE_REGEX, "Invalid Bangladesh phone number"),
   customer_email: z.string().email("Invalid email address"),
   customer_company: z.string().optional(),
   booking_date: z.string().optional(),
@@ -96,88 +96,82 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-gray-600">
-          <span className="font-semibold">Service:</span> {service.name_en}
+      <div className="alert-info">
+        <p className="text-sm text-muted">
+          <span className="font-semibold text-heading">Service:</span> {service.name_en}
         </p>
         {service.pricing_type === "fixed" && service.base_price && !hasTiers && (
-          <p className="text-lg font-bold text-blue-600 mt-2">৳{service.base_price}</p>
+          <p className="text-lg font-bold text-brand-600 dark:text-brand-300 mt-2">৳{service.base_price}</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+        <label className="form-label">Full Name *</label>
         <input
           type="text"
           {...register("customer_name")}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className={cn("input", errors.customer_name && "input-error")}
           placeholder="Your full name"
         />
         {errors.customer_name && (
-          <p className="text-red-500 text-sm mt-1">{errors.customer_name.message}</p>
+          <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.customer_name.message}</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number (BD) *</label>
+        <label className="form-label">Phone Number (BD) *</label>
         <input
           type="tel"
           {...register("customer_phone")}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className={cn("input", errors.customer_phone && "input-error")}
           placeholder="01XXXXXXXXX"
         />
         {errors.customer_phone && (
-          <p className="text-red-500 text-sm mt-1">{errors.customer_phone.message}</p>
+          <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.customer_phone.message}</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Email Address *</label>
+        <label className="form-label">Email Address *</label>
         <input
           type="email"
           {...register("customer_email")}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className={cn("input", errors.customer_email && "input-error")}
           placeholder="your@email.com"
         />
         {errors.customer_email && (
-          <p className="text-red-500 text-sm mt-1">{errors.customer_email.message}</p>
+          <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.customer_email.message}</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Company (Optional)</label>
+        <label className="form-label">Company (Optional)</label>
         <input
           type="text"
           {...register("customer_company")}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="input"
           placeholder="Company name"
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Preferred Booking Date (Optional)</label>
-        <input
-          type="date"
-          {...register("booking_date")}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
+        <label className="form-label">Preferred Booking Date (Optional)</label>
+        <input type="date" {...register("booking_date")} className="input" />
       </div>
 
       {hasTiers && (
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">Choose Package</label>
+          <label className="form-label mb-3">Choose Package</label>
           <div className="space-y-2">
             {service.pricing_tiers!.map((tier) => (
-              <label key={tier.id} className="flex items-center">
+              <label key={tier.id} className="flex items-center gap-2 text-sm text-heading cursor-pointer">
                 <input
                   type="radio"
                   {...register("service_tier")}
                   value={tier.tier_name}
-                  className="w-4 h-4 text-blue-600"
+                  className="w-4 h-4 text-brand-600"
                 />
-                <span className="ml-2 text-sm">
-                  {tier.tier_name} - ৳{tier.price}
-                </span>
+                <span>{tier.tier_name} - ৳{tier.price}</span>
               </label>
             ))}
           </div>
@@ -185,35 +179,27 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Details / Requirements *</label>
+        <label className="form-label">Details / Requirements *</label>
         <textarea
           {...register("details")}
           rows={4}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className={cn("input resize-none", errors.details && "input-error")}
           placeholder="Please describe your requirements in detail..."
         />
         {errors.details && (
-          <p className="text-red-500 text-sm mt-1">{errors.details.message}</p>
+          <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.details.message}</p>
         )}
       </div>
 
-      {submitError && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-          {submitError}
-        </div>
-      )}
+      {submitError && <div className="alert-error">{submitError}</div>}
 
       {success && (
-        <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
+        <div className="alert-success">
           Booking submitted successfully! We will contact you soon.
         </div>
       )}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 flex items-center justify-center gap-2"
-      >
+      <button type="submit" disabled={submitting} className="btn btn-brand btn-lg w-full">
         {submitting ? (
           <>
             <LoadingSpinner /> Submitting...

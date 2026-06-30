@@ -45,7 +45,7 @@ describe("API client", () => {
     const bookingData = {
       service_id: "1",
       customer_name: "John Doe",
-      customer_phone: "0171234567",
+      customer_phone: "01712345678",
     };
     mockAxiosInstance.post.mockResolvedValue({
       status: 201,
@@ -61,7 +61,7 @@ describe("API client", () => {
     const leadData = {
       lead_type: "software_development",
       name: "Jane Smith",
-      phone: "0191234567",
+      phone: "01912345678",
     };
     mockAxiosInstance.post.mockResolvedValue({
       status: 201,

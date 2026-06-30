@@ -6,6 +6,7 @@ import { Heart, Users, Gift, Laptop, Send, MapPin } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import { useToastStore } from "@/store/toast";
+import { BD_PHONE_REGEX } from "@/lib/phone";
 
 const BENEFITS = [
   { icon: Gift, title: { en: "Competitive Salary", bn: "প্রতিযোগিতামূলক বেতন" } },
@@ -39,7 +40,10 @@ export default function CareerPage() {
 
   const handleApply = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !phone.trim()) return;
+    if (!name.trim() || !BD_PHONE_REGEX.test(phone.trim())) {
+      toast("error", lang === "bn" ? "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন" : "Enter a valid 11-digit BD phone number");
+      return;
+    }
     toast("success", lang === "bn" ? "আবেদন জমা হয়েছে!" : "Application submitted!");
     setName("");
     setEmail("");
