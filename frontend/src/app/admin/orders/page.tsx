@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { Loader2, ShoppingCart, ChevronDown, X, Package, Search, Download, CheckSquare, Square, ChevronRight } from "lucide-react";
+import { Loader2, ShoppingCart, ChevronDown, X, Package, Download, CheckSquare, Square, ChevronRight } from "lucide-react";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminToolbar from "@/components/admin/AdminToolbar";
+import AdminEmptyState from "@/components/admin/AdminEmptyState";
 import { ordersApi, downloadCsv, downloadPdf } from "@/lib/api";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice } from "@/lib/utils";
@@ -181,53 +184,45 @@ export default function AdminOrdersPage() {
   const allSelected = orders.length > 0 && selected.size === orders.length;
 
   return (
-    <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Orders</h1>
-          <p className="text-gray-500 text-sm mt-1">{total} total orders</p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            <input
-              value={searchInput}
-              onChange={e => handleSearchChange(e.target.value)}
-              placeholder="Search name, phone, order#…"
-              className="input pl-9 text-sm w-full sm:w-56"
-            />
-          </div>
-          {/* Status filter */}
-          <select value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} className="input w-auto text-sm">
-            <option value="">All Status</option>
-            {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
+    <div className="space-y-4 sm:space-y-6">
+      <AdminPageHeader
+        title="Orders"
+        titleBn="অর্ডার ব্যবস্থাপনা"
+        description={`${total} total orders — status update, bulk actions, courier tracking`}
+      />
+
+      <AdminToolbar
+        searchValue={searchInput}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="নাম, ফোন, অর্ডার#…"
+      >
+        <select value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} className="admin-input w-auto text-sm py-2">
+          <option value="">All Status</option>
+          {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
+        </select>
+        <div className="flex items-center gap-1">
+          <select
+            value={csvDays}
+            onChange={(e) => setCsvDays(Number(e.target.value))}
+            className="admin-input w-auto text-sm py-2"
+            title="Export range"
+          >
+            <option value={7}>7d</option>
+            <option value={30}>30d</option>
+            <option value={90}>90d</option>
+            <option value={365}>1yr</option>
           </select>
-          {/* CSV export */}
-          <div className="flex items-center gap-1">
-            <select
-              value={csvDays}
-              onChange={(e) => setCsvDays(Number(e.target.value))}
-              className="input w-auto text-sm py-1.5 px-2"
-              title="Export range"
-            >
-              <option value={7}>7d</option>
-              <option value={30}>30d</option>
-              <option value={90}>90d</option>
-              <option value={365}>1yr</option>
-            </select>
-            <button
-              onClick={handleCsvExport}
-              disabled={csvLoading}
-              className="btn btn-outline btn-sm gap-1.5"
-              title={`Export last ${csvDays} days to CSV`}
-            >
-              {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-              CSV
-            </button>
-          </div>
+          <button
+            onClick={handleCsvExport}
+            disabled={csvLoading}
+            className="admin-btn-secondary !py-2 gap-1.5"
+            title={`Export last ${csvDays} days`}
+          >
+            {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            CSV
+          </button>
         </div>
-      </div>
+      </AdminToolbar>
 
       {/* Bulk action bar */}
       {selected.size > 0 && (
@@ -259,10 +254,11 @@ export default function AdminOrdersPage() {
         {loading ? (
           <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
         ) : orders.length === 0 ? (
-          <div className="p-12 text-center">
-            <ShoppingCart className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 font-medium">No orders found</p>
-          </div>
+          <AdminEmptyState
+            icon={ShoppingCart}
+            title="No orders found"
+            description="Orders will appear here when customers checkout."
+          />
         ) : (
           <div className="overflow-x-auto">
             <table className="table-premium min-w-[580px]">
