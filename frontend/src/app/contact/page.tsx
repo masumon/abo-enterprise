@@ -14,7 +14,7 @@ import GlassCard from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
-import { mapsPlaceUrl } from "@/lib/maps";
+import { mapsPlaceUrl, resolveGoogleMapsEmbed } from "@/lib/maps";
 import MapEmbed from "@/components/common/MapEmbed";
 import PageHero from "@/components/ui/PageHero";
 
@@ -23,7 +23,7 @@ export default function ContactPage() {
   const t = useT();
   const toast = useToastStore((s) => s.push);
   const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address"]);
-  const mapsEmbed = getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED);
+  const mapsEmbed = resolveGoogleMapsEmbed(getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED));
   const phone = getSettingValue(settings, "contact_phone", "01825007977");
   const email = getSettingValue(settings, "contact_email", "abo.enterprise@gmail.com");
   const address = getSettingValue(settings, "contact_address", lang === "bn" ? "হাজি বাহার উদ্দিন মার্কেট, সিলেট-৩১৭০" : "Hazi Bahar Uddin Market, Sylhet-3170");

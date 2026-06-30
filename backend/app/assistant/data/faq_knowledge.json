@@ -8,5 +8,9 @@
   "payment_en": "We accept bKash, Nagad, and Cash on Delivery (where available). Payment options are shown at checkout.",
   "payment_bn": "আমরা bKash, Nagad এবং ক্যাশ অন ডেলিভারি (যেখানে উপলব্ধ) গ্রহণ করি। চেকআউটে পেমেন্ট অপশন দেখানো হয়।",
   "company_en": "ABO Enterprise provides software solutions, automation, and quality products for businesses in Bangladesh.",
-  "company_bn": "ABO Enterprise বাংলাদেশের ব্যবসায়ের জন্য সফটওয়্যার সলিউশন, অটোমেশন এবং মানসম্মত পণ্য সরবরাহ করে।"
+  "company_bn": "ABO Enterprise বাংলাদেশের ব্যবসায়ের জন্য সফটওয়্যার সলিউশন, অটোমেশন এবং মানসম্মত পণ্য সরবরাহ করে।",
+  "coupon_en": "Active coupon codes can be applied at checkout. Ask 'show coupons' to see available discounts, or share a code like ABO10 to validate it.",
+  "coupon_bn": "সক্রিয় কুপন কোড চেকআউটে ব্যবহার করা যায়। 'কুপন দেখান' বললে উপলব্ধ ছাড় দেখাবে, অথবা ABO10-এর মতো কোড দিয়ে যাচাই করুন।",
+  "hours_en": "Business hours vary — contact us by phone for today's availability.",
+  "hours_bn": "ব্যবসার সময় ভিন্ন হতে পারে — আজ খোলা আছে কিনা জানতে ফোন করুন।"
 }

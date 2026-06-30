@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Bot, Loader2, Save, RefreshCw, Check, Trash2, Plus, Pencil, X,
-  MessageSquare, Zap, BookOpen, Settings2, Eye, Search,
+  MessageSquare, Zap, BookOpen, Settings2, Eye, Search, Link2, Database,
 } from "lucide-react";
 import {
   assistantAdminApi,
+  ASSISTANT_DEFAULT_CONFIG,
+  type AssistantAdminConfig,
   type AssistantFaqEntry,
   type AssistantConversation,
   type AssistantActionLog,
@@ -19,16 +21,19 @@ type Tab = "settings" | "conversations" | "logs" | "faq";
 
 const EMPTY_FAQ = { key: "", topic: "", answer_en: "", answer_bn: "" };
 
-function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
+function Toggle({ checked, onChange, label, hint }: { checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string }) {
   return (
-    <label className="flex items-center justify-between gap-4 py-3 cursor-pointer">
-      <span className="text-sm text-gray-700">{label}</span>
+    <label className="flex items-start justify-between gap-4 py-3 cursor-pointer">
+      <div className="min-w-0">
+        <span className="text-sm text-gray-700 block">{label}</span>
+        {hint && <span className="text-xs text-gray-400 mt-0.5 block">{hint}</span>}
+      </div>
       <button
         type="button"
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className={`relative w-11 h-6 rounded-full transition-colors ${checked ? "bg-brand-600" : "bg-gray-300"}`}
+        className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 mt-0.5 ${checked ? "bg-brand-600" : "bg-gray-300"}`}
       >
         <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${checked ? "translate-x-5" : ""}`} />
       </button>
@@ -36,19 +41,26 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: 
   );
 }
 
+const INTEGRATIONS = [
+  { label: "Products", table: "products", desc: "Search, price, stock, categories" },
+  { label: "Services", table: "services", desc: "Info, pricing tiers, booking" },
+  { label: "Orders", table: "orders + order_items", desc: "Place order, track, invoice" },
+  { label: "Bookings", table: "bookings_v2", desc: "Service booking + status" },
+  { label: "Leads", table: "leads_v2", desc: "Inquiry / quote submission" },
+  { label: "Settings", table: "settings", desc: "Delivery charges, welcome, flags" },
+  { label: "FAQ", table: "assistant_faq_knowledge", desc: "Admin-editable Q&A" },
+  { label: "Coupons", table: "coupons_json", desc: "Validate & list coupons" },
+  { label: "Blog", table: "blog_posts", desc: "Search & recent posts" },
+  { label: "Conversations", table: "assistant_conversations", desc: "Session history & logs" },
+];
+
 export default function AdminAssistantPage() {
   const [tab, setTab] = useState<Tab>("settings");
   const toast = useToastStore((s) => s.push);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
 
   // Settings
-  const [config, setConfig] = useState({
-    feature_assistant_chat: true,
-    feature_assistant_whatsapp: true,
-    whatsapp_number: "",
-    assistant_welcome_en: "",
-    assistant_welcome_bn: "",
-  });
+  const [config, setConfig] = useState<AssistantAdminConfig>({ ...ASSISTANT_DEFAULT_CONFIG });
   const [configLoading, setConfigLoading] = useState(true);
   const [configSaving, setConfigSaving] = useState(false);
   const [configSaved, setConfigSaved] = useState(false);
@@ -86,7 +98,7 @@ export default function AdminAssistantPage() {
     setConfigLoading(true);
     try {
       const r = await assistantAdminApi.getConfig();
-      if (r.data.data) setConfig(r.data.data);
+      if (r.data.data) setConfig({ ...ASSISTANT_DEFAULT_CONFIG, ...r.data.data });
     } catch {
       toast("error", "Failed to load assistant settings");
     } finally {
@@ -304,13 +316,36 @@ export default function AdminAssistantPage() {
 
       {/* Settings Tab */}
       {tab === "settings" && (
-        <div className="max-w-2xl">
+        <div className="space-y-6 max-w-3xl">
+          {/* Integration overview */}
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
+              <Link2 className="w-4 h-4 text-brand-600" />
+              <h2 className="text-sm font-semibold text-gray-800">Admin ↔ Assistant Integration</h2>
+            </div>
+            <div className="p-6 grid sm:grid-cols-2 gap-3">
+              {INTEGRATIONS.map((item) => (
+                <div key={item.table} className="flex gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                  <Database className="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-gray-800">{item.label}</p>
+                    <p className="text-xs font-mono text-gray-400">{item.table}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p className="px-6 pb-4 text-xs text-gray-500">
+              Assistant reads live data from these sources. Toggle features below to enable/disable each capability without code changes.
+            </p>
+          </div>
+
           {configLoading ? (
             <div className="h-64 bg-gray-100 rounded-2xl animate-pulse" />
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                <h2 className="text-sm font-semibold text-gray-800">Assistant & WhatsApp Settings</h2>
+                <h2 className="text-sm font-semibold text-gray-800">Feature Controls</h2>
                 <button
                   onClick={saveConfig}
                   disabled={configSaving}
@@ -322,51 +357,64 @@ export default function AdminAssistantPage() {
                   {configSaving ? "Saving…" : configSaved ? "Saved!" : "Save"}
                 </button>
               </div>
-              <div className="divide-y divide-gray-50 px-6">
-                <Toggle
-                  label="Enable AI Assistant Chat Widget"
-                  checked={config.feature_assistant_chat}
-                  onChange={(v) => setConfig((c) => ({ ...c, feature_assistant_chat: v }))}
-                />
-                <Toggle
-                  label="Show WhatsApp option inside Assistant (replaces floating button)"
-                  checked={config.feature_assistant_whatsapp}
-                  onChange={(v) => setConfig((c) => ({ ...c, feature_assistant_whatsapp: v }))}
-                />
-                <div className="py-4">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    WhatsApp Number (with country code)
-                  </label>
-                  <input
-                    type="tel"
-                    value={config.whatsapp_number}
-                    onChange={(e) => setConfig((c) => ({ ...c, whatsapp_number: e.target.value }))}
-                    placeholder="8801825007977"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+
+              <div className="px-6 py-2">
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-3 pb-1">General</p>
+                <div className="divide-y divide-gray-50">
+                  <Toggle
+                    label="Enable Assistant Chat Widget (site-wide)"
+                    hint="Master switch — hides the floating assistant when off"
+                    checked={config.feature_assistant_chat}
+                    onChange={(v) => setConfig((c) => ({ ...c, feature_assistant_chat: v }))}
                   />
-                  <p className="text-xs text-gray-400 mt-1">Used for WhatsApp chat inside the AI assistant widget</p>
-                </div>
-                <div className="py-4">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    Welcome Message (English)
-                  </label>
-                  <textarea
-                    value={config.assistant_welcome_en}
-                    onChange={(e) => setConfig((c) => ({ ...c, assistant_welcome_en: e.target.value }))}
-                    rows={2}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 resize-none"
+                  <Toggle
+                    label="WhatsApp option inside Assistant"
+                    checked={config.feature_assistant_whatsapp}
+                    onChange={(v) => setConfig((c) => ({ ...c, feature_assistant_whatsapp: v }))}
                   />
                 </div>
-                <div className="py-4">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                    Welcome Message (বাংলা)
-                  </label>
-                  <textarea
-                    value={config.assistant_welcome_bn}
-                    onChange={(e) => setConfig((c) => ({ ...c, assistant_welcome_bn: e.target.value }))}
-                    rows={2}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 resize-none"
-                  />
+
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-5 pb-1">Automation (DB writes)</p>
+                <div className="divide-y divide-gray-50">
+                  <Toggle label="Place orders via chat" hint="Multi-step order → orders table" checked={config.assistant_feature_orders} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_orders: v }))} />
+                  <Toggle label="Book services via chat" hint="Multi-step booking → bookings_v2" checked={config.assistant_feature_bookings} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_bookings: v }))} />
+                  <Toggle label="Submit leads / quotes" hint="Inquiry → leads_v2" checked={config.assistant_feature_leads} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_leads: v }))} />
+                  <Toggle label="Customer complaints → admin notify" checked={config.assistant_feature_complaints} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_complaints: v }))} />
+                </div>
+
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-5 pb-1">Tracking (DB reads)</p>
+                <div className="divide-y divide-gray-50">
+                  <Toggle label="Order tracking" hint="By order number or phone" checked={config.assistant_feature_order_tracking} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_order_tracking: v }))} />
+                  <Toggle label="Booking tracking" hint="By BK- number or phone" checked={config.assistant_feature_booking_tracking} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_booking_tracking: v }))} />
+                  <Toggle label="Lead / inquiry tracking" hint="By LF- number or phone" checked={config.assistant_feature_lead_tracking} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_lead_tracking: v }))} />
+                </div>
+
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-5 pb-1">Catalog & Knowledge</p>
+                <div className="divide-y divide-gray-50">
+                  <Toggle label="Product search & details" checked={config.assistant_feature_product_search} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_product_search: v }))} />
+                  <Toggle label="Service info & pricing" checked={config.assistant_feature_service_info} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_service_info: v }))} />
+                  <Toggle label="Coupons" checked={config.assistant_feature_coupons} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_coupons: v }))} />
+                  <Toggle label="Invoice help" checked={config.assistant_feature_invoices} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_invoices: v }))} />
+                  <Toggle label="Delivery info & charges" checked={config.assistant_feature_delivery_info} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_delivery_info: v }))} />
+                  <Toggle label="FAQ answers" hint="Uses FAQ tab + admin settings" checked={config.assistant_feature_faq} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_faq: v }))} />
+                  <Toggle label="Blog posts" checked={config.assistant_feature_blog} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_blog: v }))} />
+                  <Toggle label="Web search fallback" hint="DuckDuckGo when DB has no match" checked={config.assistant_feature_web_search} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_web_search: v }))} />
+                </div>
+
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-5 pb-1">Messages</p>
+                <div className="py-4 space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">WhatsApp Number</label>
+                    <input type="tel" value={config.whatsapp_number} onChange={(e) => setConfig((c) => ({ ...c, whatsapp_number: e.target.value }))} placeholder="8801825007977" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Welcome Message (English)</label>
+                    <textarea value={config.assistant_welcome_en} onChange={(e) => setConfig((c) => ({ ...c, assistant_welcome_en: e.target.value }))} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Welcome Message (বাংলা)</label>
+                    <textarea value={config.assistant_welcome_bn} onChange={(e) => setConfig((c) => ({ ...c, assistant_welcome_bn: e.target.value }))} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100" />
+                  </div>
                 </div>
               </div>
             </div>

@@ -1006,6 +1006,21 @@ class AssistantConfigOut(BaseModel):
     whatsapp_number: str = ""
     assistant_welcome_en: str = ""
     assistant_welcome_bn: str = ""
+    assistant_feature_orders: bool = True
+    assistant_feature_order_tracking: bool = True
+    assistant_feature_bookings: bool = True
+    assistant_feature_booking_tracking: bool = True
+    assistant_feature_leads: bool = True
+    assistant_feature_lead_tracking: bool = True
+    assistant_feature_product_search: bool = True
+    assistant_feature_service_info: bool = True
+    assistant_feature_coupons: bool = True
+    assistant_feature_invoices: bool = True
+    assistant_feature_delivery_info: bool = True
+    assistant_feature_faq: bool = True
+    assistant_feature_blog: bool = True
+    assistant_feature_web_search: bool = True
+    assistant_feature_complaints: bool = True
 
 
 class AssistantConfigUpdate(BaseModel):
@@ -1014,6 +1029,21 @@ class AssistantConfigUpdate(BaseModel):
     whatsapp_number: str | None = None
     assistant_welcome_en: str | None = None
     assistant_welcome_bn: str | None = None
+    assistant_feature_orders: bool | None = None
+    assistant_feature_order_tracking: bool | None = None
+    assistant_feature_bookings: bool | None = None
+    assistant_feature_booking_tracking: bool | None = None
+    assistant_feature_leads: bool | None = None
+    assistant_feature_lead_tracking: bool | None = None
+    assistant_feature_product_search: bool | None = None
+    assistant_feature_service_info: bool | None = None
+    assistant_feature_coupons: bool | None = None
+    assistant_feature_invoices: bool | None = None
+    assistant_feature_delivery_info: bool | None = None
+    assistant_feature_faq: bool | None = None
+    assistant_feature_blog: bool | None = None
+    assistant_feature_web_search: bool | None = None
+    assistant_feature_complaints: bool | None = None
 
 
 class AssistantFaqEntry(BaseModel):
