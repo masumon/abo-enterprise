@@ -316,6 +316,17 @@
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
   }
 
+  @media print {
+    .invoice-preview {
+      box-shadow: none !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+    .invoice-preview-header {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+  }
+
   /* ── Premium Tables ── */
   .table-premium { @apply w-full text-sm; }
   .table-premium thead { @apply border-b border-gray-100; }

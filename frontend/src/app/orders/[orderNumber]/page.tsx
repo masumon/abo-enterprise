@@ -3,12 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Package, Loader2, ArrowLeft, Printer } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { ordersApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
-import { formatPrice } from "@/lib/utils";
 import PageHero from "@/components/ui/PageHero";
-import GlassCard from "@/components/ui/GlassCard";
+import InvoicePreviewCard from "@/components/invoice/InvoicePreviewCard";
 
 interface OrderDetail {
   order_number: string;
@@ -58,50 +57,21 @@ export default function OrderDetailPage() {
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 text-brand-500 animate-spin" /></div>
         ) : error || !order ? (
-          <GlassCard className="p-8 text-center text-muted">
+          <div className="p-8 text-center text-muted rounded-2xl border border-gray-100 bg-white">
             <p role="alert">{lang === "bn" ? "অর্ডার পাওয়া যায়নি" : "Order not found"}</p>
-          </GlassCard>
+          </div>
         ) : (
           <div id="invoice-print">
-          <GlassCard className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="text-xl font-bold text-heading">ABO Enterprise</h2>
-                <p className="text-sm text-muted">{lang === "bn" ? "ইনভয়েস" : "Invoice"}</p>
-              </div>
-              <Package className="w-8 h-8 text-brand-600" />
-            </div>
-            <dl className="grid sm:grid-cols-2 gap-4 text-sm mb-6">
-              <div>
-                <dt className="text-muted">{lang === "bn" ? "অর্ডার নম্বর" : "Order #"}</dt>
-                <dd className="font-semibold text-heading">{order.order_number}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">{lang === "bn" ? "তারিখ" : "Date"}</dt>
-                <dd className="font-semibold text-heading">{new Date(order.created_at).toLocaleString()}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">{lang === "bn" ? "স্ট্যাটাস" : "Status"}</dt>
-                <dd className="font-semibold capitalize text-heading">{order.order_status}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">{lang === "bn" ? "পেমেন্ট" : "Payment"}</dt>
-                <dd className="font-semibold uppercase text-heading">{order.payment_method}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">{lang === "bn" ? "আইটেম" : "Items"}</dt>
-                <dd className="font-semibold text-heading">{order.items_count}</dd>
-              </div>
-              <div>
-                <dt className="text-muted">{lang === "bn" ? "মোট" : "Total"}</dt>
-                <dd className="text-xl font-bold text-brand-600">{formatPrice(order.total)}</dd>
-              </div>
-            </dl>
-            <button type="button" onClick={handlePrint} className="btn btn-outline btn-md w-full print:hidden">
-              <Printer className="w-4 h-4" />
-              {lang === "bn" ? "প্রিন্ট / PDF" : "Print / Save PDF"}
-            </button>
-          </GlassCard>
+            <InvoicePreviewCard
+              orderNumber={order.order_number}
+              orderStatus={order.order_status}
+              paymentMethod={order.payment_method}
+              total={order.total}
+              itemsCount={order.items_count}
+              createdAt={order.created_at}
+              lang={lang}
+              onPrint={handlePrint}
+            />
           </div>
         )}
       </div>
