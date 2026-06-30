@@ -6,6 +6,8 @@ import { useLanguageStore } from "@/store/language";
 import GlassCard from "@/components/ui/GlassCard";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
+import { mapsPlaceUrl } from "@/lib/maps";
+import MapEmbed from "@/components/common/MapEmbed";
 
 export default function ContactSection() {
   const { lang } = useLanguageStore();
@@ -30,7 +32,7 @@ export default function ContactSection() {
             </h3>
             <div className="space-y-3">
               {[
-                { icon: MapPin, label: address, href: "https://maps.google.com/?q=Hazi+Bahar+Uddin+Market+Sylhet" },
+                { icon: MapPin, label: address, href: mapsPlaceUrl(address) },
                 { icon: Phone, label: `+880 ${phone.slice(0, 4)} ${phone.slice(4)}`, href: `tel:+880${phone}` },
                 { icon: Mail, label: email, href: `mailto:${email}` },
                 { icon: Clock, label: lang === "bn" ? "শনি–বৃহঃ, সকাল ৯টা–রাত ৮টা" : "Sat–Thu, 9:00 AM – 8:00 PM", href: null },
@@ -58,13 +60,12 @@ export default function ContactSection() {
           </GlassCard>
 
           <GlassCard className="overflow-hidden p-0 lg:col-span-2">
-            <iframe
+            <MapEmbed
+              embedSrc={mapsEmbed}
+              address={address}
               title="ABO Enterprise Map"
-              src={mapsEmbed}
-              className="w-full h-64 lg:h-full min-h-[16rem] border-0"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-              allowFullScreen
+              minHeight="16rem"
+              className="lg:min-h-[18rem]"
             />
           </GlassCard>
         </div>
