@@ -78,7 +78,7 @@ function FooterLink({
   external?: boolean;
 }) {
   const className =
-    "footer-link group inline-flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors duration-200";
+    "footer-link group inline-flex items-center gap-1.5 text-sm text-white/75 transition-colors duration-200";
 
   if (external) {
     return (
@@ -212,13 +212,14 @@ export default function Footer() {
   };
 
   return (
-    <footer className="site-footer relative text-gray-300 overflow-hidden">
+    <footer className="site-footer relative text-white/85 overflow-hidden">
+      <div className="site-footer-accent relative z-10" aria-hidden />
       <div className="footer-glow pointer-events-none" aria-hidden />
 
       <div className="relative z-10 border-b border-white/[0.06]">
         <div className="container mx-auto px-4 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gray-500">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
               {lang === "bn" ? "দ্রুত লিংক" : "Quick links"}
             </p>
             <div className="flex flex-wrap gap-2.5">
@@ -249,14 +250,14 @@ export default function Footer() {
               </div>
               <div>
                 <h3 className="text-white font-bold text-xl tracking-tight">ABO Enterprise</h3>
-                <p className="text-brand-300/90 text-xs font-medium mt-0.5">
+                <p className="text-brand-100 text-xs font-medium mt-0.5">
                   {getSettingValue(settings, "site_tagline") ||
                     (lang === "bn" ? "ডিজিটাল ভবিষ্যৎ গড়ি" : "Powering Digital Future")}
                 </p>
               </div>
             </div>
 
-            <p className="text-sm text-gray-400 leading-relaxed mb-6 max-w-md">
+            <p className="text-sm text-white/75 leading-relaxed mb-6 max-w-md">
               {lang === "bn"
                 ? "মোবাইল এক্সেসরিজ থেকে AI সমাধান — বাংলাদেশের সম্পূর্ণ টেকনোলজি ইকোসিস্টেম।"
                 : "From mobile accessories to AI solutions — Bangladesh's complete technology ecosystem."}
@@ -344,7 +345,7 @@ export default function Footer() {
                       href={mapsPlaceUrl(address)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-start gap-3 text-gray-400 hover:text-white transition-colors group"
+                      className="flex items-start gap-3 text-white/75 hover:text-white transition-colors group"
                     >
                       <span className="footer-contact-icon">
                         <MapPin className="w-4 h-4" />
@@ -355,7 +356,7 @@ export default function Footer() {
                   <li>
                     <a
                       href={`tel:+${phoneDigits}`}
-                      className="flex items-center gap-3 text-gray-400 hover:text-white transition-colors"
+                      className="flex items-center gap-3 text-white/75 hover:text-white transition-colors"
                     >
                       <span className="footer-contact-icon">
                         <Phone className="w-4 h-4" />
@@ -363,7 +364,7 @@ export default function Footer() {
                       {phoneDisplay}
                     </a>
                   </li>
-                  <li className="flex items-center gap-3 text-gray-400">
+                  <li className="flex items-center gap-3 text-white/75">
                     <span className="footer-contact-icon">
                       <Clock className="w-4 h-4" />
                     </span>
@@ -391,34 +392,34 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="relative z-10 border-t border-white/[0.06] bg-black/20">
+      <div className="relative z-10 footer-bottom-bar">
         <div className="container mx-auto px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
-          <div className="text-xs text-gray-500 space-y-1">
+          <div className="text-xs text-white/60 space-y-1">
             <p>
               &copy; {new Date().getFullYear()} ABO Enterprise.{" "}
               {lang === "bn" ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
             </p>
             {tradeLicense && (
-              <p className="text-gray-600">
+              <p className="text-white/50">
                 {lang === "bn" ? "ট্রেড লাইসেন্স:" : "Trade License:"}{" "}
-                <span className="text-gray-500">{tradeLicense}</span>
+                <span className="text-white/65">{tradeLicense}</span>
               </p>
             )}
           </div>
-          <p className="text-xs text-gray-600">
+          <p className="text-xs text-white/55">
             {lang === "bn" ? "তৈরি করেছেন" : "Built by"}{" "}
             <a
               href="https://mumain.dev"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-brand-400 hover:text-brand-300 font-medium transition-colors"
+              className="text-white hover:text-brand-100 font-medium transition-colors underline-offset-2 hover:underline"
             >
               Mumain.dev
             </a>
-            <span className="mx-2 text-gray-700" aria-hidden>
+            <span className="mx-2 text-white/30" aria-hidden>
               ·
             </span>
-            <Link href="/admin/login" className="text-gray-500 hover:text-gray-300 transition-colors">
+            <Link href="/admin/login" className="text-white/60 hover:text-white transition-colors">
               {lang === "bn" ? "এডমিন" : "Admin"}
             </Link>
           </p>
