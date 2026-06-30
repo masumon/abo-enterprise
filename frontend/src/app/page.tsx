@@ -61,7 +61,7 @@ const websiteJsonLd = {
 };
 
 function SectionSkeleton() {
-  return <div className="py-16 animate-pulse bg-gray-50/50 dark:bg-white/[0.02]" aria-hidden />;
+  return <div className="py-16 animate-pulse bg-gray-50/50 dark:bg-[var(--surface-secondary)]/60" aria-hidden />;
 }
 
 export default function HomePage() {

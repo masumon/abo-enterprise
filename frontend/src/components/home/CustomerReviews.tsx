@@ -32,7 +32,7 @@ export default function CustomerReviews() {
   const avg = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : "5.0";
 
   return (
-    <section className="py-16 bg-white dark:bg-transparent">
+    <section className="py-16 section-panel">
       <div className="container mx-auto px-4">
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-1 mb-3">

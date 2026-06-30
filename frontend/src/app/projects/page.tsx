@@ -30,7 +30,7 @@ export default function ProjectsPage() {
   const t = (o: { en: string; bn: string }) => (lang === "bn" ? o.bn : o.en);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+    <div className="min-h-screen page-gradient">
       <PageHero
         pageKey="projects"
         align="center"
@@ -102,7 +102,7 @@ export default function ProjectsPage() {
       </section>
 
       {!showForm && (
-        <section className="bg-white border-y py-16 text-center px-4">
+        <section className="section-panel border-y py-16 text-center px-4">
           <h2 className="text-3xl font-bold text-gray-900 mb-4">{t({ en: "Ready to start?", bn: "শুরু করতে প্রস্তুত?" })}</h2>
           <button type="button" onClick={() => setShowForm(true)} className="btn btn-brand btn-lg">{t({ en: "Get Started", bn: "শুরু করুন" })}</button>
         </section>

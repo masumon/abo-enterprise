@@ -92,7 +92,7 @@ export default function BookPageClient({ serviceSlug, tierId }: BookPageClientPr
   const name = lang === "bn" && service.name_bn ? service.name_bn : service.name_en;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <PageHero
         pageKey="book"
         imageUrl={service.featured_image_url || undefined}

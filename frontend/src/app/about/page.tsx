@@ -56,7 +56,7 @@ export default function AboutPage() {
         </div>
       </PageHero>
 
-      <section className="py-16 px-4 bg-white dark:bg-transparent">
+      <section className="py-16 px-4 section-panel">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-start">
           <div>
             <div className="section-title"><h2>{t({ en: "Our Story", bn: "আমাদের গল্প" })}</h2></div>
@@ -81,7 +81,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-14 px-4 bg-gray-50">
+      <section className="py-14 px-4 section-panel-alt">
         <div className="max-w-5xl mx-auto">
           <div className="section-title text-center"><h2>{t({ en: "Key Achievements", bn: "প্রধান অর্জন" })}</h2></div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
@@ -96,7 +96,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 px-4 bg-white">
+      <section className="py-16 px-4 section-panel">
         <div className="max-w-3xl mx-auto">
           <div className="section-title text-center"><h2>{t({ en: "Our Journey", bn: "আমাদের যাত্রা" })}</h2></div>
           <div className="mt-10 space-y-6">
@@ -117,7 +117,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 px-4 bg-gray-50">
+      <section className="py-16 px-4 section-panel-alt">
         <div className="max-w-4xl mx-auto">
           <div className="section-title text-center"><h2>{t({ en: "Our Values", bn: "আমাদের মূল্যবোধ" })}</h2></div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
@@ -132,7 +132,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section className="py-16 px-4 bg-white">
+      <section className="py-16 px-4 section-panel">
         <div className="max-w-4xl mx-auto">
           <div className="section-title text-center"><h2>{t({ en: "Our Team", bn: "আমাদের দল" })}</h2></div>
           <div className="grid md:grid-cols-3 gap-6 mt-10">

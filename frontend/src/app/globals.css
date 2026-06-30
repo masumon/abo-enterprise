@@ -17,6 +17,8 @@
     --glass-shadow: 0 8px 32px rgba(30, 91, 168, 0.08), 0 2px 8px rgba(0,0,0,0.04);
     --surface: #fafbff;
     --surface-secondary: #f0f4ff;
+    --surface-card: #ffffff;
+    --surface-elevated: #ffffff;
     --navy: #0a1628;
     --navbar-height: 4rem;
     --announcement-height: 2.25rem;
@@ -28,11 +30,14 @@
   }
 
   .dark {
-    --glass-bg: rgba(10, 22, 40, 0.85);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    --surface: #0f1a2e;
-    --surface-secondary: #152238;
+    --navy: #0b1e36;
+    --surface: #122846;
+    --surface-secondary: #163052;
+    --surface-card: #152b4a;
+    --surface-elevated: #1a3558;
+    --glass-bg: rgba(18, 40, 70, 0.9);
+    --glass-border: rgba(96, 165, 250, 0.14);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(59, 130, 246, 0.08);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -57,20 +62,26 @@
   }
 
   html.dark body {
-    @apply bg-[#0a1628] text-gray-100;
+    @apply text-gray-100;
+    background-color: var(--navy);
     background-image:
-      radial-gradient(ellipse at 20% 50%, rgba(30,91,168,0.08) 0%, transparent 60%),
-      radial-gradient(ellipse at 80% 20%, rgba(233,30,99,0.05) 0%, transparent 50%);
+      radial-gradient(ellipse at 15% 0%, rgba(30, 91, 168, 0.2) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 100%, rgba(233, 30, 99, 0.09) 0%, transparent 50%),
+      linear-gradient(180deg, var(--navy) 0%, #0a1729 100%);
   }
+
+  html.dark ::-webkit-scrollbar-thumb { @apply bg-brand-600/40 rounded-full; }
+  html.dark ::-webkit-scrollbar-thumb:hover { @apply bg-brand-500/55; }
 
   .dark .input {
     @apply bg-white/5 border-white/10 text-gray-100 placeholder-gray-500 focus:bg-white/10;
   }
 
   .dark .card {
-    background: rgba(15,23,42,0.75);
-    border-color: rgba(255,255,255,0.08);
+    background: color-mix(in srgb, var(--surface-card) 94%, transparent);
+    border-color: rgba(96, 165, 250, 0.14);
     color: rgb(243 244 246);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(59, 130, 246, 0.06);
   }
 
   .dark .btn-outline {
@@ -191,10 +202,10 @@
     border-radius: 1rem;
   }
   .glass-dark {
-    background: rgba(15,23,42,0.85);
+    background: color-mix(in srgb, var(--surface-card) 88%, transparent);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.07);
+    border: 1px solid rgba(96, 165, 250, 0.14);
   }
   .glass-panel {
     background: rgba(255,255,255,0.08);
@@ -421,12 +432,13 @@
 
   /* ── Enterprise design system ── */
   .enterprise-card {
-    @apply rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[#0f1a2e] transition-all duration-300;
+    @apply rounded-2xl border border-gray-100 dark:border-brand-400/15 bg-white transition-all duration-300;
     box-shadow: 0 2px 12px rgba(30,91,168,0.06), 0 1px 3px rgba(0,0,0,0.04);
   }
   .dark .enterprise-card {
-    background: rgba(15,23,42,0.82);
+    background: color-mix(in srgb, var(--surface-card) 96%, transparent);
     color: rgb(243 244 246);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(59, 130, 246, 0.07);
   }
   .enterprise-card-hover {
     @apply enterprise-card hover:-translate-y-1 hover:shadow-card-hover;
@@ -435,7 +447,7 @@
     @apply py-14 md:py-20;
   }
   .enterprise-section-alt {
-    @apply enterprise-section bg-gray-50/80 dark:bg-white/[0.02];
+    @apply enterprise-section bg-gray-50/80 dark:bg-[var(--surface-secondary)];
   }
   .sticky-cta-bar {
     @apply fixed left-0 right-0 z-[45] lg:hidden;
@@ -448,16 +460,24 @@
     box-shadow: 0 -4px 24px rgba(30,91,168,0.08);
   }
   .dark .sticky-cta-bar {
-    background: rgba(10,22,40,0.94);
-    border-top-color: rgba(255,255,255,0.08);
+    background: color-mix(in srgb, var(--surface-card) 94%, transparent);
+    border-top-color: rgba(96, 165, 250, 0.14);
   }
 }
 
 @layer utilities {
   .text-balance { text-wrap: balance; }
-  .page-surface { @apply bg-[var(--surface)] dark:bg-[var(--navy)]; }
+  .page-surface { @apply bg-[var(--surface)] dark:bg-transparent; }
+  .page-gradient {
+    @apply bg-gradient-to-b from-gray-50 to-white;
+  }
+  .dark .page-gradient {
+    background: linear-gradient(180deg, var(--navy) 0%, var(--surface) 100%);
+  }
+  .section-panel { @apply bg-white dark:bg-[var(--surface-secondary)]; }
+  .section-panel-alt { @apply bg-gray-50 dark:bg-[var(--surface)]; }
   .surface-card {
-    @apply bg-white dark:bg-slate-900/80 border border-gray-100 dark:border-white/10 text-gray-900 dark:text-gray-100;
+    @apply bg-white dark:bg-[var(--surface-card)] border border-gray-100 dark:border-brand-400/15 text-gray-900 dark:text-gray-100;
   }
   .text-muted { @apply text-gray-500 dark:text-gray-400; }
   .text-heading { @apply text-gray-900 dark:text-white; }
@@ -487,9 +507,9 @@
     border: 1px solid rgba(255, 255, 255, 0.6);
   }
   .dark .assistant-panel {
-    background: rgba(15, 26, 46, 0.94);
-    border-color: rgba(255, 255, 255, 0.08);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45), 0 8px 24px rgba(30, 91, 168, 0.12);
+    background: color-mix(in srgb, var(--surface-card) 96%, transparent);
+    border-color: rgba(96, 165, 250, 0.14);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35), 0 8px 24px rgba(30, 91, 168, 0.14);
   }
   .assistant-chat-bg {
     background:
@@ -499,9 +519,9 @@
   }
   .dark .assistant-chat-bg {
     background:
-      radial-gradient(ellipse at 10% 0%, rgba(30, 91, 168, 0.12) 0%, transparent 50%),
-      radial-gradient(ellipse at 90% 100%, rgba(233, 30, 99, 0.06) 0%, transparent 50%),
-      linear-gradient(180deg, #0f1a2e 0%, #0a1628 100%);
+      radial-gradient(ellipse at 10% 0%, rgba(30, 91, 168, 0.16) 0%, transparent 50%),
+      radial-gradient(ellipse at 90% 100%, rgba(233, 30, 99, 0.08) 0%, transparent 50%),
+      linear-gradient(180deg, var(--surface) 0%, var(--navy) 100%);
   }
   .assistant-fab-ring {
     animation: assistantPulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;

@@ -72,7 +72,7 @@ export default function PrintingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <PageHero
         pageKey="printing"
         align="center"
