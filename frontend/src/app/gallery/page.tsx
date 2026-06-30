@@ -1,17 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
-import { Play, ImageIcon, X } from "lucide-react";
+import { Play, ImageIcon, X, ExternalLink } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
-import { PROJECTS } from "@/lib/data/projects";
 import { cn } from "@/lib/utils";
-
-const GALLERY_IMAGES = [
-  { src: "/logo.jpg", alt: "ABO Enterprise", category: "office" },
-  ...PROJECTS.map((p) => ({ src: p.image, alt: p.title.en, category: "projects" })),
-];
+import { useShowcaseContent } from "@/hooks/useShowcaseContent";
+import { toVideoEmbedUrl } from "@/lib/showcaseContent";
 
 const FILTERS = [
   { id: "all", label: { en: "All", bn: "সব" } },
@@ -21,10 +17,25 @@ const FILTERS = [
 
 export default function GalleryPage() {
   const { lang } = useLanguageStore();
+  const { projects } = useShowcaseContent();
   const [filter, setFilter] = useState("all");
   const [lightbox, setLightbox] = useState<string | null>(null);
 
-  const images = GALLERY_IMAGES.filter((img) => filter === "all" || img.category === filter);
+  const images = useMemo(() => {
+    const list = [
+      { src: "/logo.jpg", alt: "ABO Enterprise", category: "office" },
+      ...projects.flatMap((p) => [
+        { src: p.image, alt: p.title.en, category: "projects" as const },
+        ...p.images.map((src) => ({ src, alt: p.title.en, category: "projects" as const })),
+      ].filter((img) => img.src)),
+    ];
+    return list.filter((img) => filter === "all" || img.category === filter);
+  }, [projects, filter]);
+
+  const videos = useMemo(
+    () => projects.filter((p) => p.videoUrl?.trim()).map((p) => ({ ...p, embed: toVideoEmbedUrl(p.videoUrl!) })),
+    [projects]
+  );
 
   return (
     <main>
@@ -69,14 +80,43 @@ export default function GalleryPage() {
             ))}
           </div>
 
-          <div className="enterprise-card p-8 mt-12 text-center max-w-2xl mx-auto">
-            <div className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mx-auto mb-4">
-              <Play className="w-7 h-7 text-brand-600" />
-            </div>
-            <h3 className="font-bold text-heading mb-2">{lang === "bn" ? "ভিডিও গ্যালারি" : "Video Gallery"}</h3>
-            <p className="text-sm text-muted">
-              {lang === "bn" ? "ভিডিও রিভিউ ও প্রজেক্ট ডেমো শীঘ্রই আসছে।" : "Video reviews and project demos coming soon."}
-            </p>
+          <div className="mt-12">
+            <h3 className="font-bold text-heading mb-6 text-center text-xl">
+              {lang === "bn" ? "ভিডিও গ্যালারি" : "Video Gallery"}
+            </h3>
+            {videos.length === 0 ? (
+              <div className="enterprise-card p-8 text-center max-w-2xl mx-auto">
+                <div className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mx-auto mb-4">
+                  <Play className="w-7 h-7 text-brand-600" />
+                </div>
+                <p className="text-sm text-muted">
+                  {lang === "bn" ? "এডমিন থেকে প্রজেক্টে ভিডিও লিংক যোগ করুন।" : "Add video links to projects from Admin → Project Gallery."}
+                </p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                {videos.map((p) => (
+                  <div key={p.slug} className="enterprise-card overflow-hidden">
+                    {p.embed && (p.embed.includes("youtube.com") || p.embed.includes("vimeo.com")) ? (
+                      <div className="relative aspect-video">
+                        <iframe src={p.embed} title={lang === "bn" ? p.title.bn : p.title.en} className="absolute inset-0 w-full h-full" allowFullScreen />
+                      </div>
+                    ) : p.embed ? (
+                      <video src={p.embed} controls className="w-full aspect-video object-cover bg-black" />
+                    ) : null}
+                    <div className="p-4">
+                      <h4 className="font-bold text-heading">{lang === "bn" ? p.title.bn : p.title.en}</h4>
+                      {p.liveUrl && (
+                        <a href={p.liveUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-brand-600 mt-2 hover:underline">
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          {lang === "bn" ? "লাইভ দেখুন" : "View Live"}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </section>

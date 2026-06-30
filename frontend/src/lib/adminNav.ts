@@ -8,6 +8,7 @@ import {
   FileText,
   Star,
   BookOpen,
+  FolderKanban,
   CreditCard,
   Bot,
   Mail,
@@ -79,6 +80,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Content",
     labelBn: "কনটেন্ট",
     items: [
+      { href: "/admin/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি" },
       { href: "/admin/blog", icon: BookOpen, label: "Blog", labelBn: "ব্লগ" },
       { href: "/admin/email-templates", icon: Mail, label: "Email Templates", labelBn: "ইমেইল" },
     ],
