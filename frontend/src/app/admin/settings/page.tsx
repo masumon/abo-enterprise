@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 
@@ -381,40 +382,37 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-500 text-sm mt-1">Configure business, branding and site settings</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={load}
-            disabled={loading}
-            className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
-          <button
-            onClick={handleSaveAll}
-            disabled={saving !== null || loading}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              savedId === "__all__"
-                ? "bg-green-500 text-white"
-                : "bg-brand-600 text-white hover:bg-brand-700"
-            } disabled:opacity-50`}
-          >
-            {saving === "__all__"
-              ? <Loader2 className="w-4 h-4 animate-spin" />
-              : savedId === "__all__"
-                ? <Check className="w-4 h-4" />
-                : <SaveAll className="w-4 h-4" />
-            }
-            {saving === "__all__" ? "Saving…" : savedId === "__all__" ? "All Saved!" : "Save All"}
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title="Settings"
+        titleBn="সাইট সেটিংস"
+        description="ব্র্যান্ডিং, যোগাযোগ, ডেলিভারি, পেমেন্ট ও মার্কেটিং কনফিগার করুন"
+        actions={
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={load}
+              disabled={loading}
+              className="admin-btn-secondary !py-2"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+            <button
+              onClick={handleSaveAll}
+              disabled={saving !== null || loading}
+              className={`admin-btn-primary !py-2 ${savedId === "__all__" ? "!bg-green-600 hover:!bg-green-600" : ""}`}
+            >
+              {saving === "__all__"
+                ? <Loader2 className="w-4 h-4 animate-spin" />
+                : savedId === "__all__"
+                  ? <Check className="w-4 h-4" />
+                  : <SaveAll className="w-4 h-4" />
+              }
+              {saving === "__all__" ? "Saving…" : savedId === "__all__" ? "All Saved!" : "Save All"}
+            </button>
+          </div>
+        }
+      />
 
       {loading ? (
         <div className="space-y-4">
@@ -423,7 +421,7 @@ export default function AdminSettingsPage() {
           ))}
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-6 max-w-3xl">
           {SECTIONS.map((section) => (
             <SectionCard
               key={section.id}

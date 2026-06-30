@@ -4,14 +4,17 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
   ShoppingCart, Briefcase, Users, Package,
-  Clock, TrendingUp, AlertCircle, RefreshCw, DollarSign,
+  Clock, TrendingUp, AlertCircle, RefreshCw, DollarSign, Sparkles,
 } from "lucide-react";
 import { adminApi } from "@/lib/api";
 import api from "@/lib/api";
 import StatsCard from "@/components/admin/StatsCard";
 import StatusBadge from "@/components/admin/StatusBadge";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminQuickActions from "@/components/admin/AdminQuickActions";
 import { formatPrice } from "@/lib/utils";
 import { useAlertStore } from "@/store/alerts";
+import { ADMIN_QUICK_ACTIONS } from "@/lib/adminNav";
 
 interface Stats {
   total_orders: number;
@@ -37,7 +40,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
-  const { lastUpdated } = useAlertStore();
+  const { lastUpdated, pendingOrders, pendingBookings, newLeads } = useAlertStore();
 
   const fetchStats = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -59,56 +62,73 @@ export default function AdminDashboard() {
     }
   }, []);
 
-  // Initial load
   useEffect(() => { fetchStats(); }, [fetchStats]);
 
-  // Re-fetch when polling detects changes (lastUpdated changes)
   useEffect(() => {
     if (lastUpdated) fetchStats(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lastUpdated]);
 
   const updatedLabel = lastUpdated
-    ? (() => {
-        const now = new Date();
-        const isToday = lastUpdated.toDateString() === now.toDateString();
-        const time = lastUpdated.toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" });
-        const date = lastUpdated.toLocaleDateString("en-BD", { day: "numeric", month: "short" });
-        return `Updated ${isToday ? time : `${date}, ${time}`}`;
-      })()
+    ? lastUpdated.toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" })
     : null;
 
+  const quickActions = ADMIN_QUICK_ACTIONS.map((a) => ({
+    ...a,
+    badge:
+      a.href === "/admin/orders" ? pendingOrders :
+      a.href === "/admin/bookings" ? pendingBookings :
+      a.href === "/admin/leads" ? newLeads : undefined,
+  }));
+
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "সুপ্রভাত";
+    if (h < 17) return "শুভ অপরাহ্ন";
+    return "শুভ সন্ধ্যা";
+  })();
+
   return (
-    <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-500 text-sm mt-1">ABO Enterprise — Admin Overview</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {updatedLabel && (
-            <span className="text-xs text-gray-400">{updatedLabel}</span>
-          )}
-          <button
-            onClick={() => fetchStats(true)}
-            disabled={refreshing}
-            className="p-2 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 transition-colors disabled:opacity-40"
-            title="Refresh"
-          >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        title={`${greeting}!`}
+        titleBn="Admin Dashboard"
+        description="আপনার ব্যবসার সারাংশ — অর্ডার, বুকিং, লিড ও রিভেন্যু এক নজরে"
+        actions={
+          <div className="flex items-center gap-2">
+            {updatedLabel && (
+              <span className="text-xs text-gray-400 hidden sm:inline">Updated {updatedLabel}</span>
+            )}
+            <button
+              onClick={() => fetchStats(true)}
+              disabled={refreshing}
+              className="admin-btn-secondary !py-2 !px-3"
+              title="Refresh"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+            </button>
+          </div>
+        }
+      />
 
       {error && (
         <div role="alert" className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          Failed to load dashboard stats. Please refresh the page.
+          ড্যাশবোর্ড লোড হয়নি। Refresh চাপুন।
         </div>
       )}
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      {/* Quick actions */}
+      <section>
+        <div className="flex items-center gap-2 mb-3">
+          <Sparkles className="w-4 h-4 text-brand-500" />
+          <h2 className="text-sm font-semibold text-gray-700">দ্রুত কাজ</h2>
+        </div>
+        <AdminQuickActions actions={quickActions} />
+      </section>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {revenueTotal !== null && (
           <StatsCard
             title="Revenue (30d)"
@@ -120,7 +140,7 @@ export default function AdminDashboard() {
           />
         )}
         <StatsCard
-          title="Total Orders"
+          title="Orders"
           value={stats?.total_orders ?? 0}
           sub={`${stats?.pending_orders ?? 0} pending`}
           icon={ShoppingCart}
@@ -129,7 +149,7 @@ export default function AdminDashboard() {
           alert={!!stats?.pending_orders}
         />
         <StatsCard
-          title="Service Bookings"
+          title="Bookings"
           value={stats?.total_bookings ?? 0}
           sub={`${stats?.pending_bookings ?? 0} pending`}
           icon={Briefcase}
@@ -138,7 +158,7 @@ export default function AdminDashboard() {
           alert={!!stats?.pending_bookings}
         />
         <StatsCard
-          title="Project Leads"
+          title="Leads"
           value={stats?.total_leads ?? 0}
           sub={`${stats?.new_leads ?? 0} new`}
           icon={Users}
@@ -156,71 +176,79 @@ export default function AdminDashboard() {
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Orders */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <div className="admin-card">
+          <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base">
               <Clock className="w-4 h-4 text-gray-400" />
               Recent Orders
             </h2>
-            <Link href="/admin/orders" className="text-xs text-brand-600 hover:underline">View all</Link>
+            <Link href="/admin/orders" className="text-xs text-brand-600 hover:underline font-medium">
+              সব দেখুন →
+            </Link>
           </div>
           <div className="divide-y divide-gray-50">
             {loading ? (
               Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="px-5 py-3 flex items-center gap-3">
+                <div key={i} className="px-5 py-3 flex gap-3">
                   <div className="flex-1 h-4 bg-gray-100 rounded animate-pulse" />
-                  <div className="w-16 h-4 bg-gray-100 rounded animate-pulse" />
                 </div>
               ))
             ) : stats?.recent_orders?.length === 0 ? (
-              <p className="px-5 py-8 text-center text-gray-400 text-sm">No orders yet</p>
+              <p className="px-5 py-10 text-center text-gray-400 text-sm">No orders yet</p>
             ) : (
               stats?.recent_orders?.map((order) => (
-                <div key={order.id} className="px-5 py-3 flex items-center justify-between gap-3">
+                <Link
+                  key={order.id}
+                  href="/admin/orders"
+                  className="px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-gray-50/80 transition-colors"
+                >
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{order.customer_name}</p>
                     <p className="text-xs text-gray-400">{order.order_number}</p>
                   </div>
-                  <div className="text-right flex-shrink-0">
+                  <div className="text-right shrink-0">
                     <p className="text-sm font-semibold text-gray-900">{formatPrice(order.total)}</p>
                     <StatusBadge status={order.order_status} />
                   </div>
-                </div>
+                </Link>
               ))
             )}
           </div>
         </div>
 
-        {/* Recent Leads */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-            <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+        <div className="admin-card">
+          <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-gray-100">
+            <h2 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base">
               <TrendingUp className="w-4 h-4 text-gray-400" />
               Recent Leads
             </h2>
-            <Link href="/admin/leads" className="text-xs text-brand-600 hover:underline">View all</Link>
+            <Link href="/admin/leads" className="text-xs text-brand-600 hover:underline font-medium">
+              সব দেখুন →
+            </Link>
           </div>
           <div className="divide-y divide-gray-50">
             {loading ? (
               Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="px-5 py-3 flex items-center gap-3">
-                  <div className="flex-1 h-4 bg-gray-100 rounded animate-pulse" />
-                  <div className="w-16 h-4 bg-gray-100 rounded animate-pulse" />
-                </div>
+                <div key={i} className="px-5 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></div>
               ))
             ) : stats?.recent_leads?.length === 0 ? (
-              <p className="px-5 py-8 text-center text-gray-400 text-sm">No leads yet</p>
+              <p className="px-5 py-10 text-center text-gray-400 text-sm">No leads yet</p>
             ) : (
               stats?.recent_leads?.map((lead) => (
-                <div key={lead.id} className="px-5 py-3 flex items-center justify-between gap-3">
+                <Link
+                  key={lead.id}
+                  href="/admin/leads"
+                  className="px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-gray-50/80 transition-colors"
+                >
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">{lead.name}</p>
-                    <p className="text-xs text-gray-400">{lead.phone} · {lead.lead_type.replace(/_/g, " ")}</p>
+                    <p className="text-xs text-gray-400 truncate">
+                      {lead.phone} · {lead.lead_type.replace(/_/g, " ")}
+                    </p>
                   </div>
                   <StatusBadge status={lead.status} />
-                </div>
+                </Link>
               ))
             )}
           </div>

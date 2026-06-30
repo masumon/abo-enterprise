@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Search, Copy } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Copy } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
 import { productsApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminToolbar from "@/components/admin/AdminToolbar";
+import AdminEmptyState from "@/components/admin/AdminEmptyState";
 import type { Product } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { cn } from "@/lib/utils";
@@ -231,27 +234,23 @@ export default function AdminProductsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-500 text-sm mt-1">{total} items</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-            <input
-              value={searchInput}
-              onChange={e => handleSearchChange(e.target.value)}
-              placeholder="Search products…"
-              className="input pl-9 text-sm w-full sm:w-52"
-            />
-          </div>
-          <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
+    <div className="space-y-4 sm:space-y-6">
+      <AdminPageHeader
+        title="Products"
+        titleBn="পণ্য ব্যবস্থাপনা"
+        description={`${total} products — add, edit, stock & pricing`}
+        actions={
+          <button onClick={openCreate} className="admin-btn-primary">
             <Plus className="w-4 h-4" /> Add Product
           </button>
-        </div>
-      </div>
+        }
+      />
+
+      <AdminToolbar
+        searchValue={searchInput}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="পণ্য খুঁজুন…"
+      />
 
       {actionError && (
         <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-2">
@@ -265,10 +264,7 @@ export default function AdminProductsPage() {
             <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
           </div>
         ) : products.length === 0 ? (
-          <div className="p-12 text-center">
-            <Package className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 font-medium">No products yet</p>
-          </div>
+          <AdminEmptyState icon={Package} title="No products yet" description="Add your first product to start selling." />
         ) : (
           <div className="overflow-x-auto">
             <table className="table-premium min-w-[480px]">

@@ -5,14 +5,14 @@ import { usePathname } from "next/navigation";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAdminPolling } from "@/hooks/useAdminPolling";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import AdminTopBar from "@/components/admin/AdminTopBar";
 import ToastProvider from "@/components/ui/ToastProvider";
-import { Loader2, Menu } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, loading, logout } = useAdmin(pathname !== "/admin/login");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Start global 30s polling once authenticated (no-op on login page)
   useAdminPolling(pathname !== "/admin/login");
 
   if (pathname === "/admin/login") {
@@ -21,50 +21,45 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
+      <div className="min-h-screen admin-auth-loading flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-brand-500 animate-spin mx-auto mb-3" />
-          <p className="text-gray-400 text-sm">যাচাই করছি...</p>
+          <p className="text-gray-400 text-sm">যাচাই করছি…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      className="min-h-screen"
-      style={{
-        background: "linear-gradient(145deg, #f0f4ff 0%, #f8faff 50%, #faf0ff 100%)",
-      }}
-    >
+    <div className="min-h-screen admin-shell">
       {sidebarOpen && (
         <button
           type="button"
-          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/50 lg:hidden backdrop-blur-sm"
           aria-label="Close sidebar"
           onClick={() => setSidebarOpen(false)}
         />
       )}
+
       <AdminSidebar
         onLogout={logout}
         adminName={user.name}
+        adminRole={user.role}
         mobileOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
-      <div className="lg:pl-60">
-        <div className="lg:hidden sticky top-0 z-20 flex items-center gap-3 px-4 py-3 bg-white/90 backdrop-blur-md border-b border-gray-100">
-          <button
-            type="button"
-            onClick={() => setSidebarOpen(true)}
-            className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-gray-100"
-            aria-label="Open menu"
-          >
-            <Menu className="w-5 h-5 text-gray-700" />
-          </button>
-          <span className="font-semibold text-gray-900 text-sm">ABO Admin</span>
-        </div>
-        <main className="min-h-screen p-4 md:p-6 lg:p-8 pb-[max(1rem,env(safe-area-inset-bottom))]">{children}</main>
+
+      <div className="lg:pl-64 min-h-screen flex flex-col">
+        <AdminTopBar
+          adminName={user.name}
+          adminRole={user.role}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
+        <main className="flex-1 p-4 md:p-6 lg:p-8 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <div className="admin-page-container">{children}</div>
+        </main>
       </div>
+
       <ToastProvider />
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import api, { downloadCsv } from "@/lib/api";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { TrendingUp, ShoppingCart, Calendar, Users, Download, RefreshCw } from "lucide-react";
 
 interface Overview {
@@ -58,27 +59,27 @@ export default function AnalyticsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
-          <p className="text-gray-500 text-sm mt-1">Business performance overview</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={days}
-            onChange={e => setDays(Number(e.target.value))}
-            className="border border-gray-200 rounded-lg px-3 py-2 text-sm"
-          >
-            <option value={7}>Last 7 days</option>
-            <option value={30}>Last 30 days</option>
-            <option value={90}>Last 90 days</option>
-          </select>
-          <button type="button" onClick={fetchAll} className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50">
-            <RefreshCw className="w-4 h-4 text-gray-500" />
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Analytics"
+        titleBn="বিজনেস রিপোর্ট"
+        description="Revenue, orders, bookings, leads & export"
+        actions={
+          <div className="flex items-center gap-2">
+            <select
+              value={days}
+              onChange={e => setDays(Number(e.target.value))}
+              className="admin-input w-auto py-2"
+            >
+              <option value={7}>Last 7 days</option>
+              <option value={30}>Last 30 days</option>
+              <option value={90}>Last 90 days</option>
+            </select>
+            <button type="button" onClick={fetchAll} className="admin-btn-secondary !py-2 !px-3">
+              <RefreshCw className="w-4 h-4 text-gray-500" />
+            </button>
+          </div>
+        }
+      />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

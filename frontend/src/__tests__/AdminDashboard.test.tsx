@@ -1,9 +1,21 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import AdminDashboard from "@/app/admin/page";
 
 const mockStats = jest.fn();
 const mockGet = jest.fn();
+
+jest.mock("@/store/alerts", () => ({
+  useAlertStore: jest.fn((selector?: (s: Record<string, unknown>) => unknown) => {
+    const state = {
+      lastUpdated: null,
+      pendingOrders: 0,
+      pendingBookings: 0,
+      newLeads: 0,
+      set: jest.fn(),
+    };
+    return selector ? selector(state) : state;
+  }),
+}));
 
 jest.mock("@/lib/api", () => ({
   __esModule: true,
@@ -56,7 +68,7 @@ describe("Admin Dashboard", () => {
     render(<AdminDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText(/Total Orders/)).toBeInTheDocument();
+      expect(screen.getByText(/^Orders$/)).toBeInTheDocument();
       expect(screen.getByText("45")).toBeInTheDocument();
     });
   });
