@@ -44,19 +44,31 @@ export const SOCIAL_PROFILES = [
 
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/icons/icon-512.png`;
 
-export const BRAND_NAME = "ABO ENTERPRISE";
+export const BRAND_NAME = {
+  en: "ABO ENTERPRISE",
+  bn: "এবিও এন্টারপ্রাইজ",
+} as const;
 
-/** Logo tagline — always shown bilingually */
 export const BRAND_TAGLINE = {
   en: "Simple Solution",
   bn: "সহজ সমাধান",
 } as const;
 
-export const BRAND_TAGLINE_BILINGUAL = `${BRAND_TAGLINE.en} · ${BRAND_TAGLINE.bn}`;
+export type BrandLang = keyof typeof BRAND_NAME;
 
-export const BRAND_FULL_TITLE = `${BRAND_NAME} : ${BRAND_TAGLINE_BILINGUAL}`;
+export function getBrandName(lang: BrandLang): string {
+  return BRAND_NAME[lang];
+}
 
-export const BRAND_MOTTO = BRAND_TAGLINE_BILINGUAL;
+export function getBrandTagline(lang: BrandLang): string {
+  return BRAND_TAGLINE[lang];
+}
+
+export function getBrandFullTitle(lang: BrandLang): string {
+  return `${BRAND_NAME[lang]} : ${BRAND_TAGLINE[lang]}`;
+}
+
+export const BRAND_MOTTO = BRAND_TAGLINE;
 
 export const ABO_ACRONYM = {
   en: "ABO — Sumon Brothers Organization: Trusted enterprise for products, services & software.",

@@ -13,7 +13,7 @@ import { useT } from "@/lib/i18n/useT";
 import SearchSuggestions from "@/components/search/SearchSuggestions";
 import MegaMenu from "@/components/layout/MegaMenu";
 import BrandLogo from "@/components/ui/BrandLogo";
-import { BRAND_NAME, BRAND_TAGLINE_BILINGUAL } from "@/lib/tokens";
+import { getBrandFullTitle, getBrandName, getBrandTagline } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 const MOBILE_LINKS = [
@@ -95,10 +95,10 @@ export default function Navbar() {
           <BrandLogo size="sm" href={false} priority />
           <span className="hidden sm:block min-w-0">
             <span className="font-bold text-lg tracking-tight block text-brand-800 dark:text-white truncate">
-              {BRAND_NAME}
+              {getBrandName(lang)}
             </span>
             <p className="text-[10px] font-medium text-brand-600/90 dark:text-brand-200/80 truncate max-w-[11rem] md:max-w-[15rem] leading-snug">
-              : {BRAND_TAGLINE_BILINGUAL}
+              : {getBrandTagline(lang)}
             </p>
           </span>
         </Link>
@@ -175,7 +175,7 @@ export default function Navbar() {
           <div className="px-4 pt-4 pb-2 flex items-center gap-2.5 sm:hidden">
             <BrandLogo size="xs" href={false} />
             <p className="text-[10px] font-medium text-brand-700 dark:text-brand-200 min-w-0 leading-snug">
-              {BRAND_NAME} : {BRAND_TAGLINE_BILINGUAL}
+              {getBrandFullTitle(lang)}
             </p>
           </div>
           <div className="px-4 pt-2">

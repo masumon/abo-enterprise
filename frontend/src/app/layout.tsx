@@ -5,7 +5,7 @@ import PublicShell from "@/components/layout/PublicShell";
 import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import UtmTracker from "@/lib/utm";
-import { DEFAULT_OG_IMAGE, SITE_URL, BRAND_FULL_TITLE } from "@/lib/tokens";
+import { DEFAULT_OG_IMAGE, SITE_URL, getBrandFullTitle } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
 
 const API_ORIGIN = getApiBaseUrl();
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s | ABO Enterprise",
   },
   description:
-    "ABO ENTERPRISE : Simple Solution · সহজ সমাধান — মোবাইল এক্সেসরিজ, গ্যাজেট, প্রিন্টিং, আইনি সেবা, ওয়েবসাইট, AI সমাধান এবং কাস্টম সফটওয়্যার — একটি প্ল্যাটফর্মে।",
+    "এবিও এন্টারপ্রাইজ : সহজ সমাধান — মোবাইল এক্সেসরিজ, গ্যাজেট, প্রিন্টিং, আইনি সেবা, ওয়েবসাইট, AI সমাধান এবং কাস্টম সফটওয়্যার — একটি প্ল্যাটফর্মে।",
   keywords: [
     "ABO Enterprise",
     "মোবাইল এক্সেসরিজ সিলেট",
@@ -38,14 +38,14 @@ export const metadata: Metadata = {
     locale: "bn_BD",
     alternateLocale: "en_US",
     siteName: "ABO Enterprise",
-    title: BRAND_FULL_TITLE,
-    description: "মোবাইল এক্সেসরিজ থেকে AI সমাধান — Simple Solution · সহজ সমাধান, সব এক জায়গায়।",
+    title: getBrandFullTitle("bn"),
+    description: "মোবাইল এক্সেসরিজ থেকে AI সমাধান — সহজ সমাধান, সব এক জায়গায়।",
     images: [{ url: DEFAULT_OG_IMAGE, width: 512, height: 512, alt: "ABO Enterprise" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "ABO Enterprise",
-    description: BRAND_FULL_TITLE,
+    description: getBrandFullTitle("en"),
   },
   robots: { index: true, follow: true },
   manifest: "/manifest.json",
