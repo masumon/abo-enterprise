@@ -7,6 +7,7 @@ import { Search, Package, Calendar, Briefcase } from "lucide-react";
 import api from "@/lib/api";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import { useLanguageStore } from "@/store/language";
+import PageHero from "@/components/ui/PageHero";
 
 interface Result {
   type: "product" | "service" | "project";
@@ -28,7 +29,7 @@ const SERVICE_SLUG_MAP: Record<string, string> = {
 function resolveServiceHref(slug: string, category?: string): string {
   if (SERVICE_SLUG_MAP[slug]) return SERVICE_SLUG_MAP[slug];
   if (category && SERVICE_SLUG_MAP[category]) return SERVICE_SLUG_MAP[category]!;
-  return "/services";
+  return `/services/${slug}`;
 }
 
 function SearchResults() {
@@ -74,35 +75,33 @@ function SearchResults() {
   const ICONS = { product: Package, service: Calendar, project: Briefcase };
   const COLORS = { product: "text-blue-600 bg-blue-50", service: "text-green-600 bg-green-50", project: "text-purple-600 bg-purple-50" };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-10 max-w-3xl">
-        <h1 className="text-2xl font-bold text-gray-900 mb-1">
-          {q
-            ? lang === "bn"
-              ? `"${q}" এর ফলাফল`
-              : `Results for "${q}"`
-            : lang === "bn"
-              ? "খুঁজুন"
-              : "Search"}
-        </h1>
-        {q && (
-          <p className="text-gray-500 text-sm mb-6">
-            {lang === "bn" ? `${results.length}টি ফলাফল` : `${results.length} results found`}
-          </p>
-        )}
+  const title = q
+    ? lang === "bn" ? `"${q}" এর ফলাফল` : `Results for "${q}"`
+    : lang === "bn" ? "খুঁজুন" : "Search";
 
+  return (
+    <main className="min-h-screen page-surface">
+      <PageHero
+        title={title}
+        subtitle={q ? (lang === "bn" ? `${results.length}টি ফলাফল` : `${results.length} results found`) : (lang === "bn" ? "পণ্য ও সেবা খুঁজুন" : "Find products and services")}
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "খুঁজুন" : "Search" },
+        ]}
+        variant="light"
+      />
+      <div className="container mx-auto px-4 py-10 max-w-3xl">
         {loading ? (
-          <div className="grid gap-4">
+          <div className="grid gap-4" aria-busy="true">
             {[1, 2, 3].map((i) => <ProductCardSkeleton key={i} />)}
           </div>
         ) : results.length === 0 && q ? (
-          <div className="text-center py-16">
+          <div className="text-center py-16 enterprise-card p-8">
             <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">
+            <p className="text-muted">
               {lang === "bn" ? "কোনো ফলাফল পাওয়া যায়নি।" : "No results found."}
             </p>
-            <div className="flex gap-3 justify-center mt-6">
+            <div className="flex gap-3 justify-center mt-6 flex-wrap">
               <Link href="/products" className="btn btn-brand btn-sm">
                 {lang === "bn" ? "সব পণ্য" : "All Products"}
               </Link>
@@ -120,14 +119,14 @@ function SearchResults() {
                 <Link
                   key={r.id + r.type}
                   href={r.href}
-                  className="flex items-center gap-4 bg-white rounded-xl border border-gray-100 p-4 hover:shadow-md hover:border-brand-200 transition-all"
+                  className="flex items-center gap-4 enterprise-card p-4 hover:shadow-md transition-all"
                 >
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
                     <Icon className="w-5 h-5" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{r.title}</p>
-                    <p className="text-sm text-gray-500">{r.subtitle}</p>
+                    <p className="font-semibold text-heading truncate">{r.title}</p>
+                    <p className="text-sm text-muted">{r.subtitle}</p>
                   </div>
                   <span className={`text-xs font-medium px-2 py-1 rounded-full ${color}`}>
                     {r.type}
@@ -138,7 +137,7 @@ function SearchResults() {
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 

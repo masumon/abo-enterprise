@@ -14,6 +14,7 @@ import GlassCard from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
+import PageHero from "@/components/ui/PageHero";
 
 export default function ContactPage() {
   const { lang } = useLanguageStore();
@@ -71,12 +72,14 @@ export default function ContactPage() {
 
   return (
     <main className="min-h-screen">
-      <section className="gradient-brand text-white py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl font-bold mb-3">{t("contact_title")}</h1>
-          <p className="text-brand-100 text-lg">{t("contact_sub")}</p>
-        </div>
-      </section>
+      <PageHero
+        title={t("contact_title")}
+        subtitle={t("contact_sub")}
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "যোগাযোগ" : "Contact" },
+        ]}
+      />
 
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid lg:grid-cols-5 gap-8">
@@ -121,7 +124,7 @@ export default function ContactPage() {
                   {lang === "bn" ? "বার্তা পাঠানো হয়েছে!" : "Message Sent!"}
                 </h3>
                 <p className="text-gray-500">
-                  {lang === "bn" ? "২৪ ঘণ্টার মধ্যে যোগাযোগ করা হবে।" : "We'll get back to you within 24 hours."}
+                  {lang === "bn" ? "২৪ ঘণ্টার মধ্যে যোগাযোগ করা হবে।" : "We will get back to you within 24 hours."}
                 </p>
               </div>
             ) : (

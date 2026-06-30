@@ -262,7 +262,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
       {/* Success Message */}
       {success && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-          Thank you! We received your inquiry. We'll contact you within 24 hours.
+          Thank you! We received your inquiry. We&apos;ll contact you within 24 hours.
         </div>
       )}
 
@@ -282,7 +282,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
       </button>
 
       <p className="text-xs text-gray-500 text-center">
-        We'll review your requirements and contact you with a custom quote within 24 hours.
+        We&apos;ll review your requirements and contact you with a custom quote within 24 hours.
       </p>
     </form>
   );

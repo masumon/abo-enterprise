@@ -17,7 +17,7 @@ describe("Booking Form", () => {
     name_en: "Web Development",
     slug: "web-development",
     description_en: "Custom web development",
-    pricing_type: "fixed",
+    pricing_type: "fixed" as const,
     base_price: 50000,
     category: "development",
     is_active: true,

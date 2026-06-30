@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Package, ArrowRight } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
+import PageHero from "@/components/ui/PageHero";
 
 function OrderSuccessContent() {
   const params = useSearchParams();
@@ -16,7 +17,21 @@ function OrderSuccessContent() {
   }, [params]);
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 page-surface pb-mobile-nav lg:pb-0">
+    <main className="min-h-screen page-surface pb-mobile-nav lg:pb-0">
+      <PageHero
+        title={lang === "bn" ? "অর্ডার হয়েছে!" : "Order Placed!"}
+        subtitle={
+          lang === "bn"
+            ? "আপনার অর্ডারের জন্য ধন্যবাদ"
+            : "Thank you for your order"
+        }
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "সফল" : "Success" },
+        ]}
+        variant="light"
+      />
+      <div className="flex items-center justify-center px-4 pb-12">
       <div className="surface-card rounded-2xl shadow-sm p-8 max-w-md w-full text-center">
         <div className="flex justify-center mb-5">
           <div className="w-20 h-20 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center">
@@ -24,9 +39,6 @@ function OrderSuccessContent() {
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold text-heading mb-2">
-          {lang === "bn" ? "অর্ডার হয়েছে!" : "Order Placed!"}
-        </h1>
         <p className="text-muted mb-6">
           {lang === "bn"
             ? "আপনার অর্ডারের জন্য ধন্যবাদ। নিশ্চিত করতে আমরা শীঘ্রই যোগাযোগ করব।"
@@ -63,6 +75,7 @@ function OrderSuccessContent() {
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
+      </div>
       </div>
     </main>
   );

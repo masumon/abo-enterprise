@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, Loader2, LayoutGrid, List } from "lucide-react";
 import { productsApi } from "@/lib/api";
 import type { Product, ProductCategory } from "@/types";
@@ -25,20 +26,24 @@ interface Props {
   initialProducts: Product[];
   initialTotal: number;
   initialPage?: number;
+  initialCategory?: ProductCategory | "";
 }
 
 export default function ProductsClient({
   initialProducts,
   initialTotal,
   initialPage = 1,
+  initialCategory = "",
 }: Props) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { lang } = useLanguageStore();
   const t = useT();
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
-  const [category, setCategory] = useState<ProductCategory | "">("");
+  const [category, setCategory] = useState<ProductCategory | "">(initialCategory);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortBy, setSortBy] = useState("");
@@ -49,6 +54,31 @@ export default function ProductsClient({
   const infiniteScroll = useFeatureFlag("feature_infinite_scroll");
   const sentinelRef = useRef<HTMLDivElement>(null);
   const isFirstLoad = useRef(true);
+  const urlCategory = searchParams.get("category") ?? "";
+
+  useEffect(() => {
+    setProducts(initialProducts);
+    setTotal(initialTotal);
+    setCategory(initialCategory);
+    isFirstLoad.current = true;
+  }, [initialProducts, initialTotal, initialCategory]);
+
+  useEffect(() => {
+    const next =
+      urlCategory && CATEGORIES.some((c) => c.value === urlCategory)
+        ? (urlCategory as ProductCategory)
+        : "";
+    setCategory((prev) => (prev === next ? prev : next));
+  }, [urlCategory]);
+
+  const handleCategoryChange = (value: ProductCategory | "") => {
+    setCategory(value);
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set("category", value);
+    else params.delete("category");
+    const qs = params.toString();
+    router.replace(qs ? `/products?${qs}` : "/products", { scroll: false });
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
@@ -129,7 +159,7 @@ export default function ProductsClient({
             <button
               key={c.value}
               type="button"
-              onClick={() => setCategory(c.value as ProductCategory | "")}
+              onClick={() => handleCategoryChange(c.value as ProductCategory | "")}
               className={cn(
                 "px-4 py-2 rounded-xl text-sm font-medium transition-all",
                 category === c.value ? "bg-brand-600 text-white" : "bg-white text-gray-600 hover:bg-brand-50 border border-gray-100"

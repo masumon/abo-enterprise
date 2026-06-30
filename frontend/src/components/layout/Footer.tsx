@@ -169,6 +169,10 @@ export default function Footer() {
           <p className="text-xs text-gray-600">
             {lang === "bn" ? "তৈরি করেছেন" : "Built by"}{" "}
             <a href="https://mumain.dev" target="_blank" rel="noopener noreferrer" className="text-brand-400 hover:text-brand-300 font-medium">Mumain.dev</a>
+            <span className="mx-2 text-gray-700">·</span>
+            <Link href="/admin/login" className="text-gray-500 hover:text-gray-300">
+              {lang === "bn" ? "এডমিন" : "Admin"}
+            </Link>
           </p>
         </div>
       </div>

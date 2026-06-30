@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import type { BlogPost } from "@/types";
 
 import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import BlogPostActions from "./BlogPostActions";
+import BlogPostBreadcrumb from "./BlogPostBreadcrumb";
 
 const API_BASE = getApiBaseUrl();
 
@@ -117,12 +119,14 @@ export default async function BlogPostPage({
       <main className="min-h-screen">
         {/* Hero */}
         {post.featured_image_url ? (
-          <div className="w-full overflow-hidden bg-gray-900" style={{ maxHeight: "480px" }}>
-            <img
+          <div className="relative w-full overflow-hidden bg-gray-900 h-[min(480px,50vh)]">
+            <Image
               src={post.featured_image_url}
               alt={post.title_en}
-              className="w-full object-cover object-top"
-              style={{ maxHeight: "480px" }}
+              fill
+              className="object-cover object-top"
+              sizes="100vw"
+              priority
             />
           </div>
         ) : (
@@ -130,20 +134,7 @@ export default async function BlogPostPage({
         )}
 
         <div className="max-w-3xl mx-auto px-4 py-10">
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-2 text-sm text-gray-400 mb-6">
-            <Link href="/blog" className="hover:text-brand-600 transition-colors">
-              Blog
-            </Link>
-            <span>/</span>
-            {post.category && (
-              <>
-                <span className="capitalize">{post.category}</span>
-                <span>/</span>
-              </>
-            )}
-            <span className="text-gray-600 truncate max-w-xs">{post.title_en}</span>
-          </nav>
+          <BlogPostBreadcrumb category={post.category} title={post.title_en} />
 
           {/* Category */}
           {post.category && (

@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import type { Product } from "@/types";
-import ProductsClient from "./ProductsClient";
+import ProductsPageShell from "./ProductsPageShell";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { pageMeta } from "@/lib/metadata";
 
 const API_BASE = getApiBaseUrl();
+const VALID_CATEGORIES = new Set(["accessories", "gadgets", "electronics", "computer"]);
 
-export const metadata: Metadata = {
-  title: "Products — Mobile Accessories & Gadgets",
-  description: "Browse quality mobile accessories, gadgets and electronics at the best prices in Bangladesh.",
-};
+async function fetchProducts(category?: string): Promise<{ products: Product[]; total: number }> {
+  const cat = category && VALID_CATEGORIES.has(category) ? category : undefined;
+  const qs = new URLSearchParams({ page: "1", per_page: "20" });
+  if (cat) qs.set("category", cat);
 
-async function fetchProducts(): Promise<{ products: Product[]; total: number }> {
   try {
-    const res = await fetch(`${API_BASE}/api/v1/products?page=1&per_page=20`, {
+    const res = await fetch(`${API_BASE}/api/v1/products?${qs}`, {
       next: { revalidate: 60 },
       signal: AbortSignal.timeout(55000),
     });
@@ -27,18 +29,29 @@ async function fetchProducts(): Promise<{ products: Product[]; total: number }> 
   }
 }
 
-export default async function ProductsPage() {
-  const { products, total } = await fetchProducts();
+export const metadata: Metadata = pageMeta(
+  "Products — Mobile Accessories & Gadgets",
+  "Browse quality mobile accessories, gadgets and electronics at the best prices in Bangladesh.",
+  "/products"
+);
+
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: { category?: string };
+}) {
+  const category = searchParams.category ?? "";
+  const { products, total } = await fetchProducts(category);
 
   return (
     <main className="min-h-screen">
-      <section className="gradient-brand text-white py-16 px-4">
-        <div className="max-w-6xl mx-auto text-center">
-          <h1 className="text-3xl md:text-4xl font-bold mb-3">Our Products</h1>
-          <p className="text-brand-100 text-lg">Quality accessories & electronics at the best prices</p>
-        </div>
-      </section>
-      <ProductsClient initialProducts={products} initialTotal={total} />
+      <Suspense fallback={<div className="py-24 text-center text-muted" aria-busy="true">Loading...</div>}>
+        <ProductsPageShell
+          initialProducts={products}
+          initialTotal={total}
+          initialCategory={category}
+        />
+      </Suspense>
     </main>
   );
 }

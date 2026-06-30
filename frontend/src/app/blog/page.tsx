@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { BlogPost } from "@/types";
 import { SITE_URL } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import BlogGrid from "./BlogGrid";
+import BlogPageClient from "./BlogPageClient";
 
 const API_BASE = getApiBaseUrl();
 
@@ -39,20 +39,5 @@ export default async function BlogListPage({
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10));
   const { posts, total, total_pages } = await fetchPosts(page);
 
-  return (
-    <main className="min-h-screen">
-      <section className="gradient-brand text-white py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Blog</h1>
-          <p className="text-xl text-brand-100">
-            Tech tips, business insights & updates from ABO Enterprise
-          </p>
-        </div>
-      </section>
-
-      <div className="max-w-5xl mx-auto px-4 py-12">
-        <BlogGrid posts={posts} page={page} totalPages={total_pages} />
-      </div>
-    </main>
-  );
+  return <BlogPageClient posts={posts} page={page} totalPages={total_pages} />;
 }
