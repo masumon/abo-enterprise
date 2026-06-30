@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import { BrandAppIcon } from "@/components/ui/BrandLogo";
 import { X, Download, ChevronUp, Smartphone } from "lucide-react";
 import { SITE_URL } from "@/lib/tokens";
 import { useLanguageStore } from "@/store/language";
@@ -144,9 +144,7 @@ export default function PWAInstallPrompt() {
           </button>
 
           <div className="flex items-center gap-3 mb-3 pr-8">
-            <div className="w-12 h-12 rounded-xl overflow-hidden shadow-md flex-shrink-0 ring-2 ring-brand-100">
-              <Image src="/icons/icon-192.png" alt="ABO" width={48} height={48} />
-            </div>
+            <BrandAppIcon size={48} className="!rounded-xl ring-2 ring-brand-100" />
             <div>
               <p id="pwa-prompt-title" className="font-bold text-heading text-sm">
                 {labels.title}

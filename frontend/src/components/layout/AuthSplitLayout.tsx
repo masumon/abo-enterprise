@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import BrandLogo from "@/components/ui/BrandLogo";
 import { useLanguageStore } from "@/store/language";
 import { BRAND_TAGLINE } from "@/lib/tokens";
 
@@ -22,7 +22,7 @@ export default function AuthSplitLayout({ children, title, subtitle }: AuthSplit
           <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent-500/10 rounded-full blur-3xl" />
         </div>
         <Link href="/" className="relative z-10 flex items-center gap-3">
-          <Image src="/logo.jpg" alt="ABO Enterprise" width={48} height={48} className="rounded-full border-2 border-white/30" />
+          <BrandLogo size="md" href={false} variant="light" />
           <span className="font-bold text-xl">ABO Enterprise</span>
         </Link>
         <div className="relative z-10 space-y-6">
@@ -51,7 +51,7 @@ export default function AuthSplitLayout({ children, title, subtitle }: AuthSplit
       <div className="flex items-center justify-center p-6 sm:p-10 page-surface">
         <div className="w-full max-w-md">
           <div className="lg:hidden text-center mb-8">
-            <Image src="/logo.jpg" alt="ABO Enterprise" width={56} height={56} className="rounded-full mx-auto mb-3 border-2 border-brand-200" />
+            <BrandLogo size="lg" href={false} variant="brand" className="mx-auto mb-3" />
           </div>
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-heading">{title}</h2>

@@ -49,21 +49,21 @@
       "short_name": "Products",
       "description": "সকল পণ্য ব্রাউজ করুন",
       "url": "/products",
-      "icons": [{ "src": "/icons/services-icon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "সেবা বুক করুন",
       "short_name": "Services",
       "description": "প্রিন্টিং, আইনি ও সফটওয়্যার সেবা",
       "url": "/services",
-      "icons": [{ "src": "/icons/projects-icon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "অর্ডার ট্র্যাক করুন",
       "short_name": "Track",
       "description": "আপনার অর্ডারের অবস্থান দেখুন",
       "url": "/track",
-      "icons": [{ "src": "/icons/bookings-icon.png", "sizes": "192x192" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

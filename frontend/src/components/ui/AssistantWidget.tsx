@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import Image from "next/image";
+import BrandLogo from "@/components/ui/BrandLogo";
 import {
   Send,
   X,
@@ -81,13 +81,13 @@ function formatMessageContent(text: string) {
 }
 
 function AssistantAvatar({ size = 32, className }: { size?: number; className?: string }) {
+  const brandSize = size <= 32 ? "xs" : size <= 36 ? "sm" : size <= 48 ? "md" : "lg";
   return (
-    <Image
-      src="/logo.jpg"
-      alt="ABO Enterprise"
-      width={size}
-      height={size}
-      className={cn("rounded-xl object-cover shadow-sm", className)}
+    <BrandLogo
+      size={brandSize}
+      href={false}
+      variant="brand"
+      className={cn("!rounded-xl", className)}
     />
   );
 }

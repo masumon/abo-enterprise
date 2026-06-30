@@ -294,6 +294,28 @@
     background: rgba(15, 45, 90, 0.45);
   }
 
+  /* ── Brand logo (consistent site-wide + PWA) ── */
+  .brand-logo {
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px rgba(15, 45, 90, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.08);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+  a:hover .brand-logo,
+  .brand-logo:hover {
+    box-shadow: 0 4px 14px rgba(30, 91, 168, 0.22), 0 0 0 1px rgba(255, 255, 255, 0.15);
+  }
+  .brand-logo--brand {
+    @apply bg-white ring-2 ring-brand-200/70;
+  }
+  .brand-logo--light {
+    @apply bg-white/95 ring-2 ring-white/35;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  }
+  .brand-logo--glass {
+    @apply bg-white/10 ring-2 ring-white/25 backdrop-blur-sm;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  }
+
   /* ── Premium Tables ── */
   .table-premium { @apply w-full text-sm; }
   .table-premium thead { @apply border-b border-gray-100; }

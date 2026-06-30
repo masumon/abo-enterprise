@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
   Facebook,
   MessageCircle,
@@ -26,6 +25,7 @@ import { publicApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
+import BrandLogo from "@/components/ui/BrandLogo";
 import { cn } from "@/lib/utils";
 
 const SERVICES = [
@@ -240,16 +240,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-10 xl:gap-8">
           <div className="sm:col-span-2 xl:col-span-4">
             <div className="flex items-center gap-3.5 mb-5">
-              <div className="relative w-14 h-14 rounded-2xl border border-white/15 bg-white/5 p-0.5 shadow-lg shadow-black/20">
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-brand-500/20 to-accent-500/10" />
-                <Image
-                  src="/logo.jpg"
-                  alt="ABO Enterprise"
-                  width={52}
-                  height={52}
-                  className="relative rounded-[14px] object-cover w-full h-full"
-                />
-              </div>
+              <BrandLogo size="lg" href={false} variant="light" />
               <div>
                 <h3 className="text-white font-bold text-xl tracking-tight">ABO Enterprise</h3>
                 <p className="text-brand-100 text-xs font-medium mt-0.5">

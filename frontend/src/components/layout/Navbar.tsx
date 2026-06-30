@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   ShoppingCart, Menu, X, Globe, Search, Briefcase, Moon, Sun, ChevronDown,
@@ -13,6 +12,7 @@ import { useThemeStore } from "@/store/theme";
 import { useT } from "@/lib/i18n/useT";
 import SearchSuggestions from "@/components/search/SearchSuggestions";
 import MegaMenu from "@/components/layout/MegaMenu";
+import BrandLogo from "@/components/ui/BrandLogo";
 import { cn } from "@/lib/utils";
 
 const MOBILE_LINKS = [
@@ -91,9 +91,7 @@ export default function Navbar() {
         aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
       >
         <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 min-w-0">
-          <div className="w-9 h-9 rounded-full border-2 border-brand-200 bg-white flex items-center justify-center overflow-hidden shadow-sm">
-            <Image src="/logo.jpg" alt="ABO Enterprise" width={36} height={36} className="object-cover" />
-          </div>
+          <BrandLogo size="sm" href={false} priority />
           <span className="font-bold text-lg tracking-tight hidden sm:block text-brand-800 dark:text-white truncate">
             ABO Enterprise
           </span>

@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { Target, Eye, Heart, CheckCircle, Users, Briefcase, ShoppingCart, Award, Calendar, TrendingUp } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
+import BrandLogo from "@/components/ui/BrandLogo";
 
 const VALUES = [
   { icon: Heart, title: { en: "Customer First", bn: "গ্রাহক প্রথম" }, desc: { en: "Every decision starts with what's best for our customers.", bn: "সব সিদ্ধান্ত গ্রাহকের স্বার্থে।" } },
@@ -52,9 +52,7 @@ export default function AboutPage() {
         ]}
       >
         <div className="flex flex-col items-center text-center mt-2">
-          <div className="w-20 h-20 rounded-full border-4 border-white/30 overflow-hidden shadow-xl mb-3">
-            <Image src="/logo.jpg" alt="ABO Enterprise" width={80} height={80} className="object-cover w-full h-full" />
-          </div>
+          <BrandLogo size="xl" href={false} variant="light" className="mb-3" />
           <p className="text-sm text-white/80">Sumon Brothers Organization</p>
         </div>
       </PageHero>
