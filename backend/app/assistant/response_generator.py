@@ -10,9 +10,9 @@ class ResponseGenerator:
         if custom_welcome:
             return custom_welcome
         if language == "bn":
-            return "আমি ABO Enterprise সহকারী। পণ্য, সেবা, অর্ডার ট্র্যাকিং বা যোগাযোগ — জিজ্ঞাসা করুন।"
+            return "আমি ABO Enterprise সহকারী। অর্ডার দিন, সেবা বুক করুন, অর্ডার/বুকিং/লিড ট্র্যাক করুন — সব কিছু এখান থেকেই।"
         return (
-            "I'm the ABO Enterprise assistant. Ask about products, services, order tracking, or contact info."
+            "I'm the ABO Enterprise assistant. Place orders, book services, track orders/bookings/leads — all from here."
         )
 
     def web_enriched(self, language: str, summary: str) -> str:
@@ -165,14 +165,54 @@ class ResponseGenerator:
 
     def order_status(self, language: str, order: dict) -> str:
         track_hint = f"\n🔗 /track?order={order['order_number']}" if order.get("order_number") else ""
+        items_line = ""
+        items = order.get("items") or []
+        if items:
+            item_str = ", ".join(f"{i['name']} x{i['quantity']}" for i in items[:3])
+            items_line = f"\n📦 {item_str}"
+        courier_line = ""
+        if order.get("courier_tracking_id"):
+            courier_line = f"\n🚚 {order.get('courier_provider', 'Courier')}: {order['courier_tracking_id']}"
         if language == "bn":
             return (
-                f"অর্ডার **{order['order_number']}**: স্ট্যাটাস **{order['order_status']}**, "
-                f"মোট ৳{order['total']:,.0f}, {order.get('items_count', 0)}টি আইটেম।{track_hint}"
+                f"অর্ডার **{order['order_number']}**\n"
+                f"স্ট্যাটাস: **{order['order_status']}** | পেমেন্ট: {order.get('payment_status', 'N/A')}\n"
+                f"মোট ৳{order['total']:,.0f} ({order.get('items_count', len(items))}টি আইটেম)"
+                f"{items_line}{courier_line}{track_hint}"
             )
         return (
-            f"Order **{order['order_number']}**: status **{order['order_status']}**, "
-            f"total ৳{order['total']:,.0f}, {order.get('items_count', 0)} item(s).{track_hint}"
+            f"Order **{order['order_number']}**\n"
+            f"Status: **{order['order_status']}** | Payment: {order.get('payment_status', 'N/A')}\n"
+            f"Total ৳{order['total']:,.0f} ({order.get('items_count', len(items))} item(s))"
+            f"{items_line}{courier_line}{track_hint}"
+        )
+
+    def booking_status(self, language: str, booking: dict) -> str:
+        if language == "bn":
+            price = f"\nদাম: ৳{booking['quoted_price']:,.0f}" if booking.get("quoted_price") else ""
+            return (
+                f"বুকিং **{booking['booking_number']}**\n"
+                f"সেবা: {booking.get('service_name', 'N/A')}\n"
+                f"স্ট্যাটাস: **{booking.get('status', 'pending')}** | পেমেন্ট: {booking.get('payment_status', 'N/A')}"
+                f"{price}"
+            )
+        price = f"\nQuoted: ৳{booking['quoted_price']:,.0f}" if booking.get("quoted_price") else ""
+        return (
+            f"Booking **{booking['booking_number']}**\n"
+            f"Service: {booking.get('service_name', 'N/A')}\n"
+            f"Status: **{booking.get('status', 'pending')}** | Payment: {booking.get('payment_status', 'N/A')}"
+            f"{price}"
+        )
+
+    def lead_status(self, language: str, lead: dict) -> str:
+        if language == "bn":
+            return (
+                f"লিড **{lead['lead_number']}**\n"
+                f"ধরন: {lead.get('lead_type', 'general')} | স্ট্যাটাস: **{lead.get('status', 'new')}**"
+            )
+        return (
+            f"Lead **{lead['lead_number']}**\n"
+            f"Type: {lead.get('lead_type', 'general')} | Status: **{lead.get('status', 'new')}**"
         )
 
     def automation_success(self, language: str, action: str, reference: str) -> str:
@@ -297,6 +337,130 @@ class ResponseGenerator:
         if language == "bn":
             return "আমাদের কাজ ও প্রজেক্ট দেখতে /services পেজে যান অথবা কাস্টম কোটের জন্য জিজ্ঞাসা করুন।"
         return "See our work on the /services page, or ask for a custom quote for your project."
+
+    # ── Workflow prompts ────────────────────────────────────────────
+
+    def workflow_cancelled(self, language: str) -> str:
+        return "অ্যাকশন বাতিল করা হয়েছে।" if language == "bn" else "Action cancelled."
+
+    def workflow_confirm_prompt(self, language: str) -> str:
+        return "নিশ্চিত করতে 'হ্যাঁ' লিখুন, বাতিল করতে 'না'।" if language == "bn" else "Type 'yes' to confirm or 'no' to cancel."
+
+    def workflow_error(self, language: str, error: str) -> str:
+        return f"❌ {error}" if language == "en" else f"❌ সমস্যা: {error}"
+
+    def workflow_ask_product(self, language: str) -> str:
+        return "কোন পণ্য অর্ডার করবেন? পণ্যের নাম লিখুন।" if language == "bn" else "Which product would you like to order? Type the product name."
+
+    def workflow_ask_quantity(self, language: str, product_name: str) -> str:
+        return f"**{product_name}** — কতটি চান?" if language == "bn" else f"**{product_name}** — how many would you like?"
+
+    def workflow_ask_add_more(self, language: str, count: int) -> str:
+        if language == "bn":
+            return f"🛒 {count}টি পণ্য কার্টে। আরো পণ্য যোগ করবেন? (হ্যাঁ/না)"
+        return f"🛒 {count} item(s) in cart. Add another product? (yes/no)"
+
+    def workflow_ask_name(self, language: str) -> str:
+        return "আপনার নাম জানান।" if language == "bn" else "Please share your name."
+
+    def workflow_ask_phone(self, language: str) -> str:
+        return "আপনার ফোন নম্বর দিন (01XXXXXXXXX)।" if language == "bn" else "Please share your phone number (01XXXXXXXXX)."
+
+    def workflow_ask_address(self, language: str) -> str:
+        return "ডেলিভারি ঠিকানা দিন (জেলা, এলাকা, বিস্তারিত)।" if language == "bn" else "Delivery address (district, area, details)."
+
+    def workflow_ask_payment(self, language: str) -> str:
+        return "পেমেন্ট পদ্ধতি: bKash / Nagad / COD — কোনটি?" if language == "bn" else "Payment method: bKash / Nagad / COD — which one?"
+
+    def workflow_ask_payment_number(self, language: str, method: str) -> str:
+        return f"{method} TrxID/নম্বর দিন।" if language == "bn" else f"Please share your {method} transaction ID/number."
+
+    def workflow_ask_service(self, language: str) -> str:
+        return "কোন সেবা বুক করবেন? সেবার নাম লিখুন।" if language == "bn" else "Which service to book? Type the service name."
+
+    def workflow_ask_booking_details(self, language: str) -> str:
+        return "প্রজেক্ট/সেবার বিস্তারিত জানান।" if language == "bn" else "Please describe your project or service requirements."
+
+    def workflow_ask_lead_details(self, language: str) -> str:
+        return "আপনার প্রয়োজনীয়তা/প্রজেক্ট সম্পর্কে বিস্তারিত লিখুন।" if language == "bn" else "Describe your project or requirements."
+
+    def workflow_product_not_found(self, language: str) -> str:
+        return "পণ্য পাওয়া যায়নি। আবার নাম লিখুন বা 'বাতিল'।" if language == "bn" else "Product not found. Try another name or type 'cancel'."
+
+    def workflow_service_not_found(self, language: str) -> str:
+        return "সেবা পাওয়া যায়নি। আবার নাম লিখুন বা 'বাতিল'।" if language == "bn" else "Service not found. Try another name or type 'cancel'."
+
+    def workflow_out_of_stock(self, language: str) -> str:
+        return "এই পণ্যের স্টক নেই। অন্য পণ্য চেষ্টা করুন।" if language == "bn" else "This product is out of stock. Try another product."
+
+    def workflow_invalid_quantity(self, language: str) -> str:
+        return "সঠিক সংখ্যা লিখুন (যেমন: 1, 2, 3)।" if language == "bn" else "Enter a valid quantity (e.g. 1, 2, 3)."
+
+    def workflow_insufficient_stock(self, language: str, available: int) -> str:
+        return f"স্টকে {available}টি আছে। কম সংখ্যা দিন।" if language == "bn" else f"Only {available} available. Enter a lower quantity."
+
+    def workflow_order_summary(self, language: str, data: dict) -> str:
+        cart = data.get("cart", [])
+        lines = []
+        subtotal = 0.0
+        for item in cart:
+            line = float(item["product_price"]) * int(item["quantity"])
+            subtotal += line
+            lines.append(f"• {item['product_name']} x{item['quantity']} = ৳{line:,.0f}")
+        if language == "bn":
+            header = "📋 অর্ডার সারাংশ:\n"
+            footer = f"\n👤 {data.get('customer_name')} | 📞 {data.get('customer_phone')}\n📍 {data.get('delivery_address')}\n💳 {data.get('payment_method')}\n\nনিশ্চিত? (হ্যাঁ/না)"
+        else:
+            header = "📋 Order summary:\n"
+            footer = f"\n👤 {data.get('customer_name')} | 📞 {data.get('customer_phone')}\n📍 {data.get('delivery_address')}\n💳 {data.get('payment_method')}\n\nConfirm? (yes/no)"
+        return header + "\n".join(lines) + f"\nSubtotal: ৳{subtotal:,.0f}" + footer
+
+    def workflow_booking_summary(self, language: str, data: dict) -> str:
+        svc = data.get("service", {})
+        name = svc.get("name_bn") if language == "bn" else svc.get("name_en", "")
+        if language == "bn":
+            return (
+                f"📋 বুকিং সারাংশ:\nসেবা: **{name}**\n👤 {data.get('customer_name')} | 📞 {data.get('customer_phone')}\n"
+                f"📝 {data.get('details', '')}\n\nনিশ্চিত? (হ্যাঁ/না)"
+            )
+        return (
+            f"📋 Booking summary:\nService: **{name}**\n👤 {data.get('customer_name')} | 📞 {data.get('customer_phone')}\n"
+            f"📝 {data.get('details', '')}\n\nConfirm? (yes/no)"
+        )
+
+    def workflow_lead_summary(self, language: str, data: dict) -> str:
+        if language == "bn":
+            return (
+                f"📋 অনুরোধ সারাংশ:\n👤 {data.get('customer_name')} | 📞 {data.get('customer_phone')}\n"
+                f"📝 {data.get('project_description', '')}\n\nজমা দিতে 'হ্যাঁ' লিখুন।"
+            )
+        return (
+            f"📋 Request summary:\n👤 {data.get('customer_name')} | 📞 {data.get('customer_phone')}\n"
+            f"📝 {data.get('project_description', '')}\n\nType 'yes' to submit."
+        )
+
+    def workflow_order_success(self, language: str, order: dict) -> str:
+        if language == "bn":
+            return (
+                f"✅ অর্ডার সফল!\nঅর্ডার নম্বর: **{order['order_number']}**\n"
+                f"মোট: ৳{order['total']:,.0f} | স্ট্যাটাস: {order['order_status']}\n"
+                "নিচের লিংক থেকে ট্র্যাক ও ইনভয়েস ডাউনলোড করুন।"
+            )
+        return (
+            f"✅ Order placed!\nOrder number: **{order['order_number']}**\n"
+            f"Total: ৳{order['total']:,.0f} | Status: {order['order_status']}\n"
+            "Use the links below to track and download your invoice."
+        )
+
+    def workflow_booking_success(self, language: str, ref: str, service_name: str) -> str:
+        if language == "bn":
+            return f"✅ বুকিং সফল!\nবুকিং নম্বর: **{ref}**\nসেবা: {service_name}\nশীঘ্রই যোগাযোগ করা হবে।"
+        return f"✅ Booking confirmed!\nBooking number: **{ref}**\nService: {service_name}\nWe will contact you shortly."
+
+    def workflow_lead_success(self, language: str, ref: str) -> str:
+        if language == "bn":
+            return f"✅ অনুরোধ জমা হয়েছে!\nরেফারেন্স: **{ref}**\nশীঘ্রই যোগাযোগ করা হবে।"
+        return f"✅ Request submitted!\nReference: **{ref}**\nWe will contact you shortly."
 
     def format_response(
         self,

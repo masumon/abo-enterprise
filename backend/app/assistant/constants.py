@@ -33,8 +33,13 @@ class Intent(str, Enum):
     CUSTOMER_SUPPORT = "customer_support"
     COMPLAINT = "complaint"
     LEAD_CREATION = "lead_creation"
+    LEAD_TRACKING = "lead_tracking"
+    BOOKING_TRACKING = "booking_tracking"
+    COURIER_TRACKING = "courier_tracking"
     COUPON = "coupon"
     BUSINESS_HOURS = "business_hours"
+    REVIEW_REQUEST = "review_request"
+    UNKNOWN = "unknown"
 
 
 class EntityType(str, Enum):
@@ -45,6 +50,8 @@ class EntityType(str, Enum):
     SKU = "sku"
     BARCODE = "barcode"
     ORDER_NUMBER = "order_number"
+    BOOKING_NUMBER = "booking_number"
+    LEAD_NUMBER = "lead_number"
     INVOICE_NUMBER = "invoice_number"
     CUSTOMER = "customer"
     PHONE = "phone"
@@ -70,5 +77,7 @@ IDENTITY_REQUIRED_INTENTS = frozenset({
     Intent.LEAD_CREATION,
     Intent.ORDER_TRACKING,
     Intent.ORDER_STATUS,
+    Intent.BOOKING_TRACKING,
+    Intent.LEAD_TRACKING,
     Intent.INVOICE,
 })

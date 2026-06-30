@@ -40,6 +40,8 @@ _WHITESPACE_RE = re.compile(r"\s+")
 _PHONE_RE = re.compile(r"(?:\+?88)?0[13-9]\d{8}")
 _EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 _ORDER_NUM_RE = re.compile(r"\bABO-[A-Z0-9-]{4,20}\b", re.IGNORECASE)
+_BOOKING_NUM_RE = re.compile(r"\bBK-\d{4}-\d{6}\b", re.IGNORECASE)
+_LEAD_NUM_RE = re.compile(r"\bLF-\d{4}-\d{6}\b", re.IGNORECASE)
 _INVOICE_NUM_RE = re.compile(r"\bINV-[A-Z0-9-]+\b", re.IGNORECASE)
 _QUANTITY_RE = re.compile(r"\b(\d+)\s*(?:pcs|pc|piece|pieces|টা|টি|unit|units)?\b", re.IGNORECASE)
 _PRICE_RE = re.compile(r"(?:৳|tk|taka|bdt)\s*([\d,]+(?:\.\d+)?)", re.IGNORECASE)
@@ -95,6 +97,8 @@ def preprocess_text(text: str) -> dict:
     phones = _PHONE_RE.findall(raw)
     emails = _EMAIL_RE.findall(raw)
     order_numbers = [m.upper() for m in _ORDER_NUM_RE.findall(raw)]
+    booking_numbers = [m.upper() for m in _BOOKING_NUM_RE.findall(raw)]
+    lead_numbers = [m.upper() for m in _LEAD_NUM_RE.findall(raw)]
     invoice_numbers = [m.upper() for m in _INVOICE_NUM_RE.findall(raw)]
 
     quantities: list[int] = []
@@ -118,6 +122,8 @@ def preprocess_text(text: str) -> dict:
         "phones": phones,
         "emails": emails,
         "order_numbers": order_numbers,
+        "booking_numbers": booking_numbers,
+        "lead_numbers": lead_numbers,
         "invoice_numbers": invoice_numbers,
         "quantities": quantities,
         "prices": prices,

@@ -52,6 +52,12 @@ class EntityExtractor:
         for on in preprocessed.get("order_numbers", []):
             result.entities.append(ExtractedEntity(EntityType.ORDER_NUMBER, on, 0.99))
 
+        for bn in preprocessed.get("booking_numbers", []):
+            result.entities.append(ExtractedEntity(EntityType.BOOKING_NUMBER, bn, 0.99))
+
+        for ln in preprocessed.get("lead_numbers", []):
+            result.entities.append(ExtractedEntity(EntityType.LEAD_NUMBER, ln, 0.99))
+
         for inv in preprocessed.get("invoice_numbers", []):
             result.entities.append(ExtractedEntity(EntityType.INVOICE_NUMBER, inv, 0.99))
 

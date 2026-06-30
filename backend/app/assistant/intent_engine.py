@@ -12,19 +12,20 @@ _SYNONYMS_PATH = Path(__file__).parent / "data" / "synonyms.json"
 # Map synonym base words to intent keys for score boosting
 _SYNONYM_INTENT_MAP: dict[str, list[str]] = {
     "product": ["product_search", "product_details", "product_price", "product_stock", "product_availability"],
-    "order": ["order_tracking", "order_status", "order_creation", "invoice"],
-    "delivery": ["delivery"],
+    "order": ["order_tracking", "order_status", "order_creation", "invoice", "courier_tracking"],
+    "delivery": ["delivery", "courier_tracking"],
     "payment": ["payment"],
     "price": ["product_price", "service_price"],
     "stock": ["product_stock", "product_availability"],
     "service": ["service_information", "service_price", "service_booking"],
-    "booking": ["service_booking"],
+    "booking": ["service_booking", "booking_tracking"],
     "warranty": ["warranty"],
     "return": ["return_policy"],
     "invoice": ["invoice"],
     "contact": ["contact", "customer_support"],
     "quote": ["quote", "lead_creation"],
     "coupon": ["coupon"],
+    "complaint": ["complaint"],
 }
 
 

@@ -18,6 +18,7 @@ from app.assistant.context_manager import ContextManager, ConversationContext
 from app.assistant.conversation_manager import ConversationManager
 from app.assistant.response_generator import ResponseGenerator
 from app.assistant.automation_engine import AutomationEngine
+from app.assistant.action_workflow import ActionWorkflowEngine
 
 _FOLLOW_UP_PRODUCT = frozenset({
     Intent.PRODUCT_PRICE, Intent.PRODUCT_STOCK, Intent.PRODUCT_AVAILABILITY, Intent.PRODUCT_DETAILS,
@@ -42,6 +43,9 @@ class AssistantOrchestrator:
         self.conversation_mgr = ConversationManager()
         self.response = ResponseGenerator()
         self.automation = AutomationEngine()
+        self.action_workflow = ActionWorkflowEngine(
+            self.knowledge, self.automation, self.response, self.validation,
+        )
 
     async def process_message(
         self,
@@ -96,6 +100,20 @@ class AssistantOrchestrator:
         )
         ctx.update_from_entities(entities.entities, preprocessed)
         intent = self._resolve_follow_up_intent(intent, ctx, preprocessed)
+
+        # Active multi-turn workflow takes priority
+        if self.action_workflow.is_active(ctx):
+            wf_result = await self.action_workflow.handle_turn(db, ctx, preprocessed, lang, entities)
+            if wf_result:
+                text, action_data, links = wf_result
+                response_data: dict[str, Any] = {"workflow": True}
+                response_data.update(action_data or {})
+                await self._finalize_turn(db, conv, ctx, message, text, ctx.slots.get("workflow", {}).get("type", "workflow"), response_data)
+                suggestions = self._suggestions(Intent.ORDER_CREATION if ctx.slots.get("workflow", {}).get("type") == "order" else Intent.GREETING, lang, ctx)
+                result = self.response.format_response(lang, Intent.ORDER_CREATION, text, data=response_data, suggestions=suggestions, links=links)
+                result["session_id"] = conv.session_id
+                return result
+
         ctx.last_intent = intent.value
 
         perm = self.permissions.check_public_intent(intent)
@@ -157,11 +175,14 @@ class AssistantOrchestrator:
 
         if ctx.pending_action == "order_tracking" and (preprocessed.get("order_numbers") or preprocessed.get("phones")):
             return Intent.ORDER_TRACKING
+        if ctx.pending_action == "booking_tracking" and (preprocessed.get("booking_numbers") or preprocessed.get("phones")):
+            return Intent.BOOKING_TRACKING
+        if ctx.pending_action == "lead_tracking" and (preprocessed.get("lead_numbers") or preprocessed.get("phones")):
+            return Intent.LEAD_TRACKING
 
         return intent
 
     async def _handle_intent(self, db, ctx, intent, entities, preprocessed, lang):
-        automation_perm = self.permissions.check_automation(intent, ctx.has_identity(), False)
         links: list[dict] = []
 
         if intent == Intent.GREETING:
@@ -248,7 +269,7 @@ class AssistantOrchestrator:
             links = self.response.service_links(svc_dicts)
             return self.response.service_list(lang, svc_dicts), {"services": svc_dicts}, links
 
-        if intent in (Intent.ORDER_TRACKING, Intent.ORDER_STATUS):
+        if intent in (Intent.ORDER_TRACKING, Intent.ORDER_STATUS, Intent.COURIER_TRACKING):
             ctx.pending_action = None
             order_num = ctx.slots.get("order_number") or (
                 entities.get(EntityType.ORDER_NUMBER).value if entities.get(EntityType.ORDER_NUMBER) else None
@@ -257,7 +278,15 @@ class AssistantOrchestrator:
                 order = await self.automation.track_order(db, order_num)
                 if order:
                     track_links = [{"label": "Track order", "label_bn": "অর্ডার ট্র্যাক", "url": f"/track?order={order_num}", "type": "track"}]
-                    return self.response.order_status(lang, order), {"order": order}, track_links
+                    if order.get("courier_tracking_id"):
+                        track_links.append({"label": "Courier info", "label_bn": "কুরিয়ার", "url": f"/track?order={order_num}", "type": "courier"})
+                    text = self.response.order_status(lang, order)
+                    if intent == Intent.COURIER_TRACKING and order.get("courier_tracking_id"):
+                        if lang == "bn":
+                            text += f"\n\n🚚 কুরিয়ার ট্র্যাকিং: {order['courier_tracking_id']}"
+                        else:
+                            text += f"\n\n🚚 Courier tracking: {order['courier_tracking_id']}"
+                    return text, {"order": order}, track_links
                 return ("অর্ডার পাওয়া যায়নি।" if lang == "bn" else "Order not found."), {}, links
             if ctx.customer_phone:
                 orders = await self.automation.track_orders_by_phone(db, ctx.customer_phone)
@@ -266,6 +295,44 @@ class AssistantOrchestrator:
                     return "\n\n".join(lines), {"orders": orders}, links
             ctx.pending_action = "order_tracking"
             need = ["order number or phone"] if lang == "en" else ["অর্ডার নম্বর বা ফোন"]
+            return self.response.need_more_info(lang, need), {}, links
+
+        if intent == Intent.BOOKING_TRACKING:
+            ctx.pending_action = None
+            booking_num = ctx.slots.get("booking_number") or (
+                entities.get(EntityType.BOOKING_NUMBER).value if entities.get(EntityType.BOOKING_NUMBER) else None
+            )
+            if booking_num:
+                booking = await self.automation.track_booking(db, booking_num)
+                if booking:
+                    return self.response.booking_status(lang, booking), {"booking": booking}, links
+                return ("বুকিং পাওয়া যায়নি।" if lang == "bn" else "Booking not found."), {}, links
+            if ctx.customer_phone:
+                bookings = await self.automation.track_bookings_by_phone(db, ctx.customer_phone)
+                if bookings:
+                    lines = [self.response.booking_status(lang, b) for b in bookings]
+                    return "\n\n".join(lines), {"bookings": bookings}, links
+            ctx.pending_action = "booking_tracking"
+            need = ["booking number or phone"] if lang == "en" else ["বুকিং নম্বর বা ফোন"]
+            return self.response.need_more_info(lang, need), {}, links
+
+        if intent == Intent.LEAD_TRACKING:
+            ctx.pending_action = None
+            lead_num = ctx.slots.get("lead_number") or (
+                entities.get(EntityType.LEAD_NUMBER).value if entities.get(EntityType.LEAD_NUMBER) else None
+            )
+            if lead_num:
+                lead = await self.automation.track_lead(db, lead_num)
+                if lead:
+                    return self.response.lead_status(lang, lead), {"lead": lead}, links
+                return ("লিড পাওয়া যায়নি।" if lang == "bn" else "Lead/inquiry not found."), {}, links
+            if ctx.customer_phone:
+                leads = await self.automation.track_leads_by_phone(db, ctx.customer_phone)
+                if leads:
+                    lines = [self.response.lead_status(lang, l) for l in leads]
+                    return "\n\n".join(lines), {"leads": leads}, links
+            ctx.pending_action = "lead_tracking"
+            need = ["lead reference or phone"] if lang == "en" else ["লিড রেফারেন্স বা ফোন"]
             return self.response.need_more_info(lang, need), {}, links
 
         if intent == Intent.INVOICE:
@@ -303,50 +370,16 @@ class AssistantOrchestrator:
             return self.response.coupon_list(lang, active), {"coupons": active}, links
 
         if intent == Intent.LEAD_CREATION:
-            if not automation_perm.allowed:
-                fields = ["name", "phone"] if lang == "en" else ["নাম", "ফোন"]
-                return self.response.need_more_info(lang, fields), {}, links
-            wf = await self.automation.create_lead(
-                db, name=ctx.customer_name or "Customer", phone=ctx.customer_phone or "",
-                project_description=preprocessed["raw"],
-            )
-            return self.response.automation_success(lang, "Lead", wf.reference or ""), {"workflow": wf.status.value, "reference": wf.reference}, links
+            return await self.action_workflow.start_lead(ctx, preprocessed, lang, "general")
 
         if intent == Intent.SERVICE_BOOKING:
-            if not automation_perm.allowed:
-                fields = ["name", "phone", "service"] if lang == "en" else ["নাম", "ফোন", "সেবা"]
-                return self.response.need_more_info(lang, fields), {}, links
-            service_query = ctx.slots.get("service_query")
-            service = None
-            if service_query:
-                service = await self.knowledge.get_service_by_slug_or_name(db, service_query)
-            if not service and ctx.last_service_slug:
-                service = await self.knowledge.get_service_by_slug_or_name(db, ctx.last_service_slug)
-            if not service:
-                services = await self.knowledge.search_services(db, "", limit=1)
-                service = services[0] if services else None
-            if not service:
-                return self.response.need_more_info(lang, ["service name"]), {}, links
-            wf = await self.automation.create_booking(
-                db, service_id=service.id, customer_name=ctx.customer_name or "Customer",
-                customer_phone=ctx.customer_phone or "", customer_email=ctx.customer_email,
-                pricing_type=service.pricing_type or "fixed", details=preprocessed["raw"],
-            )
-            book_links = [self.response._service_link(service.slug)]
-            return self.response.automation_success(lang, "Booking", wf.reference or ""), {"workflow": wf.status.value, "reference": wf.reference}, book_links
+            return await self.action_workflow.start_booking(db, ctx, preprocessed, lang, entities)
 
         if intent == Intent.QUOTE:
-            if not automation_perm.allowed:
-                return self.response.need_more_info(lang, ["name", "phone", "project details"]), {}, links
-            wf = await self.automation.create_lead(
-                db, name=ctx.customer_name or "Customer", phone=ctx.customer_phone or "",
-                lead_type="custom_quote", project_description=preprocessed["raw"],
-            )
-            text = (
-                "কোট অনুরোধ গ্রহণ করা হয়েছে। শীঘ্রই যোগাযোগ করা হবে।"
-                if lang == "bn" else "Quote request received. We will contact you shortly."
-            )
-            return text, {"reference": wf.reference}, links
+            return await self.action_workflow.start_lead(ctx, preprocessed, lang, "custom_quote")
+
+        if intent == Intent.ORDER_CREATION:
+            return await self.action_workflow.start_order(db, ctx, preprocessed, lang, entities)
 
         if intent == Intent.COMPLAINT:
             await self.automation.notify_admin(
@@ -388,14 +421,6 @@ class AssistantOrchestrator:
         if intent == Intent.CUSTOMER_SUPPORT:
             info = await self.knowledge.get_contact_info(db, lang)
             return self.response.contact(lang, info), {"contact": info}, links
-
-        if intent == Intent.ORDER_CREATION:
-            text = (
-                "অর্ডার করতে পণ্য নির্বাচন করে চেকআউট পেজ ব্যবহার করুন।"
-                if lang == "bn" else "To place an order, add products to cart and use the checkout page."
-            )
-            checkout_links = [{"label": "Checkout", "label_bn": "চেকআউট", "url": "/checkout", "type": "checkout"}]
-            return text, {"redirect": "/checkout"}, checkout_links
 
         return self.response.unknown(lang), {}, links
 
@@ -457,26 +482,34 @@ class AssistantOrchestrator:
     def _suggestions(self, intent: Intent, lang: str, ctx: ConversationContext | None = None) -> list[str]:
         if lang == "bn":
             by_intent = {
-                Intent.GREETING: ["পণ্য দেখান", "সেবা সম্পর্কে", "অর্ডার ট্র্যাক", "যোগাযোগ"],
-                Intent.PRODUCT_SEARCH: ["ক্যাটাগরি দেখুন", "ডেলিভারি চার্জ", "কুপন আছে?", "যোগাযোগ"],
+                Intent.GREETING: ["অর্ডার করুন", "সেবা বুক", "অর্ডার ট্র্যাক", "বুকিং ট্র্যাক"],
+                Intent.PRODUCT_SEARCH: ["অর্ডার করুন", "ডেলিভারি চার্জ", "কুপন আছে?", "যোগাযোগ"],
                 Intent.PRODUCT_DETAILS: ["স্টক আছে?", "অর্ডার করুন", "ডেলিভারি সময়"],
-                Intent.ORDER_TRACKING: ["ইনভয়েস ডাউনলোড", "যোগাযোগ", "অর্ডার করুন"],
-                Intent.DELIVERY: ["পেমেন্ট অপশন", "রিটার্ন পলিসি", "পণ্য দেখান"],
-                Intent.COUPON: ["চেকআউট", "পণ্য দেখান", "ডেলিভারি চার্জ"],
+                Intent.ORDER_TRACKING: ["ইনভয়েস", "বুকিং ট্র্যাক", "অর্ডার করুন"],
+                Intent.BOOKING_TRACKING: ["সেবা বুক", "অর্ডার ট্র্যাক", "যোগাযোগ"],
+                Intent.LEAD_TRACKING: ["কোট চান", "যোগাযোগ", "সেবা দেখুন"],
+                Intent.ORDER_CREATION: ["আরো পণ্য", "ডেলিভারি চার্জ", "যোগাযোগ"],
+                Intent.SERVICE_BOOKING: ["বুকিং ট্র্যাক", "সেবা দেখুন", "যোগাযোগ"],
+                Intent.DELIVERY: ["পেমেন্ট অপশন", "রিটার্ন পলিসি", "অর্ডার করুন"],
+                Intent.COUPON: ["অর্ডার করুন", "পণ্য দেখান", "ডেলিভারি চার্জ"],
                 Intent.SERVICE_INFO: ["সেবা বুক করুন", "কোট চান", "যোগাযোগ"],
             }
-            defaults = ["পণ্য খুঁজুন", "সেবা দেখুন", "অর্ডার ট্র্যাক", "যোগাযোগ"]
+            defaults = ["অর্ডার করুন", "সেবা বুক", "অর্ডার ট্র্যাক", "যোগাযোগ"]
         else:
             by_intent = {
-                Intent.GREETING: ["Show products", "About services", "Track order", "Contact us"],
-                Intent.PRODUCT_SEARCH: ["Browse categories", "Delivery charges", "Any coupons?", "Contact"],
+                Intent.GREETING: ["Place order", "Book service", "Track order", "Track booking"],
+                Intent.PRODUCT_SEARCH: ["Place order", "Delivery charges", "Any coupons?", "Contact"],
                 Intent.PRODUCT_DETAILS: ["Check stock", "Place order", "Delivery time"],
-                Intent.ORDER_TRACKING: ["Download invoice", "Contact support", "Place order"],
-                Intent.DELIVERY: ["Payment options", "Return policy", "Browse products"],
-                Intent.COUPON: ["Go to checkout", "Browse products", "Delivery info"],
+                Intent.ORDER_TRACKING: ["Invoice", "Track booking", "Place order"],
+                Intent.BOOKING_TRACKING: ["Book service", "Track order", "Contact"],
+                Intent.LEAD_TRACKING: ["Get quote", "Contact", "View services"],
+                Intent.ORDER_CREATION: ["Add product", "Delivery info", "Contact"],
+                Intent.SERVICE_BOOKING: ["Track booking", "View services", "Contact"],
+                Intent.DELIVERY: ["Payment options", "Return policy", "Place order"],
+                Intent.COUPON: ["Place order", "Browse products", "Delivery info"],
                 Intent.SERVICE_INFO: ["Book service", "Get a quote", "Contact us"],
             }
-            defaults = ["Search products", "View services", "Track order", "Contact us"]
+            defaults = ["Place order", "Book service", "Track order", "Contact us"]
 
         suggestions = by_intent.get(intent, defaults)
         if ctx and ctx.last_product_slug and intent in _FOLLOW_UP_PRODUCT:

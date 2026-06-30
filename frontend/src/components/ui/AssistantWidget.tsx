@@ -125,10 +125,10 @@ export default function AssistantWidget() {
   const enabled = flagEnabled && config.enabled;
 
   const quickActions = useMemo(() => [
-    { icon: Package, label: t("assistant_quick_products"), message: lang === "bn" ? "পণ্য দেখান" : "Show products" },
-    { icon: Briefcase, label: t("assistant_quick_services"), message: lang === "bn" ? "সেবা সম্পর্কে জানুন" : "Tell me about services" },
+    { icon: Package, label: lang === "bn" ? "অর্ডার করুন" : "Place order", message: lang === "bn" ? "অর্ডার করতে চাই" : "I want to place an order" },
+    { icon: Briefcase, label: lang === "bn" ? "সেবা বুক" : "Book service", message: lang === "bn" ? "সেবা বুক করতে চাই" : "I want to book a service" },
     { icon: Truck, label: t("assistant_quick_track"), message: lang === "bn" ? "অর্ডার ট্র্যাক করতে চাই" : "I want to track my order" },
-    { icon: Phone, label: t("assistant_quick_contact"), message: lang === "bn" ? "যোগাযোগের তথ্য দিন" : "Contact information" },
+    { icon: Phone, label: lang === "bn" ? "বুকিং ট্র্যাক" : "Track booking", message: lang === "bn" ? "বুকিং ট্র্যাক করতে চাই" : "Track my booking" },
   ], [t, lang]);
 
   const parseLinks = (data?: Record<string, unknown>): AssistantLink[] => {

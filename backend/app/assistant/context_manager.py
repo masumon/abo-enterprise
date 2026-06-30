@@ -36,6 +36,10 @@ class ConversationContext:
                 self.slots["service_query"] = e.value
             if e.type == EntityType.ORDER_NUMBER:
                 self.slots["order_number"] = e.value
+            if e.type == EntityType.BOOKING_NUMBER:
+                self.slots["booking_number"] = e.value
+            if e.type == EntityType.LEAD_NUMBER:
+                self.slots["lead_number"] = e.value
             if e.type == EntityType.QUANTITY:
                 self.slots["quantity"] = e.value
 

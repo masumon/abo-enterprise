@@ -296,6 +296,7 @@ class KnowledgeBase:
 
     def product_to_dict(self, product: Product) -> dict:
         return {
+            "id": str(product.id),
             "name_en": product.name_en,
             "name_bn": product.name_bn,
             "price": float(product.price),

@@ -158,5 +158,20 @@
     "keywords_en": ["business hours", "opening hours", "open time", "when open", "office hours", "working hours"],
     "keywords_bn": ["খোলার সময়", "অফিস সময়", "কখন খোলা", "ব্যবসার সময়"],
     "synonyms": ["hours", "timing"]
+  },
+  "booking_tracking": {
+    "keywords_en": ["track booking", "booking status", "booking number", "my booking", "service booking status"],
+    "keywords_bn": ["বুকিং ট্র্যাক", "বুকিং স্ট্যাটাস", "বুকিং নম্বর", "আমার বুকিং"],
+    "synonyms": ["bk track"]
+  },
+  "lead_tracking": {
+    "keywords_en": ["track lead", "inquiry status", "lead status", "my inquiry", "lead number"],
+    "keywords_bn": ["লিড ট্র্যাক", "অনুরোধ স্ট্যাটাস", "আমার অনুরোধ", "লিড নম্বর"],
+    "synonyms": ["inq status"]
+  },
+  "courier_tracking": {
+    "keywords_en": ["courier tracking", "courier status", "where is parcel", "delivery status", "tracking id"],
+    "keywords_bn": ["কুরিয়ার ট্র্যাক", "পার্সেল কোথায়", "ডেলিভারি স্ট্যাটাস"],
+    "synonyms": ["courier", "parcel"]
   }
 }
