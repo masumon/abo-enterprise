@@ -195,23 +195,26 @@ async def verify_nagad_payment(
         if not verify_result:
             raise HTTPException(status_code=400, detail="Payment verification failed")
 
-        transaction.status = "Completed"
+        payment_status = str(verify_result.get("status", "")).lower()
+        is_completed = payment_status in ("success", "completed", "0000", "approved")
+        transaction.status = "Completed" if is_completed else "Failed"
         transaction.payment_completion_time = verify_result.get("timestamp")
         transaction.raw_response = verify_result.get("raw_data", {})
         await db.commit()
 
-        order_result = await db.execute(
-            select(Order).where(Order.id == transaction.order_id)
-        )
-        order = order_result.scalar_one_or_none()
-        if order:
-            order.payment_status = "completed"
-            if order.order_status == "pending":
-                order.order_status = "confirmed"
-            await db.commit()
+        if is_completed:
+            order_result = await db.execute(
+                select(Order).where(Order.id == transaction.order_id)
+            )
+            order = order_result.scalar_one_or_none()
+            if order:
+                order.payment_status = "completed"
+                if order.order_status == "pending":
+                    order.order_status = "confirmed"
+                await db.commit()
 
         return {
-            "success": True,
+            "success": is_completed,
             "payment_gateway": "nagad",
             "transaction_id": str(transaction.id),
             "status": transaction.status,
@@ -354,7 +357,13 @@ async def get_payment_transaction(
 
         return {
             "success": True,
-            "transaction": transaction,
+            "transaction": {
+                "id": str(transaction.id),
+                "order_id": str(transaction.order_id) if transaction.order_id else None,
+                "status": transaction.status,
+                "amount": float(transaction.amount),
+                "created_at": transaction.created_at.isoformat() if transaction.created_at else None,
+            },
             "gateway": gateway,
         }
     except HTTPException:

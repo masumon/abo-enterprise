@@ -84,7 +84,7 @@ export default function AdminBookingsPage() {
   const handleCsvExport = async () => {
     setCsvLoading(true);
     try {
-      await downloadCsv("/api/v1/admin/bulk/export/bookings", "bookings.csv");
+      await downloadCsv("/api/v1/admin/bulk/export/bookings", "service-bookings.csv");
     } catch {
       toast("error", "CSV export failed");
     } finally {

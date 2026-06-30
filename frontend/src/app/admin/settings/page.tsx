@@ -8,6 +8,26 @@ import { useToastStore } from "@/store/toast";
 
 type SettingValues = Record<string, string>;
 
+const HIDDEN_PLACEHOLDER = "***HIDDEN***";
+
+function apiErrorMessage(e: unknown, fallback: string): string {
+  const err = e as { response?: { data?: { detail?: string | { msg?: string }[] } } };
+  const detail = err.response?.data?.detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail) && detail[0]?.msg) return detail[0].msg;
+  return fallback;
+}
+
+function buildSaveItems(section: Section, values: SettingValues) {
+  return section.fields
+    .map((f) => ({
+      key: f.key,
+      value: values[f.key] ?? "",
+      data_type: f.type === "number" ? "number" : "string",
+    }))
+    .filter((item) => item.value !== HIDDEN_PLACEHOLDER);
+}
+
 interface SettingField {
   key: string;
   label: string;
@@ -182,7 +202,7 @@ function SectionCard({
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50/50 gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
           <span className="text-brand-600">{section.icon}</span>
           <h2 className="text-sm font-semibold text-gray-800">{section.title}</h2>
@@ -293,10 +313,20 @@ export default function AdminSettingsPage() {
 
   const validateUrls = (section: Section): string | null => {
     for (const f of section.fields) {
+      const val = (values[f.key] ?? "").trim();
+      if (!val) continue;
       if (f.type === "url" && !f.upload) {
-        const val = (values[f.key] ?? "").trim();
-        if (!val) continue;
         try { new URL(val); } catch { return `${f.label}: invalid URL`; }
+      }
+      if (f.key === "google_maps_embed") {
+        try {
+          const url = new URL(val);
+          if (!url.hostname.includes("google.com")) {
+            return `${f.label}: use a Google Maps embed URL (Share → Embed a map)`;
+          }
+        } catch {
+          return `${f.label}: invalid embed URL`;
+        }
       }
     }
     return null;
@@ -310,15 +340,12 @@ export default function AdminSettingsPage() {
       if (urlErr) { toast("error", urlErr); anyFailed = true; continue; }
 
       try {
-        const items = section.fields.map((f) => ({
-          key: f.key,
-          value: values[f.key] ?? "",
-          data_type: f.type === "number" ? "number" : "string",
-        }));
+        const items = buildSaveItems(section, values);
+        if (items.length === 0) continue;
         await adminApi.upsertSettings(items);
-      } catch {
+      } catch (e) {
         anyFailed = true;
-        toast("error", `Failed to save ${section.title}`);
+        toast("error", apiErrorMessage(e, `Could not save “${section.title}”. Check your connection and try again.`));
       }
     }
     if (!anyFailed) {
@@ -337,25 +364,25 @@ export default function AdminSettingsPage() {
 
     setSaving(sectionId);
     try {
-      const items = section.fields.map((f) => ({
-        key: f.key,
-        value: values[f.key] ?? "",
-        data_type: f.type === "number" ? "number" : "string",
-      }));
+      const items = buildSaveItems(section, values);
+      if (items.length === 0) {
+        toast("info", "No editable fields to save in this section");
+        return;
+      }
       await adminApi.upsertSettings(items);
       setSavedId(sectionId);
       setTimeout(() => setSavedId(null), 2500);
       toast("success", `${section.title} saved`);
-    } catch {
-      toast("error", `Failed to save ${section.title}`);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, `Could not save “${section.title}”. Check your connection and try again.`));
     } finally {
       setSaving(null);
     }
   };
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-3xl w-full">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
           <p className="text-gray-500 text-sm mt-1">Configure business, branding and site settings</p>

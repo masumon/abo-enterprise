@@ -19,11 +19,30 @@ function PaymentCallbackContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    const sslStatus = params.get("status");
+    const orderNum = params.get("order_number") ?? params.get("order");
+    setOrderNumber(orderNum);
+
+    // SSLCommerz redirects with ?status=success|failed|cancelled&order=...
+    if (sslStatus) {
+      if (sslStatus === "success") {
+        setStatus("success");
+        setTimeout(() => {
+          router.push(`/order-success${orderNum ? `?order=${orderNum}` : ""}`);
+        }, 2500);
+      } else {
+        setStatus("failed");
+        if (sslStatus === "cancelled") {
+          setErrorMessage(
+            lang === "bn" ? "পেমেন্ট বাতিল করা হয়েছে।" : "Payment was cancelled."
+          );
+        }
+      }
+      return;
+    }
+
     const gateway = params.get("gateway") as "bkash" | "nagad" | null;
     const paymentId = params.get("payment_id") ?? params.get("paymentID") ?? params.get("session_id");
-    const orderNum = params.get("order_number") ?? params.get("order");
-
-    setOrderNumber(orderNum);
 
     if (!gateway || !paymentId) {
       setStatus("error");

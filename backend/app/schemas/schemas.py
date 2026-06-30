@@ -690,6 +690,17 @@ class PaymentMethodCreate(PaymentMethodBase):
     pass
 
 
+class PaymentMethodUpdate(BaseModel):
+    payment_gateway: str | None = None
+    is_active: bool | None = None
+    account_identifier: str | None = None
+    commission_percentage: float | None = None
+    min_amount: float | None = None
+    max_amount: float | None = None
+    description: str | None = None
+    sort_order: int | None = None
+
+
 class PaymentMethodOut(PaymentMethodBase):
     id: uuid.UUID
     created_at: datetime

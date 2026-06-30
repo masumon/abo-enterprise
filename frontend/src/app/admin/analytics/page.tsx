@@ -163,11 +163,12 @@ export default function AnalyticsPage() {
       {/* Bulk Export */}
       <div className="bg-white rounded-xl border border-gray-100 p-6">
         <h2 className="font-bold text-gray-900 mb-4">Export Data</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { label: "Export Products CSV", path: "/api/v1/admin/bulk/export/products", filename: "products.csv", key: "products" },
-            { label: "Export Orders CSV",   path: `/api/v1/admin/bulk/export/orders?days=${days}`, filename: `orders-${days}d.csv`, key: "orders" },
-            { label: "Export Leads CSV",    path: "/api/v1/admin/bulk/export/leads", filename: "leads.csv", key: "leads" },
+            { label: "Export Orders CSV", path: `/api/v1/admin/bulk/export/orders?days=${days}`, filename: `orders-${days}d.csv`, key: "orders" },
+            { label: "Export Service Leads CSV", path: "/api/v1/admin/bulk/export/leads", filename: "service-leads.csv", key: "leads" },
+            { label: "Export Service Bookings CSV", path: "/api/v1/admin/bulk/export/bookings", filename: "service-bookings.csv", key: "bookings" },
           ].map(btn => (
             <button
               key={btn.label}

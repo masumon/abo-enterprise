@@ -63,7 +63,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </button>
           <span className="font-semibold text-gray-900 text-sm">ABO Admin</span>
         </div>
-        <main className="min-h-screen p-4 md:p-6 lg:p-8">{children}</main>
+        <main className="min-h-screen p-4 md:p-6 lg:p-8 pb-[max(1rem,env(safe-area-inset-bottom))]">{children}</main>
       </div>
       <ToastProvider />
     </div>

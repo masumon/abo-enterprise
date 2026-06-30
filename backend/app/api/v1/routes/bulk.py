@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, update
 from app.core.database import get_db
 from app.core.security import require_admin
-from app.models.models import Product, Order, Lead, LeadV2
+from app.models.models import Product, Order, LeadV2, BookingV2
 from app.schemas.schemas import BulkOrderStatusUpdate, ApiResponse
 
 router = APIRouter(prefix="/admin/bulk", tags=["bulk"])
@@ -92,29 +92,30 @@ async def export_leads(
     _admin: str = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Export leads to CSV (admin only)"""
+    """Export service leads (v2) to CSV (admin only)"""
     result = await db.execute(
-        select(Lead).where(Lead.is_deleted == False).order_by(Lead.created_at.desc())
+        select(LeadV2).where(LeadV2.is_deleted == False).order_by(LeadV2.created_at.desc())
     )
     leads = result.scalars().all()
 
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
-        "name", "phone", "email", "company", "lead_type",
-        "budget_range", "project_description", "status", "source", "created_at",
+        "lead_number", "name", "phone", "email", "company", "lead_type",
+        "budget_range", "project_description", "status", "qualification_score",
+        "source", "created_at",
     ])
     for l in leads:
         writer.writerow([
-            l.name, l.phone, l.email or "", l.company or "", l.lead_type,
+            l.lead_number, l.name, l.phone, l.email or "", l.company or "", l.lead_type,
             l.budget_range or "", l.project_description or "",
-            l.status, l.source, l.created_at.isoformat(),
+            l.status, l.qualification_score, l.source, l.created_at.isoformat(),
         ])
     output.seek(0)
     return StreamingResponse(
         io.BytesIO(output.getvalue().encode("utf-8-sig")),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=leads.csv"},
+        headers={"Content-Disposition": "attachment; filename=service-leads.csv"},
     )
 
 
@@ -123,30 +124,34 @@ async def export_bookings(
     _admin: str = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Export bookings to CSV (admin only)"""
-    from app.models.models import Booking
+    """Export service bookings (v2) to CSV (admin only)"""
     result = await db.execute(
-        select(Booking).where(Booking.is_deleted == False).order_by(Booking.created_at.desc())
+        select(BookingV2).where(BookingV2.is_deleted == False).order_by(BookingV2.created_at.desc())
     )
     bookings = result.scalars().all()
 
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
-        "booking_number", "customer_name", "customer_phone", "customer_email",
-        "service_type", "service_subtype", "details", "status", "created_at",
+        "booking_number", "service_name", "service_tier", "customer_name", "customer_phone",
+        "customer_email", "pricing_type", "quoted_price", "final_price", "status",
+        "payment_status", "payment_method", "details", "created_at",
     ])
     for b in bookings:
         writer.writerow([
-            b.booking_number, b.customer_name, b.customer_phone, b.customer_email or "",
-            b.service_type, b.service_subtype or "", b.details or "",
-            b.status, b.created_at.isoformat(),
+            b.booking_number, b.service_name, b.service_tier or "",
+            b.customer_name, b.customer_phone, b.customer_email or "",
+            b.pricing_type,
+            float(b.quoted_price) if b.quoted_price is not None else "",
+            float(b.final_price) if b.final_price is not None else "",
+            b.status, b.payment_status, b.payment_method or "",
+            b.details or "", b.created_at.isoformat(),
         ])
     output.seek(0)
     return StreamingResponse(
         io.BytesIO(output.getvalue().encode("utf-8-sig")),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=bookings.csv"},
+        headers={"Content-Disposition": "attachment; filename=service-bookings.csv"},
     )
 
 

@@ -157,7 +157,9 @@ async def validate_stock(
                 "available": product.stock_quantity,
                 "valid": True,
             })
-    return ApiResponse(data={"valid": all(i.get("valid") for i in issues if "error" not in i), "items": issues})
+    ok_items = [i for i in issues if "error" not in i]
+    is_valid = bool(ok_items) and all(i.get("valid") for i in ok_items) and not any("error" in i for i in issues)
+    return ApiResponse(data={"valid": is_valid, "items": issues})
 
 
 @router.get("/{slug}/related", response_model=ApiResponse)

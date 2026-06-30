@@ -26,6 +26,34 @@ async def get_all_settings(db: AsyncSession = Depends(get_db)):
     return ApiResponse(success=True, data=settings_dict, message="Settings retrieved")
 
 
+@router.post("/upsert", response_model=ApiResponse, dependencies=[Depends(require_admin)])
+async def upsert_settings(payload: list[SettingCreate], db: AsyncSession = Depends(get_db)):
+    """Create or update multiple settings at once (admin only)"""
+    results = []
+    for item in payload:
+        if item.value == "***HIDDEN***":
+            continue
+        result = await db.execute(
+            select(Setting).where((Setting.key == item.key) & (Setting.is_deleted == False))
+        )
+        setting = result.scalar_one_or_none()
+        if setting:
+            if not setting.is_editable:
+                continue
+            setting.value = item.value
+            if item.data_type:
+                setting.data_type = item.data_type
+            if item.description is not None:
+                setting.description = item.description
+        else:
+            setting = Setting(**item.model_dump())
+            db.add(setting)
+        results.append({"key": item.key, "value": item.value})
+
+    await db.commit()
+    return ApiResponse(success=True, data=results, message=f"{len(results)} settings saved")
+
+
 @router.get("/{key}", response_model=ApiResponse)
 async def get_setting(key: str, db: AsyncSession = Depends(get_db)):
     """Get specific setting by key"""
@@ -91,27 +119,3 @@ async def create_setting(key: str, value: str, db: AsyncSession = Depends(get_db
         data=SettingOut.model_validate(new_setting),
         message="Setting created successfully"
     )
-
-
-@router.post("/upsert", response_model=ApiResponse, dependencies=[Depends(require_admin)])
-async def upsert_settings(payload: list[SettingCreate], db: AsyncSession = Depends(get_db)):
-    """Create or update multiple settings at once (admin only)"""
-    results = []
-    for item in payload:
-        result = await db.execute(
-            select(Setting).where((Setting.key == item.key) & (Setting.is_deleted == False))
-        )
-        setting = result.scalar_one_or_none()
-        if setting:
-            setting.value = item.value
-            if item.data_type:
-                setting.data_type = item.data_type
-            if item.description is not None:
-                setting.description = item.description
-        else:
-            setting = Setting(**item.model_dump())
-            db.add(setting)
-        results.append({"key": item.key, "value": item.value})
-
-    await db.commit()
-    return ApiResponse(success=True, data=results, message=f"{len(results)} settings saved")

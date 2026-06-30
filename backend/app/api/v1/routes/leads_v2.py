@@ -182,9 +182,16 @@ async def list_leads_admin(
     if min_score is not None:
         query = query.where(LeadV2.qualification_score >= min_score)
 
-    # Count total
+    count_conditions = [LeadV2.is_deleted == False]
+    if status:
+        count_conditions.append(LeadV2.status == status)
+    if lead_type:
+        count_conditions.append(LeadV2.lead_type == lead_type)
+    if min_score is not None:
+        count_conditions.append(LeadV2.qualification_score >= min_score)
+
     count_result = await db.execute(
-        select(func.count(LeadV2.id)).where(LeadV2.is_deleted == False)
+        select(func.count(LeadV2.id)).where(and_(*count_conditions))
     )
     total = count_result.scalar()
 

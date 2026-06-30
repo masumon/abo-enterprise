@@ -11,6 +11,7 @@ from app.schemas.schemas import (
     AdminSettingUpdate,
     PaymentMethodOut,
     PaymentMethodCreate,
+    PaymentMethodUpdate,
     PaginatedResponse,
     PaginatedMeta,
     ApiResponse,
@@ -210,11 +211,11 @@ async def create_payment_method(
 @router.put("/payment-methods/{method_id}", response_model=ApiResponse)
 async def update_payment_method(
     method_id: uuid.UUID,
-    payload: PaymentMethodCreate,
+    payload: PaymentMethodUpdate,
     admin_id: str = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update payment method"""
+    """Update payment method (partial updates supported)"""
     result = await db.execute(
         select(PaymentMethod).where(PaymentMethod.id == method_id)
     )
@@ -223,8 +224,11 @@ async def update_payment_method(
     if not method:
         raise HTTPException(status_code=404, detail="Payment method not found")
 
-    # Update
-    for field, value in payload.dict(exclude_unset=True).items():
+    updates = payload.model_dump(exclude_unset=True)
+    if not updates:
+        raise HTTPException(status_code=422, detail="No fields to update")
+
+    for field, value in updates.items():
         setattr(method, field, value)
 
     await db.commit()

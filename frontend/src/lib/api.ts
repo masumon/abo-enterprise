@@ -36,7 +36,8 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && typeof window !== "undefined") {
       clearAdminToken();
       if (isAdminProtectedPath(window.location.pathname)) {
-        window.location.href = "/admin/login";
+        const redirect = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/admin/login?redirect=${redirect}`;
       }
     }
     return Promise.reject(error);
