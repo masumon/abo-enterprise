@@ -62,7 +62,7 @@ const SECTIONS: Section[] = [
     icon: <Building2 className="w-4 h-4" />,
     fields: [
       { key: "site_name", label: "Site Name", placeholder: "ABO Enterprise" },
-      { key: "site_tagline", label: "Site Tagline", placeholder: "Your one-stop shop in Sylhet" },
+      { key: "site_tagline", label: "Site Tagline (optional override)", placeholder: "ডিজিটাল ভবিষ্যৎ গড়ি — সহজ সমাধান" },
       { key: "logo_url", label: "Logo", type: "url", upload: true, placeholder: "https://..." },
       { key: "favicon_url", label: "Favicon", type: "url", upload: true, placeholder: "https://.../favicon.ico" },
       { key: "contact_phone", label: "Contact Phone", type: "tel", placeholder: "01825007977" },
@@ -76,9 +76,9 @@ const SECTIONS: Section[] = [
     icon: <ImageIcon className="w-4 h-4" />,
     fields: [
       { key: "hero_title_en", label: "Hero Title (English)", placeholder: "Welcome to ABO Enterprise" },
-      { key: "hero_subtitle_en", label: "Hero Subtitle (English)", type: "textarea", placeholder: "Your trusted tech & printing partner in Sylhet" },
-      { key: "hero_title_bn", label: "Hero Title (বাংলা)", placeholder: "ABO ENTERPRISE: পণ্য, সেবা ও সফটওয়্যারের বিশ্বস্ত এন্টারপ্রাইজ।" },
-      { key: "hero_subtitle_bn", label: "Hero Subtitle (বাংলা)", type: "textarea", placeholder: "সিলেটের বিশ্বস্ত টেক ও প্রিন্টিং পার্টনার" },
+      { key: "hero_subtitle_en", label: "Hero Subtitle (English)", type: "textarea", placeholder: "Simple Solution — products, services, software & AI in one place." },
+      { key: "hero_title_bn", label: "Hero Title (বাংলা)", placeholder: "ABO ENTERPRISE: ডিজিটাল ভবিষ্যৎ গড়ি" },
+      { key: "hero_subtitle_bn", label: "Hero Subtitle (বাংলা)", type: "textarea", placeholder: "সহজ সমাধান — পণ্য, সেবা, সফটওয়্যার ও AI এক প্ল্যাটফর্মে।" },
       { key: "hero_cta_text", label: "CTA Button Text", placeholder: "Shop Now" },
       { key: "hero_cta_url", label: "CTA Button URL", type: "url", placeholder: "/products" },
       { key: "hero_image_url", label: "Homepage Banner Image", type: "url", upload: true, placeholder: "https://...", hint: "Leave empty for built-in demo banner. Upload to replace." },

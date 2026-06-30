@@ -5,6 +5,7 @@ import { Target, Eye, Heart, CheckCircle, Users, Briefcase, ShoppingCart, Award,
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import BrandLogo from "@/components/ui/BrandLogo";
+import BrandMotto from "@/components/ui/BrandMotto";
 
 const VALUES = [
   { icon: Heart, title: { en: "Customer First", bn: "গ্রাহক প্রথম" }, desc: { en: "Every decision starts with what's best for our customers.", bn: "সব সিদ্ধান্ত গ্রাহকের স্বার্থে।" } },
@@ -43,8 +44,8 @@ export default function AboutPage() {
         pageKey="about"
         title="ABO Enterprise"
         subtitle={t({
-          en: "Products, printing, legal help & software — one trusted platform for Bangladesh.",
-          bn: "পণ্য, প্রিন্টিং, আইনি সহায়তা ও সফটওয়্যার — বাংলাদেশের এক বিশ্বস্ত প্ল্যাটফর্ম।",
+          en: "Building Digital Future — Simple Solution",
+          bn: "ডিজিটাল ভবিষ্যৎ গড়ি — সহজ সমাধান",
         })}
         breadcrumbs={[
           { label: lang === "bn" ? "হোম" : "Home", href: "/" },
@@ -53,7 +54,12 @@ export default function AboutPage() {
       >
         <div className="flex flex-col items-center text-center mt-2">
           <BrandLogo size="xl" href={false} variant="light" className="mb-3" />
-          <p className="text-sm text-white/80">Sumon Brothers Organization</p>
+          <BrandMotto
+            lang={lang}
+            headlineClassName="text-sm text-white font-semibold"
+            taglineClassName="text-xs text-white/75 mt-1"
+          />
+          <p className="text-sm text-white/70 mt-2">Sumon Brothers Organization</p>
         </div>
       </PageHero>
 

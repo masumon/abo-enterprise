@@ -26,6 +26,7 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
 import BrandLogo from "@/components/ui/BrandLogo";
+import BrandMotto from "@/components/ui/BrandMotto";
 import { cn } from "@/lib/utils";
 
 const SERVICES = [
@@ -120,7 +121,6 @@ export default function Footer() {
     "contact_email",
     "contact_address",
     "google_maps_embed",
-    "site_tagline",
     "facebook_url",
     "instagram_url",
     "linkedin_url",
@@ -243,10 +243,11 @@ export default function Footer() {
               <BrandLogo size="lg" href={false} variant="light" />
               <div>
                 <h3 className="text-white font-bold text-xl tracking-tight">ABO Enterprise</h3>
-                <p className="text-brand-100 text-xs font-medium mt-0.5">
-                  {getSettingValue(settings, "site_tagline") ||
-                    (lang === "bn" ? "ডিজিটাল ভবিষ্যৎ গড়ি" : "Powering Digital Future")}
-                </p>
+                <BrandMotto
+                  lang={lang}
+                  headlineClassName="text-brand-100 text-xs font-semibold mt-0.5"
+                  taglineClassName="text-brand-200/90 text-[11px] font-medium mt-0.5"
+                />
               </div>
             </div>
 

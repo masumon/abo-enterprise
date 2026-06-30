@@ -21,7 +21,7 @@ _ROW_ALT = "#f8faff"
 _BORDER = "#e2e8f0"
 
 _COMPANY_NAME = "ABO Enterprise"
-_COMPANY_TAGLINE = "Products, Services & Software — Trusted Enterprise"
+_COMPANY_TAGLINE = "Building Digital Future — Simple Solution"
 _COMPANY_ADDRESS = (
     "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, "
     "Beanibazar, Sylhet, Bangladesh"

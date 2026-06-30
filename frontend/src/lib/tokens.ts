@@ -44,9 +44,20 @@ export const SOCIAL_PROFILES = [
 
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/icons/icon-512.png`;
 
+/** Logo core message */
+export const BRAND_HEADLINE = {
+  en: "Building Digital Future",
+  bn: "ডিজিটাল ভবিষ্যৎ গড়ি",
+} as const;
+
 export const BRAND_TAGLINE = {
-  en: "Bangladesh's Complete Technology Ecosystem",
-  bn: "বাংলাদেশের সম্পূর্ণ টেকনোলজি ইকোসিস্টেম",
+  en: "Simple Solution",
+  bn: "সহজ সমাধান",
+} as const;
+
+export const BRAND_MOTTO = {
+  en: `${BRAND_HEADLINE.en} — ${BRAND_TAGLINE.en}`,
+  bn: `${BRAND_HEADLINE.bn} — ${BRAND_TAGLINE.bn}`,
 } as const;
 
 export const ABO_ACRONYM = {
