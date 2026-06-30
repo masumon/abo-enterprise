@@ -19,7 +19,20 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const config = error.config as (typeof error.config & { __retryCount?: number }) | undefined;
+    if (config && (config.__retryCount ?? 0) < 3) {
+      const retryable =
+        !error.response ||
+        [408, 429, 500, 502, 503, 504].includes(error.response.status) ||
+        ["ECONNABORTED", "ERR_NETWORK", "ETIMEDOUT", "ECONNRESET"].includes(error.code);
+      if (retryable && error.response?.status !== 401) {
+        config.__retryCount = (config.__retryCount ?? 0) + 1;
+        const delay = Math.min(12000, 1500 * 2 ** (config.__retryCount - 1));
+        await new Promise((r) => setTimeout(r, delay + Math.random() * 500));
+        return api.request(config);
+      }
+    }
     if (error.response?.status === 401 && typeof window !== "undefined") {
       clearAdminToken();
       if (isAdminProtectedPath(window.location.pathname)) {

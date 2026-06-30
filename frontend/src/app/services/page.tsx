@@ -3,6 +3,8 @@ import type { Service } from "@/types";
 import { pageMeta } from "@/lib/metadata";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import ServicesPageClient from "./ServicesPageClient";
+import { fetchWithRetry } from "@/lib/fetchRetry";
+import { DEMO_SERVICES } from "@/lib/demoContent";
 
 export const metadata: Metadata = pageMeta(
   "Services — Printing, Legal & Software",
@@ -10,24 +12,25 @@ export const metadata: Metadata = pageMeta(
   "/services"
 );
 
-async function fetchServices(): Promise<{ services: Service[]; total: number }> {
+async function fetchServices(): Promise<{ services: Service[]; total: number; isDemo: boolean }> {
   try {
-    const res = await fetch(`${getApiBaseUrl()}/api/v1/services?page=1&per_page=12`, {
+    const res = await fetchWithRetry(`${getApiBaseUrl()}/api/v1/services?page=1&per_page=12`, {
       next: { revalidate: 60 },
       signal: AbortSignal.timeout(55000),
     });
-    if (!res.ok) return { services: [], total: 0 };
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
-    return {
-      services: (json.data ?? []) as Service[],
-      total: json.meta?.total ?? 0,
-    };
+    const services = (json.data ?? []) as Service[];
+    if (services.length > 0) {
+      return { services, total: json.meta?.total ?? services.length, isDemo: false };
+    }
   } catch {
-    return { services: [], total: 0 };
+    // fall through to demo
   }
+  return { services: DEMO_SERVICES, total: DEMO_SERVICES.length, isDemo: true };
 }
 
 export default async function ServicesPage() {
-  const { services, total } = await fetchServices();
-  return <ServicesPageClient initialServices={services} initialTotal={total} />;
+  const { services, total, isDemo } = await fetchServices();
+  return <ServicesPageClient initialServices={services} initialTotal={total} initialIsDemo={isDemo} />;
 }

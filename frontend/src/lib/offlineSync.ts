@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "@/lib/apiBase";
+
 interface PendingAction {
   id: string;
   type: "booking" | "lead" | "order";
@@ -222,7 +224,8 @@ class OfflineDataSync {
       ? `${endpoint}/${action.data.id}` 
       : endpoint;
 
-    const response = await fetch(url, {
+    const apiBase = getApiBaseUrl();
+    const response = await fetch(`${apiBase}${url}`, {
       method,
       headers: { "Content-Type": "application/json" },
       body: method !== "DELETE" ? JSON.stringify(action.data) : undefined,
