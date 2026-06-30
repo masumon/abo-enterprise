@@ -7,13 +7,13 @@ import { z } from "zod";
 import { Printer, CheckCircle, MessageCircle } from "lucide-react";
 import { bookingsApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
-import { generateWhatsAppBookingMessage, WHATSAPP_NUMBER } from "@/lib/utils";
-import { cn } from "@/lib/utils";
+import { generateWhatsAppBookingMessage, WHATSAPP_NUMBER, cn } from "@/lib/utils";
+import { BD_PHONE_REGEX } from "@/lib/phone";
 import PageHero from "@/components/ui/PageHero";
 
 const schema = z.object({
   customer_name: z.string().min(2),
-  customer_phone: z.string().regex(/^0[13-9]\d{8}$/),
+  customer_phone: z.string().regex(BD_PHONE_REGEX, "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন"),
   service_subtype: z.string().min(1),
   details: z.string().min(10),
 });

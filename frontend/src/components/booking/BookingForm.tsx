@@ -8,7 +8,9 @@ import { serviceBookingsApi } from "@/lib/api";
 import type { Service } from "@/types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
-const bdPhoneRegex = /^0[13-9]\d{8}$/;
+import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN } from "@/lib/phone";
+
+const bdPhoneRegex = BD_PHONE_REGEX;
 
 const bookingSchema = z.object({
   customer_name: z.string().min(2, "Name must be at least 2 characters"),

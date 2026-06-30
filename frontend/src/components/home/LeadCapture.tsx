@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { BD_PHONE_REGEX, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { Send, CheckCircle, Bot, Code, Cog } from "lucide-react";
 import { serviceLeadsApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
@@ -12,7 +13,7 @@ import { cn } from "@/lib/utils";
 const schema = z.object({
   name: z.string().min(2, "নাম দিন"),
   company: z.string().optional(),
-  phone: z.string().regex(/^0[13-9]\d{8}$/, "সঠিক নম্বর দিন"),
+  phone: z.string().regex(BD_PHONE_REGEX, BD_PHONE_ERROR_BN),
   email: z.string().email("সঠিক ইমেইল দিন").optional().or(z.literal("")),
   lead_type: z.enum(["software_development", "ai_solutions", "automation", "erp", "general"]),
   project_description: z.string().min(20, "কমপক্ষে ২০ অক্ষরে প্রজেক্ট বর্ণনা করুন"),

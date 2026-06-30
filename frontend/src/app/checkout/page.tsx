@@ -12,9 +12,9 @@ import {
 } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import { ordersApi, productsApi, customerOtpApi, paymentsApi } from "@/lib/api";
-import { cn } from "@/lib/utils";
+import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -26,7 +26,7 @@ import PageHero from "@/components/ui/PageHero";
 
 const schema = z.object({
   customer_name: z.string().min(2, "Name required (min 2 chars)"),
-  customer_phone: z.string().regex(/^0[13-9]\d{8}$/, "Valid BD number: 01XXXXXXXXX"),
+  customer_phone: z.string().regex(BD_PHONE_REGEX, BD_PHONE_ERROR_EN),
   customer_email: z.string().email("Invalid email").optional().or(z.literal("")),
   district: z.string().min(1, "Select district"),
   street_address: z.string().min(5, "Enter full street/area address"),
@@ -133,7 +133,7 @@ export default function CheckoutPage() {
   };
 
   const sendOtp = async () => {
-    if (!/^0[13-9]\d{8}$/.test(selectedPhone)) return;
+    if (!BD_PHONE_REGEX.test(selectedPhone)) return;
     setOtpLoading(true);
     try {
       await customerOtpApi.send(selectedPhone);

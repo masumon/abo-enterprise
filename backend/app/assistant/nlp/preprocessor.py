@@ -37,7 +37,7 @@ _ABBREVIATIONS = {
 }
 
 _WHITESPACE_RE = re.compile(r"\s+")
-_PHONE_RE = re.compile(r"(?:\+?88)?0[13-9]\d{8}")
+_PHONE_RE = re.compile(r"(?:\+?88)?0[13-9]\d{9}")
 _EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}")
 _ORDER_NUM_RE = re.compile(r"\bABO-[A-Z0-9-]{4,20}\b", re.IGNORECASE)
 _BOOKING_NUM_RE = re.compile(r"\bBK-\d{4}-\d{6}\b", re.IGNORECASE)

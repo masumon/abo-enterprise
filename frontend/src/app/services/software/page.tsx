@@ -9,6 +9,7 @@ import { serviceLeadsApi } from "@/lib/api";
 import { toLeadV2Type } from "@/lib/leadTypes";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
+import { BD_PHONE_REGEX } from "@/lib/phone";
 import PageHero from "@/components/ui/PageHero";
 import Image from "next/image";
 import { useShowcaseContent } from "@/hooks/useShowcaseContent";
@@ -17,7 +18,7 @@ import { resolveServiceIcon } from "@/lib/showcaseContent";
 const schema = z.object({
   name: z.string().min(2),
   company: z.string().optional(),
-  phone: z.string().regex(/^0[13-9]\d{8}$/),
+  phone: z.string().regex(BD_PHONE_REGEX, "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন"),
   email: z.string().email().optional().or(z.literal("")),
   lead_type: z.enum(["software_development", "ai_solutions", "automation", "erp", "general"]),
   budget_range: z.string().optional(),

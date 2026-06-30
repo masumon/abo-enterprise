@@ -67,7 +67,7 @@ describe("Booking Form", () => {
     render(<BookingForm service={mockService} />);
 
     await user.type(screen.getByPlaceholderText(/Your full name/), "John Doe");
-    await user.type(screen.getByPlaceholderText(/01XXXXXXXXX/), "0171234567");
+    await user.type(screen.getByPlaceholderText(/01XXXXXXXXX/), "01712345678");
     await user.type(screen.getByPlaceholderText(/your@email.com/), "john@example.com");
     await user.type(
       screen.getByPlaceholderText(/Please describe your requirements in detail/),

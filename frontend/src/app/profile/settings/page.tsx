@@ -5,6 +5,7 @@ import Link from "next/link";
 import { LogOut, Save } from "lucide-react";
 import { useCustomerStore } from "@/store/customer";
 import { useCustomerProfileStore } from "@/store/customerProfile";
+import { BD_PHONE_REGEX } from "@/lib/phone";
 import { useLanguageStore } from "@/store/language";
 import { useRouter } from "next/navigation";
 import PageHero from "@/components/ui/PageHero";
@@ -29,7 +30,7 @@ export default function SettingsPage() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!/^0[13-9]\d{8}$/.test(phone) || name.trim().length < 2) return;
+    if (!BD_PHONE_REGEX.test(phone) || name.trim().length < 2) return;
     login(phone, name.trim());
     updateSettings({ email });
     setSaved(true);
