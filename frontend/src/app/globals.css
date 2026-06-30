@@ -23,7 +23,8 @@
     --navbar-offset: calc(var(--announcement-height) + var(--navbar-height));
     --bottom-nav-height: 4rem;
     --mobile-chrome-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
-    --mobile-float-bottom: calc(var(--mobile-chrome-bottom) + 0.75rem);
+    --sticky-cta-height: 3.5rem;
+    --mobile-float-bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-cta-height) + 0.75rem);
   }
 
   .dark {
@@ -259,7 +260,8 @@
     @apply enterprise-section bg-gray-50/80 dark:bg-white/[0.02];
   }
   .sticky-cta-bar {
-    @apply fixed bottom-0 left-0 right-0 z-40 lg:hidden;
+    @apply fixed left-0 right-0 z-[45] lg:hidden;
+    bottom: var(--mobile-chrome-bottom);
     padding-bottom: env(safe-area-inset-bottom, 0px);
     background: rgba(255,255,255,0.92);
     backdrop-filter: blur(16px);

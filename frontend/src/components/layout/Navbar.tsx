@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
-  ShoppingCart, Menu, X, Globe, Search, Briefcase, Moon, Sun,
+  ShoppingCart, Menu, X, Globe, Search, Briefcase, Moon, Sun, ChevronDown,
 } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
@@ -16,17 +16,33 @@ import MegaMenu from "@/components/layout/MegaMenu";
 import { cn } from "@/lib/utils";
 
 const MOBILE_LINKS = [
-  { href: "/products", key: "nav_products" as const },
-  { href: "/services", key: "nav_services" as const },
   { href: "/blog", key: "nav_blog" as const },
   { href: "/projects", key: "nav_solutions" as const },
   { href: "/about", key: "nav_about" as const },
   { href: "/contact", key: "nav_contact" as const },
 ];
 
+const MOBILE_PRODUCT_LINKS = [
+  { href: "/products", label: { en: "All Products", bn: "সব পণ্য" } },
+  { href: "/products?category=accessories", label: { en: "Accessories", bn: "এক্সেসরিজ" } },
+  { href: "/products?category=gadgets", label: { en: "Gadgets", bn: "গ্যাজেট" } },
+  { href: "/products?category=electronics", label: { en: "Electronics", bn: "ইলেকট্রনিক্স" } },
+  { href: "/profile/wishlist", label: { en: "Wishlist", bn: "উইশলিস্ট" } },
+  { href: "/compare", label: { en: "Compare", bn: "তুলনা" } },
+];
+
+const MOBILE_SERVICE_LINKS = [
+  { href: "/services", label: { en: "All Services", bn: "সব সেবা" } },
+  { href: "/services/printing", label: { en: "Printing", bn: "প্রিন্টিং" } },
+  { href: "/services/legal", label: { en: "Legal", bn: "আইনি" } },
+  { href: "/services/software", label: { en: "Software", bn: "সফটওয়্যার" } },
+  { href: "/book", label: { en: "Book a Service", bn: "সেবা বুক করুন" } },
+];
+
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileMega, setMobileMega] = useState<"products" | "services" | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -164,6 +180,39 @@ export default function Navbar() {
             </form>
           </div>
           <ul className="px-4 py-3 space-y-1">
+            {(["products", "services"] as const).map((section) => {
+              const isOpen = mobileMega === section;
+              const title = section === "products" ? t("nav_products") : t("nav_services");
+              const links = section === "products" ? MOBILE_PRODUCT_LINKS : MOBILE_SERVICE_LINKS;
+              return (
+                <li key={section}>
+                  <button
+                    type="button"
+                    onClick={() => setMobileMega(isOpen ? null : section)}
+                    className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-gray-800 dark:text-gray-100 font-medium hover:bg-brand-50 dark:hover:bg-white/10 text-sm"
+                    aria-expanded={isOpen}
+                  >
+                    {title}
+                    <ChevronDown className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")} />
+                  </button>
+                  {isOpen && (
+                    <ul className="ml-3 mt-1 space-y-0.5 border-l border-brand-100 dark:border-white/10 pl-3">
+                      {links.map((link) => (
+                        <li key={link.href}>
+                          <Link
+                            href={link.href}
+                            onClick={() => setMobileOpen(false)}
+                            className="block px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-white/10"
+                          >
+                            {lang === "bn" ? link.label.bn : link.label.en}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
             {MOBILE_LINKS.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} onClick={() => setMobileOpen(false)}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight,
   CheckCircle,
@@ -15,6 +16,7 @@ import { formatPrice } from "@/lib/utils";
 import { WHATSAPP_NUMBER } from "@/lib/utils";
 import type { Service } from "@/types";
 import { cn } from "@/lib/utils";
+import PageHero from "@/components/ui/PageHero";
 
 interface Props {
   service: Service;
@@ -93,48 +95,50 @@ export default function ServiceDetailClient({ service }: Props) {
 
   return (
     <div>
-      {/* Hero */}
-      <section className="gradient-brand text-white py-20 px-4">
-        <div className="max-w-4xl mx-auto">
+      <PageHero
+        title={name}
+        subtitle={shortDesc}
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "সেবা" : "Services", href: "/services" },
+          { label: name },
+        ]}
+      >
+        <div className="flex flex-wrap gap-4 items-center mt-4">
           {service.category && (
-            <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-sm font-medium mb-4 capitalize">
+            <span className="inline-block px-3 py-1 bg-white/20 rounded-full text-sm font-medium capitalize">
               {service.category.replace(/_/g, " ")}
             </span>
           )}
-          <h1 className="text-3xl md:text-5xl font-bold mb-4">{name}</h1>
-          {shortDesc && (
-            <p className="text-xl text-brand-100 max-w-2xl mb-8">{shortDesc}</p>
-          )}
-          <div className="flex flex-wrap gap-4 items-center">
-            <PricingBadge service={service} lang={lang} />
-            <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn btn-lg bg-white text-brand-700 hover:bg-brand-50 font-bold gap-2"
-            >
-              <MessageCircle className="w-5 h-5" />
-              {t("Chat on WhatsApp", "WhatsApp-এ কথা বলুন")}
-            </a>
-            <Link
-              href={`/book?service=${service.slug}`}
-              className="btn btn-lg btn-outline text-white border-white/60 hover:bg-white/10 gap-2"
-            >
-              {t("Book Now", "বুকিং করুন")}
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-          </div>
+          <PricingBadge service={service} lang={lang} />
+          <a
+            href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-md bg-white text-brand-700 hover:bg-brand-50 font-bold gap-2"
+          >
+            <MessageCircle className="w-5 h-5" />
+            {t("Chat on WhatsApp", "WhatsApp-এ কথা বলুন")}
+          </a>
+          <Link
+            href={`/book?service=${service.slug}`}
+            className="btn btn-md btn-outline text-white border-white/60 hover:bg-white/10 gap-2"
+          >
+            {t("Book Now", "বুকিং করুন")}
+            <ArrowRight className="w-5 h-5" />
+          </Link>
         </div>
-      </section>
+      </PageHero>
 
       <div className="max-w-5xl mx-auto px-4 py-12 space-y-12">
-        {/* Featured image */}
         {service.featured_image_url && (
-          <div className="rounded-2xl overflow-hidden shadow-lg aspect-video">
-            <img
+          <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-video">
+            <Image
               src={service.featured_image_url}
-              alt={service.name_en}
-              className="w-full h-full object-cover"
+              alt={name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 1024px) 100vw, 896px"
             />
           </div>
         )}

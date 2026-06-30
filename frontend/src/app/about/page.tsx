@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Target, Eye, Heart, CheckCircle, Users, Briefcase, ShoppingCart, Award, Calendar, TrendingUp } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
+import PageHero from "@/components/ui/PageHero";
 
 const VALUES = [
   { icon: Heart, title: { en: "Customer First", bn: "গ্রাহক প্রথম" }, desc: { en: "Every decision starts with what's best for our customers.", bn: "সব সিদ্ধান্ত গ্রাহকের স্বার্থে।" } },
@@ -38,20 +39,26 @@ export default function AboutPage() {
 
   return (
     <main className="min-h-screen">
-      <section className="gradient-brand text-white py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full border-4 border-white/30 overflow-hidden shadow-xl">
+      <PageHero
+        title="ABO Enterprise"
+        subtitle={t({
+          en: "Products, printing, legal help & software — one trusted platform for Bangladesh.",
+          bn: "পণ্য, প্রিন্টিং, আইনি সহায়তা ও সফটওয়্যার — বাংলাদেশের এক বিশ্বস্ত প্ল্যাটফর্ম।",
+        })}
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "আমাদের সম্পর্কে" : "About" },
+        ]}
+      >
+        <div className="flex flex-col items-center text-center mt-2">
+          <div className="w-20 h-20 rounded-full border-4 border-white/30 overflow-hidden shadow-xl mb-3">
             <Image src="/logo.jpg" alt="ABO Enterprise" width={80} height={80} className="object-cover w-full h-full" />
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">ABO Enterprise</h1>
-          <p className="text-sm text-brand-200 mb-2">Ahmed Brothers Organization</p>
-          <p className="text-xl text-brand-100 max-w-2xl mx-auto">
-            {t({ en: "Products, printing, legal help & software — one trusted platform for Bangladesh.", bn: "পণ্য, প্রিন্টিং, আইনি সহায়তা ও সফটওয়্যার — বাংলাদেশের এক বিশ্বস্ত প্ল্যাটফর্ম।" })}
-          </p>
+          <p className="text-sm text-white/80">Ahmed Brothers Organization</p>
         </div>
-      </section>
+      </PageHero>
 
-      <section className="py-16 px-4 bg-white">
+      <section className="py-16 px-4 bg-white dark:bg-transparent">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-start">
           <div>
             <div className="section-title"><h2>{t({ en: "Our Story", bn: "আমাদের গল্প" })}</h2></div>

@@ -23,6 +23,7 @@ import { ordersApi, productsApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import type { PaymentMethod } from "@/types";
+import PageHero from "@/components/ui/PageHero";
 
 const COUPONS: Record<string, number> = { ABO10: 0.1, WELCOME: 0.05 };
 
@@ -227,24 +228,28 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen page-surface pb-24 lg:pb-8">
+      <PageHero
+        title={lang === "bn" ? "অর্ডার করুন" : "Checkout"}
+        subtitle={
+          lang === "bn"
+            ? "গেস্ট চেকআউট — অ্যাকাউন্ট ছাড়াই অর্ডার করুন"
+            : "Guest checkout — order without creating an account"
+        }
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "কার্ট" : "Cart", href: "/cart" },
+          { label: lang === "bn" ? "চেকআউট" : "Checkout" },
+        ]}
+        variant="light"
+      />
       <div className="max-w-6xl mx-auto px-4 py-8">
         <Link
-          href="/products"
+          href="/cart"
           className="inline-flex items-center gap-2 text-sm text-muted hover:text-brand-600 dark:hover:text-brand-300 mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          {lang === "bn" ? "কেনাকাটা চালিয়ে যান" : "Continue Shopping"}
+          {lang === "bn" ? "কার্টে ফিরুন" : "Back to Cart"}
         </Link>
-
-        <h1 className="text-2xl font-bold text-heading mb-4">
-          {lang === "bn" ? "অর্ডার করুন" : "Checkout"}
-        </h1>
-
-        <div className="mb-6 rounded-xl bg-brand-50 dark:bg-brand-900/30 border border-brand-100 dark:border-brand-800 px-4 py-3 text-sm text-brand-800 dark:text-brand-200">
-          {lang === "bn"
-            ? "✓ গেস্ট চেকআউট — অ্যাকাউন্ট তৈরি করতে হবে না। শুধু নাম, ফোন ও ঠিকানা দিন।"
-            : "✓ Guest checkout — no account needed. Just provide your name, phone, and address."}
-        </div>
 
         {stockIssue && (
           <div role="alert" className="mb-6 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-4 py-3 text-sm text-amber-800 dark:text-amber-200">

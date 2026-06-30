@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import {
-  Package, Calendar, Heart, FileText, MapPin, Headphones, Settings, LogOut, Search,
+  Package, Calendar, Heart, FileText, MapPin, Headphones, Settings, Search,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { useWishlistStore } from "@/store/wishlist";
 import GlassCard from "@/components/ui/GlassCard";
+import PageHero from "@/components/ui/PageHero";
+import { useCustomerStore } from "@/store/customer";
 
 const PORTAL_ITEMS = [
   { href: "/orders", icon: Package, labelKey: "profile_orders" as const, live: true },
@@ -23,17 +25,25 @@ const PORTAL_ITEMS = [
 export default function ProfilePage() {
   const { lang } = useLanguageStore();
   const t = useT();
+  const { session } = useCustomerStore();
   const wishlistCount = useWishlistStore((s) => s.count());
 
   return (
-    <div className="min-h-screen py-8">
-      <div className="container mx-auto px-4 max-w-2xl">
-        <GlassCard className="p-6 text-center mb-6 bg-gradient-to-br from-brand-600 to-brand-800 text-white border-0">
-          <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">👤</div>
-          <h1 className="text-2xl font-bold">{t("profile_dashboard")}</h1>
-          <p className="text-white/70 text-sm mt-1">
-            {lang === "bn" ? "ABO Enterprise ক্লায়েন্ট পোর্টাল" : "ABO Enterprise Client Portal"}
-          </p>
+    <main className="min-h-screen">
+      <PageHero
+        title={t("profile_dashboard")}
+        subtitle={lang === "bn" ? "ABO Enterprise ক্লায়েন্ট পোর্টাল" : "ABO Enterprise Client Portal"}
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "ড্যাশবোর্ড" : "Dashboard" },
+        ]}
+        variant="light"
+      />
+      <div className="container mx-auto px-4 max-w-2xl py-8">
+        <GlassCard className="p-5 text-center mb-6">
+          <div className="w-14 h-14 bg-brand-50 dark:bg-brand-900/30 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">👤</div>
+          <p className="font-semibold text-heading">{session?.name ?? (lang === "bn" ? "গ্রাহক" : "Customer")}</p>
+          {session?.phone && <p className="text-sm text-muted mt-1">{session.phone}</p>}
         </GlassCard>
 
         <div className="grid sm:grid-cols-2 gap-3">
@@ -57,12 +67,7 @@ export default function ProfilePage() {
             );
           })}
         </div>
-
-        <Link href="/admin/login" className="mt-6 flex items-center justify-center gap-2 w-full py-3 border border-brand-200 text-brand-700 rounded-xl text-sm font-medium hover:bg-brand-50 glass">
-          <LogOut className="w-4 h-4 rotate-180" />
-          {lang === "bn" ? "এডমিন লগইন" : "Admin Login"}
-        </Link>
       </div>
-    </div>
+    </main>
   );
 }

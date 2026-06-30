@@ -9,6 +9,7 @@ import { useLanguageStore } from "@/store/language";
 import { ordersApi } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import GlassCard from "@/components/ui/GlassCard";
+import PageHero from "@/components/ui/PageHero";
 
 interface OrderSummary {
   order_number: string;
@@ -51,13 +52,19 @@ export default function OrdersPage() {
   };
 
   return (
-    <main className="min-h-screen py-8 px-4">
-      <div className="container mx-auto max-w-2xl">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold">{lang === "bn" ? "আমার অর্ডার" : "My Orders"}</h1>
-            {session && <p className="text-sm text-gray-500">{session.name} · {session.phone}</p>}
-          </div>
+    <main className="min-h-screen">
+      <PageHero
+        title={lang === "bn" ? "আমার অর্ডার" : "My Orders"}
+        subtitle={session ? `${session.name} · ${session.phone}` : undefined}
+        breadcrumbs={[
+          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+          { label: lang === "bn" ? "ড্যাশবোর্ড" : "Dashboard", href: "/profile" },
+          { label: lang === "bn" ? "অর্ডার" : "Orders" },
+        ]}
+        variant="light"
+      />
+      <div className="container mx-auto max-w-2xl px-4 py-8">
+        <div className="flex justify-end mb-4">
           <button type="button" onClick={() => { logout(); router.push("/login"); }} className="btn btn-ghost btn-sm">
             <LogOut className="w-4 h-4" />
             {lang === "bn" ? "লগআউট" : "Logout"}
