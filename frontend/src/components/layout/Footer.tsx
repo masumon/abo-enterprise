@@ -25,7 +25,7 @@ import { useToastStore } from "@/store/toast";
 import { publicApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
-import { mapsPlaceUrl } from "@/lib/maps";
+import { resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
 import { cn } from "@/lib/utils";
 
 const SERVICES = [
@@ -119,6 +119,7 @@ export default function Footer() {
     "contact_phone",
     "contact_email",
     "contact_address",
+    "google_maps_embed",
     "site_tagline",
     "facebook_url",
     "instagram_url",
@@ -132,8 +133,9 @@ export default function Footer() {
   const address = getSettingValue(
     settings,
     "contact_address",
-    lang === "bn" ? "হাজি বাহার উদ্দিন মার্কেট, সিলেট-৩১৭০" : "Hazi Bahar Uddin Market, Sylhet-3170"
+    lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN
   );
+  const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
   const whatsappDigits = normalizePhoneDigits(getSettingValue(settings, "whatsapp_number", phoneRaw));
   const phoneDigits = normalizePhoneDigits(phoneRaw);
   const phoneDisplay = formatPhoneDisplay(phoneRaw);
@@ -342,7 +344,7 @@ export default function Footer() {
                 <ul className="space-y-3 text-sm">
                   <li>
                     <a
-                      href={mapsPlaceUrl(address)}
+                      href={mapsLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-start gap-3 text-white/75 hover:text-white transition-colors group"

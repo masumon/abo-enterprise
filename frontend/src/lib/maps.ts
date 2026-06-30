@@ -1,8 +1,12 @@
 /** Business location defaults — used when CMS settings are empty */
+export const DEFAULT_ADDRESS_BN =
+  "হাজী বাহার উদ্দিন মার্কেট, আব্দুল্লাপুর, বৈরাগীবাজার-৩১৭০, বিয়ানীবাজার, সিলেট, বাংলাদেশ";
+export const DEFAULT_ADDRESS_EN =
+  "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh";
+
 export const BUSINESS_LOCATION = {
   name: "ABO Enterprise",
-  address: "Hazi Bahar Uddin Market, Sylhet-3170, Bangladesh",
-  /** Ambarkhana, Sylhet — near Hazi Bahar Uddin Market */
+  address: DEFAULT_ADDRESS_EN,
   lat: 24.897,
   lng: 91.8705,
 } as const;
@@ -48,6 +52,21 @@ export function resolveGoogleMapsEmbed(raw: string | undefined, fallback: string
 
 export function mapsPlaceUrl(query: string = BUSINESS_LOCATION.address): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}
+
+/** Open the same place as admin embed URL (Share → Embed in Google Maps). */
+export function mapsViewUrlFromEmbed(raw: string | undefined): string | null {
+  const parsed = parseGoogleMapsEmbedInput(raw ?? "");
+  if (!parsed) return null;
+  return parsed.replace("/maps/embed", "/maps");
+}
+
+/** Prefer admin embed location; fallback to address search. */
+export function resolveGoogleMapsLink(
+  embedRaw: string | undefined,
+  address: string = BUSINESS_LOCATION.address
+): string {
+  return mapsViewUrlFromEmbed(embedRaw) ?? mapsPlaceUrl(address);
 }
 
 export function mapsDirectionsUrl(query: string = BUSINESS_LOCATION.address): string {

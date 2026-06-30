@@ -67,7 +67,7 @@ const SECTIONS: Section[] = [
       { key: "favicon_url", label: "Favicon", type: "url", upload: true, placeholder: "https://.../favicon.ico" },
       { key: "contact_phone", label: "Contact Phone", type: "tel", placeholder: "01825007977" },
       { key: "contact_email", label: "Contact Email", type: "email", placeholder: "info@aboenterprise.com" },
-      { key: "contact_address", label: "Business Address", type: "textarea", placeholder: "Sylhet, Bangladesh" },
+      { key: "contact_address", label: "Business Address", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh" },
     ],
   },
   {
