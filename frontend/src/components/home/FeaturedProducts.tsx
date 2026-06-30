@@ -11,6 +11,12 @@ import { productsApi } from "@/lib/api";
 import type { Product } from "@/types";
 import CountdownTimer, { getWeeklySaleEnd } from "@/components/ui/CountdownTimer";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import DemoModeBanner from "@/components/ui/DemoModeBanner";
+import {
+  filterDemoProducts,
+  getDemoProducts,
+  isDemoFallbackEnabled,
+} from "@/lib/demoFallback";
 
 export default function FeaturedProducts() {
   const { lang } = useLanguageStore();
@@ -18,6 +24,7 @@ export default function FeaturedProducts() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [usingDemo, setUsingDemo] = useState(false);
   const flashSaleEnabled = useFeatureFlag("feature_flash_sale");
 
   useEffect(() => {
@@ -28,10 +35,27 @@ export default function FeaturedProducts() {
           const fallback = await productsApi.list({ per_page: 8 });
           data = fallback.data.data ?? [];
         }
-        setProducts(data);
-        setError(false);
+        if (data.length > 0) {
+          setProducts(data);
+          setUsingDemo(false);
+          setError(false);
+          return;
+        }
+        if (isDemoFallbackEnabled()) {
+          setProducts(filterDemoProducts(getDemoProducts(), { featured: true }).slice(0, 8));
+          setUsingDemo(true);
+          setError(false);
+        }
       })
-      .catch(() => setError(true))
+      .catch(() => {
+        if (isDemoFallbackEnabled()) {
+          setProducts(filterDemoProducts(getDemoProducts(), { featured: true }).slice(0, 8));
+          setUsingDemo(true);
+          setError(false);
+        } else {
+          setError(true);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -52,6 +76,8 @@ export default function FeaturedProducts() {
               : "Best quality mobile accessories and gadgets — delivered right to your door"}
           </p>
         </div>
+
+        <DemoModeBanner show={usingDemo && !loading} />
 
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">

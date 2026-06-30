@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { setDemoSettings } from "@/lib/demoFallback";
 
 let cache: Record<string, string> | null = null;
 let pending: Promise<Record<string, string>> | null = null;
@@ -9,13 +10,15 @@ async function fetchSettings(): Promise<Record<string, string>> {
   if (cache) return cache;
   if (pending) return pending;
   pending = axios
-    .get<{ data: Record<string, string> }>(`${getApiBaseUrl()}/api/v1/settings`, { timeout: 30000 })
+    .get<{ data: Record<string, string> }>(`${getApiBaseUrl()}/api/v1/settings`, { timeout: 60000 })
     .then((r) => {
       cache = r.data.data ?? {};
+      setDemoSettings(cache);
       return cache;
     })
     .catch(() => {
       cache = {};
+      setDemoSettings(cache);
       return cache;
     })
     .finally(() => {

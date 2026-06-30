@@ -8,10 +8,12 @@ import { useCompareStore } from "@/store/compare";
 import { useCustomerStore } from "@/store/customer";
 import { useCustomerProfileStore } from "@/store/customerProfile";
 import { useThemeStore, applyTheme } from "@/store/theme";
+import { usePublicSettings } from "@/hooks/usePublicSettings";
 
 export default function StoreHydration() {
   const lang = useLanguageStore((s) => s.lang);
   const theme = useThemeStore((s) => s.theme);
+  usePublicSettings();
 
   useEffect(() => {
     useLanguageStore.persist.rehydrate();

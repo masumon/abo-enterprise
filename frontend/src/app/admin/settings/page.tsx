@@ -89,6 +89,45 @@ const SECTIONS: Section[] = [
       { key: "google_maps_api_key", label: "Google Maps API Key (optional)", placeholder: "AIza...", hint: "Only needed if using the JS Maps API" },
     ],
   },
+  {
+    id: "demo",
+    title: "Demo / Offline Fallback",
+    icon: <RefreshCw className="w-4 h-4" />,
+    fields: [
+      {
+        key: "demo_fallback_enabled",
+        label: "Enable Demo Fallback",
+        placeholder: "true",
+        hint: "Show demo catalog when API is slow or unavailable (mobile networks). Set false to disable.",
+      },
+      {
+        key: "demo_notice_en",
+        label: "Demo Notice (English)",
+        type: "textarea",
+        placeholder: "Slow connection — showing demo content...",
+      },
+      {
+        key: "demo_notice_bn",
+        label: "Demo Notice (বাংলা)",
+        type: "textarea",
+        placeholder: "ধীর নেটওয়ার্ক — ডেমো কন্টেন্ট দেখানো হচ্ছে...",
+      },
+      {
+        key: "demo_products_json",
+        label: "Custom Demo Products (JSON array)",
+        type: "textarea",
+        hint: "Optional. Leave empty to use built-in defaults. Admin-editable product catalog for offline mode.",
+        placeholder: '[{"slug":"phone-case","name_en":"Phone Case","name_bn":"ফোন কেস","price":299,"category":"accessories"}]',
+      },
+      {
+        key: "demo_services_json",
+        label: "Custom Demo Services (JSON array)",
+        type: "textarea",
+        hint: "Optional. Leave empty to use built-in defaults.",
+        placeholder: '[{"slug":"printing","name_en":"Printing","name_bn":"প্রিন্টিং","category":"printing","pricing_type":"fixed"}]',
+      },
+    ],
+  },
 ];
 
 function SectionCard({

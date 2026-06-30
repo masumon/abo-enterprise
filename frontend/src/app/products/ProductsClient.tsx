@@ -13,6 +13,12 @@ import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { cn } from "@/lib/utils";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import DemoModeBanner from "@/components/ui/DemoModeBanner";
+import {
+  filterDemoProducts,
+  getDemoProducts,
+  isDemoFallbackEnabled,
+} from "@/lib/demoFallback";
 
 const CATEGORIES: { value: string; label: { en: string; bn: string } }[] = [
   { value: "", label: { en: "All", bn: "সব" } },
@@ -27,6 +33,7 @@ interface Props {
   initialTotal: number;
   initialPage?: number;
   initialCategory?: ProductCategory | "";
+  initialIsDemo?: boolean;
 }
 
 export default function ProductsClient({
@@ -34,6 +41,7 @@ export default function ProductsClient({
   initialTotal,
   initialPage = 1,
   initialCategory = "",
+  initialIsDemo = false,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,18 +58,22 @@ export default function ProductsClient({
   const [page, setPage] = useState(initialPage);
   const [total, setTotal] = useState(initialTotal);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [usingDemo, setUsingDemo] = useState(initialIsDemo);
   const { openCart } = useCartStore();
   const infiniteScroll = useFeatureFlag("feature_infinite_scroll");
   const sentinelRef = useRef<HTMLDivElement>(null);
   const isFirstLoad = useRef(true);
+  const needsApiRefresh = useRef(initialIsDemo || initialProducts.length === 0);
   const urlCategory = searchParams.get("category") ?? "";
 
   useEffect(() => {
     setProducts(initialProducts);
     setTotal(initialTotal);
     setCategory(initialCategory);
+    setUsingDemo(initialIsDemo);
     isFirstLoad.current = true;
-  }, [initialProducts, initialTotal, initialCategory]);
+    needsApiRefresh.current = initialIsDemo || initialProducts.length === 0;
+  }, [initialProducts, initialTotal, initialCategory, initialIsDemo]);
 
   useEffect(() => {
     const next =
@@ -97,20 +109,53 @@ export default function ProductsClient({
         page: pageNum,
       });
       const data = r.data.data ?? [];
-      setProducts((prev) => (append ? [...prev, ...data] : data));
-      setTotal(r.data.meta?.total ?? 0);
+      if (data.length > 0) {
+        setProducts((prev) => (append ? [...prev, ...data] : data));
+        setTotal(r.data.meta?.total ?? data.length);
+        setUsingDemo(false);
+        setPage(pageNum);
+        return;
+      }
+      if (pageNum === 1 && isDemoFallbackEnabled()) {
+        const demo = filterDemoProducts(getDemoProducts(), {
+          category: category || undefined,
+          search: debouncedSearch || undefined,
+        });
+        setProducts(demo);
+        setTotal(demo.length);
+        setUsingDemo(true);
+        setPage(1);
+        return;
+      }
+      setProducts((prev) => (append ? prev : []));
+      setTotal(append ? total : 0);
+      setUsingDemo(false);
       setPage(pageNum);
     } catch {
-      setError(true);
+      if (pageNum === 1 && isDemoFallbackEnabled()) {
+        const demo = filterDemoProducts(getDemoProducts(), {
+          category: category || undefined,
+          search: debouncedSearch || undefined,
+        });
+        setProducts(demo);
+        setTotal(demo.length);
+        setUsingDemo(true);
+        setError(false);
+        setPage(1);
+      } else {
+        setError(true);
+        setUsingDemo(false);
+      }
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [category, debouncedSearch, sortBy]);
+  }, [category, debouncedSearch, sortBy, total]);
 
   useEffect(() => {
     if (isFirstLoad.current) {
       isFirstLoad.current = false;
+      if (needsApiRefresh.current) load(1, false);
       return;
     }
     load(1, false);
@@ -137,6 +182,7 @@ export default function ProductsClient({
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <LoadingProgress loading={loading} message={t("loading_products")} className="mb-6" />
+      <DemoModeBanner show={usingDemo && !loading} />
 
       <div className="flex flex-col lg:flex-row gap-4 mb-8">
         <div className="relative flex-1">
