@@ -13,10 +13,12 @@ interface AdminOrder {
   id: string; order_number: string; customer_name: string; customer_phone: string;
   customer_email?: string; delivery_address: string; payment_method: string;
   order_status: string; subtotal: number; delivery_charge: number; total: number;
+  courier_provider?: string | null; courier_tracking_id?: string | null;
   notes?: string; items: AdminOrderItem[]; created_at: string;
 }
 
 const STATUSES = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
+const COURIERS = ["pathao", "steadfast", "redx", "other"];
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -36,6 +38,9 @@ export default function AdminOrdersPage() {
   const [csvDays, setCsvDays] = useState(30);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
+  const [courierSaving, setCourierSaving] = useState(false);
+  const [courierProvider, setCourierProvider] = useState("");
+  const [courierTracking, setCourierTracking] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useToastStore((s) => s.push);
 
@@ -125,9 +130,35 @@ export default function AdminOrdersPage() {
     setDetailLoading(true);
     try {
       const r = await ordersApi.get(id);
-      setDetail(r.data.data as unknown as AdminOrder);
+      const data = r.data.data as unknown as AdminOrder;
+      setDetail(data);
+      setCourierProvider(data.courier_provider ?? "");
+      setCourierTracking(data.courier_tracking_id ?? "");
     } finally {
       setDetailLoading(false);
+    }
+  };
+
+  const saveCourier = async () => {
+    if (!detail) return;
+    setCourierSaving(true);
+    try {
+      await ordersApi.updateCourier(detail.id, {
+        courier_provider: courierProvider || undefined,
+        courier_tracking_id: courierTracking || undefined,
+      });
+      toast("success", "Courier info updated");
+      await load();
+      setDetail((prev) => prev ? {
+        ...prev,
+        courier_provider: courierProvider || null,
+        courier_tracking_id: courierTracking || null,
+        order_status: courierTracking && ["confirmed", "processing"].includes(prev.order_status) ? "shipped" : prev.order_status,
+      } : prev);
+    } catch {
+      toast("error", "Could not update courier");
+    } finally {
+      setCourierSaving(false);
     }
   };
 
@@ -379,6 +410,27 @@ export default function AdminOrdersPage() {
                     <span>Total</span><span className="text-accent-500">{formatPrice(detail.total)}</span>
                   </div>
                   <div className="flex justify-between text-gray-500 pt-1"><span>Payment</span><span className="capitalize">{detail.payment_method}</span></div>
+                </div>
+
+                <div className="bg-brand-50 border border-brand-100 rounded-xl p-4 space-y-3">
+                  <h3 className="font-semibold text-gray-900 text-sm">Courier / Delivery</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-500">Provider</label>
+                      <select value={courierProvider} onChange={(e) => setCourierProvider(e.target.value)} className="input text-sm mt-1">
+                        <option value="">— Select —</option>
+                        {COURIERS.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500">Tracking ID</label>
+                      <input value={courierTracking} onChange={(e) => setCourierTracking(e.target.value)} className="input text-sm mt-1" placeholder="Consignment ID" />
+                    </div>
+                  </div>
+                  <button type="button" onClick={saveCourier} disabled={courierSaving} className="btn btn-primary btn-sm gap-1">
+                    {courierSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                    Save Courier
+                  </button>
                 </div>
 
                 {detail.notes && (

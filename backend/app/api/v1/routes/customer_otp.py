@@ -5,6 +5,7 @@ import time
 from pydantic import BaseModel, field_validator
 from fastapi import APIRouter, HTTPException, status
 
+from app.core.sms import send_sms
 from app.schemas.schemas import ApiResponse, bd_phone
 
 logger = logging.getLogger(__name__)
@@ -47,11 +48,13 @@ async def send_otp(payload: SendOtpRequest):
     _clean_expired()
     code = f"{random.randint(1000, 9999)}"
     _otp_store[payload.phone] = {"code": code, "expires_at": time.time() + OTP_TTL_SECONDS}
-    logger.info("OTP for %s: %s (dev/log only — configure SMS for production)", payload.phone[-4:], code)
+    sms_sent = await send_sms(payload.phone, f"ABO Enterprise OTP: {code}. Valid 5 min.")
+    if not sms_sent:
+        logger.info("OTP for %s: %s (dev/log only — set SMS_API_URL for production)", payload.phone[-4:], code)
     return ApiResponse(
         success=True,
         message="OTP sent",
-        data={"sent": True, "expires_in": OTP_TTL_SECONDS},
+        data={"sent": True, "expires_in": OTP_TTL_SECONDS, "via_sms": sms_sent},
     )
 
 

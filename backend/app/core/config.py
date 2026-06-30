@@ -65,6 +65,18 @@ class Settings(BaseSettings):
     NAGAD_CALLBACK_URL: str = ""
     NAGAD_MERCHANT_NUMBER: str = ""
 
+    # SSLCommerz (optional)
+    SSLCOMMERZ_STORE_ID: str = ""
+    SSLCOMMERZ_STORE_PASSWORD: str = ""
+    SSLCOMMERZ_IS_SANDBOX: bool = True
+
+    # SMS OTP (optional — GreenWeb / BulkSMS)
+    SMS_API_URL: str = ""
+    SMS_API_KEY: str = ""
+
+    # Frontend URL for payment callbacks
+    FRONTEND_URL: str = "https://abo-enterprise.vercel.app"
+
     @property
     def allowed_origins_list(self) -> list[str]:
         return [o.strip() for o in self.ALLOWED_ORIGINS.split(",")]

@@ -17,12 +17,12 @@ import { ordersApi, productsApi, customerOtpApi, paymentsApi } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { mapPaymentMethods } from "@/lib/paymentDisplay";
 import { BD_DISTRICTS } from "@/lib/bdDistricts";
 import { buildOrderConfirmActions, calcDeliveryCharge } from "@/lib/checkoutHelpers";
+import { validateCoupon, type AppliedCoupon } from "@/lib/coupons";
 import PageHero from "@/components/ui/PageHero";
-
-const COUPONS: Record<string, number> = { ABO10: 0.1, WELCOME: 0.05 };
 
 const schema = z.object({
   customer_name: z.string().min(2, "Name required (min 2 chars)"),
@@ -50,12 +50,13 @@ export default function CheckoutPage() {
     "free_delivery_min_amount", "checkout_confirm_channel", "checkout_otp_required",
     "whatsapp_number", "contact_phone", "contact_email",
   ]);
+  const couponsEnabled = useFeatureFlag("feature_coupons", true);
 
   const otpRequired = getSettingValue(settings, "checkout_otp_required") === "true";
 
   const [hydrated, setHydrated] = useState(false);
   const [couponInput, setCouponInput] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -93,12 +94,13 @@ export default function CheckoutPage() {
   }, [hydrated, items.length, router]);
 
   useEffect(() => {
-    const coupon = new URLSearchParams(window.location.search).get("coupon")?.trim().toUpperCase();
-    if (coupon && COUPONS[coupon]) {
-      setAppliedCoupon(coupon);
+    const coupon = new URLSearchParams(window.location.search).get("coupon")?.trim();
+    if (coupon && couponsEnabled) {
       setCouponInput(coupon);
+      validateCoupon(coupon, total()).then(setAppliedCoupon).catch(() => {});
     }
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [couponsEnabled]);
 
   useEffect(() => {
     if (!hydrated || items.length === 0) return;
@@ -112,16 +114,22 @@ export default function CheckoutPage() {
   }, [hydrated, items, setStockWarnings]);
 
   const subtotal = total();
-  const discountRate = appliedCoupon ? (COUPONS[appliedCoupon] ?? 0) : 0;
-  const discount = Math.round(subtotal * discountRate);
+  const discount = appliedCoupon?.discountAmount ?? 0;
   const afterDiscount = subtotal - discount;
   const deliveryCharge = calcDeliveryCharge(selectedDistrict || "Sylhet", afterDiscount, settings);
   const cartTotal = afterDiscount + deliveryCharge;
 
-  const applyCoupon = () => {
-    const code = couponInput.trim().toUpperCase();
-    if (COUPONS[code]) { setAppliedCoupon(code); setCouponError(null); }
-    else setCouponError(lang === "bn" ? "কুপন সঠিক নয়" : "Invalid coupon");
+  const applyCoupon = async () => {
+    if (!couponsEnabled) return;
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponError(null);
+    try {
+      const result = await validateCoupon(code, subtotal);
+      setAppliedCoupon(result);
+    } catch {
+      setCouponError(lang === "bn" ? "কুপন সঠিক নয়" : "Invalid coupon");
+    }
   };
 
   const sendOtp = async () => {
@@ -193,25 +201,39 @@ export default function CheckoutPage() {
         items: orderItems,
         subtotal,
         discount_amount: discount,
-        coupon_code: appliedCoupon ?? undefined,
+        coupon_code: appliedCoupon?.code,
         delivery_charge: deliveryCharge,
         total: cartTotal,
       });
 
-      const orderNumber = (orderRes.data.data as { order_number?: string } | undefined)?.order_number ?? null;
-      const orderId = (orderRes.data.data as { id?: string } | undefined)?.id;
+      const orderData = orderRes.data.data as { order_id?: string; order_number?: string } | undefined;
+      const orderNumber = orderData?.order_number ?? null;
+      const orderId = orderData?.order_id;
 
-      // Auto gateway redirect for SSLCommerz-style when configured
-      if (data.payment_gateway === "sslcommerz" && orderId) {
+      const tryGatewayRedirect = async (): Promise<boolean> => {
+        if (!orderId) return false;
+        const gw = data.payment_gateway;
+        const canAuto =
+          gw === "sslcommerz" ||
+          (["bkash", "nagad"].includes(gw) && (!selectedPayment?.isManual || !selectedPayment?.requiresTrxId));
+        if (!canAuto) return false;
         try {
-          const pay = await paymentsApi.initiateBkash(orderId);
+          const pay =
+            gw === "sslcommerz"
+              ? await paymentsApi.initiateSslcommerz(orderId)
+              : gw === "nagad"
+                ? await paymentsApi.initiateNagad(orderId)
+                : await paymentsApi.initiateBkash(orderId);
           if (pay.data.data?.payment_url) {
             clearCart();
             window.location.href = pay.data.data.payment_url;
-            return;
+            return true;
           }
         } catch { /* fall through to manual confirm */ }
-      }
+        return false;
+      };
+
+      if (await tryGatewayRedirect()) return;
 
       const waItems = items.map((i) => ({
         name: lang === "bn" ? i.name_bn : i.name_en,
@@ -437,18 +459,22 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="mt-4 pt-4 border-t space-y-2 text-sm">
-                  {!appliedCoupon ? (
-                    <div className="flex gap-2 mb-3">
-                      <input value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder={lang === "bn" ? "কুপন" : "Coupon"} className="input flex-1 text-sm py-2" />
-                      <button type="button" onClick={applyCoupon} className="btn btn-outline btn-sm"><Tag className="w-4 h-4" /></button>
-                    </div>
-                  ) : (
-                    <div className="flex justify-between text-green-600 text-sm mb-2">
-                      <span>{appliedCoupon}</span>
-                      <button type="button" onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} className="text-xs text-gray-400">✕</button>
-                    </div>
+                  {couponsEnabled && (
+                    <>
+                      {!appliedCoupon ? (
+                        <div className="flex gap-2 mb-3">
+                          <input value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder={lang === "bn" ? "কুপন" : "Coupon"} className="input flex-1 text-sm py-2" />
+                          <button type="button" onClick={applyCoupon} className="btn btn-outline btn-sm"><Tag className="w-4 h-4" /></button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between text-green-600 text-sm mb-2">
+                          <span>{appliedCoupon.code}</span>
+                          <button type="button" onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} className="text-xs text-gray-400">✕</button>
+                        </div>
+                      )}
+                      {couponError && <p className="text-red-500 text-xs">{couponError}</p>}
+                    </>
                   )}
-                  {couponError && <p className="text-red-500 text-xs">{couponError}</p>}
                   <div className="flex justify-between"><span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span><span>{formatPrice(subtotal)}</span></div>
                   {discount > 0 && <div className="flex justify-between text-green-600"><span>{lang === "bn" ? "ছাড়" : "Discount"}</span><span>−{formatPrice(discount)}</span></div>}
                   <div className="flex justify-between"><span>{lang === "bn" ? "ডেলিভারি" : "Delivery"}</span><span>{deliveryCharge === 0 ? (lang === "bn" ? "ফ্রি" : "FREE") : formatPrice(deliveryCharge)}</span></div>

@@ -53,6 +53,11 @@ COLUMN_PATCHES: list[tuple[str, str, str]] = [
     # reviews — admin reply
     ("reviews", "admin_reply", "TEXT"),
     ("reviews", "admin_reply_at", "TIMESTAMPTZ"),
+    # orders — checkout extensions
+    ("orders", "discount_amount", "NUMERIC(10,2) DEFAULT 0"),
+    ("orders", "coupon_code", "TEXT"),
+    ("orders", "courier_provider", "TEXT"),
+    ("orders", "courier_tracking_id", "TEXT"),
 ]
 
 INDEX_PATCHES: list[str] = [

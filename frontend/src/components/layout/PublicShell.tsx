@@ -17,6 +17,9 @@ import CookieConsent from "@/components/ui/CookieConsent";
 import SkipToContent from "@/components/ui/SkipToContent";
 import StickyCTA from "@/components/ui/StickyCTA";
 import DelayedMount from "@/components/ui/DelayedMount";
+import FacebookPixel from "@/components/analytics/FacebookPixel";
+import ScrollProgress from "@/components/ui/ScrollProgress";
+import HtmlLangSync from "@/components/ui/HtmlLangSync";
 
 export default function PublicShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -28,6 +31,8 @@ export default function PublicShell({ children }: { children: React.ReactNode })
 
   return (
     <>
+      <HtmlLangSync />
+      <ScrollProgress />
       <SkipToContent />
       <AnnouncementBar />
       <OfflineBanner />
@@ -42,6 +47,7 @@ export default function PublicShell({ children }: { children: React.ReactNode })
         <AssistantWidget />
       </DelayedMount>
       <WhatsAppButton />
+      <FacebookPixel />
       <StickyCTA />
       <BackToTop />
       <DelayedMount delayMs={4000}>

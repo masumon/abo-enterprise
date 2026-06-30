@@ -94,6 +94,30 @@ DEFAULT_SETTINGS: list[dict] = [
         "data_type": "string",
         "description": "Trade license / TIN for footer trust",
     },
+    {
+        "key": "coupons_json",
+        "value": '{"ABO10":{"discount_percent":10,"min_subtotal":0,"active":true},"WELCOME":{"discount_percent":5,"min_subtotal":500,"active":true}}',
+        "data_type": "json",
+        "description": "Admin coupon codes JSON",
+    },
+    {
+        "key": "facebook_pixel_id",
+        "value": "",
+        "data_type": "string",
+        "description": "Facebook Pixel ID for conversion tracking",
+    },
+    {
+        "key": "courier_pathao_url",
+        "value": "https://merchant.pathao.com/tracking?consignment_id={tracking_id}",
+        "data_type": "string",
+        "description": "Pathao tracking URL template",
+    },
+    {
+        "key": "courier_steadfast_url",
+        "value": "https://steadfast.com.bd/t/{tracking_id}",
+        "data_type": "string",
+        "description": "Steadfast tracking URL template",
+    },
 ]
 
 PRODUCT_SEED = [

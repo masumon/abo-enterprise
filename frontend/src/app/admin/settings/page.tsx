@@ -102,6 +102,23 @@ const SECTIONS: Section[] = [
       { key: "delivery_charge_dhaka", label: "Delivery — Dhaka (৳)", type: "number", placeholder: "60" },
       { key: "delivery_charge_outside", label: "Delivery — Outside (৳)", type: "number", placeholder: "120" },
       { key: "trade_license", label: "Trade License / TIN", placeholder: "TL-XXXXX", hint: "Shown in footer for trust" },
+      {
+        key: "coupons_json",
+        label: "Coupon Codes (JSON)",
+        type: "textarea",
+        placeholder: '{"ABO10":{"discount_percent":10,"min_subtotal":0,"active":true}}',
+        hint: "Admin-editable coupons — code, discount_percent, min_subtotal, active",
+      },
+      { key: "courier_pathao_url", label: "Pathao Tracking URL", placeholder: "https://merchant.pathao.com/tracking?consignment_id={tracking_id}" },
+      { key: "courier_steadfast_url", label: "Steadfast Tracking URL", placeholder: "https://steadfast.com.bd/t/{tracking_id}" },
+    ],
+  },
+  {
+    id: "analytics",
+    title: "Analytics & Marketing",
+    icon: <Share2 className="w-4 h-4" />,
+    fields: [
+      { key: "facebook_pixel_id", label: "Facebook Pixel ID", placeholder: "1234567890", hint: "Conversion tracking — leave empty to disable" },
     ],
   },
   {

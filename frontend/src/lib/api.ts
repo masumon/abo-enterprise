@@ -84,13 +84,26 @@ export const ordersApi = {
     api.get<ApiResponse<Order>>(`/api/v1/orders/${id}`),
 
   track: (orderNumber: string) =>
-    api.get<ApiResponse<{ order_number: string; order_status: string; payment_method: string; total: number; items_count: number; created_at: string }>>("/api/v1/orders/track", { params: { number: orderNumber } }),
+    api.get<ApiResponse<{
+      order_number: string;
+      order_status: string;
+      payment_method: string;
+      payment_status: string;
+      total: number;
+      items_count: number;
+      created_at: string;
+      courier_provider?: string | null;
+      courier_tracking_id?: string | null;
+    }>>("/api/v1/orders/track", { params: { number: orderNumber } }),
 
   byPhone: (phone: string) =>
     api.get<ApiResponse<{ order_number: string; order_status: string; total: number; items_count: number; created_at: string }[]>>("/api/v1/orders/by-phone", { params: { phone } }),
 
   updateStatus: (id: string, status: string) =>
     api.patch<ApiResponse<Order>>(`/api/v1/orders/${id}/status`, { status }),
+
+  updateCourier: (id: string, data: { courier_provider?: string; courier_tracking_id?: string }) =>
+    api.patch<ApiResponse<Order>>(`/api/v1/orders/${id}/courier`, data),
 
   bulkUpdateStatus: (order_ids: string[], status: string) =>
     api.post<ApiResponse<{ updated: number; ids: string[] }>>("/api/v1/admin/bulk/orders/status", { order_ids, status }),
@@ -477,6 +490,14 @@ export const customerOtpApi = {
     api.post<ApiResponse<{ verified: boolean }>>("/api/v1/customer/verify-otp", { phone, code }),
 };
 
+export const couponsApi = {
+  validate: (code: string, subtotal: number) =>
+    api.post<ApiResponse<{ code: string; discount_percent: number; discount_amount: number; discount_rate: number }>>(
+      "/api/v1/public/coupons/validate",
+      { code, subtotal }
+    ),
+};
+
 export const paymentsApi = {
   initiateBkash: (order_id: string) =>
     api.post<ApiResponse<{ success: boolean; payment_url?: string; transaction_id?: string; payment_gateway: string }>>("/api/v1/payments/bkash/initiate", {
@@ -488,6 +509,13 @@ export const paymentsApi = {
     api.post<ApiResponse<{ success: boolean; payment_url?: string; transaction_id?: string; payment_gateway: string }>>("/api/v1/payments/nagad/initiate", {
       order_id,
       payment_gateway: "nagad",
+    }),
+
+  initiateSslcommerz: (order_id: string, urls?: { success_url?: string; fail_url?: string; cancel_url?: string }) =>
+    api.post<ApiResponse<{ success: boolean; payment_url?: string; transaction_id?: string; payment_gateway: string }>>("/api/v1/payments/sslcommerz/initiate", {
+      order_id,
+      payment_gateway: "sslcommerz",
+      ...urls,
     }),
 
   verifyBkash: (payment_id: string) =>

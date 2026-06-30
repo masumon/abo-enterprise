@@ -11,8 +11,8 @@ import { formatPrice } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { productsApi } from "@/lib/api";
 import { useFocusTrap } from "@/lib/useFocusTrap";
-
-const COUPONS: Record<string, number> = { ABO10: 0.1, WELCOME: 0.05 };
+import { validateCoupon, type AppliedCoupon } from "@/lib/coupons";
+import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 
 export default function CartDrawer() {
   const { items, isOpen, closeCart, updateQuantity, removeItem, total, stockWarnings, setStockWarnings } = useCartStore();
@@ -20,13 +20,13 @@ export default function CartDrawer() {
   const t = useT();
   const router = useRouter();
   const trapRef = useFocusTrap(isOpen);
+  const couponsEnabled = useFeatureFlag("feature_coupons", true);
   const [coupon, setCoupon] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [validating, setValidating] = useState(false);
 
   const cartSubtotal = total();
-  const discountRate = appliedCoupon ? COUPONS[appliedCoupon] ?? 0 : 0;
-  const discount = Math.round(cartSubtotal * discountRate);
+  const discount = appliedCoupon?.discountAmount ?? 0;
   const delivery = 0;
   const tax = 0;
   const cartTotal = cartSubtotal - discount + delivery + tax;
@@ -48,9 +48,11 @@ export default function CartDrawer() {
       .finally(() => setValidating(false));
   }, [isOpen, items.length, setStockWarnings, updateQuantity]);
 
-  const applyCoupon = () => {
-    const code = coupon.trim().toUpperCase();
-    if (COUPONS[code]) setAppliedCoupon(code);
+  const applyCoupon = async () => {
+    if (!couponsEnabled || !coupon.trim()) return;
+    try {
+      setAppliedCoupon(await validateCoupon(coupon, cartSubtotal));
+    } catch { /* ignore invalid */ }
   };
 
   const removeCoupon = () => {
@@ -140,20 +142,24 @@ export default function CartDrawer() {
 
         {items.length > 0 && (
           <div className="px-5 py-5 border-t border-gray-100 dark:border-white/10 bg-[rgba(248,250,255,0.95)] dark:bg-[#0a1628]/95">
-            <div className="flex gap-2 mb-4">
-              <label htmlFor="cart-coupon" className="sr-only">{t("cart_coupon")}</label>
-              <input id="cart-coupon" value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder={t("cart_coupon")} className="input flex-1 text-sm py-2" disabled={!!appliedCoupon} />
-              {appliedCoupon ? (
-                <button type="button" onClick={removeCoupon} className="btn btn-outline btn-sm">{lang === "bn" ? "সরান" : "Remove"}</button>
-              ) : (
-                <button type="button" onClick={applyCoupon} className="btn btn-outline btn-sm">
-                  <Tag className="w-4 h-4" aria-hidden />
-                  {t("cart_apply")}
-                </button>
-              )}
-            </div>
-            {appliedCoupon && (
-              <p className="text-xs text-green-600 mb-2">{appliedCoupon} {lang === "bn" ? "প্রয়োগ হয়েছে" : "applied"} — {lang === "bn" ? "আপনি সাশ্রয় করছেন" : "You save"} {formatPrice(discount)}</p>
+            {couponsEnabled && (
+              <>
+                <div className="flex gap-2 mb-4">
+                  <label htmlFor="cart-coupon" className="sr-only">{t("cart_coupon")}</label>
+                  <input id="cart-coupon" value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder={t("cart_coupon")} className="input flex-1 text-sm py-2" disabled={!!appliedCoupon} />
+                  {appliedCoupon ? (
+                    <button type="button" onClick={removeCoupon} className="btn btn-outline btn-sm">{lang === "bn" ? "সরান" : "Remove"}</button>
+                  ) : (
+                    <button type="button" onClick={applyCoupon} className="btn btn-outline btn-sm">
+                      <Tag className="w-4 h-4" aria-hidden />
+                      {t("cart_apply")}
+                    </button>
+                  )}
+                </div>
+                {appliedCoupon && (
+                  <p className="text-xs text-green-600 mb-2">{appliedCoupon.code} {lang === "bn" ? "প্রয়োগ হয়েছে" : "applied"} — {lang === "bn" ? "আপনি সাশ্রয় করছেন" : "You save"} {formatPrice(discount)}</p>
+                )}
+              </>
             )}
             <div className="space-y-2 mb-4 text-sm">
               <div className="flex justify-between"><span className="text-muted">{t("cart_subtotal")}</span><span>{formatPrice(cartSubtotal)}</span></div>
@@ -166,7 +172,7 @@ export default function CartDrawer() {
             </div>
             <button
               type="button"
-              onClick={() => { closeCart(); router.push(appliedCoupon ? `/checkout?coupon=${appliedCoupon}` : "/checkout"); }}
+              onClick={() => { closeCart(); router.push(appliedCoupon ? `/checkout?coupon=${appliedCoupon.code}` : "/checkout"); }}
               disabled={stockWarnings.length > 0 && validating}
               className="btn btn-primary btn-lg w-full btn-ripple shadow-lg shadow-accent-500/25"
             >

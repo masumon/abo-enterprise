@@ -6,6 +6,7 @@ import {
   ShoppingCart, ChevronLeft, Package, CheckCircle,
   Heart, GitCompare, Share2, MessageCircle, Zap, Star,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { productsApi, reviewsApi } from "@/lib/api";
 import type { Product } from "@/types";
@@ -207,6 +208,11 @@ export default function ProductDetailClient({ product }: Props) {
                   {t("buy_now")}
                 </button>
                 <p className="text-center text-xs text-gray-400">{lang === "bn" ? "অ্যাকাউন্ট ছাড়াই অর্ডার — গেস্ট চেকআউট" : "No account needed — guest checkout"}</p>
+                <p className="text-center text-xs text-muted mt-2">
+                  <Link href="/legal/refund" className="text-brand-600 hover:underline">
+                    {lang === "bn" ? "↩ রিটার্ন ও রিফান্ড নীতি" : "↩ Return & refund policy"}
+                  </Link>
+                </p>
               </div>
             </div>
           </div>
