@@ -13,6 +13,7 @@ import { useT } from "@/lib/i18n/useT";
 import SearchSuggestions from "@/components/search/SearchSuggestions";
 import MegaMenu from "@/components/layout/MegaMenu";
 import BrandLogo from "@/components/ui/BrandLogo";
+import BrandMotto from "@/components/ui/BrandMotto";
 import { cn } from "@/lib/utils";
 
 const MOBILE_LINKS = [
@@ -92,8 +93,14 @@ export default function Navbar() {
       >
         <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 min-w-0">
           <BrandLogo size="sm" href={false} priority />
-          <span className="font-bold text-lg tracking-tight hidden sm:block text-brand-800 dark:text-white truncate">
-            ABO Enterprise
+          <span className="hidden sm:block min-w-0">
+            <span className="font-bold text-lg tracking-tight block text-brand-800 dark:text-white truncate">
+              ABO Enterprise
+            </span>
+            <BrandMotto
+              lang={lang}
+              className="text-[10px] font-medium text-brand-600/90 dark:text-brand-200/80 truncate max-w-[11rem] md:max-w-[14rem]"
+            />
           </span>
         </Link>
 
@@ -166,7 +173,11 @@ export default function Navbar() {
 
       {mobileOpen && (
         <div className="lg:hidden glass border-t border-white/40 dark:border-white/10 mx-2 mb-2 rounded-2xl shadow-glass animate-slide-up max-h-[calc(100vh-6rem)] overflow-y-auto">
-          <div className="px-4 pt-4">
+          <div className="px-4 pt-4 pb-2 flex items-center gap-2.5 sm:hidden">
+            <BrandLogo size="xs" href={false} />
+            <BrandMotto lang={lang} className="text-[10px] font-medium text-brand-700 dark:text-brand-200 min-w-0" />
+          </div>
+          <div className="px-4 pt-2">
             <form onSubmit={handleSearch} className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input

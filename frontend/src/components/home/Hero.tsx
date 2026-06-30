@@ -12,6 +12,7 @@ import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { MARKETING_STATS } from "@/lib/siteDefaults";
 import { resolveHomeBannerImage } from "@/lib/pageBanners";
 import BrandLogo from "@/components/ui/BrandLogo";
+import BrandMotto from "@/components/ui/BrandMotto";
 
 interface ActivityItem {
   icon: string;
@@ -150,9 +151,7 @@ export default function Hero() {
                     <BrandLogo size="md" href={false} variant="glass" />
                     <div>
                       <p className="text-white font-semibold text-sm">ABO Enterprise</p>
-                      <p className="text-white/60 text-xs">
-                        {lang === "bn" ? "লাইভ ড্যাশবোর্ড" : "Live Dashboard"}
-                      </p>
+                      <BrandMotto lang={lang} className="text-white/70 text-[11px]" />
                     </div>
                   </div>
                   <span className="flex items-center gap-1.5 text-xs text-green-300 font-medium bg-green-500/20 px-2.5 py-1 rounded-full border border-green-500/30">

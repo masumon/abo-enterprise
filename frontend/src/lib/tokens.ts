@@ -44,10 +44,13 @@ export const SOCIAL_PROFILES = [
 
 export const DEFAULT_OG_IMAGE = `${SITE_URL}/icons/icon-512.png`;
 
+/** Logo tagline */
 export const BRAND_TAGLINE = {
-  en: "Bangladesh's Complete Technology Ecosystem",
-  bn: "বাংলাদেশের সম্পূর্ণ টেকনোলজি ইকোসিস্টেম",
+  en: "Simple Solution",
+  bn: "সহজ সমাধান",
 } as const;
+
+export const BRAND_MOTTO = BRAND_TAGLINE;
 
 export const ABO_ACRONYM = {
   en: "ABO — Sumon Brothers Organization: Trusted enterprise for products, services & software.",

@@ -1,6 +1,7 @@
 "use client";
 
 import BrandLogo from "@/components/ui/BrandLogo";
+import BrandMotto from "@/components/ui/BrandMotto";
 import { formatPrice } from "@/lib/utils";
 import { DEFAULT_ADDRESS_EN } from "@/lib/maps";
 
@@ -34,9 +35,7 @@ export default function InvoicePreviewCard({
           <BrandLogo size="md" href={false} variant="light" />
           <div className="min-w-0">
             <p className="font-bold text-white text-lg leading-tight">ABO Enterprise</p>
-            <p className="text-white/75 text-xs truncate">
-              {bn ? "পণ্য, সেবা ও সফটওয়্যারের বিশ্বস্ত এন্টারপ্রাইজ" : "Trusted enterprise for products, services & software"}
-            </p>
+            <BrandMotto lang={lang} className="text-white/75 text-xs truncate" />
           </div>
         </div>
         <div className="text-right flex-shrink-0">

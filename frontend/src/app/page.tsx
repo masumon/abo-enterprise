@@ -3,7 +3,7 @@ import dynamic from "next/dynamic";
 import Hero from "@/components/home/Hero";
 import TrustBadges from "@/components/home/TrustBadges";
 import QuickCategories from "@/components/home/QuickCategories";
-import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, BRAND_TAGLINE } from "@/lib/tokens";
+import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, BRAND_MOTTO } from "@/lib/tokens";
 
 const EntryPoints = dynamic(() => import("@/components/home/EntryPoints"), { loading: () => <SectionSkeleton /> });
 const Stats = dynamic(() => import("@/components/home/Stats"), { loading: () => <SectionSkeleton /> });
@@ -16,8 +16,8 @@ const LeadCapture = dynamic(() => import("@/components/home/LeadCapture"), { loa
 const ContactSection = dynamic(() => import("@/components/home/ContactSection"), { loading: () => <SectionSkeleton /> });
 
 export const metadata: Metadata = {
-  title: "ABO Enterprise — বাংলাদেশের সম্পূর্ণ টেকনোলজি ইকোসিস্টেম",
-  description: BRAND_TAGLINE.bn,
+  title: "ABO Enterprise — সহজ সমাধান",
+  description: BRAND_MOTTO.bn,
   alternates: { canonical: SITE_URL },
   openGraph: {
     images: [{ url: DEFAULT_OG_IMAGE, width: 512, height: 512, alt: "ABO Enterprise" }],
@@ -30,7 +30,7 @@ const organizationJsonLd = {
   name: "ABO Enterprise",
   url: SITE_URL,
   logo: DEFAULT_OG_IMAGE,
-  description: BRAND_TAGLINE.en,
+  description: BRAND_MOTTO.en,
   address: {
     "@type": "PostalAddress",
     addressLocality: "Sylhet",
