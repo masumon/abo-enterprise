@@ -406,22 +406,16 @@ export default function Footer() {
               </p>
             )}
           </div>
-          <p className="text-xs text-white/55">
-            {lang === "bn" ? "তৈরি করেছেন" : "Built by"}{" "}
+          <p className="text-xs text-white/55 flex items-center justify-center md:justify-end gap-1.5">
+            <span>{lang === "bn" ? "তৈরি করেছেন" : "Built by"}</span>
             <a
-              href="https://mumain.dev"
+              href="https://mumainsumon.netlify.app"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-white hover:text-brand-100 font-medium transition-colors underline-offset-2 hover:underline"
+              className="inline-flex items-center px-2.5 py-0.5 rounded-md font-bold tracking-wide text-white bg-white/10 border border-white/20 hover:bg-white/20 hover:border-white/35 transition-all duration-200"
             >
-              Mumain.dev
+              SUMON
             </a>
-            <span className="mx-2 text-white/30" aria-hidden>
-              ·
-            </span>
-            <Link href="/admin/login" className="text-white/60 hover:text-white transition-colors">
-              {lang === "bn" ? "এডমিন" : "Admin"}
-            </Link>
           </p>
         </div>
       </div>
