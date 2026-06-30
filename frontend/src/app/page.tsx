@@ -16,7 +16,7 @@ const LeadCapture = dynamic(() => import("@/components/home/LeadCapture"), { loa
 const ContactSection = dynamic(() => import("@/components/home/ContactSection"), { loading: () => <SectionSkeleton /> });
 
 export const metadata: Metadata = {
-  title: "ABO Enterprise — ডিজিটাল ভবিষ্যৎ গড়ি · সহজ সমাধান",
+  title: "ABO Enterprise — সহজ সমাধান",
   description: BRAND_MOTTO.bn,
   alternates: { canonical: SITE_URL },
   openGraph: {

@@ -99,9 +99,7 @@ export default function Navbar() {
             </span>
             <BrandMotto
               lang={lang}
-              layout="inline"
               className="text-[10px] font-medium text-brand-600/90 dark:text-brand-200/80 truncate max-w-[11rem] md:max-w-[14rem]"
-              taglineClassName="text-brand-500/80 dark:text-brand-200/70"
             />
           </span>
         </Link>
@@ -177,7 +175,7 @@ export default function Navbar() {
         <div className="lg:hidden glass border-t border-white/40 dark:border-white/10 mx-2 mb-2 rounded-2xl shadow-glass animate-slide-up max-h-[calc(100vh-6rem)] overflow-y-auto">
           <div className="px-4 pt-4 pb-2 flex items-center gap-2.5 sm:hidden">
             <BrandLogo size="xs" href={false} />
-            <BrandMotto lang={lang} layout="inline" className="text-[10px] font-medium text-brand-700 dark:text-brand-200 min-w-0" taglineClassName="text-brand-500/80" />
+            <BrandMotto lang={lang} className="text-[10px] font-medium text-brand-700 dark:text-brand-200 min-w-0" />
           </div>
           <div className="px-4 pt-2">
             <form onSubmit={handleSearch} className="relative">

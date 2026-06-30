@@ -43,10 +43,7 @@ export default function AboutPage() {
       <PageHero
         pageKey="about"
         title="ABO Enterprise"
-        subtitle={t({
-          en: "Building Digital Future — Simple Solution",
-          bn: "ডিজিটাল ভবিষ্যৎ গড়ি — সহজ সমাধান",
-        })}
+        subtitle={t({ en: "Simple Solution", bn: "সহজ সমাধান" })}
         breadcrumbs={[
           { label: lang === "bn" ? "হোম" : "Home", href: "/" },
           { label: lang === "bn" ? "আমাদের সম্পর্কে" : "About" },
@@ -54,11 +51,7 @@ export default function AboutPage() {
       >
         <div className="flex flex-col items-center text-center mt-2">
           <BrandLogo size="xl" href={false} variant="light" className="mb-3" />
-          <BrandMotto
-            lang={lang}
-            headlineClassName="text-sm text-white font-semibold"
-            taglineClassName="text-xs text-white/75 mt-1"
-          />
+          <BrandMotto lang={lang} className="text-sm text-white font-semibold mt-2" />
           <p className="text-sm text-white/70 mt-2">Sumon Brothers Organization</p>
         </div>
       </PageHero>

@@ -35,12 +35,7 @@ export default function InvoicePreviewCard({
           <BrandLogo size="md" href={false} variant="light" />
           <div className="min-w-0">
             <p className="font-bold text-white text-lg leading-tight">ABO Enterprise</p>
-            <BrandMotto
-              lang={lang}
-              layout="inline"
-              className="text-white/75 text-xs truncate"
-              taglineClassName="text-white/60"
-            />
+            <BrandMotto lang={lang} className="text-white/75 text-xs truncate" />
           </div>
         </div>
         <div className="text-right flex-shrink-0">

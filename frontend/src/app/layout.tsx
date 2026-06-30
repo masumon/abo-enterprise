@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     template: "%s | ABO Enterprise",
   },
   description:
-    "ডিজিটাল ভবিষ্যৎ গড়ি — সহজ সমাধান। মোবাইল এক্সেসরিজ, গ্যাজেট, প্রিন্টিং, আইনি সেবা, ওয়েবসাইট, AI সমাধান এবং কাস্টম সফটওয়্যার — একটি প্ল্যাটফর্মে।",
+    "সহজ সমাধান — মোবাইল এক্সেসরিজ, গ্যাজেট, প্রিন্টিং, আইনি সেবা, ওয়েবসাইট, AI সমাধান এবং কাস্টম সফটওয়্যার — একটি প্ল্যাটফর্মে।",
   keywords: [
     "ABO Enterprise",
     "মোবাইল এক্সেসরিজ সিলেট",
@@ -38,8 +38,8 @@ export const metadata: Metadata = {
     locale: "bn_BD",
     alternateLocale: "en_US",
     siteName: "ABO Enterprise",
-    title: "ABO Enterprise — ডিজিটাল ভবিষ্যৎ গড়ি · সহজ সমাধান",
-    description: "মোবাইল এক্সেসরিজ থেকে AI সমাধান — Simple Solution, সব এক জায়গায়।",
+    title: "ABO Enterprise — সহজ সমাধান",
+    description: "মোবাইল এক্সেসরিজ থেকে AI সমাধান — সহজ সমাধান, সব এক জায়গায়।",
     images: [{ url: DEFAULT_OG_IMAGE, width: 512, height: 512, alt: "ABO Enterprise" }],
   },
   twitter: {

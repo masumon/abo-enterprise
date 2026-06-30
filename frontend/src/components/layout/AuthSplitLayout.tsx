@@ -4,7 +4,7 @@ import Link from "next/link";
 import BrandLogo from "@/components/ui/BrandLogo";
 import BrandMotto from "@/components/ui/BrandMotto";
 import { useLanguageStore } from "@/store/language";
-import { BRAND_HEADLINE, BRAND_TAGLINE } from "@/lib/tokens";
+import { BRAND_TAGLINE } from "@/lib/tokens";
 
 interface AuthSplitLayoutProps {
   children: React.ReactNode;
@@ -26,19 +26,17 @@ export default function AuthSplitLayout({ children, title, subtitle }: AuthSplit
           <BrandLogo size="md" href={false} variant="light" />
           <div>
             <span className="font-bold text-xl block">ABO Enterprise</span>
-            <BrandMotto
-              lang={lang}
-              headlineClassName="text-white/90 text-sm font-semibold"
-              taglineClassName="text-white/70 text-xs font-medium mt-0.5"
-            />
+            <BrandMotto lang={lang} className="text-white/80 text-xs font-medium mt-0.5" />
           </div>
         </Link>
         <div className="relative z-10 space-y-6">
           <h1 className="text-4xl font-bold leading-tight">
-            {lang === "bn" ? BRAND_HEADLINE.bn : BRAND_HEADLINE.en}
+            {lang === "bn" ? BRAND_TAGLINE.bn : BRAND_TAGLINE.en}
           </h1>
           <p className="text-white/80 text-lg max-w-md leading-relaxed">
-            {lang === "bn" ? BRAND_TAGLINE.bn : BRAND_TAGLINE.en}
+            {lang === "bn"
+              ? "পণ্য, সেবা, সফটওয়্যার ও AI — এক প্ল্যাটফর্মে।"
+              : "Products, services, software & AI — in one place."}
           </p>
           <ul className="space-y-3 text-sm text-white/70">
             {[

@@ -243,11 +243,7 @@ export default function Footer() {
               <BrandLogo size="lg" href={false} variant="light" />
               <div>
                 <h3 className="text-white font-bold text-xl tracking-tight">ABO Enterprise</h3>
-                <BrandMotto
-                  lang={lang}
-                  headlineClassName="text-brand-100 text-xs font-semibold mt-0.5"
-                  taglineClassName="text-brand-200/90 text-[11px] font-medium mt-0.5"
-                />
+                <BrandMotto lang={lang} className="text-brand-100 text-xs font-semibold mt-0.5" />
               </div>
             </div>
 
