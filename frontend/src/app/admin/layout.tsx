@@ -7,6 +7,7 @@ import { useAdminPolling } from "@/hooks/useAdminPolling";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminTopBar from "@/components/admin/AdminTopBar";
 import ToastProvider from "@/components/ui/ToastProvider";
+import DynamicFavicon from "@/components/ui/DynamicFavicon";
 import { Loader2 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -61,6 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       <ToastProvider />
+      <DynamicFavicon />
     </div>
   );
 }
