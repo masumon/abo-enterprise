@@ -3,6 +3,7 @@ import "./globals.css";
 import StoreHydration from "@/components/providers/StoreHydration";
 import PublicShell from "@/components/layout/PublicShell";
 import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
+import NetworkStatusBar from "@/components/network/NetworkStatusBar";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import UtmTracker from "@/lib/utm";
 import { DEFAULT_OG_IMAGE, SITE_URL, getBrandFullTitle } from "@/lib/tokens";
@@ -98,6 +99,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href={API_ORIGIN} />
       </head>
       <body className="min-h-screen flex flex-col">
+        <NetworkStatusBar />
         <GoogleAnalytics />
         <StoreHydration />
         <UtmTracker />
