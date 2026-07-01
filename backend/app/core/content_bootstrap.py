@@ -8,20 +8,25 @@ from app.core.database import AsyncSessionLocal
 from app.core.placeholder_assets import (
     BLOG_IMAGE_MAP,
     PRODUCT_IMAGE_MAP,
+    REVIEW_PHOTO_MAP,
     SERVICE_IMAGE_MAP,
     banner_settings,
     blog_featured,
+    build_about_team_json,
+    build_client_logos_json,
+    build_demo_products_json,
+    build_demo_reviews_json,
+    build_demo_services_json,
     build_showcase_projects_json,
     build_software_service_cards_json,
-    build_demo_products_json,
-    build_demo_services_json,
     og_image,
     product_gallery,
     product_image,
+    review_avatar,
     service_featured,
     service_icon,
 )
-from app.models.models import BlogPost, PaymentMethod, Product, Service, Setting
+from app.models.models import BlogPost, PaymentMethod, Product, Review, Service, Setting
 
 logger = logging.getLogger(__name__)
 
@@ -208,37 +213,39 @@ async def _ensure_setting(db, key: str, value: str, data_type: str = "string", d
     logger.info("Content bootstrap: created setting '%s'", key)
 
 
+async def _ensure_setting_if_empty(
+    db, key: str, value: str, data_type: str = "string", description: str | None = None
+) -> None:
+    """Insert placeholder image settings or fill keys that exist but are blank."""
+    result = await db.execute(
+        select(Setting).where(Setting.key == key, Setting.is_deleted == False)  # noqa: E712
+    )
+    existing = result.scalar_one_or_none()
+    if not existing:
+        db.add(Setting(key=key, value=value, data_type=data_type, description=description, is_editable=True))
+        logger.info("Content bootstrap: created setting '%s'", key)
+        return
+    if not (existing.value or "").strip():
+        existing.value = value
+        if description:
+            existing.description = description
+        logger.info("Content bootstrap: backfilled empty setting '%s'", key)
+
+
 async def _seed_placeholder_settings(db) -> None:
     for item in banner_settings():
-        await _ensure_setting(db, **item)
-    await _ensure_setting(
-        db,
-        key="showcase_projects_json",
-        value=build_showcase_projects_json(),
-        data_type="json",
-        description="Project gallery showcase (images admin-editable)",
-    )
-    await _ensure_setting(
-        db,
-        key="software_service_cards_json",
-        value=build_software_service_cards_json(),
-        data_type="json",
-        description="Software service showcase cards",
-    )
-    await _ensure_setting(
-        db,
-        key="demo_products_json",
-        value=build_demo_products_json(),
-        data_type="json",
-        description="Offline demo product catalog with placeholder images",
-    )
-    await _ensure_setting(
-        db,
-        key="demo_services_json",
-        value=build_demo_services_json(),
-        data_type="json",
-        description="Offline demo service catalog with placeholder images",
-    )
+        await _ensure_setting_if_empty(db, **item)
+    seeds = [
+        ("showcase_projects_json", build_showcase_projects_json(), "json", "Project gallery showcase (images admin-editable)"),
+        ("software_service_cards_json", build_software_service_cards_json(), "json", "Software service showcase cards"),
+        ("demo_products_json", build_demo_products_json(), "json", "Offline demo product catalog with placeholder images"),
+        ("demo_services_json", build_demo_services_json(), "json", "Offline demo service catalog with placeholder images"),
+        ("demo_reviews_json", build_demo_reviews_json(), "json", "Offline demo reviews with placeholder avatars"),
+        ("about_team_json", build_about_team_json(), "json", "About page team members with photos"),
+        ("client_logos_json", build_client_logos_json(), "json", "Homepage client logo strip"),
+    ]
+    for key, value, data_type, description in seeds:
+        await _ensure_setting_if_empty(db, key=key, value=value, data_type=data_type, description=description)
 
 
 async def _backfill_entity_images(db) -> None:
@@ -279,6 +286,13 @@ async def _backfill_entity_images(db) -> None:
         label = BLOG_IMAGE_MAP.get(post.slug, post.title_en[:40])
         post.featured_image_url = blog_featured(label)
         post.og_image = og_image(label)
+
+    review_rows = (await db.execute(
+        select(Review).where(or_(Review.photo_url.is_(None), Review.photo_url == ""))
+    )).scalars().all()
+    for review in review_rows:
+        label = REVIEW_PHOTO_MAP.get(review.customer_name, review.customer_name)
+        review.photo_url = review_avatar(label)
 
 
 async def bootstrap_content() -> None:
