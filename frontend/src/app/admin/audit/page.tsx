@@ -21,6 +21,10 @@ const ACTION_COLORS: Record<string, string> = {
   LOGOUT: "bg-gray-100 text-gray-600",
 };
 
+function actionBadgeClass(action: string): string {
+  return ACTION_COLORS[action.toUpperCase()] ?? "bg-gray-100 text-gray-700";
+}
+
 export default function AdminAuditPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -121,7 +125,7 @@ export default function AdminAuditPage() {
                   <th>Action</th>
                   <th>Entity</th>
                   <th>Record ID</th>
-                  {logs.some((l) => l.admin_email) && <th className="hidden md:table-cell">Admin</th>}
+                  <th className="hidden md:table-cell">Admin</th>
                 </tr>
               </thead>
               <tbody>
@@ -134,7 +138,7 @@ export default function AdminAuditPage() {
                       })}
                     </td>
                     <td>
-                      <span className={`badge text-xs font-semibold ${ACTION_COLORS[log.action] ?? "bg-gray-100 text-gray-700"}`}>
+                      <span className={`badge text-xs font-semibold ${actionBadgeClass(log.action)}`}>
                         {log.action}
                       </span>
                     </td>
@@ -149,9 +153,7 @@ export default function AdminAuditPage() {
                         </span>
                       ) : "—"}
                     </td>
-                    {logs.some((l) => l.admin_email) && (
-                      <td className="text-xs text-gray-500 hidden md:table-cell">{log.admin_email ?? "—"}</td>
-                    )}
+                    <td className="text-xs text-gray-500 hidden md:table-cell">{log.admin_email ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>

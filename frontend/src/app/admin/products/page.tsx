@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
 import { productsApi } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
@@ -215,8 +216,8 @@ export default function AdminProductsPage() {
       }
       setShowModal(false);
       await load(page);
-    } catch {
-      setActionError("Failed to save product");
+    } catch (e) {
+      setActionError(apiErrorMessage(e, "Failed to save product"));
     } finally {
       setSaving(false);
     }
@@ -228,8 +229,8 @@ export default function AdminProductsPage() {
       await productsApi.delete(deleteId);
       setDeleteId(null);
       await load(page);
-    } catch {
-      setActionError("Failed to delete product");
+    } catch (e) {
+      setActionError(apiErrorMessage(e, "Failed to delete product"));
     }
   };
 

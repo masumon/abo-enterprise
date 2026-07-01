@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
-from app.core.security import require_admin, require_role
+from app.core.security import require_admin
 from app.models.models import Service, ServicePricingTier, ServiceBookingForm, ActivityLog, AdminUser
 from app.schemas.schemas import (
     ServiceOut,
@@ -285,7 +285,7 @@ async def update_service(
 @router.delete("/admin/services/{service_id}", response_model=ApiResponse)
 async def delete_service(
     service_id: uuid.UUID,
-    admin_id: str = Depends(require_role("products.delete")),
+    admin_id: str = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
     """Soft delete service (admin only)"""
