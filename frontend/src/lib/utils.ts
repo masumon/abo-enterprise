@@ -69,4 +69,16 @@ export function getBdPhoneFormat(phone: string): string {
   return `+880${digits}`;
 }
 
+/** Normalize BD phone to WhatsApp digits (8801XXXXXXXXX). */
+export function toWhatsAppDigits(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.startsWith("880")) return digits;
+  if (digits.startsWith("0")) return `880${digits.slice(1)}`;
+  return `880${digits}`;
+}
+
+export function buildCustomerWhatsAppLink(phone: string, message: string): string {
+  return `https://wa.me/${toWhatsAppDigits(phone)}?text=${encodeURIComponent(message)}`;
+}
+
 export const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "8801825007977";

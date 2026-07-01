@@ -16,19 +16,30 @@ function PaymentCallbackContent() {
 
   const [status, setStatus] = useState<Status>("verifying");
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [customerPhone, setCustomerPhone] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const buildSuccessUrl = (orderNum: string | null, phone: string | null) => {
+    const params = new URLSearchParams();
+    if (orderNum) params.set("order", orderNum);
+    if (phone) params.set("phone", phone);
+    const qs = params.toString();
+    return `/order-success${qs ? `?${qs}` : ""}`;
+  };
 
   useEffect(() => {
     const sslStatus = params.get("status");
     const orderNum = params.get("order_number") ?? params.get("order");
+    const phoneParam = params.get("phone");
     setOrderNumber(orderNum);
+    setCustomerPhone(phoneParam);
 
     // SSLCommerz redirects with ?status=success|failed|cancelled&order=...
     if (sslStatus) {
       if (sslStatus === "success") {
         setStatus("success");
         setTimeout(() => {
-          router.push(`/order-success${orderNum ? `?order=${orderNum}` : ""}`);
+          router.push(buildSuccessUrl(orderNum, phoneParam));
         }, 2500);
       } else {
         setStatus("failed");
@@ -60,8 +71,12 @@ function PaymentCallbackContent() {
         const data = res.data.data;
         if (data?.success) {
           setStatus("success");
+          const phone = data.customer_phone ?? phoneParam;
+          const order = data.order_number ?? orderNum;
+          if (phone) setCustomerPhone(phone);
+          if (order) setOrderNumber(order);
           setTimeout(() => {
-            router.push(`/order-success${orderNum ? `?order=${orderNum}` : ""}`);
+            router.push(buildSuccessUrl(order ?? orderNum, phone ?? phoneParam));
           }, 2500);
         } else {
           setStatus("failed");

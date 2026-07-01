@@ -22,9 +22,9 @@ export function calcDeliveryCharge(
 export type ConfirmChannel = "whatsapp" | "email" | "both" | "none";
 
 export function getConfirmChannel(settings: Record<string, string>): ConfirmChannel {
-  const v = getSettingValue(settings, "checkout_confirm_channel") || "whatsapp";
-  if (v === "email" || v === "both" || v === "none") return v;
-  return "whatsapp";
+  const v = getSettingValue(settings, "checkout_confirm_channel") || "none";
+  if (v === "whatsapp" || v === "email" || v === "both") return v;
+  return "none";
 }
 
 export function getWhatsAppNumber(settings: Record<string, string>): string {

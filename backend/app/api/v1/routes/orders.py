@@ -2,6 +2,7 @@ import secrets
 import uuid
 from uuid import UUID
 from datetime import datetime, timezone
+from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
@@ -105,9 +106,29 @@ async def create_order(
     # Send admin notification
     if settings.ADMIN_NOTIFY_EMAIL:
         items_summary = ", ".join(f"{i.product_name} x{i.quantity}" for i in payload.items)
+        phone_digits = payload.customer_phone.replace("+", "").replace(" ", "")
+        if phone_digits.startswith("0"):
+            wa_phone = f"880{phone_digits[1:]}"
+        elif not phone_digits.startswith("880"):
+            wa_phone = f"880{phone_digits}"
+        else:
+            wa_phone = phone_digits
+        wa_msg = (
+            f"Hello {payload.customer_name}, your order {order.order_number} "
+            f"at ABO Enterprise (৳{float(payload.total):,.0f}) has been received. "
+            f"We will confirm shortly. Thank you!"
+        )
+        customer_wa_url = f"https://wa.me/{wa_phone}?text={quote(wa_msg)}"
+        admin_url = f"{settings.FRONTEND_URL.rstrip('/')}/admin/orders"
         html = order_notification_html(
-            order.order_number, payload.customer_name, payload.customer_phone,
-            float(payload.total), items_summary,
+            order.order_number,
+            payload.customer_name,
+            payload.customer_phone,
+            float(payload.total),
+            items_summary,
+            payment_method=payload.payment_method,
+            admin_orders_url=admin_url,
+            customer_whatsapp_url=customer_wa_url,
         )
         background_tasks.add_task(
             send_email, settings.ADMIN_NOTIFY_EMAIL,

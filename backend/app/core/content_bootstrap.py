@@ -69,9 +69,9 @@ DEFAULT_SETTINGS: list[dict] = [
     },
     {
         "key": "checkout_confirm_channel",
-        "value": "whatsapp",
+        "value": "none",
         "data_type": "string",
-        "description": "Order confirm: whatsapp | email | both | none",
+        "description": "Legacy customer redirect (none = admin notified, admin contacts customer)",
     },
     {
         "key": "checkout_otp_required",
