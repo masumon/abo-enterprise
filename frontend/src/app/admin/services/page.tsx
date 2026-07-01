@@ -644,7 +644,7 @@ export default function AdminServicesPage() {
                             onChange={e => setNewField(p => ({ ...p, field_type: e.target.value }))}
                             className="input w-full text-sm"
                           >
-                            {FIELD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                            {["text", "textarea", "number", "email", "phone", "url", "date", "time", "datetime-local", "select", "multiselect", "radio", "checkbox", "file", "image", "rating", "range", "color", "hidden", "paragraph"].map(t => <option key={t} value={t}>{t}</option>)}
                           </select>
                         </div>
                       </div>
