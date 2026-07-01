@@ -66,16 +66,18 @@ export default function PWAIconsConfig() {
       ];
       await adminApi.saveSettings(items);
 
-      const updated = icons.map((i) => ({
-        ...i,
-        status: i.url ? "saved" : "pending",
+      const updated: IconConfig[] = icons.map((i) => ({
+        size: i.size,
+        url: i.url,
+        status: i.url ? ("saved" as const) : ("pending" as const),
       }));
       setIcons(updated);
       toast("success", "PWA icons updated successfully");
     } catch (err) {
-      const updated = icons.map((i) => ({
-        ...i,
-        status: i.url ? "error" : "pending",
+      const updated: IconConfig[] = icons.map((i) => ({
+        size: i.size,
+        url: i.url,
+        status: i.url ? ("error" as const) : ("pending" as const),
       }));
       setIcons(updated);
       toast("error", "Failed to save icons");
