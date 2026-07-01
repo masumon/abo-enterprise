@@ -134,6 +134,8 @@ module.exports = withPWA({
     },
     // NOTE: No catch-all for cross-origin.
     // Render backend (abo-enterprise.onrender.com) is cross-origin — SW does
-    // NOT intercept it. Axios timeout (60 s) handles slow cold starts correctly.
+    // NOT intercept it. Instead, use networkAwareApi wrapper at app level
+    // which caches to IndexedDB for slow/mobile networks, while axios
+    // timeout (adaptive: 30s fast, 60s+ slow) handles backend latency.
   ],
 })(nextConfig);

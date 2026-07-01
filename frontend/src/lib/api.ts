@@ -2,13 +2,14 @@ import axios from "axios";
 import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier, BookingV2, LeadV2, Review, BlogPost, ServiceBookingFormField } from "@/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { clearAdminToken, getAdminToken, isAdminProtectedPath } from "@/lib/adminAuth";
+import { getAdaptiveTimeout, getAdaptiveRetry } from "@/lib/networkAwareApi";
 
 const baseURL = getApiBaseUrl();
 
 const api = axios.create({
   baseURL,
   headers: { "Content-Type": "application/json" },
-  timeout: 60000, // 60s — Render free tier cold start can take 30-50s
+  timeout: getAdaptiveTimeout(30000), // Adaptive: 30s fast, 60s+ slow networks
 });
 
 type RetryConfig = { __retryCount?: number; maxRetries?: number } & NonNullable<Parameters<typeof api.request>[0]>;
@@ -23,7 +24,7 @@ api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config as RetryConfig | undefined;
-    const maxRetries = config?.maxRetries ?? 3;
+    const maxRetries = config?.maxRetries ?? getAdaptiveRetry(3);
     if (config && (config.__retryCount ?? 0) < maxRetries) {
       const retryable =
         !error.response ||
