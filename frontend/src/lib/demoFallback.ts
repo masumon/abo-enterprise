@@ -56,11 +56,21 @@ export function filterDemoServices(services: Service[], category?: string | null
   return services.filter((s) => s.category === category);
 }
 
+export function isDemoProduct(productId: string): boolean {
+  return productId.startsWith("demo-");
+}
+
 export function getDemoNotice(lang: "en" | "bn"): string | null {
   const key = lang === "bn" ? "demo_notice_bn" : "demo_notice_en";
   const custom = settingsCache?.[key]?.trim();
   if (custom) return custom;
   return lang === "bn"
-    ? "ধীর নেটওয়ার্ক — ডেমো কন্টেন্ট দেখানো হচ্ছে। অর্ডার দিতে ওয়াইফাই বা পরে আবার চেষ্টা করুন।"
-    : "Slow connection — showing demo content. Connect to WiFi or retry later to place orders.";
+    ? "ধীর নেটওয়ার্ক — ডেমো কন্টেন্ট দেখানো হচ্ছে। অর্ডার দিতে ইন্টারনেট সংযোগ দিয়ে আবার চেষ্টা করুন।"
+    : "Slow connection — showing demo content. Connect to the internet and retry to place orders.";
+}
+
+export function getCachedNotice(lang: "en" | "bn"): string {
+  return lang === "bn"
+    ? "ক্যাশ থেকে দেখানো হচ্ছে — সর্বশেষ তথ্যের জন্য ইন্টারনেটে সংযুক্ত হোন।"
+    : "Showing from cache — connect to the internet for latest info.";
 }

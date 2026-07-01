@@ -17,7 +17,11 @@ export default function ApiWarmup() {
   useEffect(() => {
     if (warmed) return;
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 55000);
+    const timeoutMs = typeof navigator !== "undefined" &&
+      (navigator as Navigator & { connection?: { type?: string } }).connection?.type === "cellular"
+      ? 25000
+      : 55000;
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
     fetch(`${API_BASE}/health`, { signal: controller.signal })
       .then((r) => { if (r.ok) warmed = true; })

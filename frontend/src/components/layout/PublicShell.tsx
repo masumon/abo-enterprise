@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -19,10 +20,15 @@ import DelayedMount from "@/components/ui/DelayedMount";
 import FacebookPixel from "@/components/analytics/FacebookPixel";
 import ScrollProgress from "@/components/ui/ScrollProgress";
 import HtmlLangSync from "@/components/ui/HtmlLangSync";
+import { offlineSync } from "@/lib/offlineSync";
 
 export default function PublicShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith("/admin") ?? false;
+
+  useEffect(() => {
+    offlineSync.init().catch(() => {});
+  }, []);
 
   if (isAdmin) {
     return <>{children}</>;

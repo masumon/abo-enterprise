@@ -7,16 +7,12 @@ import { useLanguageStore } from "@/store/language";
 import { useCartStore } from "@/store/cart";
 import ProductCard from "@/components/features/ProductCard";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
-import { productsApi } from "@/lib/api";
 import type { Product } from "@/types";
 import CountdownTimer, { getWeeklySaleEnd } from "@/components/ui/CountdownTimer";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
-import {
-  filterDemoProducts,
-  getDemoProducts,
-  isDemoFallbackEnabled,
-} from "@/lib/demoFallback";
+import type { CatalogSource } from "@/lib/catalogLoader";
+import { loadProducts, peekCachedProducts } from "@/lib/catalogLoader";
 
 export default function FeaturedProducts() {
   const { lang } = useLanguageStore();
@@ -25,32 +21,44 @@ export default function FeaturedProducts() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [usingDemo, setUsingDemo] = useState(false);
+  const [catalogSource, setCatalogSource] = useState<CatalogSource>("api");
   const flashSaleEnabled = useFeatureFlag("feature_flash_sale");
 
   useEffect(() => {
-    productsApi.list({ featured: true, per_page: 8 } as Parameters<typeof productsApi.list>[0])
-      .then(async (r) => {
-        let data = r.data.data ?? [];
-        if (data.length === 0) {
-          const fallback = await productsApi.list({ per_page: 8 });
-          data = fallback.data.data ?? [];
-        }
-        if (data.length > 0) {
-          setProducts(data);
-          setUsingDemo(false);
+    const params = { featured: true, per_page: 8 };
+
+    peekCachedProducts(params).then((cached) => {
+      if (cached) {
+        setProducts(cached.products);
+        setUsingDemo(cached.source === "demo");
+        setCatalogSource(cached.source);
+        setLoading(false);
+      }
+    });
+
+    loadProducts(params)
+      .then(async (result) => {
+        if (result.products.length > 0) {
+          setProducts(result.products);
+          setUsingDemo(result.source === "demo");
+          setCatalogSource(result.source);
           setError(false);
           return;
         }
-        if (isDemoFallbackEnabled()) {
-          setProducts(filterDemoProducts(getDemoProducts(), { featured: true }).slice(0, 8));
-          setUsingDemo(true);
+        const fallback = await loadProducts({ per_page: 8 });
+        if (fallback.products.length > 0) {
+          setProducts(fallback.products);
+          setUsingDemo(fallback.source === "demo");
+          setCatalogSource(fallback.source);
           setError(false);
         }
       })
-      .catch(() => {
-        if (isDemoFallbackEnabled()) {
-          setProducts(filterDemoProducts(getDemoProducts(), { featured: true }).slice(0, 8));
-          setUsingDemo(true);
+      .catch(async () => {
+        const cached = await peekCachedProducts(params);
+        if (cached) {
+          setProducts(cached.products);
+          setUsingDemo(cached.source === "demo");
+          setCatalogSource(cached.source);
           setError(false);
         } else {
           setError(true);
@@ -77,7 +85,7 @@ export default function FeaturedProducts() {
           </p>
         </div>
 
-        <DemoModeBanner show={usingDemo && !loading} />
+        <DemoModeBanner show={(usingDemo || catalogSource === "cache") && !loading} source={catalogSource} />
 
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">

@@ -1,7 +1,6 @@
-import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { Product } from "@/types";
-import ProductDetailClient from "./ProductDetailClient";
+import ProductDetailShell from "./ProductDetailShell";
 
 import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
@@ -108,17 +107,18 @@ export default async function ProductDetailPage({
   params: { slug: string };
 }) {
   const product = await fetchProduct(params.slug);
-  if (!product) notFound();
 
-  const jsonLd = buildJsonLd(product);
+  const jsonLd = product ? buildJsonLd(product) : null;
 
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <ProductDetailClient product={product} />
+      {jsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      )}
+      <ProductDetailShell slug={params.slug} initialProduct={product} />
     </>
   );
 }

@@ -58,6 +58,9 @@ module.exports = withPWA({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
+  fallbacks: {
+    document: "/offline.html",
+  },
   // Custom runtime caching — cross-origin backend API (Render) is intentionally
   // excluded so the browser's native fetch (60 s axios timeout) handles it
   // without the SW's 10 s timeout killing slow/mobile connections on cold start.
