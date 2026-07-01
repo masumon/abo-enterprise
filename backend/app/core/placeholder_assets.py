@@ -21,15 +21,30 @@ def ph(width: int, height: int, text: str, fmt: str = "webp") -> str:
     return f"https://placehold.co/{width}x{height}/{fmt}?text={quote(text)}"
 
 
-def hero_banner(text: str = "Hero Banner") -> str:
+def hero_banner(text: str = "ABO Enterprise Sylhet") -> str:
     w, h = HERO
     return ph(w, h, text)
 
 
 def page_banner(page: str) -> str:
     w, h = HERO
-    label = page.replace("-", " ").title()
-    return ph(w, h, f"{label} Banner")
+    label = PAGE_BANNER_LABELS.get(page, page.replace("-", " ").title())
+    return ph(w, h, label)
+
+
+def review_avatar(name: str) -> str:
+    w, h = ICON_1_1
+    return ph(w, h, name)
+
+
+def team_photo(name: str) -> str:
+    w, h = ICON_1_1
+    return ph(w, h, name)
+
+
+def client_logo(name: str) -> str:
+    w, h = ICON_1_1
+    return ph(w, h, name)
 
 
 def product_image(name: str) -> str:
@@ -79,8 +94,36 @@ def software_card(title: str) -> str:
 
 def gallery_office() -> str:
     w, h = FEATURED_16_9
-    return ph(w, h, "Office Gallery")
+    return ph(w, h, "ABO Office Sylhet")
 
+
+PAGE_BANNER_LABELS: dict[str, str] = {
+    "about": "About ABO Enterprise",
+    "products": "Mobile Accessories Shop",
+    "services": "Professional Services",
+    "blog": "Tech Tips and News",
+    "gallery": "Project Gallery",
+    "career": "Join Our Team",
+    "testimonials": "Customer Reviews",
+    "contact": "Contact ABO Sylhet",
+    "faq": "Help Center FAQ",
+    "shipping": "Delivery Information",
+    "projects": "Custom Software Projects",
+    "track": "Track Your Order",
+    "book": "Book a Service",
+    "compare": "Compare Products",
+    "printing": "Printing Services",
+    "legal": "Legal Assistance",
+    "software": "Software and AI",
+    "cart": "Shopping Cart",
+    "checkout": "Secure Checkout",
+    "search": "Search Products",
+    "orders": "My Orders",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "refund": "Refund Policy",
+    "profile": "My Profile",
+}
 
 PAGE_BANNER_KEYS: tuple[str, ...] = (
     "about",
@@ -131,9 +174,46 @@ SERVICE_IMAGE_MAP: dict[str, tuple[str, str]] = {
 }
 
 BLOG_IMAGE_MAP: dict[str, str] = {
-    "welcome-abo-enterprise": "Welcome Blog",
+    "welcome-abo-enterprise": "Welcome to ABO",
     "mobile-accessories-guide": "Accessories Guide",
 }
+
+REVIEW_PHOTO_MAP: dict[str, str] = {
+    "Rahim Uddin": "Rahim Uddin",
+    "Fatema Begum": "Fatema Begum",
+    "Karim Hassan": "Karim Hassan",
+    "Nusrat Jahan": "Nusrat Jahan",
+}
+
+ABOUT_TEAM: list[dict] = [
+    {
+        "id": "founding-team",
+        "name": "Ahmed Brothers",
+        "role": {"en": "Founding Team", "bn": "প্রতিষ্ঠাতা দল"},
+        "desc": {"en": "Leading products, services & software strategy.", "bn": "পণ্য, সেবা ও সফটওয়্যার কৌশল পরিচালনা।"},
+    },
+    {
+        "id": "tech-team",
+        "name": "Tech Team",
+        "role": {"en": "Software Engineers", "bn": "সফটওয়্যার ইঞ্জিনিয়ার"},
+        "desc": {"en": "Web, mobile, AI & automation specialists.", "bn": "ওয়েব, মোবাইল, AI ও অটোমেশন বিশেষজ্ঞ।"},
+    },
+    {
+        "id": "support-team",
+        "name": "Support Team",
+        "role": {"en": "Customer Success", "bn": "গ্রাহক সেবা"},
+        "desc": {"en": "24/7 support via WhatsApp, phone & AI assistant.", "bn": "WhatsApp, ফোন ও AI সহকারীতে ২৪/৭ সেবা।"},
+    },
+]
+
+CLIENT_LOGOS: list[dict] = [
+    {"name": "Retail POS", "abbr": "RP"},
+    {"name": "Restaurant Pro", "abbr": "REST"},
+    {"name": "School ERP", "abbr": "ERP"},
+    {"name": "Hospital MS", "abbr": "HMS"},
+    {"name": "ISP Billing", "abbr": "ISP"},
+    {"name": "E-Commerce", "abbr": "ECOM"},
+]
 
 SHOWCASE_PROJECTS: list[dict] = [
     {
@@ -316,6 +396,74 @@ def build_demo_services_json() -> str:
     return json.dumps(items, ensure_ascii=False)
 
 
+def build_demo_reviews_json() -> str:
+    reviews = [
+        {
+            "id": "demo-1",
+            "customer_name": "Rahim Uddin",
+            "company": "Shop Owner, Sylhet",
+            "rating": 5,
+            "review_en": "ABO built our POS in 2 weeks. Billing errors dropped to zero!",
+            "review_bn": "ABO আমাদের POS ২ সপ্তাহে তৈরি করেছে। বিলিং ভুল শূন্য!",
+            "source": "Google",
+            "is_verified": True,
+            "is_featured": True,
+        },
+        {
+            "id": "demo-2",
+            "customer_name": "Fatema Begum",
+            "company": "Restaurant Owner",
+            "rating": 5,
+            "review_en": "Restaurant software transformed our kitchen operations.",
+            "review_bn": "রেস্টুরেন্ট সফটওয়্যার কিচেন বদলে দিয়েছে।",
+            "source": "Facebook",
+            "is_verified": True,
+            "is_featured": True,
+        },
+        {
+            "id": "demo-3",
+            "customer_name": "Karim Hassan",
+            "company": "IT Manager",
+            "rating": 5,
+            "review_en": "Custom ERP delivered on time with AI features.",
+            "review_bn": "AI সহ কাস্টম ERP ঠিক সময়ে দিয়েছে।",
+            "source": "Direct",
+            "is_verified": False,
+            "is_featured": True,
+        },
+        {
+            "id": "demo-4",
+            "customer_name": "Nusrat Jahan",
+            "company": "Freelancer",
+            "rating": 5,
+            "review_en": "Top quality accessories, same-day delivery!",
+            "review_bn": "সেরা মান, একই দিনে ডেলিভারি!",
+            "source": "Google",
+            "is_verified": True,
+            "is_featured": True,
+        },
+    ]
+    for r in reviews:
+        r["photo_url"] = review_avatar(REVIEW_PHOTO_MAP.get(r["customer_name"], r["customer_name"]))
+    return json.dumps(reviews, ensure_ascii=False)
+
+
+def build_about_team_json() -> str:
+    team = []
+    for member in ABOUT_TEAM:
+        entry = {**member}
+        entry["image"] = team_photo(member["name"])
+        team.append(entry)
+    return json.dumps(team, ensure_ascii=False)
+
+
+def build_client_logos_json() -> str:
+    logos = []
+    for client in CLIENT_LOGOS:
+        logos.append({**client, "image": client_logo(client["name"])})
+    return json.dumps(logos, ensure_ascii=False)
+
+
 def banner_settings() -> list[dict]:
     rows = [
         {
@@ -327,6 +475,11 @@ def banner_settings() -> list[dict]:
             "key": "gallery_office_image_url",
             "value": gallery_office(),
             "description": "Gallery office tab image (1920×1080)",
+        },
+        {
+            "key": "about_story_image_url",
+            "value": ph(*FEATURED_16_9, "Our Story Sylhet"),
+            "description": "About page story section image (1920×1080)",
         },
     ]
     for key in PAGE_BANNER_KEYS:

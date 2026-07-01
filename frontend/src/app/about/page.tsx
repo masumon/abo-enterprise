@@ -5,7 +5,16 @@ import { Target, Eye, Heart, CheckCircle, Users, Briefcase, ShoppingCart, Award,
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import BrandLogo from "@/components/ui/BrandLogo";
+import Image from "next/image";
 import { getBrandFullTitle } from "@/lib/tokens";
+import { usePublicSettings } from "@/hooks/usePublicSettings";
+import {
+  ABOUT_TEAM_KEY,
+  ABOUT_STORY_IMAGE_KEY,
+  getAboutStoryImage,
+  getAboutTeam,
+  type CmsTeamMember,
+} from "@/lib/cmsContent";
 
 const VALUES = [
   { icon: Heart, title: { en: "Customer First", bn: "গ্রাহক প্রথম" }, desc: { en: "Every decision starts with what's best for our customers.", bn: "সব সিদ্ধান্ত গ্রাহকের স্বার্থে।" } },
@@ -28,14 +37,17 @@ const ACHIEVEMENTS = [
   { icon: Award, value: "5+", label: { en: "Years Experience", bn: "বছরের অভিজ্ঞতা" } },
 ];
 
-const TEAM = [
-  { name: "Ahmed Brothers", role: { en: "Founding Team", bn: "প্রতিষ্ঠাতা দল" }, desc: { en: "Leading products, services & software strategy.", bn: "পণ্য, সেবা ও সফটওয়্যার কৌশল পরিচালনা।" } },
-  { name: "Tech Team", role: { en: "Software Engineers", bn: "সফটওয়্যার ইঞ্জিনিয়ার" }, desc: { en: "Web, mobile, AI & automation specialists.", bn: "ওয়েব, মোবাইল, AI ও অটোমেশন বিশেষজ্ঞ।" } },
-  { name: "Support Team", role: { en: "Customer Success", bn: "গ্রাহক সেবা" }, desc: { en: "24/7 support via WhatsApp, phone & AI assistant.", bn: "WhatsApp, ফোন ও AI সহকারীতে ২৪/৭ সেবা।" } },
+const TEAM_FALLBACK: CmsTeamMember[] = [
+  { id: "founding-team", name: "Ahmed Brothers", role: { en: "Founding Team", bn: "প্রতিষ্ঠাতা দল" }, desc: { en: "Leading products, services & software strategy.", bn: "পণ্য, সেবা ও সফটওয়্যার কৌশল পরিচালনা।" } },
+  { id: "tech-team", name: "Tech Team", role: { en: "Software Engineers", bn: "সফটওয়্যার ইঞ্জিনিয়ার" }, desc: { en: "Web, mobile, AI & automation specialists.", bn: "ওয়েব, মোবাইল, AI ও অটোমেশন বিশেষজ্ঞ।" } },
+  { id: "support-team", name: "Support Team", role: { en: "Customer Success", bn: "গ্রাহক সেবা" }, desc: { en: "24/7 support via WhatsApp, phone & AI assistant.", bn: "WhatsApp, ফোন ও AI সহকারীতে ২৪/৭ সেবা।" } },
 ];
 
 export default function AboutPage() {
   const { lang } = useLanguageStore();
+  const { settings } = usePublicSettings([ABOUT_TEAM_KEY, ABOUT_STORY_IMAGE_KEY]);
+  const team = getAboutTeam(settings, TEAM_FALLBACK);
+  const storyImage = getAboutStoryImage(settings);
   const t = (o: { en: string; bn: string }) => (lang === "bn" ? o.bn : o.en);
 
   return (
@@ -73,10 +85,23 @@ export default function AboutPage() {
               })}
             </p>
           </div>
-          <div className="card p-6 bg-gradient-to-br from-brand-50 to-white dark:from-brand-900/30 dark:to-[var(--surface-card)]">
-            <Eye className="w-8 h-8 text-brand-600 mb-3" />
-            <h3 className="font-bold text-lg mb-2">{t({ en: "Our Vision", bn: "আমাদের ভিশন" })}</h3>
-            <p className="text-muted text-sm leading-relaxed">{t({ en: "To become Bangladesh's most trusted integrated technology provider — empowering every business with affordable, world-class digital tools.", bn: "বাংলাদেশের সবচেয়ে বিশ্বস্ত ইন্টিগ্রেটেড টেক প্রদানকারী হওয়া — সাশ্রয়ী, বিশ্বমানের ডিজিটাল সরঞ্জামে প্রতিটি ব্যবসাকে ক্ষমতায়ন করা।" })}</p>
+          <div className="space-y-4">
+            {storyImage && (
+              <div className="relative aspect-video rounded-2xl overflow-hidden shadow-md">
+                <Image
+                  src={storyImage}
+                  alt={t({ en: "ABO Enterprise office", bn: "ABO Enterprise অফিস" })}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width:768px) 100vw, 50vw"
+                />
+              </div>
+            )}
+            <div className="card p-6 bg-gradient-to-br from-brand-50 to-white dark:from-brand-900/30 dark:to-[var(--surface-card)]">
+              <Eye className="w-8 h-8 text-brand-600 mb-3" />
+              <h3 className="font-bold text-lg mb-2">{t({ en: "Our Vision", bn: "আমাদের ভিশন" })}</h3>
+              <p className="text-muted text-sm leading-relaxed">{t({ en: "To become Bangladesh's most trusted integrated technology provider — empowering every business with affordable, world-class digital tools.", bn: "বাংলাদেশের সবচেয়ে বিশ্বস্ত ইন্টিগ্রেটেড টেক প্রদানকারী হওয়া — সাশ্রয়ী, বিশ্বমানের ডিজিটাল সরঞ্জামে প্রতিটি ব্যবসাকে ক্ষমতায়ন করা।" })}</p>
+            </div>
           </div>
         </div>
       </section>
@@ -136,10 +161,14 @@ export default function AboutPage() {
         <div className="max-w-4xl mx-auto">
           <div className="section-title text-center"><h2>{t({ en: "Our Team", bn: "আমাদের দল" })}</h2></div>
           <div className="grid md:grid-cols-3 gap-6 mt-10">
-            {TEAM.map((member) => (
-              <div key={member.name} className="card p-6 text-center">
-                <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-brand-100 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-brand-600" />
+            {team.map((member) => (
+              <div key={member.id ?? member.name} className="card p-6 text-center">
+                <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden relative">
+                  {member.image ? (
+                    <Image src={member.image} alt={member.name} fill className="object-cover" sizes="64px" />
+                  ) : (
+                    <Users className="w-6 h-6 text-brand-600" />
+                  )}
                 </div>
                 <h3 className="font-bold text-gray-900">{member.name}</h3>
                 <p className="text-sm text-brand-600 font-medium mt-1">{t(member.role)}</p>

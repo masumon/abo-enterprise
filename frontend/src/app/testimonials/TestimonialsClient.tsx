@@ -12,17 +12,14 @@ import GlassCard from "@/components/ui/GlassCard";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import { useToastStore } from "@/store/toast";
 
-const FALLBACK: Review[] = [
-  { id: "1", customer_name: "Rahim Uddin", company: "Shop Owner, Sylhet", rating: 5, review_en: "ABO built our POS in 2 weeks. Billing errors dropped to zero!", review_bn: "ABO আমাদের POS ২ সপ্তাহে তৈরি করেছে। বিলিং ভুল শূন্য!", source: "Google", is_verified: true, is_featured: true },
-  { id: "2", customer_name: "Fatema Begum", company: "Restaurant Owner", rating: 5, review_en: "Restaurant software transformed our kitchen operations.", review_bn: "রেস্টুরেন্ট সফটওয়্যার কিচেন বদলে দিয়েছে।", source: "Facebook", is_verified: true, is_featured: true },
-  { id: "3", customer_name: "Karim Hassan", company: "IT Manager", rating: 5, review_en: "Custom ERP delivered on time with AI features.", review_bn: "AI সহ কাস্টম ERP ঠিক সময়ে দিয়েছে।", source: "Direct", is_verified: false, is_featured: true },
-  { id: "4", customer_name: "Nusrat Jahan", company: "Freelancer", rating: 5, review_en: "Top quality accessories, same-day delivery!", review_bn: "সেরা মান, একই দিনে ডেলিভারি!", source: "Google", is_verified: true, is_featured: true },
-  { id: "5", customer_name: "Sabbir Ahmed", company: "Retail Chain", rating: 5, review_en: "Inventory system saved us hours every week.", review_bn: "ইনভেন্টরি সিস্টেম প্রতি সপ্তাহে ঘণ্টা বাঁচিয়েছে।", source: "Google", is_verified: true, is_featured: false },
-  { id: "6", customer_name: "Tasnim Rahman", company: "School Admin", rating: 4, review_en: "School management software is easy for our staff.", review_bn: "স্কুল ম্যানেজমেন্ট সফটওয়্যার স্টাফদের জন্য সহজ।", source: "Direct", is_verified: true, is_featured: false },
-];
+import { usePublicSettings } from "@/hooks/usePublicSettings";
+import { DEMO_REVIEWS_KEY, getDemoReviews } from "@/lib/cmsContent";
+
+const FALLBACK: Review[] = [];
 
 export default function TestimonialsClient() {
   const { lang } = useLanguageStore();
+  const { settings } = usePublicSettings([DEMO_REVIEWS_KEY]);
   const toast = useToastStore((s) => s.push);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,11 +28,13 @@ export default function TestimonialsClient() {
   const [rating, setRating] = useState(5);
 
   useEffect(() => {
-    reviewsApi.list({ per_page: 12 })
-      .then((r) => setReviews(r.data.data?.length ? r.data.data : FALLBACK))
-      .catch(() => setReviews(FALLBACK))
+    const demo = getDemoReviews<Review>(settings, FALLBACK);
+    reviewsApi
+      .list({ per_page: 12 })
+      .then((r) => setReviews(r.data.data?.length ? r.data.data : demo))
+      .catch(() => setReviews(demo))
       .finally(() => setLoading(false));
-  }, []);
+  }, [settings]);
 
   const avg = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : "5.0";
 

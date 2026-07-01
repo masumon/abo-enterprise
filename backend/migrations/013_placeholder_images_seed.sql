@@ -2,6 +2,8 @@
 -- Migration: 013_placeholder_images_seed.sql
 -- Idempotent: ON CONFLICT DO NOTHING for settings; UPDATE only when image fields are empty.
 -- Excludes brand logo / favicon. Run after 012_default_settings.sql.
+-- Then run 014_contextual_placeholder_images.sql, then 015_upgrade_placeholder_labels.sql
+-- if you already ran 013 before 014 (upgrades generic labels safely).
 
 INSERT INTO settings (key, value, data_type, description, is_editable) VALUES ('hero_image_url', 'https://placehold.co/1920x1080/webp?text=Hero%20Banner', 'string', 'Homepage hero banner (1920×1080)', true) ON CONFLICT (key) DO NOTHING;
 INSERT INTO settings (key, value, data_type, description, is_editable) VALUES ('gallery_office_image_url', 'https://placehold.co/1920x1080/webp?text=Office%20Gallery', 'string', 'Gallery office tab image (1920×1080)', true) ON CONFLICT (key) DO NOTHING;

@@ -83,6 +83,17 @@ const SECTIONS: Section[] = [
       { key: "hero_cta_url", label: "CTA Button URL", type: "url", placeholder: "/products" },
       { key: "hero_image_url", label: "Homepage Banner Image (1920×1080)", type: "url", upload: true, placeholder: "https://...", hint: "Seeded placeholder — upload to replace." },
       { key: "gallery_office_image_url", label: "Gallery Office Image (1920×1080)", type: "url", upload: true, placeholder: "https://...", hint: "Shown in /gallery office tab." },
+      { key: "about_story_image_url", label: "About Page Story Image (1920×1080)", type: "url", upload: true, placeholder: "https://...", hint: "Shown on /about next to Our Story." },
+    ],
+  },
+  {
+    id: "cms_media",
+    title: "About & Homepage Media (JSON)",
+    icon: <ImageIcon className="w-4 h-4" />,
+    fields: [
+      { key: "about_team_json", label: "About Team (JSON)", type: "textarea", hint: "Team members with image URLs — editable array." },
+      { key: "client_logos_json", label: "Client Logos (JSON)", type: "textarea", hint: "Homepage client strip with image URLs." },
+      { key: "demo_reviews_json", label: "Demo Reviews (JSON)", type: "textarea", hint: "Fallback reviews with photo_url when API unavailable." },
     ],
   },
   {
