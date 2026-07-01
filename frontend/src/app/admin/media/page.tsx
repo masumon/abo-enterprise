@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import {
   Save,
   Loader2,
@@ -39,7 +38,8 @@ import {
   type SoftwareServiceCard,
 } from "@/lib/showcaseContent";
 import type { CmsClientLogo, CmsTeamMember } from "@/lib/cmsContent";
-import type { Product, Service, BlogPost } from "@/types";
+import { DEMO_REVIEWS_KEY } from "@/lib/cmsContent";
+import type { Product, Service, BlogPost, Review } from "@/types";
 
 type TabId = "brand" | "banners" | "cms" | "showcase" | "catalog";
 type SettingValues = Record<string, string>;
@@ -107,6 +107,7 @@ export default function AdminMediaPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [reviews, setReviews] = useState<{ id: string; customer_name: string; photo_url: string | null }[]>([]);
+  const [demoReviews, setDemoReviews] = useState<Review[]>([]);
   const [catalogOpen, setCatalogOpen] = useState<Record<string, boolean>>({});
 
   const load = useCallback(async () => {
@@ -129,6 +130,7 @@ export default function AdminMediaPage() {
       setServices(servicesRes.data.data ?? []);
       setPosts(blogRes.data.data ?? []);
       setReviews((reviewsRes.data.data ?? []) as typeof reviews);
+      setDemoReviews(parseJson<Review[]>(s[DEMO_REVIEWS_KEY] ?? "", []));
     } catch (e) {
       toast("error", apiErrorMessage(e, "Failed to load media"));
     } finally {
@@ -186,35 +188,43 @@ export default function AdminMediaPage() {
     );
   }, [search]);
 
-  const patchProductImage = async (id: string, image_url: string) => {
+  const patchProduct = async (id: string, data: Partial<Product>) => {
     try {
-      await productsApi.update(id, { image_url });
-      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, image_url } : p)));
+      await productsApi.update(id, data);
+      setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
       toast("success", "Product image updated");
     } catch (e) {
       toast("error", apiErrorMessage(e, "Update failed"));
     }
   };
 
-  const patchServiceImage = async (id: string, featured_image_url: string) => {
+  const patchService = async (id: string, data: Partial<Service>) => {
     try {
-      await servicesAdminApi.update(id, { featured_image_url });
-      setServices((prev) => prev.map((s) => (s.id === id ? { ...s, featured_image_url } : s)));
+      await servicesAdminApi.update(id, data);
+      setServices((prev) => prev.map((s) => (s.id === id ? { ...s, ...data } : s)));
       toast("success", "Service image updated");
     } catch (e) {
       toast("error", apiErrorMessage(e, "Update failed"));
     }
   };
 
-  const patchBlogImage = async (id: string, featured_image_url: string) => {
+  const patchBlog = async (id: string, data: Partial<BlogPost>) => {
     try {
-      await adminBlogApi.update(id, { featured_image_url });
-      setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, featured_image_url } : p)));
+      await adminBlogApi.update(id, data);
+      setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
       toast("success", "Blog image updated");
     } catch (e) {
       toast("error", apiErrorMessage(e, "Update failed"));
     }
   };
+
+  const patchProductImage = (id: string, image_url: string) => patchProduct(id, { image_url });
+
+  const patchServiceImage = (id: string, featured_image_url: string) =>
+    patchService(id, { featured_image_url });
+
+  const patchBlogImage = (id: string, featured_image_url: string) =>
+    patchBlog(id, { featured_image_url });
 
   const patchReviewPhoto = async (id: string, photo_url: string) => {
     try {
@@ -387,6 +397,32 @@ export default function AdminMediaPage() {
               </div>
             ))}
           </div>
+
+          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <SectionHeader
+              title="Demo Review Avatars (Offline)"
+              titleBn="ডেমো রিভিউ ছবি"
+              sectionId="demoReviews"
+              onSave={() => saveJson("demoReviews", DEMO_REVIEWS_KEY, demoReviews)}
+            />
+            {demoReviews.length === 0 ? (
+              <p className="px-6 py-8 text-sm text-gray-400">No demo reviews in CMS.</p>
+            ) : (
+              demoReviews.map((r, i) => (
+                <div key={r.id ?? `demo-${i}`} className="px-4 sm:px-6 py-4 border-b border-gray-50">
+                  <p className="text-sm font-medium text-gray-800 mb-2">{r.customer_name}</p>
+                  <ImageUpload
+                    value={r.photo_url ?? ""}
+                    onChange={(url) =>
+                      setDemoReviews((prev) => prev.map((item, idx) => (idx === i ? { ...item, photo_url: url } : item)))
+                    }
+                    folder={MEDIA_UPLOAD_FOLDER}
+                    previewSize="sm"
+                  />
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
 
@@ -524,24 +560,43 @@ export default function AdminMediaPage() {
                     {section.id === "products" &&
                       products.map((p) =>
                         p.id ? (
-                          <div key={p.id} className="px-4 sm:px-6 py-4 flex flex-wrap gap-4 items-start">
-                            <div className="w-14 h-14 rounded-lg overflow-hidden relative bg-gray-100 flex-shrink-0">
-                              {p.image_url ? (
-                                <Image src={p.image_url} alt="" fill className="object-cover" sizes="56px" />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-gray-300 text-xs">No img</div>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-[200px]">
-                              <p className="text-sm font-medium text-gray-800">{p.name_en}</p>
+                          <div key={p.id} className="px-4 sm:px-6 py-4 space-y-3">
+                            <p className="text-sm font-medium text-gray-800">{p.name_en}</p>
+                            <p className="text-xs text-gray-400">Main image</p>
+                            <ImageUpload
+                              value={p.image_url ?? ""}
+                              onChange={(url) => patchProductImage(p.id!, url)}
+                              folder={MEDIA_UPLOAD_FOLDER}
+                              previewSize="md"
+                            />
+                            <p className="text-xs text-gray-400">Gallery images</p>
+                            {(p.images ?? []).map((img, gi) => (
                               <ImageUpload
-                                value={p.image_url ?? ""}
-                                onChange={(url) => patchProductImage(p.id!, url)}
+                                key={gi}
+                                value={img}
+                                onChange={(url) => {
+                                  const next = [...(p.images ?? [])];
+                                  next[gi] = url;
+                                  patchProduct(p.id!, { images: next.filter(Boolean) });
+                                }}
                                 folder={MEDIA_UPLOAD_FOLDER}
                                 previewSize="sm"
-                                showUrlInput={false}
                               />
-                            </div>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => patchProduct(p.id!, { images: [...(p.images ?? []), ""] })}
+                              className="text-xs text-brand-600 hover:underline"
+                            >
+                              + Add gallery image
+                            </button>
+                            <p className="text-xs text-gray-400">Social share (OG)</p>
+                            <ImageUpload
+                              value={p.og_image ?? ""}
+                              onChange={(url) => patchProduct(p.id!, { og_image: url })}
+                              folder={MEDIA_UPLOAD_FOLDER}
+                              previewSize="sm"
+                            />
                           </div>
                         ) : null
                       )}
@@ -549,17 +604,29 @@ export default function AdminMediaPage() {
                     {section.id === "services" &&
                       services.map((s) =>
                         s.id ? (
-                          <div key={s.id} className="px-4 sm:px-6 py-4 flex flex-wrap gap-4 items-start">
-                            <div className="flex-1 min-w-[200px]">
-                              <p className="text-sm font-medium text-gray-800">{s.name_en}</p>
-                              <ImageUpload
-                                value={s.featured_image_url ?? ""}
-                                onChange={(url) => patchServiceImage(s.id!, url)}
-                                folder={MEDIA_UPLOAD_FOLDER}
-                                previewSize="sm"
-                                showUrlInput={false}
-                              />
-                            </div>
+                          <div key={s.id} className="px-4 sm:px-6 py-4 space-y-3">
+                            <p className="text-sm font-medium text-gray-800">{s.name_en}</p>
+                            <p className="text-xs text-gray-400">Featured image</p>
+                            <ImageUpload
+                              value={s.featured_image_url ?? ""}
+                              onChange={(url) => patchServiceImage(s.id!, url)}
+                              folder={MEDIA_UPLOAD_FOLDER}
+                              previewSize="md"
+                            />
+                            <p className="text-xs text-gray-400">Icon image</p>
+                            <ImageUpload
+                              value={s.icon_url ?? ""}
+                              onChange={(url) => patchService(s.id!, { icon_url: url })}
+                              folder={MEDIA_UPLOAD_FOLDER}
+                              previewSize="sm"
+                            />
+                            <p className="text-xs text-gray-400">Social share (OG)</p>
+                            <ImageUpload
+                              value={s.og_image ?? ""}
+                              onChange={(url) => patchService(s.id!, { og_image: url })}
+                              folder={MEDIA_UPLOAD_FOLDER}
+                              previewSize="sm"
+                            />
                           </div>
                         ) : null
                       )}
@@ -567,13 +634,21 @@ export default function AdminMediaPage() {
                     {section.id === "blog" &&
                       posts.map((post) =>
                         post.id ? (
-                          <div key={post.id} className="px-4 sm:px-6 py-4">
-                            <p className="text-sm font-medium text-gray-800 mb-2">{post.title_en}</p>
+                          <div key={post.id} className="px-4 sm:px-6 py-4 space-y-3">
+                            <p className="text-sm font-medium text-gray-800">{post.title_en}</p>
+                            <p className="text-xs text-gray-400">Featured image</p>
                             <ImageUpload
                               value={post.featured_image_url ?? ""}
                               onChange={(url) => patchBlogImage(post.id!, url)}
                               folder={MEDIA_UPLOAD_FOLDER}
                               previewSize="md"
+                            />
+                            <p className="text-xs text-gray-400">Social share (OG)</p>
+                            <ImageUpload
+                              value={post.og_image ?? ""}
+                              onChange={(url) => patchBlog(post.id!, { og_image: url })}
+                              folder={MEDIA_UPLOAD_FOLDER}
+                              previewSize="sm"
                             />
                           </div>
                         ) : null
