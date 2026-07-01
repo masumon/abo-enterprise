@@ -7,65 +7,76 @@ import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import UtmTracker from "@/lib/utm";
 import { DEFAULT_OG_IMAGE, SITE_URL, getBrandFullTitle } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { fetchPublicSettings, settingValue } from "@/lib/serverSettings";
 
 const API_ORIGIN = getApiBaseUrl();
 
-export const metadata: Metadata = {
-  title: {
-    default: "ABO Enterprise — মোবাইল এক্সেসরিজ, সফটওয়্যার, AI সমাধান | সিলেট",
-    template: "%s | ABO Enterprise",
-  },
-  description:
-    "এবিও এন্টারপ্রাইজ : সহজ সমাধান — মোবাইল এক্সেসরিজ, গ্যাজেট, প্রিন্টিং, আইনি সেবা, ওয়েবসাইট, AI সমাধান এবং কাস্টম সফটওয়্যার — একটি প্ল্যাটফর্মে।",
-  keywords: [
-    "ABO Enterprise",
-    "মোবাইল এক্সেসরিজ সিলেট",
-    "AI সমাধান বাংলাদেশ",
-    "সফটওয়্যার ডেভেলপমেন্ট",
-    "ওয়েবসাইট ডিজাইন সিলেট",
-    "প্রিন্টিং সেবা",
-    "আইনি সেবা",
-    "ERP সফটওয়্যার",
-    "mobile accessories Sylhet",
-    "software development Bangladesh",
-  ],
-  authors: [{ name: "Mumain Ahmed (Sumon)", url: "https://mumain.dev" }],
-  creator: "Mumain Ahmed (Sumon) | Mumain.dev",
-  publisher: "ABO Enterprise",
-  metadataBase: new URL(SITE_URL),
-  openGraph: {
-    type: "website",
-    locale: "bn_BD",
-    alternateLocale: "en_US",
-    siteName: "ABO Enterprise",
-    title: getBrandFullTitle("bn"),
-    description: "মোবাইল এক্সেসরিজ থেকে AI সমাধান — সহজ সমাধান, সব এক জায়গায়।",
-    images: [{ url: DEFAULT_OG_IMAGE, width: 512, height: 512, alt: "ABO Enterprise" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "ABO Enterprise",
-    description: getBrandFullTitle("en"),
-  },
-  robots: { index: true, follow: true },
-  manifest: "/manifest.json",
-  icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await fetchPublicSettings();
+  const ogImage =
+    settingValue(settings, "default_og_image_url") ||
+    settingValue(settings, "logo_url") ||
+    DEFAULT_OG_IMAGE;
+  const favicon = settingValue(settings, "favicon_url");
+  const appIcon = settingValue(settings, "app_icon_url") || settingValue(settings, "logo_url");
+
+  return {
+    title: {
+      default: "ABO Enterprise — মোবাইল এক্সেসরিজ, সফটওয়্যার, AI সমাধান | সিলেট",
+      template: "%s | ABO Enterprise",
+    },
+    description:
+      "এবিও এন্টারপ্রাইজ : সহজ সমাধান — মোবাইল এক্সেসরিজ, গ্যাজেট, প্রিন্টিং, আইনি সেবা, ওয়েবসাইট, AI সমাধান এবং কাস্টম সফটওয়্যার — একটি প্ল্যাটফর্মে।",
+    keywords: [
+      "ABO Enterprise",
+      "মোবাইল এক্সেসরিজ সিলেট",
+      "AI সমাধান বাংলাদেশ",
+      "সফটওয়্যার ডেভেলপমেন্ট",
+      "ওয়েবসাইট ডিজাইন সিলেট",
+      "প্রিন্টিং সেবা",
+      "আইনি সেবা",
+      "ERP সফটওয়্যার",
+      "mobile accessories Sylhet",
+      "software development Bangladesh",
     ],
-    apple: [
-      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
-    ],
-    shortcut: "/icons/icon-192.png",
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "ABO Enterprise",
-  },
-};
+    authors: [{ name: "Mumain Ahmed (Sumon)", url: "https://mumain.dev" }],
+    creator: "Mumain Ahmed (Sumon) | Mumain.dev",
+    publisher: "ABO Enterprise",
+    metadataBase: new URL(SITE_URL),
+    openGraph: {
+      type: "website",
+      locale: "bn_BD",
+      alternateLocale: "en_US",
+      siteName: "ABO Enterprise",
+      title: getBrandFullTitle("bn"),
+      description: "মোবাইল এক্সেসরিজ থেকে AI সমাধান — সহজ সমাধান, সব এক জায়গায়।",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: "ABO Enterprise" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "ABO Enterprise",
+      description: getBrandFullTitle("en"),
+      images: [ogImage],
+    },
+    robots: { index: true, follow: true },
+    icons: {
+      icon: favicon
+        ? [{ url: favicon, sizes: "any" }]
+        : [
+            { url: "/favicon.ico", sizes: "any" },
+            { url: appIcon || "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+            { url: appIcon || "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+          ],
+      apple: [{ url: appIcon || "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+      shortcut: favicon || appIcon || "/icons/icon-192.png",
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "black-translucent",
+      title: "ABO Enterprise",
+    },
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#1e5ba8",

@@ -628,6 +628,16 @@ def banner_settings() -> list[dict]:
             "description": "Browser favicon (admin-editable)",
         },
         {
+            "key": "app_icon_url",
+            "value": demo_img("office", 512, 512),
+            "description": "PWA / mobile app icon (admin-editable)",
+        },
+        {
+            "key": "default_og_image_url",
+            "value": demo_img("hero", 1200, 630),
+            "description": "Default Open Graph / social share image",
+        },
+        {
             "key": "hero_image_url",
             "value": hero_banner(),
             "description": "Homepage hero banner (1920×1080)",
