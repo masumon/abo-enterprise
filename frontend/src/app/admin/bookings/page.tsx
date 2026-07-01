@@ -56,10 +56,13 @@ export default function AdminBookingsPage() {
       const r = await bookingsApi.list({ service_type: typeFilter || undefined, status: statusFilter || undefined, search: search || undefined, page });
       setBookings((r.data.data ?? []) as unknown as AdminBooking[]);
       setTotal(r.data.meta?.total ?? 0);
+    } catch (err) {
+      toast("error", "Failed to load bookings");
+      console.error("Bookings load error:", err);
     } finally {
       setLoading(false);
     }
-  }, [typeFilter, statusFilter, search, page]);
+  }, [typeFilter, statusFilter, search, page, toast]);
 
   const loadV2 = useCallback(async () => {
     setLoadingV2(true);
@@ -67,10 +70,13 @@ export default function AdminBookingsPage() {
       const r = await serviceBookingsAdminApi.list({ status: statusFilterV2 || undefined, payment_status: paymentFilterV2 || undefined, page: pageV2 });
       setBookingsV2(r.data.data ?? []);
       setTotalV2(r.data.meta?.total ?? 0);
+    } catch (err) {
+      toast("error", "Failed to load service bookings");
+      console.error("Service bookings load error:", err);
     } finally {
       setLoadingV2(false);
     }
-  }, [statusFilterV2, paymentFilterV2, pageV2]);
+  }, [statusFilterV2, paymentFilterV2, pageV2, toast]);
 
   useEffect(() => { if (tab === "v1") load(); }, [load, tab]);
   useEffect(() => { if (tab === "v2") loadV2(); }, [loadV2, tab]);
