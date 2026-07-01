@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, Package, ArrowRight, Share2, Download, Loader2 } from "lucide-react";
+import { CheckCircle2, Package, ArrowRight, Share2, Download, Loader2, X, FileText } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { trackPurchase } from "@/components/analytics/FacebookPixel";
 import { downloadPublicOrderInvoice } from "@/lib/api";
@@ -43,6 +43,7 @@ function OrderSuccessContent() {
   const [phone, setPhone] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(true);
+  const [showInvoicePrompt, setShowInvoicePrompt] = useState(true);
 
   useEffect(() => {
     const order = params.get("order");
@@ -53,10 +54,6 @@ function OrderSuccessContent() {
     const t = setTimeout(() => setShowConfetti(false), 3000);
     return () => clearTimeout(t);
   }, [params]);
-
-  const shareText = orderNumber
-    ? encodeURIComponent(lang === "bn" ? `আমার ABO অর্ডার: ${orderNumber}` : `My ABO order: ${orderNumber}`)
-    : null;
 
   const handleDownloadInvoice = async () => {
     if (!orderNumber || !phone) return;
@@ -78,6 +75,8 @@ function OrderSuccessContent() {
       await navigator.share({ title: "ABO Enterprise", text });
     }
   };
+
+  const canDownloadInvoice = Boolean(orderNumber && phone);
 
   return (
     <main className="min-h-screen page-surface pb-mobile-nav lg:pb-0">
@@ -106,8 +105,8 @@ function OrderSuccessContent() {
 
         <p className="text-muted mb-6">
           {lang === "bn"
-            ? "আপনার অর্ডারের জন্য ধন্যবাদ। নিশ্চিত করতে আমরা শীঘ্রই যোগাযোগ করব।"
-            : "Thank you for your order. We'll contact you shortly to confirm."}
+            ? "আপনার অর্ডার গ্রহণ করা হয়েছে। ইনভয়েস তৈরি হয়েছে — চাইলে এখনই ডাউনলোড করতে পারেন। আমরা শীঘ্রই যোগাযোগ করব।"
+            : "Your order has been received and an invoice was created. You can download it now or skip — we'll contact you shortly to confirm."}
         </p>
 
         {orderNumber && (
@@ -122,13 +121,57 @@ function OrderSuccessContent() {
           </div>
         )}
 
+        {canDownloadInvoice && showInvoicePrompt && (
+          <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6 text-left">
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-brand-500 flex-shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-heading">
+                    {lang === "bn" ? "ইনভয়েস প্রস্তুত" : "Invoice Ready"}
+                  </p>
+                  <p className="text-xs text-muted">
+                    {lang === "bn" ? "ঐচ্ছিক — চাইলে সেভ করুন" : "Optional — save if you want"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowInvoicePrompt(false)}
+                className="text-gray-400 hover:text-gray-600 p-1"
+                aria-label={lang === "bn" ? "বন্ধ করুন" : "Dismiss"}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                onClick={handleDownloadInvoice}
+                disabled={pdfLoading}
+                className="btn btn-brand btn-sm flex-1 flex items-center justify-center gap-2"
+              >
+                {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                {lang === "bn" ? "PDF ডাউনলোড" : "Download PDF"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowInvoicePrompt(false)}
+                className="btn btn-ghost btn-sm flex-1"
+              >
+                {lang === "bn" ? "পরে / এড়িয়ে যান" : "Skip for now"}
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3">
-          {orderNumber && phone && (
+          {canDownloadInvoice && !showInvoicePrompt && (
             <button
               type="button"
               onClick={handleDownloadInvoice}
               disabled={pdfLoading}
-              className="btn btn-brand btn-md w-full flex items-center justify-center gap-2"
+              className="btn btn-outline btn-md w-full flex items-center justify-center gap-2"
             >
               {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               {lang === "bn" ? "ইনভয়েস PDF ডাউনলোড" : "Download Invoice PDF"}

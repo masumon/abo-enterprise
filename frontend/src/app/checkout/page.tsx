@@ -20,7 +20,7 @@ import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { mapPaymentMethods } from "@/lib/paymentDisplay";
 import { BD_DISTRICTS } from "@/lib/bdDistricts";
-import { buildOrderConfirmActions, calcDeliveryCharge } from "@/lib/checkoutHelpers";
+import { calcDeliveryCharge } from "@/lib/checkoutHelpers";
 import { validateCoupon, type AppliedCoupon } from "@/lib/coupons";
 import { isDemoProduct } from "@/lib/demoFallback";
 import { isOffline } from "@/lib/networkStatus";
@@ -49,7 +49,7 @@ export default function CheckoutPage() {
 
   const { settings } = usePublicSettings([
     "delivery_charge_dhaka", "delivery_charge_outside", "delivery_charge_sylhet",
-    "free_delivery_min_amount", "checkout_confirm_channel", "checkout_otp_required",
+    "free_delivery_min_amount", "checkout_otp_required",
     "whatsapp_number", "contact_phone", "contact_email",
   ]);
   const couponsEnabled = useFeatureFlag("feature_coupons", true);
@@ -245,30 +245,6 @@ export default function CheckoutPage() {
       };
 
       if (await tryGatewayRedirect()) return;
-
-      const waItems = items.map((i) => ({
-        name: lang === "bn" ? i.name_bn : i.name_en,
-        price: i.price,
-        qty: i.quantity,
-      }));
-
-      const actions = buildOrderConfirmActions({
-        settings,
-        lang,
-        customerName: data.customer_name,
-        customerPhone: data.customer_phone,
-        customerEmail: data.customer_email,
-        deliveryAddress: data.street_address,
-        district: data.district,
-        items: waItems,
-        total: cartTotal,
-        paymentLabel: selectedPayment?.label ?? data.payment_gateway,
-        trxId: data.payment_trx_id,
-        orderNumber,
-      });
-
-      if (actions.openWhatsApp) window.open(actions.openWhatsApp, "_blank");
-      else if (actions.mailto) window.location.href = actions.mailto;
 
       clearCart();
       router.push(

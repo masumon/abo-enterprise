@@ -122,18 +122,46 @@ async def send_template_email(
         return False
 
 
-def order_notification_html(order_number: str, customer_name: str, phone: str, total: float, items_summary: str) -> str:
+def order_notification_html(
+    order_number: str,
+    customer_name: str,
+    phone: str,
+    total: float,
+    items_summary: str,
+    payment_method: str = "",
+    admin_orders_url: str = "",
+    customer_whatsapp_url: str = "",
+) -> str:
+    payment_row = ""
+    if payment_method:
+        payment_row = f'<tr style="background:#f9fafb"><td style="padding:8px;color:#888">Payment</td><td style="padding:8px;text-transform:capitalize">{payment_method}</td></tr>'
+
+    actions = ""
+    if admin_orders_url or customer_whatsapp_url:
+        buttons = []
+        if admin_orders_url:
+            buttons.append(
+                f'<a href="{admin_orders_url}" style="display:inline-block;background:#1e5ba8;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;font-weight:600;margin-right:8px">View in Admin</a>'
+            )
+        if customer_whatsapp_url:
+            buttons.append(
+                f'<a href="{customer_whatsapp_url}" style="display:inline-block;background:#25d366;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;font-weight:600">WhatsApp Customer</a>'
+            )
+        actions = f'<div style="margin:20px 0">{"".join(buttons)}</div>'
+
     return f"""
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
       <h2 style="color:#1e5ba8;margin-bottom:8px">🛒 New Order — {order_number}</h2>
-      <p style="color:#555">A new order has been placed on ABO Enterprise.</p>
+      <p style="color:#555">A new order has been placed on ABO Enterprise. Contact the customer via WhatsApp or email from your admin panel.</p>
       <table style="width:100%;border-collapse:collapse;margin:16px 0">
         <tr><td style="padding:8px;color:#888;width:120px">Customer</td><td style="padding:8px;font-weight:600">{customer_name}</td></tr>
         <tr style="background:#f9fafb"><td style="padding:8px;color:#888">Phone</td><td style="padding:8px">{phone}</td></tr>
         <tr><td style="padding:8px;color:#888">Items</td><td style="padding:8px">{items_summary}</td></tr>
+        {payment_row}
         <tr style="background:#f9fafb"><td style="padding:8px;color:#888">Total</td><td style="padding:8px;font-weight:700;color:#e91e63">৳{total:,.0f}</td></tr>
       </table>
-      <p style="color:#888;font-size:13px">Log in to your admin panel to view full details and update the order status.</p>
+      {actions}
+      <p style="color:#888;font-size:13px">Invoice was auto-created. Open the order in admin to download PDF or update status.</p>
     </div>
     """
 

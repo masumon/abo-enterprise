@@ -807,6 +807,8 @@ class PaymentResponseModel(BaseModel):
     transaction_id: Optional[str] = None
     status: Optional[str] = None
     message: Optional[str] = None
+    order_number: Optional[str] = None
+    customer_phone: Optional[str] = None
     
     class Config:
         from_attributes = True

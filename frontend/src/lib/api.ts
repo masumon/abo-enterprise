@@ -537,13 +537,13 @@ export const paymentsApi = {
     }),
 
   verifyBkash: (payment_id: string) =>
-    api.post<ApiResponse<{ success: boolean; status?: string; transaction_id?: string; payment_gateway: string }>>("/api/v1/payments/bkash/verify", {
+    api.post<ApiResponse<{ success: boolean; status?: string; transaction_id?: string; payment_gateway: string; order_number?: string; customer_phone?: string }>>("/api/v1/payments/bkash/verify", {
       payment_id,
       payment_gateway: "bkash",
     }),
 
   verifyNagad: (payment_id: string) =>
-    api.post<ApiResponse<{ success: boolean; status?: string; transaction_id?: string; payment_gateway: string }>>("/api/v1/payments/nagad/verify", {
+    api.post<ApiResponse<{ success: boolean; status?: string; transaction_id?: string; payment_gateway: string; order_number?: string; customer_phone?: string }>>("/api/v1/payments/nagad/verify", {
       payment_id,
       payment_gateway: "nagad",
     }),

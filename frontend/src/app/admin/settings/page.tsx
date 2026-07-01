@@ -157,7 +157,7 @@ const SECTIONS: Section[] = [
     title: "Checkout & Orders",
     icon: <ShoppingBag className="w-4 h-4" />,
     fields: [
-      { key: "checkout_confirm_channel", label: "Order Confirm Channel", placeholder: "whatsapp", hint: "whatsapp | email | both | none — customer sees unified Confirm Order button" },
+      { key: "checkout_confirm_channel", label: "Order Confirm Channel (legacy)", placeholder: "none", hint: "none = recommended. Orders notify admin; admin contacts customer via WhatsApp/email from /admin/orders" },
       { key: "checkout_otp_required", label: "Require Phone OTP", placeholder: "false", hint: "true to require OTP before checkout (free-tier in-memory OTP)" },
       { key: "whatsapp_number", label: "WhatsApp Order Number", placeholder: "8801825007977" },
       { key: "free_delivery_min_amount", label: "Free Delivery Min (৳)", type: "number", placeholder: "2000" },

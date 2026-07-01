@@ -8,7 +8,7 @@ import AdminToolbar from "@/components/admin/AdminToolbar";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
 import { ordersApi, downloadCsv, downloadPdf } from "@/lib/api";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, buildCustomerWhatsAppLink } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
 
 interface AdminOrderItem { product_name: string; quantity: number; product_price: number; subtotal: number; }
@@ -370,6 +370,7 @@ export default function AdminOrdersPage() {
                     <h3 className="font-semibold text-gray-900 text-sm">Customer Info</h3>
                     <div className="flex gap-2">
                       <a href={`tel:${detail.customer_phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>
+                      <a href={buildCustomerWhatsAppLink(detail.customer_phone, `Hello ${detail.customer_name}, your order ${detail.order_number} at ABO Enterprise (${formatPrice(detail.total)}) has been received. We will confirm shortly. Thank you!`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>
                       {detail.customer_email && <a href={`mailto:${detail.customer_email}`} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</a>}
                     </div>
                   </div>

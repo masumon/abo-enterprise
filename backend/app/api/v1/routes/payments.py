@@ -3,6 +3,7 @@ import hmac
 import logging
 from datetime import datetime, timezone
 from decimal import Decimal
+from urllib.parse import quote
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
@@ -117,11 +118,18 @@ async def verify_bkash_payment(
                     order.order_status = "confirmed"
                 await db.commit()
 
+        order_result = await db.execute(
+            select(Order).where(Order.id == transaction.order_id)
+        )
+        order = order_result.scalar_one_or_none()
+
         return {
             "success": transaction.status == "Completed",
             "payment_gateway": "bkash",
             "transaction_id": str(transaction.id),
             "status": transaction.status,
+            "order_number": order.order_number if order else None,
+            "customer_phone": order.customer_phone if order else None,
         }
     except HTTPException:
         raise
@@ -213,11 +221,18 @@ async def verify_nagad_payment(
                     order.order_status = "confirmed"
                 await db.commit()
 
+        order_result = await db.execute(
+            select(Order).where(Order.id == transaction.order_id)
+        )
+        order = order_result.scalar_one_or_none()
+
         return {
             "success": is_completed,
             "payment_gateway": "nagad",
             "transaction_id": str(transaction.id),
             "status": transaction.status,
+            "order_number": order.order_number if order else None,
+            "customer_phone": order.customer_phone if order else None,
         }
     except HTTPException:
         raise
@@ -238,9 +253,10 @@ async def initiate_sslcommerz_payment(
             raise HTTPException(status_code=404, detail="Order not found")
 
         base = settings.FRONTEND_URL.rstrip("/")
-        success_url = request.success_url or f"{base}/payment/callback?status=success&order={order.order_number}"
-        fail_url = request.fail_url or f"{base}/payment/callback?status=failed&order={order.order_number}"
-        cancel_url = request.cancel_url or f"{base}/payment/callback?status=cancelled&order={order.order_number}"
+        phone_q = quote(order.customer_phone, safe="")
+        success_url = request.success_url or f"{base}/payment/callback?status=success&order={order.order_number}&phone={phone_q}"
+        fail_url = request.fail_url or f"{base}/payment/callback?status=failed&order={order.order_number}&phone={phone_q}"
+        cancel_url = request.cancel_url or f"{base}/payment/callback?status=cancelled&order={order.order_number}&phone={phone_q}"
 
         session = await get_sslcommerz_gateway().create_session(
             amount=Decimal(order.total),
