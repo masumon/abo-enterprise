@@ -1,4 +1,4 @@
-"""Central placeholder image URLs for ABO Enterprise visual assets (placehold.co).
+"""Central demo image URLs for ABO Enterprise visual assets (Unsplash).
 
 Admin-editable copies live in the database (settings, products, services, blogs).
 Excludes brand logo / favicon per product requirements.
@@ -6,7 +6,6 @@ Excludes brand logo / favicon per product requirements.
 from __future__ import annotations
 
 import json
-from urllib.parse import quote
 
 # Aspect-ratio presets
 HERO = (1920, 1080)       # 16:9 — homepage & page banners
@@ -16,85 +15,237 @@ OG = (1200, 630)
 ICON_1_1 = (256, 256)
 CARD_16_9 = (1280, 720)
 
+# Stable Unsplash photo IDs — verified HTTP 200, context-matched
+_PHOTOS: dict[str, str] = {
+    "hero": "1556761175-5973dc0f32e7",
+    "office": "1517248135467-4c7edcad34c4",
+    "story": "1560472354-b33ff0c44a43",
+    "about": "1522071820081-009f0129c71c",
+    "products": "1511707171634-5f897ff02aa9",
+    "services": "1454165804606-c3d57bc86b40",
+    "blog": "1498050108023-c5249f4df085",
+    "gallery": "1504384308090-c894fdcc538d",
+    "career": "1522202176988-66273c2fd55f",
+    "testimonials": "1521791136064-7986c2920216",
+    "contact": "1558618666-fcd25c85cd64",
+    "faq": "1553877522-43269d4ea984",
+    "shipping": "1633356122544-f134324a6cee",
+    "projects": "1460925895917-afdab827c52f",
+    "track": "1542291026-7eec264c27ff",
+    "book": "1554224155-6726b3ff858f",
+    "compare": "1523275335684-37898b6baf30",
+    "printing": "1618005182384-a83a8bd57fbe",
+    "legal": "1554224155-6726b3ff858f",
+    "software": "1498050108023-c5249f4df085",
+    "cart": "1556742049-0cfed4f6a45d",
+    "checkout": "1563013544-824ae1b704d3",
+    "search": "1551288049-bebda4e38f71",
+    "orders": "1542291026-7eec264c27ff",
+    "privacy": "1560472354-b33ff0c44a43",
+    "terms": "1454165804606-c3d57bc86b40",
+    "refund": "1554224155-6726b3ff858f",
+    "profile": "1507003211169-0a1dd7228f2d",
+    "phone-case": "1523275335684-37898b6baf30",
+    "charger": "1608043152269-423dbba4e7e1",
+    "earbuds": "1618005182384-a83a8bd57fbe",
+    "power-bank": "1633356122544-f134324a6cee",
+    "glass": "1511707171634-5f897ff02aa9",
+    "cable": "1542291026-7eec264c27ff",
+    "car-holder": "1558618666-fcd25c85cd64",
+    "speaker": "1608043152269-423dbba4e7e1",
+    "printing-svc": "1618005182384-a83a8bd57fbe",
+    "legal-svc": "1554224155-6726b3ff858f",
+    "software-svc": "1498050108023-c5249f4df085",
+    "web-design": "1547658719-da2b51169166",
+    "mobile-app": "1504384308090-c894fdcc538d",
+    "marketing": "1460925895917-afdab827c52f",
+    "blog-welcome": "1498050108023-c5249f4df085",
+    "blog-guide": "1511707171634-5f897ff02aa9",
+    "pos-project": "1556742049-0cfed4f6a45d",
+    "hms-project": "1560472354-b33ff0c44a43",
+    "ecom-project": "1556742049-0cfed4f6a45d",
+    "ui-shot": "1551288049-bebda4e38f71",
+    "card-website": "1547658719-da2b51169166",
+    "card-ai": "1677442136019-21780ecad995",
+    "card-automation": "1498050108023-c5249f4df085",
+    "card-erp": "1551288049-bebda4e38f71",
+    "card-mobile": "1504384308090-c894fdcc538d",
+    "card-devops": "1551288049-bebda4e38f71",
+    "team-founder": "1560250097-0b93528c311a",
+    "team-tech": "1573496359142-b8d87734a5a2",
+    "team-support": "1472099645785-5658abf4ff4e",
+    "client-retail": "1556742049-0cfed4f6a45d",
+    "client-rest": "1517248135467-4c7edcad34c4",
+    "client-school": "1522202176988-66273c2fd55f",
+    "client-hospital": "1560472354-b33ff0c44a43",
+    "client-isp": "1551288049-bebda4e38f71",
+    "client-ecom": "1556742049-0cfed4f6a45d",
+    "review-1": "1507003211169-0a1dd7228f2d",
+    "review-2": "1494790108377-be9c29b29330",
+    "review-3": "1500648767791-00dcc994a43e",
+    "review-4": "1438761681033-6461ffad8d80",
+}
 
-def ph(width: int, height: int, text: str, fmt: str = "webp") -> str:
-    return f"https://placehold.co/{width}x{height}/{fmt}?text={quote(text)}"
+_PRODUCT_PHOTO_KEYS: dict[str, str] = {
+    "phone-case-premium": "phone-case",
+    "fast-charger-65w": "charger",
+    "earbuds-tws-pro": "earbuds",
+    "power-bank-20000": "power-bank",
+    "glass-protector": "glass",
+    "type-c-cable-3m": "cable",
+    "car-holder-magnetic": "car-holder",
+    "bt-speaker-waterproof": "speaker",
+}
+
+_SERVICE_PHOTO_KEYS: dict[str, str] = {
+    "printing": "printing-svc",
+    "legal": "legal-svc",
+    "software": "software-svc",
+    "web-design": "web-design",
+    "mobile-app": "mobile-app",
+    "digital-marketing": "marketing",
+}
+
+_PROJECT_PHOTO_KEYS: dict[str, tuple[str, str, str]] = {
+    "sylhet-retail-pos": ("pos-project", "ui-shot", "pos-project"),
+    "clinic-hms": ("hms-project", "ui-shot", "hms-project"),
+    "ecommerce-ai-chatbot": ("ecom-project", "ui-shot", "card-ai"),
+}
+
+_CARD_PHOTO_KEYS: dict[str, str] = {
+    "website": "card-website",
+    "ai": "card-ai",
+    "automation": "card-automation",
+    "erp": "card-erp",
+    "mobile": "card-mobile",
+    "devops": "card-devops",
+}
+
+_TEAM_PHOTO_KEYS: dict[str, str] = {
+    "founding-team": "team-founder",
+    "tech-team": "team-tech",
+    "support-team": "team-support",
+}
+
+_CLIENT_PHOTO_KEYS: dict[str, str] = {
+    "Retail POS": "client-retail",
+    "Restaurant Pro": "client-rest",
+    "School ERP": "client-school",
+    "Hospital MS": "client-hospital",
+    "ISP Billing": "client-isp",
+    "E-Commerce": "client-ecom",
+}
+
+_REVIEW_PHOTO_KEYS: dict[str, str] = {
+    "Rahim Uddin": "review-1",
+    "Fatema Begum": "review-2",
+    "Karim Hassan": "review-3",
+    "Nusrat Jahan": "review-4",
+}
+
+
+def demo_img(key: str, w: int, h: int) -> str:
+    pid = _PHOTOS.get(key, _PHOTOS["hero"])
+    return f"https://images.unsplash.com/photo-{pid}?auto=format&fit=crop&w={w}&h={h}&q=80"
 
 
 def hero_banner(text: str = "ABO Enterprise Sylhet") -> str:
     w, h = HERO
-    return ph(w, h, text)
+    return demo_img("hero", w, h)
 
 
 def page_banner(page: str) -> str:
     w, h = HERO
-    label = PAGE_BANNER_LABELS.get(page, page.replace("-", " ").title())
-    return ph(w, h, label)
+    return demo_img(page if page in _PHOTOS else "services", w, h)
 
 
 def review_avatar(name: str) -> str:
     w, h = ICON_1_1
-    return ph(w, h, name)
+    key = _REVIEW_PHOTO_KEYS.get(name, "review-1")
+    return demo_img(key, w, h)
 
 
 def team_photo(name: str) -> str:
     w, h = ICON_1_1
-    return ph(w, h, name)
+    for member in ABOUT_TEAM:
+        if member["name"] == name:
+            key = _TEAM_PHOTO_KEYS.get(member["id"], "team-founder")
+            return demo_img(key, w, h)
+    return demo_img("team-founder", w, h)
 
 
 def client_logo(name: str) -> str:
     w, h = ICON_1_1
-    return ph(w, h, name)
+    key = _CLIENT_PHOTO_KEYS.get(name, "client-retail")
+    return demo_img(key, w, h)
 
 
 def product_image(name: str) -> str:
     w, h = PRODUCT_4_5
-    return ph(w, h, name)
+    slug_key = next((k for k, label in PRODUCT_IMAGE_MAP.items() if label == name), None)
+    photo_key = _PRODUCT_PHOTO_KEYS.get(slug_key or "", "phone-case")
+    return demo_img(photo_key, w, h)
 
 
 def product_gallery(name: str, index: int) -> str:
     w, h = PRODUCT_4_5
-    return ph(w, h, f"{name} {index}")
+    slug_key = next((k for k, label in PRODUCT_IMAGE_MAP.items() if label == name), None)
+    base = _PRODUCT_PHOTO_KEYS.get(slug_key or "", "phone-case")
+    alt = "cable" if index == 2 else base
+    return demo_img(alt, w, h)
 
 
 def og_image(name: str) -> str:
     w, h = OG
-    return ph(w, h, f"{name} OG")
+    return demo_img("hero", w, h)
 
 
 def service_featured(name: str) -> str:
     w, h = FEATURED_16_9
-    return ph(w, h, name)
+    slug_key = next((k for k, (feat, _) in SERVICE_IMAGE_MAP.items() if feat == name), None)
+    photo_key = _SERVICE_PHOTO_KEYS.get(slug_key or "", "software-svc")
+    return demo_img(photo_key, w, h)
 
 
 def service_icon(name: str) -> str:
     w, h = ICON_1_1
-    return ph(w, h, name)
+    slug_key = next((k for k, (_, icon) in SERVICE_IMAGE_MAP.items() if icon == name), None)
+    photo_key = _SERVICE_PHOTO_KEYS.get(slug_key or "", "software-svc")
+    return demo_img(photo_key, w, h)
 
 
 def blog_featured(title: str) -> str:
     w, h = FEATURED_16_9
-    return ph(w, h, title)
+    key = "blog-welcome" if "Welcome" in title else "blog-guide"
+    return demo_img(key, w, h)
 
 
 def project_cover(title: str) -> str:
     w, h = FEATURED_16_9
-    return ph(w, h, title)
+    slug = next((p["slug"] for p in SHOWCASE_PROJECTS if p["title"]["en"] == title), None)
+    if slug and slug in _PROJECT_PHOTO_KEYS:
+        return demo_img(_PROJECT_PHOTO_KEYS[slug][0], w, h)
+    return demo_img("projects", w, h)
 
 
 def project_screenshot(title: str, index: int) -> str:
     w, h = FEATURED_16_9
-    return ph(w, h, f"{title} {index}")
+    slug = next((p["slug"] for p in SHOWCASE_PROJECTS if p["title"]["en"] == title), None)
+    if slug and slug in _PROJECT_PHOTO_KEYS:
+        keys = _PROJECT_PHOTO_KEYS[slug]
+        return demo_img(keys[min(index, len(keys) - 1)], w, h)
+    return demo_img("ui-shot", w, h)
 
 
 def software_card(title: str) -> str:
     w, h = CARD_16_9
-    return ph(w, h, title)
+    card_id = next((c["id"] for c in SOFTWARE_SERVICE_CARDS if c["title"]["en"] == title), "website")
+    return demo_img(_CARD_PHOTO_KEYS.get(card_id, "card-website"), w, h)
 
 
 def gallery_office() -> str:
     w, h = FEATURED_16_9
-    return ph(w, h, "ABO Office Sylhet")
+    return demo_img("office", w, h)
 
 
 PAGE_BANNER_LABELS: dict[str, str] = {
@@ -478,7 +629,7 @@ def banner_settings() -> list[dict]:
         },
         {
             "key": "about_story_image_url",
-            "value": ph(*FEATURED_16_9, "Our Story Sylhet"),
+            "value": demo_img("story", *FEATURED_16_9),
             "description": "About page story section image (1920×1080)",
         },
     ]
