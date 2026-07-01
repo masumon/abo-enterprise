@@ -2,25 +2,34 @@
 
 import { Info } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
-import { getDemoNotice } from "@/lib/demoFallback";
+import { getCachedNotice, getDemoNotice } from "@/lib/demoFallback";
+import type { CatalogSource } from "@/lib/catalogLoader";
 
 interface Props {
   show: boolean;
+  source?: CatalogSource;
 }
 
-/** Shown when catalog is served from offline/demo fallback. */
-export default function DemoModeBanner({ show }: Props) {
+/** Shown when catalog is served from cache or demo fallback. */
+export default function DemoModeBanner({ show, source = "demo" }: Props) {
   const { lang } = useLanguageStore();
   if (!show) return null;
-  const message = getDemoNotice(lang);
+
+  const message = source === "cache" ? getCachedNotice(lang) : getDemoNotice(lang);
   if (!message) return null;
+
+  const styles =
+    source === "cache"
+      ? "border-blue-200 bg-blue-50 text-blue-900"
+      : "border-amber-200 bg-amber-50 text-amber-900";
+  const iconColor = source === "cache" ? "text-blue-600" : "text-amber-600";
 
   return (
     <div
-      className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-start gap-3 text-sm text-amber-900"
+      className={`mb-6 rounded-xl border px-4 py-3 flex items-start gap-3 text-sm ${styles}`}
       role="status"
     >
-      <Info className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-600" aria-hidden />
+      <Info className={`w-5 h-5 flex-shrink-0 mt-0.5 ${iconColor}`} aria-hidden />
       <p>{message}</p>
     </div>
   );

@@ -11,6 +11,8 @@ const api = axios.create({
   timeout: 60000, // 60s — Render free tier cold start can take 30-50s
 });
 
+type RetryConfig = { __retryCount?: number; maxRetries?: number } & NonNullable<Parameters<typeof api.request>[0]>;
+
 api.interceptors.request.use((config) => {
   const token = getAdminToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -20,8 +22,9 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const config = error.config as (typeof error.config & { __retryCount?: number }) | undefined;
-    if (config && (config.__retryCount ?? 0) < 3) {
+    const config = error.config as RetryConfig | undefined;
+    const maxRetries = config?.maxRetries ?? 3;
+    if (config && (config.__retryCount ?? 0) < maxRetries) {
       const retryable =
         !error.response ||
         [408, 429, 500, 502, 503, 504].includes(error.response.status) ||
@@ -45,8 +48,8 @@ api.interceptors.response.use(
 );
 
 export const productsApi = {
-  list: (params?: { category?: string; featured?: boolean; search?: string; sort_by?: string; page?: number; per_page?: number }) =>
-    api.get<PaginatedResponse<Product>>("/api/v1/products", { params }),
+  list: (params?: { category?: string; featured?: boolean; search?: string; sort_by?: string; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
+    api.get<PaginatedResponse<Product>>("/api/v1/products", { params, ...opts }),
 
   adminList: (params?: { category?: string; search?: string; is_active?: boolean; page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<Product>>("/api/v1/products/admin", { params }),
@@ -209,8 +212,8 @@ export const authApi = {
 };
 
 export const servicesApi = {
-  list: (params?: { category?: string; featured?: boolean; page?: number; per_page?: number }) =>
-    api.get<PaginatedResponse<Service>>("/api/v1/services", { params }),
+  list: (params?: { category?: string; featured?: boolean; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
+    api.get<PaginatedResponse<Service>>("/api/v1/services", { params, ...opts }),
 
   getBySlug: (slug: string) =>
     api.get<ApiResponse<Service>>(`/api/v1/services/${slug}`),

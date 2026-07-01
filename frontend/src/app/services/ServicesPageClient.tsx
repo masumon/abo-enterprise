@@ -6,7 +6,6 @@ import {
   Printer, Scale, Code2, Megaphone, Briefcase,
   ArrowRight, Bot, Cog, Smartphone,
 } from "lucide-react";
-import { servicesApi } from "@/lib/api";
 import type { Service } from "@/types";
 import { useLanguageStore } from "@/store/language";
 import ServiceCard from "@/components/services/ServiceCard";
@@ -15,11 +14,11 @@ import PageHero from "@/components/ui/PageHero";
 import { ServiceCardSkeleton } from "@/components/common/Skeletons";
 import { cn } from "@/lib/utils";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
-import {
-  filterDemoServices,
-  getDemoServices,
-  isDemoFallbackEnabled,
-} from "@/lib/demoFallback";
+import type { CatalogSource } from "@/lib/catalogLoader";
+import { loadServices, peekCachedServices } from "@/lib/catalogLoader";
+import { cacheApiResponse, servicesCacheKey } from "@/lib/apiCache";
+import { isConstrainedNetwork } from "@/lib/networkStatus";
+import { getDemoServices } from "@/lib/demoFallback";
 
 const FEATURED = [
   {
@@ -66,7 +65,17 @@ export default function ServicesPageClient({
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(initialTotal);
   const [usingDemo, setUsingDemo] = useState(initialIsDemo);
+  const [catalogSource, setCatalogSource] = useState<CatalogSource>(initialIsDemo ? "demo" : "api");
   const skipInitial = useRef(!initialIsDemo && initialServices.length > 0);
+
+  useEffect(() => {
+    if (!initialIsDemo && initialServices.length > 0) {
+      cacheApiResponse(
+        servicesCacheKey({ page: 1, per_page: 12 }),
+        { services: initialServices, total: initialTotal }
+      ).catch(() => {});
+    }
+  }, [initialIsDemo, initialServices, initialTotal]);
 
   const categories = [
     { id: null, label: lang === "bn" ? "সব" : "All", en: "All" },
@@ -82,44 +91,31 @@ export default function ServicesPageClient({
   const load = useCallback(async (pageNum: number, cat: string | null) => {
     setLoading(true);
     setError(false);
+
+    const params = { category: cat || undefined, page: pageNum, per_page: 12 };
+
+    if (pageNum === 1 && isConstrainedNetwork()) {
+      const cached = await peekCachedServices(params);
+      if (cached) {
+        setServices(cached.services);
+        setTotal(cached.total);
+        setUsingDemo(cached.source === "demo");
+        setCatalogSource(cached.source);
+        setLoading(false);
+      }
+    }
+
     try {
-      const res = await servicesApi.list({
-        category: cat || undefined,
-        page: pageNum,
-        per_page: 12,
-      });
-      const data = res.data.data ?? [];
-      if (data.length > 0) {
-        setServices(data);
-        setTotal(res.data.meta?.total ?? data.length);
-        setUsingDemo(false);
-        setPage(pageNum);
-        return;
-      }
-      if (pageNum === 1 && isDemoFallbackEnabled()) {
-        const demo = filterDemoServices(getDemoServices(), cat);
-        setServices(demo);
-        setTotal(demo.length);
-        setUsingDemo(true);
-        setPage(1);
-        return;
-      }
-      setServices([]);
-      setTotal(0);
-      setUsingDemo(false);
+      const result = await loadServices(params);
+      setServices(result.services);
+      setTotal(result.total);
+      setUsingDemo(result.source === "demo");
+      setCatalogSource(result.source);
       setPage(pageNum);
     } catch {
-      if (pageNum === 1 && isDemoFallbackEnabled()) {
-        const demo = filterDemoServices(getDemoServices(), cat);
-        setServices(demo);
-        setTotal(demo.length);
-        setUsingDemo(true);
-        setError(false);
-        setPage(1);
-      } else {
-        setError(true);
-        setUsingDemo(false);
-      }
+      setError(true);
+      setUsingDemo(false);
+      setCatalogSource("api");
     } finally {
       setLoading(false);
     }
@@ -173,7 +169,7 @@ export default function ServicesPageClient({
             <ServiceFilters categories={categories} selectedCategory={category} onCategoryChange={setCategory} />
           </div>
 
-          <DemoModeBanner show={usingDemo && !loading} />
+          <DemoModeBanner show={(usingDemo || catalogSource === "cache") && !loading} source={catalogSource} />
 
           {loading ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" aria-busy="true">

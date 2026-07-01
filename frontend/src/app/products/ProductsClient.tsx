@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, Loader2, LayoutGrid, List } from "lucide-react";
-import { productsApi } from "@/lib/api";
 import type { Product, ProductCategory } from "@/types";
 import ProductCard from "@/components/features/ProductCard";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
@@ -14,11 +13,10 @@ import { useT } from "@/lib/i18n/useT";
 import { cn } from "@/lib/utils";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
-import {
-  filterDemoProducts,
-  getDemoProducts,
-  isDemoFallbackEnabled,
-} from "@/lib/demoFallback";
+import type { CatalogSource } from "@/lib/catalogLoader";
+import { loadProducts, peekCachedProducts } from "@/lib/catalogLoader";
+import { cacheApiResponse, productsCacheKey } from "@/lib/apiCache";
+import { isConstrainedNetwork } from "@/lib/networkStatus";
 
 const CATEGORIES: { value: string; label: { en: string; bn: string } }[] = [
   { value: "", label: { en: "All", bn: "সব" } },
@@ -59,6 +57,7 @@ export default function ProductsClient({
   const [total, setTotal] = useState(initialTotal);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [usingDemo, setUsingDemo] = useState(initialIsDemo);
+  const [catalogSource, setCatalogSource] = useState<CatalogSource>(initialIsDemo ? "demo" : "api");
   const { openCart } = useCartStore();
   const infiniteScroll = useFeatureFlag("feature_infinite_scroll");
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -67,10 +66,21 @@ export default function ProductsClient({
   const urlCategory = searchParams.get("category") ?? "";
 
   useEffect(() => {
+    if (!initialIsDemo && initialProducts.length > 0) {
+      const key = productsCacheKey({
+        category: initialCategory || undefined,
+        page: initialPage,
+      });
+      cacheApiResponse(key, { products: initialProducts, total: initialTotal }).catch(() => {});
+    }
+  }, [initialIsDemo, initialProducts, initialTotal, initialCategory, initialPage]);
+
+  useEffect(() => {
     setProducts(initialProducts);
     setTotal(initialTotal);
     setCategory(initialCategory);
     setUsingDemo(initialIsDemo);
+    setCatalogSource(initialIsDemo ? "demo" : "api");
     isFirstLoad.current = true;
     needsApiRefresh.current = initialIsDemo || initialProducts.length === 0;
   }, [initialProducts, initialTotal, initialCategory, initialIsDemo]);
@@ -101,56 +111,41 @@ export default function ProductsClient({
     if (append) setLoadingMore(true);
     else setLoading(true);
     setError(false);
+
+    const params = {
+      category: category || undefined,
+      search: debouncedSearch || undefined,
+      sort_by: sortBy || undefined,
+      page: pageNum,
+    };
+
+    if (!append && pageNum === 1 && isConstrainedNetwork()) {
+      const cached = await peekCachedProducts(params);
+      if (cached) {
+        setProducts(cached.products);
+        setTotal(cached.total);
+        setUsingDemo(cached.source === "demo");
+        setCatalogSource(cached.source);
+        setLoading(false);
+      }
+    }
+
     try {
-      const r = await productsApi.list({
-        category: category || undefined,
-        search: debouncedSearch || undefined,
-        sort_by: sortBy || undefined,
-        page: pageNum,
-      });
-      const data = r.data.data ?? [];
-      if (data.length > 0) {
-        setProducts((prev) => (append ? [...prev, ...data] : data));
-        setTotal(r.data.meta?.total ?? data.length);
-        setUsingDemo(false);
-        setPage(pageNum);
-        return;
-      }
-      if (pageNum === 1 && isDemoFallbackEnabled()) {
-        const demo = filterDemoProducts(getDemoProducts(), {
-          category: category || undefined,
-          search: debouncedSearch || undefined,
-        });
-        setProducts(demo);
-        setTotal(demo.length);
-        setUsingDemo(true);
-        setPage(1);
-        return;
-      }
-      setProducts((prev) => (append ? prev : []));
-      setTotal(append ? total : 0);
-      setUsingDemo(false);
+      const result = await loadProducts(params);
+      setProducts((prev) => (append ? [...prev, ...result.products] : result.products));
+      setTotal(result.total);
+      setUsingDemo(result.source === "demo");
+      setCatalogSource(result.source);
       setPage(pageNum);
     } catch {
-      if (pageNum === 1 && isDemoFallbackEnabled()) {
-        const demo = filterDemoProducts(getDemoProducts(), {
-          category: category || undefined,
-          search: debouncedSearch || undefined,
-        });
-        setProducts(demo);
-        setTotal(demo.length);
-        setUsingDemo(true);
-        setError(false);
-        setPage(1);
-      } else {
-        setError(true);
-        setUsingDemo(false);
-      }
+      setError(true);
+      setUsingDemo(false);
+      setCatalogSource("api");
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [category, debouncedSearch, sortBy, total]);
+  }, [category, debouncedSearch, sortBy]);
 
   useEffect(() => {
     if (isFirstLoad.current) {
@@ -182,7 +177,7 @@ export default function ProductsClient({
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <LoadingProgress loading={loading} message={t("loading_products")} className="mb-6" />
-      <DemoModeBanner show={usingDemo && !loading} />
+      <DemoModeBanner show={(usingDemo || catalogSource === "cache") && !loading} source={catalogSource} />
 
       <div className="flex flex-col lg:flex-row gap-4 mb-8">
         <div className="relative flex-1">
