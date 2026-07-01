@@ -134,9 +134,16 @@ export default function AdminOrdersPage() {
     try {
       const r = await ordersApi.get(id);
       const data = r.data.data as unknown as AdminOrder;
+      if (!data) {
+        toast("error", "Order details could not be loaded");
+        return;
+      }
       setDetail(data);
       setCourierProvider(data.courier_provider ?? "");
       setCourierTracking(data.courier_tracking_id ?? "");
+    } catch (err) {
+      toast("error", "Failed to load order details");
+      console.error("Order detail error:", err);
     } finally {
       setDetailLoading(false);
     }
