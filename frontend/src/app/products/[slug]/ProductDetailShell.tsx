@@ -6,8 +6,6 @@ import { Loader2 } from "lucide-react";
 import type { Product } from "@/types";
 import { useLanguageStore } from "@/store/language";
 import ProductDetailClient from "./ProductDetailClient";
-import DemoModeBanner from "@/components/ui/DemoModeBanner";
-import type { CatalogSource } from "@/lib/catalogLoader";
 import { cacheProduct, loadProductBySlug, peekCachedProduct } from "@/lib/catalogLoader";
 
 interface Props {
@@ -19,7 +17,6 @@ export default function ProductDetailShell({ slug, initialProduct }: Props) {
   const { lang } = useLanguageStore();
   const [product, setProduct] = useState<Product | null>(initialProduct);
   const [loading, setLoading] = useState(!initialProduct);
-  const [source, setSource] = useState<CatalogSource>(initialProduct ? "api" : "api");
 
   useEffect(() => {
     if (initialProduct) {
@@ -30,17 +27,13 @@ export default function ProductDetailShell({ slug, initialProduct }: Props) {
     peekCachedProduct(slug).then((cached) => {
       if (cached) {
         setProduct(cached);
-        setSource("cache");
         setLoading(false);
       }
     });
 
     loadProductBySlug(slug)
-      .then(({ product: p, source: s }) => {
-        if (p) {
-          setProduct(p);
-          setSource(s);
-        }
+      .then(({ product: p }) => {
+        if (p) setProduct(p);
       })
       .finally(() => setLoading(false));
   }, [slug, initialProduct]);
@@ -62,8 +55,8 @@ export default function ProductDetailShell({ slug, initialProduct }: Props) {
         </p>
         <p className="text-muted text-sm mb-6">
           {lang === "bn"
-            ? "অফলাইনে থাকলে আগে দেখা পণ্য ক্যাশ থেকে দেখানো হয়। ইন্টারনেট সংযোগ দিয়ে আবার চেষ্টা করুন।"
-            : "Offline mode shows previously viewed products from cache. Connect and retry."}
+            ? "পণ্যটি খুঁজে পাওয়া যায়নি। অনুগ্রহ করে আবার চেষ্টা করুন।"
+            : "This product could not be found. Please try again."}
         </p>
         <Link href="/products" className="btn btn-brand btn-md">
           {lang === "bn" ? "সব পণ্য দেখুন" : "Browse products"}
@@ -72,10 +65,5 @@ export default function ProductDetailShell({ slug, initialProduct }: Props) {
     );
   }
 
-  return (
-    <>
-      <DemoModeBanner show={source === "cache"} source={source} />
-      <ProductDetailClient product={product} />
-    </>
-  );
+  return <ProductDetailClient product={product} />;
 }

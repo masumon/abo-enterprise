@@ -14,6 +14,8 @@ const CustomerReviews = dynamic(() => import("@/components/home/CustomerReviews"
 const FAQ = dynamic(() => import("@/components/home/FAQ"), { loading: () => <SectionSkeleton /> });
 const LeadCapture = dynamic(() => import("@/components/home/LeadCapture"), { loading: () => <SectionSkeleton /> });
 const ContactSection = dynamic(() => import("@/components/home/ContactSection"), { loading: () => <SectionSkeleton /> });
+const Portfolio = dynamic(() => import("@/components/home/Portfolio"), { loading: () => <SectionSkeleton /> });
+const ClientLogos = dynamic(() => import("@/components/home/ClientLogos"), { loading: () => <SectionSkeleton /> });
 
 export const metadata: Metadata = {
   title: getBrandFullTitle("bn"),
@@ -82,6 +84,8 @@ export default function HomePage() {
       <Stats />
       <ServicesOverview />
       <FeaturedProducts />
+      <Portfolio />
+      <ClientLogos />
       <WhyChooseUs />
       <CustomerReviews />
       <FAQ />
