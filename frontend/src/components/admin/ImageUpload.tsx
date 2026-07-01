@@ -52,12 +52,41 @@ export default function ImageUpload({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const validateImageDimensions = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith("image/")) {
+        resolve(true);
+      }
+      const img = new window.Image();
+      img.onload = () => {
+        const width = img.naturalWidth;
+        const height = img.naturalHeight;
+        if (width < 100 || height < 100) {
+          setError("Image must be at least 100×100 pixels");
+          resolve(false);
+        } else if (width > 5000 || height > 5000) {
+          setError("Image must not exceed 5000×5000 pixels");
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      };
+      img.onerror = () => resolve(true);
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
     setError(null);
     try {
+      const valid = await validateImageDimensions(file);
+      if (!valid) {
+        setUploading(false);
+        return;
+      }
       const r = await adminApi.uploadMedia(file, folder);
       const url = r.data.data?.url ?? "";
       if (url) onChange(url);

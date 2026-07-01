@@ -409,6 +409,12 @@ export const adminApi = {
 
   listAuditLogs: (params: { page?: number; per_page?: number } = {}) =>
     api.get<PaginatedResponse<{ id: string; action: string; entity_type: string; entity_id: string | null; created_at: string; admin_email?: string }>>("/api/v1/admin/audit-logs", { params }),
+
+  listMedia: (folder = "abo-enterprise/uploads") =>
+    api.get<ApiResponse<{ id: string; url: string; name: string; size: number; uploaded_at: string; type: "image" | "video" }[]>>("/api/v1/media/assets", { params: { folder } }),
+
+  saveSettings: (items: { key: string; value: string; data_type?: string }[]) =>
+    api.post<ApiResponse<{ key: string; value: string }[]>>("/api/v1/settings/upsert", items),
 };
 
 export interface EmailTemplateRecord {
