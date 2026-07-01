@@ -20,6 +20,7 @@ import DelayedMount from "@/components/ui/DelayedMount";
 import FacebookPixel from "@/components/analytics/FacebookPixel";
 import ScrollProgress from "@/components/ui/ScrollProgress";
 import HtmlLangSync from "@/components/ui/HtmlLangSync";
+import DynamicFavicon from "@/components/ui/DynamicFavicon";
 import { offlineSync } from "@/lib/offlineSync";
 
 export default function PublicShell({ children }: { children: React.ReactNode }) {
@@ -37,6 +38,7 @@ export default function PublicShell({ children }: { children: React.ReactNode })
   return (
     <>
       <HtmlLangSync />
+      <DynamicFavicon />
       <ScrollProgress />
       <SkipToContent />
       <AnnouncementBar />
