@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.nagad import get_nagad_gateway
 from app.core.sslcommerz import get_sslcommerz_gateway
+from app.core.invoice import InvoiceService
 from app.models.models import BkashTransaction, NagadTransaction, Order
 from app.schemas.schemas import (
     PaymentInitiateRequest,
@@ -116,6 +117,7 @@ async def verify_bkash_payment(
                 order.payment_status = "completed"
                 if order.order_status == "pending":
                     order.order_status = "confirmed"
+                await InvoiceService(db).mark_order_invoice_paid(order.id)
                 await db.commit()
 
         order_result = await db.execute(
@@ -219,6 +221,7 @@ async def verify_nagad_payment(
                 order.payment_status = "completed"
                 if order.order_status == "pending":
                     order.order_status = "confirmed"
+                await InvoiceService(db).mark_order_invoice_paid(order.id)
                 await db.commit()
 
         order_result = await db.execute(

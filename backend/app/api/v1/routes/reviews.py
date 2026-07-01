@@ -57,7 +57,9 @@ async def list_reviews(
 
 @router.post("", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
 async def create_review(payload: ReviewCreate, db: AsyncSession = Depends(get_db)):
-    review = Review(**payload.model_dump())
+    data = payload.model_dump()
+    data["is_active"] = False  # Public submissions require admin approval
+    review = Review(**data)
     db.add(review)
     await db.flush()
     await db.refresh(review)
