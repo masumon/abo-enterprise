@@ -248,64 +248,22 @@ async def _seed_placeholder_settings(db) -> None:
         await _ensure_setting_if_empty(db, key=key, value=value, data_type=data_type, description=description)
 
 
-async def _backfill_entity_images(db) -> None:
-    """Fill missing image fields on seeded entities — never overwrites admin uploads."""
-    products = (await db.execute(
-        select(Product).where(
-            Product.is_deleted == False,  # noqa: E712
-            or_(Product.image_url.is_(None), Product.image_url == ""),
-        )
-    )).scalars().all()
-    for product in products:
-        label = PRODUCT_IMAGE_MAP.get(product.slug, product.name_en)
-        product.image_url = product_image(label)
-        product.images = [product_gallery(label, 1), product_gallery(label, 2)]
-        product.og_image = og_image(label)
-
-    services = (await db.execute(
-        select(Service).where(
-            Service.is_deleted == False,  # noqa: E712
-            or_(Service.featured_image_url.is_(None), Service.featured_image_url == ""),
-        )
-    )).scalars().all()
-    for service in services:
-        featured_label, icon_label = SERVICE_IMAGE_MAP.get(
-            service.slug, (service.name_en, service.name_en)
-        )
-        service.featured_image_url = service_featured(featured_label)
-        service.icon_url = service_icon(icon_label)
-        service.og_image = og_image(featured_label)
-
-    blogs = (await db.execute(
-        select(BlogPost).where(
-            BlogPost.is_deleted == False,  # noqa: E712
-            or_(BlogPost.featured_image_url.is_(None), BlogPost.featured_image_url == ""),
-        )
-    )).scalars().all()
-    for post in blogs:
-        label = BLOG_IMAGE_MAP.get(post.slug, post.title_en[:40])
-        post.featured_image_url = blog_featured(label)
-        post.og_image = og_image(label)
-
-    review_rows = (await db.execute(
-        select(Review).where(or_(Review.photo_url.is_(None), Review.photo_url == ""))
-    )).scalars().all()
-    for review in review_rows:
-        label = REVIEW_PHOTO_MAP.get(review.customer_name, review.customer_name)
-        review.photo_url = review_avatar(label)
+def _needs_demo(url: str | None) -> bool:
+    if url is None:
+        return True
+    s = str(url).strip()
+    return not s or "placehold.co" in s
 
 
-async def _upgrade_placehold_images(db) -> None:
-    """Replace placehold.co demo URLs with real Unsplash photos. Skips admin uploads."""
-    marker = "placehold.co"
-
+async def _ensure_demo_images(db) -> None:
+    """Ensure every image slot has a real demo photo. Skips custom admin uploads."""
     for item in banner_settings():
         row = (
             await db.execute(
                 select(Setting).where(Setting.key == item["key"], Setting.is_deleted == False)  # noqa: E712
             )
         ).scalar_one_or_none()
-        if row and marker in (row.value or ""):
+        if row and _needs_demo(row.value):
             row.value = item["value"]
 
     json_builders = [
@@ -323,42 +281,40 @@ async def _upgrade_placehold_images(db) -> None:
                 select(Setting).where(Setting.key == key, Setting.is_deleted == False)  # noqa: E712
             )
         ).scalar_one_or_none()
-        if row and marker in (row.value or ""):
+        if row and (_needs_demo(row.value) or "placehold.co" in (row.value or "")):
             row.value = builder()
 
     products = (await db.execute(select(Product).where(Product.is_deleted == False))).scalars().all()  # noqa: E712
     for product in products:
-        if marker in (product.image_url or ""):
-            label = PRODUCT_IMAGE_MAP.get(product.slug, product.name_en)
+        label = PRODUCT_IMAGE_MAP.get(product.slug, product.name_en)
+        if _needs_demo(product.image_url):
             product.image_url = product_image(label)
-        if product.images and any(marker in (u or "") for u in product.images):
-            label = PRODUCT_IMAGE_MAP.get(product.slug, product.name_en)
+        if not product.images or any(_needs_demo(u) for u in product.images):
             product.images = [product_gallery(label, 1), product_gallery(label, 2)]
-        if marker in (product.og_image or ""):
-            label = PRODUCT_IMAGE_MAP.get(product.slug, product.name_en)
+        if _needs_demo(product.og_image):
             product.og_image = og_image(label)
 
     services = (await db.execute(select(Service).where(Service.is_deleted == False))).scalars().all()  # noqa: E712
     for service in services:
         featured_label, icon_label = SERVICE_IMAGE_MAP.get(service.slug, (service.name_en, service.name_en))
-        if marker in (service.featured_image_url or ""):
+        if _needs_demo(service.featured_image_url):
             service.featured_image_url = service_featured(featured_label)
-        if marker in (service.icon_url or ""):
+        if _needs_demo(service.icon_url):
             service.icon_url = service_icon(icon_label)
-        if marker in (service.og_image or ""):
+        if _needs_demo(service.og_image):
             service.og_image = og_image(featured_label)
 
     blogs = (await db.execute(select(BlogPost).where(BlogPost.is_deleted == False))).scalars().all()  # noqa: E712
     for post in blogs:
         label = BLOG_IMAGE_MAP.get(post.slug, post.title_en[:40])
-        if marker in (post.featured_image_url or ""):
+        if _needs_demo(post.featured_image_url):
             post.featured_image_url = blog_featured(label)
-        if marker in (post.og_image or ""):
+        if _needs_demo(post.og_image):
             post.og_image = og_image(label)
 
     reviews = (await db.execute(select(Review))).scalars().all()
     for review in reviews:
-        if marker in (review.photo_url or ""):
+        if _needs_demo(review.photo_url):
             label = REVIEW_PHOTO_MAP.get(review.customer_name, review.customer_name)
             review.photo_url = review_avatar(label)
 
@@ -371,7 +327,6 @@ async def bootstrap_content() -> None:
                 await _ensure_setting(db, **item)
 
             await _seed_placeholder_settings(db)
-            await _upgrade_placehold_images(db)
 
             product_count = (await db.execute(
                 select(func.count(Product.id)).where(Product.is_deleted == False)  # noqa: E712
@@ -454,7 +409,7 @@ async def bootstrap_content() -> None:
                     ))
                 logger.info("Content bootstrap: seeded %d blog posts", len(BLOG_SEED))
 
-            await _backfill_entity_images(db)
+            await _ensure_demo_images(db)
 
             pm_count = (await db.execute(select(func.count(PaymentMethod.id)))).scalar() or 0
             if pm_count == 0:

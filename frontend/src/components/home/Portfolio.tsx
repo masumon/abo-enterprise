@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useShowcaseContent } from "@/hooks/useShowcaseContent";
 import GlassCard from "@/components/ui/GlassCard";
+import { resolveProjectImage } from "@/lib/demoImages";
 
 export default function Portfolio() {
   const { lang } = useLanguageStore();
@@ -27,9 +28,7 @@ export default function Portfolio() {
             <Link key={p.slug} href={`/projects/${p.slug}`}>
               <GlassCard hover className="overflow-hidden h-full">
                 <div className="relative h-44 aspect-video bg-gradient-to-br from-brand-50 to-brand-100">
-                  {p.image ? (
-                    <Image src={p.image} alt={t(p.title)} fill className="object-cover" sizes="(max-width:768px) 100vw, 33vw" />
-                  ) : null}
+                  <Image src={resolveProjectImage(p.image)} alt={t(p.title)} fill className="object-cover" sizes="(max-width:768px) 100vw, 33vw" />
                 </div>
                 <div className="p-5">
                   <span className="text-xs text-brand-600 font-semibold">{t(p.category)}</span>

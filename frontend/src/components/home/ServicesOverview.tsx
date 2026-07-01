@@ -9,6 +9,7 @@ import GlassCard from "@/components/ui/GlassCard";
 import { servicesApi } from "@/lib/api";
 import type { Service } from "@/types";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
+import { resolveServiceImage } from "@/lib/demoImages";
 
 function serviceHref(slug: string): string {
   if (slug === "software") return "/services/software";
@@ -55,20 +56,19 @@ export default function ServicesOverview() {
                 (lang === "bn" ? service.short_description_bn : null) ||
                 service.short_description_en ||
                 service.description_en;
+              const imageSrc = resolveServiceImage(service.featured_image_url, service.slug);
               return (
                 <Link key={service.id ?? service.slug} href={serviceHref(service.slug)} className="group">
                   <GlassCard hover className="overflow-hidden h-full">
-                    {service.featured_image_url && (
-                      <div className="relative h-36 bg-gray-100">
-                        <Image
-                          src={service.featured_image_url}
+                    <div className="relative h-36 bg-gray-100">
+                      <Image
+                        src={imageSrc}
                           alt={name}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          sizes="(max-width:768px) 100vw, 33vw"
-                        />
-                      </div>
-                    )}
+                        sizes="(max-width:768px) 100vw, 33vw"
+                      />
+                    </div>
                     <div className="p-5">
                       {service.category && (
                         <span className="inline-block px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-600 bg-brand-50 rounded-full mb-2">

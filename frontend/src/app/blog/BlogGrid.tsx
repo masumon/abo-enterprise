@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { BlogPost } from "@/types";
 import { useLanguageStore } from "@/store/language";
+import { resolveBlogImage } from "@/lib/demoImages";
 
 interface Props {
   posts: BlogPost[];
@@ -48,23 +49,15 @@ export default function BlogGrid({ posts, page, totalPages }: Props) {
               href={`/blog/${post.slug}`}
               className="group flex flex-col enterprise-card overflow-hidden shadow-sm hover:shadow-md hover:border-brand-200 dark:hover:border-brand-500/30 transition-all"
             >
-              {post.featured_image_url ? (
-                <div className="relative aspect-video overflow-hidden bg-gray-100">
-                  <Image
-                    src={post.featured_image_url}
-                    alt={title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                  />
-                </div>
-              ) : (
-                <div className="aspect-video bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center">
-                  <span className="text-4xl text-brand-200 font-bold select-none">
-                    {title.charAt(0)}
-                  </span>
-                </div>
-              )}
+              <div className="relative aspect-video overflow-hidden bg-gray-100">
+                <Image
+                  src={resolveBlogImage(post.featured_image_url)}
+                  alt={title}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+              </div>
               <div className="flex flex-col flex-1 p-5">
                 {post.category && (
                   <span className="text-xs font-semibold text-brand-600 uppercase tracking-wide mb-2">
