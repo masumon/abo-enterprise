@@ -7,6 +7,7 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
 import { ordersApi, downloadCsv, downloadPdf } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/apiError";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice, buildCustomerWhatsAppLink } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
@@ -26,6 +27,7 @@ const COURIERS = ["pathao", "steadfast", "redx", "other"];
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -54,6 +56,10 @@ export default function AdminOrdersPage() {
       const r = await ordersApi.list({ order_status: filter || undefined, search: search || undefined, page });
       setOrders((r.data.data ?? []) as unknown as AdminOrder[]);
       setTotal(r.data.meta?.total ?? 0);
+      setLoadError(null);
+    } catch (err) {
+      setLoadError(apiErrorMessage(err, "Failed to load orders. Please retry."));
+      console.error("Orders load error:", err);
     } finally {
       setLoading(false);
     }
@@ -275,6 +281,11 @@ export default function AdminOrdersPage() {
       <div className="admin-card overflow-hidden">
         {loading ? (
           <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
+        ) : loadError ? (
+          <div className="p-12 flex flex-col items-center gap-3 text-center">
+            <p className="text-sm text-red-600 font-medium">অর্ডার লোড করা যায়নি — {loadError}</p>
+            <button onClick={load} className="btn btn-outline btn-sm">Retry / আবার চেষ্টা করুন</button>
+          </div>
         ) : orders.length === 0 ? (
           <AdminEmptyState
             icon={ShoppingCart}

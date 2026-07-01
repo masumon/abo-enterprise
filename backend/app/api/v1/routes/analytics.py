@@ -1,9 +1,8 @@
-import asyncio
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy import cast, Date, func, select, text
+from sqlalchemy import cast, Date, func, or_, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -21,26 +20,27 @@ async def get_analytics_overview(
 ):
     since = datetime.now(timezone.utc) - timedelta(days=days)
 
-    order_rev, booking_rev, new_orders, new_bookings, new_leads, won_leads = await asyncio.gather(
-        db.scalar(select(func.sum(Order.total)).where(
-            Order.created_at >= since,
-            Order.payment_status == "completed",
-            Order.is_deleted == False,  # noqa: E712
-        )),
-        db.scalar(select(func.sum(BookingV2.final_price)).where(
-            BookingV2.created_at >= since,
-            BookingV2.payment_status == "completed",
-            BookingV2.is_deleted == False,  # noqa: E712
-        )),
-        db.scalar(select(func.count(Order.id)).where(Order.created_at >= since, Order.is_deleted == False)),  # noqa: E712
-        db.scalar(select(func.count(BookingV2.id)).where(BookingV2.created_at >= since, BookingV2.is_deleted == False)),  # noqa: E712
-        db.scalar(select(func.count(LeadV2.id)).where(LeadV2.created_at >= since, LeadV2.is_deleted == False)),  # noqa: E712
-        db.scalar(select(func.count(LeadV2.id)).where(
-            LeadV2.created_at >= since,
-            LeadV2.status == "won",
-            LeadV2.is_deleted == False,  # noqa: E712
-        )),
-    )
+    # Sequential awaits: a single AsyncSession must not run concurrent queries
+    # (asyncio.gather on one session raises "concurrent operations are not permitted").
+    order_rev = await db.scalar(select(func.sum(Order.total)).where(
+        Order.created_at >= since,
+        # COD orders never reach payment_status="completed"; count delivered ones too.
+        or_(Order.payment_status == "completed", Order.order_status == "delivered"),
+        Order.is_deleted == False,  # noqa: E712
+    ))
+    booking_rev = await db.scalar(select(func.sum(BookingV2.final_price)).where(
+        BookingV2.created_at >= since,
+        BookingV2.payment_status == "completed",
+        BookingV2.is_deleted == False,  # noqa: E712
+    ))
+    new_orders = await db.scalar(select(func.count(Order.id)).where(Order.created_at >= since, Order.is_deleted == False))  # noqa: E712
+    new_bookings = await db.scalar(select(func.count(BookingV2.id)).where(BookingV2.created_at >= since, BookingV2.is_deleted == False))  # noqa: E712
+    new_leads = await db.scalar(select(func.count(LeadV2.id)).where(LeadV2.created_at >= since, LeadV2.is_deleted == False))  # noqa: E712
+    won_leads = await db.scalar(select(func.count(LeadV2.id)).where(
+        LeadV2.created_at >= since,
+        LeadV2.status == "won",
+        LeadV2.is_deleted == False,  # noqa: E712
+    ))
 
     order_rev = order_rev or 0
     booking_rev = booking_rev or 0
@@ -91,27 +91,25 @@ async def get_revenue_chart(
 ):
     since = datetime.now(timezone.utc) - timedelta(days=days)
 
-    order_result, booking_result = await asyncio.gather(
-        db.execute(
-            select(
-                cast(Order.created_at, Date).label("day"),
-                func.sum(Order.total).label("revenue"),
-            ).where(
-                Order.created_at >= since,
-                Order.payment_status == "completed",
-                Order.is_deleted == False,  # noqa: E712
-            ).group_by(cast(Order.created_at, Date))
-        ),
-        db.execute(
-            select(
-                cast(BookingV2.created_at, Date).label("day"),
-                func.sum(BookingV2.final_price).label("revenue"),
-            ).where(
-                BookingV2.created_at >= since,
-                BookingV2.payment_status == "completed",
-                BookingV2.is_deleted == False,  # noqa: E712
-            ).group_by(cast(BookingV2.created_at, Date))
-        ),
+    order_result = await db.execute(
+        select(
+            cast(Order.created_at, Date).label("day"),
+            func.sum(Order.total).label("revenue"),
+        ).where(
+            Order.created_at >= since,
+            or_(Order.payment_status == "completed", Order.order_status == "delivered"),
+            Order.is_deleted == False,  # noqa: E712
+        ).group_by(cast(Order.created_at, Date))
+    )
+    booking_result = await db.execute(
+        select(
+            cast(BookingV2.created_at, Date).label("day"),
+            func.sum(BookingV2.final_price).label("revenue"),
+        ).where(
+            BookingV2.created_at >= since,
+            BookingV2.payment_status == "completed",
+            BookingV2.is_deleted == False,  # noqa: E712
+        ).group_by(cast(BookingV2.created_at, Date))
     )
     order_rows = order_result.all()
     booking_rows = booking_result.all()
@@ -143,15 +141,15 @@ async def get_lead_funnel(
     since = datetime.now(timezone.utc) - timedelta(days=days)
     statuses = ["new", "contacted", "qualified", "proposal_sent", "negotiation", "won", "lost"]
 
-    counts = await asyncio.gather(*[
-        db.scalar(select(func.count(LeadV2.id)).where(
+    rows = (await db.execute(
+        select(LeadV2.status, func.count(LeadV2.id)).where(
             LeadV2.created_at >= since,
-            LeadV2.status == status,
+            LeadV2.status.in_(statuses),
             LeadV2.is_deleted == False,  # noqa: E712
-        ))
-        for status in statuses
-    ])
-    funnel = dict(zip(statuses, counts))
+        ).group_by(LeadV2.status)
+    )).all()
+    by_status = dict(rows)
+    funnel = {status: by_status.get(status, 0) for status in statuses}
 
     return {"success": True, "data": funnel}
 

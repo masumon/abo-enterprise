@@ -216,8 +216,16 @@ class BulkOrderStatusUpdate(BaseModel):
     status: str
 
 
-class OrderItemOut(OrderItemCreate):
+class OrderItemOut(BaseModel):
+    # Standalone (not inheriting OrderItemCreate): DB rows have product_id as
+    # UUID | None, which fails OrderItemCreate's required `product_id: str`.
     id: uuid.UUID
+    product_id: uuid.UUID | None = None
+    product_name: str
+    product_price: float
+    quantity: int
+    subtotal: float
+
     model_config = {"from_attributes": True}
 
 
@@ -266,9 +274,18 @@ class BookingStatusUpdate(BaseModel):
     status: str
 
 
-class BookingOut(BookingCreate):
+class BookingOut(BaseModel):
+    # Standalone (not inheriting BookingCreate): output must not re-run input
+    # validators like bd_phone, or one legacy row breaks the whole list.
     id: uuid.UUID
     booking_number: str
+    service_type: str
+    service_subtype: str | None = None
+    customer_name: str
+    customer_phone: str
+    customer_email: str | None = None
+    details: str | None = None
+    estimated_price: str | None = None
     status: str
     created_at: datetime
 
@@ -298,8 +315,19 @@ class LeadStatusUpdate(BaseModel):
     status: str
 
 
-class LeadOut(LeadCreate):
+class LeadOut(BaseModel):
+    # Standalone (not inheriting LeadCreate): output must not re-run input
+    # validators like bd_phone, or one legacy row breaks the whole list.
     id: uuid.UUID
+    source: str
+    lead_type: str
+    name: str
+    company: str | None = None
+    phone: str
+    email: str | None = None
+    budget_range: str | None = None
+    project_description: str | None = None
+    requirements: str | None = None
     status: str
     created_at: datetime
 

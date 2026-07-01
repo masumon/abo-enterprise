@@ -54,10 +54,13 @@ export default function AdminLeadsPage() {
       const r = await leadsApi.list({ lead_type: typeFilter || undefined, status: statusFilter || undefined, search: search || undefined, page });
       setLeads((r.data.data ?? []) as unknown as AdminLead[]);
       setTotal(r.data.meta?.total ?? 0);
+    } catch (err) {
+      toast("error", "Failed to load leads");
+      console.error("Leads load error:", err);
     } finally {
       setLoading(false);
     }
-  }, [typeFilter, statusFilter, search, page]);
+  }, [typeFilter, statusFilter, search, page, toast]);
 
   const loadV2 = useCallback(async () => {
     setLoadingV2(true);
@@ -65,10 +68,13 @@ export default function AdminLeadsPage() {
       const r = await serviceLeadsAdminApi.list({ status: statusFilterV2 || undefined, lead_type: typeFilterV2 || undefined, page: pageV2 });
       setLeadsV2(r.data.data ?? []);
       setTotalV2(r.data.meta?.total ?? 0);
+    } catch (err) {
+      toast("error", "Failed to load service leads");
+      console.error("Service leads load error:", err);
     } finally {
       setLoadingV2(false);
     }
-  }, [statusFilterV2, typeFilterV2, pageV2]);
+  }, [statusFilterV2, typeFilterV2, pageV2, toast]);
 
   useEffect(() => { if (tab === "v1") load(); }, [load, tab]);
   useEffect(() => { if (tab === "v2") loadV2(); }, [loadV2, tab]);
