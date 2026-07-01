@@ -54,8 +54,8 @@ export const productsApi = {
   adminList: (params?: { category?: string; search?: string; is_active?: boolean; page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<Product>>("/api/v1/products/admin", { params }),
 
-  get: (slug: string) =>
-    api.get<ApiResponse<Product>>(`/api/v1/products/${slug}`),
+  get: (slug: string, opts?: { timeout?: number; maxRetries?: number }) =>
+    api.get<ApiResponse<Product>>(`/api/v1/products/${slug}`, opts),
 
   related: (slug: string) =>
     api.get<ApiResponse<Product[]>>(`/api/v1/products/${slug}/related`),
@@ -212,7 +212,7 @@ export const authApi = {
 };
 
 export const servicesApi = {
-  list: (params?: { category?: string; featured?: boolean; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
+  list: (params?: { category?: string; featured?: boolean; search?: string; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
     api.get<PaginatedResponse<Service>>("/api/v1/services", { params, ...opts }),
 
   getBySlug: (slug: string) =>

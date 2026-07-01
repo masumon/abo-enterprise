@@ -2,6 +2,7 @@ import { productsApi, servicesApi } from "@/lib/api";
 import {
   cacheApiResponse,
   getCachedApiResponse,
+  productCacheKey,
   productsCacheKey,
   servicesCacheKey,
 } from "@/lib/apiCache";
@@ -40,6 +41,7 @@ interface ProductLoadParams {
 
 interface ServiceLoadParams {
   category?: string;
+  search?: string;
   page?: number;
   per_page?: number;
 }
@@ -164,4 +166,38 @@ export async function peekCachedServices(
   );
   if (!cached?.services?.length) return null;
   return { services: cached.services, total: cached.total, source: "cache" };
+}
+
+/** Cache a single product when viewed (for offline product detail). */
+export async function cacheProduct(product: Product): Promise<void> {
+  if (!product?.slug) return;
+  await cacheApiResponse(productCacheKey(product.slug), product, 7 * 24 * 60);
+}
+
+/** Peek a cached product by slug. */
+export async function peekCachedProduct(slug: string): Promise<Product | null> {
+  return getCachedApiResponse<Product>(productCacheKey(slug));
+}
+
+/** Load product by slug — cache on success, serve cache when offline or API fails. */
+export async function loadProductBySlug(slug: string): Promise<{ product: Product | null; source: CatalogSource }> {
+  const cached = await peekCachedProduct(slug);
+
+  if (isOffline()) {
+    return { product: cached, source: cached ? "cache" : "api" };
+  }
+
+  const mobileOpts = isConstrainedNetwork() ? MOBILE_CATALOG_OPTS : undefined;
+
+  try {
+    const r = await productsApi.get(slug, mobileOpts);
+    const product = r.data.data ?? null;
+    if (product) {
+      await cacheProduct(product);
+      return { product, source: "api" };
+    }
+    return { product: cached, source: cached ? "cache" : "api" };
+  } catch {
+    return { product: cached, source: cached ? "cache" : "api" };
+  }
 }

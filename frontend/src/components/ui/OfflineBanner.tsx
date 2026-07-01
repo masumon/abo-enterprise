@@ -51,8 +51,8 @@ export default function OfflineBanner() {
     >
       {isOffline ? <WifiOff className="w-4 h-4" /> : <SignalLow className="w-4 h-4" />}
       {isOffline
-        ? (lang === "bn" ? "আপনি অফলাইনে আছেন — সংরক্ষিত কন্টেন্ট দেখানো হচ্ছে" : "You are offline — showing saved content")
-        : (lang === "bn" ? "মোবাইল নেটওয়ার্ক — সংরক্ষিত কন্টেন্ট দেখানো হচ্ছে" : "Mobile network — showing saved content")}
+        ? (lang === "bn" ? "আপনি অফলাইনে আছেন — ক্যাশ থেকে দেখানো হচ্ছে" : "You are offline — showing from cache")
+        : (lang === "bn" ? "ধীর নেটওয়ার্ক — ক্যাশ থেকে দেখানো হচ্ছে" : "Slow network — showing from cache")}
       {isOffline && (
         <button type="button" onClick={sync} disabled={syncing} className="ml-2 underline flex items-center gap-1">
           <RefreshCw className={cn("w-3 h-3", syncing && "animate-spin")} />

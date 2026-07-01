@@ -13,7 +13,6 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
 import type { CatalogSource } from "@/lib/catalogLoader";
 import { loadProducts, peekCachedProducts } from "@/lib/catalogLoader";
-import { isConstrainedNetwork } from "@/lib/networkStatus";
 
 export default function FeaturedProducts() {
   const { lang } = useLanguageStore();
@@ -28,16 +27,14 @@ export default function FeaturedProducts() {
   useEffect(() => {
     const params = { featured: true, per_page: 8 };
 
-    if (isConstrainedNetwork()) {
-      peekCachedProducts(params).then((cached) => {
-        if (cached) {
-          setProducts(cached.products);
-          setUsingDemo(cached.source === "demo");
-          setCatalogSource(cached.source);
-          setLoading(false);
-        }
-      });
-    }
+    peekCachedProducts(params).then((cached) => {
+      if (cached) {
+        setProducts(cached.products);
+        setUsingDemo(cached.source === "demo");
+        setCatalogSource(cached.source);
+        setLoading(false);
+      }
+    });
 
     loadProducts(params)
       .then(async (result) => {
@@ -56,7 +53,17 @@ export default function FeaturedProducts() {
           setError(false);
         }
       })
-      .catch(() => setError(true))
+      .catch(async () => {
+        const cached = await peekCachedProducts(params);
+        if (cached) {
+          setProducts(cached.products);
+          setUsingDemo(cached.source === "demo");
+          setCatalogSource(cached.source);
+          setError(false);
+        } else {
+          setError(true);
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 

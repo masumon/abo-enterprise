@@ -4,7 +4,8 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search, Package, Calendar, Briefcase } from "lucide-react";
-import api from "@/lib/api";
+import { loadProducts, loadServices, peekCachedProducts, peekCachedServices } from "@/lib/catalogLoader";
+import type { Product, Service } from "@/types";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
@@ -32,42 +33,63 @@ function resolveServiceHref(slug: string, category?: string): string {
   return `/services/${slug}`;
 }
 
+function toResults(products: Product[], services: Service[], lang: string): Result[] {
+  const items: Result[] = [];
+  products.forEach((p) => items.push({
+    type: "product",
+    id: p.id ?? p.slug,
+    title: lang === "bn" && p.name_bn ? p.name_bn : p.name_en,
+    subtitle: `৳${p.price?.toLocaleString("bn-BD") ?? "—"}`,
+    href: `/products/${p.slug}`,
+    price: p.price,
+  }));
+  services.forEach((s) => items.push({
+    type: "service",
+    id: s.id,
+    title: lang === "bn" && s.name_bn ? s.name_bn : s.name_en,
+    subtitle: s.category ?? "",
+    href: resolveServiceHref(s.slug, s.category),
+  }));
+  return items;
+}
+
 function SearchResults() {
   const params = useSearchParams();
   const { lang } = useLanguageStore();
   const q = params.get("q") || "";
   const [results, setResults] = useState<Result[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fromCache, setFromCache] = useState(false);
 
   useEffect(() => {
     if (!q.trim()) return;
     setLoading(true);
+    setFromCache(false);
+
+    const searchParams = { search: q, per_page: 6 };
+
+    Promise.all([
+      peekCachedProducts(searchParams),
+      peekCachedServices(searchParams),
+    ]).then(([prodCache, svcCache]) => {
+      if (prodCache || svcCache) {
+        setResults(toResults(prodCache?.products ?? [], svcCache?.services ?? [], lang));
+        setFromCache(true);
+        setLoading(false);
+      }
+    });
 
     Promise.allSettled([
-      api.get(`/api/v1/products`, { params: { search: q, per_page: 6 } }),
-      api.get(`/api/v1/services`, { params: { search: q, per_page: 6 } }),
+      loadProducts(searchParams),
+      loadServices(searchParams),
     ]).then(([prod, svc]) => {
-      const items: Result[] = [];
-      if (prod.status === "fulfilled") {
-        (prod.value.data.data || []).forEach((p: { id: string; slug: string; name_en: string; name_bn?: string; price?: number }) => items.push({
-          type: "product",
-          id: p.id,
-          title: lang === "bn" && p.name_bn ? p.name_bn : p.name_en,
-          subtitle: `৳${p.price?.toLocaleString("bn-BD") ?? "—"}`,
-          href: `/products/${p.slug}`,
-          price: p.price,
-        }));
-      }
-      if (svc.status === "fulfilled") {
-        (svc.value.data.data || []).forEach((s: { id: string; slug: string; name_en: string; name_bn?: string; category?: string }) => items.push({
-          type: "service",
-          id: s.id,
-          title: lang === "bn" && s.name_bn ? s.name_bn : s.name_en,
-          subtitle: s.category ?? "",
-          href: resolveServiceHref(s.slug, s.category),
-        }));
-      }
-      setResults(items);
+      const products = prod.status === "fulfilled" ? prod.value.products : [];
+      const services = svc.status === "fulfilled" ? svc.value.services : [];
+      setResults(toResults(products, services, lang));
+      setFromCache(
+        (prod.status === "fulfilled" && prod.value.source === "cache") ||
+        (svc.status === "fulfilled" && svc.value.source === "cache")
+      );
       setLoading(false);
     });
   }, [q, lang]);
@@ -92,6 +114,11 @@ function SearchResults() {
         variant="light"
       />
       <div className="container mx-auto px-4 py-10 max-w-3xl">
+        {fromCache && results.length > 0 && (
+          <p className="text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 mb-4" role="status">
+            {lang === "bn" ? "সংরক্ষিত ফলাফল দেখানো হচ্ছে" : "Showing saved results"}
+          </p>
+        )}
         {loading ? (
           <div className="grid gap-4" aria-busy="true">
             {[1, 2, 3].map((i) => <ProductCardSkeleton key={i} />)}

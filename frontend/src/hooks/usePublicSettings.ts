@@ -2,38 +2,73 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { setDemoSettings } from "@/lib/demoFallback";
+import { cacheApiResponse, getCachedApiResponse, SETTINGS_CACHE_KEY } from "@/lib/apiCache";
+import { isOffline } from "@/lib/networkStatus";
 
-let cache: Record<string, string> | null = null;
+let memoryCache: Record<string, string> | null = null;
 let pending: Promise<Record<string, string>> | null = null;
 
+async function loadCachedSettings(): Promise<Record<string, string> | null> {
+  return getCachedApiResponse<Record<string, string>>(SETTINGS_CACHE_KEY);
+}
+
 async function fetchSettings(): Promise<Record<string, string>> {
-  if (cache) return cache;
+  if (memoryCache) return memoryCache;
+
+  const cached = await loadCachedSettings();
+  if (cached && Object.keys(cached).length > 0) {
+    memoryCache = cached;
+    setDemoSettings(cached);
+    if (isOffline()) return cached;
+  }
+
   if (pending) return pending;
+
   pending = axios
-    .get<{ data: Record<string, string> }>(`${getApiBaseUrl()}/api/v1/settings`, { timeout: 60000 })
-    .then((r) => {
-      cache = r.data.data ?? {};
-      setDemoSettings(cache);
-      return cache;
+    .get<{ data: Record<string, string> }>(`${getApiBaseUrl()}/api/v1/settings`, {
+      timeout: isOffline() ? 5000 : 60000,
     })
-    .catch(() => {
-      cache = {};
-      setDemoSettings(cache);
-      return cache;
+    .then(async (r) => {
+      memoryCache = r.data.data ?? {};
+      setDemoSettings(memoryCache);
+      await cacheApiResponse(SETTINGS_CACHE_KEY, memoryCache, 7 * 24 * 60);
+      return memoryCache;
+    })
+    .catch(async () => {
+      if (cached && Object.keys(cached).length > 0) return cached;
+      memoryCache = {};
+      setDemoSettings(memoryCache);
+      return memoryCache;
     })
     .finally(() => {
       pending = null;
     });
+
   return pending;
 }
 
-/** Fetch public CMS settings (cached). Safe for client components. */
+/** Fetch public CMS settings (memory + IndexedDB cache). Safe for client components. */
 export function usePublicSettings(keys?: string[]) {
-  const [settings, setSettings] = useState<Record<string, string>>(cache ?? {});
-  const [loading, setLoading] = useState(!cache);
+  const [settings, setSettings] = useState<Record<string, string>>(memoryCache ?? {});
+  const [loading, setLoading] = useState(!memoryCache);
 
   useEffect(() => {
     let active = true;
+
+    loadCachedSettings().then((cached) => {
+      if (!active || !cached || Object.keys(cached).length === 0) return;
+      memoryCache = cached;
+      setDemoSettings(cached);
+      if (keys?.length) {
+        const subset: Record<string, string> = {};
+        for (const k of keys) subset[k] = cached[k] ?? "";
+        setSettings(subset);
+      } else {
+        setSettings(cached);
+      }
+      setLoading(false);
+    });
+
     fetchSettings().then((data) => {
       if (!active) return;
       if (keys?.length) {
@@ -45,6 +80,7 @@ export function usePublicSettings(keys?: string[]) {
       }
       setLoading(false);
     });
+
     return () => { active = false; };
   }, [keys?.join(",")]);
 

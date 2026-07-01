@@ -71,6 +71,6 @@ export function getDemoNotice(lang: "en" | "bn"): string | null {
 
 export function getCachedNotice(lang: "en" | "bn"): string {
   return lang === "bn"
-    ? "সংরক্ষিত ক্যাটালগ দেখানো হচ্ছে — সর্বশেষ দামের জন্য ইন্টারনেটে সংযুক্ত হোন।"
-    : "Showing saved catalog — connect to the internet for latest prices.";
+    ? "ক্যাশ থেকে দেখানো হচ্ছে — সর্বশেষ তথ্যের জন্য ইন্টারনেটে সংযুক্ত হোন।"
+    : "Showing from cache — connect to the internet for latest info.";
 }

@@ -17,7 +17,6 @@ import DemoModeBanner from "@/components/ui/DemoModeBanner";
 import type { CatalogSource } from "@/lib/catalogLoader";
 import { loadServices, peekCachedServices } from "@/lib/catalogLoader";
 import { cacheApiResponse, servicesCacheKey } from "@/lib/apiCache";
-import { isConstrainedNetwork } from "@/lib/networkStatus";
 import { getDemoServices } from "@/lib/demoFallback";
 
 const FEATURED = [
@@ -94,7 +93,7 @@ export default function ServicesPageClient({
 
     const params = { category: cat || undefined, page: pageNum, per_page: 12 };
 
-    if (pageNum === 1 && isConstrainedNetwork()) {
+    if (pageNum === 1) {
       const cached = await peekCachedServices(params);
       if (cached) {
         setServices(cached.services);
@@ -113,9 +112,18 @@ export default function ServicesPageClient({
       setCatalogSource(result.source);
       setPage(pageNum);
     } catch {
-      setError(true);
-      setUsingDemo(false);
-      setCatalogSource("api");
+      const cached = await peekCachedServices(params);
+      if (cached) {
+        setServices(cached.services);
+        setTotal(cached.total);
+        setUsingDemo(cached.source === "demo");
+        setCatalogSource(cached.source);
+        setError(false);
+      } else {
+        setError(true);
+        setUsingDemo(false);
+        setCatalogSource("api");
+      }
     } finally {
       setLoading(false);
     }

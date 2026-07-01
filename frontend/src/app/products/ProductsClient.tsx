@@ -16,7 +16,6 @@ import DemoModeBanner from "@/components/ui/DemoModeBanner";
 import type { CatalogSource } from "@/lib/catalogLoader";
 import { loadProducts, peekCachedProducts } from "@/lib/catalogLoader";
 import { cacheApiResponse, productsCacheKey } from "@/lib/apiCache";
-import { isConstrainedNetwork } from "@/lib/networkStatus";
 
 const CATEGORIES: { value: string; label: { en: string; bn: string } }[] = [
   { value: "", label: { en: "All", bn: "সব" } },
@@ -119,7 +118,7 @@ export default function ProductsClient({
       page: pageNum,
     };
 
-    if (!append && pageNum === 1 && isConstrainedNetwork()) {
+    if (!append && pageNum === 1) {
       const cached = await peekCachedProducts(params);
       if (cached) {
         setProducts(cached.products);
@@ -138,9 +137,18 @@ export default function ProductsClient({
       setCatalogSource(result.source);
       setPage(pageNum);
     } catch {
-      setError(true);
-      setUsingDemo(false);
-      setCatalogSource("api");
+      const cached = await peekCachedProducts(params);
+      if (cached) {
+        setProducts(cached.products);
+        setTotal(cached.total);
+        setUsingDemo(cached.source === "demo");
+        setCatalogSource(cached.source);
+        setError(false);
+      } else {
+        setError(true);
+        setUsingDemo(false);
+        setCatalogSource("api");
+      }
     } finally {
       setLoading(false);
       setLoadingMore(false);

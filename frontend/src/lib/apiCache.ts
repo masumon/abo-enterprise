@@ -29,3 +29,9 @@ export function productsCacheKey(params: Record<string, unknown>): string {
 export function servicesCacheKey(params: Record<string, unknown>): string {
   return `services:${JSON.stringify(params)}`;
 }
+
+export function productCacheKey(slug: string): string {
+  return `product:${slug}`;
+}
+
+export const SETTINGS_CACHE_KEY = "settings:public";
