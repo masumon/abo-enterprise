@@ -2,9 +2,25 @@
 import logging
 from datetime import datetime, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 
 from app.core.database import AsyncSessionLocal
+from app.core.placeholder_assets import (
+    BLOG_IMAGE_MAP,
+    PRODUCT_IMAGE_MAP,
+    SERVICE_IMAGE_MAP,
+    banner_settings,
+    blog_featured,
+    build_showcase_projects_json,
+    build_software_service_cards_json,
+    build_demo_products_json,
+    build_demo_services_json,
+    og_image,
+    product_gallery,
+    product_image,
+    service_featured,
+    service_icon,
+)
 from app.models.models import BlogPost, PaymentMethod, Product, Service, Setting
 
 logger = logging.getLogger(__name__)
@@ -192,12 +208,87 @@ async def _ensure_setting(db, key: str, value: str, data_type: str = "string", d
     logger.info("Content bootstrap: created setting '%s'", key)
 
 
+async def _seed_placeholder_settings(db) -> None:
+    for item in banner_settings():
+        await _ensure_setting(db, **item)
+    await _ensure_setting(
+        db,
+        key="showcase_projects_json",
+        value=build_showcase_projects_json(),
+        data_type="json",
+        description="Project gallery showcase (images admin-editable)",
+    )
+    await _ensure_setting(
+        db,
+        key="software_service_cards_json",
+        value=build_software_service_cards_json(),
+        data_type="json",
+        description="Software service showcase cards",
+    )
+    await _ensure_setting(
+        db,
+        key="demo_products_json",
+        value=build_demo_products_json(),
+        data_type="json",
+        description="Offline demo product catalog with placeholder images",
+    )
+    await _ensure_setting(
+        db,
+        key="demo_services_json",
+        value=build_demo_services_json(),
+        data_type="json",
+        description="Offline demo service catalog with placeholder images",
+    )
+
+
+async def _backfill_entity_images(db) -> None:
+    """Fill missing image fields on seeded entities — never overwrites admin uploads."""
+    products = (await db.execute(
+        select(Product).where(
+            Product.is_deleted == False,  # noqa: E712
+            or_(Product.image_url.is_(None), Product.image_url == ""),
+        )
+    )).scalars().all()
+    for product in products:
+        label = PRODUCT_IMAGE_MAP.get(product.slug, product.name_en)
+        product.image_url = product_image(label)
+        product.images = [product_gallery(label, 1), product_gallery(label, 2)]
+        product.og_image = og_image(label)
+
+    services = (await db.execute(
+        select(Service).where(
+            Service.is_deleted == False,  # noqa: E712
+            or_(Service.featured_image_url.is_(None), Service.featured_image_url == ""),
+        )
+    )).scalars().all()
+    for service in services:
+        featured_label, icon_label = SERVICE_IMAGE_MAP.get(
+            service.slug, (service.name_en, service.name_en)
+        )
+        service.featured_image_url = service_featured(featured_label)
+        service.icon_url = service_icon(icon_label)
+        service.og_image = og_image(featured_label)
+
+    blogs = (await db.execute(
+        select(BlogPost).where(
+            BlogPost.is_deleted == False,  # noqa: E712
+            or_(BlogPost.featured_image_url.is_(None), BlogPost.featured_image_url == ""),
+        )
+    )).scalars().all()
+    for post in blogs:
+        label = BLOG_IMAGE_MAP.get(post.slug, post.title_en[:40])
+        post.featured_image_url = blog_featured(label)
+        post.og_image = og_image(label)
+
+
 async def bootstrap_content() -> None:
     """Seed default settings, products, and blog posts only when tables are empty."""
     try:
         async with AsyncSessionLocal() as db:
             for item in DEFAULT_SETTINGS:
                 await _ensure_setting(db, **item)
+
+            await _seed_placeholder_settings(db)
 
             product_count = (await db.execute(
                 select(func.count(Product.id)).where(Product.is_deleted == False)  # noqa: E712
@@ -206,6 +297,7 @@ async def bootstrap_content() -> None:
             if product_count == 0:
                 for row in PRODUCT_SEED:
                     slug, name_en, name_bn, price, orig, cat, badge, stock, featured, sort = row
+                    label = PRODUCT_IMAGE_MAP.get(slug, name_en)
                     db.add(Product(
                         slug=slug,
                         name_en=name_en,
@@ -214,11 +306,13 @@ async def bootstrap_content() -> None:
                         original_price=orig,
                         category=cat,
                         badge=badge,
+                        image_url=product_image(label),
+                        images=[product_gallery(label, 1), product_gallery(label, 2)],
+                        og_image=og_image(label),
                         stock_quantity=stock,
                         is_active=True,
                         is_featured=featured,
                         sort_order=sort,
-                        images=[],
                         specifications={},
                         tags=[],
                     ))
@@ -231,6 +325,7 @@ async def bootstrap_content() -> None:
             if service_count == 0:
                 for row in SERVICE_SEED:
                     slug, name_en, name_bn, cat, pricing_type, base_price, featured, sort = row
+                    featured_label, icon_label = SERVICE_IMAGE_MAP.get(slug, (name_en, name_en))
                     db.add(Service(
                         slug=slug,
                         name_en=name_en,
@@ -240,6 +335,9 @@ async def bootstrap_content() -> None:
                         category=cat,
                         pricing_type=pricing_type,
                         base_price=base_price,
+                        featured_image_url=service_featured(featured_label),
+                        icon_url=service_icon(icon_label),
+                        og_image=og_image(featured_label),
                         is_active=True,
                         is_featured=featured,
                         sort_order=sort,
@@ -262,13 +360,18 @@ async def bootstrap_content() -> None:
             if published_count == 0:
                 now = datetime.now(timezone.utc)
                 for post in BLOG_SEED:
+                    label = BLOG_IMAGE_MAP.get(post["slug"], post["title_en"][:40])
                     db.add(BlogPost(
                         **post,
+                        featured_image_url=blog_featured(label),
+                        og_image=og_image(label),
                         author_name="ABO Enterprise",
                         published_at=now,
                         tags=[],
                     ))
                 logger.info("Content bootstrap: seeded %d blog posts", len(BLOG_SEED))
+
+            await _backfill_entity_images(db)
 
             pm_count = (await db.execute(select(func.count(PaymentMethod.id)))).scalar() or 0
             if pm_count == 0:

@@ -5,8 +5,8 @@ import ProductsPageShell from "./ProductsPageShell";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { pageMeta } from "@/lib/metadata";
 import { fetchWithRetry } from "@/lib/fetchRetry";
-import { DEMO_PRODUCTS } from "@/lib/demoContent";
 import { filterDemoProducts } from "@/lib/demoFallback";
+import { fetchDemoProductsFromSettings } from "@/lib/serverDemoCatalog";
 
 const API_BASE = getApiBaseUrl();
 const VALID_CATEGORIES = new Set(["accessories", "gadgets", "electronics", "computer"]);
@@ -30,7 +30,8 @@ async function fetchProducts(category?: string): Promise<{ products: Product[]; 
   } catch {
     // fall through to demo
   }
-  const demo = filterDemoProducts(DEMO_PRODUCTS, { category: cat });
+  const demoSource = await fetchDemoProductsFromSettings();
+  const demo = filterDemoProducts(demoSource, { category: cat });
   return { products: demo, total: demo.length, isDemo: true };
 }
 

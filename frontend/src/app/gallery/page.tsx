@@ -7,6 +7,7 @@ import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import { cn } from "@/lib/utils";
 import { useShowcaseContent } from "@/hooks/useShowcaseContent";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { toVideoEmbedUrl } from "@/lib/showcaseContent";
 
 const FILTERS = [
@@ -18,19 +19,21 @@ const FILTERS = [
 export default function GalleryPage() {
   const { lang } = useLanguageStore();
   const { projects } = useShowcaseContent();
+  const { settings } = usePublicSettings(["gallery_office_image_url"]);
+  const officeImage = getSettingValue(settings, "gallery_office_image_url");
   const [filter, setFilter] = useState("all");
   const [lightbox, setLightbox] = useState<string | null>(null);
 
   const images = useMemo(() => {
     const list = [
-      { src: "/logo.jpg", alt: "ABO Enterprise", category: "office" },
+      ...(officeImage ? [{ src: officeImage, alt: "ABO Enterprise Office", category: "office" as const }] : []),
       ...projects.flatMap((p) => [
         { src: p.image, alt: p.title.en, category: "projects" as const },
         ...p.images.map((src) => ({ src, alt: p.title.en, category: "projects" as const })),
       ].filter((img) => img.src)),
     ];
     return list.filter((img) => filter === "all" || img.category === filter);
-  }, [projects, filter]);
+  }, [projects, filter, officeImage]);
 
   const videos = useMemo(
     () => projects.filter((p) => p.videoUrl?.trim()).map((p) => ({ ...p, embed: toVideoEmbedUrl(p.videoUrl!) })),

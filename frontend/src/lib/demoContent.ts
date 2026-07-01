@@ -1,6 +1,6 @@
 import type { Product, Service } from "@/types";
 
-/** Static demo catalog — shown when API is slow/unavailable. Admin can override via settings JSON. */
+/** Static demo catalog metadata — image URLs come from CMS `demo_products_json` / `demo_services_json`. */
 export const DEMO_PRODUCTS: Product[] = [
   {
     id: "demo-phone-case-premium",
@@ -17,7 +17,6 @@ export const DEMO_PRODUCTS: Product[] = [
     is_featured: true,
     rating: 4.8,
     review_count: 124,
-    image_url: "https://images.unsplash.com/photo-1601784551446-20c9e07cdbdb?w=600&q=80",
   },
   {
     id: "demo-fast-charger-65w",
@@ -34,7 +33,6 @@ export const DEMO_PRODUCTS: Product[] = [
     is_featured: true,
     rating: 4.7,
     review_count: 89,
-    image_url: "https://images.unsplash.com/photo-1591290619762-d2c8cfef16d8?w=600&q=80",
   },
   {
     id: "demo-earbuds-tws-pro",
@@ -51,7 +49,6 @@ export const DEMO_PRODUCTS: Product[] = [
     is_featured: true,
     rating: 4.9,
     review_count: 203,
-    image_url: "https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=600&q=80",
   },
   {
     id: "demo-power-bank-20000",
@@ -66,7 +63,6 @@ export const DEMO_PRODUCTS: Product[] = [
     is_featured: true,
     rating: 4.6,
     review_count: 67,
-    image_url: "https://images.unsplash.com/photo-1609091839311-d5365f9ff1c8?w=600&q=80",
   },
   {
     id: "demo-glass-protector",
@@ -78,7 +74,6 @@ export const DEMO_PRODUCTS: Product[] = [
     stock_quantity: 100,
     rating: 4.5,
     review_count: 312,
-    image_url: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=600&q=80",
   },
   {
     id: "demo-type-c-cable-3m",
@@ -90,7 +85,6 @@ export const DEMO_PRODUCTS: Product[] = [
     stock_quantity: 200,
     rating: 4.4,
     review_count: 156,
-    image_url: "https://images.unsplash.com/photo-1625723044792-f60b9c238a4e?w=600&q=80",
   },
   {
     id: "demo-car-holder-magnetic",
@@ -102,7 +96,6 @@ export const DEMO_PRODUCTS: Product[] = [
     stock_quantity: 40,
     rating: 4.3,
     review_count: 45,
-    image_url: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&q=80",
   },
   {
     id: "demo-bt-speaker-waterproof",
@@ -115,7 +108,6 @@ export const DEMO_PRODUCTS: Product[] = [
     stock_quantity: 10,
     rating: 4.7,
     review_count: 78,
-    image_url: "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&q=80",
   },
 ];
 
@@ -132,7 +124,6 @@ export const DEMO_SERVICES: Service[] = [
     base_price: 500,
     is_featured: true,
     icon_color: "#1e5ba8",
-    featured_image_url: "https://images.unsplash.com/photo-1562564055-71e051d33c19?w=600&q=80",
   },
   {
     id: "demo-legal-assistance",
@@ -146,7 +137,6 @@ export const DEMO_SERVICES: Service[] = [
     min_price: 1000,
     is_featured: true,
     icon_color: "#f59e0b",
-    featured_image_url: "https://images.unsplash.com/photo-1589829545856-d10d557cf95f?w=600&q=80",
   },
   {
     id: "demo-software-development",
@@ -160,7 +150,6 @@ export const DEMO_SERVICES: Service[] = [
     min_price: 25000,
     is_featured: true,
     icon_color: "#16a34a",
-    featured_image_url: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600&q=80",
   },
   {
     id: "demo-web-design",
@@ -174,7 +163,6 @@ export const DEMO_SERVICES: Service[] = [
     base_price: 15000,
     is_featured: false,
     icon_color: "#7c3aed",
-    featured_image_url: "https://images.unsplash.com/photo-1547658719-da2b51169166?w=600&q=80",
   },
   {
     id: "demo-mobile-app",
@@ -188,7 +176,6 @@ export const DEMO_SERVICES: Service[] = [
     min_price: 50000,
     is_featured: false,
     icon_color: "#0ea5e9",
-    featured_image_url: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=600&q=80",
   },
   {
     id: "demo-digital-marketing",
@@ -202,6 +189,5 @@ export const DEMO_SERVICES: Service[] = [
     base_price: 8000,
     is_featured: false,
     icon_color: "#ec4899",
-    featured_image_url: "https://images.unsplash.com/photo-1432888622747-4eb9a8f2c293?w=600&q=80",
   },
 ];
