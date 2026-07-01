@@ -12,6 +12,7 @@ import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
 import { formatPrice, discountPercent } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { resolveProductImage } from "@/lib/demoImages";
 import Badge, { badgeVariantFromProduct } from "@/components/ui/Badge";
 import type { Product } from "@/types";
 
@@ -43,6 +44,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
   const rating = product.rating ?? 4.5;
   const reviewCount = product.review_count ?? 0;
   const alt = productAlt(product, lang);
+  const imageSrc = resolveProductImage(product.image_url, product.slug);
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -78,11 +80,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
       <article className="card-hover group flex gap-4 p-4 relative">
         <Link href={`/products/${product.slug}`} className="absolute inset-0 z-0" aria-hidden tabIndex={-1} />
         <div className="relative w-28 aspect-square rounded-xl overflow-hidden bg-brand-50 flex-shrink-0">
-          {product.image_url ? (
-            <Image src={product.image_url} alt={alt} fill className="object-cover" sizes="112px" />
-          ) : (
-            <Package className="w-10 h-10 text-brand-200 m-auto mt-9" aria-hidden />
-          )}
+          <Image src={imageSrc} alt={alt} fill className="object-cover" sizes="112px" />
         </div>
         <div className="flex-1 min-w-0 relative z-10">
           {product.category && (
@@ -148,13 +146,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
       </div>
 
       <div className="relative aspect-[4/5] sm:aspect-square bg-gradient-to-br from-brand-50 via-blue-50 to-brand-100 overflow-hidden">
-        {product.image_url ? (
-          <Image src={product.image_url} alt={alt} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 50vw, 25vw" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-brand-200">
-            <Package className="w-14 h-14" aria-hidden />
-          </div>
-        )}
+        <Image src={imageSrc} alt={alt} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 50vw, 25vw" />
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2">
             <span className="bg-black/50 text-white text-xs font-bold px-3 py-1 rounded-full">{t("out_of_stock")}</span>

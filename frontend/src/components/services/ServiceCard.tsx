@@ -4,6 +4,7 @@ import type { Service } from "@/types";
 import type { Language } from "@/types";
 import { ArrowRight, Star } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+import { resolveServiceImage } from "@/lib/demoImages";
 
 interface ServiceCardProps {
   service: Service;
@@ -17,20 +18,20 @@ export default function ServiceCard({ service, lang = "en" }: ServiceCardProps) 
     service.short_description_en ||
     service.description_en;
 
+  const imageSrc = resolveServiceImage(service.featured_image_url, service.slug);
+
   return (
     <Link href={`/services/${service.slug}`} className="block h-full group">
       <article className="h-full enterprise-card-hover overflow-hidden">
-        {service.featured_image_url && (
-          <div className="relative h-44 bg-gray-100 overflow-hidden">
-            <Image
-              src={service.featured_image_url}
+        <div className="relative h-44 bg-gray-100 overflow-hidden">
+          <Image
+            src={imageSrc}
               alt={name}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
-              sizes="(max-width: 768px) 100vw, 33vw"
-            />
-          </div>
-        )}
+            sizes="(max-width: 768px) 100vw, 33vw"
+          />
+        </div>
 
         <div className="p-5">
           {service.category && (

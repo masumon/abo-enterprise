@@ -17,6 +17,7 @@ import { WHATSAPP_NUMBER } from "@/lib/utils";
 import type { Service } from "@/types";
 import { cn } from "@/lib/utils";
 import PageHero from "@/components/ui/PageHero";
+import { resolveServiceImage } from "@/lib/demoImages";
 
 interface Props {
   service: Service;
@@ -133,17 +134,15 @@ export default function ServiceDetailClient({ service }: Props) {
       </PageHero>
 
       <div className="max-w-5xl mx-auto px-4 py-12 space-y-12">
-        {service.featured_image_url && (
-          <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-video">
-            <Image
-              src={service.featured_image_url}
+        <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-video">
+          <Image
+            src={resolveServiceImage(service.featured_image_url, service.slug)}
               alt={name}
               fill
               className="object-cover"
-              sizes="(max-width: 1024px) 100vw, 896px"
-            />
-          </div>
-        )}
+            sizes="(max-width: 1024px) 100vw, 896px"
+          />
+        </div>
 
         {/* Description */}
         {description && (

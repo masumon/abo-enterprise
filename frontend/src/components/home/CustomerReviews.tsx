@@ -11,6 +11,7 @@ import { usePublicSettings } from "@/hooks/usePublicSettings";
 import { getDemoReviews, DEMO_REVIEWS_KEY } from "@/lib/cmsContent";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import GlassCard from "@/components/ui/GlassCard";
+import { resolveReviewPhoto } from "@/lib/demoImages";
 
 export default function CustomerReviews() {
   const { lang } = useLanguageStore();
@@ -69,11 +70,7 @@ export default function CustomerReviews() {
                 </p>
                 <div className="flex items-center gap-3 mt-auto">
                   <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                    {r.photo_url ? (
-                      <Image src={r.photo_url} alt={r.customer_name} width={36} height={36} className="object-cover" />
-                    ) : (
-                      <span className="text-brand-600 font-bold text-sm">{r.customer_name[0]}</span>
-                    )}
+                    <Image src={resolveReviewPhoto(r.photo_url)} alt={r.customer_name} width={36} height={36} className="object-cover" />
                   </div>
                   <div>
                     <p className="font-semibold text-sm">{r.customer_name}</p>

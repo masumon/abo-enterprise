@@ -618,6 +618,16 @@ def build_client_logos_json() -> str:
 def banner_settings() -> list[dict]:
     rows = [
         {
+            "key": "logo_url",
+            "value": demo_img("office", 512, 512),
+            "description": "Site logo (admin-editable)",
+        },
+        {
+            "key": "favicon_url",
+            "value": demo_img("office", 32, 32),
+            "description": "Browser favicon (admin-editable)",
+        },
+        {
             "key": "hero_image_url",
             "value": hero_banner(),
             "description": "Homepage hero banner (1920×1080)",
