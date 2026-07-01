@@ -276,6 +276,7 @@ export default function AssetRegistry() {
                 Description
               </label>
               <textarea
+                aria-label="Description"
                 value={editingSpec.description}
                 onChange={(e) =>
                   handleUpdateSpec(editing!, { description: e.target.value })

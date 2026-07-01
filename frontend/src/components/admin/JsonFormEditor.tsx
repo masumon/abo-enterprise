@@ -81,24 +81,25 @@ export default function JsonFormEditor({
   };
 
   const renderFieldInput = (field: FormField, key: string) => {
-    const baseProps = {
-      value: field.value,
-      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        let val: FieldValue = e.target.value;
-        if (field.type === "number") val = parseFloat(e.target.value) || 0;
-        if (field.type === "boolean") val = (e.target as HTMLInputElement).checked;
-        handleFieldChange(key, val);
-      },
+    const commonProps = {
       className:
         "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400",
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      let val: FieldValue = e.target.value;
+      if (field.type === "number") val = parseFloat(e.target.value) || 0;
+      handleFieldChange(key, val);
     };
 
     if (field.type === "textarea") {
       return (
         <textarea
-          {...baseProps}
+          aria-label={field.label}
+          value={String(field.value)}
+          onChange={handleChange}
           rows={3}
-          className={`${baseProps.className} resize-none`}
+          className={`${commonProps.className} resize-none`}
         />
       );
     }
@@ -117,7 +118,10 @@ export default function JsonFormEditor({
     return (
       <input
         type={field.type}
-        {...baseProps}
+        aria-label={field.label}
+        value={String(field.value)}
+        onChange={handleChange}
+        className={commonProps.className}
       />
     );
   };
@@ -145,6 +149,7 @@ export default function JsonFormEditor({
       {showRaw ? (
         <div className="space-y-2">
           <textarea
+            aria-label="Raw JSON editor"
             value={rawValue}
             onChange={(e) => setRawValue(e.target.value)}
             className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:border-brand-400 resize-none"
