@@ -150,11 +150,11 @@ export default function AssetRegistry() {
         </div>
       </div>
 
-      {showForm && editingSpec ? (
+      {showForm && editingSpec && editing ? (
         <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-gray-900">
-              {editing ? "Edit Specification" : "New Specification"}
+              Edit Specification
             </h3>
             <button
               type="button"
@@ -177,7 +177,7 @@ export default function AssetRegistry() {
                 type="text"
                 value={editingSpec.name}
                 onChange={(e) =>
-                  handleUpdateSpec(editing, { name: e.target.value })
+                  handleUpdateSpec(editing!, { name: e.target.value })
                 }
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400"
               />
@@ -190,7 +190,7 @@ export default function AssetRegistry() {
               <select
                 value={editingSpec.category}
                 onChange={(e) =>
-                  handleUpdateSpec(editing, {
+                  handleUpdateSpec(editing!, {
                     category: e.target.value as AssetSpec["category"],
                   })
                 }
@@ -214,7 +214,7 @@ export default function AssetRegistry() {
                 type="number"
                 value={editingSpec.recommendedWidth}
                 onChange={(e) =>
-                  handleUpdateSpec(editing, {
+                  handleUpdateSpec(editing!, {
                     recommendedWidth: parseInt(e.target.value),
                   })
                 }
@@ -230,7 +230,7 @@ export default function AssetRegistry() {
                 type="number"
                 value={editingSpec.recommendedHeight}
                 onChange={(e) =>
-                  handleUpdateSpec(editing, {
+                  handleUpdateSpec(editing!, {
                     recommendedHeight: parseInt(e.target.value),
                   })
                 }
@@ -247,7 +247,7 @@ export default function AssetRegistry() {
                 value={editingSpec.aspectRatio}
                 placeholder="e.g., 16:9"
                 onChange={(e) =>
-                  handleUpdateSpec(editing, { aspectRatio: e.target.value })
+                  handleUpdateSpec(editing!, { aspectRatio: e.target.value })
                 }
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400"
               />
@@ -261,7 +261,7 @@ export default function AssetRegistry() {
                 type="text"
                 value={editingSpec.formats.join(", ")}
                 onChange={(e) =>
-                  handleUpdateSpec(editing, {
+                  handleUpdateSpec(editing!, {
                     formats: e.target.value
                       .split(",")
                       .map((f) => f.trim()),
@@ -278,7 +278,7 @@ export default function AssetRegistry() {
               <textarea
                 value={editingSpec.description}
                 onChange={(e) =>
-                  handleUpdateSpec(editing, { description: e.target.value })
+                  handleUpdateSpec(editing!, { description: e.target.value })
                 }
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400 resize-none"
