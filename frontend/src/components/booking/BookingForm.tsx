@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -38,6 +39,7 @@ function resolveInitialTier(service: Service, initialTierId?: string) {
 }
 
 export default function BookingForm({ service, initialTierId, onSuccess }: BookingFormProps) {
+  const router = useRouter();
   const initialTier = resolveInitialTier(service, initialTierId);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -63,7 +65,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       const selectedTier = service.pricing_tiers?.find((t) => t.tier_name === data.service_tier);
       const quotedPrice = selectedTier?.price ?? service.base_price ?? data.quoted_price;
 
-      await serviceBookingsApi.create({
+      const r = await serviceBookingsApi.create({
         service_id: service.id,
         service_tier: data.service_tier,
         customer_name: data.customer_name,
@@ -75,6 +77,13 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         quoted_price: quotedPrice,
         details: data.details,
       });
+
+      // Redirect to the success page with the auto-created invoice
+      const bookingId = r?.data?.data?.id;
+      if (bookingId) {
+        router.push(`/booking-success?booking=${bookingId}&phone=${encodeURIComponent(data.customer_phone)}`);
+        return;
+      }
 
       if (onSuccess) {
         onSuccess();

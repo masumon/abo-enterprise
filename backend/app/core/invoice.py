@@ -145,7 +145,7 @@ class InvoiceService:
             total=float(order.total),
             payment_method=payment_method or order.payment_method,
             payment_status="paid" if order.payment_status == "completed" else "pending",
-            issued_date=datetime.now(timezone.utc).date(),
+            issued_date=datetime.now(timezone.utc),
             due_date=None,  # No due date for orders
             notes=notes,
         )
@@ -189,7 +189,7 @@ class InvoiceService:
             total=amount,
             payment_method=payment_method or "pending",
             payment_status="pending",
-            issued_date=datetime.now(timezone.utc).date(),
+            issued_date=datetime.now(timezone.utc),
             notes=(
                 f"Service booking receipt for {booking.booking_number}. "
                 f"legacy_booking_id:{booking.id}"
@@ -244,7 +244,7 @@ class InvoiceService:
             total=total,
             payment_method=payment_method or booking.payment_method,
             payment_status="paid" if booking.payment_status in ("completed", "paid") else "pending",
-            issued_date=datetime.now(timezone.utc).date(),
+            issued_date=datetime.now(timezone.utc),
             due_date=None,
             notes=f"Service booking receipt for {booking.booking_number}.",
         )

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, FileText, X, Trash2, Download, ChevronDown, Plus } from "lucide-react";
+import { Loader2, FileText, X, Trash2, Download, ChevronDown, Plus, RefreshCw } from "lucide-react";
 import api, { invoicesAdminApi, downloadPdf } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/apiError";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
@@ -52,6 +53,7 @@ export default function AdminInvoicesPage() {
   const [statusUpdating, setStatusUpdating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -69,6 +71,30 @@ export default function AdminInvoicesPage() {
   }, [filter, page, toast]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleBackfill = async () => {
+    setSyncing(true);
+    try {
+      const r = await api.post("/api/v1/invoices/admin/backfill");
+      const d = r.data.data as {
+        created: { orders: number; bookings: number; legacy_bookings: number };
+        errors: string[];
+      };
+      const totalCreated = d.created.orders + d.created.bookings + d.created.legacy_bookings;
+      if (d.errors?.length) {
+        toast("error", `${totalCreated} created, ${d.errors.length} failed — ${d.errors[0]}`);
+      } else if (totalCreated === 0) {
+        toast("success", "All orders & bookings already have invoices");
+      } else {
+        toast("success", `${totalCreated} missing invoice(s) created`);
+      }
+      await load();
+    } catch (err) {
+      toast("error", apiErrorMessage(err, "Invoice sync failed"));
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const updateStatus = async (invoice: AdminInvoice, newStatus: string) => {
     if (newStatus === invoice.payment_status) return;
@@ -174,6 +200,15 @@ export default function AdminInvoicesPage() {
           <p className="text-gray-500 text-sm mt-1">{total} total invoices</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleBackfill}
+            disabled={syncing}
+            title="অর্ডার ও বুকিং থেকে অনুপস্থিত ইনভয়েস তৈরি করুন"
+            className="btn btn-outline btn-md flex items-center gap-2"
+          >
+            {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Sync from Orders
+          </button>
           <button onClick={() => setShowCreate(true)} className="btn btn-brand btn-md flex items-center gap-2">
             <Plus className="w-4 h-4" /> Create Invoice
           </button>
