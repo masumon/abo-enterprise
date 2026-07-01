@@ -636,6 +636,40 @@ class LeadFormField(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class MediaAsset(Base):
+    __tablename__ = "media_assets"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    url: Mapped[str] = mapped_column(Text, nullable=False, unique=True, index=True)
+    filename: Mapped[str] = mapped_column(String(255), nullable=False)
+    folder: Mapped[str] = mapped_column(String(255), default="abo-enterprise/uploads", index=True)
+    file_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    mime_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    width: Mapped[int | None] = mapped_column(Integer)
+    height: Mapped[int | None] = mapped_column(Integer)
+    format: Mapped[str | None] = mapped_column(String(20))
+    cloudinary_public_id: Mapped[str | None] = mapped_column(String(255), unique=True)
+    uploaded_by: Mapped[str | None] = mapped_column(String(255))
+    alt_text: Mapped[str | None] = mapped_column(String(500))
+    tags: Mapped[list] = mapped_column(JSON, default=list)
+    is_featured: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+class AssetUsage(Base):
+    __tablename__ = "asset_usage"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    asset_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("media_assets.id", ondelete="CASCADE"), index=True)
+    entity_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    entity_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    field_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    context: Mapped[dict] = mapped_column(JSON, default=dict)
+    used_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class CareerApplication(Base):
     __tablename__ = "career_applications"
 
