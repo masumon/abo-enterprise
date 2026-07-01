@@ -50,6 +50,10 @@ const nextConfig = {
     return [
       { source: "/home", destination: "/", permanent: true },
       { source: "/shop", destination: "/products", permanent: true },
+      { source: "/dashboard", destination: "/profile", permanent: true },
+      { source: "/admin/dashboard", destination: "/admin", permanent: true },
+      { source: "/admin/revenue", destination: "/admin/analytics", permanent: true },
+      { source: "/manifest.json", destination: "/manifest.webmanifest", permanent: false },
     ];
   },
 };

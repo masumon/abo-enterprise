@@ -238,7 +238,7 @@ export default function Navbar() {
               </Link>
             </li>
             <li>
-              <Link href="/dashboard" onClick={() => setMobileOpen(false)}
+              <Link href="/profile" onClick={() => setMobileOpen(false)}
                 className="block px-3 py-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-white/10 text-sm">
                 {lang === "bn" ? "ড্যাশবোর্ড" : "Dashboard"}
               </Link>
