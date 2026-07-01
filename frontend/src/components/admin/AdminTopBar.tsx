@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, Menu, Bell } from "lucide-react";
+import { ChevronRight, Menu, Bell, RotateCw } from "lucide-react";
 import { getAdminPageTitle } from "@/lib/adminNav";
 import { useAlertStore } from "@/store/alerts";
+import { useState } from "react";
 
 interface Props {
   adminName: string;
@@ -17,6 +18,16 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick }: Props
   const pageTitle = getAdminPageTitle(pathname);
   const { pendingOrders, pendingBookings, newLeads } = useAlertStore();
   const alertTotal = pendingOrders + pendingBookings + newLeads;
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      window.location.reload();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-20 admin-topbar">
@@ -43,6 +54,16 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick }: Props
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors disabled:opacity-50"
+            aria-label="Refresh admin panel"
+            title="Refresh"
+          >
+            <RotateCw className={`w-4 h-4 text-gray-600 ${isRefreshing ? "animate-spin" : ""}`} />
+          </button>
           {alertTotal > 0 && (
             <div
               className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-100 text-amber-800 text-xs font-medium"

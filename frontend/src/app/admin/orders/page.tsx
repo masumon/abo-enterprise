@@ -14,7 +14,7 @@ import { useToastStore } from "@/store/toast";
 interface AdminOrderItem { product_name: string; quantity: number; product_price: number; subtotal: number; }
 interface AdminOrder {
   id: string; order_number: string; customer_name: string; customer_phone: string;
-  customer_email?: string; delivery_address: string; payment_method: string;
+  customer_email?: string; delivery_address: string; payment_method: string; payment_status?: string;
   order_status: string; subtotal: number; delivery_charge: number; total: number;
   courier_provider?: string | null; courier_tracking_id?: string | null;
   notes?: string; items: AdminOrderItem[]; created_at: string;
@@ -71,9 +71,17 @@ export default function AdminOrdersPage() {
   const updateStatus = async (id: string, status: string) => {
     setUpdatingId(id);
     try {
-      await ordersApi.updateStatus(id, status);
+      const r = await ordersApi.updateStatus(id, status);
+      if (!r?.data?.data) {
+        toast("error", "Failed to update order status");
+        return;
+      }
       await load();
       if (detail?.id === id) setDetail(prev => prev ? { ...prev, order_status: status } : prev);
+      toast("success", `Order status updated to ${status}`);
+    } catch (err) {
+      toast("error", "Failed to update order status");
+      console.error("Status update error:", err);
     } finally {
       setUpdatingId(null);
     }
@@ -133,16 +141,23 @@ export default function AdminOrdersPage() {
     setDetailLoading(true);
     try {
       const r = await ordersApi.get(id);
+      if (!r?.data?.data) {
+        toast("error", "Order details not found in response");
+        console.error("Empty order response", r);
+        return;
+      }
       const data = r.data.data as unknown as AdminOrder;
-      if (!data) {
-        toast("error", "Order details could not be loaded");
+      if (!data.id || !data.order_number) {
+        toast("error", "Invalid order data structure");
+        console.error("Invalid order structure", data);
         return;
       }
       setDetail(data);
       setCourierProvider(data.courier_provider ?? "");
       setCourierTracking(data.courier_tracking_id ?? "");
-    } catch (err) {
-      toast("error", "Failed to load order details");
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      toast("error", `Failed to load order: ${errorMsg}`);
       console.error("Order detail error:", err);
     } finally {
       setDetailLoading(false);
