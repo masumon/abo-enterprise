@@ -6,8 +6,9 @@ import Link from "next/link";
 import { CheckCircle2, Package, ArrowRight, Share2, Download, Loader2, X, FileText } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { trackPurchase } from "@/components/analytics/FacebookPixel";
-import { downloadPublicOrderInvoice } from "@/lib/api";
+import { downloadPublicOrderInvoice, publicInvoicesApi, type PublicInvoiceData } from "@/lib/api";
 import PageHero from "@/components/ui/PageHero";
+import InvoiceCard from "@/components/invoice/InvoiceCard";
 
 function ConfettiBurst() {
   useEffect(() => {
@@ -44,6 +45,8 @@ function OrderSuccessContent() {
   const [pdfLoading, setPdfLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(true);
   const [showInvoicePrompt, setShowInvoicePrompt] = useState(true);
+  const [invoice, setInvoice] = useState<PublicInvoiceData | null>(null);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
 
   useEffect(() => {
     const order = params.get("order");
@@ -54,6 +57,27 @@ function OrderSuccessContent() {
     const t = setTimeout(() => setShowConfetti(false), 3000);
     return () => clearTimeout(t);
   }, [params]);
+
+  // Auto-load the invoice so the customer sees it on this page
+  useEffect(() => {
+    if (!orderNumber || !phone) return;
+    let cancelled = false;
+    setInvoiceLoading(true);
+    publicInvoicesApi
+      .orderInvoice(orderNumber, phone)
+      .then((r) => {
+        if (!cancelled && r.data?.data) setInvoice(r.data.data);
+      })
+      .catch(() => {
+        /* PDF button still works as fallback */
+      })
+      .finally(() => {
+        if (!cancelled) setInvoiceLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [orderNumber, phone]);
 
   const handleDownloadInvoice = async () => {
     if (!orderNumber || !phone) return;
@@ -122,18 +146,13 @@ function OrderSuccessContent() {
         )}
 
         {canDownloadInvoice && showInvoicePrompt && (
-          <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4 mb-6 text-left">
-            <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-brand-500 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-heading">
-                    {lang === "bn" ? "ইনভয়েস প্রস্তুত" : "Invoice Ready"}
-                  </p>
-                  <p className="text-xs text-muted">
-                    {lang === "bn" ? "ঐচ্ছিক — চাইলে সেভ করুন" : "Optional — save if you want"}
-                  </p>
-                </div>
+                <FileText className="w-4 h-4 text-brand-500" />
+                <p className="text-sm font-semibold text-heading">
+                  {lang === "bn" ? "আপনার ইনভয়েস" : "Your Invoice"}
+                </p>
               </div>
               <button
                 type="button"
@@ -144,7 +163,23 @@ function OrderSuccessContent() {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
+
+            {invoiceLoading ? (
+              <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-6 flex items-center justify-center gap-2 text-sm text-muted">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                {lang === "bn" ? "ইনভয়েস তৈরি হচ্ছে…" : "Preparing your invoice…"}
+              </div>
+            ) : invoice ? (
+              <InvoiceCard invoice={invoice} lang={lang} />
+            ) : (
+              <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-sm text-muted text-left">
+                {lang === "bn"
+                  ? "ইনভয়েস প্রিভিউ লোড করা যায়নি — নিচের বাটন দিয়ে PDF ডাউনলোড করুন।"
+                  : "Couldn't load the invoice preview — use the button below to download the PDF."}
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-2 mt-3">
               <button
                 type="button"
                 onClick={handleDownloadInvoice}
@@ -159,7 +194,7 @@ function OrderSuccessContent() {
                 onClick={() => setShowInvoicePrompt(false)}
                 className="btn btn-ghost btn-sm flex-1"
               >
-                {lang === "bn" ? "পরে / এড়িয়ে যান" : "Skip for now"}
+                {lang === "bn" ? "এড়িয়ে যান" : "Skip"}
               </button>
             </div>
           </div>

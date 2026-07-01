@@ -259,6 +259,56 @@ export async function downloadPublicOrderInvoice(orderNumber: string, phone: str
   URL.revokeObjectURL(url);
 }
 
+export async function downloadPublicBookingInvoice(bookingId: string, phone: string): Promise<void> {
+  const res = await fetch(
+    `${API_BASE}/api/v1/invoices/public/booking/${encodeURIComponent(bookingId)}/pdf?phone=${encodeURIComponent(phone)}`
+  );
+  if (!res.ok) throw new Error("Invoice not available");
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `invoice-${bookingId}.pdf`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+export interface PublicInvoiceData {
+  invoice_number: string;
+  payment_method: string | null;
+  payment_status: string;
+  customer_name: string;
+  customer_phone: string | null;
+  items: { name: string; quantity: number; price: number; subtotal?: number }[];
+  subtotal: number;
+  tax: number;
+  total: number;
+  issued_date: string | null;
+  created_at: string | null;
+  order_number?: string | null;
+  order_status?: string | null;
+  delivery_charge?: number | null;
+  courier_provider?: string | null;
+  courier_tracking_id?: string | null;
+  booking_number?: string | null;
+  booking_status?: string | null;
+  service_name?: string | null;
+}
+
+export const publicInvoicesApi = {
+  orderInvoice: (orderNumber: string, phone: string) =>
+    api.get<ApiResponse<PublicInvoiceData>>(
+      `/api/v1/invoices/public/order/${encodeURIComponent(orderNumber)}`,
+      { params: { phone } }
+    ),
+
+  bookingInvoice: (bookingId: string, phone: string) =>
+    api.get<ApiResponse<PublicInvoiceData>>(
+      `/api/v1/invoices/public/booking/${encodeURIComponent(bookingId)}`,
+      { params: { phone } }
+    ),
+};
+
 export async function downloadPdf(path: string, filename: string): Promise<void> {
   const token = getAdminToken();
   const res = await fetch(`${API_BASE}${path}`, {

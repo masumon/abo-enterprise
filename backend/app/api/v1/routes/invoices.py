@@ -31,15 +31,34 @@ async def _pdf_response(invoice: Invoice, db: AsyncSession) -> Response:
     )
 
 
-# ==================== PUBLIC CUSTOMER PDF ====================
+# ==================== PUBLIC CUSTOMER INVOICE ====================
 
-@router.get("/public/order/{order_number}/pdf")
-async def public_order_invoice_pdf(
-    order_number: str,
-    phone: str = Query(..., min_length=11, max_length=11),
-    db: AsyncSession = Depends(get_db),
-):
-    """Download order invoice PDF — requires matching customer phone."""
+def _public_invoice_payload(invoice: Invoice, *, order=None, booking: BookingV2 | None = None) -> dict:
+    """Customer-facing invoice details for the order/booking success page."""
+    return {
+        "invoice_number": invoice.invoice_number,
+        "payment_method": invoice.payment_method,
+        "payment_status": invoice.payment_status,
+        "customer_name": invoice.customer_name,
+        "customer_phone": invoice.customer_phone,
+        "items": invoice.items or [],
+        "subtotal": float(invoice.subtotal or 0),
+        "tax": float(invoice.tax or 0),
+        "total": float(invoice.total or 0),
+        "issued_date": invoice.issued_date.isoformat() if invoice.issued_date else None,
+        "created_at": invoice.created_at.isoformat() if invoice.created_at else None,
+        "order_number": order.order_number if order else None,
+        "order_status": order.order_status if order else None,
+        "delivery_charge": float(order.delivery_charge or 0) if order else None,
+        "courier_provider": order.courier_provider if order else None,
+        "courier_tracking_id": order.courier_tracking_id if order else None,
+        "booking_number": booking.booking_number if booking else None,
+        "booking_status": booking.status if booking else None,
+        "service_name": booking.service_name if booking else None,
+    }
+
+
+async def _get_order_for_customer(order_number: str, phone: str, db: AsyncSession):
     from app.models.models import Order
 
     result = await db.execute(
@@ -51,11 +70,83 @@ async def public_order_invoice_pdf(
     order = result.scalar_one_or_none()
     if not order or order.customer_phone != phone:
         raise HTTPException(status_code=404, detail="Order not found")
+    return order
 
+
+async def _get_booking_for_customer(booking_id: uuid.UUID, phone: str, db: AsyncSession) -> BookingV2:
+    result = await db.execute(
+        select(BookingV2).where(
+            BookingV2.id == booking_id,
+            BookingV2.is_deleted == False,  # noqa: E712
+        )
+    )
+    booking = result.scalar_one_or_none()
+    if not booking or booking.customer_phone != phone:
+        raise HTTPException(status_code=404, detail="Booking not found")
+    return booking
+
+
+@router.get("/public/order/{order_number}", response_model=ApiResponse)
+async def public_order_invoice(
+    order_number: str,
+    phone: str = Query(..., min_length=11, max_length=11),
+    db: AsyncSession = Depends(get_db),
+):
+    """Invoice details for the order-success page — requires matching customer phone.
+
+    Creates the invoice on the fly if checkout-time auto-creation failed,
+    so the customer always sees one.
+    """
+    order = await _get_order_for_customer(order_number, phone, db)
     invoice_service = InvoiceService(db)
     invoice = await invoice_service.get_by_order_id(order.id)
     if not invoice:
         invoice = await invoice_service.create_order_invoice(order_id=order.id)
+    return ApiResponse(data=_public_invoice_payload(invoice, order=order))
+
+
+@router.get("/public/order/{order_number}/pdf")
+async def public_order_invoice_pdf(
+    order_number: str,
+    phone: str = Query(..., min_length=11, max_length=11),
+    db: AsyncSession = Depends(get_db),
+):
+    """Download order invoice PDF — requires matching customer phone."""
+    order = await _get_order_for_customer(order_number, phone, db)
+    invoice_service = InvoiceService(db)
+    invoice = await invoice_service.get_by_order_id(order.id)
+    if not invoice:
+        invoice = await invoice_service.create_order_invoice(order_id=order.id)
+    return await _pdf_response(invoice, db)
+
+
+@router.get("/public/booking/{booking_id}", response_model=ApiResponse)
+async def public_booking_invoice(
+    booking_id: uuid.UUID,
+    phone: str = Query(..., min_length=11, max_length=11),
+    db: AsyncSession = Depends(get_db),
+):
+    """Invoice details for the booking-success page — requires matching customer phone."""
+    booking = await _get_booking_for_customer(booking_id, phone, db)
+    invoice_service = InvoiceService(db)
+    invoice = await invoice_service.get_by_booking_v2_id(booking.id)
+    if not invoice:
+        invoice = await invoice_service.create_booking_invoice(booking_id=booking.id)
+    return ApiResponse(data=_public_invoice_payload(invoice, booking=booking))
+
+
+@router.get("/public/booking/{booking_id}/pdf")
+async def public_booking_invoice_pdf(
+    booking_id: uuid.UUID,
+    phone: str = Query(..., min_length=11, max_length=11),
+    db: AsyncSession = Depends(get_db),
+):
+    """Download booking invoice PDF — requires matching customer phone."""
+    booking = await _get_booking_for_customer(booking_id, phone, db)
+    invoice_service = InvoiceService(db)
+    invoice = await invoice_service.get_by_booking_v2_id(booking.id)
+    if not invoice:
+        invoice = await invoice_service.create_booking_invoice(booking_id=booking.id)
     return await _pdf_response(invoice, db)
 
 
