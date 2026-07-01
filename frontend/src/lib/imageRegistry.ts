@@ -14,6 +14,8 @@ export const MEDIA_UPLOAD_FOLDER = "abo-enterprise/media";
 export const BRAND_IMAGE_SLOTS: ImageSlotDef[] = [
   { key: "logo_url", label: "Site Logo", labelBn: "সাইট লোগো", usedOn: "Navbar, Footer, Hero, Invoice" },
   { key: "favicon_url", label: "Favicon", labelBn: "ফ্যাভিকন", usedOn: "Browser tab icon" },
+  { key: "app_icon_url", label: "PWA App Icon", labelBn: "PWA অ্যাপ আইকন", usedOn: "Mobile home screen, manifest" },
+  { key: "default_og_image_url", label: "Default Social Share Image", labelBn: "সোশ্যাল শেয়ার ছবি", usedOn: "Facebook/Twitter preview fallback" },
   { key: "hero_image_url", label: "Homepage Banner", labelBn: "হোমপেজ ব্যানার", usedOn: "Homepage hero" },
   { key: "gallery_office_image_url", label: "Gallery Office Photo", labelBn: "গ্যালারি অফিস ছবি", usedOn: "/gallery office tab" },
   { key: "about_story_image_url", label: "About Story Image", labelBn: "আমাদের গল্প ছবি", usedOn: "/about Our Story" },
