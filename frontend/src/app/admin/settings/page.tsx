@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll } from "lucide-react";
+import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Users, Trophy, Zap, Code } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import { parseGoogleMapsEmbedInput } from "@/lib/maps";
 import { PAGE_BANNER_CONFIG, bannerSettingKey } from "@/lib/pageBanners";
@@ -76,177 +76,202 @@ interface Section {
 }
 
 const SECTIONS: Section[] = [
+  // ═══════════════════════════════════════════════════════════════════════
+  // BRAND ASSETS
+  // ═══════════════════════════════════════════════════════════════════════
   {
-    id: "company",
-    title: "Company Info",
+    id: "brand_core",
+    title: "Brand Identity",
     icon: <Building2 className="w-4 h-4" />,
     fields: [
-      { key: "site_name", label: "Site Name", placeholder: "ABO Enterprise" },
-      { key: "site_tagline", label: "Site Tagline (optional override)", placeholder: "সহজ সমাধান" },
-      { key: "logo_url", label: "Logo", type: "url", upload: true, placeholder: "https://..." },
-      { key: "favicon_url", label: "Favicon", type: "url", upload: true, placeholder: "https://.../favicon.ico" },
-      { key: "contact_phone", label: "Contact Phone", type: "tel", placeholder: "01825007977" },
-      { key: "contact_email", label: "Contact Email", type: "email", placeholder: "info@aboenterprise.com" },
-      { key: "contact_address", label: "Business Address", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh" },
+      { key: "site_name", label: "Company Name", placeholder: "ABO Enterprise" },
+      { key: "site_tagline", label: "Tagline", placeholder: "সহজ সমাধান" },
+      { key: "logo_url", label: "Logo (PNG/SVG)", type: "url", upload: true, placeholder: "https://..." },
+      { key: "favicon_url", label: "Favicon (ICO/PNG)", type: "url", upload: true, placeholder: "https://.../favicon.ico" },
+      { key: "app_icon_url", label: "PWA Icon (192×192 or 512×512)", type: "url", upload: true, placeholder: "https://..." },
+      { key: "default_og_image_url", label: "Default OG Image (1200×630)", type: "url", upload: true, placeholder: "https://...", hint: "Fallback for social shares" },
     ],
   },
   {
-    id: "hero",
-    title: "Hero / Banner",
+    id: "company_info",
+    title: "Contact & Location",
+    icon: <MapPin className="w-4 h-4" />,
+    fields: [
+      { key: "contact_phone", label: "Phone", type: "tel", placeholder: "01825007977" },
+      { key: "contact_email", label: "Email", type: "email", placeholder: "info@aboenterprise.com" },
+      { key: "contact_address", label: "Address", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh" },
+      { key: "google_maps_embed", label: "Google Maps Embed", type: "textarea", hint: "Share → Embed a map", placeholder: "Paste iframe or URL" },
+      { key: "google_maps_api_key", label: "Google Maps API Key", placeholder: "AIza..." },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // HERO ASSETS
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: "hero_homepage",
+    title: "Homepage Hero",
     icon: <ImageIcon className="w-4 h-4" />,
     fields: [
-      { key: "hero_title_en", label: "Hero Title (English)", placeholder: "ABO ENTERPRISE : Simple Solution" },
-      { key: "hero_subtitle_en", label: "Hero Subtitle (English)", type: "textarea", placeholder: "Simple Solution — products, services, software & AI in one place." },
-      { key: "hero_title_bn", label: "Hero Title (বাংলা)", placeholder: "এবিও এন্টারপ্রাইজ : সহজ সমাধান" },
-      { key: "hero_subtitle_bn", label: "Hero Subtitle (বাংলা)", type: "textarea", placeholder: "সহজ সমাধান — পণ্য, সেবা, সফটওয়্যার ও AI এক প্ল্যাটফর্মে।" },
+      { key: "hero_title_en", label: "Title (EN)", placeholder: "ABO ENTERPRISE : Simple Solution" },
+      { key: "hero_title_bn", label: "Title (বাংলা)", placeholder: "এবিও এন্টারপ্রাইজ : সহজ সমাধান" },
+      { key: "hero_subtitle_en", label: "Subtitle (EN)", type: "textarea", placeholder: "Simple Solution — products, services, software & AI in one place." },
+      { key: "hero_subtitle_bn", label: "Subtitle (বাংলা)", type: "textarea", placeholder: "সহজ সমাধান — পণ্য, সেবা, সফটওয়্যার ও AI এক প্ল্যাটফর্মে।" },
       { key: "hero_cta_text", label: "CTA Button Text", placeholder: "Shop Now" },
-      { key: "hero_cta_url", label: "CTA Button URL", type: "url", placeholder: "/products" },
-      { key: "hero_image_url", label: "Homepage Banner Image (1920×1080)", type: "url", upload: true, placeholder: "https://...", hint: "Seeded placeholder — upload to replace." },
-      { key: "gallery_office_image_url", label: "Gallery Office Image (1920×1080)", type: "url", upload: true, placeholder: "https://...", hint: "Shown in /gallery office tab." },
-      { key: "about_story_image_url", label: "About Page Story Image (1920×1080)", type: "url", upload: true, placeholder: "https://...", hint: "Shown on /about next to Our Story." },
+      { key: "hero_cta_url", label: "CTA Button Link", type: "url", placeholder: "/products" },
+      { key: "hero_image_url", label: "Hero Image (1920×1080)", type: "url", upload: true, placeholder: "https://..." },
     ],
   },
-  {
-    id: "cms_media",
-    title: "About & Homepage Media (JSON)",
-    icon: <ImageIcon className="w-4 h-4" />,
-    fields: [
-      { key: "about_team_json", label: "About Team (JSON)", type: "textarea", hint: "Team members with image URLs — editable array." },
-      { key: "client_logos_json", label: "Client Logos (JSON)", type: "textarea", hint: "Homepage client strip with image URLs." },
-      { key: "demo_reviews_json", label: "Demo Reviews (JSON)", type: "textarea", hint: "Fallback reviews with photo_url when API unavailable." },
-    ],
-  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // PAGE BANNERS (All 25 Pages)
+  // ═══════════════════════════════════════════════════════════════════════
   {
     id: "page_banners",
-    title: "Page Banners",
+    title: "Page Banners (All Pages)",
     icon: <ImageIcon className="w-4 h-4" />,
     fields: PAGE_BANNER_CONFIG.map(({ key, label, hint }) => ({
       key: bannerSettingKey(key),
-      label: `${label} Banner`,
+      label: `${label}`,
       type: "url" as const,
       upload: true,
       placeholder: "https://...",
-      hint: hint ?? "Seeded placeholder — upload your image to replace.",
+      hint: hint ?? "1920×1080 recommended",
     })),
   },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // TRUST ASSETS
+  // ═══════════════════════════════════════════════════════════════════════
   {
-    id: "social",
-    title: "Social Links",
-    icon: <Share2 className="w-4 h-4" />,
+    id: "trust_media",
+    title: "Trust Assets (JSON)",
+    icon: <Trophy className="w-4 h-4" />,
     fields: [
-      { key: "facebook_url", label: "Facebook Page URL", type: "url", placeholder: "https://facebook.com/aboenterprise" },
-      { key: "instagram_url", label: "Instagram URL", type: "url", placeholder: "https://instagram.com/..." },
-      { key: "twitter_url", label: "Twitter / X URL", type: "url", placeholder: "https://x.com/..." },
-      { key: "linkedin_url", label: "LinkedIn URL", type: "url", placeholder: "https://linkedin.com/company/..." },
-      { key: "youtube_url", label: "YouTube Channel URL", type: "url", placeholder: "https://youtube.com/@..." },
-      { key: "tiktok_url", label: "TikTok URL", type: "url", placeholder: "https://tiktok.com/@..." },
+      { key: "about_team_json", label: "Team Members", type: "textarea", hint: "Array with name, role, photo_url, bio" },
+      { key: "client_logos_json", label: "Client Logos", type: "textarea", hint: "Array with name, logo_url" },
+      { key: "demo_reviews_json", label: "Testimonials", type: "textarea", hint: "Array with name, review, photo_url, rating" },
     ],
   },
   {
-    id: "ecommerce",
-    title: "Business Settings",
+    id: "additional_assets",
+    title: "Additional Assets",
+    icon: <ImageIcon className="w-4 h-4" />,
+    fields: [
+      { key: "gallery_office_image_url", label: "Office Photo (1920×1080)", type: "url", upload: true, placeholder: "https://..." },
+      { key: "about_story_image_url", label: "About Story Image (1920×1080)", type: "url", upload: true, placeholder: "https://..." },
+      { key: "trade_license", label: "Trade License / TIN", placeholder: "TL-XXXXX", hint: "Footer trust badge" },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // COMMERCE SETTINGS
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: "ecommerce_config",
+    title: "E-Commerce Settings",
     icon: <ShoppingBag className="w-4 h-4" />,
     fields: [
-      { key: "currency", label: "Currency Code", placeholder: "BDT" },
-      { key: "timezone", label: "Timezone", placeholder: "Asia/Dhaka" },
-      { key: "delivery_charge_dhaka", label: "Delivery Charge — Dhaka (৳)", type: "number", placeholder: "60" },
-      { key: "delivery_charge_outside", label: "Delivery Charge — Outside Dhaka (৳)", type: "number", placeholder: "120" },
-      { key: "min_order_amount", label: "Minimum Order Amount (৳)", type: "number", placeholder: "200" },
-      { key: "maintenance_mode", label: "Maintenance Mode", type: "text" as const, hint: "Toggle to put site in maintenance mode", placeholder: "false" },
-    ],
-  },
-  {
-    id: "location",
-    title: "Map & Location",
-    icon: <MapPin className="w-4 h-4" />,
-    fields: [
-      { key: "google_maps_embed", label: "Google Maps Embed URL", type: "textarea", placeholder: "Paste embed URL or full <iframe> code from Google Maps", hint: "Google Maps → Share → Embed a map — paste the URL or entire iframe HTML" },
-      { key: "google_maps_api_key", label: "Google Maps API Key (optional)", placeholder: "AIza...", hint: "Only needed if using the JS Maps API" },
-    ],
-  },
-  {
-    id: "checkout",
-    title: "Checkout & Orders",
-    icon: <ShoppingBag className="w-4 h-4" />,
-    fields: [
-      { key: "checkout_confirm_channel", label: "Order Confirm Channel (legacy)", placeholder: "none", hint: "none = recommended. Orders notify admin; admin contacts customer via WhatsApp/email from /admin/orders" },
-      { key: "checkout_otp_required", label: "Require Phone OTP", placeholder: "false", hint: "true to require OTP before checkout (free-tier in-memory OTP)" },
-      { key: "whatsapp_number", label: "WhatsApp Order Number", placeholder: "8801825007977" },
+      { key: "currency", label: "Currency", placeholder: "BDT" },
+      { key: "min_order_amount", label: "Min Order (৳)", type: "number", placeholder: "200" },
       { key: "free_delivery_min_amount", label: "Free Delivery Min (৳)", type: "number", placeholder: "2000" },
-      { key: "delivery_charge_sylhet", label: "Delivery — Sylhet (৳)", type: "number", placeholder: "0" },
-      { key: "delivery_charge_dhaka", label: "Delivery — Dhaka (৳)", type: "number", placeholder: "60" },
-      { key: "delivery_charge_outside", label: "Delivery — Outside (৳)", type: "number", placeholder: "120" },
-      { key: "trade_license", label: "Trade License / TIN", placeholder: "TL-XXXXX", hint: "Shown in footer for trust" },
-      {
-        key: "coupons_json",
-        label: "Coupon Codes (JSON)",
-        type: "textarea",
-        placeholder: '{"ABO10":{"discount_percent":10,"min_subtotal":0,"active":true}}',
-        hint: "Admin-editable coupons — code, discount_percent, min_subtotal, active",
-      },
+    ],
+  },
+  {
+    id: "delivery_config",
+    title: "Delivery Settings",
+    icon: <ShoppingBag className="w-4 h-4" />,
+    fields: [
+      { key: "delivery_charge_sylhet", label: "Sylhet (৳)", type: "number", placeholder: "0" },
+      { key: "delivery_charge_dhaka", label: "Dhaka (৳)", type: "number", placeholder: "60" },
+      { key: "delivery_charge_outside", label: "Outside (৳)", type: "number", placeholder: "120" },
       { key: "courier_pathao_url", label: "Pathao Tracking URL", placeholder: "https://merchant.pathao.com/tracking?consignment_id={tracking_id}" },
       { key: "courier_steadfast_url", label: "Steadfast Tracking URL", placeholder: "https://steadfast.com.bd/t/{tracking_id}" },
     ],
   },
   {
-    id: "features",
+    id: "checkout_config",
+    title: "Checkout Options",
+    icon: <ShoppingBag className="w-4 h-4" />,
+    fields: [
+      { key: "checkout_confirm_channel", label: "Order Confirm Channel", placeholder: "none" },
+      { key: "checkout_otp_required", label: "Require Phone OTP", placeholder: "false", hint: "true/false" },
+      { key: "whatsapp_number", label: "WhatsApp Order Number", placeholder: "8801825007977" },
+      {
+        key: "coupons_json",
+        label: "Coupon Codes (JSON)",
+        type: "textarea",
+        placeholder: '{"ABO10":{"discount_percent":10,"min_subtotal":0,"active":true}}',
+        hint: "Admin-editable coupons",
+      },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // MARKETING & SOCIAL
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: "social_links",
+    title: "Social Media Links",
+    icon: <Share2 className="w-4 h-4" />,
+    fields: [
+      { key: "facebook_url", label: "Facebook", type: "url", placeholder: "https://facebook.com/aboenterprise" },
+      { key: "instagram_url", label: "Instagram", type: "url", placeholder: "https://instagram.com/..." },
+      { key: "twitter_url", label: "Twitter / X", type: "url", placeholder: "https://x.com/..." },
+      { key: "linkedin_url", label: "LinkedIn", type: "url", placeholder: "https://linkedin.com/company/..." },
+      { key: "youtube_url", label: "YouTube", type: "url", placeholder: "https://youtube.com/@..." },
+      { key: "tiktok_url", label: "TikTok", type: "url", placeholder: "https://tiktok.com/@..." },
+    ],
+  },
+  {
+    id: "marketing_config",
+    title: "Marketing & Analytics",
+    icon: <Zap className="w-4 h-4" />,
+    fields: [
+      { key: "facebook_pixel_id", label: "Facebook Pixel ID", placeholder: "1234567890", hint: "Conversion tracking" },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // FEATURES & TOOLS
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: "site_features",
     title: "Site Features",
-    icon: <Share2 className="w-4 h-4" />,
+    icon: <Zap className="w-4 h-4" />,
     fields: [
-      { key: "feature_flash_sale", label: "Flash Sale Banner", type: "boolean", hint: "Homepage flash sale countdown" },
-      { key: "feature_coupons", label: "Coupon Codes", type: "boolean", hint: "Checkout & cart coupon field" },
-      { key: "feature_guest_checkout", label: "Guest Checkout", type: "boolean", hint: "Allow checkout without account" },
-      { key: "feature_newsletter", label: "Newsletter Signup", type: "boolean", hint: "Footer email subscription" },
-      { key: "feature_infinite_scroll", label: "Infinite Scroll", type: "boolean", hint: "Product list load-more" },
-      { key: "feature_assistant_chat", label: "AI Chat Widget", type: "boolean", hint: "Floating assistant on site" },
-      { key: "feature_assistant_whatsapp", label: "Assistant WhatsApp Handoff", type: "boolean", hint: "WhatsApp option in assistant" },
+      { key: "feature_flash_sale", label: "Flash Sale", type: "boolean", hint: "Homepage countdown" },
+      { key: "feature_coupons", label: "Coupons", type: "boolean", hint: "Checkout coupon field" },
+      { key: "feature_guest_checkout", label: "Guest Checkout", type: "boolean" },
+      { key: "feature_newsletter", label: "Newsletter", type: "boolean", hint: "Footer signup" },
+      { key: "feature_infinite_scroll", label: "Infinite Scroll", type: "boolean", hint: "Product load-more" },
+      { key: "feature_assistant_chat", label: "AI Chat Widget", type: "boolean" },
+      { key: "feature_assistant_whatsapp", label: "Assistant WhatsApp", type: "boolean" },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // SYSTEM
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: "system_config",
+    title: "System Settings",
+    icon: <Shield className="w-4 h-4" />,
+    fields: [
+      { key: "timezone", label: "Timezone", placeholder: "Asia/Dhaka" },
+      { key: "maintenance_mode", label: "Maintenance Mode", type: "text" as const, placeholder: "false", hint: "true to disable site" },
     ],
   },
   {
-    id: "analytics",
-    title: "Analytics & Marketing",
-    icon: <Share2 className="w-4 h-4" />,
-    fields: [
-      { key: "facebook_pixel_id", label: "Facebook Pixel ID", placeholder: "1234567890", hint: "Conversion tracking — leave empty to disable" },
-    ],
-  },
-  {
-    id: "demo",
-    title: "Demo / Offline Fallback",
+    id: "demo_config",
+    title: "Demo & Offline Fallback",
     icon: <RefreshCw className="w-4 h-4" />,
     fields: [
-      {
-        key: "demo_fallback_enabled",
-        label: "Enable Demo Fallback",
-        placeholder: "true",
-        hint: "Show demo catalog when API is slow or unavailable (mobile networks). Set false to disable.",
-      },
-      {
-        key: "demo_notice_en",
-        label: "Demo Notice (English)",
-        type: "textarea",
-        placeholder: "Slow connection — showing demo content...",
-      },
-      {
-        key: "demo_notice_bn",
-        label: "Demo Notice (বাংলা)",
-        type: "textarea",
-        placeholder: "ধীর নেটওয়ার্ক — ডেমো কন্টেন্ট দেখানো হচ্ছে...",
-      },
-      {
-        key: "demo_products_json",
-        label: "Custom Demo Products (JSON array)",
-        type: "textarea",
-        hint: "Optional. Leave empty to use built-in defaults. Admin-editable product catalog for offline mode.",
-        placeholder: '[{"slug":"phone-case","name_en":"Phone Case","name_bn":"ফোন কেস","price":299,"category":"accessories"}]',
-      },
-      {
-        key: "demo_services_json",
-        label: "Custom Demo Services (JSON array)",
-        type: "textarea",
-        hint: "Optional. Leave empty to use built-in defaults.",
-        placeholder: '[{"slug":"printing","name_en":"Printing","name_bn":"প্রিন্টিং","category":"printing","pricing_type":"fixed"}]',
-      },
+      { key: "demo_fallback_enabled", label: "Enable Demo Mode", placeholder: "true", hint: "Show demo when API slow" },
+      { key: "demo_notice_en", label: "Demo Notice (EN)", type: "textarea", placeholder: "Slow connection — showing demo content..." },
+      { key: "demo_notice_bn", label: "Demo Notice (বাংলা)", type: "textarea", placeholder: "ধীর নেটওয়ার্ক — ডেমো কন্টেন্ট দেখানো হচ্ছে..." },
+      { key: "demo_products_json", label: "Demo Products (JSON)", type: "textarea", placeholder: '[{"slug":"...","name_en":"..."}]', hint: "Optional; leave blank for defaults" },
+      { key: "demo_services_json", label: "Demo Services (JSON)", type: "textarea", placeholder: '[{"slug":"...","name_en":"..."}]', hint: "Optional; leave blank for defaults" },
     ],
   },
 ];
