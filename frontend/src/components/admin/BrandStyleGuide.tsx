@@ -127,6 +127,7 @@ export default function BrandStyleGuide() {
         </div>
 
         <button
+          type="button"
           onClick={handleDownloadGuide}
           className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm font-medium transition-colors"
         >
@@ -149,6 +150,7 @@ export default function BrandStyleGuide() {
           >
             {/* Header */}
             <button
+              type="button"
               onClick={() => setExpandedIdx(expandedIdx === idx ? null : idx)}
               className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors text-left"
             >
@@ -193,6 +195,7 @@ export default function BrandStyleGuide() {
                       {standard.rule}
                     </p>
                     <button
+                      type="button"
                       onClick={() => handleCopyRule(standard.rule)}
                       className="p-1 text-gray-400 hover:text-gray-600"
                       title="Copy"
@@ -254,7 +257,7 @@ export default function BrandStyleGuide() {
           ))}
         </div>
 
-        <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">
+        <button type="button" className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">
           Save Compliance Settings
         </button>
       </div>

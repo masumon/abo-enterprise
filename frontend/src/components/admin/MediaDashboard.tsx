@@ -182,6 +182,7 @@ export default function MediaDashboard() {
           </div>
 
           <button
+            type="button"
             onClick={handleCleanup}
             disabled={cleaning}
             className={cn(
@@ -240,6 +241,7 @@ export default function MediaDashboard() {
       {/* Refresh Button */}
       <div className="flex justify-end">
         <button
+          type="button"
           onClick={loadStats}
           className="px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
         >

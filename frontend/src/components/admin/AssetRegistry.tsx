@@ -157,6 +157,7 @@ export default function AssetRegistry() {
               {editing ? "Edit Specification" : "New Specification"}
             </h3>
             <button
+              type="button"
               onClick={() => {
                 setEditing(null);
                 setShowForm(false);
@@ -292,6 +293,7 @@ export default function AssetRegistry() {
               Asset Specifications
             </h3>
             <button
+              type="button"
               onClick={handleAddSpec}
               className="flex items-center gap-2 px-3 py-2 bg-brand-600 text-white rounded-lg text-sm hover:bg-brand-700"
             >
@@ -317,6 +319,7 @@ export default function AssetRegistry() {
                 </div>
                 <div className="flex items-center gap-1 ml-2">
                   <button
+                    type="button"
                     onClick={() => {
                       setEditing(spec.id);
                       setShowForm(true);
@@ -326,6 +329,7 @@ export default function AssetRegistry() {
                     <Edit2 className="w-4 h-4" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleDeleteSpec(spec.id)}
                     className="p-1.5 text-red-600 hover:bg-red-50 rounded"
                   >
