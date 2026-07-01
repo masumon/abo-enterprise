@@ -9,7 +9,6 @@ import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import CartDrawer from "@/components/features/CartDrawer";
 import AssistantWidget from "@/components/ui/AssistantWidget";
 import CompareBar from "@/components/ui/CompareBar";
-import OfflineBanner from "@/components/ui/OfflineBanner";
 import ApiWarmup from "@/components/ui/ApiWarmup";
 import ToastProvider from "@/components/ui/ToastProvider";
 import BackToTop from "@/components/ui/BackToTop";
@@ -42,7 +41,6 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <ScrollProgress />
       <SkipToContent />
       <AnnouncementBar />
-      <OfflineBanner />
       <Navbar />
       <div id="page-content" className="flex-1 pt-[var(--navbar-offset)] pb-mobile-nav lg:pb-0 min-h-screen page-surface">
         {children}

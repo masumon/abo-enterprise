@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Heart, Users, Gift, Laptop, Send, MapPin } from "lucide-react";
+import { Heart, Users, Gift, Laptop, Send, MapPin, Loader2 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import { useToastStore } from "@/store/toast";
 import { BD_PHONE_REGEX } from "@/lib/phone";
+import { careerApi } from "@/lib/api";
 
 const BENEFITS = [
   { icon: Gift, title: { en: "Competitive Salary", bn: "প্রতিযোগিতামূলক বেতন" } },
@@ -37,19 +38,35 @@ export default function CareerPage() {
   const [phone, setPhone] = useState("");
   const [role, setRole] = useState("");
   const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleApply = (e: React.FormEvent) => {
+  const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !BD_PHONE_REGEX.test(phone.trim())) {
       toast("error", lang === "bn" ? "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন" : "Enter a valid 11-digit BD phone number");
       return;
     }
-    toast("success", lang === "bn" ? "আবেদন জমা হয়েছে!" : "Application submitted!");
-    setName("");
-    setEmail("");
-    setPhone("");
-    setRole("");
-    setMessage("");
+
+    setSubmitting(true);
+    try {
+      await careerApi.submit({
+        name: name.trim(),
+        email: email.trim() || undefined,
+        phone: phone.trim(),
+        position: role,
+        cover_letter: message || undefined,
+      });
+      toast("success", lang === "bn" ? "আবেদন জমা হয়েছে!" : "Application submitted!");
+      setName("");
+      setEmail("");
+      setPhone("");
+      setRole("");
+      setMessage("");
+    } catch (err) {
+      toast("error", lang === "bn" ? "আবেদন জমা দিতে সমস্যা হয়েছে" : "Failed to submit application");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -134,9 +151,9 @@ export default function CareerPage() {
                 <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className="input resize-none" />
               </div>
               <div className="sm:col-span-2">
-                <button type="submit" className="btn btn-brand btn-md w-full sm:w-auto">
-                  <Send className="w-4 h-4" />
-                  {t({ en: "Submit Application", bn: "আবেদন জমা দিন" })}
+                <button type="submit" disabled={submitting} className="btn btn-brand btn-md w-full sm:w-auto disabled:opacity-60">
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {submitting ? (lang === "bn" ? "জমা দিচ্ছি..." : "Submitting...") : t({ en: "Submit Application", bn: "আবেদন জমা দিন" })}
                 </button>
               </div>
             </form>

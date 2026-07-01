@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
-from app.core.security import require_admin
+from app.core.security import require_admin, require_role
 from app.core.config import settings
 from app.core.email import send_email, order_notification_html, customer_order_confirmation_html
 from app.core.invoice import InvoiceService
@@ -277,7 +277,7 @@ async def update_order_status(
     order_id: UUID,
     payload: OrderStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("orders.write")),
 ):
     valid_statuses = {"pending", "confirmed", "processing", "shipped", "delivered", "cancelled"}
     if payload.status not in valid_statuses:
@@ -322,7 +322,7 @@ async def update_order_courier(
     order_id: UUID,
     payload: OrderCourierUpdate,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("orders.write")),
 ):
     result = await db.execute(
         select(Order).options(selectinload(Order.items)).where(Order.id == order_id)

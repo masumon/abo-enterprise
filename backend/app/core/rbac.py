@@ -12,7 +12,7 @@ ROLE_PERMISSIONS = {
         "analytics.read",
         "bulk.read", "bulk.write",
         "settings.read", "settings.write",
-        "users.read",
+        "users.read", "users.write", "users.delete",
     ],
     "editor": [
         "orders.read", "products.read", "products.write",

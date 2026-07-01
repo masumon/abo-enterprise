@@ -22,6 +22,7 @@ from app.api.v1.routes import (
     email_templates,
     customer_otp,
     coupons,
+    career,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -48,3 +49,4 @@ api_router.include_router(assistant.router)
 api_router.include_router(email_templates.router)
 api_router.include_router(customer_otp.router)
 api_router.include_router(coupons.router)
+api_router.include_router(career.router)

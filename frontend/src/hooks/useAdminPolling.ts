@@ -4,11 +4,14 @@ import { useAlertStore } from "@/store/alerts";
 import { useToastStore } from "@/store/toast";
 
 const POLL_INTERVAL = 30_000; // 30 seconds
+const FAILURE_THRESHOLD = 3; // Show "sync failed" only after 3 consecutive failures
 
 export function useAdminPolling(enabled = true) {
   const setAlerts = useAlertStore((s) => s.set);
   const toast = useToastStore((s) => s.push);
   const prev = useRef({ pendingOrders: -1, pendingBookings: -1, newLeads: -1 });
+  const failureCountRef = useRef(0);
+  const lastSyncFailedToastRef = useRef(false);
 
   useEffect(() => {
     if (!enabled) return;
@@ -46,8 +49,17 @@ export function useAdminPolling(enabled = true) {
 
         prev.current = { pendingOrders, pendingBookings, newLeads };
         setAlerts({ pendingOrders, pendingBookings, newLeads });
-      } catch {
-        // Silent fail — network errors during polling should not disrupt the UI
+        failureCountRef.current = 0; // Reset on success
+        if (lastSyncFailedToastRef.current) {
+          toast("success", "Dashboard sync restored");
+          lastSyncFailedToastRef.current = false;
+        }
+      } catch (err) {
+        failureCountRef.current += 1;
+        if (failureCountRef.current >= FAILURE_THRESHOLD && !lastSyncFailedToastRef.current) {
+          toast("error", "Dashboard stats sync failed (retrying)");
+          lastSyncFailedToastRef.current = true;
+        }
       }
     }
 

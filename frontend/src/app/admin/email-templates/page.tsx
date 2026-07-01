@@ -59,6 +59,7 @@ export default function AdminEmailTemplatesPage() {
   const close = () => { setEditing(null); setIsNew(false); setPreviewMode(false); };
 
   function renderPreview(body: string, variables: string[]) {
+    // Safe: only admin-authored text + variable placeholders, no untrusted input
     let result = body;
     for (const v of variables) {
       result = result.replace(new RegExp(`\\{\\{\\s*${v}\\s*\\}\\}`, "g"), `<span class="bg-yellow-100 text-yellow-800 rounded px-1 font-mono text-xs">[${v}]</span>`);

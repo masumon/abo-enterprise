@@ -1059,3 +1059,37 @@ class AssistantFaqUpdate(BaseModel):
     topic: str | None = None
     answer_en: str | None = None
     answer_bn: str | None = None
+
+
+class CareerApplicationCreate(BaseModel):
+    name: str
+    email: str | None = None
+    phone: str
+    position: str
+    cover_letter: str | None = None
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        return bd_phone(v)
+
+
+class CareerApplicationUpdate(BaseModel):
+    status: str | None = None
+    notes: str | None = None
+
+
+class CareerApplicationResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+    email: str | None
+    phone: str
+    position: str
+    cover_letter: str | None
+    status: str
+    notes: str | None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

@@ -6,7 +6,7 @@ import cloudinary
 import cloudinary.uploader
 
 from app.core.database import get_db
-from app.core.security import require_admin, hash_password
+from app.core.security import require_admin, require_role, hash_password
 from app.core.config import settings
 from app.models.models import (
     Order, BookingV2, LeadV2, Product, AdminUser, ActivityLog,
@@ -185,7 +185,7 @@ async def list_admin_users(
 async def create_admin_user(
     payload: AdminUserCreate,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("users.write")),
 ):
     existing = await db.execute(select(AdminUser).where(AdminUser.email == payload.email))
     if existing.scalar_one_or_none():
@@ -231,7 +231,7 @@ async def update_admin_user(
     user_id: UUID,
     payload: AdminUserUpdate,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("users.write")),
 ):
     result = await db.execute(select(AdminUser).where(AdminUser.id == user_id))
     user = result.scalar_one_or_none()
@@ -280,7 +280,7 @@ async def update_admin_user(
 async def deactivate_admin_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("users.delete")),
 ):
     if str(user_id) == admin_id:
         raise HTTPException(status_code=400, detail="Cannot deactivate your own account")

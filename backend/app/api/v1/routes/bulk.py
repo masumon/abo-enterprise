@@ -7,13 +7,14 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, update
 from app.core.database import get_db
-from app.core.security import require_admin
+from app.core.security import require_admin, require_role
 from app.models.models import Product, Order, LeadV2, BookingV2
 from app.schemas.schemas import BulkOrderStatusUpdate, ApiResponse
 
 router = APIRouter(prefix="/admin/bulk", tags=["bulk"])
 
 VALID_ORDER_STATUSES = {"pending", "confirmed", "processing", "shipped", "delivered", "cancelled"}
+MAX_EXPORT_ROWS = 2000  # Limit exports to protect Render free-tier memory
 
 
 # ── BULK STATUS UPDATE ────────────────────────────────────────────────────────
@@ -21,7 +22,7 @@ VALID_ORDER_STATUSES = {"pending", "confirmed", "processing", "shipped", "delive
 @router.post("/orders/status", response_model=ApiResponse)
 async def bulk_update_order_status(
     payload: BulkOrderStatusUpdate,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("orders.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Update status on multiple orders in one request (admin only)"""
@@ -62,6 +63,7 @@ async def export_orders(
         select(Order)
         .where(and_(Order.created_at >= since, Order.is_deleted == False))
         .order_by(Order.created_at.desc())
+        .limit(MAX_EXPORT_ROWS)
     )
     orders = result.scalars().all()
 
@@ -94,7 +96,7 @@ async def export_leads(
 ):
     """Export service leads (v2) to CSV (admin only)"""
     result = await db.execute(
-        select(LeadV2).where(LeadV2.is_deleted == False).order_by(LeadV2.created_at.desc())
+        select(LeadV2).where(LeadV2.is_deleted == False).order_by(LeadV2.created_at.desc()).limit(MAX_EXPORT_ROWS)
     )
     leads = result.scalars().all()
 
@@ -126,7 +128,7 @@ async def export_bookings(
 ):
     """Export service bookings (v2) to CSV (admin only)"""
     result = await db.execute(
-        select(BookingV2).where(BookingV2.is_deleted == False).order_by(BookingV2.created_at.desc())
+        select(BookingV2).where(BookingV2.is_deleted == False).order_by(BookingV2.created_at.desc()).limit(MAX_EXPORT_ROWS)
     )
     bookings = result.scalars().all()
 
@@ -162,7 +164,7 @@ async def export_products(
 ):
     """Export products to CSV (admin only)"""
     result = await db.execute(
-        select(Product).where(Product.is_deleted == False).order_by(Product.name_en)
+        select(Product).where(Product.is_deleted == False).order_by(Product.name_en).limit(MAX_EXPORT_ROWS)
     )
     products = result.scalars().all()
 

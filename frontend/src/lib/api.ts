@@ -227,14 +227,6 @@ export const reviewsApi = {
     api.post<ApiResponse<Review>>("/api/v1/reviews", data),
 };
 
-export const blogApi = {
-  list: (params?: { category?: string; featured?: boolean; page?: number; per_page?: number }) =>
-    api.get<PaginatedResponse<BlogPost>>("/api/v1/blog", { params }),
-
-  getBySlug: (slug: string) =>
-    api.get<ApiResponse<BlogPost>>(`/api/v1/blog/${slug}`),
-};
-
 const API_BASE = baseURL;
 
 export async function downloadCsv(path: string, filename: string): Promise<void> {
@@ -547,11 +539,6 @@ export const paymentsApi = {
       payment_id,
       payment_gateway: "nagad",
     }),
-
-  getTransaction: (transaction_id: string, gateway: "bkash" | "nagad") =>
-    api.get<ApiResponse<{ id: string; status: string; amount: number }>>("/api/v1/payments/transaction/" + transaction_id, {
-      params: { gateway },
-    }),
 };
 
 export const publicApi = {
@@ -745,6 +732,25 @@ export const assistantAdminApi = {
 
   deleteFaq: (key: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/assistant/admin/faq/${key}`),
+};
+
+export const careerApi = {
+  submit: (data: { name: string; email?: string; phone: string; position: string; cover_letter?: string }) =>
+    api.post<ApiResponse<{ id: string; name: string; phone: string; position: string; status: string; created_at: string }>>("/api/v1/career", data),
+};
+
+export const careerAdminApi = {
+  list: (params?: { page?: number; per_page?: number; status?: string; search?: string }) =>
+    api.get<PaginatedResponse<{ id: string; name: string; email?: string; phone: string; position: string; status: string; notes?: string; created_at: string }>>("/api/v1/career/admin/applications", { params }),
+
+  get: (id: string) =>
+    api.get<ApiResponse<{ id: string; name: string; email?: string; phone: string; position: string; cover_letter?: string; status: string; notes?: string; created_at: string; updated_at: string }>>(`/api/v1/career/admin/applications/${id}`),
+
+  updateStatus: (id: string, status: string, notes?: string) =>
+    api.patch<ApiResponse<null>>(`/api/v1/career/admin/applications/${id}`, { status, notes }),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/career/admin/applications/${id}`),
 };
 
 export default api;

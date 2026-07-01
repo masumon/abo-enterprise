@@ -30,13 +30,6 @@ const EMPTY_TIER: Partial<ServicePricingTier> = {
   tier_name: "", price: 0, description_en: "", features: [], is_active: true, sort_order: 0,
 };
 
-const FIELD_TYPES = [
-  "text", "textarea", "number", "email", "phone", "url",
-  "date", "time", "datetime-local",
-  "select", "multiselect", "radio", "checkbox",
-  "file", "image", "rating", "range", "color", "hidden", "paragraph",
-] as const;
-
 const EMPTY_FIELD: Partial<ServiceBookingFormField> = {
   field_name: "", field_type: "text", field_label_en: "", field_label_bn: "",
   is_required: false, placeholder: "", options: [], sort_order: 0, is_active: true,

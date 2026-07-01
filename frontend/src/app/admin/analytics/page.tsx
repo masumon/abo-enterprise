@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import api, { downloadCsv } from "@/lib/api";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { useToastStore } from "@/store/toast";
+import { apiErrorMessage } from "@/lib/apiError";
 import { TrendingUp, ShoppingCart, Calendar, Users, Download, RefreshCw } from "lucide-react";
 
 interface Overview {
@@ -21,13 +23,14 @@ export default function AnalyticsPage() {
   const [funnel, setFunnel] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<string | null>(null);
+  const toast = useToastStore((s) => s.push);
 
   async function handleExport(path: string, filename: string, key: string) {
     setExporting(key);
     try {
       await downloadCsv(path, filename);
     } catch (e) {
-      console.error(e);
+      toast("error", apiErrorMessage(e, "Export failed"));
     } finally {
       setExporting(null);
     }
@@ -47,7 +50,7 @@ export default function AnalyticsPage() {
       setChart(ch.data.data);
       setFunnel(fn.data.data);
     } catch (e) {
-      console.error(e);
+      toast("error", apiErrorMessage(e, "Failed to load analytics"));
     } finally {
       setLoading(false);
     }
