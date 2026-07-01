@@ -299,7 +299,7 @@ async def update_invoice_payment_status(
     if payment_status == "paid":
         from datetime import datetime, timezone
 
-        invoice.paid_date = datetime.now(timezone.utc).date()
+        invoice.paid_date = datetime.now(timezone.utc)
 
     await db.commit()
     await db.refresh(invoice)
@@ -351,6 +351,90 @@ async def delete_invoice(
     await db.commit()
 
     return ApiResponse(message="Invoice deleted successfully")
+
+
+@router.post("/admin/backfill", response_model=ApiResponse)
+async def backfill_missing_invoices(
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create invoices for existing orders/bookings that are missing one.
+
+    Auto-invoice failures at checkout are swallowed (the order must still
+    succeed), so this endpoint both repairs old records and surfaces the
+    underlying error messages when creation keeps failing.
+    """
+    from app.models.models import Order
+
+    invoice_service = InvoiceService(db)
+    created = {"orders": 0, "bookings": 0, "legacy_bookings": 0}
+    errors: list[str] = []
+
+    # isnot(None) guard also avoids the SQL NOT IN + NULL trap
+    order_ids_with_invoice = select(Invoice.order_id).where(
+        Invoice.order_id.isnot(None), Invoice.is_deleted == False  # noqa: E712
+    )
+    orders_result = await db.execute(
+        select(Order.id, Order.order_number).where(
+            Order.is_deleted == False,  # noqa: E712
+            Order.id.not_in(order_ids_with_invoice),
+        )
+    )
+    for order_id, order_number in orders_result.all():
+        try:
+            await invoice_service.create_order_invoice(order_id=order_id)
+            created["orders"] += 1
+        except Exception as exc:
+            await db.rollback()
+            logger.exception("Backfill invoice failed for order %s", order_number)
+            errors.append(f"Order {order_number}: {exc}")
+
+    booking_ids_with_invoice = select(Invoice.booking_id).where(
+        Invoice.booking_id.isnot(None), Invoice.is_deleted == False  # noqa: E712
+    )
+    bookings_result = await db.execute(
+        select(BookingV2.id, BookingV2.booking_number).where(
+            BookingV2.is_deleted == False,  # noqa: E712
+            BookingV2.id.not_in(booking_ids_with_invoice),
+        )
+    )
+    for booking_id, booking_number in bookings_result.all():
+        try:
+            await invoice_service.create_booking_invoice(booking_id=booking_id)
+            created["bookings"] += 1
+        except Exception as exc:
+            await db.rollback()
+            logger.exception("Backfill invoice failed for booking %s", booking_number)
+            errors.append(f"Booking {booking_number}: {exc}")
+
+    legacy_result = await db.execute(
+        select(Booking).where(Booking.is_deleted == False)  # noqa: E712
+    )
+    for booking in legacy_result.scalars().all():
+        try:
+            if await invoice_service.get_by_legacy_booking_id(booking.id):
+                continue
+            await invoice_service.create_legacy_booking_invoice(booking)
+            created["legacy_bookings"] += 1
+        except Exception as exc:
+            await db.rollback()
+            logger.exception("Backfill invoice failed for legacy booking %s", booking.booking_number)
+            errors.append(f"Booking {booking.booking_number}: {exc}")
+
+    total_created = sum(created.values())
+    if total_created:
+        db.add(ActivityLog(
+            admin_id=uuid.UUID(admin_id),
+            action="create",
+            entity_type="invoice",
+            new_values={"backfilled": created},
+        ))
+        await db.commit()
+
+    return ApiResponse(
+        data={"created": created, "errors": errors[:20]},
+        message=f"{total_created} invoice(s) created, {len(errors)} failed",
+    )
 
 
 @router.get("/admin/invoices/stats/summary", response_model=ApiResponse)

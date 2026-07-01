@@ -157,8 +157,9 @@ async def create_order(
     try:
         invoice = await InvoiceService(db).create_order_invoice(order_id=order.id)
         invoice_id = str(invoice.id)
-    except Exception as exc:
-        logger.warning("Auto invoice for order %s failed: %s", order.order_number, exc)
+    except Exception:
+        await db.rollback()
+        logger.exception("Auto invoice for order %s failed", order.order_number)
 
     return ApiResponse(
         data={

@@ -111,8 +111,9 @@ async def create_booking(
     try:
         invoice = await InvoiceService(db).create_booking_invoice(booking_id=booking.id)
         invoice_id = str(invoice.id)
-    except Exception as exc:
-        logger.warning("Auto invoice for booking %s failed: %s", booking.booking_number, exc)
+    except Exception:
+        await db.rollback()
+        logger.exception("Auto invoice for booking %s failed", booking.booking_number)
 
     data = BookingV2Out.model_validate(booking).model_dump()
     data["invoice_id"] = invoice_id
