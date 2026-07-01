@@ -54,7 +54,7 @@ export default function CareerAdminPage() {
         search: search || undefined,
       });
       setApps(res.data.data);
-      setTotal(res.data.meta.total);
+      setTotal(res.data.meta?.total ?? 0);
     } catch (err) {
       toast("error", apiErrorMessage(err, "Failed to load applications"));
     } finally {
