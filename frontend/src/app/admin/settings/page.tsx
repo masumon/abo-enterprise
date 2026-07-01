@@ -81,7 +81,8 @@ const SECTIONS: Section[] = [
       { key: "hero_subtitle_bn", label: "Hero Subtitle (বাংলা)", type: "textarea", placeholder: "সহজ সমাধান — পণ্য, সেবা, সফটওয়্যার ও AI এক প্ল্যাটফর্মে।" },
       { key: "hero_cta_text", label: "CTA Button Text", placeholder: "Shop Now" },
       { key: "hero_cta_url", label: "CTA Button URL", type: "url", placeholder: "/products" },
-      { key: "hero_image_url", label: "Homepage Banner Image", type: "url", upload: true, placeholder: "https://...", hint: "Leave empty for built-in demo banner. Upload to replace." },
+      { key: "hero_image_url", label: "Homepage Banner Image (1920×1080)", type: "url", upload: true, placeholder: "https://...", hint: "Seeded placeholder — upload to replace." },
+      { key: "gallery_office_image_url", label: "Gallery Office Image (1920×1080)", type: "url", upload: true, placeholder: "https://...", hint: "Shown in /gallery office tab." },
     ],
   },
   {
@@ -94,7 +95,7 @@ const SECTIONS: Section[] = [
       type: "url" as const,
       upload: true,
       placeholder: "https://...",
-      hint: hint ?? "Leave empty to use built-in demo. Upload your image to replace.",
+      hint: hint ?? "Seeded placeholder — upload your image to replace.",
     })),
   },
   {

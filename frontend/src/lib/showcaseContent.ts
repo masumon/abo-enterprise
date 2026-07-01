@@ -76,7 +76,6 @@ export const DEFAULT_SOFTWARE_SERVICE_CARDS: SoftwareServiceCard[] = [
     icon: "globe",
     color: "from-green-500 to-teal-500",
     title: { en: "Website & Web App", bn: "ওয়েবসাইট ও ওয়েব অ্যাপ" },
-    image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&q=80",
     items: [
       { en: "Business websites", bn: "ব্যবসায়িক ওয়েবসাইট" },
       { en: "E-commerce platforms", bn: "ই-কমার্স প্ল্যাটফর্ম" },
@@ -89,7 +88,6 @@ export const DEFAULT_SOFTWARE_SERVICE_CARDS: SoftwareServiceCard[] = [
     icon: "bot",
     color: "from-orange-500 to-red-500",
     title: { en: "AI Solutions", bn: "AI সমাধান" },
-    image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&q=80",
     items: [
       { en: "Custom AI agents", bn: "কাস্টম AI এজেন্ট" },
       { en: "OCR / Document processing", bn: "OCR / ডকুমেন্ট প্রসেসিং" },
@@ -102,7 +100,6 @@ export const DEFAULT_SOFTWARE_SERVICE_CARDS: SoftwareServiceCard[] = [
     icon: "cog",
     color: "from-indigo-500 to-purple-500",
     title: { en: "Python Automation", bn: "পাইথন অটোমেশন" },
-    image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
     items: [
       { en: "Business process automation", bn: "ব্যবসায়িক প্রক্রিয়া স্বয়ংক্রিয়" },
       { en: "Data scraping & processing", bn: "ডেটা স্ক্র্যাপিং" },
@@ -115,7 +112,6 @@ export const DEFAULT_SOFTWARE_SERVICE_CARDS: SoftwareServiceCard[] = [
     icon: "database",
     color: "from-cyan-500 to-blue-500",
     title: { en: "ERP / POS / CRM", bn: "ERP / POS / CRM" },
-    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&q=80",
     items: [
       { en: "Inventory management", bn: "ইনভেন্টরি ম্যানেজমেন্ট" },
       { en: "POS for retail & restaurant", bn: "রিটেইল ও রেস্টুরেন্ট POS" },
@@ -128,7 +124,6 @@ export const DEFAULT_SOFTWARE_SERVICE_CARDS: SoftwareServiceCard[] = [
     icon: "monitor",
     color: "from-pink-500 to-rose-500",
     title: { en: "Mobile & Desktop Apps", bn: "মোবাইল ও ডেস্কটপ অ্যাপ" },
-    image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&q=80",
     items: [
       { en: "Android & iOS apps", bn: "Android ও iOS অ্যাপ" },
       { en: "Cross-platform apps", bn: "ক্রস-প্ল্যাটফর্ম অ্যাপ" },
@@ -141,7 +136,6 @@ export const DEFAULT_SOFTWARE_SERVICE_CARDS: SoftwareServiceCard[] = [
     icon: "code",
     color: "from-violet-500 to-purple-500",
     title: { en: "DevOps & Cloud", bn: "DevOps ও ক্লাউড" },
-    image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=800&q=80",
     items: [
       { en: "Docker & containerization", bn: "Docker কন্টেইনারাইজেশন" },
       { en: "Cloud deployment (AWS/GCP)", bn: "ক্লাউড ডিপ্লয়মেন্ট" },

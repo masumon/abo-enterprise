@@ -4,7 +4,7 @@ import { pageMeta } from "@/lib/metadata";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import ServicesPageClient from "./ServicesPageClient";
 import { fetchWithRetry } from "@/lib/fetchRetry";
-import { DEMO_SERVICES } from "@/lib/demoContent";
+import { fetchDemoServicesFromSettings } from "@/lib/serverDemoCatalog";
 
 export const metadata: Metadata = pageMeta(
   "Services — Printing, Legal & Software",
@@ -27,7 +27,8 @@ async function fetchServices(): Promise<{ services: Service[]; total: number; is
   } catch {
     // fall through to demo
   }
-  return { services: DEMO_SERVICES, total: DEMO_SERVICES.length, isDemo: true };
+  const services = await fetchDemoServicesFromSettings();
+  return { services, total: services.length, isDemo: true };
 }
 
 export default async function ServicesPage() {

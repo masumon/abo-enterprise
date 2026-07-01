@@ -25,11 +25,15 @@ function parseJsonArray<T>(raw: string | undefined, fallback: T[]): T[] {
 }
 
 export function getDemoProducts(): Product[] {
-  return parseJsonArray(settingsCache?.demo_products_json, DEMO_PRODUCTS);
+  const fromSettings = parseJsonArray<Product>(settingsCache?.demo_products_json, []);
+  if (fromSettings.length > 0) return fromSettings;
+  return DEMO_PRODUCTS;
 }
 
 export function getDemoServices(): Service[] {
-  return parseJsonArray(settingsCache?.demo_services_json, DEMO_SERVICES);
+  const fromSettings = parseJsonArray<Service>(settingsCache?.demo_services_json, []);
+  if (fromSettings.length > 0) return fromSettings;
+  return DEMO_SERVICES;
 }
 
 export function filterDemoProducts(
