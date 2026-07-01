@@ -8,7 +8,7 @@ import uuid
 from datetime import datetime, timezone
 import mimetypes
 
-router = APIRouter(prefix="/api/v1/media", tags=["media"])
+router = APIRouter(prefix="/media", tags=["media"])
 
 
 @router.post("/upload-with-metadata")
@@ -26,13 +26,12 @@ async def upload_with_metadata(
         mime_type = file.content_type or "application/octet-stream"
         format = mime_type.split("/")[-1] if "/" in mime_type else "unknown"
 
-        from PIL import Image as PILImage
-        from io import BytesIO
-
         width = None
         height = None
         if mime_type.startswith("image/"):
             try:
+                from PIL import Image as PILImage
+                from io import BytesIO
                 img = PILImage.open(BytesIO(contents))
                 width, height = img.size
             except Exception:
