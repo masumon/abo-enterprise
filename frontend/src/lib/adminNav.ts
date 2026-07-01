@@ -16,6 +16,8 @@ import {
   BarChart2,
   Settings,
   Shield,
+  Send,
+  UserPlus,
   ExternalLink,
   type LucideIcon,
 } from "lucide-react";
@@ -64,6 +66,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { href: "/admin/bookings", icon: Briefcase, label: "Bookings", labelBn: "বুকিং", badge: "bookings" },
       { href: "/admin/leads", icon: Users, label: "Leads", labelBn: "লিড", badge: "leads" },
+      { href: "/admin/career", icon: UserPlus, label: "Career Applications", labelBn: "চাকরির আবেদন" },
     ],
   },
   {
@@ -85,6 +88,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি" },
       { href: "/admin/blog", icon: BookOpen, label: "Blog", labelBn: "ব্লগ" },
       { href: "/admin/email-templates", icon: Mail, label: "Email Templates", labelBn: "ইমেইল" },
+      { href: "/admin/newsletter", icon: Send, label: "Newsletter", labelBn: "নিউজলেটার" },
     ],
   },
   {
