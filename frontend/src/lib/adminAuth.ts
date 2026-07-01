@@ -12,6 +12,12 @@ export function setAdminToken(token: string): void {
   document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
 }
 
+/** Re-sync middleware cookie when localStorage still has a valid token. */
+export function syncAdminTokenCookie(): void {
+  const token = getAdminToken();
+  if (token) setAdminToken(token);
+}
+
 export function clearAdminToken(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(TOKEN_KEY);

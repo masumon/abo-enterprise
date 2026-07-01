@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { Upload, Loader2, X, ImageIcon, Video } from "lucide-react";
 import { adminApi } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/apiError";
 import { cn } from "@/lib/utils";
 
 type AcceptType = "image" | "video" | "both";
@@ -60,8 +61,8 @@ export default function ImageUpload({
       const r = await adminApi.uploadMedia(file, folder);
       const url = r.data.data?.url ?? "";
       if (url) onChange(url);
-    } catch {
-      setError("Upload failed. Check file size and format.");
+    } catch (e) {
+      setError(apiErrorMessage(e, "Upload failed. Check file size and format, or paste a URL."));
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
