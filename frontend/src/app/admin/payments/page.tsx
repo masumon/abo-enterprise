@@ -57,7 +57,7 @@ const EMPTY_FORM: Partial<PaymentMethodRecord> = {
 };
 
 export default function AdminPaymentsPage() {
-  const [tab, setTab] = useState<"gateways" | "transactions">("gateways");
+  const [tab, setTab] = useState<"gateways" | "transactions" | "reconciliation">("gateways");
   const [methods, setMethods] = useState<PaymentMethodRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<{
@@ -68,6 +68,21 @@ export default function AdminPaymentsPage() {
   const [txGateway, setTxGateway] = useState("all");
   const [txPage, setTxPage] = useState(1);
   const [txTotal, setTxTotal] = useState(0);
+  const [reconLoading, setReconLoading] = useState(false);
+  const [reconRecords, setReconRecords] = useState<{
+    id: string;
+    reconciliation_date: string;
+    payment_gateway: string;
+    total_transactions: number;
+    total_amount: number;
+    successful_count: number;
+    failed_count: number;
+    pending_count: number;
+    reconciliation_status: string;
+    notes: string | null;
+  }[]>([]);
+  const [reconPage, setReconPage] = useState(1);
+  const [reconTotal, setReconTotal] = useState(0);
   const [editing, setEditing] = useState<Partial<PaymentMethodRecord> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -104,6 +119,21 @@ export default function AdminPaymentsPage() {
   }, [txGateway, txPage, toast]);
 
   useEffect(() => { if (tab === "transactions") loadTransactions(); }, [loadTransactions, tab]);
+
+  const loadReconciliation = useCallback(async () => {
+    setReconLoading(true);
+    try {
+      const r = await adminApi.listPaymentReconciliation(reconPage);
+      setReconRecords(r.data.data ?? []);
+      setReconTotal(r.data.meta?.total ?? 0);
+    } catch {
+      toast("error", "Failed to load reconciliation records");
+    } finally {
+      setReconLoading(false);
+    }
+  }, [reconPage, toast]);
+
+  useEffect(() => { if (tab === "reconciliation") loadReconciliation(); }, [loadReconciliation, tab]);
 
   const openNew = (gateway?: string) => {
     setEditing({ ...EMPTY_FORM, payment_gateway: gateway ?? "" });
@@ -197,7 +227,11 @@ export default function AdminPaymentsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-500 text-sm mt-1">
-            {tab === "gateways" ? "Configure checkout payment methods" : "View bKash & Nagad transactions"}
+            {tab === "gateways"
+              ? "Configure checkout payment methods"
+              : tab === "transactions"
+                ? "View bKash & Nagad transactions"
+                : "Daily payment reconciliation summary"}
           </p>
         </div>
         {tab === "gateways" && (
@@ -207,21 +241,71 @@ export default function AdminPaymentsPage() {
         )}
       </div>
 
-      <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
-        {(["gateways", "transactions"] as const).map((t) => (
+      <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit flex-wrap">
+        {([
+          ["gateways", "Gateways"],
+          ["transactions", "Transactions"],
+          ["reconciliation", "Reconciliation"],
+        ] as const).map(([t, label]) => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               tab === t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            {t === "gateways" ? "Gateways" : "Transactions"}
+            {label}
           </button>
         ))}
       </div>
 
-      {tab === "transactions" ? (
+      {tab === "reconciliation" ? (
+        <div className="admin-card overflow-hidden">
+          {reconLoading ? (
+            <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
+          ) : reconRecords.length === 0 ? (
+            <p className="p-8 text-center text-gray-500">No reconciliation records yet</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="table-premium min-w-[600px]">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Gateway</th>
+                    <th>Transactions</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reconRecords.map((r) => (
+                    <tr key={r.id}>
+                      <td className="text-sm text-gray-600">{new Date(r.reconciliation_date).toLocaleDateString("en-BD")}</td>
+                      <td className="capitalize">{r.payment_gateway}</td>
+                      <td className="text-sm">
+                        <span className="text-green-600">{r.successful_count} ok</span>
+                        {r.failed_count > 0 && <span className="text-red-500 ml-2">{r.failed_count} fail</span>}
+                        {r.pending_count > 0 && <span className="text-amber-600 ml-2">{r.pending_count} pending</span>}
+                      </td>
+                      <td className="font-medium">৳{r.total_amount.toLocaleString()}</td>
+                      <td>
+                        <span className="badge text-xs capitalize">{r.reconciliation_status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {reconTotal > 20 && (
+            <div className="flex justify-center gap-2 p-4 border-t border-gray-100">
+              <button disabled={reconPage === 1} onClick={() => setReconPage((p) => p - 1)} className="btn btn-outline btn-sm">Previous</button>
+              <span className="text-sm text-gray-500 self-center">Page {reconPage}</span>
+              <button disabled={reconPage * 20 >= reconTotal} onClick={() => setReconPage((p) => p + 1)} className="btn btn-outline btn-sm">Next</button>
+            </div>
+          )}
+        </div>
+      ) : tab === "transactions" ? (
         <div className="admin-card overflow-hidden">
           <div className="px-5 py-3 border-b border-gray-100 flex items-center gap-3">
             <Receipt className="w-4 h-4 text-gray-400" />

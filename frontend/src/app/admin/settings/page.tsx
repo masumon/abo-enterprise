@@ -8,17 +8,25 @@ import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, Ma
 import { useToastStore } from "@/store/toast";
 import { parseGoogleMapsEmbedInput } from "@/lib/maps";
 import { PAGE_BANNER_CONFIG, bannerSettingKey } from "@/lib/pageBanners";
+import { apiErrorMessage } from "@/lib/apiError";
 
 type SettingValues = Record<string, string>;
 
 const HIDDEN_PLACEHOLDER = "***HIDDEN***";
 
-function apiErrorMessage(e: unknown, fallback: string): string {
-  const err = e as { response?: { data?: { detail?: string | { msg?: string }[] } } };
-  const detail = err.response?.data?.detail;
-  if (typeof detail === "string") return detail;
-  if (Array.isArray(detail) && detail[0]?.msg) return detail[0].msg;
-  return fallback;
+const JSON_SETTING_KEYS = new Set([
+  "about_team_json",
+  "client_logos_json",
+  "demo_reviews_json",
+  "demo_products_json",
+  "demo_services_json",
+  "coupons_json",
+]);
+
+function settingDataType(key: string, fieldType?: string): string {
+  if (fieldType === "number") return "number";
+  if (JSON_SETTING_KEYS.has(key) || key.endsWith("_json")) return "json";
+  return "string";
 }
 
 function buildSaveItems(section: Section, values: SettingValues) {
@@ -32,7 +40,7 @@ function buildSaveItems(section: Section, values: SettingValues) {
       return {
         key: f.key,
         value,
-        data_type: f.type === "number" ? "number" : "string",
+        data_type: settingDataType(f.key, f.type),
       };
     })
     .filter((item) => item.value !== HIDDEN_PLACEHOLDER);
@@ -356,6 +364,13 @@ export default function AdminSettingsPage() {
       if (f.key === "google_maps_embed") {
         if (!parseGoogleMapsEmbedInput(val)) {
           return `${f.label}: paste a Google Maps embed URL or full iframe code (Share → Embed a map)`;
+        }
+      }
+      if (JSON_SETTING_KEYS.has(f.key) || f.key.endsWith("_json")) {
+        try {
+          JSON.parse(val);
+        } catch {
+          return `${f.label}: invalid JSON — check commas and quotes`;
         }
       }
     }

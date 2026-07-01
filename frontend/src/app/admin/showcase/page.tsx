@@ -109,8 +109,8 @@ export default function AdminShowcasePage() {
     setSaving(true);
     try {
       await adminApi.upsertSettings([
-        { key: SHOWCASE_PROJECTS_KEY, value: JSON.stringify(projects), data_type: "string" },
-        { key: SOFTWARE_SERVICE_CARDS_KEY, value: JSON.stringify(services), data_type: "string" },
+        { key: SHOWCASE_PROJECTS_KEY, value: JSON.stringify(projects), data_type: "json" },
+        { key: SOFTWARE_SERVICE_CARDS_KEY, value: JSON.stringify(services), data_type: "json" },
       ]);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);

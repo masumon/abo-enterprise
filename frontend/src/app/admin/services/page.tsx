@@ -6,6 +6,7 @@ import {
   ToggleLeft, ToggleRight, Star, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { servicesAdminApi } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
 import type { Service, ServicePricingTier, ServiceBookingFormField } from "@/types";
 import { formatPrice } from "@/lib/utils";
@@ -136,8 +137,8 @@ export default function AdminServicesPage() {
       }
       closeEditor();
       await load();
-    } catch {
-      toast("error", isNew ? "Failed to create service" : "Failed to update service");
+    } catch (e) {
+      toast("error", apiErrorMessage(e, isNew ? "Failed to create service" : "Failed to update service"));
     } finally {
       setSaving(false);
     }
@@ -154,8 +155,8 @@ export default function AdminServicesPage() {
           await servicesAdminApi.delete(id);
           toast("success", "Service deleted");
           await load();
-        } catch {
-          toast("error", "Failed to delete service");
+        } catch (e) {
+          toast("error", apiErrorMessage(e, "Failed to delete service"));
         } finally {
           setDeletingId(null);
         }

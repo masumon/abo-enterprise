@@ -127,7 +127,19 @@ async def upload_media(
         upload_opts["resource_type"] = "video"
         upload_opts["allowed_formats"] = ["mp4", "webm", "mov", "avi"]
 
-    result = cloudinary.uploader.upload(content, **upload_opts)
+    if not settings.CLOUDINARY_CLOUD_NAME or not settings.CLOUDINARY_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="Cloudinary is not configured. Paste an image URL in settings instead.",
+        )
+
+    try:
+        result = cloudinary.uploader.upload(content, **upload_opts)
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Upload failed. Check Cloudinary credentials or paste a direct image URL.",
+        ) from exc
 
     return ApiResponse(
         data={
@@ -402,21 +414,24 @@ async def list_audit_logs(
 ):
     total = (await db.execute(select(func.count(ActivityLog.id)))).scalar_one()
     result = await db.execute(
-        select(ActivityLog).order_by(ActivityLog.created_at.desc())
+        select(ActivityLog, AdminUser.email)
+        .outerjoin(AdminUser, ActivityLog.admin_id == AdminUser.id)
+        .order_by(ActivityLog.created_at.desc())
         .offset((page - 1) * per_page).limit(per_page)
     )
-    logs = result.scalars().all()
+    rows = result.all()
     return PaginatedResponse(
         data=[
             {
                 "id": str(log.id),
                 "admin_id": str(log.admin_id),
+                "admin_email": email,
                 "action": log.action,
                 "entity_type": log.entity_type,
                 "entity_id": str(log.entity_id) if log.entity_id else None,
                 "created_at": log.created_at.isoformat(),
             }
-            for log in logs
+            for log, email in rows
         ],
         meta=PaginatedMeta(page=page, per_page=per_page, total=total, total_pages=max(1, -(-total // per_page))),
     )

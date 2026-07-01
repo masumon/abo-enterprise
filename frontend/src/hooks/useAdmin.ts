@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/lib/api";
-import { clearAdminToken, getAdminToken } from "@/lib/adminAuth";
+import { clearAdminToken, getAdminToken, syncAdminTokenCookie } from "@/lib/adminAuth";
 
 interface AdminUser {
   id: string;
@@ -38,6 +38,7 @@ export function useAdmin(redirectOnFail = true) {
   const redirectedRef = useRef(false);
 
   const checkAuth = useCallback(async () => {
+    syncAdminTokenCookie();
     const token = getAdminToken();
     if (!token) {
       if (redirectOnFail && !redirectedRef.current) {
