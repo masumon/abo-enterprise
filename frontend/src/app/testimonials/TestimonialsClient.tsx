@@ -26,6 +26,7 @@ export default function TestimonialsClient() {
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [rating, setRating] = useState(5);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     const demo = getDemoReviews<Review>(settings, FALLBACK);
@@ -38,13 +39,32 @@ export default function TestimonialsClient() {
 
   const avg = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : "5.0";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !message.trim()) return;
-    toast("success", lang === "bn" ? "ধন্যবাদ! রিভিউ জমা হয়েছে।" : "Thank you! Your review has been submitted.");
-    setName("");
-    setMessage("");
-    setRating(5);
+    if (!name.trim() || !message.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      await reviewsApi.create({
+        customer_name: name.trim(),
+        rating,
+        review_en: message.trim(),
+        review_bn: lang === "bn" ? message.trim() : undefined,
+        source: "website",
+      });
+      toast(
+        "success",
+        lang === "bn"
+          ? "ধন্যবাদ! রিভিউ জমা হয়েছে — অনুমোদনের পর প্রকাশিত হবে।"
+          : "Thank you! Your review was submitted and will appear after approval."
+      );
+      setName("");
+      setMessage("");
+      setRating(5);
+    } catch {
+      toast("error", lang === "bn" ? "রিভিউ জমা দেওয়া যায়নি।" : "Could not submit review.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -119,7 +139,7 @@ export default function TestimonialsClient() {
               <label className="form-label">{lang === "bn" ? "আপনার মতামত" : "Your Review"}</label>
               <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className="input resize-none" required />
             </div>
-            <button type="submit" className="btn btn-brand btn-md w-full">
+            <button type="submit" disabled={submitting} className="btn btn-brand btn-md w-full">
               <Send className="w-4 h-4" />
               {lang === "bn" ? "জমা দিন" : "Submit Review"}
             </button>

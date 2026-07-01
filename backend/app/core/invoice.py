@@ -95,6 +95,14 @@ class InvoiceService:
         )
         return result.scalar_one_or_none()
 
+    async def mark_order_invoice_paid(self, order_id: uuid.UUID) -> None:
+        """Sync invoice payment_status when order payment completes."""
+        invoice = await self.get_by_order_id(order_id)
+        if not invoice or invoice.payment_status == "paid":
+            return
+        invoice.payment_status = "paid"
+        invoice.paid_date = datetime.now(timezone.utc)
+
     async def create_order_invoice(
         self,
         order_id: uuid.UUID,
@@ -136,7 +144,7 @@ class InvoiceService:
             tax=0,
             total=float(order.total),
             payment_method=payment_method or order.payment_method,
-            payment_status="completed" if order.payment_status == "completed" else "pending",
+            payment_status="paid" if order.payment_status == "completed" else "pending",
             issued_date=datetime.now(timezone.utc).date(),
             due_date=None,  # No due date for orders
             notes=notes,
@@ -235,7 +243,7 @@ class InvoiceService:
             tax=0,
             total=total,
             payment_method=payment_method or booking.payment_method,
-            payment_status="completed" if booking.payment_status == "completed" else "pending",
+            payment_status="paid" if booking.payment_status in ("completed", "paid") else "pending",
             issued_date=datetime.now(timezone.utc).date(),
             due_date=None,
             notes=f"Service booking receipt for {booking.booking_number}.",

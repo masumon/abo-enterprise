@@ -37,6 +37,11 @@ yarn-error.log*
 *.swp
 *.swo
 
+# next-pwa build outputs (regenerated on `next build`)
+frontend/public/sw.js
+frontend/public/workbox-*.js
+frontend/public/fallback-*.js
+
 # Python virtual envs
 venv/
 .venv/

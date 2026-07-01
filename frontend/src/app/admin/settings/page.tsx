@@ -23,8 +23,20 @@ const JSON_SETTING_KEYS = new Set([
   "coupons_json",
 ]);
 
+const BOOL_SETTING_KEYS = new Set([
+  "maintenance_mode",
+  "feature_flash_sale",
+  "feature_coupons",
+  "feature_guest_checkout",
+  "feature_newsletter",
+  "feature_infinite_scroll",
+  "feature_assistant_chat",
+  "feature_assistant_whatsapp",
+]);
+
 function settingDataType(key: string, fieldType?: string): string {
   if (fieldType === "number") return "number";
+  if (fieldType === "boolean" || BOOL_SETTING_KEYS.has(key)) return "boolean";
   if (JSON_SETTING_KEYS.has(key) || key.endsWith("_json")) return "json";
   return "string";
 }
@@ -50,7 +62,7 @@ interface SettingField {
   key: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "url" | "email" | "tel" | "number" | "textarea";
+  type?: "text" | "url" | "email" | "tel" | "number" | "textarea" | "boolean";
   hint?: string;
   upload?: boolean;
   accept?: "image" | "video" | "both";
@@ -177,6 +189,20 @@ const SECTIONS: Section[] = [
     ],
   },
   {
+    id: "features",
+    title: "Site Features",
+    icon: <Share2 className="w-4 h-4" />,
+    fields: [
+      { key: "feature_flash_sale", label: "Flash Sale Banner", type: "boolean", hint: "Homepage flash sale countdown" },
+      { key: "feature_coupons", label: "Coupon Codes", type: "boolean", hint: "Checkout & cart coupon field" },
+      { key: "feature_guest_checkout", label: "Guest Checkout", type: "boolean", hint: "Allow checkout without account" },
+      { key: "feature_newsletter", label: "Newsletter Signup", type: "boolean", hint: "Footer email subscription" },
+      { key: "feature_infinite_scroll", label: "Infinite Scroll", type: "boolean", hint: "Product list load-more" },
+      { key: "feature_assistant_chat", label: "AI Chat Widget", type: "boolean", hint: "Floating assistant on site" },
+      { key: "feature_assistant_whatsapp", label: "Assistant WhatsApp Handoff", type: "boolean", hint: "WhatsApp option in assistant" },
+    ],
+  },
+  {
     id: "analytics",
     title: "Analytics & Marketing",
     icon: <Share2 className="w-4 h-4" />,
@@ -281,19 +307,21 @@ function SectionCard({
                 folder="abo-enterprise/settings"
                 accept={field.accept ?? "image"}
               />
-            ) : field.key === "maintenance_mode" ? (
+            ) : field.type === "boolean" || field.key === "maintenance_mode" ? (
               <label className="flex items-center gap-3 cursor-pointer">
                 <button
                   type="button"
                   role="switch"
                   aria-checked={values[field.key] === "true"}
                   onClick={() => onChange(field.key, values[field.key] === "true" ? "false" : "true")}
-                  className={`relative inline-flex w-11 h-6 rounded-full transition-colors ${values[field.key] === "true" ? "bg-red-500" : "bg-gray-200"}`}
+                  className={`relative inline-flex w-11 h-6 rounded-full transition-colors ${values[field.key] === "true" ? "bg-brand-600" : "bg-gray-200"}`}
                 >
                   <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${values[field.key] === "true" ? "translate-x-5" : "translate-x-0"}`} />
                 </button>
-                <span className={`text-sm font-medium ${values[field.key] === "true" ? "text-red-600" : "text-gray-500"}`}>
-                  {values[field.key] === "true" ? "Enabled — site is in maintenance" : "Disabled — site is live"}
+                <span className={`text-sm font-medium ${values[field.key] === "true" ? "text-brand-700" : "text-gray-500"}`}>
+                  {values[field.key] === "true"
+                    ? (field.key === "maintenance_mode" ? "Enabled — site is in maintenance" : "Enabled")
+                    : (field.key === "maintenance_mode" ? "Disabled — site is live" : "Disabled")}
                 </span>
               </label>
             ) : field.type === "textarea" ? (

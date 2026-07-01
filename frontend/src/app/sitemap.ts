@@ -27,7 +27,6 @@ const STATIC_PATHS: { path: string; priority: number; changeFrequency: MetadataR
   { path: "/register", priority: 0.3, changeFrequency: "yearly" },
   { path: "/forgot-password", priority: 0.3, changeFrequency: "yearly" },
   { path: "/profile", priority: 0.35, changeFrequency: "monthly" },
-  { path: "/dashboard", priority: 0.35, changeFrequency: "monthly" },
   { path: "/orders", priority: 0.35, changeFrequency: "monthly" },
   { path: "/cart", priority: 0.45, changeFrequency: "weekly" },
   { path: "/checkout", priority: 0.4, changeFrequency: "monthly" },
