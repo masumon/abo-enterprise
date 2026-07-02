@@ -13,11 +13,12 @@ from app.schemas.schemas import (
     CareerApplicationResponse,
 )
 from app.core.security import require_admin
+from app.core.rate_limit import rate_limit
 
 router = APIRouter(prefix="/career", tags=["career"])
 
 
-@router.post("", response_model=ApiResponse)
+@router.post("", response_model=ApiResponse, dependencies=[Depends(rate_limit("career_create", 5, 600))])
 async def submit_career_application(payload: CareerApplicationCreate, db: AsyncSession = Depends(get_db)):
     """Public endpoint for career applications."""
     app = CareerApplication(

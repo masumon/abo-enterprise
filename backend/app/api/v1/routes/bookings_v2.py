@@ -22,6 +22,7 @@ from app.models.models import (
     AdminUser,
     Invoice,
 )
+from app.core.rate_limit import rate_limit
 from app.schemas.schemas import (
     BookingV2Out,
     BookingV2Create,
@@ -45,7 +46,7 @@ def generate_booking_number():
 
 # ==================== PUBLIC ENDPOINTS ====================
 
-@router.post("", response_model=ApiResponse)
+@router.post("", response_model=ApiResponse, dependencies=[Depends(rate_limit("bookings_v2_create", 10, 600))])
 async def create_booking(
     payload: BookingV2Create,
     background_tasks: BackgroundTasks,

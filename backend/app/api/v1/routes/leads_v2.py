@@ -8,6 +8,7 @@ from app.core.security import require_admin
 from app.core.config import settings
 from app.core.email import send_email, lead_notification_html, customer_lead_confirmation_html
 from app.models.models import LeadV2, ActivityLog, AdminUser
+from app.core.rate_limit import rate_limit
 from app.schemas.schemas import (
     LeadV2Out,
     LeadV2Create,
@@ -73,7 +74,7 @@ def calculate_lead_score(lead: LeadV2) -> int:
 
 # ==================== PUBLIC ENDPOINTS ====================
 
-@router.post("", response_model=ApiResponse)
+@router.post("", response_model=ApiResponse, dependencies=[Depends(rate_limit("leads_v2_create", 10, 600))])
 async def create_lead(
     payload: LeadV2Create,
     background_tasks: BackgroundTasks,

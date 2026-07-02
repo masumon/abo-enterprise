@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.models.models import BookingV2, LeadV2, Order, Product, Review, Service, Setting
 from app.schemas.schemas import ApiResponse
+from app.core.rate_limit import rate_limit
 
 router = APIRouter(prefix="/public", tags=["public"])
 
@@ -134,7 +135,7 @@ class NewsletterSubscribe(BaseModel):
     email: EmailStr
 
 
-@router.post("/newsletter", response_model=ApiResponse)
+@router.post("/newsletter", response_model=ApiResponse, dependencies=[Depends(rate_limit("newsletter", 5, 600))])
 async def subscribe_newsletter(payload: NewsletterSubscribe, db: AsyncSession = Depends(get_db)):
     """Store newsletter subscriber email in settings table."""
     email = payload.email.strip().lower()

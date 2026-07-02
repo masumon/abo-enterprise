@@ -43,6 +43,37 @@ def decode_token(token: str) -> dict:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
+CUSTOMER_TOKEN_DAYS = 30
+
+
+def create_customer_token(phone: str) -> str:
+    """Issued after OTP verification — proves ownership of a phone number."""
+    expire = datetime.now(timezone.utc) + timedelta(days=CUSTOMER_TOKEN_DAYS)
+    return jwt.encode(
+        {"sub": phone, "exp": expire, "type": "customer"},
+        settings.SECRET_KEY,
+        algorithm=settings.JWT_ALGORITHM,
+    )
+
+
+async def require_customer(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+) -> str:
+    """Returns the OTP-verified phone number from a customer token."""
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Phone verification required. Please log in with OTP.",
+        )
+    payload = decode_token(credentials.credentials)
+    if payload.get("type") != "customer":
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
+    phone = payload.get("sub")
+    if not phone:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+    return phone
+
+
 async def require_admin(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: AsyncSession = Depends(get_db),

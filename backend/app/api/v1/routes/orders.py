@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
-from app.core.security import require_admin, require_role
+from app.core.rate_limit import rate_limit
+from app.core.security import require_admin, require_customer, require_role
 from app.core.config import settings
 from app.core.email import send_email, order_notification_html, customer_order_confirmation_html
 from app.core.invoice import InvoiceService
@@ -57,7 +58,12 @@ async def _validate_and_reserve_stock(db: AsyncSession, items: list) -> None:
         product.stock_quantity -= item_data.quantity
 
 
-@router.post("", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=ApiResponse,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(rate_limit("orders_create", 15, 600))],
+)
 async def create_order(
     payload: OrderCreate,
     background_tasks: BackgroundTasks,
@@ -199,11 +205,20 @@ async def track_order(
 
 @router.get("/by-phone", response_model=ApiResponse)
 async def orders_by_phone(
-    phone: str = Query(..., description="Customer phone 01XXXXXXXXX"),
+    phone: str | None = Query(None, description="Deprecated — phone now comes from the OTP token"),
+    verified_phone: str = Depends(require_customer),
     db: AsyncSession = Depends(get_db),
 ):
-    if not phone.startswith("0") or len(phone) != 11:
-        raise HTTPException(status_code=400, detail="Invalid phone format")
+    """Order history for the OTP-verified customer.
+
+    The phone number is taken from the customer token issued by
+    /customer/verify-otp — a bare phone number is no longer enough to read
+    someone's order history. The legacy ?phone= param is accepted only if it
+    matches the verified number.
+    """
+    if phone and phone != verified_phone:
+        raise HTTPException(status_code=403, detail="Phone does not match verified session")
+    phone = verified_phone
     result = await db.execute(
         select(Order).options(selectinload(Order.items))
         .where(Order.customer_phone == phone, Order.is_deleted == False)  # noqa: E712

@@ -213,7 +213,9 @@ describe("ApiWarmup — completion", () => {
       await flushPromises();
     });
 
-    expect(container.firstChild).toBeNull();
+    // On the homepage the overlay plays a 550ms exit animation before
+    // unmounting — wait for the exit timer instead of asserting instantly.
+    await waitFor(() => expect(container.firstChild).toBeNull(), { timeout: 2000 });
   });
 
   it("renders nothing immediately when module-level warm cache is set", () => {

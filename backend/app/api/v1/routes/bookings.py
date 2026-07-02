@@ -11,6 +11,7 @@ from app.core.email import send_email, booking_notification_html, customer_booki
 from app.core.invoice import InvoiceService
 from app.models.models import Booking
 from app.schemas.schemas import BookingCreate, BookingOut, BookingStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
+from app.core.rate_limit import rate_limit
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,7 +24,7 @@ def generate_booking_number() -> str:
     return f"ABO-B-{now.year}{now.month:02d}-{now.microsecond % 10000:04d}"
 
 
-@router.post("", response_model=ApiResponse, status_code=201)
+@router.post("", response_model=ApiResponse, status_code=201, dependencies=[Depends(rate_limit("bookings_create", 10, 600))])
 async def create_booking(
     payload: BookingCreate,
     background_tasks: BackgroundTasks,

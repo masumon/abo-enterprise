@@ -28,15 +28,23 @@ export default function OrdersPage() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!isLoggedIn()) {
+    if (!isLoggedIn() || !session?.token) {
       router.replace("/login");
       return;
     }
-    ordersApi.byPhone(session!.phone)
+    ordersApi.byPhone(session.phone, session.token)
       .then((r) => setOrders(r.data.data ?? []))
-      .catch(() => setError(true))
+      .catch((err) => {
+        // Expired/invalid OTP token → re-verify
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+          logout();
+          router.replace("/login");
+          return;
+        }
+        setError(true);
+      })
       .finally(() => setLoading(false));
-  }, [isLoggedIn, session, router]);
+  }, [isLoggedIn, session, router, logout]);
 
   const statusLabel = (s: string) => {
     const map: Record<string, { en: string; bn: string }> = {

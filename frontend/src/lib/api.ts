@@ -28,7 +28,8 @@ api.interceptors.request.use((config) => {
     config.timeout = getAdaptiveTimeout(30000);
   }
   const token = getAdminToken();
-  if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Don't clobber an explicit per-request token (e.g. the customer OTP token)
+  if (token && !config.headers.Authorization) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
@@ -135,8 +136,12 @@ export const ordersApi = {
       courier_tracking_id?: string | null;
     }>>("/api/v1/orders/track", { params: { number: orderNumber } }),
 
-  byPhone: (phone: string) =>
-    api.get<ApiResponse<{ order_number: string; order_status: string; total: number; items_count: number; created_at: string }[]>>("/api/v1/orders/by-phone", { params: { phone } }),
+  // Requires the customer OTP token — phone is derived server-side from it
+  byPhone: (phone: string, customerToken: string) =>
+    api.get<ApiResponse<{ order_number: string; order_status: string; total: number; items_count: number; created_at: string }[]>>("/api/v1/orders/by-phone", {
+      params: { phone },
+      headers: { Authorization: `Bearer ${customerToken}` },
+    }),
 
   updateStatus: (id: string, status: string) =>
     api.patch<ApiResponse<Order>>(`/api/v1/orders/${id}/status`, { status }),
@@ -596,7 +601,7 @@ export const customerOtpApi = {
     api.post<ApiResponse<{ sent: boolean; expires_in: number }>>("/api/v1/customer/send-otp", { phone }),
 
   verify: (phone: string, code: string) =>
-    api.post<ApiResponse<{ verified: boolean }>>("/api/v1/customer/verify-otp", { phone, code }),
+    api.post<ApiResponse<{ verified: boolean; access_token?: string }>>("/api/v1/customer/verify-otp", { phone, code }),
 };
 
 export const couponsApi = {

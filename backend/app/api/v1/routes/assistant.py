@@ -33,6 +33,7 @@ router = APIRouter(prefix="/assistant", tags=["assistant"])
 _orchestrator = AssistantOrchestrator()
 _kb = KnowledgeBase()
 
+from app.core.rate_limit import rate_limit
 from app.assistant.feature_flags import (
     ASSISTANT_CONFIG_KEYS,
     ASSISTANT_BOOLEAN_FEATURES,
@@ -70,7 +71,7 @@ async def _upsert_setting(
         db.add(Setting(key=key, value=value, data_type=data_type, description=description, is_editable=True))
 
 
-@router.post("/chat", response_model=ApiResponse)
+@router.post("/chat", response_model=ApiResponse, dependencies=[Depends(rate_limit("assistant_chat", 30, 300))])
 async def chat(
     payload: AssistantChatRequest,
     db: AsyncSession = Depends(get_db),
