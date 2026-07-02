@@ -11,12 +11,19 @@ import {
   ShoppingBag,
   Sparkles,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { BRAND_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
+import {
+  DEFAULT_WARMUP_CONTENT,
+  parseWarmupContent,
+  type WarmupContent,
+  type WarmupTrustIndicator,
+} from "@/lib/warmupContent";
 
 const API_BASE = getApiBaseUrl();
 
@@ -30,41 +37,16 @@ type ReadyState = {
   appState: boolean;
 };
 
-const BUSINESS_SHOWCASE = [
-  { en: "Mobile Accessories", bn: "মোবাইল এক্সেসরিজ" },
-  { en: "Printing Services", bn: "প্রিন্টিং সার্ভিসেস" },
-  { en: "Legal Services", bn: "লিগ্যাল সার্ভিসেস" },
-  { en: "Digital Services", bn: "ডিজিটাল সার্ভিসেস" },
-  { en: "AI Solutions", bn: "AI সলিউশন্স" },
-  { en: "Custom Software", bn: "কাস্টম সফটওয়্যার" },
-];
+const TRUST_ICON_MAP: Record<string, LucideIcon> = {
+  users: Users,
+  package: Package,
+  briefcase: Briefcase,
+  "shield-check": ShieldCheck,
+};
 
-const TRUST_INDICATORS = [
-  { value: "12k+", icon: Users, en: "Happy Customers", bn: "সন্তুষ্ট গ্রাহক" },
-  { value: "850+", icon: Package, en: "Products", bn: "পণ্য" },
-  { value: "320+", icon: Briefcase, en: "Business Clients", bn: "ব্যবসায়িক ক্লায়েন্ট" },
-  { value: "100%", icon: ShieldCheck, en: "Secure Orders", bn: "নিরাপদ অর্ডার" },
-];
-
-const FEATURED_CAROUSEL = [
-  { type: "service", en: "Express Printing", bn: "এক্সপ্রেস প্রিন্টিং" },
-  { type: "product", en: "Fast-Charge Accessories", bn: "ফাস্ট-চার্জ এক্সেসরিজ" },
-  { type: "service", en: "Legal Document Support", bn: "লিগ্যাল ডকুমেন্ট সাপোর্ট" },
-  { type: "service", en: "Business AI Automation", bn: "বিজনেস AI অটোমেশন" },
-];
-
-const REVIEW_HIGHLIGHTS = [
-  {
-    en: "“Great quality and fast support. Everything in one platform.”",
-    bn: "“দারুণ মান ও দ্রুত সাপোর্ট। এক প্ল্যাটফর্মে সব সমাধান।”",
-    by: "Rahim Enterprise",
-  },
-  {
-    en: "“Reliable services with clear communication and secure delivery.”",
-    bn: "“বিশ্বাসযোগ্য সেবা, স্পষ্ট যোগাযোগ ও নিরাপদ ডেলিভারি।”",
-    by: "Nusrat Traders",
-  },
-];
+function resolveTrustIcon(key: string): LucideIcon {
+  return TRUST_ICON_MAP[key] ?? ShieldCheck;
+}
 
 const SHOWCASE_ROTATION_MS = 2000;
 const FEATURED_ROTATION_MS = 3000;
@@ -103,6 +85,7 @@ export default function ApiWarmup() {
   const [showcaseIndex, setShowcaseIndex] = useState(0);
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
+  const [content, setContent] = useState<WarmupContent>(DEFAULT_WARMUP_CONTENT);
   const [readyState, setReadyState] = useState<ReadyState>({
     health: false,
     products: false,
@@ -130,21 +113,26 @@ export default function ApiWarmup() {
     let nextPoll: ReturnType<typeof setTimeout> | undefined;
 
     const poll = async () => {
-      const [healthOk, productsOk, servicesOk, settingsOk] = await Promise.all([
+      const [healthOk, productsOk, servicesOk, settingsResult] = await Promise.all([
         checkEndpoint("/health", HEALTH_TIMEOUT_MS),
         checkEndpoint("/api/v1/products?per_page=1", API_TIMEOUT_MS),
         checkEndpoint("/api/v1/services?per_page=1", API_TIMEOUT_MS),
-        checkEndpoint("/api/v1/settings", API_TIMEOUT_MS),
+        fetchSettingsEndpoint(API_TIMEOUT_MS),
       ]);
 
       if (!alive) return;
+
+      // Update warmup content from settings when available
+      if (settingsResult.ok && Object.keys(settingsResult.data).length > 0) {
+        setContent(parseWarmupContent(settingsResult.data));
+      }
 
       setReadyState((prev) => {
         const next = {
           health: prev.health || healthOk,
           products: prev.products || productsOk,
           services: prev.services || servicesOk,
-          settings: prev.settings || settingsOk,
+          settings: prev.settings || settingsResult.ok,
           appState: prev.appState || document.readyState !== "loading",
         };
         if (next.health && next.products && next.services && next.settings && next.appState) {
@@ -170,20 +158,20 @@ export default function ApiWarmup() {
   useEffect(() => {
     if (!warming || dismissed) return;
     const showcaseTimer = setInterval(() => {
-      setShowcaseIndex((v) => (v + 1) % BUSINESS_SHOWCASE.length);
+      setShowcaseIndex((v) => (v + 1) % content.businessShowcase.length);
     }, SHOWCASE_ROTATION_MS);
     const featuredTimer = setInterval(() => {
-      setFeaturedIndex((v) => (v + 1) % FEATURED_CAROUSEL.length);
+      setFeaturedIndex((v) => (v + 1) % content.featuredCarousel.length);
     }, FEATURED_ROTATION_MS);
     const reviewTimer = setInterval(() => {
-      setReviewIndex((v) => (v + 1) % REVIEW_HIGHLIGHTS.length);
+      setReviewIndex((v) => (v + 1) % content.reviewHighlights.length);
     }, REVIEW_ROTATION_MS);
     return () => {
       clearInterval(showcaseTimer);
       clearInterval(featuredTimer);
       clearInterval(reviewTimer);
     };
-  }, [warming, dismissed]);
+  }, [warming, dismissed, content]);
 
   const currentStatus = getLoadingStatus(lang, readyState);
 
@@ -207,9 +195,9 @@ export default function ApiWarmup() {
     );
   }
 
-  const showcase = BUSINESS_SHOWCASE[showcaseIndex];
-  const featured = FEATURED_CAROUSEL[featuredIndex];
-  const review = REVIEW_HIGHLIGHTS[reviewIndex];
+  const showcase = content.businessShowcase[showcaseIndex % content.businessShowcase.length];
+  const featured = content.featuredCarousel[featuredIndex % content.featuredCarousel.length];
+  const review = content.reviewHighlights[reviewIndex % content.reviewHighlights.length];
 
   return (
     <div className="fixed inset-0 z-[75] overflow-y-auto gradient-surface">
@@ -233,12 +221,10 @@ export default function ApiWarmup() {
                     {BRAND_NAME}
                   </p>
                   <h1 className="text-xl sm:text-2xl font-bold text-heading">
-                    {lang === "bn" ? "স্বাগতম!" : "Welcome!"}
+                    {lang === "bn" ? content.welcomeBn : content.welcomeEn}
                   </h1>
                   <p className="text-sm text-muted">
-                    {lang === "bn"
-                      ? "আপনার ব্যবসার সব সমাধান এক প্ল্যাটফর্মে।"
-                      : "All your business solutions in one platform."}
+                    {lang === "bn" ? content.subtitleBn : content.subtitleEn}
                   </p>
                 </div>
               </div>
@@ -254,13 +240,16 @@ export default function ApiWarmup() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                {TRUST_INDICATORS.map(({ value, icon: Icon, en, bn }) => (
-                  <div key={en} className="glass rounded-xl p-3">
-                    <Icon className="w-4 h-4 text-brand-500 mb-1" aria-hidden />
-                    <p className="text-sm font-bold text-heading">{value}</p>
-                    <p className="text-[11px] text-muted">{lang === "bn" ? bn : en}</p>
-                  </div>
-                ))}
+                {content.trustIndicators.map((indicator: WarmupTrustIndicator) => {
+                  const Icon = resolveTrustIcon(indicator.icon);
+                  return (
+                    <div key={indicator.en} className="glass rounded-xl p-3">
+                      <Icon className="w-4 h-4 text-brand-500 mb-1" aria-hidden />
+                      <p className="text-sm font-bold text-heading">{indicator.value}</p>
+                      <p className="text-[11px] text-muted">{lang === "bn" ? indicator.bn : indicator.en}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
@@ -285,12 +274,10 @@ export default function ApiWarmup() {
 
               <div className="glass rounded-2xl p-4">
                 <p className="text-xs uppercase tracking-wide text-brand-600 dark:text-brand-300 mb-1">
-                  {lang === "bn" ? "আজকের অফার" : "Today’s Offer"}
+                  {lang === "bn" ? "আজকের অফার" : "Today's Offer"}
                 </p>
                 <p className="text-sm font-medium text-heading">
-                  {lang === "bn"
-                    ? "নতুন ক্লায়েন্টদের জন্য ফ্রি বিজনেস কনসাল্টেশন।"
-                    : "Free business consultation for new clients today."}
+                  {lang === "bn" ? content.offerBn : content.offerEn}
                 </p>
               </div>
             </div>
