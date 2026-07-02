@@ -134,7 +134,7 @@ export const ordersApi = {
 export const bookingsApi = {
   create: (data: Booking) =>
     isOffline()
-      ? queueOfflineCreate<Booking>("booking", data as Record<string, unknown>)
+      ? queueOfflineCreate<Booking>("booking", data as unknown as Record<string, unknown>)
       : api.post<ApiResponse<Booking>>("/api/v1/bookings", data),
 
   list: (params?: { service_type?: string; status?: string; search?: string; page?: number }) =>
@@ -150,7 +150,7 @@ export const bookingsApi = {
 export const leadsApi = {
   create: (data: Lead) =>
     isOffline()
-      ? queueOfflineCreate<Lead>("lead", data as Record<string, unknown>)
+      ? queueOfflineCreate<Lead>("lead", data as unknown as Record<string, unknown>)
       : api.post<ApiResponse<Lead>>("/api/v1/leads", data),
 
   list: (params?: { lead_type?: string; status?: string; search?: string; page?: number }) =>
@@ -189,7 +189,7 @@ export const serviceBookingsApi = {
     requirements?: string;
   }) =>
     isOffline()
-      ? queueOfflineCreate<BookingV2 & { invoice_id?: string | null }>("service_booking", data as Record<string, unknown>)
+      ? queueOfflineCreate<BookingV2 & { invoice_id?: string | null }>("service_booking", data as unknown as Record<string, unknown>)
       : api.post<ApiResponse<BookingV2 & { invoice_id?: string | null }>>("/api/v1/service-bookings", data),
 
   get: (id: string) =>
@@ -211,7 +211,7 @@ export const serviceLeadsApi = {
     timeline?: string;
   }) =>
     isOffline()
-      ? queueOfflineCreate<LeadV2>("service_lead", data as Record<string, unknown>)
+      ? queueOfflineCreate<LeadV2>("service_lead", data as unknown as Record<string, unknown>)
       : api.post<ApiResponse<LeadV2>>("/api/v1/service-leads", data),
 };
 
