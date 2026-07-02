@@ -187,9 +187,12 @@ describe("ApiWarmup — early readiness exit", () => {
   });
 });
 
+// Enough ticks to drain the full async poll chain (fetch → json → setState).
+const PROMISE_FLUSH_TICKS = 20;
+
 /** Flush all pending Promises/microtasks across multiple ticks. */
 const flushPromises = async () => {
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < PROMISE_FLUSH_TICKS; i++) {
     await Promise.resolve();
   }
 };

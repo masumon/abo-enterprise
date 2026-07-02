@@ -63,7 +63,7 @@ function getLoadingStatus(lang: "bn" | "en", state: ReadyState): string {
   return lang === "bn" ? "প্রায় প্রস্তুত..." : "Almost ready...";
 }
 
-async function checkEndpoint(path: string, timeoutMs = 9000): Promise<boolean> {
+async function checkEndpoint(path: string, timeoutMs = API_TIMEOUT_MS): Promise<boolean> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -76,7 +76,7 @@ async function checkEndpoint(path: string, timeoutMs = 9000): Promise<boolean> {
   }
 }
 
-async function fetchSettingsEndpoint(timeoutMs = 9000): Promise<{ ok: boolean; data: Record<string, string> }> {
+async function fetchSettingsEndpoint(timeoutMs = API_TIMEOUT_MS): Promise<{ ok: boolean; data: Record<string, string> }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
