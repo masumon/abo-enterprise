@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { BrandAppIcon } from "@/components/ui/BrandLogo";
 import { X, Download, ChevronUp, Smartphone } from "lucide-react";
 import { SITE_URL } from "@/lib/tokens";
@@ -10,6 +11,10 @@ interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
+
+// Never cover checkout / payment / success pages — the full-screen overlay
+// blocks taps mid-checkout and hides the invoice on the success screen.
+const SUPPRESSED_ROUTES = ["/checkout", "/order-success", "/booking-success", "/payment", "/admin"];
 
 const REMIND_KEY = "pwa_remind_until";
 const INSTALLED_KEY = "pwa_installed";
@@ -32,6 +37,7 @@ function isIOS(): boolean {
 
 export default function PWAInstallPrompt() {
   const { lang } = useLanguageStore();
+  const pathname = usePathname();
   const bn = lang === "bn";
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [mode, setMode] = useState<"hidden" | "full" | "minimized">("hidden");
@@ -97,6 +103,7 @@ export default function PWAInstallPrompt() {
   };
 
   if (mode === "hidden") return null;
+  if (SUPPRESSED_ROUTES.some((p) => pathname?.startsWith(p))) return null;
 
   const labels = {
     title: bn ? "ABO Enterprise অ্যাপ" : "ABO Enterprise App",
