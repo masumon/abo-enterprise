@@ -12,7 +12,7 @@ interface PendingAction {
 }
 
 export interface OfflineSubmissionStatus {
-  queuedCount: number;
+  queuedSubmissionCount: number;
   lastEvent: "idle" | "queued" | "synced";
   lastUpdatedAt: number | null;
 }
@@ -175,7 +175,7 @@ class OfflineDataSync {
   async getSubmissionStatus(): Promise<OfflineSubmissionStatus> {
     const actions = await this.getPendingActions();
     return {
-      queuedCount: actions.filter((action) => action.action === "create").length,
+      queuedSubmissionCount: actions.filter((action) => action.action === "create").length,
       lastEvent: this.lastEvent,
       lastUpdatedAt: this.lastUpdatedAt,
     };

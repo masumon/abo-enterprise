@@ -13,7 +13,7 @@ export default function OfflineSubmissionBadge() {
   useEffect(() => {
     return offlineSync.subscribe((nextStatus) => {
       setStatus(nextStatus);
-      if (nextStatus.queuedCount === 0 && nextStatus.lastEvent === "synced") {
+      if (nextStatus.queuedSubmissionCount === 0 && nextStatus.lastEvent === "synced") {
         setShowSyncedUntil((nextStatus.lastUpdatedAt ?? Date.now()) + SYNCED_VISIBILITY_MS);
       }
     });
@@ -34,7 +34,7 @@ export default function OfflineSubmissionBadge() {
 
   if (!status) return null;
 
-  const hasQueued = status.queuedCount > 0;
+  const hasQueued = status.queuedSubmissionCount > 0;
   const showSynced = Boolean(showSyncedUntil && showSyncedUntil > Date.now());
 
   if (!hasQueued && !showSynced) return null;
@@ -55,7 +55,7 @@ export default function OfflineSubmissionBadge() {
               hasQueued ? "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200" : "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
             }`}
           >
-            {hasQueued ? `Queued ${status.queuedCount}` : "Synced"}
+            {hasQueued ? `Queued ${status.queuedSubmissionCount}` : "Synced"}
           </span>
           <p className="mt-2 text-sm font-medium text-heading">
             {hasQueued ? "Offline submission saved" : "Queued submissions synced"}
