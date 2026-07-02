@@ -15,6 +15,7 @@ import {
 import { useLanguageStore } from "@/store/language";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import BrandLogo from "@/components/ui/BrandLogo";
+import { BRAND_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 
 const API_BASE = getApiBaseUrl();
@@ -65,10 +66,20 @@ const REVIEW_HIGHLIGHTS = [
   },
 ];
 
-const SHOWCASE_ROTATION_MS = 1900;
-const FEATURED_ROTATION_MS = 2600;
-const REVIEW_ROTATION_MS = 3000;
+const SHOWCASE_ROTATION_MS = 2000;
+const FEATURED_ROTATION_MS = 3000;
+const REVIEW_ROTATION_MS = 4000;
+const HEALTH_TIMEOUT_MS = 12000;
+const API_TIMEOUT_MS = 8000;
 const WARMUP_POLL_MS = 2200;
+const WARMUP_RETRY_MS = 2500;
+
+function getLoadingStatus(lang: "bn" | "en", state: ReadyState): string {
+  if (!state.health) return lang === "bn" ? "নিরাপদ সার্ভার চালু হচ্ছে..." : "Starting secure server...";
+  if (!state.products) return lang === "bn" ? "পণ্য লোড হচ্ছে..." : "Loading products...";
+  if (!state.services) return lang === "bn" ? "সেবা প্রস্তুত হচ্ছে..." : "Preparing services...";
+  return lang === "bn" ? "প্রায় প্রস্তুত..." : "Almost ready...";
+}
 
 async function checkEndpoint(path: string, timeoutMs = 9000): Promise<boolean> {
   const controller = new AbortController();
@@ -120,10 +131,10 @@ export default function ApiWarmup() {
 
     const poll = async () => {
       const [healthOk, productsOk, servicesOk, settingsOk] = await Promise.all([
-        checkEndpoint("/health", 12000),
-        checkEndpoint("/api/v1/products?per_page=1", 8000),
-        checkEndpoint("/api/v1/services?per_page=1", 8000),
-        checkEndpoint("/api/v1/settings", 8000),
+        checkEndpoint("/health", HEALTH_TIMEOUT_MS),
+        checkEndpoint("/api/v1/products?per_page=1", API_TIMEOUT_MS),
+        checkEndpoint("/api/v1/services?per_page=1", API_TIMEOUT_MS),
+        checkEndpoint("/api/v1/settings", API_TIMEOUT_MS),
       ]);
 
       if (!alive) return;
@@ -147,7 +158,7 @@ export default function ApiWarmup() {
     };
 
     poll().catch(() => {
-      if (alive) nextPoll = setTimeout(poll, 2500);
+      if (alive) nextPoll = setTimeout(poll, WARMUP_RETRY_MS);
     });
 
     return () => {
@@ -174,13 +185,7 @@ export default function ApiWarmup() {
     };
   }, [warming, dismissed]);
 
-  const currentStatus = !readyState.health
-    ? (lang === "bn" ? "নিরাপদ সার্ভার চালু হচ্ছে..." : "Starting secure server...")
-    : !readyState.products
-      ? (lang === "bn" ? "পণ্য লোড হচ্ছে..." : "Loading products...")
-      : !readyState.services
-        ? (lang === "bn" ? "সেবা প্রস্তুত হচ্ছে..." : "Preparing services...")
-        : (lang === "bn" ? "প্রায় প্রস্তুত..." : "Almost ready...");
+  const currentStatus = getLoadingStatus(lang, readyState);
 
   if (!warming) return null;
 
@@ -225,7 +230,7 @@ export default function ApiWarmup() {
                 </div>
                 <div>
                   <p className="text-xs uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300">
-                    ABO Enterprise
+                    {BRAND_NAME}
                   </p>
                   <h1 className="text-xl sm:text-2xl font-bold text-heading">
                     {lang === "bn" ? "স্বাগতম!" : "Welcome!"}
