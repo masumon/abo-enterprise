@@ -52,29 +52,23 @@ export default function MobileBottomNav() {
         key={item.href}
         href={item.href}
         className={cn(
-          "relative flex flex-col items-center justify-center gap-0.5 text-[10px] font-medium transition-colors duration-200",
+          "relative flex flex-col items-center justify-center gap-[3px] px-3",
+          "rounded-[20px] transition-all duration-250",
           isActive
-            ? "text-brand-700 dark:text-brand-200"
-            : "text-gray-500 dark:text-gray-400 active:text-brand-600"
+            ? "text-brand-700 dark:text-brand-200 bg-brand-50/70 dark:bg-brand-900/35 scale-[1.04]"
+            : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100/60 dark:hover:bg-white/[0.08] active:scale-95"
         )}
         aria-label={lang === "bn" ? item.label.bn : item.label.en}
         aria-current={isActive ? "page" : undefined}
       >
-        {/* Active indicator bar */}
-        <span
-          className={cn(
-            "absolute top-0 h-[3px] rounded-b-full bg-brand-600 dark:bg-brand-400 transition-all duration-300",
-            isActive ? "w-8 opacity-100" : "w-0 opacity-0"
-          )}
-        />
         <Icon
           strokeWidth={isActive ? 2.4 : 1.8}
           className={cn(
-            "w-[22px] h-[22px] transition-all duration-200",
+            "w-[20px] h-[20px] transition-all duration-250",
             isActive ? "-translate-y-px" : ""
           )}
         />
-        <span className={cn(isActive ? "font-bold" : "")}>
+        <span className={cn("text-[9px] font-medium leading-none", isActive && "font-semibold")}>
           {lang === "bn" ? item.label.bn : item.label.en}
         </span>
       </Link>
@@ -83,32 +77,51 @@ export default function MobileBottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 lg:hidden border-t border-gray-100/80 dark:border-white/10 bg-white/95 dark:bg-[#0f1a2e]/95 backdrop-blur-xl shadow-[0_-4px_24px_rgba(30,91,168,0.08)] dark:shadow-[0_-4px_24px_rgba(0,0,0,0.35)]"
+      className="fixed left-1/2 -translate-x-1/2 z-50 lg:hidden"
+      style={{ bottom: "max(12px, calc(env(safe-area-inset-bottom, 0px) + 4px))" }}
       aria-label={lang === "bn" ? "মোবাইল নেভিগেশন" : "Mobile navigation"}
     >
-      <div className="grid grid-cols-5 h-16">
+      <div
+        className={cn(
+          "flex items-stretch",
+          "h-[52px] px-1.5 gap-0.5",
+          "rounded-[26px]",
+          /* Glassmorphism */
+          "bg-white/80 dark:bg-[#0b1f3a]/88 backdrop-blur-2xl",
+          "border border-white/60 dark:border-white/[0.09]",
+          /* Ambient glow + premium shadow */
+          "shadow-[0_8px_32px_rgba(30,91,168,0.14),0_-2px_8px_rgba(30,91,168,0.04),0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.88)]",
+          "dark:shadow-[0_8px_40px_rgba(0,0,0,0.50),0_0_0_1px_rgba(59,130,246,0.08),inset_0_1px_0_rgba(255,255,255,0.05)]",
+        )}
+      >
         {LEFT_ITEMS.map(renderTab)}
 
-        {/* Center cart button — stays inside the bar so it never overlaps
-            sticky CTAs (product add-to-cart, checkout order bar) above it */}
+        {/* Center cart button */}
         <Link
           href="/cart"
           aria-label={lang === "bn" ? "কার্ট" : "Cart"}
           aria-current={cartActive ? "page" : undefined}
-          className="flex flex-col items-center justify-center gap-0.5"
+          className={cn(
+            "relative flex flex-col items-center justify-center gap-[3px] px-3",
+            "transition-all duration-250 active:scale-90",
+            cartActive && "scale-105"
+          )}
         >
           <span
             className={cn(
-              "relative w-[42px] h-[42px] rounded-full flex items-center justify-center transition-all duration-200",
+              "relative w-[38px] h-[38px] rounded-full flex items-center justify-center",
               "bg-gradient-to-br from-brand-500 to-brand-700 text-white",
-              "shadow-md shadow-brand-600/30",
-              cartActive ? "from-brand-600 to-brand-800 scale-105 ring-2 ring-brand-200 dark:ring-brand-800" : "active:scale-95"
+              "shadow-[0_4px_14px_rgba(30,91,168,0.42)]",
+              "transition-all duration-250",
+              cartActive
+                ? "from-brand-600 to-brand-800 shadow-[0_6px_20px_rgba(30,91,168,0.58)] ring-2 ring-brand-200/70 dark:ring-brand-700/60"
+                : ""
             )}
           >
-            <ShoppingCart className="w-5 h-5" strokeWidth={2.2} />
+            <ShoppingCart className="w-[18px] h-[18px]" strokeWidth={2.2} />
             {showBadge && (
               <span
-                className="absolute -top-1 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-[#0f1a2e]"
+                className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-[#0b1f3a]"
                 aria-label={lang === "bn" ? `কার্টে ${cartCount}টি পণ্য` : `${cartCount} items in cart`}
               >
                 {cartCount > 99 ? "99+" : cartCount}
@@ -117,8 +130,8 @@ export default function MobileBottomNav() {
           </span>
           <span
             className={cn(
-              "text-[10px] font-medium transition-colors duration-200",
-              cartActive ? "text-brand-700 dark:text-brand-200 font-bold" : "text-gray-500 dark:text-gray-400"
+              "text-[9px] font-medium transition-colors duration-200 leading-none",
+              cartActive ? "text-brand-700 dark:text-brand-200 font-semibold" : "text-gray-500 dark:text-gray-400"
             )}
           >
             {lang === "bn" ? "কার্ট" : "Cart"}
@@ -127,7 +140,6 @@ export default function MobileBottomNav() {
 
         {RIGHT_ITEMS.map(renderTab)}
       </div>
-      <div className="h-safe-bottom min-h-[env(safe-area-inset-bottom,0px)]" />
     </nav>
   );
 }
