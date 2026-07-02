@@ -12,12 +12,21 @@ const baseURL = getApiBaseUrl();
 const api = axios.create({
   baseURL,
   headers: { "Content-Type": "application/json" },
-  timeout: getAdaptiveTimeout(30000), // Adaptive: 30s fast, 60s+ slow networks
+  // Default fallback timeout — overridden per-request in the interceptor below
+  // so that network-quality changes (e.g. WiFi → mobile data) are always reflected.
+  timeout: 30000,
 });
 
 type RetryConfig = { __retryCount?: number; maxRetries?: number } & NonNullable<Parameters<typeof api.request>[0]>;
 
 api.interceptors.request.use((config) => {
+  // Re-evaluate timeout on every request so it adapts to the *current* network
+  // quality rather than the quality at module-initialization time.
+  // Fix: getAdaptiveTimeout() returns 60 000 ms on slow/cellular networks vs
+  // 30 000 ms on fast WiFi — call it here so changes in network type are honoured.
+  if (!config.timeout || config.timeout === 30000) {
+    config.timeout = getAdaptiveTimeout(30000);
+  }
   const token = getAdminToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
