@@ -76,6 +76,22 @@ async function checkEndpoint(path: string, timeoutMs = 9000): Promise<boolean> {
   }
 }
 
+async function fetchSettingsEndpoint(timeoutMs = 9000): Promise<{ ok: boolean; data: Record<string, string> }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/settings`, { signal: controller.signal, cache: "no-store" });
+    if (!res.ok) return { ok: false, data: {} };
+    const json = await res.json();
+    const data: Record<string, string> = json?.data ?? {};
+    return { ok: true, data };
+  } catch {
+    return { ok: false, data: {} };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export default function ApiWarmup() {
   const pathname = usePathname();
   const { lang } = useLanguageStore();

@@ -187,8 +187,12 @@ describe("ApiWarmup — early readiness exit", () => {
   });
 });
 
-/** Flush all pending Promises/microtasks (runs after the current macro/micro task queue). */
-const flushPromises = () => new Promise<void>(resolve => setImmediate(resolve));
+/** Flush all pending Promises/microtasks across multiple ticks. */
+const flushPromises = async () => {
+  for (let i = 0; i < 20; i++) {
+    await Promise.resolve();
+  }
+};
 
 // ─── Completion & warm-cache tests ───────────────────────────────────────────
 // These run last. The "all-ok" test sets warmed=true in the module; the
