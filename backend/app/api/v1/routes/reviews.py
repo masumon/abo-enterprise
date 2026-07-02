@@ -9,6 +9,7 @@ from app.core.database import get_db
 from app.core.security import require_admin
 from app.models.models import Review
 from app.schemas.schemas import ReviewCreate, ReviewOut, ApiResponse, PaginatedResponse, PaginatedMeta
+from app.core.rate_limit import rate_limit
 
 
 class ReviewAdminUpdate(BaseModel):
@@ -55,7 +56,7 @@ async def list_reviews(
     )
 
 
-@router.post("", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
+@router.post("", response_model=ApiResponse, status_code=status.HTTP_201_CREATED, dependencies=[Depends(rate_limit("reviews_create", 5, 600))])
 async def create_review(payload: ReviewCreate, db: AsyncSession = Depends(get_db)):
     data = payload.model_dump()
     data["is_active"] = False  # Public submissions require admin approval

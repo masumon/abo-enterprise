@@ -25,11 +25,15 @@ export default function InvoicesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!session?.phone) return;
-    ordersApi.byPhone(session.phone)
+    if (!session?.phone || !session?.token) {
+      setLoading(false);
+      return;
+    }
+    ordersApi.byPhone(session.phone, session.token)
       .then((r) => setOrders(r.data.data ?? []))
+      .catch(() => setOrders([]))
       .finally(() => setLoading(false));
-  }, [session?.phone]);
+  }, [session?.phone, session?.token]);
 
   return (
     <main>

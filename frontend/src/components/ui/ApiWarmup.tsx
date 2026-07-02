@@ -148,15 +148,18 @@ export default function ApiWarmup() {
   const startedAtRef = useRef(Date.now());
   const prevWarmingRef = useRef(warming);
 
-  // Exit animation when warmup completes
+  // Exit animation when warmup completes. `exiting` must NOT be a dependency:
+  // setExiting(true) would re-run the effect and its cleanup would cancel the
+  // very timer that ends the animation, leaving the overlay mounted forever.
   useEffect(() => {
-    if (prevWarmingRef.current && !warming && !exiting && isHome && !dismissed) {
+    if (prevWarmingRef.current && !warming && isHome && !dismissed) {
+      prevWarmingRef.current = warming;
       setExiting(true);
       const t = setTimeout(() => setExiting(false), 550);
       return () => clearTimeout(t);
     }
     prevWarmingRef.current = warming;
-  }, [warming, exiting, isHome, dismissed]);
+  }, [warming, isHome, dismissed]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && sessionStorage.getItem(WARMED_SESSION_KEY) === "1") {

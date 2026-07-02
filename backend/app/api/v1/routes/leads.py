@@ -8,11 +8,12 @@ from app.core.config import settings
 from app.core.email import send_email, lead_notification_html
 from app.models.models import Lead
 from app.schemas.schemas import LeadCreate, LeadOut, LeadStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
+from app.core.rate_limit import rate_limit
 
 router = APIRouter(prefix="/leads", tags=["leads"])
 
 
-@router.post("", response_model=ApiResponse, status_code=201)
+@router.post("", response_model=ApiResponse, status_code=201, dependencies=[Depends(rate_limit("leads_create", 10, 600))])
 async def create_lead(
     payload: LeadCreate,
     background_tasks: BackgroundTasks,

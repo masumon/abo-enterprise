@@ -31,7 +31,14 @@ export default function SettingsPage() {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!BD_PHONE_REGEX.test(phone) || name.trim().length < 2) return;
-    login(phone, name.trim());
+    // The session token is bound to the verified phone — a new number
+    // must be re-verified with OTP before it can read order history.
+    if (!session?.token || phone !== session.phone) {
+      logout();
+      router.push("/login");
+      return;
+    }
+    login(phone, name.trim(), session.token);
     updateSettings({ email });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);

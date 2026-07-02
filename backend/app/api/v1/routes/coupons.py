@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.models.models import Setting
 from app.schemas.schemas import ApiResponse
+from app.core.rate_limit import rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ async def _load_coupons(db: AsyncSession) -> dict[str, dict]:
     return DEFAULT_COUPONS
 
 
-@router.post("/validate", response_model=ApiResponse)
+@router.post("/validate", response_model=ApiResponse, dependencies=[Depends(rate_limit("coupon_validate", 20, 300))])
 async def validate_coupon(payload: CouponValidateRequest, db: AsyncSession = Depends(get_db)):
     coupons = await _load_coupons(db)
     entry = coupons.get(payload.code)
