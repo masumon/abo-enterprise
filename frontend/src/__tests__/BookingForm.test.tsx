@@ -7,6 +7,8 @@ jest.mock("@/lib/api", () => ({
   serviceBookingsApi: {
     create: jest.fn(),
   },
+  isQueuedResponse: (response: { status?: number; data?: { queued?: boolean } | null }) =>
+    response?.status === 202 || response?.data?.queued === true,
 }));
 
 const mockCreate = serviceBookingsApi.create as jest.Mock;

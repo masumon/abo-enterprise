@@ -66,9 +66,11 @@ async function queueOfflineCreate<T>(
 }
 
 export function isQueuedResponse(
-  response?: { status?: number; data?: { queued?: boolean } | null } | null
+  response?: { status?: number; data?: unknown } | null
 ): boolean {
-  return response?.status === 202 || response?.data?.queued === true;
+  if (!response) return false;
+  const data = response.data as { queued?: boolean } | null | undefined;
+  return response.status === 202 || data?.queued === true;
 }
 
 export const productsApi = {
