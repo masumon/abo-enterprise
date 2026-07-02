@@ -29,8 +29,6 @@ import {
 
 const API_BASE = getApiBaseUrl();
 
-let warmed = false;
-
 type ReadyState = {
   health: boolean;
   products: boolean;
@@ -53,7 +51,8 @@ function resolveTrustIcon(key: string): LucideIcon {
 const SHOWCASE_ROTATION_MS = 2000;
 const FEATURED_ROTATION_MS = 3000;
 const REVIEW_ROTATION_MS = 4000;
-const MIN_DISPLAY_MS = process.env.NODE_ENV === "test" ? 0 : 2500;
+const MIN_DISPLAY_MS =
+  typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent) ? 0 : 2500;
 const WARMED_SESSION_KEY = "abo_warmup_ready";
 
 function getHealthTimeoutMs() {
@@ -122,7 +121,10 @@ export default function ApiWarmup() {
   const pathname = usePathname();
   const { lang } = useLanguageStore();
   const isHome = pathname === "/";
-  const [warming, setWarming] = useState(!warmed);
+  const warmedRef = useRef(false);
+  const [warming, setWarming] = useState(
+    () => !(typeof window !== "undefined" && sessionStorage.getItem(WARMED_SESSION_KEY) === "1")
+  );
   const [dismissed, setDismissed] = useState(false);
   const [showcaseIndex, setShowcaseIndex] = useState(0);
   const [featuredIndex, setFeaturedIndex] = useState(0);
@@ -139,9 +141,9 @@ export default function ApiWarmup() {
 
   useEffect(() => {
     if (typeof window !== "undefined" && sessionStorage.getItem(WARMED_SESSION_KEY) === "1") {
-      warmed = true;
+      warmedRef.current = true;
     }
-    if (warmed) {
+    if (warmedRef.current) {
       setWarming(false);
       return;
     }
@@ -153,14 +155,14 @@ export default function ApiWarmup() {
   }, []);
 
   useEffect(() => {
-    if (warmed) return;
+    if (warmedRef.current) return;
 
     let alive = true;
     let nextPoll: ReturnType<typeof setTimeout> | undefined;
     let readyTimer: ReturnType<typeof setTimeout> | undefined;
 
     const finishWarmup = () => {
-      warmed = true;
+      warmedRef.current = true;
       if (typeof window !== "undefined") {
         sessionStorage.setItem(WARMED_SESSION_KEY, "1");
       }
@@ -194,7 +196,12 @@ export default function ApiWarmup() {
           const elapsed = Date.now() - startedAtRef.current;
           const delay = Math.max(0, MIN_DISPLAY_MS - elapsed);
           if (delay === 0) finishWarmup();
-          else readyTimer = setTimeout(finishWarmup, delay);
+          else {
+            readyTimer = setTimeout(() => {
+              readyTimer = undefined;
+              finishWarmup();
+            }, delay);
+          }
         } else {
           nextPoll = setTimeout(poll, getWarmupPollMs());
         }

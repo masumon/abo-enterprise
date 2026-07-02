@@ -39,16 +39,26 @@ class OfflineDataSync {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
       request.onerror = () => {
+        this.db = null;
         this.initPromise = null;
         reject(request.error);
       };
       request.onsuccess = async () => {
         this.db = request.result;
         try {
-          await this.clearExpiredCache();
-          await this.syncPendingActions();
+          try {
+            await this.clearExpiredCache();
+          } catch (error) {
+            throw new Error(`Cache cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
+          }
+          try {
+            await this.syncPendingActions();
+          } catch (error) {
+            throw new Error(`Pending action sync failed: ${error instanceof Error ? error.message : String(error)}`);
+          }
           resolve();
         } catch (error) {
+          this.db = null;
           reject(error);
         } finally {
           this.initPromise = null;
@@ -247,7 +257,17 @@ class OfflineDataSync {
 
     const apiBase = getApiBaseUrl();
     const controller = new AbortController();
-    const timeoutMs = getNetworkQuality() === "slow" ? 45000 : 20000;
+    const timeoutMs = (() => {
+      switch (getNetworkQuality()) {
+        case "offline":
+          return 5000;
+        case "slow":
+          return 45000;
+        case "online":
+        default:
+          return 20000;
+      }
+    })();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     const response = await fetch(`${apiBase}${url}`, {
       method,

@@ -61,7 +61,7 @@ async function queueOfflineCreate<T>(
     status: 202,
     statusText: "Accepted",
     headers: {},
-    config: {} as AxiosResponse["config"],
+    config: { headers: {}, method: "post", url: "", data } as AxiosResponse["config"],
   };
 }
 
