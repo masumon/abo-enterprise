@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { serviceBookingsApi } from "@/lib/api";
+import { saveOrderSnapshot } from "@/lib/orderSnapshot";
 import type { Service } from "@/types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { cn } from "@/lib/utils";
@@ -79,8 +80,24 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       });
 
       // Redirect to the success page with the auto-created invoice
-      const bookingId = r?.data?.data?.id;
+      const created = r?.data?.data;
+      const bookingId = created?.id;
       if (bookingId) {
+        const price = Number(created?.quoted_price ?? quotedPrice ?? 0);
+        saveOrderSnapshot({
+          kind: "booking",
+          reference: String(bookingId),
+          booking_number: created?.booking_number,
+          service_name: created?.service_name ?? service.name_en,
+          phone: data.customer_phone,
+          customer_name: data.customer_name,
+          payment_method: "pending",
+          items: [{ name: created?.service_name ?? service.name_en, quantity: 1, price, subtotal: price }],
+          subtotal: price,
+          delivery_charge: 0,
+          total: price,
+          created_at: new Date().toISOString(),
+        });
         router.push(`/booking-success?booking=${bookingId}&phone=${encodeURIComponent(data.customer_phone)}`);
         return;
       }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { Loader2, FileText, X, Trash2, Download, ChevronDown, Plus, RefreshCw } from "lucide-react";
+import { Loader2, FileText, X, Trash2, Download, ChevronDown, Plus, RefreshCw, Stethoscope, CheckCircle2, AlertCircle } from "lucide-react";
 import api, { invoicesAdminApi, downloadPdf } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -54,6 +54,8 @@ export default function AdminInvoicesPage() {
   const [deleting, setDeleting] = useState(false);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [diagLoading, setDiagLoading] = useState(false);
+  const [diagReport, setDiagReport] = useState<{ ok: boolean; checks: { check: string; ok: boolean; detail: string }[] } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -93,6 +95,18 @@ export default function AdminInvoicesPage() {
       toast("error", apiErrorMessage(err, "Invoice sync failed"));
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleDiagnostics = async () => {
+    setDiagLoading(true);
+    try {
+      const r = await api.get("/api/v1/invoices/admin/diagnostics");
+      setDiagReport(r.data.data as { ok: boolean; checks: { check: string; ok: boolean; detail: string }[] });
+    } catch (err) {
+      toast("error", apiErrorMessage(err, "Diagnostics failed"));
+    } finally {
+      setDiagLoading(false);
     }
   };
 
@@ -199,7 +213,16 @@ export default function AdminInvoicesPage() {
           <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
           <p className="text-gray-500 text-sm mt-1">{total} total invoices</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleDiagnostics}
+            disabled={diagLoading}
+            title="ইনভয়েস সিস্টেম পরীক্ষা করুন — সমস্যার আসল কারণ দেখাবে"
+            className="btn btn-outline btn-md flex items-center gap-2"
+          >
+            {diagLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Stethoscope className="w-4 h-4" />}
+            Diagnostics
+          </button>
           <button
             onClick={handleBackfill}
             disabled={syncing}
@@ -224,6 +247,30 @@ export default function AdminInvoicesPage() {
           </select>
         </div>
       </div>
+
+      {diagReport && (
+        <div className={`rounded-xl border p-4 ${diagReport.ok ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>
+          <div className="flex items-center justify-between mb-2">
+            <p className={`text-sm font-semibold flex items-center gap-2 ${diagReport.ok ? "text-green-800" : "text-red-800"}`}>
+              {diagReport.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+              {diagReport.ok ? "সব পরীক্ষা পাস — ইনভয়েস সিস্টেম ঠিক আছে" : "সমস্যা পাওয়া গেছে — নিচের বিবরণ দেখুন"}
+            </p>
+            <button onClick={() => setDiagReport(null)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+          </div>
+          <ul className="space-y-1.5">
+            {diagReport.checks.map((c) => (
+              <li key={c.check} className="text-xs flex items-start gap-2">
+                {c.ok
+                  ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />
+                  : <AlertCircle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" />}
+                <span className={c.ok ? "text-gray-600" : "text-red-700 font-medium"}>
+                  <span className="font-mono">{c.check}</span>: {c.detail}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         {loading ? (
