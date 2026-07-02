@@ -185,7 +185,9 @@ class OfflineDataSync {
     this.listeners.add(listener);
     void this.getSubmissionStatus()
       .then(listener)
-      .catch(() => {});
+      .catch((error) => {
+        console.error("Offline submission status subscription failed:", error);
+      });
 
     return () => {
       this.listeners.delete(listener);
