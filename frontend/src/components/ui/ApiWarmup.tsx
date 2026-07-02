@@ -83,9 +83,16 @@ function getMaxBlockingMs() {
 
 function getLoadingStatus(lang: "bn" | "en", state: ReadyState): string {
   if (!state.health) return lang === "bn" ? "নিরাপদ সার্ভার চালু হচ্ছে..." : "Starting secure server...";
-  if (!state.products) return lang === "bn" ? "পণ্য লোড হচ্ছে..." : "Loading products...";
-  if (!state.services) return lang === "bn" ? "সেবা প্রস্তুত হচ্ছে..." : "Preparing services...";
-  return lang === "bn" ? "প্রায় প্রস্তুত..." : "Almost ready...";
+  if (!state.products) return lang === "bn" ? "পণ্য প্রস্তুত হচ্ছে..." : "Preparing products...";
+  if (!state.services) return lang === "bn" ? "সেবা লোড হচ্ছে..." : "Loading services...";
+  if (!state.settings) return lang === "bn" ? "ডেটাবেজ সংযুক্ত হচ্ছে..." : "Connecting database...";
+  return lang === "bn" ? "প্রায় প্রস্তুত..." : "Almost ready...";
+}
+
+function getLoadingProgress(state: ReadyState): number {
+  const flags = [state.health, state.products, state.services, state.settings, state.appState];
+  const done = flags.filter(Boolean).length;
+  return Math.min(12 + (done / flags.length) * 82, 94);
 }
 
 async function checkEndpoint(path: string, timeoutMs = getApiTimeoutMs()): Promise<boolean> {
@@ -126,6 +133,7 @@ export default function ApiWarmup() {
     () => !(typeof window !== "undefined" && sessionStorage.getItem(WARMED_SESSION_KEY) === "1")
   );
   const [dismissed, setDismissed] = useState(false);
+  const [exiting, setExiting] = useState(false);
   const [showcaseIndex, setShowcaseIndex] = useState(0);
   const [featuredIndex, setFeaturedIndex] = useState(0);
   const [reviewIndex, setReviewIndex] = useState(0);
@@ -138,6 +146,17 @@ export default function ApiWarmup() {
     appState: false,
   });
   const startedAtRef = useRef(Date.now());
+  const prevWarmingRef = useRef(warming);
+
+  // Exit animation when warmup completes
+  useEffect(() => {
+    if (prevWarmingRef.current && !warming && !exiting && isHome && !dismissed) {
+      setExiting(true);
+      const t = setTimeout(() => setExiting(false), 550);
+      return () => clearTimeout(t);
+    }
+    prevWarmingRef.current = warming;
+  }, [warming, exiting, isHome, dismissed]);
 
   useEffect(() => {
     if (typeof window !== "undefined" && sessionStorage.getItem(WARMED_SESSION_KEY) === "1") {
@@ -179,7 +198,6 @@ export default function ApiWarmup() {
 
       if (!alive) return;
 
-      // Update warmup content from settings when available
       if (settingsResult.ok && Object.keys(settingsResult.data).length > 0) {
         setContent(parseWarmupContent(settingsResult.data));
       }
@@ -247,8 +265,9 @@ export default function ApiWarmup() {
   }, [warming, dismissed, content]);
 
   const currentStatus = getLoadingStatus(lang, readyState);
+  const loadingProgress = getLoadingProgress(readyState);
 
-  if (!warming) return null;
+  if (!warming && !exiting) return null;
 
   if (!isHome || dismissed) {
     return (
@@ -273,102 +292,238 @@ export default function ApiWarmup() {
   const review = content.reviewHighlights[reviewIndex % content.reviewHighlights.length];
 
   return (
-    <div className="fixed inset-0 z-[75] overflow-y-auto gradient-surface">
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-16 -left-12 w-44 h-44 rounded-full bg-brand-300/30 blur-3xl animate-pulse" />
-        <div className="absolute top-1/3 -right-8 w-40 h-40 rounded-full bg-accent-300/20 blur-3xl animate-pulse" />
-        <div className="absolute bottom-10 left-1/4 w-36 h-36 rounded-full bg-brand-500/10 blur-2xl animate-pulse" />
+    <div
+      className={cn(
+        "fixed inset-0 z-[75] welcome-overlay overflow-hidden",
+        exiting && "animate-welcome-exit"
+      )}
+      role="region"
+      aria-label={lang === "bn" ? "স্বাগত অভিজ্ঞতা" : "Welcome experience"}
+    >
+      {/* ── Ambient background orbs ── */}
+      <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+        <div className="absolute -top-32 -left-32 w-[560px] h-[560px] rounded-full bg-brand-700/25 blur-[100px] animate-orb-drift-1" />
+        <div className="absolute top-1/4 -right-40 w-[480px] h-[480px] rounded-full bg-accent-600/18 blur-[110px] animate-orb-drift-2" />
+        <div className="absolute -bottom-40 left-1/3 w-[520px] h-[520px] rounded-full bg-emerald-700/12 blur-[120px] animate-orb-drift-3" />
+        {/* Subtle radial grid */}
+        <div
+          className="absolute inset-0 opacity-[0.025]"
+          style={{
+            backgroundImage: "radial-gradient(rgba(255,255,255,0.7) 1px, transparent 1px)",
+            backgroundSize: "44px 44px",
+          }}
+        />
       </div>
 
-      <div className="relative min-h-screen px-4 py-6 sm:py-8 flex items-center justify-center">
-        <div className="w-full max-w-4xl glass-panel rounded-3xl p-5 sm:p-7 shadow-glass">
-          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <BrandLogo size="xl" variant="glass" priority />
-                  <span className="absolute -inset-1 rounded-full border border-brand-300/50 animate-ping" />
+      {/* ── Scrollable content ── */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-8 overflow-y-auto">
+        <div className="w-full max-w-2xl">
+          {/* ── Glass container ── */}
+          <div className="welcome-glass rounded-3xl overflow-hidden">
+
+            {/* ─── Header ─── */}
+            <div className="px-6 sm:px-8 pt-7 sm:pt-8 pb-6 border-b border-white/[0.07]">
+              <div className="flex items-start justify-between gap-4 mb-4">
+                {/* Logo + Brand */}
+                <div className="flex items-center gap-3.5">
+                  {/* Animated logo */}
+                  <div className="relative flex-shrink-0 animate-fade-in">
+                    <BrandLogo size="xl" variant="glass" priority />
+                    <span
+                      aria-hidden
+                      className="absolute -inset-2 rounded-[22px] border border-brand-400/35 animate-glow-breathe"
+                    />
+                    <span
+                      aria-hidden
+                      className="absolute -inset-3.5 rounded-[26px] border border-brand-500/15 animate-glow-breathe"
+                      style={{ animationDelay: "0.8s" }}
+                    />
+                  </div>
+                  {/* Brand text */}
+                  <div>
+                    <p
+                      className="text-[10px] uppercase tracking-[0.22em] text-brand-300/75 font-semibold mb-0.5 animate-fade-up"
+                      style={{ animationDelay: "0.1s" }}
+                    >
+                      {BRAND_NAME}
+                    </p>
+                    <h1
+                      className="text-xl sm:text-2xl font-bold text-white leading-tight animate-fade-up"
+                      style={{ animationDelay: "0.18s" }}
+                    >
+                      {lang === "bn" ? content.welcomeBn : content.welcomeEn}
+                    </h1>
+                    <p
+                      className="text-sm text-white/55 mt-0.5 animate-fade-up"
+                      style={{ animationDelay: "0.26s" }}
+                    >
+                      {lang === "bn" ? content.subtitleBn : content.subtitleEn}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.18em] text-brand-600 dark:text-brand-300">
-                    {BRAND_NAME}
-                  </p>
-                  <h1 className="text-xl sm:text-2xl font-bold text-heading">
-                    {lang === "bn" ? content.welcomeBn : content.welcomeEn}
-                  </h1>
-                  <p className="text-sm text-muted">
-                    {lang === "bn" ? content.subtitleBn : content.subtitleEn}
-                  </p>
+                {/* Live badge */}
+                <div
+                  className="flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1.5 rounded-full animate-fade-in"
+                  style={{
+                    background: "rgba(16,185,129,0.15)",
+                    border: "1px solid rgba(16,185,129,0.3)",
+                    animationDelay: "0.3s",
+                  }}
+                >
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" aria-hidden />
+                  <span className="text-[10px] text-emerald-300 font-semibold uppercase tracking-wide">LIVE</span>
                 </div>
               </div>
+            </div>
 
-              <div className="glass rounded-2xl p-4">
-                <p className="text-xs uppercase tracking-wide text-brand-600 dark:text-brand-300 mb-2">
-                  {lang === "bn" ? "রোটেটিং বিজনেস শোকেস" : "Rotating Business Showcase"}
+            {/* ─── Body ─── */}
+            <div className="px-6 sm:px-8 py-5 space-y-4">
+
+              {/* Business showcase */}
+              <div
+                className="welcome-inner-card-accent rounded-2xl px-5 py-4 animate-fade-up"
+                style={{ animationDelay: "0.32s" }}
+              >
+                <p className="text-[9px] uppercase tracking-[0.2em] text-brand-300/65 mb-2 font-semibold">
+                  {lang === "bn" ? "আমরা যা প্রদান করি" : "What We Offer"}
                 </p>
-                <div className="flex items-center gap-2 text-base font-semibold text-heading min-h-7">
-                  <Sparkles className="w-4 h-4 text-accent-500 flex-shrink-0" />
-                  <span className="transition-all duration-300">{lang === "bn" ? showcase.bn : showcase.en}</span>
+                <div className="flex items-center gap-2.5 min-h-7">
+                  <Sparkles className="w-4 h-4 text-brand-300/80 flex-shrink-0" aria-hidden />
+                  <span
+                    key={showcaseIndex}
+                    className="text-white font-semibold text-base sm:text-lg leading-tight animate-blur-in-up"
+                  >
+                    {lang === "bn" ? showcase.bn : showcase.en}
+                  </span>
+                </div>
+                {/* Progress dots */}
+                <div className="flex gap-1.5 mt-3" aria-hidden>
+                  {content.businessShowcase.map((_, i) => (
+                    <span
+                      key={i}
+                      className={i === showcaseIndex ? "welcome-dot-active" : "welcome-dot-inactive"}
+                    />
+                  ))}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Trust indicators */}
+              <div
+                className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-fade-up"
+                style={{ animationDelay: "0.42s" }}
+              >
                 {content.trustIndicators.map((indicator: WarmupTrustIndicator) => {
                   const Icon = resolveTrustIcon(indicator.icon);
                   return (
-                    <div key={indicator.en} className="glass rounded-xl p-3">
-                      <Icon className="w-4 h-4 text-brand-500 mb-1" aria-hidden />
-                      <p className="text-sm font-bold text-heading">{indicator.value}</p>
-                      <p className="text-[11px] text-muted">{lang === "bn" ? indicator.bn : indicator.en}</p>
+                    <div key={indicator.en} className="welcome-inner-card rounded-xl px-3 py-3.5 text-center">
+                      <Icon className="w-4 h-4 text-brand-300/80 mx-auto mb-1.5" aria-hidden />
+                      <p className="text-white font-bold text-xl leading-none tabular-nums">
+                        {indicator.value}
+                      </p>
+                      <p className="text-white/45 text-[10px] mt-1 leading-tight">
+                        {lang === "bn" ? indicator.bn : indicator.en}
+                      </p>
                     </div>
                   );
                 })}
               </div>
-            </div>
 
-            <div className="space-y-3">
-              <div className="glass rounded-2xl p-4">
-                <p className="text-xs uppercase tracking-wide text-brand-600 dark:text-brand-300 mb-2">
-                  {lang === "bn" ? "ফিচার্ড ক্যারোসেল" : "Featured Carousel"}
-                </p>
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className={cn("w-4 h-4", featured.type === "service" ? "text-accent-500" : "text-brand-500")} />
-                  <p className="font-semibold text-heading">{lang === "bn" ? featured.bn : featured.en}</p>
+              {/* Featured · Review · Offer */}
+              <div
+                className="grid sm:grid-cols-3 gap-3 animate-fade-up"
+                style={{ animationDelay: "0.52s" }}
+              >
+                {/* Featured */}
+                <div className="welcome-inner-card rounded-xl p-3.5">
+                  <p className="text-[9px] uppercase tracking-[0.18em] text-brand-300/60 mb-2 font-semibold">
+                    {lang === "bn" ? "ফিচার্ড" : "Featured"}
+                  </p>
+                  <div className="flex items-start gap-2">
+                    <ShoppingBag
+                      className={cn(
+                        "w-3.5 h-3.5 mt-0.5 flex-shrink-0",
+                        featured.type === "service" ? "text-accent-400" : "text-brand-300"
+                      )}
+                      aria-hidden
+                    />
+                    <p
+                      key={featuredIndex}
+                      className="text-white/85 text-xs font-medium leading-snug animate-fade-in"
+                    >
+                      {lang === "bn" ? featured.bn : featured.en}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Review */}
+                <div className="welcome-inner-card rounded-xl p-3.5">
+                  <p className="text-[9px] uppercase tracking-[0.18em] text-brand-300/60 mb-2 font-semibold">
+                    {lang === "bn" ? "গ্রাহক মতামত" : "Review"}
+                  </p>
+                  <p
+                    key={reviewIndex}
+                    className="text-white/75 text-xs leading-relaxed line-clamp-2 animate-fade-in"
+                  >
+                    {lang === "bn" ? review.bn : review.en}
+                  </p>
+                  <p className="text-white/35 text-[9px] mt-1.5">— {review.by}</p>
+                </div>
+
+                {/* Today's offer */}
+                <div className="welcome-inner-card-offer rounded-xl p-3.5 relative overflow-hidden">
+                  <div
+                    aria-hidden
+                    className="absolute -top-4 -right-4 w-20 h-20 rounded-full bg-accent-500/12 blur-2xl"
+                  />
+                  <p className="text-[9px] uppercase tracking-[0.18em] text-accent-300/75 mb-2 font-semibold relative">
+                    {lang === "bn" ? "আজকের অফার" : "Today's Offer"}
+                  </p>
+                  <p className="text-white/88 text-xs font-medium leading-snug relative">
+                    {lang === "bn" ? content.offerBn : content.offerEn}
+                  </p>
                 </div>
               </div>
-
-              <div className="glass rounded-2xl p-4">
-                <p className="text-xs uppercase tracking-wide text-brand-600 dark:text-brand-300 mb-2">
-                  {lang === "bn" ? "গ্রাহক মতামত" : "Customer Highlights"}
-                </p>
-                <p className="text-sm text-gray-700 dark:text-gray-200 min-h-12">{lang === "bn" ? review.bn : review.en}</p>
-                <p className="text-xs text-muted mt-1">— {review.by}</p>
-              </div>
-
-              <div className="glass rounded-2xl p-4">
-                <p className="text-xs uppercase tracking-wide text-brand-600 dark:text-brand-300 mb-1">
-                  {lang === "bn" ? "আজকের অফার" : "Today's Offer"}
-                </p>
-                <p className="text-sm font-medium text-heading">
-                  {lang === "bn" ? content.offerBn : content.offerEn}
-                </p>
-              </div>
             </div>
-          </div>
 
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-brand-200/50 dark:border-brand-400/20 pt-4">
-            <div className="flex items-center gap-2" role="status" aria-live="polite" aria-busy="true">
-              <Loader2 className="w-4 h-4 text-brand-500 animate-spin" aria-hidden />
-              <p className="text-sm text-gray-700 dark:text-gray-200">{currentStatus}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setDismissed(true)}
-              className="btn btn-glass btn-sm"
+            {/* ─── Footer: loading status ─── */}
+            <div
+              className="px-6 sm:px-8 pb-6 sm:pb-7 pt-4 border-t border-white/[0.06] animate-fade-up"
+              style={{ animationDelay: "0.6s" }}
             >
-              {lang === "bn" ? "সাইটে যান" : "Continue now"}
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              {/* Progress bar */}
+              <div className="welcome-progress-bar mb-3">
+                <div
+                  className="welcome-progress-fill"
+                  style={{ width: `${loadingProgress}%` }}
+                  role="progressbar"
+                  aria-valuenow={loadingProgress}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                />
+              </div>
+
+              <div className="flex items-center justify-between gap-3">
+                <div
+                  className="flex items-center gap-2"
+                  role="status"
+                  aria-live="polite"
+                  aria-busy="true"
+                >
+                  <Loader2 className="w-3.5 h-3.5 text-brand-300/80 animate-spin flex-shrink-0" aria-hidden />
+                  <p className="text-xs text-white/55">{currentStatus}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDismissed(true)}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium text-white/60 hover:text-white/90 transition-all duration-200 hover:bg-white/8"
+                  style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+                >
+                  {lang === "bn" ? "এড়িয়ে যান" : "Continue now"}
+                  <ArrowRight className="w-3 h-3" aria-hidden />
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
