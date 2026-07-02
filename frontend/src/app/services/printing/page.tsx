@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Printer, CheckCircle, MessageCircle } from "lucide-react";
-import { bookingsApi } from "@/lib/api";
+import { bookingsApi, isQueuedResponse } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { generateWhatsAppBookingMessage, WHATSAPP_NUMBER, cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
@@ -32,6 +32,7 @@ const PRINT_SERVICES = [
 export default function PrintingPage() {
   const { lang } = useLanguageStore();
   const [isSuccess, setIsSuccess] = useState(false);
+  const [queued, setQueued] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -43,22 +44,27 @@ export default function PrintingPage() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     setSubmitError(null);
+    setQueued(false);
     try {
-      await bookingsApi.create({
+      const response = await bookingsApi.create({
         service_type: "printing",
         service_subtype: data.service_subtype,
         customer_name: data.customer_name,
         customer_phone: data.customer_phone,
         details: data.details,
       });
+      const wasQueued = isQueuedResponse(response);
+      setQueued(wasQueued);
 
-      const msg = generateWhatsAppBookingMessage(
-        PRINT_SERVICES.find((s) => s.value === data.service_subtype)?.label.en ?? data.service_subtype,
-        data.customer_name,
-        data.customer_phone,
-        data.details
-      );
-      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+      if (!wasQueued) {
+        const msg = generateWhatsAppBookingMessage(
+          PRINT_SERVICES.find((s) => s.value === data.service_subtype)?.label.en ?? data.service_subtype,
+          data.customer_name,
+          data.customer_phone,
+          data.details
+        );
+        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+      }
       setIsSuccess(true);
     } catch {
       setSubmitError(
@@ -96,12 +102,16 @@ export default function PrintingPage() {
             <div className="text-center py-8">
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <h2 className="text-xl font-bold text-heading mb-2">
-                {lang === "bn" ? "অর্ডার গ্রহণ হয়েছে!" : "Booking Confirmed!"}
+                {queued ? (lang === "bn" ? "অর্ডার কিউ হয়েছে!" : "Booking Queued!") : lang === "bn" ? "অর্ডার গ্রহণ হয়েছে!" : "Booking Confirmed!"}
               </h2>
               <p className="text-gray-500 mb-6">
-                {lang === "bn"
-                  ? "WhatsApp খুলে গেছে। শীঘ্রই আমরা যোগাযোগ করব।"
-                  : "WhatsApp opened. We'll contact you shortly with details."}
+                {queued
+                  ? lang === "bn"
+                    ? "ইন্টারনেট ফিরলে বুকিংটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
+                    : "The booking will sync automatically when your connection returns."
+                  : lang === "bn"
+                    ? "WhatsApp খুলে গেছে। শীঘ্রই আমরা যোগাযোগ করব।"
+                    : "WhatsApp opened. We'll contact you shortly with details."}
               </p>
               <button onClick={() => setIsSuccess(false)} className="btn btn-brand btn-md">
                 {lang === "bn" ? "আরও অর্ডার করুন" : "Place Another Order"}

@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Scale, CheckCircle, MessageCircle, AlertTriangle } from "lucide-react";
-import { bookingsApi } from "@/lib/api";
+import { bookingsApi, isQueuedResponse } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { generateWhatsAppBookingMessage, WHATSAPP_NUMBER, cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
@@ -47,6 +47,7 @@ const LEGAL_SERVICES = [
 export default function LegalPage() {
   const { lang } = useLanguageStore();
   const [isSuccess, setIsSuccess] = useState(false);
+  const [queued, setQueued] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
@@ -59,13 +60,14 @@ export default function LegalPage() {
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
+    setQueued(false);
     try {
       const details = data.station
         ? `থানা/অফিস: ${data.station}\n\n${data.details}`
         : data.details;
 
       const selected = LEGAL_SERVICES.find((s) => s.value === data.service_subtype);
-      await bookingsApi.create({
+      const response = await bookingsApi.create({
         service_type: "legal",
         service_subtype: data.service_subtype,
         customer_name: data.customer_name,
@@ -73,14 +75,18 @@ export default function LegalPage() {
         details,
         estimated_price: selected?.price.en,
       });
+      const wasQueued = isQueuedResponse(response);
+      setQueued(wasQueued);
 
-      const msg = generateWhatsAppBookingMessage(
-        selected?.label.en ?? "Legal Service",
-        data.customer_name,
-        data.customer_phone,
-        details
-      );
-      window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+      if (!wasQueued) {
+        const msg = generateWhatsAppBookingMessage(
+          selected?.label.en ?? "Legal Service",
+          data.customer_name,
+          data.customer_phone,
+          details
+        );
+        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
+      }
       setIsSuccess(true);
     } catch {
       alert(lang === "bn" ? "বুকিং জমা দিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।" : "Failed to submit booking. Please try again.");
@@ -124,12 +130,16 @@ export default function LegalPage() {
             <div className="text-center py-8">
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <h2 className="text-xl font-bold text-heading mb-2">
-                {lang === "bn" ? "অনুরোধ গ্রহণ হয়েছে!" : "Request Received!"}
+                {queued ? (lang === "bn" ? "অনুরোধ কিউ হয়েছে!" : "Request Queued!") : lang === "bn" ? "অনুরোধ গ্রহণ হয়েছে!" : "Request Received!"}
               </h2>
               <p className="text-gray-500 mb-6">
-                {lang === "bn"
-                  ? "WhatsApp-এ বার্তা পাঠানো হয়েছে। শীঘ্রই যোগাযোগ করা হবে।"
-                  : "Message sent to WhatsApp. We'll contact you soon."}
+                {queued
+                  ? lang === "bn"
+                    ? "ইন্টারনেট ফিরলে অনুরোধটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
+                    : "The request will sync automatically when your connection returns."
+                  : lang === "bn"
+                    ? "WhatsApp-এ বার্তা পাঠানো হয়েছে। শীঘ্রই যোগাযোগ করা হবে।"
+                    : "Message sent to WhatsApp. We'll contact you soon."}
               </p>
               <button onClick={() => setIsSuccess(false)} className="btn btn-brand btn-md">
                 {lang === "bn" ? "আরেকটি অনুরোধ করুন" : "New Request"}

@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { BD_PHONE_REGEX, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { Send, CheckCircle, Bot, Code, Cog } from "lucide-react";
-import { serviceLeadsApi } from "@/lib/api";
+import { isQueuedResponse, serviceLeadsApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +34,7 @@ const LEAD_TYPES = [
 export default function LeadCapture() {
   const { lang } = useLanguageStore();
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [queued, setQueued] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -52,8 +53,9 @@ export default function LeadCapture() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     setSubmitError(null);
+    setQueued(false);
     try {
-      await serviceLeadsApi.create({
+      const response = await serviceLeadsApi.create({
         lead_type: toLeadV2Type(data.lead_type),
         name: data.name,
         phone: data.phone,
@@ -61,6 +63,7 @@ export default function LeadCapture() {
         company: data.company || undefined,
         project_description: data.project_description,
       });
+      setQueued(isQueuedResponse(response));
       setIsSubmitted(true);
     } catch {
       setSubmitError(
@@ -99,12 +102,16 @@ export default function LeadCapture() {
             <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-10 text-center text-white">
               <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
               <h3 className="text-xl font-bold mb-2">
-                {lang === "bn" ? "আপনার অনুরোধ পেয়েছি!" : "Request Received!"}
+                {queued ? (lang === "bn" ? "অনুরোধ কিউ হয়েছে!" : "Request Queued!") : lang === "bn" ? "আপনার অনুরোধ পেয়েছি!" : "Request Received!"}
               </h3>
               <p className="text-white/70">
-                {lang === "bn"
-                  ? "২৪ ঘণ্টার মধ্যে WhatsApp বা ফোনে যোগাযোগ করা হবে।"
-                  : "We'll contact you via WhatsApp or phone within 24 hours."}
+                {queued
+                  ? lang === "bn"
+                    ? "ইন্টারনেট ফিরলে অনুরোধটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
+                    : "The request will sync automatically when your connection returns."
+                  : lang === "bn"
+                    ? "২৪ ঘণ্টার মধ্যে WhatsApp বা ফোনে যোগাযোগ করা হবে।"
+                    : "We'll contact you via WhatsApp or phone within 24 hours."}
               </p>
             </div>
           ) : (

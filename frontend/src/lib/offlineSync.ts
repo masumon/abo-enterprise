@@ -1,13 +1,20 @@
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { getNetworkQuality } from "@/lib/networkStatus";
 
 interface PendingAction {
   id: string;
-  type: "booking" | "lead" | "order";
+  type: "booking" | "lead" | "order" | "service_booking" | "service_lead";
   action: "create" | "update" | "delete";
   data: Record<string, any>;
   timestamp: number;
   retry: number;
   maxRetries: number;
+}
+
+export interface OfflineSubmissionStatus {
+  queuedSubmissionCount: number;
+  lastEvent: "idle" | "queued" | "synced";
+  lastUpdatedAt: number | null;
 }
 
 const DB_NAME = "aboenterprise";
@@ -19,7 +26,11 @@ const STORES = {
 
 class OfflineDataSync {
   private db: IDBDatabase | null = null;
-  private isOnline: boolean = navigator.onLine;
+  private initPromise: Promise<void> | null = null;
+  private isOnline: boolean = typeof navigator === "undefined" ? true : navigator.onLine;
+  private listeners = new Set<(status: OfflineSubmissionStatus) => void>();
+  private lastEvent: OfflineSubmissionStatus["lastEvent"] = "idle";
+  private lastUpdatedAt: number | null = null;
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -29,13 +40,38 @@ class OfflineDataSync {
   }
 
   async init(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || typeof indexedDB === "undefined") return;
+    if (this.db) return;
+    if (this.initPromise) return this.initPromise;
+
+    this.initPromise = new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
+      request.onerror = () => {
+        this.db = null;
+        this.initPromise = null;
+        reject(request.error);
+      };
+      request.onsuccess = async () => {
         this.db = request.result;
-        resolve();
+        try {
+          try {
+            await this.clearExpiredCache();
+          } catch (error) {
+            throw new Error(`Cache cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
+          }
+          try {
+            await this.syncPendingActions();
+          } catch (error) {
+            throw new Error(`Pending action sync failed: ${error instanceof Error ? error.message : String(error)}`);
+          }
+          resolve();
+        } catch (error) {
+          this.db = null;
+          reject(error);
+        } finally {
+          this.initPromise = null;
+        }
       };
 
       request.onupgradeneeded = (event: any) => {
@@ -55,6 +91,8 @@ class OfflineDataSync {
         }
       };
     });
+
+    return this.initPromise;
   }
 
   private onOnline(): void {
@@ -69,7 +107,7 @@ class OfflineDataSync {
   }
 
   async addPendingAction(
-    type: "booking" | "lead" | "order",
+    type: "booking" | "lead" | "order" | "service_booking" | "service_lead",
     action: "create" | "update" | "delete",
     data: Record<string, any>
   ): Promise<string> {
@@ -92,7 +130,10 @@ class OfflineDataSync {
       const request = store.add(pendingAction);
 
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(actionId);
+      request.onsuccess = () => {
+        void this.emitStatus("queued");
+        resolve(actionId);
+      };
     });
   }
 
@@ -115,7 +156,7 @@ class OfflineDataSync {
     });
   }
 
-  async removePendingAction(actionId: string): Promise<void> {
+  async removePendingAction(actionId: string, event: OfflineSubmissionStatus["lastEvent"] = "idle"): Promise<void> {
     if (!this.db) await this.init();
 
     return new Promise((resolve, reject) => {
@@ -124,8 +165,33 @@ class OfflineDataSync {
       const request = store.delete(actionId);
 
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
+      request.onsuccess = () => {
+        void this.emitStatus(event);
+        resolve();
+      };
     });
+  }
+
+  async getSubmissionStatus(): Promise<OfflineSubmissionStatus> {
+    const actions = await this.getPendingActions();
+    return {
+      queuedSubmissionCount: actions.filter((action) => action.action === "create").length,
+      lastEvent: this.lastEvent,
+      lastUpdatedAt: this.lastUpdatedAt,
+    };
+  }
+
+  subscribe(listener: (status: OfflineSubmissionStatus) => void): () => void {
+    this.listeners.add(listener);
+    void this.getSubmissionStatus()
+      .then(listener)
+      .catch((error) => {
+        console.error("Offline submission status subscription failed:", error);
+      });
+
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
   async cacheData(key: string, data: any, expiryMinutes: number = 60): Promise<void> {
@@ -195,7 +261,7 @@ class OfflineDataSync {
     for (const action of pendingActions) {
       try {
         await this.syncAction(action);
-        await this.removePendingAction(action.id);
+        await this.removePendingAction(action.id, "synced");
         console.log(`Synced: ${action.id}`);
       } catch (error) {
         action.retry++;
@@ -215,6 +281,8 @@ class OfflineDataSync {
       booking: "/api/v1/bookings",
       lead: "/api/v1/leads",
       order: "/api/v1/orders",
+      service_booking: "/api/v1/service-bookings",
+      service_lead: "/api/v1/service-leads",
     };
 
     const endpoint = endpoints[action.type];
@@ -225,11 +293,25 @@ class OfflineDataSync {
       : endpoint;
 
     const apiBase = getApiBaseUrl();
+    const controller = new AbortController();
+    const timeoutMs = (() => {
+      switch (getNetworkQuality()) {
+        case "offline":
+          return 5000;
+        case "slow":
+          return 45000;
+        case "online":
+        default:
+          return 20000;
+      }
+    })();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     const response = await fetch(`${apiBase}${url}`, {
       method,
       headers: { "Content-Type": "application/json" },
       body: method !== "DELETE" ? JSON.stringify(action.data) : undefined,
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timer));
 
     if (!response.ok) {
       throw new Error(`Sync failed: ${response.statusText}`);
@@ -247,6 +329,13 @@ class OfflineDataSync {
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve();
     });
+  }
+
+  private async emitStatus(event: OfflineSubmissionStatus["lastEvent"]): Promise<void> {
+    this.lastEvent = event;
+    this.lastUpdatedAt = Date.now();
+    const status = await this.getSubmissionStatus();
+    this.listeners.forEach((listener) => listener(status));
   }
 }
 

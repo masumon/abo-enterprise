@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Phone, Mail, MapPin, MessageSquare, Send, Loader2, CheckCircle, Clock } from "lucide-react";
-import { serviceLeadsApi } from "@/lib/api";
+import { isQueuedResponse, serviceLeadsApi } from "@/lib/api";
 import { toLeadV2Type } from "@/lib/leadTypes";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
@@ -39,6 +39,7 @@ export default function ContactPage() {
   type FormData = z.infer<typeof schema>;
 
   const [submitted, setSubmitted] = useState(false);
+  const [queued, setQueued] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -49,16 +50,28 @@ export default function ContactPage() {
   const onSubmit = async (data: FormData) => {
     setLoading(true);
     setSubmitError(null);
+    setQueued(false);
     try {
-      await serviceLeadsApi.create({
+      const response = await serviceLeadsApi.create({
         lead_type: toLeadV2Type("general"),
         name: data.name,
         phone: data.phone,
         email: data.email || undefined,
         project_description: data.project_description,
       });
+      const wasQueued = isQueuedResponse(response);
+      setQueued(wasQueued);
       setSubmitted(true);
-      toast("success", lang === "bn" ? "বার্তা পাঠানো হয়েছে" : "Message sent successfully");
+      toast(
+        "success",
+        wasQueued
+          ? lang === "bn"
+            ? "বার্তাটি অফলাইনে কিউ হয়েছে"
+            : "Message queued offline"
+          : lang === "bn"
+            ? "বার্তা পাঠানো হয়েছে"
+            : "Message sent successfully"
+      );
     } catch {
       setSubmitError(t("error_generic"));
       toast("error", t("error_generic"));
@@ -124,10 +137,16 @@ export default function ContactPage() {
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <CheckCircle className="w-14 h-14 text-green-500 mb-4" />
                 <h3 className="text-xl font-bold text-heading mb-2">
-                  {lang === "bn" ? "বার্তা পাঠানো হয়েছে!" : "Message Sent!"}
+                  {queued ? (lang === "bn" ? "বার্তা কিউ হয়েছে!" : "Message Queued!") : lang === "bn" ? "বার্তা পাঠানো হয়েছে!" : "Message Sent!"}
                 </h3>
                 <p className="text-muted">
-                  {lang === "bn" ? "২৪ ঘণ্টার মধ্যে যোগাযোগ করা হবে।" : "We will get back to you within 24 hours."}
+                  {queued
+                    ? lang === "bn"
+                      ? "ইন্টারনেট ফিরলে এটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
+                      : "It will sync automatically when your connection returns."
+                    : lang === "bn"
+                      ? "২৪ ঘণ্টার মধ্যে যোগাযোগ করা হবে।"
+                      : "We will get back to you within 24 hours."}
                 </p>
               </div>
             ) : (

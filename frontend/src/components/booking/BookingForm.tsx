@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { serviceBookingsApi } from "@/lib/api";
+import { isQueuedResponse, serviceBookingsApi } from "@/lib/api";
 import { saveOrderSnapshot } from "@/lib/orderSnapshot";
 import type { Service } from "@/types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
@@ -44,6 +44,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
   const initialTier = resolveInitialTier(service, initialTierId);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [queued, setQueued] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const {
     register,
@@ -62,6 +63,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
     try {
       setSubmitting(true);
       setSubmitError(null);
+      setQueued(false);
 
       const selectedTier = service.pricing_tiers?.find((t) => t.tier_name === data.service_tier);
       const quotedPrice = selectedTier?.price ?? service.base_price ?? data.quoted_price;
@@ -78,6 +80,17 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         quoted_price: quotedPrice,
         details: data.details,
       });
+
+      if (isQueuedResponse(r)) {
+        setQueued(true);
+        setSuccess(true);
+        reset();
+        setTimeout(() => {
+          setSuccess(false);
+          setQueued(false);
+        }, 4000);
+        return;
+      }
 
       // Redirect to the success page with the auto-created invoice
       const created = r?.data?.data;
@@ -221,7 +234,9 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
 
       {success && (
         <div className="alert-success">
-          Booking submitted successfully! We will contact you soon.
+          {queued
+            ? "Booking queued offline. It will sync automatically when you're back online."
+            : "Booking submitted successfully! We will contact you soon."}
         </div>
       )}
 

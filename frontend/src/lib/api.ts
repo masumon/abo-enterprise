@@ -1,8 +1,11 @@
 import axios from "axios";
+import type { AxiosResponse } from "axios";
 import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier, BookingV2, LeadV2, Review, BlogPost, ServiceBookingFormField } from "@/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { clearAdminToken, getAdminToken, isAdminProtectedPath } from "@/lib/adminAuth";
 import { getAdaptiveTimeout, getAdaptiveRetry } from "@/lib/networkAwareApi";
+import { isOffline } from "@/lib/networkStatus";
+import { offlineSync } from "@/lib/offlineSync";
 
 const baseURL = getApiBaseUrl();
 
@@ -47,6 +50,28 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+async function queueOfflineCreate<T>(
+  type: "booking" | "lead" | "service_booking" | "service_lead",
+  data: Record<string, unknown>
+): Promise<AxiosResponse<ApiResponse<T | null> & { queued: true }>> {
+  await offlineSync.addPendingAction(type, "create", data);
+  return {
+    data: { success: true, data: null, queued: true },
+    status: 202,
+    statusText: "Accepted",
+    headers: {},
+    config: { headers: {}, method: "post", url: "", data } as AxiosResponse["config"],
+  };
+}
+
+export function isQueuedResponse(
+  response?: { status?: number; data?: unknown } | null
+): boolean {
+  if (!response) return false;
+  const data = response.data as { queued?: boolean } | null | undefined;
+  return response.status === 202 || data?.queued === true;
+}
 
 export const productsApi = {
   list: (params?: { category?: string; featured?: boolean; search?: string; sort_by?: string; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
@@ -116,7 +141,9 @@ export const ordersApi = {
 
 export const bookingsApi = {
   create: (data: Booking) =>
-    api.post<ApiResponse<Booking>>("/api/v1/bookings", data),
+    isOffline()
+      ? queueOfflineCreate<Booking>("booking", data as unknown as Record<string, unknown>)
+      : api.post<ApiResponse<Booking>>("/api/v1/bookings", data),
 
   list: (params?: { service_type?: string; status?: string; search?: string; page?: number }) =>
     api.get<PaginatedResponse<Booking>>("/api/v1/bookings", { params }),
@@ -130,7 +157,9 @@ export const bookingsApi = {
 
 export const leadsApi = {
   create: (data: Lead) =>
-    api.post<ApiResponse<Lead>>("/api/v1/leads", data),
+    isOffline()
+      ? queueOfflineCreate<Lead>("lead", data as unknown as Record<string, unknown>)
+      : api.post<ApiResponse<Lead>>("/api/v1/leads", data),
 
   list: (params?: { lead_type?: string; status?: string; search?: string; page?: number }) =>
     api.get<PaginatedResponse<Lead>>("/api/v1/leads", { params }),
@@ -167,7 +196,9 @@ export const serviceBookingsApi = {
     details?: string;
     requirements?: string;
   }) =>
-    api.post<ApiResponse<BookingV2 & { invoice_id?: string | null }>>("/api/v1/service-bookings", data),
+    isOffline()
+      ? queueOfflineCreate<BookingV2 & { invoice_id?: string | null }>("service_booking", data as unknown as Record<string, unknown>)
+      : api.post<ApiResponse<BookingV2 & { invoice_id?: string | null }>>("/api/v1/service-bookings", data),
 
   get: (id: string) =>
     api.get<ApiResponse<BookingV2>>(`/api/v1/service-bookings/${id}`),
@@ -187,7 +218,9 @@ export const serviceLeadsApi = {
     budget_max?: number;
     timeline?: string;
   }) =>
-    api.post<ApiResponse<LeadV2>>("/api/v1/service-leads", data),
+    isOffline()
+      ? queueOfflineCreate<LeadV2>("service_lead", data as unknown as Record<string, unknown>)
+      : api.post<ApiResponse<LeadV2>>("/api/v1/service-leads", data),
 };
 
 export const serviceLeadsAdminApi = {

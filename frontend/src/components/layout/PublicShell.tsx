@@ -21,6 +21,7 @@ import ScrollProgress from "@/components/ui/ScrollProgress";
 import HtmlLangSync from "@/components/ui/HtmlLangSync";
 import DynamicFavicon from "@/components/ui/DynamicFavicon";
 import { offlineSync } from "@/lib/offlineSync";
+import OfflineSubmissionBadge from "@/components/network/OfflineSubmissionBadge";
 
 export default function PublicShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -58,6 +59,7 @@ export default function PublicShell({ children }: { children: React.ReactNode })
         <CookieConsent />
       </DelayedMount>
       <ApiWarmup />
+      <OfflineSubmissionBadge />
       <MobileBottomNav />
       <ToastProvider />
     </>
