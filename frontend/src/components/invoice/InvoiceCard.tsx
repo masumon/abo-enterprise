@@ -25,7 +25,9 @@ export default function InvoiceCard({ invoice, lang }: Props) {
           <p className="text-brand-100 text-[11px]">{bn ? "ইনভয়েস" : "INVOICE"}</p>
         </div>
         <div className="text-right">
-          <p className="text-white font-mono font-bold text-sm">{invoice.invoice_number}</p>
+          <p className="text-white font-mono font-bold text-sm">
+            {invoice.invoice_number || (bn ? "তৈরি হচ্ছে…" : "Generating…")}
+          </p>
           <span
             className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${
               isPaid ? "bg-green-400/20 text-green-100" : "bg-amber-400/20 text-amber-100"

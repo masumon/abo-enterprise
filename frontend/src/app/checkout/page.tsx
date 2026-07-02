@@ -24,6 +24,7 @@ import { calcDeliveryCharge } from "@/lib/checkoutHelpers";
 import { validateCoupon, type AppliedCoupon } from "@/lib/coupons";
 import { isDemoProduct } from "@/lib/demoFallback";
 import { isOffline } from "@/lib/networkStatus";
+import { saveOrderSnapshot } from "@/lib/orderSnapshot";
 import PageHero from "@/components/ui/PageHero";
 
 const schema = z.object({
@@ -220,6 +221,29 @@ export default function CheckoutPage() {
       const orderData = orderRes.data.data as { order_id?: string; order_number?: string } | undefined;
       const orderNumber = orderData?.order_number ?? null;
       const orderId = orderData?.order_id;
+
+      // Snapshot for the success page — renders the invoice summary even if
+      // the invoice API is slow or unreachable (PWA / mobile networks)
+      if (orderNumber) {
+        saveOrderSnapshot({
+          kind: "order",
+          reference: orderNumber,
+          order_number: orderNumber,
+          phone: data.customer_phone,
+          customer_name: data.customer_name,
+          payment_method: data.payment_gateway,
+          items: orderItems.map((i) => ({
+            name: i.product_name,
+            quantity: i.quantity,
+            price: i.product_price,
+            subtotal: i.subtotal,
+          })),
+          subtotal,
+          delivery_charge: deliveryCharge,
+          total: cartTotal,
+          created_at: new Date().toISOString(),
+        });
+      }
 
       const tryGatewayRedirect = async (): Promise<boolean> => {
         if (!orderId) return false;

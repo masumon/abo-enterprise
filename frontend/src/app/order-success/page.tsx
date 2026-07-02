@@ -7,6 +7,7 @@ import { CheckCircle2, Package, ArrowRight, Share2, Download, Loader2, X, FileTe
 import { useLanguageStore } from "@/store/language";
 import { trackPurchase } from "@/components/analytics/FacebookPixel";
 import { downloadPublicOrderInvoice, publicInvoicesApi, type PublicInvoiceData } from "@/lib/api";
+import { readOrderSnapshot, snapshotToInvoice } from "@/lib/orderSnapshot";
 import PageHero from "@/components/ui/PageHero";
 import InvoiceCard from "@/components/invoice/InvoiceCard";
 
@@ -58,18 +59,24 @@ function OrderSuccessContent() {
     return () => clearTimeout(t);
   }, [params]);
 
-  // Auto-load the invoice so the customer sees it on this page
+  // Auto-load the invoice so the customer sees it on this page.
+  // The checkout-time snapshot renders instantly; the API response (with the
+  // real invoice number) replaces it when it arrives.
   useEffect(() => {
-    if (!orderNumber || !phone) return;
+    if (!orderNumber) return;
+    const snap = readOrderSnapshot(orderNumber);
+    if (snap) setInvoice(snapshotToInvoice(snap));
+
+    if (!phone) return;
     let cancelled = false;
-    setInvoiceLoading(true);
+    if (!snap) setInvoiceLoading(true);
     publicInvoicesApi
       .orderInvoice(orderNumber, phone)
       .then((r) => {
         if (!cancelled && r.data?.data) setInvoice(r.data.data);
       })
       .catch(() => {
-        /* PDF button still works as fallback */
+        /* snapshot (if any) stays visible; PDF button still works */
       })
       .finally(() => {
         if (!cancelled) setInvoiceLoading(false);
@@ -145,7 +152,7 @@ function OrderSuccessContent() {
           </div>
         )}
 
-        {canDownloadInvoice && showInvoicePrompt && (
+        {(invoice || canDownloadInvoice) && showInvoicePrompt && (
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
@@ -180,15 +187,17 @@ function OrderSuccessContent() {
             )}
 
             <div className="flex flex-col sm:flex-row gap-2 mt-3">
-              <button
-                type="button"
-                onClick={handleDownloadInvoice}
-                disabled={pdfLoading}
-                className="btn btn-brand btn-sm flex-1 flex items-center justify-center gap-2"
-              >
-                {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {lang === "bn" ? "PDF ডাউনলোড" : "Download PDF"}
-              </button>
+              {canDownloadInvoice && (
+                <button
+                  type="button"
+                  onClick={handleDownloadInvoice}
+                  disabled={pdfLoading}
+                  className="btn btn-brand btn-sm flex-1 flex items-center justify-center gap-2"
+                >
+                  {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                  {lang === "bn" ? "PDF ডাউনলোড" : "Download PDF"}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setShowInvoicePrompt(false)}

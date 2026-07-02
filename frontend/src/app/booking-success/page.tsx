@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CheckCircle2, ArrowRight, Download, Loader2, X, FileText, Wrench } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { downloadPublicBookingInvoice, publicInvoicesApi, type PublicInvoiceData } from "@/lib/api";
+import { readOrderSnapshot, snapshotToInvoice } from "@/lib/orderSnapshot";
 import PageHero from "@/components/ui/PageHero";
 import InvoiceCard from "@/components/invoice/InvoiceCard";
 
@@ -24,18 +25,24 @@ function BookingSuccessContent() {
     setPhone(params.get("phone"));
   }, [params]);
 
-  // Auto-load the invoice so the customer sees it on this page
+  // Auto-load the invoice so the customer sees it on this page.
+  // The booking-time snapshot renders instantly; the API response (with the
+  // real invoice number) replaces it when it arrives.
   useEffect(() => {
-    if (!bookingId || !phone) return;
+    if (!bookingId) return;
+    const snap = readOrderSnapshot(bookingId);
+    if (snap) setInvoice(snapshotToInvoice(snap));
+
+    if (!phone) return;
     let cancelled = false;
-    setInvoiceLoading(true);
+    if (!snap) setInvoiceLoading(true);
     publicInvoicesApi
       .bookingInvoice(bookingId, phone)
       .then((r) => {
         if (!cancelled && r.data?.data) setInvoice(r.data.data);
       })
       .catch(() => {
-        /* PDF button still works as fallback */
+        /* snapshot (if any) stays visible; PDF button still works */
       })
       .finally(() => {
         if (!cancelled) setInvoiceLoading(false);
@@ -98,7 +105,7 @@ function BookingSuccessContent() {
             </div>
           )}
 
-          {canDownload && showInvoice && (
+          {(invoice || canDownload) && showInvoice && (
             <div className="mb-6">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
@@ -133,6 +140,7 @@ function BookingSuccessContent() {
               )}
 
               <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                {canDownload && (
                 <button
                   type="button"
                   onClick={handleDownloadInvoice}
@@ -142,6 +150,7 @@ function BookingSuccessContent() {
                   {pdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                   {lang === "bn" ? "PDF ডাউনলোড" : "Download PDF"}
                 </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setShowInvoice(false)}

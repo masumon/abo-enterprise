@@ -444,6 +444,92 @@ async def delete_invoice(
     return ApiResponse(message="Invoice deleted successfully")
 
 
+@router.get("/admin/diagnostics", response_model=ApiResponse)
+async def invoice_diagnostics(
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Pinpoint why invoice creation fails in this environment.
+
+    Runs read-only checks plus a probe invoice INSERT inside a savepoint
+    that is always rolled back, and returns the exact error text.
+    """
+    import secrets
+    from datetime import datetime, timezone
+    from sqlalchemy import text as sql_text
+    from app.models.models import Order
+
+    checks: list[dict] = []
+
+    # 1. Table + column comparison against the ORM
+    try:
+        cols = (await db.execute(sql_text(
+            "SELECT column_name FROM information_schema.columns WHERE table_name = 'invoices'"
+        ))).scalars().all()
+        if not cols:
+            checks.append({"check": "invoices_table", "ok": False,
+                           "detail": "Table 'invoices' does not exist in this database"})
+        else:
+            expected = {c.name for c in Invoice.__table__.columns}
+            missing = sorted(expected - set(cols))
+            checks.append({"check": "invoices_table", "ok": not missing,
+                           "detail": f"missing columns: {', '.join(missing)}" if missing
+                           else f"all {len(expected)} ORM columns present"})
+    except Exception as exc:
+        checks.append({"check": "invoices_table", "ok": False, "detail": f"{type(exc).__name__}: {str(exc)[:300]}"})
+
+    # 2. Row counts
+    try:
+        invoice_count = (await db.execute(select(func.count(Invoice.id)).where(Invoice.is_deleted == False))).scalar() or 0  # noqa: E712
+        order_count = (await db.execute(select(func.count(Order.id)).where(Order.is_deleted == False))).scalar() or 0  # noqa: E712
+        orders_without = (await db.execute(
+            select(func.count(Order.id)).where(
+                Order.is_deleted == False,  # noqa: E712
+                Order.id.not_in(select(Invoice.order_id).where(
+                    Invoice.order_id.isnot(None), Invoice.is_deleted == False)),  # noqa: E712
+            )
+        )).scalar() or 0
+        checks.append({"check": "counts", "ok": orders_without == 0,
+                       "detail": f"{invoice_count} invoices, {order_count} orders, {orders_without} orders missing an invoice"})
+    except Exception as exc:
+        checks.append({"check": "counts", "ok": False, "detail": f"{type(exc).__name__}: {str(exc)[:300]}"})
+
+    # 3. Probe INSERT inside a savepoint — always rolled back
+    probe = Invoice(
+        invoice_number=f"DIAG-{secrets.token_hex(4).upper()}",
+        customer_name="Diagnostics Probe",
+        customer_phone="01700000000",
+        items=[{"name": "probe item", "quantity": 1, "price": 1.0, "subtotal": 1.0}],
+        subtotal=1, tax=0, total=1,
+        payment_method="cod",
+        payment_status="pending",
+        issued_date=datetime.now(timezone.utc),
+    )
+    nested = await db.begin_nested()
+    try:
+        db.add(probe)
+        await db.flush()
+        checks.append({"check": "insert_probe", "ok": True, "detail": "invoice INSERT works in this database"})
+    except Exception as exc:
+        checks.append({"check": "insert_probe", "ok": False,
+                       "detail": f"{type(exc).__name__}: {str(exc)[:500]}"})
+    finally:
+        try:
+            await nested.rollback()
+        except Exception:
+            await db.rollback()
+        try:
+            db.expunge(probe)
+        except Exception:
+            pass
+
+    all_ok = all(c["ok"] for c in checks)
+    return ApiResponse(
+        data={"ok": all_ok, "checks": checks},
+        message="All invoice checks passed" if all_ok else "Invoice diagnostics found problems",
+    )
+
+
 @router.post("/admin/backfill", response_model=ApiResponse)
 async def backfill_missing_invoices(
     admin_id: str = Depends(require_admin),
