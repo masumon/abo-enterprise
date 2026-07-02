@@ -41,6 +41,15 @@ const config: Config = {
         "slide-up": "slideUp 0.35s cubic-bezier(0.16,1,0.3,1) both",
         "scale-in": "scaleIn 0.25s cubic-bezier(0.16,1,0.3,1) both",
         "slide-right": "slideRight 0.35s cubic-bezier(0.16,1,0.3,1) both",
+        // Welcome experience animations
+        "blur-in-up": "blurInUp 0.55s cubic-bezier(0.16,1,0.3,1) both",
+        "fade-up": "fadeUp 0.55s cubic-bezier(0.16,1,0.3,1) both",
+        "glow-breathe": "glowBreathe 3s ease-in-out infinite",
+        "orb-drift-1": "orbDrift1 16s ease-in-out infinite",
+        "orb-drift-2": "orbDrift2 20s ease-in-out infinite",
+        "orb-drift-3": "orbDrift3 13s ease-in-out infinite",
+        "shimmer-slide": "shimmerSlide 2.8s linear infinite",
+        "welcome-exit": "welcomeExit 0.55s ease-out forwards",
       },
       keyframes: {
         float: {
@@ -62,6 +71,41 @@ const config: Config = {
         slideRight: {
           from: { opacity: "0", transform: "translateX(100%)" },
           to: { opacity: "1", transform: "translateX(0)" },
+        },
+        // Welcome experience keyframes
+        blurInUp: {
+          "0%": { opacity: "0", transform: "translateY(10px)", filter: "blur(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)", filter: "blur(0)" },
+        },
+        fadeUp: {
+          "0%": { opacity: "0", transform: "translateY(16px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        glowBreathe: {
+          "0%, 100%": { opacity: "0.4", transform: "scale(1)" },
+          "50%": { opacity: "0.85", transform: "scale(1.1)" },
+        },
+        orbDrift1: {
+          "0%, 100%": { transform: "translate(0px, 0px)" },
+          "30%": { transform: "translate(45px, -28px)" },
+          "65%": { transform: "translate(-22px, 18px)" },
+        },
+        orbDrift2: {
+          "0%, 100%": { transform: "translate(0px, 0px)" },
+          "40%": { transform: "translate(-32px, 24px)" },
+          "72%": { transform: "translate(22px, -18px)" },
+        },
+        orbDrift3: {
+          "0%, 100%": { transform: "translate(0px, 0px)" },
+          "50%": { transform: "translate(18px, -32px)" },
+        },
+        shimmerSlide: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+        welcomeExit: {
+          "0%": { opacity: "1", transform: "scale(1)" },
+          "100%": { opacity: "0", transform: "scale(1.015)" },
         },
       },
       boxShadow: {
