@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   ArrowRight,
@@ -18,6 +18,8 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { BRAND_NAME } from "@/lib/brand";
 import { cn } from "@/lib/utils";
+import { getAdaptiveTimeout } from "@/lib/networkAwareApi";
+import { isConstrainedNetwork, isOffline } from "@/lib/networkStatus";
 import {
   DEFAULT_WARMUP_CONTENT,
   parseWarmupContent,
@@ -51,10 +53,34 @@ function resolveTrustIcon(key: string): LucideIcon {
 const SHOWCASE_ROTATION_MS = 2000;
 const FEATURED_ROTATION_MS = 3000;
 const REVIEW_ROTATION_MS = 4000;
-const HEALTH_TIMEOUT_MS = 12000;
-const API_TIMEOUT_MS = 8000;
-const WARMUP_POLL_MS = 2200;
-const WARMUP_RETRY_MS = 2500;
+const MIN_DISPLAY_MS = process.env.NODE_ENV === "test" ? 0 : 2500;
+const WARMED_SESSION_KEY = "abo_warmup_ready";
+
+function getHealthTimeoutMs() {
+  return getAdaptiveTimeout(15000);
+}
+
+function getApiTimeoutMs() {
+  return getAdaptiveTimeout(12000);
+}
+
+function getWarmupPollMs() {
+  if (isOffline()) return 5000;
+  if (isConstrainedNetwork()) return 4500;
+  return 2200;
+}
+
+function getWarmupRetryMs() {
+  if (isOffline()) return 5000;
+  if (isConstrainedNetwork()) return 5000;
+  return 2500;
+}
+
+function getMaxBlockingMs() {
+  if (isOffline()) return 4000;
+  if (isConstrainedNetwork()) return 10000;
+  return 15000;
+}
 
 function getLoadingStatus(lang: "bn" | "en", state: ReadyState): string {
   if (!state.health) return lang === "bn" ? "নিরাপদ সার্ভার চালু হচ্ছে..." : "Starting secure server...";
@@ -63,7 +89,7 @@ function getLoadingStatus(lang: "bn" | "en", state: ReadyState): string {
   return lang === "bn" ? "প্রায় প্রস্তুত..." : "Almost ready...";
 }
 
-async function checkEndpoint(path: string, timeoutMs = API_TIMEOUT_MS): Promise<boolean> {
+async function checkEndpoint(path: string, timeoutMs = getApiTimeoutMs()): Promise<boolean> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -76,7 +102,7 @@ async function checkEndpoint(path: string, timeoutMs = API_TIMEOUT_MS): Promise<
   }
 }
 
-async function fetchSettingsEndpoint(timeoutMs = API_TIMEOUT_MS): Promise<{ ok: boolean; data: Record<string, string> }> {
+async function fetchSettingsEndpoint(timeoutMs = getApiTimeoutMs()): Promise<{ ok: boolean; data: Record<string, string> }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -109,8 +135,12 @@ export default function ApiWarmup() {
     settings: false,
     appState: false,
   });
+  const startedAtRef = useRef(Date.now());
 
   useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem(WARMED_SESSION_KEY) === "1") {
+      warmed = true;
+    }
     if (warmed) {
       setWarming(false);
       return;
@@ -127,13 +157,22 @@ export default function ApiWarmup() {
 
     let alive = true;
     let nextPoll: ReturnType<typeof setTimeout> | undefined;
+    let readyTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const finishWarmup = () => {
+      warmed = true;
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(WARMED_SESSION_KEY, "1");
+      }
+      setWarming(false);
+    };
 
     const poll = async () => {
       const [healthOk, productsOk, servicesOk, settingsResult] = await Promise.all([
-        checkEndpoint("/health", HEALTH_TIMEOUT_MS),
-        checkEndpoint("/api/v1/products?per_page=1", API_TIMEOUT_MS),
-        checkEndpoint("/api/v1/services?per_page=1", API_TIMEOUT_MS),
-        fetchSettingsEndpoint(API_TIMEOUT_MS),
+        checkEndpoint("/health", getHealthTimeoutMs()),
+        checkEndpoint("/api/v1/products?per_page=1", getApiTimeoutMs()),
+        checkEndpoint("/api/v1/services?per_page=1", getApiTimeoutMs()),
+        fetchSettingsEndpoint(getApiTimeoutMs()),
       ]);
 
       if (!alive) return;
@@ -152,24 +191,35 @@ export default function ApiWarmup() {
           appState: prev.appState || document.readyState !== "loading",
         };
         if (next.health && next.products && next.services && next.settings && next.appState) {
-          warmed = true;
-          setWarming(false);
+          const elapsed = Date.now() - startedAtRef.current;
+          const delay = Math.max(0, MIN_DISPLAY_MS - elapsed);
+          if (delay === 0) finishWarmup();
+          else readyTimer = setTimeout(finishWarmup, delay);
         } else {
-          nextPoll = setTimeout(poll, WARMUP_POLL_MS);
+          nextPoll = setTimeout(poll, getWarmupPollMs());
         }
         return next;
       });
     };
 
     poll().catch(() => {
-      if (alive) nextPoll = setTimeout(poll, WARMUP_RETRY_MS);
+      if (alive) nextPoll = setTimeout(poll, getWarmupRetryMs());
     });
 
     return () => {
       alive = false;
       if (nextPoll) clearTimeout(nextPoll);
+      if (readyTimer) clearTimeout(readyTimer);
     };
   }, []);
+
+  useEffect(() => {
+    if (!warming || dismissed) return;
+    const timer = setTimeout(() => {
+      setDismissed(true);
+    }, getMaxBlockingMs());
+    return () => clearTimeout(timer);
+  }, [warming, dismissed]);
 
   useEffect(() => {
     if (!warming || dismissed) return;

@@ -1,8 +1,9 @@
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { getNetworkQuality } from "@/lib/networkStatus";
 
 interface PendingAction {
   id: string;
-  type: "booking" | "lead" | "order";
+  type: "booking" | "lead" | "order" | "service_booking" | "service_lead";
   action: "create" | "update" | "delete";
   data: Record<string, any>;
   timestamp: number;
@@ -19,7 +20,8 @@ const STORES = {
 
 class OfflineDataSync {
   private db: IDBDatabase | null = null;
-  private isOnline: boolean = navigator.onLine;
+  private initPromise: Promise<void> | null = null;
+  private isOnline: boolean = typeof navigator === "undefined" ? true : navigator.onLine;
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -29,13 +31,28 @@ class OfflineDataSync {
   }
 
   async init(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    if (typeof window === "undefined" || typeof indexedDB === "undefined") return;
+    if (this.db) return;
+    if (this.initPromise) return this.initPromise;
+
+    this.initPromise = new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
+      request.onerror = () => {
+        this.initPromise = null;
+        reject(request.error);
+      };
+      request.onsuccess = async () => {
         this.db = request.result;
-        resolve();
+        try {
+          await this.clearExpiredCache();
+          await this.syncPendingActions();
+          resolve();
+        } catch (error) {
+          reject(error);
+        } finally {
+          this.initPromise = null;
+        }
       };
 
       request.onupgradeneeded = (event: any) => {
@@ -55,6 +72,8 @@ class OfflineDataSync {
         }
       };
     });
+
+    return this.initPromise;
   }
 
   private onOnline(): void {
@@ -69,7 +88,7 @@ class OfflineDataSync {
   }
 
   async addPendingAction(
-    type: "booking" | "lead" | "order",
+    type: "booking" | "lead" | "order" | "service_booking" | "service_lead",
     action: "create" | "update" | "delete",
     data: Record<string, any>
   ): Promise<string> {
@@ -215,6 +234,8 @@ class OfflineDataSync {
       booking: "/api/v1/bookings",
       lead: "/api/v1/leads",
       order: "/api/v1/orders",
+      service_booking: "/api/v1/service-bookings",
+      service_lead: "/api/v1/service-leads",
     };
 
     const endpoint = endpoints[action.type];
@@ -225,11 +246,15 @@ class OfflineDataSync {
       : endpoint;
 
     const apiBase = getApiBaseUrl();
+    const controller = new AbortController();
+    const timeoutMs = getNetworkQuality() === "slow" ? 45000 : 20000;
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
     const response = await fetch(`${apiBase}${url}`, {
       method,
       headers: { "Content-Type": "application/json" },
       body: method !== "DELETE" ? JSON.stringify(action.data) : undefined,
-    });
+      signal: controller.signal,
+    }).finally(() => clearTimeout(timer));
 
     if (!response.ok) {
       throw new Error(`Sync failed: ${response.statusText}`);

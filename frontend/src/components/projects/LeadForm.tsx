@@ -88,7 +88,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
         timeline: data.timeline,
       });
 
-      if (response.status === 200 || response.status === 201) {
+      if (response.status === 200 || response.status === 201 || response.status === 202) {
         setSuccess(true);
         reset();
         setTimeout(() => {
