@@ -65,6 +65,12 @@ async function queueOfflineCreate<T>(
   };
 }
 
+export function isQueuedResponse(
+  response?: { status?: number; data?: { queued?: boolean } | null } | null
+): boolean {
+  return response?.status === 202 || response?.data?.queued === true;
+}
+
 export const productsApi = {
   list: (params?: { category?: string; featured?: boolean; search?: string; sort_by?: string; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
     api.get<PaginatedResponse<Product>>("/api/v1/products", { params, ...opts }),

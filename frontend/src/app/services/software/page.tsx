@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { CheckCircle } from "lucide-react";
-import { serviceLeadsApi } from "@/lib/api";
+import { isQueuedResponse, serviceLeadsApi } from "@/lib/api";
 import { toLeadV2Type } from "@/lib/leadTypes";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
@@ -39,6 +39,7 @@ export default function SoftwarePage() {
   const { lang } = useLanguageStore();
   const { serviceCards } = useShowcaseContent();
   const [isSuccess, setIsSuccess] = useState(false);
+  const [queued, setQueued] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
@@ -48,8 +49,9 @@ export default function SoftwarePage() {
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
+    setQueued(false);
     try {
-      await serviceLeadsApi.create({
+      const response = await serviceLeadsApi.create({
         lead_type: toLeadV2Type(data.lead_type),
         name: data.name,
         phone: data.phone,
@@ -58,6 +60,7 @@ export default function SoftwarePage() {
         project_description: data.project_description,
         budget_range: data.budget_range,
       });
+      setQueued(isQueuedResponse(response));
       setIsSuccess(true);
     } finally {
       setIsSubmitting(false);
@@ -133,12 +136,16 @@ export default function SoftwarePage() {
               <div className="text-center py-8">
                 <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-heading mb-2">
-                  {lang === "bn" ? "আপনার বার্তা পেয়েছি!" : "Message Received!"}
+                  {queued ? (lang === "bn" ? "অনুরোধ কিউ হয়েছে!" : "Request Queued!") : lang === "bn" ? "আপনার বার্তা পেয়েছি!" : "Message Received!"}
                 </h3>
                 <p className="text-gray-500">
-                  {lang === "bn"
-                    ? "২৪ ঘণ্টার মধ্যে WhatsApp বা ফোনে যোগাযোগ করব।"
-                    : "We'll contact you within 24 hours via WhatsApp or phone."}
+                  {queued
+                    ? lang === "bn"
+                      ? "ইন্টারনেট ফিরলে অনুরোধটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
+                      : "The request will sync automatically when your connection returns."
+                    : lang === "bn"
+                      ? "২৪ ঘণ্টার মধ্যে WhatsApp বা ফোনে যোগাযোগ করব।"
+                      : "We'll contact you within 24 hours via WhatsApp or phone."}
                 </p>
               </div>
             ) : (

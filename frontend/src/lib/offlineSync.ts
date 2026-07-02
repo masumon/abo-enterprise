@@ -11,6 +11,12 @@ interface PendingAction {
   maxRetries: number;
 }
 
+export interface OfflineSubmissionStatus {
+  queuedCount: number;
+  lastEvent: "idle" | "queued" | "synced";
+  lastUpdatedAt: number | null;
+}
+
 const DB_NAME = "aboenterprise";
 const DB_VERSION = 1;
 const STORES = {
@@ -22,6 +28,9 @@ class OfflineDataSync {
   private db: IDBDatabase | null = null;
   private initPromise: Promise<void> | null = null;
   private isOnline: boolean = typeof navigator === "undefined" ? true : navigator.onLine;
+  private listeners = new Set<(status: OfflineSubmissionStatus) => void>();
+  private lastEvent: OfflineSubmissionStatus["lastEvent"] = "idle";
+  private lastUpdatedAt: number | null = null;
 
   constructor() {
     if (typeof window !== "undefined") {
@@ -121,7 +130,10 @@ class OfflineDataSync {
       const request = store.add(pendingAction);
 
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(actionId);
+      request.onsuccess = () => {
+        void this.emitStatus("queued");
+        resolve(actionId);
+      };
     });
   }
 
@@ -144,7 +156,7 @@ class OfflineDataSync {
     });
   }
 
-  async removePendingAction(actionId: string): Promise<void> {
+  async removePendingAction(actionId: string, event: OfflineSubmissionStatus["lastEvent"] = "idle"): Promise<void> {
     if (!this.db) await this.init();
 
     return new Promise((resolve, reject) => {
@@ -153,8 +165,31 @@ class OfflineDataSync {
       const request = store.delete(actionId);
 
       request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve();
+      request.onsuccess = () => {
+        void this.emitStatus(event);
+        resolve();
+      };
     });
+  }
+
+  async getSubmissionStatus(): Promise<OfflineSubmissionStatus> {
+    const actions = await this.getPendingActions();
+    return {
+      queuedCount: actions.filter((action) => action.action === "create").length,
+      lastEvent: this.lastEvent,
+      lastUpdatedAt: this.lastUpdatedAt,
+    };
+  }
+
+  subscribe(listener: (status: OfflineSubmissionStatus) => void): () => void {
+    this.listeners.add(listener);
+    void this.getSubmissionStatus()
+      .then(listener)
+      .catch(() => {});
+
+    return () => {
+      this.listeners.delete(listener);
+    };
   }
 
   async cacheData(key: string, data: any, expiryMinutes: number = 60): Promise<void> {
@@ -224,7 +259,7 @@ class OfflineDataSync {
     for (const action of pendingActions) {
       try {
         await this.syncAction(action);
-        await this.removePendingAction(action.id);
+        await this.removePendingAction(action.id, "synced");
         console.log(`Synced: ${action.id}`);
       } catch (error) {
         action.retry++;
@@ -292,6 +327,13 @@ class OfflineDataSync {
       request.onerror = () => reject(request.error);
       request.onsuccess = () => resolve();
     });
+  }
+
+  private async emitStatus(event: OfflineSubmissionStatus["lastEvent"]): Promise<void> {
+    this.lastEvent = event;
+    this.lastUpdatedAt = Date.now();
+    const status = await this.getSubmissionStatus();
+    this.listeners.forEach((listener) => listener(status));
   }
 }
 

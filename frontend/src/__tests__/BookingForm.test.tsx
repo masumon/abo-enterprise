@@ -80,4 +80,23 @@ describe("Booking Form", () => {
       expect(screen.getByText(/submitted successfully/i)).toBeInTheDocument();
     });
   });
+
+  it("should show queued message for offline booking submissions", async () => {
+    const user = userEvent.setup();
+    mockCreate.mockResolvedValue({ status: 202, data: { queued: true, data: null } });
+    render(<BookingForm service={mockService} />);
+
+    await user.type(screen.getByPlaceholderText(/Your full name/), "John Doe");
+    await user.type(screen.getByPlaceholderText(/01XXXXXXXXX/), "01712345678");
+    await user.type(screen.getByPlaceholderText(/your@email.com/), "john@example.com");
+    await user.type(
+      screen.getByPlaceholderText(/Please describe your requirements in detail/),
+      "I need a custom web application for my e-commerce business"
+    );
+    await user.click(screen.getByText(/Book This Service/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/queued offline/i)).toBeInTheDocument();
+    });
+  });
 });

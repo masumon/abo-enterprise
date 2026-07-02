@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { serviceLeadsApi } from "@/lib/api";
+import { isQueuedResponse, serviceLeadsApi } from "@/lib/api";
 import { toLeadV2Type } from "@/lib/leadTypes";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
@@ -59,6 +59,7 @@ const TIMELINE_OPTIONS = [
 export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) {
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [queued, setQueued] = useState(false);
   const {
     register,
     handleSubmit,
@@ -74,6 +75,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
   async function onSubmit(data: LeadFormData) {
     try {
       setSubmitting(true);
+      setQueued(false);
 
       const response = await serviceLeadsApi.create({
         lead_type: toLeadV2Type(data.lead_type),
@@ -89,10 +91,12 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
       });
 
       if (response.status === 200 || response.status === 201 || response.status === 202) {
+        setQueued(isQueuedResponse(response));
         setSuccess(true);
         reset();
         setTimeout(() => {
           setSuccess(false);
+          setQueued(false);
           onSuccess?.();
         }, 3000);
       }
@@ -264,7 +268,9 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
       {/* Success Message */}
       {success && (
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-          Thank you! We received your inquiry. We&apos;ll contact you within 24 hours.
+          {queued
+            ? "Inquiry queued offline. It will sync automatically when your connection returns."
+            : "Thank you! We received your inquiry. We&apos;ll contact you within 24 hours."}
         </div>
       )}
 
