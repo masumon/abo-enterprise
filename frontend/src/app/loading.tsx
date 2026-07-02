@@ -1,7 +1,7 @@
 import { BRAND_NAME } from "@/lib/brand";
 
 export default function Loading() {
-  const brandShort = BRAND_NAME.split(" ")[0] ?? "ABO";
+  const brandShort = BRAND_NAME.split(" ")[0] || "ABO";
 
   return (
     <div className="min-h-screen gradient-surface flex items-center justify-center px-4">
