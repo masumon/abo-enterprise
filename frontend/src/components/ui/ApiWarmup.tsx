@@ -295,7 +295,7 @@ export default function ApiWarmup() {
     <div
       className={cn(
         "fixed inset-0 z-[75] welcome-overlay overflow-hidden",
-        exiting && "animate-welcome-exit"
+        exiting && "animate-welcome-exit pointer-events-none"
       )}
       role="region"
       aria-label={lang === "bn" ? "স্বাগত অভিজ্ঞতা" : "Welcome experience"}

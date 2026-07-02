@@ -105,7 +105,7 @@ const config: Config = {
         },
         welcomeExit: {
           "0%": { opacity: "1", transform: "scale(1)" },
-          "100%": { opacity: "0", transform: "scale(1.015)", pointerEvents: "none" },
+          "100%": { opacity: "0", transform: "scale(1.015)" },
         },
       },
       boxShadow: {

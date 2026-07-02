@@ -761,7 +761,7 @@
     100% { background-position:  200% 0; }
   }
   @keyframes welcomeExit {
-    0%   { opacity: 1; transform: scale(1);     pointer-events: auto; }
-    100% { opacity: 0; transform: scale(1.015); pointer-events: none; }
+    0%   { opacity: 1; transform: scale(1);     }
+    100% { opacity: 0; transform: scale(1.015); }
   }
 }
