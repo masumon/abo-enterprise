@@ -65,6 +65,11 @@ const REVIEW_HIGHLIGHTS = [
   },
 ];
 
+const SHOWCASE_ROTATION_MS = 1900;
+const FEATURED_ROTATION_MS = 2600;
+const REVIEW_ROTATION_MS = 3000;
+const WARMUP_POLL_MS = 2200;
+
 async function checkEndpoint(path: string, timeoutMs = 9000): Promise<boolean> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -135,7 +140,7 @@ export default function ApiWarmup() {
           warmed = true;
           setWarming(false);
         } else {
-          nextPoll = setTimeout(poll, 2200);
+          nextPoll = setTimeout(poll, WARMUP_POLL_MS);
         }
         return next;
       });
@@ -155,13 +160,13 @@ export default function ApiWarmup() {
     if (!warming || dismissed) return;
     const showcaseTimer = setInterval(() => {
       setShowcaseIndex((v) => (v + 1) % BUSINESS_SHOWCASE.length);
-    }, 1900);
+    }, SHOWCASE_ROTATION_MS);
     const featuredTimer = setInterval(() => {
       setFeaturedIndex((v) => (v + 1) % FEATURED_CAROUSEL.length);
-    }, 2600);
+    }, FEATURED_ROTATION_MS);
     const reviewTimer = setInterval(() => {
       setReviewIndex((v) => (v + 1) % REVIEW_HIGHLIGHTS.length);
-    }, 3000);
+    }, REVIEW_ROTATION_MS);
     return () => {
       clearInterval(showcaseTimer);
       clearInterval(featuredTimer);
