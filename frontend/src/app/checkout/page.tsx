@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -68,6 +68,9 @@ export default function CheckoutPage() {
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
   const [copiedAcct, setCopiedAcct] = useState(false);
+  // Set before clearCart() so the empty-cart redirect below can't hijack the
+  // navigation to /order-success (a race customers hit on slower devices).
+  const orderPlacedRef = useRef(false);
 
   const {
     register, handleSubmit, watch, setValue, formState: { errors },
@@ -93,7 +96,7 @@ export default function CheckoutPage() {
   }, []);
 
   useEffect(() => {
-    if (hydrated && items.length === 0) router.replace("/products");
+    if (hydrated && items.length === 0 && !orderPlacedRef.current) router.replace("/products");
   }, [hydrated, items.length, router]);
 
   useEffect(() => {
@@ -260,6 +263,7 @@ export default function CheckoutPage() {
                 ? await paymentsApi.initiateNagad(orderId)
                 : await paymentsApi.initiateBkash(orderId);
           if (pay.data.data?.payment_url) {
+            orderPlacedRef.current = true;
             clearCart();
             window.location.href = pay.data.data.payment_url;
             return true;
@@ -270,6 +274,7 @@ export default function CheckoutPage() {
 
       if (await tryGatewayRedirect()) return;
 
+      orderPlacedRef.current = true;
       clearCart();
       router.push(
         `/order-success${orderNumber ? `?order=${orderNumber}&phone=${encodeURIComponent(data.customer_phone)}` : ""}`
