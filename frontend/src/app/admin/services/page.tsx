@@ -279,14 +279,15 @@ export default function AdminServicesPage() {
             </button>
           </div>
         ) : (
-          <table className="table-premium">
+          <div className="overflow-x-auto">
+          <table className="table-premium min-w-[480px]">
             <thead>
               <tr>
                 <th>Service</th>
-                <th>Category</th>
-                <th>Pricing</th>
-                <th>Tiers</th>
-                <th>Featured</th>
+                <th className="hidden sm:table-cell">Category</th>
+                <th className="hidden md:table-cell">Pricing</th>
+                <th className="hidden md:table-cell">Tiers</th>
+                <th className="hidden sm:table-cell">Featured</th>
                 <th>Active</th>
                 <th className="text-right pr-5">Actions</th>
               </tr>
@@ -298,13 +299,13 @@ export default function AdminServicesPage() {
                     <p className="font-medium text-gray-900">{s.name_en}</p>
                     <p className="text-xs text-gray-400">{s.slug}</p>
                   </td>
-                  <td className="px-5 py-3 text-gray-600 capitalize">{(s.category ?? "").replace(/_/g, " ")}</td>
-                  <td className="px-5 py-3">
+                  <td className="px-5 py-3 text-gray-600 capitalize hidden sm:table-cell">{(s.category ?? "").replace(/_/g, " ")}</td>
+                  <td className="px-5 py-3 hidden md:table-cell">
                     <p className="text-gray-600 capitalize text-sm">{s.pricing_type}</p>
                     {s.base_price != null && <p className="text-xs text-gray-400">{formatPrice(s.base_price)}</p>}
                   </td>
-                  <td className="px-5 py-3 text-gray-500 text-sm">{s.pricing_tiers?.length ?? 0}</td>
-                  <td className="px-5 py-3">
+                  <td className="px-5 py-3 text-gray-500 text-sm hidden md:table-cell">{s.pricing_tiers?.length ?? 0}</td>
+                  <td className="px-5 py-3 hidden sm:table-cell">
                     {s.is_featured
                       ? <Star className="w-4 h-4 text-amber-400" />
                       : <span className="text-gray-300 text-xs">—</span>
@@ -347,6 +348,7 @@ export default function AdminServicesPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
