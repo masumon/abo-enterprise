@@ -45,11 +45,16 @@ class KnowledgeBase:
         return sorted({k.rsplit("_", 1)[0] for k in self._faq if k.endswith(("_en", "_bn"))})
 
     def search_faq(self, query: str, language: str = "en", limit: int = 3) -> list[dict]:
-        """Keyword search across FAQ keys and answers."""
+        """Keyword search across FAQ keys, admin-defined questions, and answers.
+
+        The `{key}_q` field holds customer questions/keywords the admin
+        entered for that answer — matches there weigh the most, so admins
+        can teach the assistant new answers without code changes.
+        """
         if not query.strip():
             return []
         q = query.lower()
-        tokens = [t for t in re.split(r"\s+", q) if len(t) >= 2]
+        tokens = [t for t in re.findall(r"[\wঀ-৿]+", q) if len(t) >= 2]
         results: list[tuple[float, dict]] = []
         seen: set[str] = set()
 
@@ -57,8 +62,15 @@ class KnowledgeBase:
             if topic in seen:
                 continue
             answer = self.get_faq(topic, language) or ""
+            questions = (self._faq.get(f"{topic}_q") or "").lower()
             haystack = f"{topic} {answer}".lower()
             score = 0.0
+            if questions:
+                if q in questions:
+                    score += 4.0
+                for token in tokens:
+                    if token in questions:
+                        score += 2.0
             if q in haystack:
                 score += 2.0
             for token in tokens:

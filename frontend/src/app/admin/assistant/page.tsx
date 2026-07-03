@@ -19,7 +19,7 @@ import StatusBadge from "@/components/admin/StatusBadge";
 
 type Tab = "settings" | "conversations" | "logs" | "faq";
 
-const EMPTY_FAQ = { key: "", topic: "", answer_en: "", answer_bn: "" };
+const EMPTY_FAQ = { key: "", topic: "", answer_en: "", answer_bn: "", questions: "" };
 
 function Toggle({ checked, onChange, label, hint }: { checked: boolean; onChange: (v: boolean) => void; label: string; hint?: string }) {
   return (
@@ -238,12 +238,14 @@ export default function AdminAssistantPage() {
           key: faqEditing.key,
           answer_en: faqEditing.answer_en,
           answer_bn: faqEditing.answer_bn || undefined,
+          questions: faqEditing.questions || undefined,
         });
         toast("success", "FAQ entry created");
       } else {
         await assistantAdminApi.updateFaq(faqEditing.key, {
           answer_en: faqEditing.answer_en,
           answer_bn: faqEditing.answer_bn,
+          questions: faqEditing.questions ?? "",
         });
         toast("success", "FAQ entry updated");
       }
@@ -616,7 +618,7 @@ export default function AdminAssistantPage() {
                 {faqList.filter((entry) => {
                   if (!faqSearch.trim()) return true;
                   const q = faqSearch.toLowerCase();
-                  return entry.key.toLowerCase().includes(q) || entry.answer_en.toLowerCase().includes(q) || (entry.topic ?? "").toLowerCase().includes(q);
+                  return entry.key.toLowerCase().includes(q) || entry.answer_en.toLowerCase().includes(q) || (entry.topic ?? "").toLowerCase().includes(q) || (entry.questions ?? "").toLowerCase().includes(q);
                 }).map((entry) => (
                   <div key={entry.key} className="px-6 py-4 hover:bg-gray-50/50">
                     <div className="flex items-start justify-between gap-4">
@@ -628,6 +630,11 @@ export default function AdminAssistantPage() {
                         <p className="text-sm text-gray-600 line-clamp-2">{entry.answer_en}</p>
                         {entry.answer_bn && (
                           <p className="text-sm text-gray-400 line-clamp-1 mt-1">{entry.answer_bn}</p>
+                        )}
+                        {entry.questions?.trim() && (
+                          <p className="text-[11px] text-brand-500 mt-1">
+                            {entry.questions.split("\n").filter(Boolean).length} trigger question(s)
+                          </p>
                         )}
                       </div>
                       <div className="flex gap-1 flex-shrink-0">
@@ -685,6 +692,21 @@ export default function AdminAssistantPage() {
                       rows={3}
                       className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none"
                     />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
+                      Customer questions / keywords
+                    </label>
+                    <textarea
+                      value={faqEditing.questions ?? ""}
+                      onChange={(e) => setFaqEditing((f) => f && { ...f, questions: e.target.value })}
+                      rows={3}
+                      placeholder={"ঢাকার বাইরে ডেলিভারি হয়?\ndhakar baire delivery\ndo you deliver outside dhaka"}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none"
+                    />
+                    <p className="text-[11px] text-gray-400 mt-1">
+                      এক লাইনে একটি প্রশ্ন/কিওয়ার্ড — বাংলা, English বা Banglish। গ্রাহক এগুলোর কাছাকাছি কিছু লিখলে এই উত্তরটি দেখানো হবে।
+                    </p>
                   </div>
                   <div className="flex justify-end gap-2 pt-2">
                     <button onClick={() => setFaqEditing(null)} className="px-4 py-2 border border-gray-200 rounded-lg text-sm">Cancel</button>

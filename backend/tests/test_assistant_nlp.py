@@ -145,6 +145,48 @@ def test_clean_search_query_strips_fillers():
     assert _clean_search_query("show me the business card") == "business card"
 
 
+# ── FAQ knowledge base with admin-defined trigger questions ──────────
+
+def _kb_with(faq: dict):
+    from app.assistant.knowledge_base import KnowledgeBase
+
+    kb = KnowledgeBase()
+    kb.reload_faq(faq)
+    return kb
+
+
+def test_faq_matches_admin_trigger_questions():
+    kb = _kb_with({
+        "outside_delivery_en": "Yes, we deliver everywhere in Bangladesh.",
+        "outside_delivery_bn": "হ্যাঁ, আমরা সারাদেশে ডেলিভারি করি।",
+        "outside_delivery_q": "ঢাকার বাইরে ডেলিভারি হয়?\ndhakar baire delivery\ndeliver outside dhaka",
+    })
+    pre = preprocess_text("dhakar baire delivery hoy ki?")
+    hits = kb.search_faq(pre["normalized"], "en", limit=1)
+    assert hits and hits[0]["key"] == "outside_delivery"
+
+    pre = preprocess_text("ঢাকার বাইরে ডেলিভারি হয়?")
+    hits = kb.search_faq(pre["normalized"], "bn", limit=1)
+    assert hits and hits[0]["key"] == "outside_delivery"
+
+
+def test_faq_question_match_outranks_answer_match():
+    kb = _kb_with({
+        # answer text mentions "delivery" but questions say nothing about it
+        "warranty_en": "Warranty claims include free delivery of the replacement.",
+        # this entry is explicitly taught the delivery question
+        "outside_delivery_en": "Yes, we deliver everywhere.",
+        "outside_delivery_q": "deliver outside dhaka\ndelivery outside",
+    })
+    hits = kb.search_faq("delivery outside dhaka", "en", limit=2)
+    assert hits and hits[0]["key"] == "outside_delivery"
+
+
+def test_faq_topics_ignore_question_keys():
+    kb = _kb_with({"pay_en": "We accept bKash.", "pay_q": "how to pay"})
+    assert kb.list_faq_topics() == ["pay"]
+
+
 # ── Workflow yes/no/cancel ────────────────────────────────────────────
 
 @pytest.fixture(scope="module")
