@@ -11,7 +11,7 @@ from app.core.database import get_db
 from app.core.rate_limit import rate_limit
 from app.core.security import require_admin, require_customer, require_role
 from app.core.config import settings
-from app.core.email import send_email, order_notification_html, customer_order_confirmation_html
+from app.core.email import send_email, order_notification_html, customer_order_confirmation_html, customer_order_status_html
 from app.core.invoice import InvoiceService
 from app.models.models import Order, OrderItem, Product, ActivityLog
 from app.schemas.schemas import OrderCreate, OrderOut, OrderStatusUpdate, OrderCourierUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
@@ -292,6 +292,7 @@ async def get_order(
 async def update_order_status(
     order_id: UUID,
     payload: OrderStatusUpdate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     admin_id: str = Depends(require_role("orders.write")),
 ):
@@ -330,6 +331,33 @@ async def update_order_status(
     db.add(log)
     await db.commit()
     await db.refresh(order)
+
+    # Notify customer on real status change (skip pending → pending noise)
+    notify_statuses = {"confirmed", "processing", "shipped", "delivered", "cancelled"}
+    if (
+        order.customer_email
+        and old_status != order.order_status
+        and order.order_status in notify_statuses
+    ):
+        track_url = f"{settings.FRONTEND_URL.rstrip('/')}/track?order={order.order_number}"
+        html = customer_order_status_html(
+            order.order_number,
+            order.customer_name,
+            order.order_status,
+            total=float(order.total),
+            courier_provider=order.courier_provider,
+            tracking_id=order.courier_tracking_id,
+            track_url=track_url,
+        )
+        subject_map = {
+            "confirmed": f"Order Confirmed #{order.order_number} — ABO Enterprise",
+            "processing": f"Order In Processing #{order.order_number} — ABO Enterprise",
+            "shipped": f"Order Shipped #{order.order_number} — ABO Enterprise",
+            "delivered": f"Order Delivered #{order.order_number} — ABO Enterprise",
+            "cancelled": f"Order Cancelled #{order.order_number} — ABO Enterprise",
+        }
+        background_tasks.add_task(send_email, order.customer_email, subject_map[order.order_status], html)
+
     return ApiResponse(data=OrderOut.model_validate(order), message="Order status updated")
 
 
@@ -337,6 +365,7 @@ async def update_order_status(
 async def update_order_courier(
     order_id: UUID,
     payload: OrderCourierUpdate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     admin_id: str = Depends(require_role("orders.write")),
 ):
@@ -346,6 +375,7 @@ async def update_order_courier(
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    old_status = order.order_status
     if payload.courier_provider is not None:
         order.courier_provider = payload.courier_provider or None
     if payload.courier_tracking_id is not None:
@@ -366,4 +396,26 @@ async def update_order_courier(
     db.add(log)
     await db.commit()
     await db.refresh(order)
+
+    # When courier data lifts the order to "shipped", email the tracking ID
+    if (
+        order.customer_email
+        and old_status != order.order_status
+        and order.order_status == "shipped"
+    ):
+        track_url = f"{settings.FRONTEND_URL.rstrip('/')}/track?order={order.order_number}"
+        html = customer_order_status_html(
+            order.order_number,
+            order.customer_name,
+            "shipped",
+            total=float(order.total),
+            courier_provider=order.courier_provider,
+            tracking_id=order.courier_tracking_id,
+            track_url=track_url,
+        )
+        background_tasks.add_task(
+            send_email, order.customer_email,
+            f"Order Shipped #{order.order_number} — ABO Enterprise", html,
+        )
+
     return ApiResponse(data=OrderOut.model_validate(order), message="Courier info updated")

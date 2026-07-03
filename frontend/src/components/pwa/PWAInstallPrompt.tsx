@@ -19,8 +19,16 @@ const SUPPRESSED_ROUTES = ["/checkout", "/order-success", "/booking-success", "/
 const REMIND_KEY = "pwa_remind_until";
 const INSTALLED_KEY = "pwa_installed";
 const MINIMIZED_KEY = "pwa_minimized_session";
+const FIRST_VISIT_KEY = "pwa_first_seen_at";
 const REMIND_DAYS = 7;
-const SHOW_DELAY_MS = 3500;
+/** Never prompt inside the visitor's first-5-second read of the homepage.
+ * The prompt shows only when BOTH are true:
+ *   (a) this is not the visitor's very first session (returning visitor), OR
+ *       they've spent > FIRST_VISIT_ENGAGED_MS on-site this visit
+ *   (b) at least SHOW_DELAY_MS has elapsed on the current page
+ */
+const SHOW_DELAY_MS = 8000;
+const FIRST_VISIT_ENGAGED_MS = 30_000;
 const SITE_HOST = new URL(SITE_URL).hostname;
 
 function isStandalone(): boolean {
@@ -64,9 +72,15 @@ export default function PWAInstallPrompt() {
     window.addEventListener("beforeinstallprompt", handler);
 
     const minimized = sessionStorage.getItem(MINIMIZED_KEY) === "1";
+    const now = Date.now();
+    const firstSeenAt = parseInt(localStorage.getItem(FIRST_VISIT_KEY) ?? "0", 10);
+    const isReturningVisitor = firstSeenAt > 0 && now - firstSeenAt > 60_000; // > 1 min between visits
+    if (!firstSeenAt) localStorage.setItem(FIRST_VISIT_KEY, String(now));
+
+    const showIn = isReturningVisitor ? SHOW_DELAY_MS : FIRST_VISIT_ENGAGED_MS;
     const timer = setTimeout(() => {
       setMode(minimized ? "minimized" : "full");
-    }, SHOW_DELAY_MS);
+    }, showIn);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);

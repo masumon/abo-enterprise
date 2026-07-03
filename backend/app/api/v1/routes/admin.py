@@ -104,19 +104,34 @@ async def upload_media(
     folder: str = Query("abo-enterprise/uploads"),
     _: dict = Depends(require_admin),
 ):
-    content_type = file.content_type or ""
-    is_image = content_type.startswith("image/")
-    is_video = content_type.startswith("video/")
+    ALLOWED_IMAGE_MIMES = {"image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"}
+    ALLOWED_VIDEO_MIMES = {"video/mp4", "video/webm", "video/quicktime", "video/x-msvideo"}
+
+    content_type = (file.content_type or "").lower().strip()
+    is_image = content_type in ALLOWED_IMAGE_MIMES
+    is_video = content_type in ALLOWED_VIDEO_MIMES
 
     if not is_image and not is_video:
-        raise HTTPException(status_code=400, detail="File must be an image or video")
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Unsupported file type. Allowed: "
+                "images (jpg, png, webp, gif, svg) or videos (mp4, webm, mov, avi)."
+            ),
+        )
 
     max_size = 50 * 1024 * 1024 if is_video else 5 * 1024 * 1024
     if file.size and file.size > max_size:
         limit = "50MB" if is_video else "5MB"
         raise HTTPException(status_code=400, detail=f"File must be under {limit}")
 
+    # file.size is optional — measure the actual read to enforce the limit
     content = await file.read()
+    if len(content) > max_size:
+        limit = "50MB" if is_video else "5MB"
+        raise HTTPException(status_code=413, detail=f"File must be under {limit}")
+    if not content:
+        raise HTTPException(status_code=400, detail="Empty file")
     safe_folder = folder.strip("/").replace("..", "") or "abo-enterprise/uploads"
 
     upload_opts: dict = {"folder": safe_folder}

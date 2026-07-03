@@ -6,7 +6,13 @@ import { usePathname } from "next/navigation";
 import { LayoutDashboard, LogOut, ExternalLink, Search, X, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAlertStore } from "@/store/alerts";
-import { ADMIN_EXTERNAL_LINKS, ADMIN_NAV_GROUPS, type AdminNavItem } from "@/lib/adminNav";
+import {
+  ADMIN_EXTERNAL_LINKS,
+  ADMIN_NAV_GROUPS,
+  canSeeNavItem,
+  type AdminNavItem,
+  type AdminRole,
+} from "@/lib/adminNav";
 
 interface Props {
   onLogout: () => void;
@@ -40,17 +46,25 @@ export default function AdminSidebar({
 
   const filterText = query.trim().toLowerCase();
 
+  const role = (adminRole as AdminRole | undefined);
   const filteredGroups = useMemo(() => {
-    if (!filterText) return ADMIN_NAV_GROUPS;
-    return ADMIN_NAV_GROUPS.map((group) => ({
+    // First hide items the current role can't use, then apply the search text.
+    const rolescoped = ADMIN_NAV_GROUPS.map((group) => ({
       ...group,
-      items: group.items.filter(
-        (item) =>
-          item.label.toLowerCase().includes(filterText) ||
-          item.labelBn?.toLowerCase().includes(filterText)
-      ),
+      items: group.items.filter((item) => canSeeNavItem(item, role)),
     })).filter((g) => g.items.length > 0);
-  }, [filterText]);
+    if (!filterText) return rolescoped;
+    return rolescoped
+      .map((group) => ({
+        ...group,
+        items: group.items.filter(
+          (item) =>
+            item.label.toLowerCase().includes(filterText) ||
+            item.labelBn?.toLowerCase().includes(filterText),
+        ),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [filterText, role]);
 
   const renderNavItem = (item: AdminNavItem) => {
     const active = !item.external && isActive(item.href, item.exact);

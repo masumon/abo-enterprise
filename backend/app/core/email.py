@@ -64,16 +64,36 @@ async def send_email(
     subject: str,
     html: str,
     attachments: Optional[list] = None,
+    *,
+    retries: int = 2,
 ) -> None:
-    """Send email asynchronously"""
+    """Send email asynchronously with bounded exponential-backoff retries.
+
+    SMTP failures (network blip, temp reject) shouldn't lose a customer
+    notification; retry twice with 2s / 5s spacing before giving up. Runs
+    inside a FastAPI BackgroundTask, so retries don't extend the API response.
+    """
     loop = asyncio.get_event_loop()
-    try:
-        await loop.run_in_executor(
-            None, _send_sync, to, subject, html, attachments
-        )
-    except Exception as e:
-        logger.error(f"Async email failed: {str(e)}")
-        # Email is non-critical; never fail the main request
+    delays = [2.0, 5.0]
+    for attempt in range(retries + 1):
+        try:
+            await loop.run_in_executor(
+                None, _send_sync, to, subject, html, attachments
+            )
+            if attempt:
+                logger.info("Email to %s delivered on retry %d", to, attempt)
+            return
+        except Exception as e:
+            if attempt >= retries:
+                logger.error(
+                    "Email to %s failed after %d attempts: %s", to, attempt + 1, e
+                )
+                return
+            logger.warning(
+                "Email to %s failed on attempt %d (%s); retrying in %.0fs",
+                to, attempt + 1, e, delays[attempt],
+            )
+            await asyncio.sleep(delays[attempt])
 
 
 async def send_template_email(
@@ -248,6 +268,68 @@ def customer_order_confirmation_html(
 
         <p style="color:#999;font-size:12px;margin-top:24px;border-top:1px solid #eee;padding-top:16px">
           We will contact you soon with delivery updates. Thank you for shopping with ABO Enterprise!
+        </p>
+      </div>
+    </div>
+    """
+
+
+def customer_order_status_html(
+    order_number: str,
+    customer_name: str,
+    new_status: str,
+    total: float | None = None,
+    courier_provider: str | None = None,
+    tracking_id: str | None = None,
+    track_url: str | None = None,
+) -> str:
+    """Status-change notification: confirmed / processing / shipped / delivered / cancelled."""
+    status_meta = {
+        "confirmed":  ("✅ Order Confirmed",  "#059669", "Your order has been confirmed and will be processed shortly."),
+        "processing": ("📦 Order In Processing", "#0284c7", "Your order is being prepared for shipment."),
+        "shipped":    ("🚚 Order Shipped",    "#7c3aed", "Your order is on its way!"),
+        "delivered":  ("🎉 Order Delivered",  "#059669", "Your order has been delivered. Thank you for choosing ABO Enterprise!"),
+        "cancelled":  ("⚠️ Order Cancelled",  "#dc2626", "Your order has been cancelled. Contact us if this was unexpected."),
+    }
+    title, colour, blurb = status_meta.get(
+        new_status,
+        (f"Order Update — {new_status.title()}", "#1e5ba8", "Your order status has changed."),
+    )
+
+    tracking_html = ""
+    if new_status == "shipped" and tracking_id:
+        provider = (courier_provider or "courier").replace("_", " ").title()
+        tracking_html = f"""
+        <div style="background:#f5f3ff;padding:14px 16px;border-left:4px solid #7c3aed;margin:16px 0;border-radius:4px">
+          <p style="margin:0 0 4px;color:#5b21b6;font-weight:600;font-size:13px">🚚 {provider} Tracking</p>
+          <p style="margin:0;color:#1f2937;font-family:monospace;font-size:15px;font-weight:700">{tracking_id}</p>
+        </div>"""
+
+    total_html = ""
+    if total is not None:
+        total_html = f"<p style='color:#666;margin:12px 0 0'>Order total: <b style='color:#e91e63'>৳{total:,.0f}</b></p>"
+
+    action_html = ""
+    if track_url:
+        action_html = (
+            f'<a href="{track_url}" style="display:inline-block;margin-top:20px;background:#1e5ba8;color:white;'
+            f'padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:600">Track Order</a>'
+        )
+
+    return f"""
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9fafb">
+      <div style="background:white;border-radius:8px;padding:24px">
+        <h2 style="color:{colour};margin:0 0 16px">{title}</h2>
+        <p style="color:#555;margin:0 0 16px">Dear {customer_name},</p>
+        <p style="color:#666;margin:0 0 12px">{blurb}</p>
+        <div style="background:#f0f8ff;padding:14px 16px;border-left:4px solid #1e5ba8;margin:16px 0;border-radius:4px">
+          <p style="margin:0;color:#1e5ba8;font-weight:600">Order #: {order_number}</p>
+        </div>
+        {tracking_html}
+        {total_html}
+        {action_html}
+        <p style="color:#999;font-size:12px;margin-top:24px;border-top:1px solid #eee;padding-top:16px">
+          Questions? Reply to this email or WhatsApp us. — ABO Enterprise
         </p>
       </div>
     </div>

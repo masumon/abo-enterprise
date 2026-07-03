@@ -18,9 +18,13 @@ import {
   Shield,
   Send,
   UserPlus,
+  Percent,
   ExternalLink,
   type LucideIcon,
 } from "lucide-react";
+
+/** Roles that reflect backend ROLE_PERMISSIONS (see backend/app/core/rbac.py) */
+export type AdminRole = "super_admin" | "admin" | "editor" | "viewer";
 
 export interface AdminNavItem {
   href: string;
@@ -30,6 +34,22 @@ export interface AdminNavItem {
   exact?: boolean;
   external?: boolean;
   badge?: "orders" | "bookings" | "leads";
+  /** Minimum role required to see this item in the sidebar. Missing = visible to everyone. */
+  minRole?: AdminRole;
+}
+
+/** Role precedence — later roles include earlier ones. */
+const ROLE_LEVEL: Record<AdminRole, number> = {
+  viewer: 0,
+  editor: 1,
+  admin: 2,
+  super_admin: 3,
+};
+
+export function canSeeNavItem(item: AdminNavItem, role: AdminRole | undefined): boolean {
+  if (!item.minRole) return true;
+  const userLevel = ROLE_LEVEL[role ?? "viewer"] ?? 0;
+  return userLevel >= ROLE_LEVEL[item.minRole];
 }
 
 export interface AdminNavGroup {
@@ -57,6 +77,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/orders", icon: ShoppingCart, label: "Orders", labelBn: "অর্ডার", badge: "orders" },
       { href: "/admin/invoices", icon: FileText, label: "Invoices", labelBn: "ইনভয়েস" },
       { href: "/admin/payments", icon: CreditCard, label: "Payments", labelBn: "পেমেন্ট" },
+      { href: "/admin/coupons", icon: Percent, label: "Coupons", labelBn: "কুপন", minRole: "admin" },
     ],
   },
   {
@@ -96,10 +117,10 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "System",
     labelBn: "সিস্টেম",
     items: [
-      { href: "/admin/settings", icon: Settings, label: "Settings", labelBn: "সেটিংস" },
-      { href: "/admin/users", icon: Users, label: "Users", labelBn: "ইউজার" },
-      { href: "/admin/audit", icon: Shield, label: "Audit Logs", labelBn: "অডিট" },
-      { href: "/admin/assistant", icon: Bot, label: "AI Assistant", labelBn: "AI সহকারী" },
+      { href: "/admin/settings", icon: Settings, label: "Settings", labelBn: "সেটিংস", minRole: "admin" },
+      { href: "/admin/users", icon: Users, label: "Users", labelBn: "ইউজার", minRole: "admin" },
+      { href: "/admin/audit", icon: Shield, label: "Audit Logs", labelBn: "অডিট", minRole: "admin" },
+      { href: "/admin/assistant", icon: Bot, label: "AI Assistant", labelBn: "AI সহকারী", minRole: "editor" },
     ],
   },
 ];

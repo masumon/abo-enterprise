@@ -23,14 +23,48 @@ export default function ConfirmDialog({
   onCancel,
 }: Props) {
   const cancelRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (open) {
-      cancelRef.current?.focus();
-      const handleKey = (e: KeyboardEvent) => { if (e.key === "Escape") onCancel(); };
-      document.addEventListener("keydown", handleKey);
-      return () => document.removeEventListener("keydown", handleKey);
-    }
+    if (!open) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    cancelRef.current?.focus();
+
+    const focusables = () =>
+      dialogRef.current
+        ? Array.from(
+            dialogRef.current.querySelectorAll<HTMLElement>(
+              'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+            ),
+          ).filter((el) => !el.hasAttribute("disabled"))
+        : [];
+
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onCancel();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      // Trap Tab inside the dialog while it's open — screen-reader users
+      // shouldn't be able to tab into the layout behind the overlay.
+      const list = focusables();
+      if (list.length === 0) return;
+      const first = list[0];
+      const last = list[list.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKey);
+    return () => {
+      document.removeEventListener("keydown", handleKey);
+      previouslyFocused?.focus?.();
+    };
   }, [open, onCancel]);
 
   if (!open) return null;
@@ -50,7 +84,7 @@ export default function ConfirmDialog({
       style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-scale-in">
+      <div ref={dialogRef} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-scale-in">
         <div className="flex items-start gap-4">
           <div className={`p-3 rounded-xl flex-shrink-0 ${colors.icon}`}>
             {variant === "danger" ? <Trash2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
