@@ -2,8 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useBrandLogo } from "@/hooks/useBrandLogo";
+import { BRAND_LOGO_PATH } from "@/lib/brand";
 
 const SIZES = {
   xs: 32,
@@ -33,6 +35,11 @@ export default function BrandLogo({
 }: BrandLogoProps) {
   const { logoUrl, alt } = useBrandLogo();
   const px = SIZES[size];
+  // If the CMS-configured logoUrl 404s or the domain is unreachable, fall
+  // back to the bundled brand asset. Prevents the "broken image icon +
+  // 'ABO Enterp…' truncated" first impression on Login / Register etc.
+  const [errored, setErrored] = useState(false);
+  const src = errored ? BRAND_LOGO_PATH : logoUrl;
 
   const frame = (
     <span
@@ -46,13 +53,14 @@ export default function BrandLogo({
       style={{ width: px, height: px }}
     >
       <Image
-        src={logoUrl}
+        src={src}
         alt={alt}
         width={px}
         height={px}
         className="object-cover w-full h-full"
         priority={priority}
         sizes={`${px}px`}
+        onError={() => setErrored(true)}
       />
     </span>
   );

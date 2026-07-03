@@ -120,7 +120,14 @@ export default function ProductDetailClient({ product }: Props) {
                 {images[selectedImage] ? (
                   <ImageZoom src={images[selectedImage]} alt={`${name} — ABO Enterprise`} />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center"><Package className="w-20 h-20 text-brand-200" aria-hidden /></div>
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-brand-500 to-brand-700 text-white">
+                    <span className="text-6xl font-bold tracking-tight" aria-hidden>
+                      {(name || "?").trim().charAt(0).toUpperCase()}
+                    </span>
+                    <span className="px-3 text-xs font-medium opacity-80 text-center line-clamp-2">
+                      {name}
+                    </span>
+                  </div>
                 )}
                 {discount && <span className="absolute top-3 right-3 badge bg-red-500 text-white z-10">-{discount}%</span>}
               </div>

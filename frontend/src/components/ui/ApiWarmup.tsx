@@ -173,7 +173,20 @@ export default function ApiWarmup() {
     const frame = requestAnimationFrame(() => {
       setReadyState((prev) => ({ ...prev, appState: document.readyState !== "loading" }));
     });
-    return () => cancelAnimationFrame(frame);
+    // Hard fail-safe: if endpoint polling never resolves (slow cold start,
+    // network blip), never trap the visitor for more than 6s — dismiss and
+    // stamp the session flag so subsequent navigations are clean.
+    const failSafe = setTimeout(() => {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(WARMED_SESSION_KEY, "1");
+      }
+      warmedRef.current = true;
+      setWarming(false);
+    }, 6000);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(failSafe);
+    };
   }, []);
 
   useEffect(() => {
@@ -272,23 +285,12 @@ export default function ApiWarmup() {
 
   if (!warming && !exiting) return null;
 
-  if (!isHome || dismissed) {
-    return (
-      <div
-        className="fixed bottom-mobile-float lg:bottom-4 left-4 right-4 lg:left-auto lg:right-4 lg:max-w-xs z-30 surface-card backdrop-blur-md rounded-xl px-4 py-3 shadow-lg flex items-center gap-3"
-        role="status"
-        aria-live="polite"
-      >
-        <Loader2 className="w-4 h-4 text-brand-500 animate-spin flex-shrink-0" aria-hidden />
-        <div>
-          <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{currentStatus}</p>
-          <p className="text-xs text-muted">
-            {lang === "bn" ? "আপনি ব্রাউজিং চালিয়ে যেতে পারেন" : "You can continue browsing"}
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // Off-home routes (cart, checkout, products, services, etc.): NEVER render.
+  // The persistent floating "warming server..." card was covering order totals
+  // on Cart and interrupting the Checkout form. On these pages the customer's
+  // action IS the warm-up — silence is correct.
+  if (!isHome) return null;
+  if (dismissed) return null;
 
   const showcase = content.businessShowcase[showcaseIndex % content.businessShowcase.length];
   const featured = content.featuredCarousel[featuredIndex % content.featuredCarousel.length];

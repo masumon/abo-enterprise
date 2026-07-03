@@ -62,7 +62,17 @@
   }
 
   html[lang="bn"] body {
-    font-family: 'Hind Siliguri', 'Inter', system-ui, sans-serif;
+    font-family: 'Hind Siliguri', 'Noto Sans Bengali', 'SolaimanLipi', 'Inter', system-ui, sans-serif;
+  }
+
+  /* Bengali headings — Segoe's default tracking spreads conjuncts uncomfortably.
+     Tighten to zero and lift line-height slightly for better vertical rhythm. */
+  html[lang="bn"] h1,
+  html[lang="bn"] h2,
+  html[lang="bn"] h3,
+  html[lang="bn"] h4 {
+    letter-spacing: 0;
+    line-height: 1.35;
   }
 
   html[lang="en"] body {

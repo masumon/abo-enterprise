@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { X, Zap } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 
@@ -37,12 +38,17 @@ export default function AnnouncementBar() {
   const [visible, setVisible] = useState(true);
   const [idx, setIdx] = useState(0);
   const { lang } = useLanguageStore();
+  const pathname = usePathname();
+  // Promotional bar belongs only where the visitor is browsing, not
+  // mid-purchase or mid-account-action.
+  const isHome = pathname === "/";
 
   useEffect(() => {
     const dismissed = localStorage.getItem(STORAGE_KEY) === "1";
-    setVisible(!dismissed);
-    setAnnouncementHeight(!dismissed);
-  }, []);
+    const active = !dismissed && isHome;
+    setVisible(active);
+    setAnnouncementHeight(active);
+  }, [isHome]);
 
   useEffect(() => {
     if (!visible) return;

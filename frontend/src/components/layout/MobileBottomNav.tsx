@@ -41,7 +41,10 @@ export default function MobileBottomNav() {
 
   const isItemActive = (href: string) =>
     pathname === href || (href !== "/" && pathname.startsWith(href));
-  const cartActive = pathname.startsWith("/cart") || pathname.startsWith("/checkout");
+  // On /cart the user is already in the cart — don't visually pull them back
+  // to it. Only /checkout keeps the active highlight so the customer
+  // knows the cart button will take them back to review.
+  const cartActive = pathname.startsWith("/checkout");
   const showBadge = mounted && cartCount > 0;
 
   const renderTab = (item: { href: string; icon: typeof Home; label: { en: string; bn: string } }) => {
