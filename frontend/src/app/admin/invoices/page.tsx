@@ -288,9 +288,9 @@ export default function AdminInvoicesPage() {
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/60">
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Invoice</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Customer</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Total</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Date</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
@@ -307,12 +307,12 @@ export default function AdminInvoicesPage() {
                         <p className="text-xs text-gray-400 capitalize">{inv.payment_method.replace(/_/g, " ")}</p>
                       )}
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3 hidden sm:table-cell">
                       <p className="text-gray-900">{inv.customer_name}</p>
                       <p className="text-xs text-gray-400">{inv.customer_email ?? inv.customer_phone ?? "—"}</p>
                     </td>
                     <td className="px-5 py-3 font-semibold text-gray-900">{formatPrice(inv.total)}</td>
-                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs">
+                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs hidden md:table-cell">
                       {new Date(inv.created_at).toLocaleDateString("en-BD")}
                     </td>
                     <td className="px-5 py-3">
