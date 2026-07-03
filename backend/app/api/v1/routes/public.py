@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta, timezone
 import json
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import Response
 from pydantic import BaseModel, EmailStr
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.models.models import BookingV2, LeadV2, Order, Product, Review, Service, Setting
 from app.schemas.schemas import ApiResponse
+from app.core.http_cache import etag_json_response
 from app.core.rate_limit import rate_limit
 
 router = APIRouter(prefix="/public", tags=["public"])
@@ -175,9 +177,13 @@ DEFAULT_FLAGS = {
 }
 
 
-@router.get("/feature-flags", response_model=ApiResponse)
-async def get_feature_flags(db: AsyncSession = Depends(get_db)):
-    """Public feature flags from settings table (keys prefixed with feature_)."""
+@router.get("/feature-flags")
+async def get_feature_flags(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
+    """Public feature flags from settings table (keys prefixed with feature_).
+
+    Returns 304 Not Modified when the caller's If-None-Match matches, so
+    repeat visits don't re-download the same flag payload on every navigation.
+    """
     result = await db.execute(
         select(Setting).where(
             Setting.key.like("feature_%"),
@@ -190,4 +196,8 @@ async def get_feature_flags(db: AsyncSession = Depends(get_db)):
             flags[s.key] = s.value.lower() in ("true", "1", "yes")
         else:
             flags[s.key] = s.value
-    return ApiResponse(data=flags)
+    return etag_json_response(
+        request,
+        {"success": True, "data": flags, "message": ""},
+        max_age=60,
+    )

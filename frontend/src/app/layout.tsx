@@ -44,6 +44,16 @@ export async function generateMetadata(): Promise<Metadata> {
     creator: "Mumain Ahmed (Sumon) | Mumain.dev",
     publisher: "ABO Enterprise",
     metadataBase: new URL(SITE_URL),
+    alternates: {
+      canonical: SITE_URL,
+      // Site content is bilingual on the same URL — declare both plus
+      // x-default so search engines don't index one language as canonical.
+      languages: {
+        bn: SITE_URL,
+        en: SITE_URL,
+        "x-default": SITE_URL,
+      },
+    },
     openGraph: {
       type: "website",
       locale: "bn_BD",

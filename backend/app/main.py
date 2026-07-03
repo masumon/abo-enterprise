@@ -7,6 +7,10 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import logging
 from app.core.config import settings
+from app.core.monitoring import init_sentry
+
+# Best-effort — no-op unless SENTRY_DSN is configured.
+init_sentry()
 from app.core.exceptions import ABOException, to_http_exception
 from app.core.security import require_admin
 from app.core.bootstrap import bootstrap_admin
