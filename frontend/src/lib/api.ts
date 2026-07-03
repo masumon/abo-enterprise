@@ -775,6 +775,8 @@ export interface AssistantFaqEntry {
   topic: string;
   answer_en: string;
   answer_bn: string;
+  /** Customer questions/keywords (one per line, any language) that trigger this answer */
+  questions?: string;
 }
 
 export interface AssistantConversation {
@@ -828,10 +830,10 @@ export const assistantAdminApi = {
   listFaq: () =>
     api.get<ApiResponse<AssistantFaqEntry[]>>("/api/v1/assistant/admin/faq"),
 
-  createFaq: (data: { key: string; answer_en: string; answer_bn?: string }) =>
+  createFaq: (data: { key: string; answer_en: string; answer_bn?: string; questions?: string }) =>
     api.post<ApiResponse<{ key: string }>>("/api/v1/assistant/admin/faq", data),
 
-  updateFaq: (key: string, data: { answer_en?: string; answer_bn?: string }) =>
+  updateFaq: (key: string, data: { answer_en?: string; answer_bn?: string; questions?: string }) =>
     api.put<ApiResponse<null>>(`/api/v1/assistant/admin/faq/${key}`, data),
 
   deleteFaq: (key: string) =>

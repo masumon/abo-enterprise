@@ -157,14 +157,15 @@ export default function CareerAdminPage() {
       ) : (
         <>
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[480px]">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold text-gray-700">Name</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Position</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Phone</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 hidden sm:table-cell">Position</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 hidden md:table-cell">Phone</th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Applied</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700 hidden md:table-cell">Applied</th>
                   <th className="px-4 py-3 text-right font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
@@ -177,14 +178,14 @@ export default function CareerAdminPage() {
                         {app.email && <p className="text-xs text-gray-500">{app.email}</p>}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{app.position}</td>
-                    <td className="px-4 py-3 text-gray-600">{app.phone}</td>
+                    <td className="px-4 py-3 text-gray-600 hidden sm:table-cell">{app.position}</td>
+                    <td className="px-4 py-3 text-gray-600 hidden md:table-cell">{app.phone}</td>
                     <td className="px-4 py-3">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${STATUS_COLORS[app.status] || "bg-gray-50 text-gray-700 border-gray-200"}`}>
                         {app.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-500">
+                    <td className="px-4 py-3 text-xs text-gray-500 hidden md:table-cell">
                       {new Date(app.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3 text-right space-x-2">
@@ -207,6 +208,7 @@ export default function CareerAdminPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
 
           {/* Pagination */}

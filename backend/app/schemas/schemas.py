@@ -1081,12 +1081,16 @@ class AssistantFaqEntry(BaseModel):
     topic: str = ""
     answer_en: str
     answer_bn: str = ""
+    # Customer questions/keywords (any language, one per line) that should
+    # trigger this answer — lets admins teach the assistant without code.
+    questions: str = ""
 
 
 class AssistantFaqUpdate(BaseModel):
     topic: str | None = None
     answer_en: str | None = None
     answer_bn: str | None = None
+    questions: str | None = None
 
 
 class CareerApplicationCreate(BaseModel):

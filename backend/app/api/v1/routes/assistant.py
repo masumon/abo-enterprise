@@ -339,6 +339,7 @@ def _faq_from_flat(flat: dict) -> list[dict]:
             "topic": key.replace("_", " ").title(),
             "answer_en": flat.get(f"{key}_en", ""),
             "answer_bn": flat.get(f"{key}_bn", ""),
+            "questions": flat.get(f"{key}_q", ""),
         })
     return entries
 
@@ -406,6 +407,8 @@ async def create_assistant_faq(
     flat[f"{key}_en"] = payload.answer_en
     if payload.answer_bn:
         flat[f"{key}_bn"] = payload.answer_bn
+    if payload.questions and payload.questions.strip():
+        flat[f"{key}_q"] = payload.questions.strip()
 
     await _save_faq_flat(db, flat)
     await db.commit()
@@ -429,6 +432,11 @@ async def update_assistant_faq(
         flat[f"{key}_en"] = payload.answer_en
     if payload.answer_bn is not None:
         flat[f"{key}_bn"] = payload.answer_bn
+    if payload.questions is not None:
+        if payload.questions.strip():
+            flat[f"{key}_q"] = payload.questions.strip()
+        else:
+            flat.pop(f"{key}_q", None)
 
     await _save_faq_flat(db, flat)
     await db.commit()
@@ -445,7 +453,7 @@ async def delete_assistant_faq(
     key = key.strip().lower().replace(" ", "_")
     flat = await _load_faq_flat(db)
     removed = False
-    for suffix in ("_en", "_bn"):
+    for suffix in ("_en", "_bn", "_q"):
         fk = f"{key}{suffix}"
         if fk in flat:
             del flat[fk]

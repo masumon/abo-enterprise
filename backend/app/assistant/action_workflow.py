@@ -15,10 +15,14 @@ from app.assistant.response_generator import ResponseGenerator
 from app.assistant.validation_engine import ValidationEngine
 
 _CANCEL_WORDS = frozenset({
-    "cancel", "stop", "quit", "exit", "বাতিল", "থামুন", "cancelled",
+    "cancel", "stop", "quit", "exit", "বাতিল", "থামুন", "cancelled", "থাক", "বাদ", "batil",
 })
-_YES_WORDS = frozenset({"yes", "y", "ok", "confirm", "হ্যাঁ", "হ্যা", "ঠিক", "জি", "confirm"})
-_NO_WORDS = frozenset({"no", "n", "না", "নাহ"})
+_YES_WORDS = frozenset({
+    "yes", "y", "ok", "okay", "confirm", "sure", "yeah", "yep",
+    "হ্যাঁ", "হ্যা", "ঠিক", "জি", "জ্বি", "জ্বী", "আচ্ছা", "হবে", "করুন",
+    "ji", "jee", "hae", "hobe", "thik", "accha", "acha",
+})
+_NO_WORDS = frozenset({"no", "n", "না", "নাহ", "nah", "nope"})
 _PAYMENT_MAP = {
     "bkash": "bkash", "বিকাশ": "bkash",
     "nagad": "nagad", "নগদ": "nagad",
@@ -52,14 +56,27 @@ class ActionWorkflowEngine:
         ctx.slots.pop("workflow", None)
         ctx.pending_action = None
 
+    @staticmethod
+    def _tokens(normalized: str) -> set[str]:
+        return set(re.findall(r"[\wঀ-৿]+", normalized.lower()))
+
     def _is_cancel(self, normalized: str) -> bool:
-        return normalized.strip() in _CANCEL_WORDS or normalized.startswith("cancel")
+        tokens = self._tokens(normalized)
+        return bool(tokens & _CANCEL_WORDS) or normalized.strip().startswith("cancel")
 
     def _is_yes(self, normalized: str) -> bool:
-        return normalized.strip() in _YES_WORDS
+        # Token-based so Banglish hints appended by the preprocessor
+        # ("ji" → "ji yes") still register, and "না" anywhere wins over "ok".
+        tokens = self._tokens(normalized)
+        if not tokens or len(tokens) > 4:
+            return False
+        return bool(tokens & _YES_WORDS) and not (tokens & _NO_WORDS) and not (tokens & _CANCEL_WORDS)
 
     def _is_no(self, normalized: str) -> bool:
-        return normalized.strip() in _NO_WORDS
+        tokens = self._tokens(normalized)
+        if not tokens or len(tokens) > 4:
+            return False
+        return bool(tokens & _NO_WORDS) and not (tokens & _YES_WORDS)
 
     async def handle_turn(
         self,
