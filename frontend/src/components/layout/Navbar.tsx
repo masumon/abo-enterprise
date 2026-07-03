@@ -159,7 +159,9 @@ export default function Navbar() {
 
             <Link
               href="/cart"
-              className="relative w-8 h-8 flex items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 hover:scale-110 active:scale-95 transition-all duration-200 shadow-md shadow-brand-500/25"
+              // Mobile has the bottom-nav cart button — hide from the header to
+              // remove icon crowding. Desktop keeps it (no bottom nav there).
+              className="relative w-8 h-8 hidden lg:flex items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 hover:scale-110 active:scale-95 transition-all duration-200 shadow-md shadow-brand-500/25"
               aria-label={`${t("nav_cart")} (${count})`}
             >
               <ShoppingCart className="w-[16px] h-[16px]" />

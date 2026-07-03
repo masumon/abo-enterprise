@@ -71,11 +71,12 @@ export default function PageHero({
         "relative overflow-hidden px-4 -mt-[var(--navbar-offset)]",
         isBrand
           ? cn(
-              "text-white py-14 md:py-20 pt-[calc(var(--navbar-offset)+3.5rem)]",
+              // Mobile is a compact strip (~72px); desktop keeps the tall hero.
+              "text-white py-6 md:py-20 pt-[calc(var(--navbar-offset)+1.25rem)] md:pt-[calc(var(--navbar-offset)+3.5rem)]",
               !hasImage && "gradient-brand"
             )
           : cn(
-              "page-surface border-b border-gray-100 dark:border-white/10 py-12 md:py-16 pt-[calc(var(--navbar-offset)+3rem)]",
+              "page-surface border-b border-gray-100 dark:border-white/10 py-5 md:py-16 pt-[calc(var(--navbar-offset)+1rem)] md:pt-[calc(var(--navbar-offset)+3rem)]",
               !hasImage && "bg-gradient-to-b from-slate-50 to-white dark:from-[#0f1a2e] dark:to-[#0a1628]"
             )
       )}
@@ -124,7 +125,7 @@ export default function PageHero({
 
         <h1
           className={cn(
-            "text-3xl sm:text-4xl md:text-5xl font-bold mb-3 text-balance",
+            "text-xl sm:text-2xl md:text-5xl font-bold mb-1.5 md:mb-3 text-balance leading-tight",
             !isBrand && "text-heading",
             isCenter && "mx-auto"
           )}
@@ -135,7 +136,7 @@ export default function PageHero({
         {subtitle && (
           <p
             className={cn(
-              "text-base md:text-lg max-w-2xl leading-relaxed",
+              "text-[13px] sm:text-sm md:text-lg max-w-2xl leading-snug md:leading-relaxed",
               isBrand ? "text-white/85" : "text-muted",
               isCenter && "mx-auto"
             )}

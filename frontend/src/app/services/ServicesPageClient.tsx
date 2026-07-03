@@ -156,7 +156,7 @@ export default function ServicesPageClient({
 
       <section className="enterprise-section-alt">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-xl font-bold text-heading mb-6">{t({ en: "Featured Categories", bn: "বিশেষ বিভাগ" })}</h2>
+          <h2 className="text-xl font-bold text-heading mb-6">{t({ en: "Printing, Legal & Digital Services", bn: "প্রিন্টিং, আইনি ও ডিজিটাল সেবা" })}</h2>
           <div className="grid md:grid-cols-3 gap-4 mb-10">
             {FEATURED.map(({ icon: Icon, title, subtitle, href, color }) => (
               <Link key={href} href={href} className="enterprise-card-hover p-5 block group">

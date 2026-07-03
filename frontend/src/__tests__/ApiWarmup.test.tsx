@@ -97,14 +97,15 @@ describe("ApiWarmup — state transitions", () => {
     expect(screen.getByText("Welcome!")).toBeInTheDocument();
   });
 
-  it("shows compact toast while warming on non-home pages", async () => {
+  it("renders nothing on non-home pages (no warming toast on cart/checkout)", async () => {
+    // Fix for UX finding #02 — the persistent 'warming server…' card was
+    // covering totals on Cart / interrupting Checkout. Off /, render null.
     mockUsePathname.mockReturnValue("/products");
     useFailFetch();
 
-    render(<ApiWarmup />);
+    const { container } = render(<ApiWarmup />);
 
-    expect(screen.getByText("You can continue browsing")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
+    expect(container.firstChild).toBeNull();
   });
 
   it("shows 'Starting secure server...' status before health is ready", async () => {
@@ -143,37 +144,19 @@ describe("ApiWarmup — state transitions", () => {
 // warmed is still false here — failing fetch keeps overlay visible.
 
 describe("ApiWarmup — early readiness exit", () => {
-  it("clicking 'Continue now' hides the full-page overlay", async () => {
+  it("clicking 'Continue now' removes the overlay entirely (no compact toast)", async () => {
+    // UX finding #01 — the previous behaviour kept a persistent floating
+    // toast even after dismiss. It now unmounts completely.
     mockUsePathname.mockReturnValue("/");
     useFailFetch();
 
-    render(<ApiWarmup />);
+    const { container } = render(<ApiWarmup />);
 
     expect(screen.getByText("Welcome!")).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /continue now/i }));
 
     expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
-    expect(screen.getByText("You can continue browsing")).toBeInTheDocument();
-  });
-
-  it("compact toast remains visible after dismiss while still warming", async () => {
-    mockUsePathname.mockReturnValue("/");
-    useFailFetch();
-
-    render(<ApiWarmup />);
-    await userEvent.click(screen.getByRole("button", { name: /continue now/i }));
-
-    expect(screen.getByRole("status")).toBeInTheDocument();
-  });
-
-  it("compact toast shows loading status text after dismiss", async () => {
-    mockUsePathname.mockReturnValue("/");
-    useFailFetch();
-
-    render(<ApiWarmup />);
-    await userEvent.click(screen.getByRole("button", { name: /continue now/i }));
-
-    expect(screen.getByText(/Starting secure server\.\.\./i)).toBeInTheDocument();
+    expect(container.firstChild).toBeNull();
   });
 
   it("does not show the full-page overlay again after dismiss", async () => {

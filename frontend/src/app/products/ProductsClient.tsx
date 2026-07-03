@@ -202,15 +202,17 @@ export default function ProductsClient({
             className="input pl-10 w-full"
           />
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <SlidersHorizontal className="w-4 h-4 text-gray-400" aria-hidden />
+        {/* Category pills — horizontal scroll on mobile so they never wrap
+            to a second row (saves ~44px of above-the-fold space) */}
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 py-0.5 sm:flex-wrap sm:overflow-visible">
+          <SlidersHorizontal className="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden />
           {CATEGORIES.map((c) => (
             <button
               key={c.value}
               type="button"
               onClick={() => handleCategoryChange(c.value as ProductCategory | "")}
               className={cn(
-                "px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                "px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap flex-shrink-0",
                 category === c.value ? "bg-brand-600 text-white" : "bg-white text-gray-600 hover:bg-brand-50 border border-gray-100"
               )}
             >
