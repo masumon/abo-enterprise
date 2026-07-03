@@ -125,29 +125,51 @@ class KnowledgeBase:
         data = await self.get_site_settings(db, list(keys))
         return data.get(keys[0]) or data.get(keys[1]) or None
 
+    @staticmethod
+    def _query_tokens(query: str) -> list[str]:
+        return [t for t in re.findall(r"[\wঀ-৿]+", query.lower()) if len(t) >= 3]
+
     async def search_products(
         self, db: AsyncSession, query: str, limit: int = 5, category: str | None = None, brand: str | None = None
     ) -> list[Product]:
-        conditions = [Product.is_active == True, Product.is_deleted == False]  # noqa: E712
+        base = [Product.is_active == True, Product.is_deleted == False]  # noqa: E712
         if category:
-            conditions.append(Product.category.ilike(f"%{category}%"))
+            base.append(Product.category.ilike(f"%{category}%"))
         if brand:
-            conditions.append(Product.brand.ilike(f"%{brand}%"))
-        if query:
-            term = f"%{query}%"
-            conditions.append(
-                or_(
-                    Product.name_en.ilike(term),
-                    Product.name_bn.ilike(term),
-                    Product.sku.ilike(term),
-                    Product.brand.ilike(term),
-                    Product.description_en.ilike(term),
-                    Product.description_bn.ilike(term),
-                    Product.category.ilike(term),
-                )
+            base.append(Product.brand.ilike(f"%{brand}%"))
+
+        def _text_match(term: str):
+            like = f"%{term}%"
+            return or_(
+                Product.name_en.ilike(like),
+                Product.name_bn.ilike(like),
+                Product.sku.ilike(like),
+                Product.brand.ilike(like),
+                Product.description_en.ilike(like),
+                Product.description_bn.ilike(like),
+                Product.category.ilike(like),
             )
+
+        conditions = list(base)
+        if query:
+            conditions.append(_text_match(query))
         result = await db.execute(
             select(Product).where(and_(*conditions)).order_by(Product.sort_order.asc()).limit(limit)
+        )
+        found = list(result.scalars().all())
+        if found or not query:
+            return found
+
+        # Full phrase missed — retry matching any individual word so
+        # multi-word queries like "gaming laptop dam" still find "Laptop".
+        tokens = self._query_tokens(query)
+        if not tokens:
+            return []
+        result = await db.execute(
+            select(Product)
+            .where(and_(*base, or_(*[_text_match(t) for t in tokens])))
+            .order_by(Product.sort_order.asc())
+            .limit(limit)
         )
         return list(result.scalars().all())
 
@@ -194,22 +216,38 @@ class KnowledgeBase:
         return sorted({r[0] for r in result.all() if r[0]})
 
     async def search_services(self, db: AsyncSession, query: str = "", limit: int = 5) -> list[Service]:
-        conditions = [Service.is_active == True, Service.is_deleted == False]  # noqa: E712
-        if query:
-            term = f"%{query}%"
-            conditions.append(
-                or_(
-                    Service.name_en.ilike(term),
-                    Service.name_bn.ilike(term),
-                    Service.description_en.ilike(term),
-                    Service.description_bn.ilike(term),
-                    Service.short_description_en.ilike(term),
-                    Service.short_description_bn.ilike(term),
-                    Service.category.ilike(term),
-                )
+        base = [Service.is_active == True, Service.is_deleted == False]  # noqa: E712
+
+        def _text_match(term: str):
+            like = f"%{term}%"
+            return or_(
+                Service.name_en.ilike(like),
+                Service.name_bn.ilike(like),
+                Service.description_en.ilike(like),
+                Service.description_bn.ilike(like),
+                Service.short_description_en.ilike(like),
+                Service.short_description_bn.ilike(like),
+                Service.category.ilike(like),
             )
+
+        conditions = list(base)
+        if query:
+            conditions.append(_text_match(query))
         result = await db.execute(
             select(Service).where(and_(*conditions)).order_by(Service.sort_order.asc()).limit(limit)
+        )
+        found = list(result.scalars().all())
+        if found or not query:
+            return found
+
+        tokens = self._query_tokens(query)
+        if not tokens:
+            return []
+        result = await db.execute(
+            select(Service)
+            .where(and_(*base, or_(*[_text_match(t) for t in tokens])))
+            .order_by(Service.sort_order.asc())
+            .limit(limit)
         )
         return list(result.scalars().all())
 

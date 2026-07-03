@@ -27,8 +27,32 @@ _FOLLOW_UP_PRODUCT = frozenset({
 _SHORT_FOLLOW_UP = frozenset({
     "price", "cost", "rate", "stock", "available", "availability", "details", "info",
     "দাম", "মূল্য", "স্টক", "বিস্তারিত", "উপলব্ধ", "কত",
+    # tokens the preprocessor may append as hints
+    "how", "much", "dam", "koto", "ache", "mojud", "stok",
 })
 _COUPON_CODE_RE = re.compile(r"\b[A-Z0-9]{3,20}\b")
+
+# Filler words stripped from product/service search queries so
+# "laptop er dam koto" searches for "laptop", not the whole sentence.
+_QUERY_STOPWORDS = frozenset({
+    "a", "an", "the", "i", "me", "my", "you", "your", "is", "are", "do", "does",
+    "what", "which", "how", "much", "many", "can", "could", "please", "pls",
+    "show", "find", "search", "looking", "for", "want", "need", "buy", "get",
+    "tell", "about", "of", "in", "on", "to", "have", "any", "there",
+    "price", "cost", "rate", "stock", "available", "availability", "details", "info",
+    "product", "products", "item", "items", "service", "services",
+    "er", "ta", "ti", "ki", "ki?", "koto", "dam", "daam", "ache", "ase", "chai", "lagbe",
+    "kinbo", "kinte", "korbo", "nibo", "nite", "koi", "kothay", "vai", "bhai", "apni",
+    "আমি", "আমার", "আপনার", "আপনি", "কি", "কী", "কত", "দাম", "মূল্য", "স্টক", "আছে",
+    "চাই", "লাগবে", "কিনব", "কিনতে", "নিতে", "দেখান", "দেখাও", "খুঁজুন", "সম্পর্কে",
+    "পণ্য", "প্রোডাক্ট", "সেবা", "সার্ভিস", "একটা", "একটি", "টা", "টি", "এর", "কেমন",
+})
+
+
+def _clean_search_query(text: str) -> str:
+    tokens = re.findall(r"[\wঀ-৿]+", text.lower())
+    kept = [t for t in tokens if t not in _QUERY_STOPWORDS and len(t) >= 2]
+    return " ".join(kept)
 
 
 class AssistantOrchestrator:
@@ -77,12 +101,23 @@ class AssistantOrchestrator:
         )
 
         preprocessed = preprocess_text(message)
-        if language:
+        if language in ("bn", "en"):
             ctx.language = language
-        elif preprocessed["language"] != "en":
-            ctx.language = preprocessed["language"]
+        elif preprocessed["language"] in ("bn", "mixed"):
+            # Any Bengali script → reply in Bengali.
+            ctx.language = "bn"
+        elif len(preprocessed["normalized"].split()) >= 3:
+            # A full English sentence switches the reply language back.
+            ctx.language = "en"
 
         lang = ctx.language
+
+        # Product/service mentions are per-turn signals; stale slots from a
+        # previous question must not hijack this turn's search. Follow-up
+        # questions still work via last_product_slug / last_service_slug.
+        # (order/booking/lead numbers stay — they're explicit identifiers.)
+        ctx.slots.pop("product_query", None)
+        ctx.slots.pop("service_query", None)
 
         products = await self.knowledge.search_products(db, "", limit=50)
         services = await self.knowledge.search_services(db, "", limit=30)
@@ -175,17 +210,22 @@ class AssistantOrchestrator:
         result["session_id"] = conv.session_id
         return result
 
+    @staticmethod
+    def _is_short_follow_up(preprocessed: dict) -> bool:
+        """True when every token is a follow-up word (e.g. 'dam koto', 'দাম')."""
+        # Hint expansion can double the token count ("dam koto" →
+        # "dam koto price how much"), so allow a few extra tokens; the
+        # all-tokens-must-be-follow-up-words rule is the real guard.
+        tokens = [re.sub(r"[^\wঀ-৿]", "", t) for t in preprocessed["normalized"].split()]
+        tokens = [t for t in tokens if t]
+        return bool(tokens) and len(tokens) <= 6 and all(t in _SHORT_FOLLOW_UP for t in tokens)
+
     def _resolve_follow_up_intent(self, intent: Intent, ctx: ConversationContext, preprocessed: dict) -> Intent:
-        normalized = preprocessed["normalized"].strip()
-        words = normalized.split()
-        is_short = len(words) <= 3
-
-        if intent in _FOLLOW_UP_PRODUCT and is_short and not ctx.slots.get("product_query") and ctx.last_product_slug:
-            return intent
-
-        if is_short and normalized in _SHORT_FOLLOW_UP and ctx.last_product_slug:
+        if self._is_short_follow_up(preprocessed) and ctx.last_product_slug:
             if intent == Intent.UNKNOWN:
-                return Intent.PRODUCT_PRICE if normalized in {"price", "cost", "rate", "দাম", "মূল্য", "কত"} else Intent.PRODUCT_DETAILS
+                tokens = set(preprocessed["normalized"].split())
+                price_words = {"price", "cost", "rate", "দাম", "মূল্য", "কত", "dam", "koto", "much"}
+                return Intent.PRODUCT_PRICE if tokens & price_words else Intent.PRODUCT_DETAILS
 
         if ctx.pending_action == "order_tracking" and (preprocessed.get("order_numbers") or preprocessed.get("phones")):
             return Intent.ORDER_TRACKING
@@ -225,7 +265,7 @@ class AssistantOrchestrator:
             return self.response.faq_answer(lang, faq or self.response.unknown(lang)), {}, links
 
         if intent in (Intent.PRODUCT_SEARCH, Intent.CATEGORY, Intent.BRAND):
-            query = ctx.slots.get("product_query", "") or preprocessed["normalized"]
+            query = ctx.slots.get("product_query", "") or _clean_search_query(preprocessed["normalized"])
             category = entities.get(EntityType.CATEGORY)
             brand = entities.get(EntityType.BRAND)
             cat_val = category.value if category else None
@@ -267,7 +307,7 @@ class AssistantOrchestrator:
             return self.response.product_detail(lang, pd), {"product": pd}, links
 
         if intent in (Intent.SERVICE_INFO, Intent.SERVICE_PRICE):
-            query = ctx.slots.get("service_query", "") or preprocessed["normalized"]
+            query = ctx.slots.get("service_query", "") or _clean_search_query(preprocessed["normalized"])
             if query.strip():
                 service, tiers = await self.knowledge.get_service_with_tiers(db, query)
                 if service:
@@ -360,13 +400,20 @@ class AssistantOrchestrator:
             return text, {"order_number": order_num}, inv_links
 
         if intent == Intent.COUPON:
-            code = self._extract_coupon_code(preprocessed)
-            if code:
+            codes = self._extract_coupon_codes(preprocessed)
+            invalid_code: str | None = None
+            for code in codes:
                 coupon = await self.knowledge.get_coupon(db, code)
                 if coupon:
                     checkout_links = [{"label": "Checkout", "label_bn": "চেকআউট", "url": f"/checkout?coupon={code}", "type": "checkout"}]
                     return self.response.coupon_info(lang, coupon), {"coupon": coupon}, checkout_links
-                return ("কুপন সঠিক নয়।" if lang == "bn" else "Invalid coupon code."), {}, links
+                invalid_code = code
+            if invalid_code:
+                return (
+                    f"'{invalid_code}' কুপনটি সঠিক নয়। চালু অফারগুলো দেখতে 'কুপন' লিখুন।"
+                    if lang == "bn"
+                    else f"Coupon '{invalid_code}' is not valid. Type 'coupon' to see current offers."
+                ), {}, links
             coupons = await self.knowledge.load_coupons(db)
             active = []
             for k, v in coupons.items():
@@ -454,15 +501,16 @@ class AssistantOrchestrator:
                 links = self.response.blog_links(posts)
                 return self.response.blog_list(lang, posts), {"posts": posts}, links
 
-        if flags.product_search:
-            found = await self.knowledge.search_products(db, query, limit=3)
+        cleaned = _clean_search_query(query)
+        if flags.product_search and cleaned:
+            found = await self.knowledge.search_products(db, cleaned, limit=3)
             if found:
                 product_dicts = [self.knowledge.product_to_dict(p) for p in found]
                 links = self.response.product_links(product_dicts)
                 return self.response.product_list(lang, product_dicts), {"products": product_dicts}, links
 
-        if flags.service_info:
-            svcs = await self.knowledge.search_services(db, query, limit=3)
+        if flags.service_info and cleaned:
+            svcs = await self.knowledge.search_services(db, cleaned, limit=3)
             if svcs:
                 svc_dicts = [self.knowledge.service_to_dict(s) for s in svcs]
                 links = self.response.service_links(svc_dicts)
@@ -477,23 +525,41 @@ class AssistantOrchestrator:
         return self.response.unknown(lang), {}, links
 
     async def _resolve_product(self, db, ctx, entities, preprocessed):
-        query = ctx.slots.get("product_query", preprocessed["normalized"])
-        if ctx.last_product_slug and (not query or query in _SHORT_FOLLOW_UP):
+        query = ctx.slots.get("product_query") or _clean_search_query(preprocessed["normalized"])
+        if ctx.last_product_slug and (not query or self._is_short_follow_up(preprocessed)):
             product = await self.knowledge.get_product_by_slug(db, ctx.last_product_slug)
             if product:
                 return product
+        if not query:
+            return None
         product = await self.knowledge.get_product_by_slug_or_name(db, query)
         if not product:
             found = await self.knowledge.search_products(db, query, limit=1)
             product = found[0] if found else None
         return product
 
-    def _extract_coupon_code(self, preprocessed: dict) -> str | None:
+    def _extract_coupon_codes(self, preprocessed: dict) -> list[str]:
+        """Return plausible coupon codes only.
+
+        A token counts as a code candidate when the user typed it in ALL
+        CAPS or it contains a digit — plain words like "any"/"coupon"
+        must never be treated as codes (that used to answer every
+        "any coupons?" with "Invalid coupon code").
+        """
         raw = preprocessed.get("raw", "")
-        for match in _COUPON_CODE_RE.findall(raw.upper()):
-            if match not in {"FAQ", "COD", "BDT", "ABO", "PDF", "URL", "SMS"}:
-                return match
-        return None
+        candidates: list[str] = []
+        for token in re.findall(r"\b[A-Za-z0-9]{3,20}\b", raw):
+            has_digit = any(c.isdigit() for c in token)
+            is_caps = token.isupper() and token.isalpha()
+            if not (has_digit or is_caps):
+                continue
+            code = token.upper()
+            if code in {"FAQ", "COD", "BDT", "ABO", "PDF", "URL", "SMS", "INV", "COD", "VAT"}:
+                continue
+            if code.isdigit():  # bare numbers are quantities/phones, not codes
+                continue
+            candidates.append(code)
+        return candidates
 
     async def _finalize_turn(self, db, conv, ctx, user_msg, assistant_msg, intent, metadata):
         await self.conversation_mgr.save_turn(db, conv, ctx, user_msg, assistant_msg, intent, metadata)

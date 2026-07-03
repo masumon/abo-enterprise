@@ -1,177 +1,663 @@
 {
   "greeting": {
-    "keywords_en": ["hello", "hi", "hey", "good morning", "good evening", "assalamu alaikum", "salam"],
-    "keywords_bn": ["হ্যালো", "নমস্কার", "সালাম", "আসসালামু আলাইকুম", "শুভ সকাল", "শুভ সন্ধ্যা"],
-    "synonyms": ["hlo", "hlw", "helo", "hy"]
+    "keywords_en": [
+      "hello",
+      "hi",
+      "hey",
+      "good morning",
+      "good evening",
+      "assalamu alaikum",
+      "salam",
+      "kemon achen",
+      "kemon acho"
+    ],
+    "keywords_bn": [
+      "হ্যালো",
+      "নমস্কার",
+      "সালাম",
+      "আসসালামু আলাইকুম",
+      "শুভ সকাল",
+      "শুভ সন্ধ্যা"
+    ],
+    "synonyms": [
+      "hlo",
+      "hlw",
+      "helo",
+      "hy",
+      "hii",
+      "hloo"
+    ]
   },
   "product_search": {
-    "keywords_en": ["search product", "find product", "show product", "looking for", "browse", "catalog"],
-    "keywords_bn": ["পণ্য খুঁজুন", "প্রোডাক্ট খুঁজুন", "পণ্য দেখান", "কি কি পণ্য"],
-    "synonyms": ["product search", "prod search", "item search"]
+    "keywords_en": [
+      "search product",
+      "find product",
+      "show product",
+      "looking for",
+      "browse",
+      "catalog"
+    ],
+    "keywords_bn": [
+      "পণ্য খুঁজুন",
+      "প্রোডাক্ট খুঁজুন",
+      "পণ্য দেখান",
+      "কি কি পণ্য",
+      "কি আছে",
+      "পণ্য আছে",
+      "কি কি আছে"
+    ],
+    "synonyms": [
+      "product search",
+      "prod search",
+      "item search",
+      "ki ache",
+      "ki produkt",
+      "product dekhan"
+    ]
   },
   "product_details": {
-    "keywords_en": ["product details", "tell me about", "specification", "specs", "description"],
-    "keywords_bn": ["পণ্যের বিবরণ", "বিস্তারিত", "স্পেসিফিকেশন"],
-    "synonyms": ["details", "info about product"]
+    "keywords_en": [
+      "product details",
+      "tell me about",
+      "specification",
+      "specs",
+      "description"
+    ],
+    "keywords_bn": [
+      "পণ্যের বিবরণ",
+      "বিস্তারিত",
+      "স্পেসিফিকেশন"
+    ],
+    "synonyms": [
+      "details",
+      "info about product"
+    ]
   },
   "product_price": {
-    "keywords_en": ["price", "how much", "cost", "rate", "pricing"],
-    "keywords_bn": ["দাম", "মূল্য", "কত টাকা", "কত"],
-    "synonyms": ["prc", "tk", "taka", "bdt"]
+    "keywords_en": [
+      "price",
+      "how much",
+      "cost",
+      "rate",
+      "pricing"
+    ],
+    "keywords_bn": [
+      "দাম",
+      "মূল্য",
+      "কত টাকা",
+      "কত",
+      "দাম কত",
+      "কত দাম",
+      "দাম কেমন"
+    ],
+    "synonyms": [
+      "prc",
+      "tk",
+      "taka",
+      "bdt",
+      "dam koto",
+      "koto dam",
+      "price koto"
+    ]
   },
   "product_stock": {
-    "keywords_en": ["stock", "in stock", "available quantity", "how many left"],
-    "keywords_bn": ["স্টক", "মজুদ", "কতটা আছে"],
-    "synonyms": ["inventory", "qty available"]
+    "keywords_en": [
+      "stock",
+      "in stock",
+      "available quantity",
+      "how many left"
+    ],
+    "keywords_bn": [
+      "স্টক",
+      "মজুদ",
+      "কতটা আছে",
+      "স্টকে আছে"
+    ],
+    "synonyms": [
+      "inventory",
+      "qty available",
+      "stock ache",
+      "stok ache"
+    ]
   },
   "product_availability": {
-    "keywords_en": ["available", "availability", "is it available", "can i buy"],
-    "keywords_bn": ["উপলব্ধ", "পাওয়া যাবে", "আছে কি"],
-    "synonyms": ["avail"]
+    "keywords_en": [
+      "available",
+      "availability",
+      "is it available",
+      "can i buy"
+    ],
+    "keywords_bn": [
+      "উপলব্ধ",
+      "পাওয়া যাবে",
+      "আছে কি"
+    ],
+    "synonyms": [
+      "avail"
+    ]
   },
   "category": {
-    "keywords_en": ["category", "categories", "product type"],
-    "keywords_bn": ["ক্যাটাগরি", "ধরন", "শ্রেণী"],
-    "synonyms": ["cat"]
+    "keywords_en": [
+      "category",
+      "categories",
+      "product type"
+    ],
+    "keywords_bn": [
+      "ক্যাটাগরি",
+      "ধরন",
+      "শ্রেণী"
+    ],
+    "synonyms": [
+      "cat"
+    ]
   },
   "brand": {
-    "keywords_en": ["brand", "manufacturer", "make"],
-    "keywords_bn": ["ব্র্যান্ড", "কোম্পানি"],
+    "keywords_en": [
+      "brand",
+      "manufacturer",
+      "make"
+    ],
+    "keywords_bn": [
+      "ব্র্যান্ড",
+      "কোম্পানি"
+    ],
     "synonyms": []
   },
   "service_information": {
-    "keywords_en": ["service", "services", "what services", "offer", "solution"],
-    "keywords_bn": ["সেবা", "সার্ভিস", "কি সেবা", "সলিউশন"],
-    "synonyms": ["svc"]
+    "keywords_en": [
+      "service",
+      "services",
+      "what services",
+      "offer",
+      "solution"
+    ],
+    "keywords_bn": [
+      "সেবা",
+      "সার্ভিস",
+      "কি সেবা",
+      "সলিউশন"
+    ],
+    "synonyms": [
+      "svc"
+    ]
   },
   "service_price": {
-    "keywords_en": ["service price", "service cost", "service charge", "service rate"],
-    "keywords_bn": ["সেবার দাম", "সেবার মূল্য"],
+    "keywords_en": [
+      "service price",
+      "service cost",
+      "service charge",
+      "service rate"
+    ],
+    "keywords_bn": [
+      "সেবার দাম",
+      "সেবার মূল্য"
+    ],
     "synonyms": []
   },
   "service_booking": {
-    "keywords_en": ["book service", "booking", "schedule", "appointment", "reserve"],
-    "keywords_bn": ["বুকিং", "সেবা বুক", "অ্যাপয়েন্টমেন্ট"],
-    "synonyms": ["book", "bk"]
+    "keywords_en": [
+      "book service",
+      "booking",
+      "schedule",
+      "appointment",
+      "reserve"
+    ],
+    "keywords_bn": [
+      "বুকিং",
+      "সেবা বুক",
+      "অ্যাপয়েন্টমেন্ট",
+      "বুক করতে চাই",
+      "বুকিং দিতে চাই",
+      "বুক",
+      "বুক করুন"
+    ],
+    "synonyms": [
+      "book",
+      "bk",
+      "booking dibo",
+      "book korbo",
+      "booking korte chai"
+    ]
   },
   "quote": {
-    "keywords_en": ["quote", "quotation", "estimate", "proposal", "get quote"],
-    "keywords_bn": ["কোট", "কোটেশন", "অনুমান"],
-    "synonyms": ["qte"]
+    "keywords_en": [
+      "quote",
+      "quotation",
+      "estimate",
+      "proposal",
+      "get quote"
+    ],
+    "keywords_bn": [
+      "কোট",
+      "কোটেশন",
+      "অনুমান"
+    ],
+    "synonyms": [
+      "qte"
+    ]
   },
   "order_creation": {
-    "keywords_en": ["place order", "create order", "buy", "purchase", "order now", "checkout"],
-    "keywords_bn": ["অর্ডার করুন", "অর্ডার দিন", "কিনতে চাই", "ক্রয়"],
-    "synonyms": ["ord", "place ord"]
+    "keywords_en": [
+      "place order",
+      "create order",
+      "buy",
+      "purchase",
+      "order now",
+      "checkout"
+    ],
+    "keywords_bn": [
+      "অর্ডার করুন",
+      "অর্ডার দিন",
+      "কিনতে চাই",
+      "ক্রয়",
+      "কিনব",
+      "নিতে চাই",
+      "অর্ডার দিতে চাই",
+      "অর্ডার করব"
+    ],
+    "synonyms": [
+      "ord",
+      "place ord",
+      "order korbo",
+      "order dibo",
+      "kinte chai",
+      "kinbo"
+    ]
   },
   "order_confirmation": {
-    "keywords_en": ["confirm order", "order confirmed", "confirmation"],
-    "keywords_bn": ["অর্ডার নিশ্চিত", "কনফার্ম"],
+    "keywords_en": [
+      "confirm order",
+      "order confirmed",
+      "confirmation"
+    ],
+    "keywords_bn": [
+      "অর্ডার নিশ্চিত",
+      "কনফার্ম"
+    ],
     "synonyms": []
   },
   "order_tracking": {
-    "keywords_en": ["track order", "tracking", "where is my order", "order number"],
-    "keywords_bn": ["অর্ডার ট্র্যাক", "অর্ডার কোথায়", "অর্ডার নম্বর"],
-    "synonyms": ["track", "trk"]
+    "keywords_en": [
+      "track order",
+      "tracking",
+      "where is my order",
+      "order number"
+    ],
+    "keywords_bn": [
+      "অর্ডার ট্র্যাক",
+      "অর্ডার কোথায়",
+      "অর্ডার নম্বর",
+      "আমার অর্ডার",
+      "অর্ডার কই"
+    ],
+    "synonyms": [
+      "track",
+      "trk",
+      "order koi",
+      "order kothay",
+      "amar order"
+    ]
   },
   "order_status": {
-    "keywords_en": ["order status", "status of order", "pending", "shipped", "delivered"],
-    "keywords_bn": ["অর্ডার স্ট্যাটাস", "অবস্থা"],
+    "keywords_en": [
+      "order status",
+      "status of order",
+      "pending",
+      "shipped",
+      "delivered"
+    ],
+    "keywords_bn": [
+      "অর্ডার স্ট্যাটাস",
+      "অবস্থা"
+    ],
     "synonyms": []
   },
   "delivery": {
-    "keywords_en": ["delivery", "shipping", "courier", "dispatch", "delivery time", "delivery charge"],
-    "keywords_bn": ["ডেলিভারি", "শিপিং", "কুরিয়ার", "পাঠানো"],
-    "synonyms": ["del", "ship"]
+    "keywords_en": [
+      "delivery",
+      "shipping",
+      "courier",
+      "dispatch",
+      "delivery time",
+      "delivery charge"
+    ],
+    "keywords_bn": [
+      "ডেলিভারি",
+      "শিপিং",
+      "কুরিয়ার",
+      "পাঠানো",
+      "কত দিনে",
+      "কবে পাব",
+      "ডেলিভারি চার্জ"
+    ],
+    "synonyms": [
+      "del",
+      "ship",
+      "delivery charge koto",
+      "kobe pabo",
+      "koto dine"
+    ]
   },
   "warranty": {
-    "keywords_en": ["warranty", "guarantee", "warranty period"],
-    "keywords_bn": ["ওয়ারেন্টি", "গ্যারান্টি"],
+    "keywords_en": [
+      "warranty",
+      "guarantee",
+      "warranty period"
+    ],
+    "keywords_bn": [
+      "ওয়ারেন্টি",
+      "গ্যারান্টি"
+    ],
     "synonyms": []
   },
   "return_policy": {
-    "keywords_en": ["return", "return policy", "refund", "exchange", "money back"],
-    "keywords_bn": ["রিটার্ন", "ফেরত", "রিফান্ড", "বিনিময়"],
-    "synonyms": []
+    "keywords_en": [
+      "return",
+      "return policy",
+      "refund",
+      "exchange",
+      "money back"
+    ],
+    "keywords_bn": [
+      "রিটার্ন",
+      "ফেরত",
+      "রিফান্ড",
+      "বিনিময়"
+    ],
+    "synonyms": [
+      "ferot dibo",
+      "return korbo"
+    ]
   },
   "payment": {
-    "keywords_en": ["payment", "pay", "bkash", "nagad", "cash on delivery", "cod"],
-    "keywords_bn": ["পেমেন্ট", "পরিশোধ", "বিকাশ", "নগদ"],
-    "synonyms": ["paymnt", "pmnt"]
+    "keywords_en": [
+      "payment",
+      "pay",
+      "bkash",
+      "nagad",
+      "cash on delivery",
+      "cod"
+    ],
+    "keywords_bn": [
+      "পেমেন্ট",
+      "পরিশোধ",
+      "বিকাশ",
+      "নগদ"
+    ],
+    "synonyms": [
+      "paymnt",
+      "pmnt",
+      "bikash",
+      "kivabe pay",
+      "payment korbo"
+    ]
   },
   "invoice": {
-    "keywords_en": ["invoice", "bill", "receipt", "tax invoice"],
-    "keywords_bn": ["ইনভয়েস", "বিল", "রসিদ"],
-    "synonyms": ["inv"]
+    "keywords_en": [
+      "invoice",
+      "bill",
+      "receipt",
+      "tax invoice"
+    ],
+    "keywords_bn": [
+      "ইনভয়েস",
+      "বিল",
+      "রসিদ"
+    ],
+    "synonyms": [
+      "inv"
+    ]
   },
   "contact": {
-    "keywords_en": ["contact", "phone number", "email", "reach", "call", "address"],
-    "keywords_bn": ["যোগাযোগ", "ফোন", "ইমেইল", "ঠিকানা"],
-    "synonyms": []
+    "keywords_en": [
+      "contact",
+      "phone number",
+      "email",
+      "reach",
+      "call",
+      "address"
+    ],
+    "keywords_bn": [
+      "যোগাযোগ",
+      "ফোন",
+      "ইমেইল",
+      "ঠিকানা",
+      "ফোন নাম্বার",
+      "কথা বলতে চাই"
+    ],
+    "synonyms": [
+      "number den",
+      "jogajog korbo"
+    ]
   },
   "company_information": {
-    "keywords_en": ["about company", "about abo", "who are you", "company info", "about us"],
-    "keywords_bn": ["কোম্পানি সম্পর্কে", "আপনারা কে", "আমাদের সম্পর্কে"],
-    "synonyms": ["about"]
+    "keywords_en": [
+      "about company",
+      "about abo",
+      "who are you",
+      "company info",
+      "about us"
+    ],
+    "keywords_bn": [
+      "কোম্পানি সম্পর্কে",
+      "আপনারা কে",
+      "আমাদের সম্পর্কে"
+    ],
+    "synonyms": [
+      "about"
+    ]
   },
   "faq": {
-    "keywords_en": ["faq", "frequently asked", "common question", "help"],
-    "keywords_bn": ["প্রশ্নোত্তর", "সাধারণ প্রশ্ন", "সাহায্য"],
+    "keywords_en": [
+      "faq",
+      "frequently asked",
+      "common question",
+      "help"
+    ],
+    "keywords_bn": [
+      "প্রশ্নোত্তর",
+      "সাধারণ প্রশ্ন",
+      "সাহায্য"
+    ],
     "synonyms": []
   },
   "blog": {
-    "keywords_en": ["blog", "article", "news", "post"],
-    "keywords_bn": ["ব্লগ", "নিউজ", "আর্টিকেল"],
+    "keywords_en": [
+      "blog",
+      "article",
+      "news",
+      "post"
+    ],
+    "keywords_bn": [
+      "ব্লগ",
+      "নিউজ",
+      "আর্টিকেল"
+    ],
     "synonyms": []
   },
   "portfolio": {
-    "keywords_en": ["portfolio", "projects", "work", "case study"],
-    "keywords_bn": ["পোর্টফোলিও", "প্রজেক্ট", "কাজ"],
+    "keywords_en": [
+      "portfolio",
+      "projects",
+      "work",
+      "case study"
+    ],
+    "keywords_bn": [
+      "পোর্টফোলিও",
+      "প্রজেক্ট",
+      "কাজ"
+    ],
     "synonyms": []
   },
   "customer_support": {
-    "keywords_en": ["support", "help me", "customer service", "assist"],
-    "keywords_bn": ["সাপোর্ট", "সাহায্য করুন", "কাস্টমার সার্ভিস"],
+    "keywords_en": [
+      "support",
+      "help me",
+      "customer service",
+      "assist"
+    ],
+    "keywords_bn": [
+      "সাপোর্ট",
+      "সাহায্য করুন",
+      "কাস্টমার সার্ভিস"
+    ],
     "synonyms": []
   },
   "complaint": {
-    "keywords_en": ["complaint", "problem", "issue", "not working", "bad service", "unhappy"],
-    "keywords_bn": ["অভিযোগ", "সমস্যা", "খারাপ সেবা"],
-    "synonyms": ["complain"]
+    "keywords_en": [
+      "complaint",
+      "problem",
+      "issue",
+      "not working",
+      "bad service",
+      "unhappy"
+    ],
+    "keywords_bn": [
+      "অভিযোগ",
+      "সমস্যা",
+      "খারাপ সেবা",
+      "কাজ করছে না",
+      "নষ্ট"
+    ],
+    "synonyms": [
+      "complain",
+      "kaj korche na",
+      "kharap",
+      "nosto"
+    ]
   },
   "lead_creation": {
-    "keywords_en": ["inquiry", "interested", "lead", "consultation", "project", "hire"],
-    "keywords_bn": ["আগ্রহী", "জিজ্ঞাসা", "প্রজেক্ট", "কনসালটেশন"],
-    "synonyms": ["inq"]
+    "keywords_en": [
+      "inquiry",
+      "interested",
+      "lead",
+      "consultation",
+      "project",
+      "hire"
+    ],
+    "keywords_bn": [
+      "আগ্রহী",
+      "জিজ্ঞাসা",
+      "প্রজেক্ট",
+      "কনসালটেশন"
+    ],
+    "synonyms": [
+      "inq"
+    ]
   },
   "review_request": {
-    "keywords_en": ["review", "feedback", "rating", "testimonial"],
-    "keywords_bn": ["রিভিউ", "মতামত", "রেটিং"],
+    "keywords_en": [
+      "review",
+      "feedback",
+      "rating",
+      "testimonial"
+    ],
+    "keywords_bn": [
+      "রিভিউ",
+      "মতামত",
+      "রেটিং"
+    ],
     "synonyms": []
   },
   "coupon": {
-    "keywords_en": ["coupon", "discount code", "promo code", "promo", "discount", "offer code", "voucher"],
-    "keywords_bn": ["কুপন", "ডিসকাউন্ট", "ছাড়", "প্রোমো কোড", "অফার"],
-    "synonyms": ["promo", "disc"]
+    "keywords_en": [
+      "coupon",
+      "discount code",
+      "promo code",
+      "promo",
+      "discount",
+      "offer code",
+      "voucher"
+    ],
+    "keywords_bn": [
+      "কুপন",
+      "ডিসকাউন্ট",
+      "ছাড়",
+      "প্রোমো কোড",
+      "অফার",
+      "কুপন আছে",
+      "অফার আছে"
+    ],
+    "synonyms": [
+      "promo",
+      "disc",
+      "coupon ache",
+      "offer ache",
+      "discount ache"
+    ]
   },
   "business_hours": {
-    "keywords_en": ["business hours", "opening hours", "open time", "when open", "office hours", "working hours"],
-    "keywords_bn": ["খোলার সময়", "অফিস সময়", "কখন খোলা", "ব্যবসার সময়"],
-    "synonyms": ["hours", "timing"]
+    "keywords_en": [
+      "business hours",
+      "opening hours",
+      "open time",
+      "when open",
+      "office hours",
+      "working hours"
+    ],
+    "keywords_bn": [
+      "খোলার সময়",
+      "অফিস সময়",
+      "কখন খোলা",
+      "ব্যবসার সময়"
+    ],
+    "synonyms": [
+      "hours",
+      "timing"
+    ]
   },
   "booking_tracking": {
-    "keywords_en": ["track booking", "booking status", "booking number", "my booking", "service booking status"],
-    "keywords_bn": ["বুকিং ট্র্যাক", "বুকিং স্ট্যাটাস", "বুকিং নম্বর", "আমার বুকিং"],
-    "synonyms": ["bk track"]
+    "keywords_en": [
+      "track booking",
+      "booking status",
+      "booking number",
+      "my booking",
+      "service booking status"
+    ],
+    "keywords_bn": [
+      "বুকিং ট্র্যাক",
+      "বুকিং স্ট্যাটাস",
+      "বুকিং নম্বর",
+      "আমার বুকিং"
+    ],
+    "synonyms": [
+      "bk track"
+    ]
   },
   "lead_tracking": {
-    "keywords_en": ["track lead", "inquiry status", "lead status", "my inquiry", "lead number"],
-    "keywords_bn": ["লিড ট্র্যাক", "অনুরোধ স্ট্যাটাস", "আমার অনুরোধ", "লিড নম্বর"],
-    "synonyms": ["inq status"]
+    "keywords_en": [
+      "track lead",
+      "inquiry status",
+      "lead status",
+      "my inquiry",
+      "lead number"
+    ],
+    "keywords_bn": [
+      "লিড ট্র্যাক",
+      "অনুরোধ স্ট্যাটাস",
+      "আমার অনুরোধ",
+      "লিড নম্বর"
+    ],
+    "synonyms": [
+      "inq status"
+    ]
   },
   "courier_tracking": {
-    "keywords_en": ["courier tracking", "courier status", "where is parcel", "delivery status", "tracking id"],
-    "keywords_bn": ["কুরিয়ার ট্র্যাক", "পার্সেল কোথায়", "ডেলিভারি স্ট্যাটাস"],
-    "synonyms": ["courier", "parcel"]
+    "keywords_en": [
+      "courier tracking",
+      "courier status",
+      "where is parcel",
+      "delivery status",
+      "tracking id"
+    ],
+    "keywords_bn": [
+      "কুরিয়ার ট্র্যাক",
+      "পার্সেল কোথায়",
+      "ডেলিভারি স্ট্যাটাস"
+    ],
+    "synonyms": [
+      "courier",
+      "parcel"
+    ]
   }
 }

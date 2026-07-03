@@ -1,6 +1,7 @@
 """Rule-based intent recognition with bilingual keyword and synonym matching."""
 
 import json
+import re
 from pathlib import Path
 
 from app.assistant.constants import Intent
@@ -39,12 +40,22 @@ def _load_synonyms() -> dict:
         return json.load(f)
 
 
+def _keyword_in_text(keyword: str, text: str) -> bool:
+    """Match a keyword/phrase on word boundaries.
+
+    Plain substring matching caused false intents ("hi" inside "which",
+    "book" inside "facebook"). Bengali script has no such issue because
+    \\b works on unicode word characters there too.
+    """
+    return re.search(rf"(?<!\w){re.escape(keyword)}(?!\w)", text) is not None
+
+
 class IntentEngine:
     def __init__(self) -> None:
         self._patterns = _load_patterns()
         self._synonyms = _load_synonyms()
 
-    def _score_intent(self, normalized_text: str, intent_key: str, config: dict) -> float:
+    def _score_intent(self, normalized_text: str, tokens: list[str], intent_key: str, config: dict) -> float:
         score = 0.0
         all_keywords = (
             config.get("keywords_en", [])
@@ -53,15 +64,20 @@ class IntentEngine:
         )
         for kw in all_keywords:
             kw_lower = kw.lower()
-            if kw_lower in normalized_text:
+            if _keyword_in_text(kw_lower, normalized_text):
                 score += 1.0 + len(kw_lower) * 0.02
-            else:
-                ratio = fuzzy_score(normalized_text, kw_lower)
-                if ratio > 0.72:
-                    score += ratio * 0.5
+            elif " " not in kw_lower and len(kw_lower) >= 4:
+                # Typo tolerance: compare against individual words, not the
+                # whole message (whole-message ratios are meaningless).
+                for token in tokens:
+                    if abs(len(token) - len(kw_lower)) <= 2 and fuzzy_score(token, kw_lower) > 0.8:
+                        score += 0.5
+                        break
 
         for base, syns in self._synonyms.items():
-            matched = base in normalized_text or any(s in normalized_text for s in syns)
+            matched = _keyword_in_text(base, normalized_text) or any(
+                _keyword_in_text(s.lower(), normalized_text) for s in syns
+            )
             if matched and intent_key in _SYNONYM_INTENT_MAP.get(base, []):
                 score += 0.45
 
@@ -71,15 +87,18 @@ class IntentEngine:
         if not normalized_text.strip():
             return Intent.UNKNOWN, 0.0
 
+        tokens = normalized_text.split()
         scores: dict[str, float] = {}
         for intent_key, config in self._patterns.items():
-            scores[intent_key] = self._score_intent(normalized_text, intent_key, config)
-
-        if scores.get("greeting", 0) >= 1.0 and len(normalized_text.split()) <= 4:
-            return Intent.GREETING, scores["greeting"]
+            scores[intent_key] = self._score_intent(normalized_text, tokens, intent_key, config)
 
         best_key = max(scores, key=scores.get)
         best_score = scores[best_key]
+
+        # Greeting shortcut only when nothing stronger matched.
+        if scores.get("greeting", 0) >= 1.0 and len(tokens) <= 4 and scores["greeting"] >= best_score:
+            return Intent.GREETING, scores["greeting"]
+
         if best_score < 0.5:
             return Intent.UNKNOWN, best_score
         try:
