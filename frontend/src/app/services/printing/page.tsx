@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Printer, CheckCircle, MessageCircle } from "lucide-react";
+import { Printer, CheckCircle, Send } from "lucide-react";
 import { bookingsApi, isQueuedResponse } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
-import { generateWhatsAppBookingMessage, WHATSAPP_NUMBER, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
 import PageHero from "@/components/ui/PageHero";
 
@@ -53,18 +53,7 @@ export default function PrintingPage() {
         customer_phone: data.customer_phone,
         details: data.details,
       });
-      const wasQueued = isQueuedResponse(response);
-      setQueued(wasQueued);
-
-      if (!wasQueued) {
-        const msg = generateWhatsAppBookingMessage(
-          PRINT_SERVICES.find((s) => s.value === data.service_subtype)?.label.en ?? data.service_subtype,
-          data.customer_name,
-          data.customer_phone,
-          data.details
-        );
-        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
-      }
+      setQueued(isQueuedResponse(response));
       setIsSuccess(true);
     } catch {
       setSubmitError(
@@ -110,8 +99,8 @@ export default function PrintingPage() {
                     ? "ইন্টারনেট ফিরলে বুকিংটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
                     : "The booking will sync automatically when your connection returns."
                   : lang === "bn"
-                    ? "WhatsApp খুলে গেছে। শীঘ্রই আমরা যোগাযোগ করব।"
-                    : "WhatsApp opened. We'll contact you shortly with details."}
+                    ? "আপনার অর্ডার জমা হয়েছে। আমরা শীঘ্রই ফোনে যোগাযোগ করব।"
+                    : "Your order has been submitted. We'll contact you by phone soon."}
               </p>
               <button onClick={() => setIsSuccess(false)} className="btn btn-brand btn-md">
                 {lang === "bn" ? "আরও অর্ডার করুন" : "Place Another Order"}
@@ -191,10 +180,10 @@ export default function PrintingPage() {
                 disabled={isSubmitting}
                 className="btn btn-primary btn-lg w-full"
               >
-                <MessageCircle className="w-5 h-5" />
+                <Send className="w-5 h-5" />
                 {isSubmitting
                   ? lang === "bn" ? "পাঠানো হচ্ছে..." : "Sending..."
-                  : lang === "bn" ? "WhatsApp-এ অর্ডার করুন" : "Order via WhatsApp"}
+                  : lang === "bn" ? "অর্ডার জমা দিন" : "Place Order"}
               </button>
             </form>
           )}

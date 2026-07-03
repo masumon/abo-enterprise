@@ -4,10 +4,10 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Scale, CheckCircle, MessageCircle, AlertTriangle } from "lucide-react";
+import { Scale, CheckCircle, Send, AlertTriangle } from "lucide-react";
 import { bookingsApi, isQueuedResponse } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
-import { generateWhatsAppBookingMessage, WHATSAPP_NUMBER, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
 import PageHero from "@/components/ui/PageHero";
 
@@ -75,18 +75,7 @@ export default function LegalPage() {
         details,
         estimated_price: selected?.price.en,
       });
-      const wasQueued = isQueuedResponse(response);
-      setQueued(wasQueued);
-
-      if (!wasQueued) {
-        const msg = generateWhatsAppBookingMessage(
-          selected?.label.en ?? "Legal Service",
-          data.customer_name,
-          data.customer_phone,
-          details
-        );
-        window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${msg}`, "_blank");
-      }
+      setQueued(isQueuedResponse(response));
       setIsSuccess(true);
     } catch {
       alert(lang === "bn" ? "বুকিং জমা দিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।" : "Failed to submit booking. Please try again.");
@@ -138,8 +127,8 @@ export default function LegalPage() {
                     ? "ইন্টারনেট ফিরলে অনুরোধটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
                     : "The request will sync automatically when your connection returns."
                   : lang === "bn"
-                    ? "WhatsApp-এ বার্তা পাঠানো হয়েছে। শীঘ্রই যোগাযোগ করা হবে।"
-                    : "Message sent to WhatsApp. We'll contact you soon."}
+                    ? "আপনার অনুরোধ জমা হয়েছে। আমরা শীঘ্রই ফোনে যোগাযোগ করব।"
+                    : "Your request has been submitted. We'll contact you by phone soon."}
               </p>
               <button onClick={() => setIsSuccess(false)} className="btn btn-brand btn-md">
                 {lang === "bn" ? "আরেকটি অনুরোধ করুন" : "New Request"}
@@ -232,10 +221,10 @@ export default function LegalPage() {
               </div>
 
               <button type="submit" disabled={isSubmitting} className="btn btn-primary btn-lg w-full">
-                <MessageCircle className="w-5 h-5" />
+                <Send className="w-5 h-5" />
                 {isSubmitting
                   ? lang === "bn" ? "পাঠানো হচ্ছে..." : "Sending..."
-                  : lang === "bn" ? "WhatsApp-এ অনুরোধ করুন" : "Request via WhatsApp"}
+                  : lang === "bn" ? "অনুরোধ জমা দিন" : "Submit Request"}
               </button>
             </form>
           )}
