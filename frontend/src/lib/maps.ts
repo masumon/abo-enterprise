@@ -11,6 +11,10 @@ export const BUSINESS_LOCATION = {
   lng: 92.1548483,
 } as const;
 
+/** Contact defaults — shown on invoices/receipts when CMS settings are empty */
+export const DEFAULT_BUSINESS_PHONE = "+880 1825 007977";
+export const DEFAULT_BUSINESS_EMAIL = "abo.enterprise@gmail.com";
+
 /** Google Maps embed — ABO Enterprise, Beanibazar (admin can override) */
 export const DEFAULT_MAPS_EMBED =
   "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d14481.252168680774!2d92.1548483!3d24.8531558!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3751cb8f6e28ada5%3A0xaa987532ec744f22!2zQUJPIEVudGVycHJpc2Ug4KaP4Kas4Ka_4KaTIOCmj-CmqOCnjeCmn-CmvuCmsOCmquCnjeCmsOCmvuCmh-CmnA!5e0!3m2!1sen!2sbd!4v1782852750035!5m2!1sen!2sbd";
