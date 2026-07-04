@@ -1,5 +1,6 @@
 """Per-session conversation context management."""
 
+import copy
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -85,5 +86,9 @@ class ContextManager:
             last_product_slug=data.get("last_product_slug"),
             last_service_slug=data.get("last_service_slug"),
             pending_action=data.get("pending_action"),
-            slots=data.get("slots") or {},
+            # Deep-copy so the working context never shares nested objects with
+            # the value SQLAlchemy loaded from the JSON column. Sharing them let
+            # in-place edits poison the ORM's change-detection baseline, so
+            # workflow-step updates were silently dropped on save.
+            slots=copy.deepcopy(data.get("slots") or {}),
         )

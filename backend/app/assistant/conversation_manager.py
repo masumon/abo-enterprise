@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.models.models import AssistantConversation, AssistantMessage
 from app.assistant.context_manager import ContextManager, ConversationContext
@@ -52,6 +53,13 @@ class ConversationManager:
         metadata: dict | None = None,
     ) -> None:
         conv.context = self._context_mgr.to_dict(ctx)
+        # `context` is a plain JSON column with no mutation tracking. Because the
+        # working context can share nested objects with the value SQLAlchemy
+        # loaded, a reassignment can compare "equal" to its own mutated baseline
+        # and be silently skipped on flush — which used to freeze every
+        # multi-turn workflow (booking/order/lead) on its first step forever.
+        # Force the column dirty so the new context is always written.
+        flag_modified(conv, "context")
         conv.language = ctx.language
         conv.customer_phone = ctx.customer_phone or conv.customer_phone
         conv.customer_name = ctx.customer_name or conv.customer_name

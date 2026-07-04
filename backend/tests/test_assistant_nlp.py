@@ -187,6 +187,42 @@ def test_faq_topics_ignore_question_keys():
     assert kb.list_faq_topics() == ["pay"]
 
 
+# ── Conversation context persistence (multi-turn workflow) ───────────
+
+def test_from_dict_deep_copies_slots():
+    """Loading a context must not share nested objects with the stored dict.
+
+    Sharing them poisoned SQLAlchemy's JSON change-detection baseline so
+    workflow-step updates were silently dropped — freezing booking/order/
+    lead flows on their first step forever.
+    """
+    from app.assistant.context_manager import ContextManager
+
+    cm = ContextManager()
+    stored = {"session_id": "s1", "slots": {"workflow": {"type": "booking", "step": "details"}}}
+    ctx = cm.from_dict(stored)
+    ctx.slots["workflow"]["step"] = "confirm"
+
+    # The stored dict (SQLAlchemy's loaded value) must stay untouched, so the
+    # next save is detected as a real change and actually written.
+    assert stored["slots"]["workflow"]["step"] == "details"
+    assert ctx.slots["workflow"]["step"] == "confirm"
+
+
+def test_context_round_trip_preserves_workflow_step():
+    from app.assistant.context_manager import ContextManager, ConversationContext
+
+    cm = ContextManager()
+    ctx = ConversationContext(session_id="s1")
+    ctx.slots["workflow"] = {"type": "booking", "step": "details", "data": {}}
+
+    # simulate save → load
+    reloaded = cm.from_dict(cm.to_dict(ctx))
+    reloaded.slots["workflow"]["step"] = "confirm"
+    reloaded2 = cm.from_dict(cm.to_dict(reloaded))
+    assert reloaded2.slots["workflow"]["step"] == "confirm"
+
+
 # ── Workflow yes/no/cancel ────────────────────────────────────────────
 
 @pytest.fixture(scope="module")
