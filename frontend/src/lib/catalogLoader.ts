@@ -46,8 +46,17 @@ interface ServiceLoadParams {
   per_page?: number;
 }
 
-/** Shorter timeout + fewer retries on mobile/cellular — fail fast to cache/demo. */
-const MOBILE_CATALOG_OPTS = { timeout: 22000, maxRetries: 1 } as const;
+// Mobile/cellular request tuning.
+//
+// The dominant cause of "loads on WiFi but not on mobile data" is the free-tier
+// backend cold-starting (30–60s to wake). Mobile links add latency on top, so a
+// SHORT timeout here made the very first mobile visit — when there is no cache to
+// fall back to — give up before the server finished waking, leaving a blank/failed
+// page. WiFi survived only because the axios interceptor grants it a longer
+// adaptive timeout. So on constrained networks we now wait LONG ENOUGH for the
+// cold start (a returning visitor still gets instant cache via the catch blocks
+// below — this only affects how long the first, cache-less fetch is allowed to run).
+const MOBILE_CATALOG_OPTS = { timeout: 60000, maxRetries: 2 } as const;
 
 async function loadDemoProducts(params: ProductLoadParams): Promise<ProductsLoadResult> {
   const demo = filterDemoProducts(getDemoProducts(), {
