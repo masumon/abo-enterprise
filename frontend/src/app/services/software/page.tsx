@@ -11,6 +11,7 @@ import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
 import PageHero from "@/components/ui/PageHero";
+import ReferenceBadge from "@/components/ui/ReferenceBadge";
 import Image from "next/image";
 import { useShowcaseContent } from "@/hooks/useShowcaseContent";
 import { resolveServiceIcon } from "@/lib/showcaseContent";
@@ -40,6 +41,7 @@ export default function SoftwarePage() {
   const { serviceCards } = useShowcaseContent();
   const [isSuccess, setIsSuccess] = useState(false);
   const [queued, setQueued] = useState(false);
+  const [reference, setReference] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
@@ -60,7 +62,10 @@ export default function SoftwarePage() {
         project_description: data.project_description,
         budget_range: data.budget_range,
       });
-      setQueued(isQueuedResponse(response));
+      const wasQueued = isQueuedResponse(response);
+      setQueued(wasQueued);
+      const created = response.data?.data as { lead_number?: string } | null;
+      setReference(!wasQueued ? created?.lead_number ?? null : null);
       setIsSuccess(true);
     } finally {
       setIsSubmitting(false);
@@ -147,6 +152,7 @@ export default function SoftwarePage() {
                       ? "২৪ ঘণ্টার মধ্যে WhatsApp বা ফোনে যোগাযোগ করব।"
                       : "We'll contact you within 24 hours via WhatsApp or phone."}
                 </p>
+                {!queued && reference && <ReferenceBadge reference={reference} />}
               </div>
             ) : (
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

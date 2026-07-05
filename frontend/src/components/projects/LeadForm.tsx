@@ -60,6 +60,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [queued, setQueued] = useState(false);
+  const [reference, setReference] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -91,14 +92,17 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
       });
 
       if (response.status === 200 || response.status === 201 || response.status === 202) {
-        setQueued(isQueuedResponse(response));
+        const wasQueued = isQueuedResponse(response);
+        setQueued(wasQueued);
+        const created = response.data?.data as { lead_number?: string } | null;
+        setReference(!wasQueued ? created?.lead_number ?? null : null);
         setSuccess(true);
         reset();
         setTimeout(() => {
           setSuccess(false);
           setQueued(false);
           onSuccess?.();
-        }, 3000);
+        }, 5000);
       }
     } catch (error) {
       console.error("Lead submission failed:", error);
@@ -270,7 +274,12 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
         <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
           {queued
             ? "Inquiry queued offline. It will sync automatically when your connection returns."
-            : "Thank you! We received your inquiry. We&apos;ll contact you within 24 hours."}
+            : "Thank you! We received your inquiry. We'll contact you within 24 hours."}
+          {!queued && reference && (
+            <span className="block mt-1 font-mono font-semibold text-green-800">
+              Reference: {reference}
+            </span>
+          )}
         </div>
       )}
 
