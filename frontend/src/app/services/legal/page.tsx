@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,6 +10,7 @@ import { bookingsApi, isQueuedResponse } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
+import { saveOrderSnapshot } from "@/lib/orderSnapshot";
 import PageHero from "@/components/ui/PageHero";
 
 const schema = z.object({
@@ -46,6 +48,7 @@ const LEGAL_SERVICES = [
 
 export default function LegalPage() {
   const { lang } = useLanguageStore();
+  const router = useRouter();
   const [isSuccess, setIsSuccess] = useState(false);
   const [queued, setQueued] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -75,7 +78,33 @@ export default function LegalPage() {
         details,
         estimated_price: selected?.price.en,
       });
-      setQueued(isQueuedResponse(response));
+      const wasQueued = isQueuedResponse(response);
+      setQueued(wasQueued);
+
+      // Same as an order: show the invoice/receipt page with the booking
+      // (reference) number, downloadable invoice and status.
+      const created = response.data?.data as { booking_id?: string; booking_number?: string } | null;
+      if (!wasQueued && created?.booking_id) {
+        // Mirror the backend's price parse (first number of the range) so the
+        // instant snapshot matches the invoice the API returns.
+        const amount = Number((selected?.price.en ?? "").replace(/,/g, "").match(/[\d.]+/)?.[0] ?? 0) || 0;
+        saveOrderSnapshot({
+          kind: "booking",
+          reference: created.booking_id,
+          phone: data.customer_phone,
+          customer_name: data.customer_name,
+          payment_method: "pending",
+          items: [{ name: selected?.label.en ?? data.service_subtype, quantity: 1, price: amount, subtotal: amount }],
+          subtotal: amount,
+          delivery_charge: 0,
+          total: amount,
+          booking_number: created.booking_number,
+          service_name: "Legal Service",
+          created_at: new Date().toISOString(),
+        });
+        router.push(`/booking-success?booking=${created.booking_id}&phone=${encodeURIComponent(data.customer_phone)}`);
+        return;
+      }
       setIsSuccess(true);
     } catch {
       alert(lang === "bn" ? "বুকিং জমা দিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।" : "Failed to submit booking. Please try again.");

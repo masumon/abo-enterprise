@@ -9,6 +9,7 @@ import { Send, CheckCircle, Bot, Code, Cog } from "lucide-react";
 import { isQueuedResponse, serviceLeadsApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
+import ReferenceBadge from "@/components/ui/ReferenceBadge";
 
 const schema = z.object({
   name: z.string().min(2, "নাম দিন"),
@@ -35,6 +36,7 @@ export default function LeadCapture() {
   const { lang } = useLanguageStore();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [queued, setQueued] = useState(false);
+  const [reference, setReference] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -63,7 +65,10 @@ export default function LeadCapture() {
         company: data.company || undefined,
         project_description: data.project_description,
       });
-      setQueued(isQueuedResponse(response));
+      const wasQueued = isQueuedResponse(response);
+      setQueued(wasQueued);
+      const created = response.data?.data as { lead_number?: string } | null;
+      setReference(!wasQueued ? created?.lead_number ?? null : null);
       setIsSubmitted(true);
     } catch {
       setSubmitError(
@@ -113,6 +118,7 @@ export default function LeadCapture() {
                     ? "২৪ ঘণ্টার মধ্যে WhatsApp বা ফোনে যোগাযোগ করা হবে।"
                     : "We'll contact you via WhatsApp or phone within 24 hours."}
               </p>
+              {!queued && reference && <ReferenceBadge reference={reference} />}
             </div>
           ) : (
             <form

@@ -159,6 +159,19 @@ export const bookingsApi = {
       ? queueOfflineCreate<Booking>("booking", data as unknown as Record<string, unknown>)
       : api.post<ApiResponse<Booking>>("/api/v1/bookings", data),
 
+  // Public tracking by booking number (BK-… v2, or ABO-B-… legacy v1).
+  track: (bookingNumber: string) =>
+    api.get<ApiResponse<{
+      kind: "booking";
+      booking_number: string;
+      booking_status: string;
+      service_name: string;
+      payment_status?: string | null;
+      total?: number | null;
+      estimated_price?: string | null;
+      created_at: string;
+    }>>("/api/v1/bookings/track", { params: { number: bookingNumber } }),
+
   list: (params?: { service_type?: string; status?: string; search?: string; page?: number }) =>
     api.get<PaginatedResponse<Booking>>("/api/v1/bookings", { params }),
 

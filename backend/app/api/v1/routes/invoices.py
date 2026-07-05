@@ -33,7 +33,9 @@ async def _pdf_response(invoice: Invoice, db: AsyncSession) -> Response:
 
 # ==================== PUBLIC CUSTOMER INVOICE ====================
 
-def _public_invoice_payload(invoice: Invoice, *, order=None, booking: BookingV2 | None = None) -> dict:
+def _public_invoice_payload(
+    invoice: Invoice, *, order=None, booking: BookingV2 | None = None, legacy_booking: Booking | None = None
+) -> dict:
     """Customer-facing invoice details for the order/booking success page."""
     return {
         "invoice_number": invoice.invoice_number,
@@ -52,9 +54,9 @@ def _public_invoice_payload(invoice: Invoice, *, order=None, booking: BookingV2 
         "delivery_charge": float(order.delivery_charge or 0) if order else None,
         "courier_provider": order.courier_provider if order else None,
         "courier_tracking_id": order.courier_tracking_id if order else None,
-        "booking_number": booking.booking_number if booking else None,
-        "booking_status": booking.status if booking else None,
-        "service_name": booking.service_name if booking else None,
+        "booking_number": booking.booking_number if booking else (legacy_booking.booking_number if legacy_booking else None),
+        "booking_status": booking.status if booking else (legacy_booking.status if legacy_booking else None),
+        "service_name": booking.service_name if booking else (_legacy_service_label(legacy_booking) if legacy_booking else None),
     }
 
 
@@ -84,6 +86,27 @@ async def _get_booking_for_customer(booking_id: uuid.UUID, phone: str, db: Async
     if not booking or booking.customer_phone != phone:
         raise HTTPException(status_code=404, detail="Booking not found")
     return booking
+
+
+async def _get_legacy_booking_for_customer(booking_id: uuid.UUID, phone: str, db: AsyncSession) -> Booking | None:
+    """Fetch a legacy (v1) booking — printing/legal service forms — by id + phone."""
+    result = await db.execute(
+        select(Booking).where(
+            Booking.id == booking_id,
+            Booking.is_deleted == False,  # noqa: E712
+        )
+    )
+    booking = result.scalar_one_or_none()
+    if booking and booking.customer_phone == phone:
+        return booking
+    return None
+
+
+def _legacy_service_label(booking: Booking) -> str:
+    label = (booking.service_type or "Service").replace("_", " ").title()
+    if booking.service_subtype:
+        label = f"{label} — {booking.service_subtype.replace('_', ' ').title()}"
+    return label
 
 
 @router.get("/public/order/{order_number}", response_model=ApiResponse)
@@ -126,13 +149,32 @@ async def public_booking_invoice(
     phone: str = Query(..., min_length=11, max_length=11),
     db: AsyncSession = Depends(get_db),
 ):
-    """Invoice details for the booking-success page — requires matching customer phone."""
-    booking = await _get_booking_for_customer(booking_id, phone, db)
+    """Invoice details for the booking-success page — requires matching customer phone.
+
+    Handles both booking systems: BookingV2 (the /book flow) and legacy v1
+    bookings (printing/legal service forms), so every booking type shows the
+    same invoice + reference as an order.
+    """
     invoice_service = InvoiceService(db)
-    invoice = await invoice_service.get_by_booking_v2_id(booking.id)
-    if not invoice:
-        invoice = await invoice_service.create_booking_invoice(booking_id=booking.id)
-    return ApiResponse(data=_public_invoice_payload(invoice, booking=booking))
+
+    v2 = await db.execute(
+        select(BookingV2).where(BookingV2.id == booking_id, BookingV2.is_deleted == False)  # noqa: E712
+    )
+    booking = v2.scalar_one_or_none()
+    if booking and booking.customer_phone == phone:
+        invoice = await invoice_service.get_by_booking_v2_id(booking.id)
+        if not invoice:
+            invoice = await invoice_service.create_booking_invoice(booking_id=booking.id)
+        return ApiResponse(data=_public_invoice_payload(invoice, booking=booking))
+
+    legacy = await _get_legacy_booking_for_customer(booking_id, phone, db)
+    if legacy:
+        invoice = await invoice_service.get_by_legacy_booking_id(legacy.id)
+        if not invoice:
+            invoice = await invoice_service.create_legacy_booking_invoice(legacy)
+        return ApiResponse(data=_public_invoice_payload(invoice, legacy_booking=legacy))
+
+    raise HTTPException(status_code=404, detail="Booking not found")
 
 
 @router.get("/public/booking/{booking_id}/pdf")
@@ -141,13 +183,30 @@ async def public_booking_invoice_pdf(
     phone: str = Query(..., min_length=11, max_length=11),
     db: AsyncSession = Depends(get_db),
 ):
-    """Download booking invoice PDF — requires matching customer phone."""
-    booking = await _get_booking_for_customer(booking_id, phone, db)
+    """Download booking invoice PDF — requires matching customer phone.
+
+    Works for both BookingV2 and legacy v1 (printing/legal) bookings.
+    """
     invoice_service = InvoiceService(db)
-    invoice = await invoice_service.get_by_booking_v2_id(booking.id)
-    if not invoice:
-        invoice = await invoice_service.create_booking_invoice(booking_id=booking.id)
-    return await _pdf_response(invoice, db)
+
+    v2 = await db.execute(
+        select(BookingV2).where(BookingV2.id == booking_id, BookingV2.is_deleted == False)  # noqa: E712
+    )
+    booking = v2.scalar_one_or_none()
+    if booking and booking.customer_phone == phone:
+        invoice = await invoice_service.get_by_booking_v2_id(booking.id)
+        if not invoice:
+            invoice = await invoice_service.create_booking_invoice(booking_id=booking.id)
+        return await _pdf_response(invoice, db)
+
+    legacy = await _get_legacy_booking_for_customer(booking_id, phone, db)
+    if legacy:
+        invoice = await invoice_service.get_by_legacy_booking_id(legacy.id)
+        if not invoice:
+            invoice = await invoice_service.create_legacy_booking_invoice(legacy)
+        return await _pdf_response(invoice, db)
+
+    raise HTTPException(status_code=404, detail="Booking not found")
 
 
 # ==================== INVOICE CRUD ====================

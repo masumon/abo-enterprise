@@ -18,6 +18,7 @@ import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
 import { resolveGoogleMapsEmbed, resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
 import MapEmbed from "@/components/common/MapEmbed";
 import PageHero from "@/components/ui/PageHero";
+import ReferenceBadge from "@/components/ui/ReferenceBadge";
 
 export default function ContactPage() {
   const { lang } = useLanguageStore();
@@ -40,6 +41,7 @@ export default function ContactPage() {
 
   const [submitted, setSubmitted] = useState(false);
   const [queued, setQueued] = useState(false);
+  const [reference, setReference] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -61,6 +63,8 @@ export default function ContactPage() {
       });
       const wasQueued = isQueuedResponse(response);
       setQueued(wasQueued);
+      const created = response.data?.data as { lead_number?: string } | null;
+      setReference(!wasQueued ? created?.lead_number ?? null : null);
       setSubmitted(true);
       toast(
         "success",
@@ -148,6 +152,7 @@ export default function ContactPage() {
                       ? "২৪ ঘণ্টার মধ্যে যোগাযোগ করা হবে।"
                       : "We will get back to you within 24 hours."}
                 </p>
+                {!queued && reference && <ReferenceBadge reference={reference} />}
               </div>
             ) : (
               <>

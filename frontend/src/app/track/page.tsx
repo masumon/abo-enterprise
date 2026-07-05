@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, Package, Loader2, CheckCircle2, Truck, Clock, XCircle, ExternalLink } from "lucide-react";
-import { ordersApi } from "@/lib/api";
+import { ordersApi, bookingsApi } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import { useLanguageStore } from "@/store/language";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
@@ -11,18 +11,22 @@ import { buildCourierTrackingUrl } from "@/lib/courierTracking";
 import PageHero from "@/components/ui/PageHero";
 
 interface TrackResult {
-  order_number: string;
-  order_status: string;
-  payment_method: string;
-  payment_status?: string;
-  total: number;
-  items_count: number;
+  kind: "order" | "booking";
+  reference: string;          // order_number or booking_number
+  status: string;             // order_status or booking_status
+  total?: number | null;
+  estimated_price?: string | null;
+  payment_method?: string | null;
+  payment_status?: string | null;
+  items_count?: number;
+  service_name?: string | null;
   created_at: string;
   courier_provider?: string | null;
   courier_tracking_id?: string | null;
 }
 
-const STATUS_STEPS = ["pending", "confirmed", "processing", "shipped", "delivered"];
+const ORDER_STEPS = ["pending", "confirmed", "processing", "shipped", "delivered"];
+const BOOKING_STEPS = ["pending", "confirmed", "in_progress", "completed"];
 
 const STATUS_LABELS: Record<string, { en: string; bn: string }> = {
   pending: { en: "Pending", bn: "অপেক্ষমাণ" },
@@ -30,6 +34,8 @@ const STATUS_LABELS: Record<string, { en: string; bn: string }> = {
   processing: { en: "Processing", bn: "প্রক্রিয়াধীন" },
   shipped: { en: "Shipped", bn: "পাঠানো হয়েছে" },
   delivered: { en: "Delivered", bn: "ডেলিভারি সম্পন্ন" },
+  in_progress: { en: "In Progress", bn: "কাজ চলছে" },
+  completed: { en: "Completed", bn: "সম্পন্ন" },
 };
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
@@ -38,6 +44,8 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
   processing: <Package className="w-5 h-5" />,
   shipped: <Truck className="w-5 h-5" />,
   delivered: <CheckCircle2 className="w-5 h-5" />,
+  in_progress: <Package className="w-5 h-5" />,
+  completed: <CheckCircle2 className="w-5 h-5" />,
   cancelled: <XCircle className="w-5 h-5" />,
 };
 
@@ -50,20 +58,50 @@ function TrackContent() {
   const [result, setResult] = useState<TrackResult | null>(null);
   const [error, setError] = useState("");
 
-  const handleTrack = async (orderNumber?: string) => {
-    const num = (orderNumber ?? input).trim();
+  const handleTrack = async (reference?: string) => {
+    const num = (reference ?? input).trim();
     if (!num) return;
     setLoading(true);
     setError("");
     setResult(null);
+    // Booking numbers: BK-… (v2) or ABO-B-… (legacy printing/legal).
+    const upper = num.toUpperCase();
+    const isBooking = upper.startsWith("BK-") || upper.startsWith("ABO-B-");
     try {
-      const r = await ordersApi.track(num);
-      setResult(r.data.data as TrackResult);
+      if (isBooking) {
+        const r = await bookingsApi.track(num);
+        const d = r.data.data;
+        setResult({
+          kind: "booking",
+          reference: d.booking_number,
+          status: d.booking_status,
+          total: d.total,
+          estimated_price: d.estimated_price,
+          payment_status: d.payment_status,
+          service_name: d.service_name,
+          created_at: d.created_at,
+        });
+      } else {
+        const r = await ordersApi.track(num);
+        const d = r.data.data;
+        setResult({
+          kind: "order",
+          reference: d.order_number,
+          status: d.order_status,
+          total: d.total,
+          payment_method: d.payment_method,
+          payment_status: d.payment_status,
+          items_count: d.items_count,
+          created_at: d.created_at,
+          courier_provider: d.courier_provider,
+          courier_tracking_id: d.courier_tracking_id,
+        });
+      }
     } catch {
       setError(
         lang === "bn"
-          ? "অর্ডার পাওয়া যায়নি। অর্ডার নম্বর যাচাই করে আবার চেষ্টা করুন।"
-          : "Order not found. Please check the order number and try again."
+          ? "অর্ডার বা বুকিং পাওয়া যায়নি। নম্বরটি যাচাই করে আবার চেষ্টা করুন।"
+          : "Order or booking not found. Please check the number and try again."
       );
     } finally {
       setLoading(false);
@@ -71,16 +109,17 @@ function TrackContent() {
   };
 
   useEffect(() => {
-    const orderParam = params.get("order");
-    if (orderParam) {
-      setInput(orderParam);
-      handleTrack(orderParam);
+    const ref = params.get("order") || params.get("booking");
+    if (ref) {
+      setInput(ref);
+      handleTrack(ref);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const stepIndex = result ? STATUS_STEPS.indexOf(result.order_status) : -1;
-  const isCancelled = result?.order_status === "cancelled";
+  const steps = result?.kind === "booking" ? BOOKING_STEPS : ORDER_STEPS;
+  const stepIndex = result ? steps.indexOf(result.status) : -1;
+  const isCancelled = result?.status === "cancelled";
   const courierUrl = result
     ? buildCourierTrackingUrl(result.courier_provider, result.courier_tracking_id, settings)
     : null;
@@ -90,11 +129,11 @@ function TrackContent() {
       <PageHero
         pageKey="track"
         align="center"
-        title={lang === "bn" ? "অর্ডার ট্র্যাক করুন" : "Track Your Order"}
+        title={lang === "bn" ? "ট্র্যাক করুন" : "Track Your Order"}
         subtitle={
           lang === "bn"
-            ? "অর্ডার নম্বর দিয়ে বর্তমান অবস্থা দেখুন"
-            : "Enter your order number to see the current status"
+            ? "অর্ডার বা বুকিং নম্বর দিয়ে বর্তমান অবস্থা দেখুন"
+            : "Enter your order or booking number to see the current status"
         }
         breadcrumbs={[
           { label: lang === "bn" ? "হোম" : "Home", href: "/" },
@@ -110,7 +149,7 @@ function TrackContent() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleTrack()}
-              placeholder="e.g. ABO-20240101-0001"
+              placeholder={lang === "bn" ? "যেমন ABO-… বা BK-…" : "e.g. ABO-… or BK-…"}
               className="input flex-1"
             />
             <button
@@ -131,30 +170,50 @@ function TrackContent() {
 
         {result && (
           <div className="surface-card rounded-2xl shadow-sm p-6 space-y-6">
-            <div className="flex items-start justify-between">
-              <div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
-                  {lang === "bn" ? "অর্ডার নম্বর" : "Order Number"}
+                  {result.kind === "booking"
+                    ? lang === "bn" ? "বুকিং নম্বর" : "Booking Number"
+                    : lang === "bn" ? "অর্ডার নম্বর" : "Order Number"}
                 </p>
-                <p className="text-lg font-bold text-heading">{result.order_number}</p>
+                <p className="text-lg font-bold text-heading break-all">{result.reference}</p>
+                {result.kind === "booking" && result.service_name && (
+                  <p className="text-sm text-brand-600 dark:text-brand-300 mt-0.5">{result.service_name}</p>
+                )}
               </div>
-              <div className="text-right">
+              <div className="text-right flex-shrink-0">
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">
                   {lang === "bn" ? "মোট" : "Total"}
                 </p>
-                <p className="text-lg font-bold text-brand-600">{formatPrice(result.total)}</p>
+                <p className="text-lg font-bold text-brand-600">
+                  {result.total != null && result.total > 0
+                    ? formatPrice(result.total)
+                    : result.estimated_price || (lang === "bn" ? "কোটেশন" : "On quote")}
+                </p>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-3 text-sm">
               <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 text-center">
-                <p className="text-xs text-gray-400 mb-1">{lang === "bn" ? "পণ্য" : "Items"}</p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200">{result.items_count}</p>
+                {result.kind === "booking" ? (
+                  <>
+                    <p className="text-xs text-gray-400 mb-1">{lang === "bn" ? "ধরন" : "Type"}</p>
+                    <p className="font-semibold text-gray-800 dark:text-gray-200">{lang === "bn" ? "সেবা" : "Service"}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs text-gray-400 mb-1">{lang === "bn" ? "পণ্য" : "Items"}</p>
+                    <p className="font-semibold text-gray-800 dark:text-gray-200">{result.items_count}</p>
+                  </>
+                )}
               </div>
               <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 text-center">
                 <p className="text-xs text-gray-400 mb-1">{lang === "bn" ? "পেমেন্ট" : "Payment"}</p>
-                <p className="font-semibold text-gray-800 dark:text-gray-200 capitalize">{result.payment_method}</p>
-                {result.payment_status && (
+                <p className="font-semibold text-gray-800 dark:text-gray-200 capitalize">
+                  {result.payment_method || (result.payment_status ?? "—")}
+                </p>
+                {result.payment_method && result.payment_status && (
                   <p className="text-[10px] text-muted capitalize mt-0.5">{result.payment_status}</p>
                 )}
               </div>
@@ -187,22 +246,28 @@ function TrackContent() {
                 <XCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
                 <div>
                   <p className="font-semibold text-red-700">
-                    {lang === "bn" ? "অর্ডার বাতিল" : "Order Cancelled"}
+                    {result.kind === "booking"
+                      ? lang === "bn" ? "বুকিং বাতিল" : "Booking Cancelled"
+                      : lang === "bn" ? "অর্ডার বাতিল" : "Order Cancelled"}
                   </p>
                   <p className="text-sm text-red-500">
-                    {lang === "bn" ? "এই অর্ডারটি বাতিল করা হয়েছে।" : "This order has been cancelled."}
+                    {result.kind === "booking"
+                      ? lang === "bn" ? "এই বুকিংটি বাতিল করা হয়েছে।" : "This booking has been cancelled."
+                      : lang === "bn" ? "এই অর্ডারটি বাতিল করা হয়েছে।" : "This order has been cancelled."}
                   </p>
                 </div>
               </div>
             ) : (
               <div>
                 <p className="text-xs text-gray-400 uppercase tracking-wider mb-4">
-                  {lang === "bn" ? "অর্ডার অগ্রগতি" : "Order Progress"}
+                  {result.kind === "booking"
+                    ? lang === "bn" ? "বুকিং অগ্রগতি" : "Booking Progress"
+                    : lang === "bn" ? "অর্ডার অগ্রগতি" : "Order Progress"}
                 </p>
                 <div className="relative">
                   <div className="absolute left-4 top-5 bottom-5 w-0.5 bg-gray-100 dark:bg-white/10" />
                   <div className="space-y-4">
-                    {STATUS_STEPS.map((step, i) => {
+                    {steps.map((step, i) => {
                       const done = i <= stepIndex;
                       const active = i === stepIndex;
                       const label = STATUS_LABELS[step];
