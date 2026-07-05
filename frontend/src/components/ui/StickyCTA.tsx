@@ -9,7 +9,10 @@ import { useT } from "@/lib/i18n/useT";
 
 const HIDE_ON = ["/checkout", "/cart", "/login", "/register", "/admin"];
 
-const SHOW_ON_PREFIXES = ["/services", "/book", "/projects"];
+const SHOW_ON_PREFIXES = ["/services", "/projects"];
+
+// These are static informational pages under /services, not bookable service slugs.
+const NON_BOOKABLE_SERVICE_SLUGS = new Set(["legal", "printing", "software"]);
 
 export default function StickyCTA() {
   const pathname = usePathname();
@@ -20,6 +23,13 @@ export default function StickyCTA() {
   const allowed = SHOW_ON_PREFIXES.some(
     (p) => pathname === p || pathname?.startsWith(`${p}/`)
   );
+
+  const serviceSlugMatch = pathname?.match(/^\/services\/([^/]+)\/?$/);
+  const activeServiceSlug =
+    serviceSlugMatch && !NON_BOOKABLE_SERVICE_SLUGS.has(serviceSlugMatch[1])
+      ? serviceSlugMatch[1]
+      : null;
+  const bookHref = activeServiceSlug ? `/book?service=${activeServiceSlug}` : "/services";
 
   useEffect(() => {
     if (!allowed) return;
@@ -46,7 +56,7 @@ export default function StickyCTA() {
           <Briefcase className="w-4 h-4" />
           {t("nav_get_quote")}
         </Link>
-        <Link href="/book" className="btn btn-brand btn-sm flex-1 btn-ripple">
+        <Link href={bookHref} className="btn btn-brand btn-sm flex-1 btn-ripple">
           <Calendar className="w-4 h-4" />
           {lang === "bn" ? "বুক করুন" : "Book Now"}
         </Link>

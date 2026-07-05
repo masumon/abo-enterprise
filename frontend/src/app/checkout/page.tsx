@@ -20,6 +20,7 @@ import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { mapPaymentMethods } from "@/lib/paymentDisplay";
 import { BD_DISTRICTS } from "@/lib/bdDistricts";
+import { getUpazilasForDistrict } from "@/lib/bdUpazilas";
 import { calcDeliveryCharge } from "@/lib/checkoutHelpers";
 import { validateCoupon, type AppliedCoupon } from "@/lib/coupons";
 import { isDemoProduct } from "@/lib/demoFallback";
@@ -32,6 +33,7 @@ const schema = z.object({
   customer_phone: z.string().regex(BD_PHONE_REGEX, BD_PHONE_ERROR_EN),
   customer_email: z.string().email("Invalid email").optional().or(z.literal("")),
   district: z.string().min(1, "Select district"),
+  upazila: z.string().optional(),
   street_address: z.string().min(5, "Enter full street/area address"),
   payment_gateway: z.string().min(1, "Select payment method"),
   payment_trx_id: z.string().optional(),
@@ -81,14 +83,23 @@ export default function CheckoutPage() {
 
   const selectedGateway = watch("payment_gateway");
   const selectedDistrict = watch("district");
+  const selectedUpazila = watch("upazila");
   const selectedPhone = watch("customer_phone");
   const selectedPayment = paymentOptions.find((p) => p.gateway === selectedGateway) ?? paymentOptions[0];
+  const upazilaOptions = useMemo(() => getUpazilasForDistrict(selectedDistrict), [selectedDistrict]);
 
   useEffect(() => {
     if (paymentOptions.length && !paymentOptions.some((p) => p.gateway === selectedGateway)) {
       setValue("payment_gateway", paymentOptions[0].gateway);
     }
   }, [paymentOptions, selectedGateway, setValue]);
+
+  // District drives the upazila/thana list — clear the pick if it no longer belongs to the new district.
+  useEffect(() => {
+    if (selectedUpazila && !upazilaOptions.includes(selectedUpazila)) {
+      setValue("upazila", "");
+    }
+  }, [upazilaOptions, selectedUpazila, setValue]);
 
   useEffect(() => {
     useCartStore.persist.rehydrate();
@@ -196,7 +207,7 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const fullAddress = `${data.street_address}, ${data.district}, Bangladesh`;
+      const fullAddress = `${data.street_address}, ${data.upazila ? `${data.upazila}, ` : ""}${data.district}, Bangladesh`;
       const orderItems = items.map((i) => ({
         product_id: i.product_id,
         product_name: i.name_en,
@@ -388,12 +399,19 @@ export default function CheckoutPage() {
                       {errors.district && <p className="text-red-500 text-xs mt-1">{errors.district.message}</p>}
                     </div>
                     <div>
-                      <label className="form-label">{lang === "bn" ? "ডেলিভারি চার্জ" : "Delivery"}</label>
-                      <div className="input input-readonly flex items-center text-sm font-semibold">
-                        {deliveryCharge === 0
-                          ? (lang === "bn" ? "🎉 বিনামূল্যে" : "🎉 FREE")
-                          : formatPrice(deliveryCharge)}
-                      </div>
+                      <label className="form-label">{lang === "bn" ? "থানা / উপজেলা" : "Upazila / Thana"}</label>
+                      <select {...register("upazila")} className="input">
+                        <option value="">{lang === "bn" ? "বাছাই করুন" : "Select"}</option>
+                        {upazilaOptions.map((u) => <option key={u} value={u}>{u}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="form-label">{lang === "bn" ? "ডেলিভারি চার্জ" : "Delivery"}</label>
+                    <div className="input input-readonly flex items-center text-sm font-semibold">
+                      {deliveryCharge === 0
+                        ? (lang === "bn" ? "🎉 বিনামূল্যে" : "🎉 FREE")
+                        : formatPrice(deliveryCharge)}
                     </div>
                   </div>
                   <div>
