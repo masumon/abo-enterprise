@@ -11,6 +11,7 @@ import {
   ShoppingBag,
   Sparkles,
   Users,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
@@ -28,6 +29,27 @@ import {
 } from "@/lib/warmupContent";
 
 const API_BASE = getApiBaseUrl();
+
+// sessionStorage can THROW (Safari private mode, some in-app browsers like
+// Facebook/Messenger opened via a link). If setItem threw inside a dismiss
+// path it aborted before setWarming(false) ran — leaving the welcome screen
+// stuck on screen. These wrappers make storage access never throw, so the
+// overlay can always be dismissed.
+function readWarmedFlag(): boolean {
+  try {
+    return typeof window !== "undefined" && sessionStorage.getItem(WARMED_SESSION_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function stampWarmedFlag(): void {
+  try {
+    if (typeof window !== "undefined") sessionStorage.setItem(WARMED_SESSION_KEY, "1");
+  } catch {
+    /* storage blocked (private / in-app browser) — ignore, dismissal proceeds */
+  }
+}
 
 type ReadyState = {
   health: boolean;
@@ -129,9 +151,7 @@ export default function ApiWarmup() {
   const { lang } = useLanguageStore();
   const isHome = pathname === "/";
   const warmedRef = useRef(false);
-  const [warming, setWarming] = useState(
-    () => !(typeof window !== "undefined" && sessionStorage.getItem(WARMED_SESSION_KEY) === "1")
-  );
+  const [warming, setWarming] = useState(() => !readWarmedFlag());
   const [dismissed, setDismissed] = useState(false);
   const [exiting, setExiting] = useState(false);
   const [showcaseIndex, setShowcaseIndex] = useState(0);
@@ -162,7 +182,7 @@ export default function ApiWarmup() {
   }, [warming, isHome, dismissed]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && sessionStorage.getItem(WARMED_SESSION_KEY) === "1") {
+    if (readWarmedFlag()) {
       warmedRef.current = true;
     }
     if (warmedRef.current) {
@@ -174,12 +194,11 @@ export default function ApiWarmup() {
       setReadyState((prev) => ({ ...prev, appState: document.readyState !== "loading" }));
     });
     // Hard fail-safe: if endpoint polling never resolves (slow cold start,
-    // network blip), never trap the visitor for more than 6s — dismiss and
-    // stamp the session flag so subsequent navigations are clean.
+    // network blip, storage blocked), never trap the visitor for more than
+    // 6s — dismiss and stamp the session flag so later navigations are clean.
+    // setWarming(false) runs unconditionally; stampWarmedFlag can't throw.
     const failSafe = setTimeout(() => {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(WARMED_SESSION_KEY, "1");
-      }
+      stampWarmedFlag();
       warmedRef.current = true;
       setWarming(false);
     }, 6000);
@@ -198,9 +217,7 @@ export default function ApiWarmup() {
 
     const finishWarmup = () => {
       warmedRef.current = true;
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(WARMED_SESSION_KEY, "1");
-      }
+      stampWarmedFlag();
       setWarming(false);
     };
 
@@ -283,6 +300,15 @@ export default function ApiWarmup() {
   const currentStatus = getLoadingStatus(lang, readyState);
   const loadingProgress = getLoadingProgress(readyState);
 
+  // Close now: dismiss instantly and remember it for this session so a
+  // refresh doesn't bring the screen back. Never throws.
+  const handleClose = () => {
+    stampWarmedFlag();
+    warmedRef.current = true;
+    setDismissed(true);
+    setWarming(false);
+  };
+
   if (!warming && !exiting) return null;
 
   // Off-home routes (cart, checkout, products, services, etc.): NEVER render.
@@ -305,6 +331,17 @@ export default function ApiWarmup() {
       role="region"
       aria-label={lang === "bn" ? "স্বাগত অভিজ্ঞতা" : "Welcome experience"}
     >
+      {/* ── Always-visible close (top-right) — instant exit on tap ── */}
+      <button
+        type="button"
+        onClick={handleClose}
+        aria-label={lang === "bn" ? "বন্ধ করুন" : "Close"}
+        className="fixed top-3 right-3 z-[80] w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 active:scale-95 text-white/90 backdrop-blur-sm border border-white/15 transition-all touch-manipulation"
+        style={{ top: "max(0.75rem, env(safe-area-inset-top))" }}
+      >
+        <X className="w-5 h-5" aria-hidden />
+      </button>
+
       {/* ── Ambient background orbs ── */}
       <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none select-none">
         <div className="absolute -top-32 -left-32 w-[560px] h-[560px] rounded-full bg-brand-700/25 blur-[100px] animate-orb-drift-1" />

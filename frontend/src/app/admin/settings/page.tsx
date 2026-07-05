@@ -62,7 +62,7 @@ interface SettingField {
   key: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "url" | "email" | "tel" | "number" | "textarea" | "boolean";
+  type?: "text" | "url" | "email" | "tel" | "number" | "textarea" | "boolean" | "datetime-local";
   hint?: string;
   upload?: boolean;
   accept?: "image" | "video" | "both";
@@ -233,6 +233,22 @@ const SECTIONS: Section[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════════
+  // FLASH SALE
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: "flash_sale",
+    title: "Flash Sale",
+    icon: <Zap className="w-4 h-4" />,
+    fields: [
+      { key: "feature_flash_sale", label: "Enable Flash Sale", type: "boolean", hint: "Shows the homepage countdown banner" },
+      { key: "flash_sale_title_en", label: "Title (EN)", placeholder: "Flash Sale" },
+      { key: "flash_sale_title_bn", label: "Title (বাংলা)", placeholder: "ফ্ল্যাশ সেল" },
+      { key: "flash_sale_start", label: "Start (optional)", type: "datetime-local", hint: "Leave blank to start immediately" },
+      { key: "flash_sale_end", label: "End", type: "datetime-local", hint: "Countdown target. Blank = end of this week (Sun 23:59)." },
+    ],
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
   // FEATURES & TOOLS
   // ═══════════════════════════════════════════════════════════════════════
   {
@@ -240,7 +256,6 @@ const SECTIONS: Section[] = [
     title: "Site Features",
     icon: <Zap className="w-4 h-4" />,
     fields: [
-      { key: "feature_flash_sale", label: "Flash Sale", type: "boolean", hint: "Homepage countdown" },
       { key: "feature_coupons", label: "Coupons", type: "boolean", hint: "Checkout coupon field" },
       { key: "feature_guest_checkout", label: "Guest Checkout", type: "boolean" },
       { key: "feature_newsletter", label: "Newsletter", type: "boolean", hint: "Footer signup" },
