@@ -132,26 +132,26 @@ export default function Navbar() {
                   <SearchSuggestions query={searchQuery} onSelect={() => { setSearchOpen(false); setSearchQuery(""); }} />
                 </div>
                 <button type="button" aria-label="Close search" onClick={() => setSearchOpen(false)}
-                  className="ml-1 w-8 h-8 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100/80 dark:hover:bg-white/10 transition-all duration-200">
+                  className="ml-1 w-11 h-11 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100/80 dark:hover:bg-white/10 transition-all duration-200 touch-manipulation">
                   <X className="w-4 h-4" />
                 </button>
               </form>
             ) : (
               <button type="button" onClick={() => setSearchOpen(true)}
-                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200"
+                className="w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation"
                 aria-label={t("nav_search")}>
                 <Search className="w-[17px] h-[17px]" />
               </button>
             )}
 
             <button type="button" onClick={toggleTheme}
-              className="w-8 h-8 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200"
+              className="w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation"
               aria-label="Toggle dark mode">
               {theme === "dark" ? <Sun className="w-[17px] h-[17px]" /> : <Moon className="w-[17px] h-[17px]" />}
             </button>
 
             <button type="button" onClick={toggle}
-              className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] sm:text-xs font-semibold border border-brand-200/80 text-brand-700 hover:bg-brand-50/80 hover:scale-105 active:scale-95 transition-all duration-200 dark:border-brand-700/70 dark:text-brand-300"
+              className="flex items-center gap-1 px-3 h-11 rounded-full text-[10px] sm:text-xs font-semibold border border-brand-200/80 text-brand-700 hover:bg-brand-50/80 hover:scale-105 active:scale-95 transition-all duration-200 dark:border-brand-700/70 dark:text-brand-300 touch-manipulation"
               aria-label="Toggle language">
               <Globe className="w-3 h-3" />
               {lang === "en" ? "বাং" : "EN"}
@@ -178,7 +178,7 @@ export default function Navbar() {
             </Link>
 
             <button type="button" onClick={() => setMobileOpen((v) => !v)}
-              className="lg:hidden w-8 h-8 flex items-center justify-center rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200"
+              className="lg:hidden w-11 h-11 flex items-center justify-center rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation"
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}>
               {mobileOpen ? <X className="w-[18px] h-[18px]" /> : <Menu className="w-[18px] h-[18px]" />}
