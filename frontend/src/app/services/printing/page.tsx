@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,6 +10,7 @@ import { bookingsApi, isQueuedResponse } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
+import { saveOrderSnapshot } from "@/lib/orderSnapshot";
 import PageHero from "@/components/ui/PageHero";
 
 const schema = z.object({
@@ -31,6 +33,7 @@ const PRINT_SERVICES = [
 
 export default function PrintingPage() {
   const { lang } = useLanguageStore();
+  const router = useRouter();
   const [isSuccess, setIsSuccess] = useState(false);
   const [queued, setQueued] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,7 +56,31 @@ export default function PrintingPage() {
         customer_phone: data.customer_phone,
         details: data.details,
       });
-      setQueued(isQueuedResponse(response));
+      const wasQueued = isQueuedResponse(response);
+      setQueued(wasQueued);
+
+      // Same as an order: send the customer to the invoice/receipt page with
+      // their booking (reference) number, downloadable invoice and status.
+      const created = response.data?.data as { booking_id?: string; booking_number?: string } | null;
+      if (!wasQueued && created?.booking_id) {
+        const svc = PRINT_SERVICES.find((s) => s.value === data.service_subtype);
+        saveOrderSnapshot({
+          kind: "booking",
+          reference: created.booking_id,
+          phone: data.customer_phone,
+          customer_name: data.customer_name,
+          payment_method: "pending",
+          items: [{ name: svc?.label.en ?? data.service_subtype, quantity: 1, price: 0, subtotal: 0 }],
+          subtotal: 0,
+          delivery_charge: 0,
+          total: 0,
+          booking_number: created.booking_number,
+          service_name: "Printing Service",
+          created_at: new Date().toISOString(),
+        });
+        router.push(`/booking-success?booking=${created.booking_id}&phone=${encodeURIComponent(data.customer_phone)}`);
+        return;
+      }
       setIsSuccess(true);
     } catch {
       setSubmitError(
