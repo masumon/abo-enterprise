@@ -61,3 +61,28 @@ export function getWeeklySaleEnd(): Date {
   end.setHours(23, 59, 59, 999);
   return end;
 }
+
+/**
+ * Resolve the flash-sale end time from the admin-configured setting
+ * (a `datetime-local` string like "2026-07-10T18:00"). Falls back to the
+ * end of the current week when the admin hasn't set one or it's invalid,
+ * so behaviour is unchanged when the field is left blank.
+ */
+export function resolveFlashSaleEnd(endSetting?: string | null): Date {
+  if (endSetting && endSetting.trim()) {
+    const parsed = new Date(endSetting);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+  return getWeeklySaleEnd();
+}
+
+/** True when the flash-sale window is currently open given admin settings. */
+export function isFlashSaleActive(startSetting: string | null | undefined, end: Date): boolean {
+  const now = Date.now();
+  if (end.getTime() <= now) return false;
+  if (startSetting && startSetting.trim()) {
+    const start = new Date(startSetting);
+    if (!Number.isNaN(start.getTime()) && start.getTime() > now) return false;
+  }
+  return true;
+}

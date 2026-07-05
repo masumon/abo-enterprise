@@ -8,8 +8,9 @@ import { useCartStore } from "@/store/cart";
 import ProductCard from "@/components/features/ProductCard";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import type { Product } from "@/types";
-import CountdownTimer, { getWeeklySaleEnd } from "@/components/ui/CountdownTimer";
+import CountdownTimer, { resolveFlashSaleEnd, isFlashSaleActive } from "@/components/ui/CountdownTimer";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
 import type { CatalogSource } from "@/lib/catalogLoader";
 import { loadProducts, peekCachedProducts } from "@/lib/catalogLoader";
@@ -23,6 +24,16 @@ export default function FeaturedProducts() {
   const [usingDemo, setUsingDemo] = useState(false);
   const [catalogSource, setCatalogSource] = useState<CatalogSource>("api");
   const flashSaleEnabled = useFeatureFlag("feature_flash_sale");
+
+  // Admin-controlled flash-sale window & label (Settings → Flash Sale).
+  const { settings } = usePublicSettings();
+  const flashEnd = resolveFlashSaleEnd(getSettingValue(settings, "flash_sale_end"));
+  const flashStart = getSettingValue(settings, "flash_sale_start");
+  const flashTitle =
+    lang === "bn"
+      ? getSettingValue(settings, "flash_sale_title_bn") || "ফ্ল্যাশ সেল"
+      : getSettingValue(settings, "flash_sale_title_en") || "Flash Sale";
+  const showFlashSale = flashSaleEnabled && isFlashSaleActive(flashStart, flashEnd);
 
   useEffect(() => {
     const params = { featured: true, per_page: 8 };
@@ -71,9 +82,9 @@ export default function FeaturedProducts() {
     <section id="products" className="py-16 gradient-surface">
       <div className="container mx-auto px-4">
         <div className="section-title text-center mb-10">
-          {flashSaleEnabled && (
+          {showFlashSale && (
             <div className="flex flex-col items-center gap-2 mb-2">
-              <CountdownTimer endDate={getWeeklySaleEnd()} label={lang === "bn" ? "ফ্ল্যাশ সেল" : "Flash Sale"} />
+              <CountdownTimer endDate={flashEnd} label={flashTitle} />
             </div>
           )}
           <h2>{lang === "bn" ? "জনপ্রিয় পণ্য" : "Featured Products"}</h2>
