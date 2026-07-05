@@ -77,7 +77,7 @@ export default function Hero() {
 
   return (
     <section
-      className="gradient-hero min-h-[92vh] flex items-center relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-offset)]"
+      className="gradient-hero min-h-[92vh] min-h-[92dvh] flex items-center relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-offset)]"
       style={heroImage ? {
         backgroundImage: `linear-gradient(135deg, rgba(21,101,192,0.92) 0%, rgba(13,71,161,0.88) 50%, rgba(233,30,99,0.75) 100%), url(${heroImage})`,
         backgroundSize: "cover",

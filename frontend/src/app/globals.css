@@ -775,3 +775,19 @@
     100% { opacity: 0; transform: scale(1.015); }
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+   Mobile input zoom guard (iOS Safari)
+   iOS auto-zooms the viewport when a focused form control renders below
+   16px, which jars the layout on checkout, login, search and booking
+   forms. Force >=16px on phones only — desktop keeps its compact sizing,
+   and pinch-zoom stays enabled (we never set maximum-scale=1).
+   Unlayered so it reliably wins over Tailwind's text-sm/text-xs utilities.
+   ────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}

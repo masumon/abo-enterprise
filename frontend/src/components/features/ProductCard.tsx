@@ -131,16 +131,17 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
 
       <div className={cn(
         "absolute top-3 right-3 z-20 flex flex-col gap-1.5 transition-opacity",
+        // Always visible on touch (mobile/tablet); reveal on hover for desktop.
         "opacity-100 lg:opacity-0",
-        (actionsOpen || actionsOpen) && "lg:opacity-100"
+        actionsOpen && "lg:opacity-100"
       )}>
-        <button type="button" onClick={handleWishlist} className={cn("w-8 h-8 rounded-lg glass flex items-center justify-center pointer-events-auto touch-manipulation", wished ? "text-accent-500" : "text-gray-500")} aria-label={t("wishlist")}>
+        <button type="button" onClick={handleWishlist} className={cn("w-9 h-9 rounded-lg glass flex items-center justify-center pointer-events-auto touch-manipulation", wished ? "text-accent-500" : "text-gray-500")} aria-label={t("wishlist")}>
           <Heart className={cn("w-4 h-4", wished && "fill-current")} />
         </button>
-        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addCompare(product); toast("info", lang === "bn" ? "তুলনায় যোগ" : "Added to compare"); }} disabled={isCompared(productId)} className="w-8 h-8 rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation" aria-label={t("compare")}>
+        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addCompare(product); toast("info", lang === "bn" ? "তুলনায় যোগ" : "Added to compare"); }} disabled={isCompared(productId)} className="w-9 h-9 rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation" aria-label={t("compare")}>
           <GitCompare className="w-4 h-4" />
         </button>
-        <Link href={`/products/${product.slug}`} className="w-8 h-8 rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation" aria-label={t("view_details")}>
+        <Link href={`/products/${product.slug}`} className="w-9 h-9 rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation" aria-label={t("view_details")}>
           <Eye className="w-4 h-4" />
         </Link>
       </div>
