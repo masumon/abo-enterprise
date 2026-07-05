@@ -2,7 +2,7 @@
 
 import { Truck, Phone, Mail, MapPin, CheckCircle2, Clock } from "lucide-react";
 import type { PublicInvoiceData } from "@/lib/api";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { getBrandTagline } from "@/lib/tokens";
 import {
@@ -30,6 +30,24 @@ export default function InvoiceCard({ invoice, lang }: Props) {
 
   return (
     <div className="relative bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl overflow-hidden text-left shadow-xl shadow-brand-900/[0.07]">
+      {/* ── Paid/pending watermark stamp — the realistic paper-invoice touch ── */}
+      <div
+        aria-hidden
+        className={cn(
+          "absolute inset-0 flex items-center justify-center pointer-events-none select-none z-0",
+          isPaid ? "opacity-[0.07] dark:opacity-[0.09]" : "opacity-[0.055] dark:opacity-[0.075]"
+        )}
+      >
+        <span
+          className={cn(
+            "font-black uppercase tracking-[0.15em] text-6xl sm:text-7xl -rotate-[18deg] border-4 rounded-2xl px-6 py-2 whitespace-nowrap",
+            isPaid ? "text-green-600 border-green-600" : "text-amber-600 border-amber-600"
+          )}
+        >
+          {isPaid ? (bn ? "পরিশোধিত" : "PAID") : (bn ? "বকেয়া" : "DUE")}
+        </span>
+      </div>
+
       {/* ── Header ── */}
       <div className="gradient-brand relative px-5 sm:px-6 py-5 overflow-hidden">
         {/* decorative sheen */}
@@ -135,6 +153,7 @@ export default function InvoiceCard({ invoice, lang }: Props) {
               <tr className="bg-gray-50 dark:bg-gray-800/60 text-[10px] uppercase tracking-wider text-muted">
                 <th className="text-left px-3.5 py-2.5 font-semibold">{bn ? "আইটেম" : "Item"}</th>
                 <th className="text-center px-2 py-2.5 font-semibold w-14">{bn ? "পরিমাণ" : "Qty"}</th>
+                <th className="text-right px-2 py-2.5 font-semibold hidden sm:table-cell">{bn ? "একক মূল্য" : "Rate"}</th>
                 <th className="text-right px-3.5 py-2.5 font-semibold">{bn ? "মূল্য" : "Amount"}</th>
               </tr>
             </thead>
@@ -146,6 +165,9 @@ export default function InvoiceCard({ invoice, lang }: Props) {
                 >
                   <td className="px-3.5 py-2.5 text-heading">{item.name}</td>
                   <td className="px-2 py-2.5 text-center text-muted">{item.quantity}</td>
+                  <td className="px-2 py-2.5 text-right text-muted whitespace-nowrap hidden sm:table-cell">
+                    {formatPrice(item.price)}
+                  </td>
                   <td className="px-3.5 py-2.5 text-right font-medium text-heading whitespace-nowrap">
                     {formatPrice(item.subtotal ?? item.price * item.quantity)}
                   </td>
@@ -205,6 +227,11 @@ export default function InvoiceCard({ invoice, lang }: Props) {
             </span>
           </span>
         </div>
+        <p className="text-center text-[10px] text-muted/70 mt-3 pt-2 border-t border-dashed border-gray-200 dark:border-gray-700">
+          {bn
+            ? "এটি একটি কম্পিউটার-জেনারেটেড ইনভয়েস, স্বাক্ষরের প্রয়োজন নেই।"
+            : "This is a computer-generated invoice and does not require a signature."}
+        </p>
       </div>
     </div>
   );

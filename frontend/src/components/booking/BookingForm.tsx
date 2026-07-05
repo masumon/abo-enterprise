@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +11,8 @@ import type { Service } from "@/types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
+import { BD_DISTRICTS } from "@/lib/bdDistricts";
+import { getUpazilasForDistrict } from "@/lib/bdUpazilas";
 
 const bookingSchema = z.object({
   customer_name: z.string().min(2, "Name must be at least 2 characters"),
@@ -18,6 +20,8 @@ const bookingSchema = z.object({
   customer_email: z.string().email("Invalid email address"),
   customer_company: z.string().optional(),
   booking_date: z.string().optional(),
+  district: z.string().optional(),
+  upazila: z.string().optional(),
   details: z.string().min(10, "Please provide more details"),
   service_tier: z.string().optional(),
   quoted_price: z.number().optional(),
@@ -49,6 +53,8 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
     reset,
   } = useForm<BookingFormData>({
@@ -59,6 +65,12 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
     },
   });
 
+  const selectedDistrict = watch("district");
+  const upazilaOptions = useMemo(
+    () => (selectedDistrict ? getUpazilasForDistrict(selectedDistrict) : []),
+    [selectedDistrict]
+  );
+
   async function onSubmit(data: BookingFormData) {
     try {
       setSubmitting(true);
@@ -67,6 +79,8 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
 
       const selectedTier = service.pricing_tiers?.find((t) => t.tier_name === data.service_tier);
       const quotedPrice = selectedTier?.price ?? service.base_price ?? data.quoted_price;
+      const location = [data.upazila, data.district].filter(Boolean).join(", ");
+      const details = location ? `Location: ${location}\n\n${data.details}` : data.details;
 
       const r = await serviceBookingsApi.create({
         service_id: service.id,
@@ -78,7 +92,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         booking_date: data.booking_date ? new Date(data.booking_date).toISOString() : undefined,
         pricing_type: service.pricing_type,
         quoted_price: quotedPrice,
-        details: data.details,
+        details,
       });
 
       if (isQueuedResponse(r)) {
@@ -196,6 +210,30 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       <div>
         <label className="form-label">Preferred Booking Date (Optional)</label>
         <input type="date" {...register("booking_date")} className="input" />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="form-label">District (Optional)</label>
+          <select
+            {...register("district")}
+            onChange={(e) => {
+              register("district").onChange(e);
+              setValue("upazila", "");
+            }}
+            className="input"
+          >
+            <option value="">Select</option>
+            {BD_DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="form-label">Upazila / Thana (Optional)</label>
+          <select {...register("upazila")} className="input" disabled={!selectedDistrict}>
+            <option value="">Select</option>
+            {upazilaOptions.map((u) => <option key={u} value={u}>{u}</option>)}
+          </select>
+        </div>
       </div>
 
       {hasTiers && (
