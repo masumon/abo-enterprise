@@ -516,9 +516,9 @@ class AssistantOrchestrator:
                 links = self.response.service_links(svc_dicts)
                 return self.response.service_list(lang, svc_dicts), {"services": svc_dicts}, links
 
-        if flags.web_search:
+        if flags.web_search and cleaned:
             from app.assistant.web_search import search_web
-            web = await search_web(query)
+            web = await search_web(cleaned)
             if web:
                 return self.response.web_enriched(lang, web), {"web_search": True}, links
 

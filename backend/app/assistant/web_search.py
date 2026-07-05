@@ -19,15 +19,15 @@ async def search_web(query: str, max_chars: int = 600) -> str | None:
             )
             r.raise_for_status()
             data = r.json()
-            parts: list[str] = []
-            if data.get("AbstractText"):
-                parts.append(str(data["AbstractText"]))
-            for topic in (data.get("RelatedTopics") or [])[:3]:
-                if isinstance(topic, dict) and topic.get("Text"):
-                    parts.append(str(topic["Text"]))
-            if not parts:
+            # Only trust a direct AbstractText. When DuckDuckGo has no single
+            # answer it returns RelatedTopics as a disambiguation list instead
+            # (e.g. "product" -> dot/cross/tensor product) — surfacing those
+            # as if they were an answer reads as nonsense to a customer, so
+            # we treat "no clear abstract" the same as "no result".
+            abstract = data.get("AbstractText")
+            if not abstract:
                 return None
-            text = " ".join(parts)
+            text = str(abstract)
             return text[:max_chars] + ("…" if len(text) > max_chars else "")
     except Exception as exc:
         logger.debug("web_search failed: %s", exc)
