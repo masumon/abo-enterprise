@@ -54,15 +54,9 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-_EXTRA_ORIGINS = [
-    "https://aboenterprise.vercel.app",   # production (no hyphen)
-    "https://abo-enterprise.vercel.app",  # alternative slug
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=list(set(settings.allowed_origins_list + _EXTRA_ORIGINS)),
-    allow_origin_regex=r"https://.*\.vercel\.app",  # all Vercel preview & production URLs
+    allow_origins=settings.allowed_origins_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
