@@ -70,6 +70,18 @@ app.include_router(health_router)
 
 # ==================== EXCEPTION HANDLERS ====================
 
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    forwarded_proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    if forwarded_proto == "https":
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    return response
+
+
 @app.exception_handler(ABOException)
 async def abo_exception_handler(request: Request, exc: ABOException):
     return JSONResponse(
@@ -106,14 +118,6 @@ async def root():
 @app.get("/api/v1/auth/ping", include_in_schema=False)
 async def auth_ping(admin_id: str = Depends(require_admin)):
     """Diagnostic: check DB connectivity and admin existence. Requires admin auth."""
-    import bcrypt
-    from urllib.parse import urlparse
-    try:
-        parsed = urlparse(settings.DATABASE_URL)
-        db_host = f"{parsed.hostname}:{parsed.port or 5432}"
-    except Exception:
-        db_host = "unknown"
-
     try:
         from app.core.database import AsyncSessionLocal
         from app.models.models import AdminUser
@@ -127,11 +131,10 @@ async def auth_ping(admin_id: str = Depends(require_admin)):
             active_count = active_result.scalar()
         return {
             "db": "connected",
-            "db_host": db_host,
             "admin_total": admin_count,
             "admin_active": active_count,
-            "bcrypt_version": bcrypt.__version__,
             "status": "ok" if active_count > 0 else "no_active_admin",
         }
-    except Exception as e:
-        return {"db": "error", "db_host": db_host, "detail": str(e), "status": "error"}
+    except Exception:
+        logger.exception("Admin auth ping failed")
+        return {"db": "error", "status": "error"}

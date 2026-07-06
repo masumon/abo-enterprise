@@ -8,13 +8,18 @@ _url = settings.DATABASE_URL
 _is_supabase = "supabase.co" in _url or "pooler.supabase.com" in _url
 _connect_args = {"ssl": "require"} if _is_supabase else {}
 
+
+def _should_echo_sql() -> bool:
+    return bool(settings.DEBUG) and settings.APP_ENV.strip().lower() != "production"
+
+
 engine = create_async_engine(
     _url,
     pool_size=3,       # keep low for Render Free / Supabase free (max 60 conns)
     max_overflow=5,
     pool_pre_ping=True,
     pool_recycle=300,  # recycle connections every 5 min (avoids stale-conn errors)
-    echo=settings.DEBUG,
+    echo=_should_echo_sql(),
     connect_args=_connect_args,
 )
 
