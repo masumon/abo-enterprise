@@ -23,20 +23,13 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 async def _init_db_and_bootstrap() -> None:
-    """Create any missing tables, sync columns, then bootstrap the admin account."""
-    from app.core.database import engine, Base
-    from app.core.schema_sync import sync_schema
-    try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database tables verified/created.")
-    except Exception as exc:
-        logger.error("Database table creation failed: %s", exc, exc_info=exc)
-        return
-    try:
-        await sync_schema(engine)
-    except Exception as exc:
-        logger.error("Schema sync failed: %s", exc, exc_info=exc)
+    """Bootstrap the admin account and seed content.
+
+    Schema creation and column patches are handled exclusively by Alembic
+    migrations (alembic upgrade head) which run at build time before the
+    service starts.  Runtime DDL (create_all, schema_sync) has been removed
+    to prevent unsafe schema mutations on every cold start.
+    """
     await bootstrap_admin()
     await bootstrap_content()
 
