@@ -1,8 +1,11 @@
-"""Apply idempotent schema patches so SQLAlchemy models match production Postgres.
+"""DEPRECATED — runtime schema mutation has been replaced by Alembic migrations.
 
-The initial Supabase migration (001) predates extended product/service fields in
-the ORM. create_all() only creates missing tables, not missing columns — so
-queries like SELECT products.* fail with 500 until columns are added.
+All column patches previously applied here are now in:
+    alembic/versions/0002_schema_sync_columns.py
+
+This module is kept for reference only.  It is no longer imported or
+called from any application code.  Do NOT re-enable runtime schema sync
+against production.
 """
 
 from __future__ import annotations

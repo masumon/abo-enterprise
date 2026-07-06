@@ -23,20 +23,13 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 async def _init_db_and_bootstrap() -> None:
-    """Create any missing tables, sync columns, then bootstrap the admin account."""
-    from app.core.database import engine, Base
-    from app.core.schema_sync import sync_schema
-    try:
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-        logger.info("Database tables verified/created.")
-    except Exception as exc:
-        logger.error("Database table creation failed: %s", exc, exc_info=exc)
-        return
-    try:
-        await sync_schema(engine)
-    except Exception as exc:
-        logger.error("Schema sync failed: %s", exc, exc_info=exc)
+    """Bootstrap the admin account and seed content.
+
+    Schema creation and column patches are handled exclusively by Alembic
+    migrations (alembic upgrade head) which run at build time before the
+    service starts.  Runtime DDL (create_all, schema_sync) has been removed
+    to prevent unsafe schema mutations on every cold start.
+    """
     await bootstrap_admin()
     await bootstrap_content()
 
@@ -61,15 +54,9 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-_EXTRA_ORIGINS = [
-    "https://aboenterprise.vercel.app",   # production (no hyphen)
-    "https://abo-enterprise.vercel.app",  # alternative slug
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=list(set(settings.allowed_origins_list + _EXTRA_ORIGINS)),
-    allow_origin_regex=r"https://.*\.vercel\.app",  # all Vercel preview & production URLs
+    allow_origins=settings.allowed_origins_list,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -82,6 +69,18 @@ app.include_router(health_router)
 
 
 # ==================== EXCEPTION HANDLERS ====================
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    forwarded_proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    if forwarded_proto == "https":
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    return response
+
 
 @app.exception_handler(ABOException)
 async def abo_exception_handler(request: Request, exc: ABOException):
@@ -119,14 +118,6 @@ async def root():
 @app.get("/api/v1/auth/ping", include_in_schema=False)
 async def auth_ping(admin_id: str = Depends(require_admin)):
     """Diagnostic: check DB connectivity and admin existence. Requires admin auth."""
-    import bcrypt
-    from urllib.parse import urlparse
-    try:
-        parsed = urlparse(settings.DATABASE_URL)
-        db_host = f"{parsed.hostname}:{parsed.port or 5432}"
-    except Exception:
-        db_host = "unknown"
-
     try:
         from app.core.database import AsyncSessionLocal
         from app.models.models import AdminUser
@@ -140,11 +131,10 @@ async def auth_ping(admin_id: str = Depends(require_admin)):
             active_count = active_result.scalar()
         return {
             "db": "connected",
-            "db_host": db_host,
             "admin_total": admin_count,
             "admin_active": active_count,
-            "bcrypt_version": bcrypt.__version__,
             "status": "ok" if active_count > 0 else "no_active_admin",
         }
-    except Exception as e:
-        return {"db": "error", "db_host": db_host, "detail": str(e), "status": "error"}
+    except Exception:
+        logger.exception("Admin auth ping failed")
+        return {"db": "error", "status": "error"}
