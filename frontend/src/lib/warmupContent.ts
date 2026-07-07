@@ -50,43 +50,27 @@ export interface WarmupContent {
 
 export const DEFAULT_WARMUP_CONTENT: WarmupContent = {
   businessShowcase: [
-    { en: "Mobile Accessories", bn: "মোবাইল এক্সেসরিজ" },
-    { en: "Printing Services", bn: "প্রিন্টিং সার্ভিসেস" },
-    { en: "Legal Services", bn: "লিগ্যাল সার্ভিসেস" },
-    { en: "Digital Services", bn: "ডিজিটাল সার্ভিসেস" },
-    { en: "AI Solutions", bn: "AI সলিউশন্স" },
-    { en: "Custom Software", bn: "কাস্টম সফটওয়্যার" },
+    { en: "Loading live business data", bn: "লাইভ ব্যবসার ডেটা লোড হচ্ছে" },
   ],
   trustIndicators: [
-    { value: "12k+", icon: "users", en: "Happy Customers", bn: "সন্তুষ্ট গ্রাহক" },
-    { value: "850+", icon: "package", en: "Products", bn: "পণ্য" },
-    { value: "320+", icon: "briefcase", en: "Business Clients", bn: "ব্যবসায়িক ক্লায়েন্ট" },
-    { value: "100%", icon: "shield-check", en: "Secure Orders", bn: "নিরাপদ অর্ডার" },
+    { value: "--", icon: "users", en: "Syncing", bn: "সিঙ্ক হচ্ছে" },
   ],
   featuredCarousel: [
-    { type: "service", en: "Express Printing", bn: "এক্সপ্রেস প্রিন্টিং" },
-    { type: "product", en: "Fast-Charge Accessories", bn: "ফাস্ট-চার্জ এক্সেসরিজ" },
-    { type: "service", en: "Legal Document Support", bn: "লিগ্যাল ডকুমেন্ট সাপোর্ট" },
-    { type: "service", en: "Business AI Automation", bn: "বিজনেস AI অটোমেশন" },
+    { type: "service", en: "Loading live featured items", bn: "লাইভ ফিচারড আইটেম লোড হচ্ছে" },
   ],
   reviewHighlights: [
     {
-      en: "\u201cGreat quality and fast support. Everything in one platform.\u201d",
-      bn: "\u201c\u09a6\u09be\u09b0\u09c1\u09a3 \u09ae\u09be\u09a8 \u0993 \u09a6\u09cd\u09b0\u09c1\u09a4 \u09b8\u09be\u09aa\u09cb\u09b0\u09cd\u099f\u0964 \u098f\u0995 \u09aa\u09cd\u09b2\u09be\u099f\u09ab\u09b0\u09cd\u09ae\u09c7 \u09b8\u09ac \u09b8\u09ae\u09be\u09a7\u09be\u09a8\u0964\u201d",
-      by: "Rahim Enterprise",
-    },
-    {
-      en: "\u201cReliable services with clear communication and secure delivery.\u201d",
-      bn: "\u201c\u09ac\u09bf\u09b6\u09cd\u09ac\u09be\u09b8\u09af\u09cb\u0997\u09cd\u09af \u09b8\u09c7\u09ac\u09be, \u09b8\u09cd\u09aa\u09b7\u09cd\u099f \u09af\u09cb\u0997\u09be\u09af\u09cb\u0997 \u0993 \u09a8\u09bf\u09b0\u09be\u09aa\u09a6 \u09a1\u09c7\u09b2\u09bf\u09ad\u09be\u09b0\u09bf\u0964\u201d",
-      by: "Nusrat Traders",
+      en: "\u201cLive customer feedback is loading.\u201d",
+      bn: "\u201cলাইভ কাস্টমার ফিডব্যাক লোড হচ্ছে।\u201d",
+      by: "ABO Enterprise",
     },
   ],
-  welcomeEn: "Welcome!",
-  welcomeBn: "\u09b8\u09cd\u09ac\u09be\u0997\u09a4\u09ae\u09cd!",
-  subtitleEn: "All your business solutions in one platform.",
-  subtitleBn: "\u0986\u09aa\u09a8\u09be\u09b0 \u09ac\u09cd\u09af\u09ac\u09b8\u09be\u09b0 \u09b8\u09ac \u09b8\u09ae\u09be\u09a7\u09be\u09a8 \u098f\u0995 \u09aa\u09cd\u09b2\u09be\u099f\u09ab\u09b0\u09cd\u09ae\u09c7\u0964",
-  offerEn: "Free business consultation for new clients today.",
-  offerBn: "\u09a8\u09a4\u09c1\u09a8 \u0995\u09cd\u09b2\u09be\u09df\u09c7\u09a8\u09cd\u099f\u09a6\u09c7\u09b0 \u099c\u09a8\u09cd\u09af \u09ab\u09cd\u09b0\u09bf \u09ac\u09bf\u099c\u09a8\u09c7\u09b8 \u0995\u09a8\u09b8\u09be\u09b2\u09cd\u099f\u09c7\u09b6\u09a8\u0964",
+  welcomeEn: "Loading...",
+  welcomeBn: "লোড হচ্ছে...",
+  subtitleEn: "Fetching live content from server.",
+  subtitleBn: "সার্ভার থেকে লাইভ কনটেন্ট আনা হচ্ছে।",
+  offerEn: "Refreshing with live data.",
+  offerBn: "লাইভ ডেটা দিয়ে রিফ্রেশ করা হচ্ছে।",
 };
 
 function parseJsonArray<T>(raw: string | undefined, fallback: T[]): T[] {

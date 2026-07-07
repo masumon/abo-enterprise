@@ -55,34 +55,32 @@ export default function ProductsClient({
   const [page, setPage] = useState(initialPage);
   const [total, setTotal] = useState(initialTotal);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [usingDemo, setUsingDemo] = useState(initialIsDemo);
-  const [catalogSource, setCatalogSource] = useState<CatalogSource>(initialIsDemo ? "demo" : "api");
+  const [catalogSource, setCatalogSource] = useState<CatalogSource>("api");
   const { openCart } = useCartStore();
   const infiniteScroll = useFeatureFlag("feature_infinite_scroll");
   const sentinelRef = useRef<HTMLDivElement>(null);
   const isFirstLoad = useRef(true);
-  const needsApiRefresh = useRef(initialIsDemo || initialProducts.length === 0);
+  const needsApiRefresh = useRef(initialProducts.length === 0);
   const urlCategory = searchParams.get("category") ?? "";
 
   useEffect(() => {
-    if (!initialIsDemo && initialProducts.length > 0) {
+    if (initialProducts.length > 0) {
       const key = productsCacheKey({
         category: initialCategory || undefined,
         page: initialPage,
       });
       cacheApiResponse(key, { products: initialProducts, total: initialTotal }).catch(() => {});
     }
-  }, [initialIsDemo, initialProducts, initialTotal, initialCategory, initialPage]);
+  }, [initialProducts, initialTotal, initialCategory, initialPage]);
 
   useEffect(() => {
     setProducts(initialProducts);
     setTotal(initialTotal);
     setCategory(initialCategory);
-    setUsingDemo(initialIsDemo);
-    setCatalogSource(initialIsDemo ? "demo" : "api");
+    setCatalogSource("api");
     isFirstLoad.current = true;
-    needsApiRefresh.current = initialIsDemo || initialProducts.length === 0;
-  }, [initialProducts, initialTotal, initialCategory, initialIsDemo]);
+    needsApiRefresh.current = initialProducts.length === 0;
+  }, [initialProducts, initialTotal, initialCategory]);
 
   useEffect(() => {
     const next =
@@ -123,7 +121,6 @@ export default function ProductsClient({
       if (cached) {
         setProducts(cached.products);
         setTotal(cached.total);
-        setUsingDemo(cached.source === "demo");
         setCatalogSource(cached.source);
         setLoading(false);
       }
@@ -133,7 +130,6 @@ export default function ProductsClient({
       const result = await loadProducts(params);
       setProducts((prev) => (append ? [...prev, ...result.products] : result.products));
       setTotal(result.total);
-      setUsingDemo(result.source === "demo");
       setCatalogSource(result.source);
       setPage(pageNum);
     } catch {
@@ -141,12 +137,10 @@ export default function ProductsClient({
       if (cached) {
         setProducts(cached.products);
         setTotal(cached.total);
-        setUsingDemo(cached.source === "demo");
         setCatalogSource(cached.source);
         setError(false);
       } else {
         setError(true);
-        setUsingDemo(false);
         setCatalogSource("api");
       }
     } finally {
@@ -185,7 +179,7 @@ export default function ProductsClient({
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <LoadingProgress loading={loading} message={t("loading_products")} className="mb-6" />
-      <DemoModeBanner show={(usingDemo || catalogSource === "cache") && !loading} source={catalogSource} />
+      <DemoModeBanner show={catalogSource === "cache" && !loading} source={catalogSource} />
 
       <div className="flex flex-col lg:flex-row gap-4 mb-8">
         <div className="relative flex-1">

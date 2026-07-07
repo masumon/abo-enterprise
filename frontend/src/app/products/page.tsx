@@ -5,8 +5,6 @@ import ProductsPageShell from "./ProductsPageShell";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { pageMeta } from "@/lib/metadata";
 import { fetchWithRetry } from "@/lib/fetchRetry";
-import { filterDemoProducts } from "@/lib/demoFallback";
-import { fetchDemoProductsFromSettings } from "@/lib/serverDemoCatalog";
 
 const API_BASE = getApiBaseUrl();
 const VALID_CATEGORIES = new Set(["accessories", "gadgets", "electronics", "computer"]);
@@ -24,15 +22,11 @@ async function fetchProducts(category?: string): Promise<{ products: Product[]; 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     const products = (json.data ?? []) as Product[];
-    if (products.length > 0) {
-      return { products, total: json.meta?.total ?? products.length, isDemo: false };
-    }
-  } catch {
-    // fall through to demo
+    return { products, total: json.meta?.total ?? products.length, isDemo: false };
+  } catch (err) {
+    console.error("products_page_initial_fetch_failed", err);
   }
-  const demoSource = await fetchDemoProductsFromSettings();
-  const demo = filterDemoProducts(demoSource, { category: cat });
-  return { products: demo, total: demo.length, isDemo: true };
+  return { products: [], total: 0, isDemo: false };
 }
 
 export const metadata: Metadata = pageMeta(

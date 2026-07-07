@@ -37,10 +37,6 @@ export function getClientLogos(settings: Record<string, string>, fallback: CmsCl
   return parseJsonArray(getSettingValue(settings, CLIENT_LOGOS_KEY), fallback);
 }
 
-export function getDemoReviews<T>(settings: Record<string, string>, fallback: T[]): T[] {
-  return parseJsonArray(getSettingValue(settings, DEMO_REVIEWS_KEY), fallback);
-}
-
 export function getAboutStoryImage(settings: Record<string, string>): string {
   return getSettingValue(settings, ABOUT_STORY_IMAGE_KEY);
 }

@@ -1,27 +1,102 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from uuid import UUID
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
-from app.core.security import require_admin
-from app.models.models import Setting
+from app.core.security import decode_token, require_admin
+from app.models.models import AdminUser, Setting
 from app.schemas.schemas import SettingOut, SettingUpdate, SettingCreate, ApiResponse
 from typing import Any
 
 router = APIRouter(prefix="/settings", tags=["settings"])
+logger = logging.getLogger(__name__)
+
+_PUBLIC_SETTING_EXACT_KEYS = {
+    "google_maps_embed",
+    "timezone",
+    "maintenance_mode",
+    "trade_license",
+    "whatsapp_number",
+    "contact_phone",
+    "contact_email",
+    "contact_address",
+    "business_email",
+}
+
+_PUBLIC_SETTING_PREFIXES = (
+    "site_",
+    "seo_",
+    "hero_",
+    "about_",
+    "contact_",
+    "social_",
+    "feature_",
+    "flash_sale_",
+    "delivery_",
+    "free_delivery_",
+    "checkout_",
+    "courier_",
+    "warmup_",
+    "showcase_",
+    "software_",
+    "client_",
+    "product_",
+    "service_",
+    "review_",
+)
+
+
+def _is_public_setting_key(key: str) -> bool:
+    if key in _PUBLIC_SETTING_EXACT_KEYS:
+        return True
+    return any(key.startswith(prefix) for prefix in _PUBLIC_SETTING_PREFIXES)
+
+
+async def _is_admin_request(request: Request, db: AsyncSession) -> bool:
+    auth = request.headers.get("authorization", "")
+    if not auth.lower().startswith("bearer "):
+        return False
+
+    token = auth.split(" ", 1)[1].strip()
+    if not token:
+        return False
+
+    try:
+        payload = decode_token(token)
+        if payload.get("type") != "access":
+            return False
+        admin_id = payload.get("sub")
+        admin_uuid = UUID(admin_id)
+    except Exception:
+        return False
+
+    result = await db.execute(
+        select(AdminUser).where(AdminUser.id == admin_uuid, AdminUser.is_active == True)  # noqa: E712
+    )
+    return result.scalar_one_or_none() is not None
 
 
 @router.get("", response_model=ApiResponse)
-async def get_all_settings(db: AsyncSession = Depends(get_db)):
+async def get_all_settings(request: Request, db: AsyncSession = Depends(get_db)):
     """Get all settings (public)"""
     result = await db.execute(select(Setting).where(Setting.is_deleted == False))
     settings = result.scalars().all()
+    is_admin = await _is_admin_request(request, db)
 
     settings_dict = {}
     for setting in settings:
         if setting.is_secret:
-            settings_dict[setting.key] = "***HIDDEN***"
-        else:
+            if is_admin:
+                settings_dict[setting.key] = "***HIDDEN***"
+            continue
+
+        if is_admin or _is_public_setting_key(setting.key):
             settings_dict[setting.key] = setting.value
+
+    if not is_admin:
+        logger.info("Public settings response filtered: %s keys", len(settings_dict))
 
     return ApiResponse(success=True, data=settings_dict, message="Settings retrieved")
 
@@ -55,7 +130,7 @@ async def upsert_settings(payload: list[SettingCreate], db: AsyncSession = Depen
 
 
 @router.get("/{key}", response_model=ApiResponse)
-async def get_setting(key: str, db: AsyncSession = Depends(get_db)):
+async def get_setting(key: str, request: Request, db: AsyncSession = Depends(get_db)):
     """Get specific setting by key"""
     result = await db.execute(
         select(Setting).where((Setting.key == key) & (Setting.is_deleted == False))
@@ -67,6 +142,10 @@ async def get_setting(key: str, db: AsyncSession = Depends(get_db)):
 
     if setting.is_secret:
         raise HTTPException(status_code=403, detail="Cannot access secret settings")
+
+    is_admin = await _is_admin_request(request, db)
+    if not is_admin and not _is_public_setting_key(setting.key):
+        raise HTTPException(status_code=403, detail="Setting is not public")
 
     return ApiResponse(success=True, data={"key": setting.key, "value": setting.value})
 

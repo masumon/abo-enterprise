@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { setDemoSettings } from "@/lib/demoFallback";
 import { cacheApiResponse, getCachedApiResponse, SETTINGS_CACHE_KEY } from "@/lib/apiCache";
 import { isOffline } from "@/lib/networkStatus";
 
@@ -18,7 +17,6 @@ async function fetchSettings(): Promise<Record<string, string>> {
   const cached = await loadCachedSettings();
   if (cached && Object.keys(cached).length > 0) {
     memoryCache = cached;
-    setDemoSettings(cached);
     if (isOffline()) return cached;
   }
 
@@ -30,14 +28,13 @@ async function fetchSettings(): Promise<Record<string, string>> {
     })
     .then(async (r) => {
       memoryCache = r.data.data ?? {};
-      setDemoSettings(memoryCache);
       await cacheApiResponse(SETTINGS_CACHE_KEY, memoryCache, 7 * 24 * 60);
       return memoryCache;
     })
-    .catch(async () => {
+    .catch(async (err) => {
+      console.warn("public_settings_fetch_failed", err);
       if (cached && Object.keys(cached).length > 0) return cached;
       memoryCache = {};
-      setDemoSettings(memoryCache);
       return memoryCache;
     })
     .finally(() => {
@@ -58,7 +55,6 @@ export function usePublicSettings(keys?: string[]) {
     loadCachedSettings().then((cached) => {
       if (!active || !cached || Object.keys(cached).length === 0) return;
       memoryCache = cached;
-      setDemoSettings(cached);
       if (keys?.length) {
         const subset: Record<string, string> = {};
         for (const k of keys) subset[k] = cached[k] ?? "";

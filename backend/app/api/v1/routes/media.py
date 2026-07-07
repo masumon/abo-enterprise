@@ -1,73 +1,116 @@
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException
+from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.config import settings
 from app.models.models import MediaAsset
 import uuid
 from datetime import datetime, timezone
-import mimetypes
+import cloudinary
+import cloudinary.uploader
 
 router = APIRouter(prefix="/media", tags=["media"])
+
+cloudinary.config(
+    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
+    api_key=settings.CLOUDINARY_API_KEY,
+    api_secret=settings.CLOUDINARY_API_SECRET,
+)
 
 
 @router.post("/upload-with-metadata")
 async def upload_with_metadata(
     file: UploadFile = File(...),
-    folder: str = "abo-enterprise/uploads",
+    folder: str = Query("abo-enterprise/uploads"),
     db: AsyncSession = Depends(get_db),
-    admin = Depends(require_admin),
+    admin_id: str = Depends(require_admin),
 ):
     """Upload file and store metadata (width, height, size, format)"""
+    if not settings.CLOUDINARY_CLOUD_NAME or not settings.CLOUDINARY_API_KEY or not settings.CLOUDINARY_API_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Cloudinary is not configured on the backend.",
+        )
+
+    contents = await file.read()
+    file_size = len(contents)
+    if not contents:
+        raise HTTPException(status_code=400, detail="Empty file")
+
+    mime_type = (file.content_type or "application/octet-stream").lower().strip()
+    is_image = mime_type.startswith("image/")
+    is_video = mime_type.startswith("video/")
+    if not is_image and not is_video:
+        raise HTTPException(status_code=400, detail="Unsupported file type")
+
+    max_size = 50 * 1024 * 1024 if is_video else 5 * 1024 * 1024
+    if file_size > max_size:
+        limit = "50MB" if is_video else "5MB"
+        raise HTTPException(status_code=413, detail=f"File must be under {limit}")
+
+    width = None
+    height = None
+    if is_image:
+        try:
+            from PIL import Image as PILImage
+            from io import BytesIO
+
+            img = PILImage.open(BytesIO(contents))
+            width, height = img.size
+        except Exception:
+            width, height = None, None
+
+    safe_folder = folder.strip("/").replace("..", "") or "abo-enterprise/uploads"
+    upload_opts: dict = {"folder": safe_folder}
+    if is_video:
+        upload_opts["resource_type"] = "video"
+    else:
+        upload_opts["resource_type"] = "image"
+        upload_opts["transformation"] = [{"quality": "auto", "fetch_format": "auto"}]
+
     try:
-        contents = await file.read()
-        file_size = len(contents)
-
-        mime_type = file.content_type or "application/octet-stream"
-        format = mime_type.split("/")[-1] if "/" in mime_type else "unknown"
-
-        width = None
-        height = None
-        if mime_type.startswith("image/"):
-            try:
-                from PIL import Image as PILImage
-                from io import BytesIO
-                img = PILImage.open(BytesIO(contents))
-                width, height = img.size
-            except Exception:
-                pass
-
+        cloudinary_result = cloudinary.uploader.upload(contents, **upload_opts)
         media_asset = MediaAsset(
             id=uuid.uuid4(),
-            url=f"https://res.cloudinary.com/{folder}/{file.filename}",
+            url=cloudinary_result["secure_url"],
             filename=file.filename,
-            folder=folder,
+            folder=safe_folder,
             file_size=file_size,
             mime_type=mime_type,
-            width=width,
-            height=height,
-            format=format,
-            uploaded_by=getattr(admin, "username", "unknown"),
+            width=cloudinary_result.get("width") or width,
+            height=cloudinary_result.get("height") or height,
+            format=cloudinary_result.get("format"),
+            cloudinary_public_id=cloudinary_result.get("public_id"),
+            uploaded_by=admin_id,
             created_at=datetime.now(timezone.utc),
             updated_at=datetime.now(timezone.utc),
         )
 
         db.add(media_asset)
         await db.commit()
+        await db.refresh(media_asset)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Media upload failed. Please verify Cloudinary credentials and quota.",
+        ) from exc
 
-        return {
-            "success": True,
-            "data": {
-                "id": str(media_asset.id),
-                "url": media_asset.url,
-                "width": width,
-                "height": height,
-                "size": file_size,
-                "format": format,
-            }
-        }
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    return {
+        "success": True,
+        "data": {
+            "id": str(media_asset.id),
+            "url": media_asset.url,
+            "public_id": media_asset.cloudinary_public_id,
+            "width": media_asset.width,
+            "height": media_asset.height,
+            "size": media_asset.file_size,
+            "format": media_asset.format,
+        },
+    }
 
 
 @router.get("/assets")
