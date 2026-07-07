@@ -11,15 +11,12 @@ import PageHero from "@/components/ui/PageHero";
 import GlassCard from "@/components/ui/GlassCard";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import { useToastStore } from "@/store/toast";
+import { cacheApiResponse, getCachedApiResponse } from "@/lib/apiCache";
 
-import { usePublicSettings } from "@/hooks/usePublicSettings";
-import { DEMO_REVIEWS_KEY, getDemoReviews } from "@/lib/cmsContent";
-
-const FALLBACK: Review[] = [];
+const TESTIMONIALS_CACHE_KEY = "reviews:testimonials";
 
 export default function TestimonialsClient() {
   const { lang } = useLanguageStore();
-  const { settings } = usePublicSettings([DEMO_REVIEWS_KEY]);
   const toast = useToastStore((s) => s.push);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,13 +26,33 @@ export default function TestimonialsClient() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const demo = getDemoReviews<Review>(settings, FALLBACK);
+    getCachedApiResponse<Review[]>(TESTIMONIALS_CACHE_KEY)
+      .then((cached) => {
+        if (cached?.length) {
+          setReviews(cached);
+          setLoading(false);
+        }
+      })
+      .catch((err) => console.warn("testimonials_cache_read_failed", err));
+
     reviewsApi
       .list({ per_page: 12 })
-      .then((r) => setReviews(r.data.data?.length ? r.data.data : demo))
-      .catch(() => setReviews(demo))
+      .then((r) => {
+        const data = r.data.data ?? [];
+        setReviews(data);
+        if (data.length) {
+          cacheApiResponse(TESTIMONIALS_CACHE_KEY, data, 24 * 60).catch((err) =>
+            console.warn("testimonials_cache_write_failed", err)
+          );
+        }
+      })
+      .catch(async (err) => {
+        console.warn("testimonials_fetch_failed", err);
+        const cached = await getCachedApiResponse<Review[]>(TESTIMONIALS_CACHE_KEY);
+        setReviews(cached ?? []);
+      })
       .finally(() => setLoading(false));
-  }, [settings]);
+  }, []);
 
   const avg = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1) : "5.0";
 

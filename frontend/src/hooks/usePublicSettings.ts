@@ -31,7 +31,8 @@ async function fetchSettings(): Promise<Record<string, string>> {
       await cacheApiResponse(SETTINGS_CACHE_KEY, memoryCache, 7 * 24 * 60);
       return memoryCache;
     })
-    .catch(async () => {
+    .catch(async (err) => {
+      console.warn("public_settings_fetch_failed", err);
       if (cached && Object.keys(cached).length > 0) return cached;
       memoryCache = {};
       return memoryCache;

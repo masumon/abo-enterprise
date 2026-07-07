@@ -77,7 +77,8 @@ export async function loadProducts(params: ProductLoadParams): Promise<ProductsL
       return { products, total, source: "api" };
     }
     return { products: [], total: 0, source: "api" };
-  } catch {
+  } catch (err) {
+    console.warn("catalog_load_products_failed", err);
     if (cached?.products?.length) {
       return { products: cached.products, total: cached.total, source: "cache" };
     }
@@ -119,7 +120,8 @@ export async function loadServices(params: ServiceLoadParams): Promise<ServicesL
       return { services, total, source: "api" };
     }
     return { services: [], total: 0, source: "api" };
-  } catch {
+  } catch (err) {
+    console.warn("catalog_load_services_failed", err);
     if (cached?.services?.length) {
       return { services: cached.services, total: cached.total, source: "cache" };
     }
@@ -167,7 +169,8 @@ export async function loadProductBySlug(slug: string): Promise<{ product: Produc
       return { product, source: "api" };
     }
     return { product: cached, source: cached ? "cache" : "api" };
-  } catch {
+  } catch (err) {
+    console.warn("catalog_load_product_by_slug_failed", err);
     return { product: cached, source: cached ? "cache" : "api" };
   }
 }

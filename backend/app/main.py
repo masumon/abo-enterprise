@@ -30,6 +30,10 @@ async def _init_db_and_bootstrap() -> None:
     service starts.  Runtime DDL (create_all, schema_sync) has been removed
     to prevent unsafe schema mutations on every cold start.
     """
+    if not settings.STARTUP_BOOTSTRAP_ENABLED:
+        logger.info("Startup bootstrap disabled (STARTUP_BOOTSTRAP_ENABLED=false)")
+        return
+
     await bootstrap_admin()
     await bootstrap_content()
 

@@ -7,28 +7,46 @@ import { Star, BadgeCheck } from "lucide-react";
 import { reviewsApi } from "@/lib/api";
 import type { Review } from "@/types";
 import { useLanguageStore } from "@/store/language";
-import { usePublicSettings } from "@/hooks/usePublicSettings";
-import { getDemoReviews, DEMO_REVIEWS_KEY } from "@/lib/cmsContent";
+import { cacheApiResponse, getCachedApiResponse } from "@/lib/apiCache";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import GlassCard from "@/components/ui/GlassCard";
 import { resolveReviewPhoto } from "@/lib/demoImages";
 
+const FEATURED_REVIEWS_CACHE_KEY = "reviews:featured";
+
 export default function CustomerReviews() {
   const { lang } = useLanguageStore();
-  const { settings } = usePublicSettings([DEMO_REVIEWS_KEY]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    getCachedApiResponse<Review[]>(FEATURED_REVIEWS_CACHE_KEY)
+      .then((cached) => {
+        if (cached?.length) {
+          setReviews(cached);
+          setLoading(false);
+        }
+      })
+      .catch((err) => console.warn("featured_reviews_cache_read_failed", err));
+
     reviewsApi
       .list({ featured: true, per_page: 4 })
       .then((r) => {
         const data = r.data.data ?? [];
-        setReviews(data.length ? data : getDemoReviews<Review>(settings, []));
+        setReviews(data);
+        if (data.length) {
+          cacheApiResponse(FEATURED_REVIEWS_CACHE_KEY, data, 24 * 60).catch((err) =>
+            console.warn("featured_reviews_cache_write_failed", err)
+          );
+        }
       })
-      .catch(() => setReviews(getDemoReviews<Review>(settings, [])))
+      .catch(async (err) => {
+        console.warn("featured_reviews_fetch_failed", err);
+        const cached = await getCachedApiResponse<Review[]>(FEATURED_REVIEWS_CACHE_KEY);
+        setReviews(cached ?? []);
+      })
       .finally(() => setLoading(false));
-  }, [settings]);
+  }, []);
 
   const avg = reviews.length
     ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
