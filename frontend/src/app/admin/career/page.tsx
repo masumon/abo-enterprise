@@ -6,6 +6,7 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Search, Loader2, ChevronLeft, ChevronRight, Trash2, Eye, AlertCircle, Check, Clock } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import { apiErrorMessage } from "@/lib/apiError";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 interface CareerApp {
   id: string;
@@ -40,6 +41,7 @@ export default function CareerAdminPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedApp, setSelectedApp] = useState<CareerAppDetail | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
   const toast = useToastStore((s) => s.push);
   const per_page = 20;
@@ -90,7 +92,6 @@ export default function CareerAdminPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this application?")) return;
     setDeleting(id);
     try {
       await careerAdminApi.delete(id);
@@ -101,6 +102,7 @@ export default function CareerAdminPage() {
       toast("error", apiErrorMessage(err, "Failed to delete application"));
     } finally {
       setDeleting(null);
+      setDeleteTargetId(null);
     }
   };
 
@@ -197,7 +199,7 @@ export default function CareerAdminPage() {
                         View
                       </button>
                       <button
-                        onClick={() => handleDelete(app.id)}
+                        onClick={() => setDeleteTargetId(app.id)}
                         disabled={deleting === app.id}
                         className="inline-flex items-center gap-1 px-2 py-1 rounded bg-red-50 text-red-600 hover:bg-red-100 text-xs font-medium disabled:opacity-60"
                       >
@@ -345,6 +347,16 @@ export default function CareerAdminPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteTargetId !== null}
+        title="Delete Application?"
+        message="This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => deleteTargetId && handleDelete(deleteTargetId)}
+        onCancel={() => setDeleteTargetId(null)}
+      />
     </div>
   );
 }

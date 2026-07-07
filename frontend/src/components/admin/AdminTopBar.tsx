@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, Menu, Bell, RotateCw } from "lucide-react";
+import { ChevronRight, Menu, Bell, RotateCw, Languages } from "lucide-react";
 import { getAdminPageTitle } from "@/lib/adminNav";
 import { useAlertStore } from "@/store/alerts";
+import { useLanguageStore } from "@/store/language";
 import { useState } from "react";
 
 interface Props {
@@ -15,7 +16,8 @@ interface Props {
 
 export default function AdminTopBar({ adminName, adminRole, onMenuClick }: Props) {
   const pathname = usePathname();
-  const pageTitle = getAdminPageTitle(pathname);
+  const { lang, toggle: toggleLang } = useLanguageStore();
+  const pageTitle = getAdminPageTitle(pathname, lang);
   const { pendingOrders, pendingBookings, newLeads } = useAlertStore();
   const alertTotal = pendingOrders + pendingBookings + newLeads;
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -43,7 +45,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick }: Props
 
         <nav className="flex items-center gap-1.5 text-sm min-w-0 flex-1" aria-label="Breadcrumb">
           <Link href="/admin" className="text-gray-400 hover:text-brand-600 transition-colors shrink-0">
-            Admin
+            {lang === "bn" ? "অ্যাডমিন" : "Admin"}
           </Link>
           {pathname !== "/admin" && (
             <>
@@ -54,6 +56,15 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick }: Props
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={toggleLang}
+            className="w-9 h-9 flex items-center justify-center gap-1 rounded-xl hover:bg-gray-100 transition-colors text-gray-600 text-[10px] font-bold"
+            aria-label="Toggle language"
+            title={lang === "bn" ? "Switch to English" : "বাংলায় দেখুন"}
+          >
+            <Languages className="w-4 h-4" />
+          </button>
           <button
             type="button"
             onClick={handleRefresh}

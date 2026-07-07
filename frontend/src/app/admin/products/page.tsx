@@ -12,6 +12,8 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { useToastStore } from "@/store/toast";
 import type { Product } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { cn } from "@/lib/utils";
@@ -69,6 +71,7 @@ export default function AdminProductsPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
+  const toast = useToastStore((s) => s.push);
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -211,13 +214,17 @@ export default function AdminProductsPage() {
       } as Partial<Product>;
       if (editing) {
         await productsApi.update(editing.id!, payload);
+        toast("success", "Product updated");
       } else {
         await productsApi.create(payload);
+        toast("success", "Product created");
       }
       setShowModal(false);
       await load(page);
     } catch (e) {
-      setActionError(apiErrorMessage(e, "Failed to save product"));
+      const msg = apiErrorMessage(e, "Failed to save product");
+      setActionError(msg);
+      toast("error", msg);
     } finally {
       setSaving(false);
     }
@@ -228,9 +235,12 @@ export default function AdminProductsPage() {
     try {
       await productsApi.delete(deleteId);
       setDeleteId(null);
+      toast("success", "Product deleted");
       await load(page);
     } catch (e) {
-      setActionError(apiErrorMessage(e, "Failed to delete product"));
+      const msg = apiErrorMessage(e, "Failed to delete product");
+      setActionError(msg);
+      toast("error", msg);
     }
   };
 
@@ -576,19 +586,15 @@ export default function AdminProductsPage() {
         </div>
       )}
 
-      {/* Delete Confirm */}
-      {deleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div className="rounded-2xl w-full max-w-sm p-6 animate-scale-in" style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)" }}>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Product?</h3>
-            <p className="text-gray-500 text-sm mb-5">This action cannot be undone.</p>
-            <div className="flex justify-end gap-3">
-              <button onClick={() => setDeleteId(null)} className="btn btn-outline btn-md">Cancel</button>
-              <button onClick={handleDelete} className="btn btn-md bg-red-600 hover:bg-red-700 text-white border-red-600">Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={deleteId !== null}
+        title="Delete Product?"
+        message="This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }

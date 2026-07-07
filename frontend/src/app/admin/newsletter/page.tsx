@@ -6,11 +6,13 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Copy, Check, Download, Mail, AlertCircle, Loader2, Trash2 } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import { apiErrorMessage } from "@/lib/apiError";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 export default function NewsletterAdminPage() {
   const [subscribers, setSubscribers] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [copiedEmail, setCopiedEmail] = useState<string | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<string | null>(null);
   const toast = useToastStore((s) => s.push);
 
   const load = useCallback(async () => {
@@ -61,7 +63,6 @@ export default function NewsletterAdminPage() {
   };
 
   const handleRemoveEmail = async (email: string) => {
-    if (!confirm(`Remove ${email} from subscribers?`)) return;
     const updated = subscribers.filter((e) => e !== email);
     try {
       await adminApi.updateSetting("newsletter_subscribers", {
@@ -71,6 +72,8 @@ export default function NewsletterAdminPage() {
       toast("success", "Subscriber removed");
     } catch (err) {
       toast("error", apiErrorMessage(err, "Failed to remove subscriber"));
+    } finally {
+      setRemoveTarget(null);
     }
   };
 
@@ -163,7 +166,7 @@ export default function NewsletterAdminPage() {
                     )}
                   </button>
                   <button
-                    onClick={() => handleRemoveEmail(email)}
+                    onClick={() => setRemoveTarget(email)}
                     className="p-1.5 rounded hover:bg-red-100 opacity-0 group-hover:opacity-100 transition-opacity"
                     title="Remove subscriber"
                   >
@@ -188,6 +191,16 @@ export default function NewsletterAdminPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        title="Remove Subscriber?"
+        message={removeTarget ? `Remove ${removeTarget} from the newsletter list?` : ""}
+        confirmLabel="Remove"
+        variant="danger"
+        onConfirm={() => removeTarget && handleRemoveEmail(removeTarget)}
+        onCancel={() => setRemoveTarget(null)}
+      />
     </div>
   );
 }

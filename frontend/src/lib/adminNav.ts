@@ -136,12 +136,15 @@ export const ADMIN_ALL_PAGES: AdminNavItem[] = [
   ...ADMIN_NAV_GROUPS.flatMap((g) => g.items),
 ];
 
-export function getAdminPageTitle(pathname: string): string {
-  if (pathname === "/admin" || pathname === "/admin/dashboard") return "Dashboard";
+export function getAdminPageTitle(pathname: string, lang: "en" | "bn" = "en"): string {
+  if (pathname === "/admin" || pathname === "/admin/dashboard") {
+    return lang === "bn" ? "ড্যাশবোর্ড" : "Dashboard";
+  }
   const match = ADMIN_ALL_PAGES.find((item) =>
     item.exact ? pathname === item.href : pathname.startsWith(item.href)
   );
-  return match?.label ?? "Admin";
+  if (!match) return lang === "bn" ? "অ্যাডমিন" : "Admin";
+  return lang === "bn" ? match.labelBn ?? match.label : match.label;
 }
 
 export const ADMIN_QUICK_ACTIONS = [
