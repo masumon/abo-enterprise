@@ -4,7 +4,6 @@ import { pageMeta } from "@/lib/metadata";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import ServicesPageClient from "./ServicesPageClient";
 import { fetchWithRetry } from "@/lib/fetchRetry";
-import { fetchDemoServicesFromSettings } from "@/lib/serverDemoCatalog";
 
 export const metadata: Metadata = pageMeta(
   "Services — Printing, Legal & Software",
@@ -21,14 +20,11 @@ async function fetchServices(): Promise<{ services: Service[]; total: number; is
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const json = await res.json();
     const services = (json.data ?? []) as Service[];
-    if (services.length > 0) {
-      return { services, total: json.meta?.total ?? services.length, isDemo: false };
-    }
-  } catch {
-    // fall through to demo
+    return { services, total: json.meta?.total ?? services.length, isDemo: false };
+  } catch (err) {
+    console.error("services_page_initial_fetch_failed", err);
   }
-  const services = await fetchDemoServicesFromSettings();
-  return { services, total: services.length, isDemo: true };
+  return { services: [], total: 0, isDemo: false };
 }
 
 export default async function ServicesPage() {

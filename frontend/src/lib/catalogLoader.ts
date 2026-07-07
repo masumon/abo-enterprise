@@ -6,17 +6,10 @@ import {
   productsCacheKey,
   servicesCacheKey,
 } from "@/lib/apiCache";
-import {
-  filterDemoProducts,
-  filterDemoServices,
-  getDemoProducts,
-  getDemoServices,
-  isDemoFallbackEnabled,
-} from "@/lib/demoFallback";
 import { isConstrainedNetwork, isOffline } from "@/lib/networkStatus";
 import type { Product, Service } from "@/types";
 
-export type CatalogSource = "api" | "cache" | "demo";
+export type CatalogSource = "api" | "cache";
 
 export interface ProductsLoadResult {
   products: Product[];
@@ -58,20 +51,6 @@ interface ServiceLoadParams {
 // below — this only affects how long the first, cache-less fetch is allowed to run).
 const MOBILE_CATALOG_OPTS = { timeout: 60000, maxRetries: 2 } as const;
 
-async function loadDemoProducts(params: ProductLoadParams): Promise<ProductsLoadResult> {
-  const demo = filterDemoProducts(getDemoProducts(), {
-    category: params.category,
-    search: params.search,
-    featured: params.featured,
-  });
-  return { products: demo, total: demo.length, source: "demo" };
-}
-
-async function loadDemoServices(params: ServiceLoadParams): Promise<ServicesLoadResult> {
-  const demo = filterDemoServices(getDemoServices(), params.category ?? null);
-  return { services: demo, total: demo.length, source: "demo" };
-}
-
 /**
  * Load products — stale-while-revalidate on mobile/slow networks.
  * Offline: serve cache only. Online: always try API (shorter timeout on cellular).
@@ -83,9 +62,6 @@ export async function loadProducts(params: ProductLoadParams): Promise<ProductsL
   if (isOffline()) {
     if (cached?.products?.length) {
       return { products: cached.products, total: cached.total, source: "cache" };
-    }
-    if (params.page === 1 && isDemoFallbackEnabled()) {
-      return loadDemoProducts(params);
     }
     throw new Error("products_load_failed");
   }
@@ -100,16 +76,10 @@ export async function loadProducts(params: ProductLoadParams): Promise<ProductsL
       await cacheApiResponse(cacheKey, { products, total });
       return { products, total, source: "api" };
     }
-    if (params.page === 1 && isDemoFallbackEnabled()) {
-      return loadDemoProducts(params);
-    }
     return { products: [], total: 0, source: "api" };
   } catch {
     if (cached?.products?.length) {
       return { products: cached.products, total: cached.total, source: "cache" };
-    }
-    if (params.page === 1 && isDemoFallbackEnabled()) {
-      return loadDemoProducts(params);
     }
     throw new Error("products_load_failed");
   }
@@ -135,9 +105,6 @@ export async function loadServices(params: ServiceLoadParams): Promise<ServicesL
     if (cached?.services?.length) {
       return { services: cached.services, total: cached.total, source: "cache" };
     }
-    if (params.page === 1 && isDemoFallbackEnabled()) {
-      return loadDemoServices(params);
-    }
     throw new Error("services_load_failed");
   }
 
@@ -151,16 +118,10 @@ export async function loadServices(params: ServiceLoadParams): Promise<ServicesL
       await cacheApiResponse(cacheKey, { services, total });
       return { services, total, source: "api" };
     }
-    if (params.page === 1 && isDemoFallbackEnabled()) {
-      return loadDemoServices(params);
-    }
     return { services: [], total: 0, source: "api" };
   } catch {
     if (cached?.services?.length) {
       return { services: cached.services, total: cached.total, source: "cache" };
-    }
-    if (params.page === 1 && isDemoFallbackEnabled()) {
-      return loadDemoServices(params);
     }
     throw new Error("services_load_failed");
   }

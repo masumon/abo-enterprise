@@ -23,7 +23,6 @@ import { BD_DISTRICTS } from "@/lib/bdDistricts";
 import { getUpazilasForDistrict } from "@/lib/bdUpazilas";
 import { calcDeliveryCharge } from "@/lib/checkoutHelpers";
 import { validateCoupon, type AppliedCoupon } from "@/lib/coupons";
-import { isDemoProduct } from "@/lib/demoFallback";
 import { isOffline } from "@/lib/networkStatus";
 import { saveOrderSnapshot } from "@/lib/orderSnapshot";
 import PageHero from "@/components/ui/PageHero";
@@ -135,7 +134,6 @@ export default function CheckoutPage() {
   const afterDiscount = subtotal - discount;
   const deliveryCharge = calcDeliveryCharge(selectedDistrict || "Sylhet", afterDiscount, settings);
   const cartTotal = afterDiscount + deliveryCharge;
-  const hasDemoItems = items.some((i) => isDemoProduct(i.product_id));
 
   const applyCoupon = async () => {
     if (!couponsEnabled) return;
@@ -189,10 +187,6 @@ export default function CheckoutPage() {
   const onSubmit = async (data: FormData) => {
     if (isOffline()) {
       setSubmitError(lang === "bn" ? "অফলাইনে অর্ডার করা যায় না — ইন্টারনেট সংযোগ দিন" : "Cannot order offline — please connect to the internet");
-      return;
-    }
-    if (hasDemoItems) {
-      setSubmitError(lang === "bn" ? "ডেমো পণ্য অর্ডার করা যায় না — ইন্টারনেট সংযোগ দিয়ে আবার চেষ্টা করুন" : "Demo products cannot be ordered — connect and retry for real products");
       return;
     }
     if (otpRequired && !otpVerified) {
@@ -330,14 +324,6 @@ export default function CheckoutPage() {
           {lang === "bn" ? "কার্টে ফিরুন" : "Back to Cart"}
         </Link>
 
-        {hasDemoItems && (
-          <div role="alert" className="mb-6 alert-warning">
-            {lang === "bn"
-              ? "কার্টে ডেমো পণ্য আছে — অর্ডার দিতে ইন্টারনেট সংযোগ দিয়ে আসল পণ্য লোড করুন।"
-              : "Cart has demo products — connect to the internet to load real products before ordering."}
-          </div>
-        )}
-
         {stockIssue && (
           <div role="alert" className="mb-6 alert-warning">
             {lang === "bn" ? "কিছু পণ্যের স্টক সীমিত — কার্ট যাচাই করুন।" : "Limited stock — review your cart."}
@@ -474,7 +460,7 @@ export default function CheckoutPage() {
                 <div className="flex items-center gap-1.5"><Truck className="w-4 h-4 text-brand-500" />{lang === "bn" ? "দেশwide ডেলিভারি" : "Nationwide delivery"}</div>
               </div>
 
-              <button type="submit" disabled={isSubmitting || stockIssue || hasDemoItems} className="btn btn-success btn-lg w-full hidden lg:flex">
+              <button type="submit" disabled={isSubmitting || stockIssue} className="btn btn-success btn-lg w-full hidden lg:flex">
                 {isSubmitting ? (lang === "bn" ? "প্রক্রিয়া..." : "Processing...") : ctaLabel}
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -537,7 +523,7 @@ export default function CheckoutPage() {
       <div className="sticky-cta-bar px-4 py-3">
         <div className="flex items-center gap-3 max-w-6xl mx-auto">
           <div className="flex-1"><p className="text-xs text-muted">{lang === "bn" ? "মোট" : "Total"}</p><p className="text-lg font-bold text-success-600">{formatPrice(cartTotal)}</p></div>
-          <button type="submit" form="checkout-form" disabled={isSubmitting || stockIssue || hasDemoItems} className="btn btn-success btn-md min-w-[9rem]">
+          <button type="submit" form="checkout-form" disabled={isSubmitting || stockIssue} className="btn btn-success btn-md min-w-[9rem]">
             {isSubmitting ? "..." : ctaLabel}
           </button>
         </div>

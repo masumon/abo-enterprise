@@ -17,7 +17,6 @@ import DemoModeBanner from "@/components/ui/DemoModeBanner";
 import type { CatalogSource } from "@/lib/catalogLoader";
 import { loadServices, peekCachedServices } from "@/lib/catalogLoader";
 import { cacheApiResponse, servicesCacheKey } from "@/lib/apiCache";
-import { getDemoServices } from "@/lib/demoFallback";
 
 const FEATURED = [
   {
@@ -63,8 +62,7 @@ export default function ServicesPageClient({
   const [category, setCategory] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(initialTotal);
-  const [usingDemo, setUsingDemo] = useState(initialIsDemo);
-  const [catalogSource, setCatalogSource] = useState<CatalogSource>(initialIsDemo ? "demo" : "api");
+  const [catalogSource, setCatalogSource] = useState<CatalogSource>("api");
   const skipInitial = useRef(!initialIsDemo && initialServices.length > 0);
 
   useEffect(() => {
@@ -79,7 +77,7 @@ export default function ServicesPageClient({
   const categories = [
     { id: null, label: lang === "bn" ? "সব" : "All", en: "All" },
     ...Array.from(
-      new Set([...initialServices, ...getDemoServices()].map((s) => s.category).filter(Boolean))
+      new Set([...initialServices, ...services].map((s) => s.category).filter(Boolean))
     ).map((c) => ({
       id: c!,
       label: c!,
@@ -98,7 +96,6 @@ export default function ServicesPageClient({
       if (cached) {
         setServices(cached.services);
         setTotal(cached.total);
-        setUsingDemo(cached.source === "demo");
         setCatalogSource(cached.source);
         setLoading(false);
       }
@@ -108,7 +105,6 @@ export default function ServicesPageClient({
       const result = await loadServices(params);
       setServices(result.services);
       setTotal(result.total);
-      setUsingDemo(result.source === "demo");
       setCatalogSource(result.source);
       setPage(pageNum);
     } catch {
@@ -116,12 +112,10 @@ export default function ServicesPageClient({
       if (cached) {
         setServices(cached.services);
         setTotal(cached.total);
-        setUsingDemo(cached.source === "demo");
         setCatalogSource(cached.source);
         setError(false);
       } else {
         setError(true);
-        setUsingDemo(false);
         setCatalogSource("api");
       }
     } finally {
@@ -177,7 +171,7 @@ export default function ServicesPageClient({
             <ServiceFilters categories={categories} selectedCategory={category} onCategoryChange={setCategory} />
           </div>
 
-          <DemoModeBanner show={(usingDemo || catalogSource === "cache") && !loading} source={catalogSource} />
+          <DemoModeBanner show={catalogSource === "cache" && !loading} source={catalogSource} />
 
           {loading ? (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4" aria-busy="true">
