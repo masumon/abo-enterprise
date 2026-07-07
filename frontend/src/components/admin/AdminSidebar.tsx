@@ -3,9 +3,11 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, LogOut, ExternalLink, Search, X, ChevronDown } from "lucide-react";
+import { LogOut, ExternalLink, Search, X, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAlertStore } from "@/store/alerts";
+import { useLanguageStore } from "@/store/language";
+import BrandLogo from "@/components/ui/BrandLogo";
 import {
   ADMIN_EXTERNAL_LINKS,
   ADMIN_NAV_GROUPS,
@@ -31,6 +33,8 @@ export default function AdminSidebar({
 }: Props) {
   const pathname = usePathname();
   const { pendingOrders, pendingBookings, newLeads } = useAlertStore();
+  const { lang } = useLanguageStore();
+  const bn = lang === "bn";
   const [query, setQuery] = useState("");
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
@@ -80,7 +84,7 @@ export default function AdminSidebar({
     const content = (
       <>
         <Icon className={cn("w-4 h-4 flex-shrink-0", active && "scale-105")} />
-        <span className="flex-1 truncate">{item.label}</span>
+        <span className="flex-1 truncate">{bn ? item.labelBn ?? item.label : item.label}</span>
         {count > 0 && (
           <span
             className={cn(
@@ -119,9 +123,7 @@ export default function AdminSidebar({
       {/* Brand */}
       <div className="h-14 flex items-center justify-between px-4 border-b border-white/[0.06] shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div className="w-8 h-8 bg-gradient-to-br from-brand-400 to-brand-700 rounded-xl flex items-center justify-center shadow-lg">
-            <LayoutDashboard className="w-4 h-4 text-white" />
-          </div>
+          <BrandLogo size="xs" variant="light" href={false} />
           <div className="min-w-0">
             <p className="text-white font-bold text-sm leading-tight truncate">ABO Enterprise</p>
             <p className="text-gray-500 text-[10px] font-medium tracking-wider">ADMIN</p>
@@ -145,7 +147,7 @@ export default function AdminSidebar({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="মেনু খুঁজুন…"
+            placeholder={bn ? "মেনু খুঁজুন…" : "Search menu…"}
             className="w-full pl-8 pr-3 py-2 text-xs rounded-lg bg-white/[0.06] border border-white/[0.08] text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30"
           />
         </div>
@@ -167,7 +169,7 @@ export default function AdminSidebar({
                   hasActive ? "text-brand-300" : "text-gray-500 hover:text-gray-400"
                 )}
               >
-                <span>{group.labelBn ?? group.label}</span>
+                <span>{bn ? group.labelBn ?? group.label : group.label}</span>
                 <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", isCollapsed && "-rotate-90")} />
               </button>
               {!isCollapsed && (
@@ -180,7 +182,7 @@ export default function AdminSidebar({
         {!filterText && (
           <div>
             <p className="px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-500">
-              লিংক
+              {bn ? "লিংক" : "Links"}
             </p>
             <div className="space-y-0.5">
               {ADMIN_EXTERNAL_LINKS.map((item) => {
@@ -194,7 +196,7 @@ export default function AdminSidebar({
                     className="flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium text-gray-500 hover:bg-white/[0.06] hover:text-gray-200 transition-all"
                   >
                     <Icon className="w-4 h-4" />
-                    {item.labelBn ?? item.label}
+                    {bn ? item.labelBn ?? item.label : item.label}
                   </a>
                 );
               })}

@@ -5,10 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Bot, Eye, EyeOff, AlertCircle, Wifi, WifiOff, Loader2, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, AlertCircle, WifiOff, Loader2, ShieldCheck } from "lucide-react";
 import { authApi } from "@/lib/api";
 import { setAdminToken } from "@/lib/adminAuth";
 import { cn } from "@/lib/utils";
+import BrandLogo from "@/components/ui/BrandLogo";
 
 const schema = z.object({
   email: z.string().email("Valid email required"),
@@ -169,8 +170,8 @@ export default function AdminLoginPage() {
           backgroundImage: "radial-gradient(circle at 20% 80%, rgba(255,255,255,0.15) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(99,102,241,0.2) 0%, transparent 40%)",
         }} />
         <div className="relative z-10">
-          <div className="w-12 h-12 bg-white/10 backdrop-blur rounded-2xl flex items-center justify-center mb-8">
-            <Bot className="w-6 h-6 text-white" />
+          <div className="mb-8">
+            <BrandLogo size="lg" variant="light" href={false} />
           </div>
           <h1 className="text-3xl font-bold text-white leading-tight mb-3">
             ABO Enterprise<br />Admin Panel
@@ -191,8 +192,8 @@ export default function AdminLoginPage() {
       {/* Right login form */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-10">
         <div className="lg:hidden text-center mb-8">
-          <div className="w-14 h-14 bg-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow">
-            <Bot className="w-7 h-7 text-white" />
+          <div className="flex justify-center mb-4">
+            <BrandLogo size="lg" variant="light" href={false} />
           </div>
           <h1 className="text-white text-xl font-bold">ABO Enterprise</h1>
           <p className="text-gray-500 text-sm mt-1">Admin Panel</p>
