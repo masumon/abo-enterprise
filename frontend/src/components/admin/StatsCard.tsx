@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -9,6 +10,8 @@ interface Props {
   color?: "brand" | "accent" | "green" | "amber";
   loading?: boolean;
   alert?: boolean;
+  /** When set, the whole card becomes a link to this admin page. */
+  href?: string;
 }
 
 const COLOR_MAP = {
@@ -42,31 +45,44 @@ const COLOR_MAP = {
   },
 };
 
-export default function StatsCard({ title, value, sub, icon: Icon, color = "brand", loading, alert }: Props) {
+export default function StatsCard({ title, value, sub, icon: Icon, color = "brand", loading, alert, href }: Props) {
   const c = COLOR_MAP[color];
-  return (
-    <div className="admin-card p-5 group hover:-translate-y-0.5 transition-all duration-200">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-2">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{title}</p>
-            {alert && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />}
-          </div>
-          {loading ? (
-            <div className="h-8 w-20 bg-gray-100 rounded-lg animate-pulse" />
-          ) : (
-            <p className={cn("text-3xl font-bold tracking-tight", c.value)}>{value}</p>
-          )}
-          {sub && <p className="text-xs text-gray-400 mt-1.5 font-medium">{sub}</p>}
+  const cardClassName = cn(
+    "admin-card p-5 group hover:-translate-y-0.5 transition-all duration-200",
+    href && "block cursor-pointer hover:shadow-md"
+  );
+
+  const content = (
+    <div className="flex items-start justify-between gap-3">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 mb-2">
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">{title}</p>
+          {alert && <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse flex-shrink-0" />}
         </div>
-        <div className={cn(
-          "w-12 h-12 rounded-2xl flex items-center justify-center border flex-shrink-0",
-          "shadow-md transition-transform duration-200 group-hover:scale-110",
-          c.bg, c.ring, c.glow
-        )}>
-          <Icon className={cn("w-6 h-6", c.icon)} />
-        </div>
+        {loading ? (
+          <div className="h-8 w-20 bg-gray-100 rounded-lg animate-pulse" />
+        ) : (
+          <p className={cn("text-3xl font-bold tracking-tight", c.value)}>{value}</p>
+        )}
+        {sub && <p className="text-xs text-gray-400 mt-1.5 font-medium">{sub}</p>}
+      </div>
+      <div className={cn(
+        "w-12 h-12 rounded-2xl flex items-center justify-center border flex-shrink-0",
+        "shadow-md transition-transform duration-200 group-hover:scale-110",
+        c.bg, c.ring, c.glow
+      )}>
+        <Icon className={cn("w-6 h-6", c.icon)} />
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className={cardClassName}>
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className={cardClassName}>{content}</div>;
 }
