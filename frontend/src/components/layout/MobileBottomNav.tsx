@@ -89,12 +89,12 @@ export default function MobileBottomNav() {
           "flex items-stretch",
           "h-[52px] px-1.5 gap-0.5",
           "rounded-[26px]",
-          /* Glassmorphism */
-          "bg-white/80 dark:bg-[#0b1f3a]/88 backdrop-blur-2xl",
+          /* Match top navbar glassmorphism */
+          "bg-white/72 dark:bg-[#0b1f3a]/82 backdrop-blur-2xl",
           "border border-white/60 dark:border-white/[0.09]",
-          /* Ambient glow + premium shadow */
-          "shadow-[0_8px_32px_rgba(30,91,168,0.14),0_-2px_8px_rgba(30,91,168,0.04),0_2px_4px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.88)]",
-          "dark:shadow-[0_8px_40px_rgba(0,0,0,0.50),0_0_0_1px_rgba(59,130,246,0.08),inset_0_1px_0_rgba(255,255,255,0.05)]",
+          "shadow-[0_4px_20px_rgba(30,91,168,0.10),0_1px_3px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.82)]",
+          "dark:shadow-[0_4px_24px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.05)]",
+          "transition-all duration-500",
         )}
       >
         {LEFT_ITEMS.map(renderTab)}
