@@ -65,7 +65,7 @@ export const DEFAULT_WARMUP_CONTENT: WarmupContent = {
       by: "ABO Enterprise",
     },
   ],
-  welcomeEn: "Loading...",
+  welcomeEn: "Welcome!",
   welcomeBn: "লোড হচ্ছে...",
   subtitleEn: "Fetching live content from server.",
   subtitleBn: "সার্ভার থেকে লাইভ কনটেন্ট আনা হচ্ছে।",

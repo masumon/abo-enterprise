@@ -599,6 +599,9 @@
   .pb-mobile-nav {
     padding-bottom: var(--mobile-chrome-bottom);
   }
+  .pb-mobile-float {
+    padding-bottom: var(--mobile-float-bottom);
+  }
   .bottom-mobile-nav {
     bottom: var(--mobile-chrome-bottom);
   }
