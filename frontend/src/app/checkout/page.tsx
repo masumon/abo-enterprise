@@ -305,7 +305,7 @@ export default function CheckoutPage() {
   const ctaLabel = lang === "bn" ? "অর্ডার নিশ্চিত করুন" : "Confirm Order";
 
   return (
-    <div className="min-h-screen page-surface pb-24 lg:pb-8">
+    <div className="min-h-screen page-surface pb-mobile-float lg:pb-8">
       <PageHero
         pageKey="checkout"
         title={lang === "bn" ? "অর্ডার করুন" : "Checkout"}

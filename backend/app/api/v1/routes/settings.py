@@ -23,6 +23,10 @@ _PUBLIC_SETTING_EXACT_KEYS = {
     "contact_email",
     "contact_address",
     "business_email",
+    "facebook_url",
+    "instagram_url",
+    "linkedin_url",
+    "youtube_url",
 }
 
 _PUBLIC_SETTING_PREFIXES = (
