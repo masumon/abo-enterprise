@@ -14,15 +14,24 @@ interface BookPageClientProps {
   tierId?: string;
 }
 
+function normalizeServiceSlug(raw?: string): string {
+  return (raw ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[_\s]+/g, "-")
+    .replace(/-+/g, "-");
+}
+
 export default function BookPageClient({ serviceSlug, tierId }: BookPageClientProps) {
   const { lang } = useLanguageStore();
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [booked, setBooked] = useState(false);
+  const normalizedSlug = normalizeServiceSlug(serviceSlug);
 
   useEffect(() => {
-    if (!serviceSlug) {
+    if (!normalizedSlug) {
       setLoading(false);
       setError(lang === "bn" ? "কোনো সেবা নির্বাচন করা হয়নি।" : "No service selected.");
       return;
@@ -33,7 +42,7 @@ export default function BookPageClient({ serviceSlug, tierId }: BookPageClientPr
       setLoading(true);
       setError(null);
       try {
-        const res = await servicesApi.getBySlug(serviceSlug);
+        const res = await servicesApi.getBySlug(normalizedSlug);
         if (!cancelled) setService(res.data.data ?? null);
       } catch {
         if (!cancelled) {
@@ -48,7 +57,7 @@ export default function BookPageClient({ serviceSlug, tierId }: BookPageClientPr
     return () => {
       cancelled = true;
     };
-  }, [serviceSlug, lang]);
+  }, [normalizedSlug, lang]);
 
   if (loading) {
     return (
