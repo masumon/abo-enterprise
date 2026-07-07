@@ -137,6 +137,7 @@ export default function AdminDashboard() {
             icon={DollarSign}
             color="brand"
             loading={loading}
+            href="/admin/analytics"
           />
         )}
         <StatsCard
@@ -147,6 +148,7 @@ export default function AdminDashboard() {
           color="brand"
           loading={loading}
           alert={!!stats?.pending_orders}
+          href="/admin/orders"
         />
         <StatsCard
           title="Bookings"
@@ -156,6 +158,7 @@ export default function AdminDashboard() {
           color="accent"
           loading={loading}
           alert={!!stats?.pending_bookings}
+          href="/admin/bookings"
         />
         <StatsCard
           title="Leads"
@@ -165,6 +168,7 @@ export default function AdminDashboard() {
           color="green"
           loading={loading}
           alert={!!stats?.new_leads}
+          href="/admin/leads"
         />
         <StatsCard
           title="Products"
@@ -173,6 +177,7 @@ export default function AdminDashboard() {
           icon={Package}
           color="amber"
           loading={loading}
+          href="/admin/products"
         />
       </div>
 
