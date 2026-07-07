@@ -16,7 +16,7 @@ const leadSchema = z.object({
   lead_type: z.string().min(1, "Please select a service"),
   name: z.string().min(2, "Name must be at least 2 characters"),
   phone: z.string().regex(bdPhoneRegex, "Invalid Bangladesh phone number"),
-  email: z.string().email("Invalid email address"),
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
   company: z.string().optional(),
   project_description: z.string().min(20, "Please describe your project (minimum 20 characters)"),
   requirements: z.string().min(10, "Please provide your requirements"),
@@ -82,7 +82,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
         lead_type: toLeadV2Type(data.lead_type),
         name: data.name,
         phone: data.phone,
-        email: data.email,
+        email: data.email?.trim() || undefined,
         company: data.company,
         project_description: data.project_description,
         requirements: data.requirements,
@@ -155,7 +155,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
       <div className="grid md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Email *
+            Email (Optional)
           </label>
           <input
             type="email"

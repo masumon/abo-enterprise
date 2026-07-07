@@ -17,7 +17,11 @@ import { getUpazilasForDistrict } from "@/lib/bdUpazilas";
 const bookingSchema = z.object({
   customer_name: z.string().min(2, "Name must be at least 2 characters"),
   customer_phone: z.string().regex(BD_PHONE_REGEX, "Invalid Bangladesh phone number"),
-  customer_email: z.string().email("Invalid email address"),
+  customer_email: z
+    .string()
+    .email("Invalid email address")
+    .optional()
+    .or(z.literal("")),
   customer_company: z.string().optional(),
   booking_date: z.string().optional(),
   district: z.string().optional(),
@@ -87,7 +91,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         service_tier: data.service_tier,
         customer_name: data.customer_name,
         customer_phone: data.customer_phone,
-        customer_email: data.customer_email,
+        customer_email: data.customer_email?.trim() || undefined,
         customer_company: data.customer_company,
         booking_date: data.booking_date ? new Date(data.booking_date).toISOString() : undefined,
         pricing_type: service.pricing_type,
@@ -145,10 +149,14 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
     }
   }
 
+  function onInvalidSubmit() {
+    setSubmitError("Please fix highlighted fields and try again.");
+  }
+
   const hasTiers = Boolean(service.pricing_tiers && service.pricing_tiers.length > 0);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="space-y-6">
       <div className="alert-info">
         <p className="text-sm text-muted">
           <span className="font-semibold text-heading">Service:</span> {service.name_en}
@@ -185,7 +193,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       </div>
 
       <div>
-        <label className="form-label">Email Address *</label>
+        <label className="form-label">Email Address (Optional)</label>
         <input
           type="email"
           {...register("customer_email")}

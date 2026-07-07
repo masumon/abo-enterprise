@@ -101,4 +101,21 @@ describe("Booking Form", () => {
       expect(screen.getByText(/queued offline/i)).toBeInTheDocument();
     });
   });
+
+  it("should submit booking without email", async () => {
+    const user = userEvent.setup();
+    render(<BookingForm service={mockService} />);
+
+    await user.type(screen.getByPlaceholderText(/Your full name/), "John Doe");
+    await user.type(screen.getByPlaceholderText(/01XXXXXXXXX/), "01712345678");
+    await user.type(
+      screen.getByPlaceholderText(/Please describe your requirements in detail/),
+      "I need a custom web application for my e-commerce business"
+    );
+    await user.click(screen.getByText(/Book This Service/i));
+
+    await waitFor(() => {
+      expect(mockCreate).toHaveBeenCalled();
+    });
+  });
 });
