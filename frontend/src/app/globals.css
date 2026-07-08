@@ -794,3 +794,59 @@
     font-size: 16px;
   }
 }
+
+/* ── Admin Dark Mode ──────────────────────────────────────────────────────
+   Opt-in via the topbar toggle; scoped to .admin-dark on the admin shell so
+   the public site is never affected. Overrides both the admin-* component
+   classes and the hardcoded gray/white utilities used across admin pages. */
+.admin-dark.admin-shell {
+  background: linear-gradient(160deg, #0b1220 0%, #0f172a 55%, #131a2e 100%);
+  color: rgb(226 232 240);
+}
+.admin-dark .admin-topbar {
+  background: rgba(13, 20, 36, 0.85);
+  border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+.admin-dark .admin-card,
+.admin-dark .admin-toolbar,
+.admin-dark .admin-panel,
+.admin-dark .admin-detail-drawer {
+  background: #101828;
+  border-color: rgba(255, 255, 255, 0.07);
+}
+.admin-dark .admin-input,
+.admin-dark :is(.input, select.input, textarea.input) {
+  background: #0d1524;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgb(226 232 240);
+}
+.admin-dark .admin-btn-secondary {
+  background: #16203a;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgb(203 213 225);
+}
+.admin-dark .table-premium thead tr { background: rgba(255, 255, 255, 0.03); }
+.admin-dark .table-premium th { color: rgb(148 163 184); }
+.admin-dark .table-premium td { border-bottom-color: rgba(255, 255, 255, 0.05); }
+.admin-dark .table-premium tbody tr:hover { background: rgba(59, 130, 246, 0.07); }
+
+/* Hardcoded utility overrides inside the admin shell */
+.admin-dark :is(.bg-white) { background-color: #101828; }
+.admin-dark :is(.bg-gray-50, .bg-gray-100, .bg-gray-50\/60, .bg-gray-50\/80) { background-color: #0d1524; }
+.admin-dark :is(.hover\:bg-gray-50):hover,
+.admin-dark :is(.hover\:bg-gray-100):hover,
+.admin-dark :is(.hover\:bg-gray-50\/80):hover,
+.admin-dark :is(.hover\:bg-brand-50\/40):hover,
+.admin-dark :is(.hover\:bg-gray-50\/50):hover { background-color: rgba(59, 130, 246, 0.08); }
+.admin-dark :is(.text-gray-900, .text-gray-800) { color: rgb(226 232 240); }
+.admin-dark :is(.text-gray-700, .text-gray-600) { color: rgb(203 213 225); }
+.admin-dark :is(.text-gray-500) { color: rgb(148 163 184); }
+.admin-dark :is(.text-gray-400, .text-gray-300) { color: rgb(100 116 139); }
+.admin-dark :is(.text-heading) { color: rgb(226 232 240); }
+.admin-dark :is(.border-gray-100, .border-gray-200, .border-gray-100\/80, .border-gray-50) { border-color: rgba(255, 255, 255, 0.08); }
+.admin-dark :is(.divide-gray-50, .divide-gray-100) > * + * { border-color: rgba(255, 255, 255, 0.06); }
+.admin-dark :is(.bg-brand-50, .bg-brand-50\/40) { background-color: rgba(59, 130, 246, 0.12); }
+.admin-dark :is(.bg-red-50) { background-color: rgba(239, 68, 68, 0.12); }
+.admin-dark :is(.bg-amber-50) { background-color: rgba(245, 158, 11, 0.12); }
+.admin-dark :is(.bg-emerald-50, .bg-green-50) { background-color: rgba(16, 185, 129, 0.12); }
+.admin-dark .form-label { color: rgb(148 163 184); }

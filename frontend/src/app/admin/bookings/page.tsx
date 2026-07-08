@@ -34,6 +34,7 @@ export default function AdminBookingsPage() {
   const [detail, setDetail] = useState<AdminBooking | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [csvLoading, setCsvLoading] = useState(false);
+  const [exportPdfLoading, setExportPdfLoading] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // V2 state
@@ -95,6 +96,17 @@ export default function AdminBookingsPage() {
       toast("error", "CSV export failed");
     } finally {
       setCsvLoading(false);
+    }
+  };
+
+  const handlePdfExport = async () => {
+    setExportPdfLoading(true);
+    try {
+      await downloadPdf("/api/v1/admin/bulk/export/bookings/pdf", "service-bookings.pdf");
+    } catch {
+      toast("error", "PDF export failed");
+    } finally {
+      setExportPdfLoading(false);
     }
   };
 
@@ -202,6 +214,15 @@ export default function AdminBookingsPage() {
               >
                 {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                 CSV
+              </button>
+              <button
+                onClick={handlePdfExport}
+                disabled={exportPdfLoading}
+                className="btn btn-outline btn-sm gap-1.5"
+                title="Export all bookings as PDF"
+              >
+                {exportPdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                PDF
               </button>
             </>
           )}

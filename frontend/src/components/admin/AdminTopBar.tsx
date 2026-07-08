@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronRight, Menu, Bell, RotateCw, Languages } from "lucide-react";
+import { ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun } from "lucide-react";
 import { getAdminPageTitle } from "@/lib/adminNav";
 import { useAlertStore } from "@/store/alerts";
 import { useLanguageStore } from "@/store/language";
@@ -12,9 +12,11 @@ interface Props {
   adminName: string;
   adminRole?: string;
   onMenuClick: () => void;
+  dark?: boolean;
+  onToggleTheme?: () => void;
 }
 
-export default function AdminTopBar({ adminName, adminRole, onMenuClick }: Props) {
+export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, onToggleTheme }: Props) {
   const pathname = usePathname();
   const { lang, toggle: toggleLang } = useLanguageStore();
   const pageTitle = getAdminPageTitle(pathname, lang);
@@ -56,6 +58,17 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick }: Props
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
+          {onToggleTheme && (
+            <button
+              type="button"
+              onClick={onToggleTheme}
+              className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-600"
+              aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+              title={dark ? "Light mode" : "Dark mode"}
+            >
+              {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+          )}
           <button
             type="button"
             onClick={toggleLang}

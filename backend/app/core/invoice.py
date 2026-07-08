@@ -42,11 +42,43 @@ def _find_logo_path() -> Path | None:
     return None
 
 
+# PDF fonts: reportlab's built-in Helvetica has no ৳ (U+09F3) glyph — it used
+# to render as a dingbat box on every invoice. GNU FreeSans (GPL + font
+# exception, embedding permitted) ships in assets/fonts and includes the taka
+# sign. Falls back to Helvetica if the files are ever missing.
+_FONT = "Helvetica"
+_FONT_BOLD = "Helvetica-Bold"
+
+
+def _register_pdf_fonts() -> None:
+    global _FONT, _FONT_BOLD
+    if _FONT == "InvoiceSans":
+        return
+    try:
+        from reportlab.pdfbase import pdfmetrics
+        from reportlab.pdfbase.ttfonts import TTFont
+
+        fonts_dir = Path(__file__).resolve().parents[2] / "assets" / "fonts"
+        regular = fonts_dir / "FreeSans.ttf"
+        bold = fonts_dir / "FreeSansBold.ttf"
+        if regular.is_file() and bold.is_file():
+            pdfmetrics.registerFont(TTFont("InvoiceSans", str(regular)))
+            pdfmetrics.registerFont(TTFont("InvoiceSans-Bold", str(bold)))
+            pdfmetrics.registerFontFamily(
+                "InvoiceSans", normal="InvoiceSans", bold="InvoiceSans-Bold",
+                italic="InvoiceSans", boldItalic="InvoiceSans-Bold",
+            )
+            _FONT = "InvoiceSans"
+            _FONT_BOLD = "InvoiceSans-Bold"
+    except Exception:
+        pass  # keep Helvetica fallback
+
+
 def generate_invoice_number():
-    """Generate unique invoice number INV-YYYY-XXXXXX"""
+    """Generate unique invoice number INV-YYYY-XXXXXX (hex — collision-safe)."""
+    import secrets
     year = datetime.now(timezone.utc).year
-    random_part = "".join(random.choices(string.digits, k=6))
-    return f"INV-{year}-{random_part}"
+    return f"INV-{year}-{secrets.token_hex(3).upper()}"
 
 
 class InvoiceService:
@@ -274,6 +306,8 @@ class InvoiceService:
         except ImportError:
             raise ImportError("reportlab library required for PDF generation. Install: pip install reportlab")
 
+        _register_pdf_fonts()
+
         ref_label = None
         ref_value = None
         if invoice.order_id:
@@ -310,8 +344,8 @@ class InvoiceService:
             parent=styles["Normal"],
             fontSize=22,
             leading=26,
-            textColor=brand_dark,
-            fontName="Helvetica-Bold",
+            textColor=colors.white,
+            fontName=_FONT_BOLD,
             alignment=TA_RIGHT,
         )
         invoice_num = ParagraphStyle(
@@ -328,7 +362,7 @@ class InvoiceService:
             fontSize=9,
             leading=12,
             textColor=brand,
-            fontName="Helvetica-Bold",
+            fontName=_FONT_BOLD,
             spaceBefore=4,
             spaceAfter=6,
         )
@@ -353,7 +387,7 @@ class InvoiceService:
             fontSize=11,
             leading=14,
             textColor=brand_dark,
-            fontName="Helvetica-Bold",
+            fontName=_FONT_BOLD,
             alignment=TA_CENTER,
             spaceBefore=8,
         )
@@ -371,13 +405,13 @@ class InvoiceService:
 
         company_block = Paragraph(
             f"<b>{_COMPANY_NAME}</b><br/><font size='8' color='#dbeafe'>{_COMPANY_TAGLINE}</font>",
-            ParagraphStyle("HdrCo", parent=styles["Normal"], fontSize=14, textColor=colors.white, fontName="Helvetica-Bold"),
+            ParagraphStyle("HdrCo", parent=styles["Normal"], fontSize=14, textColor=colors.white, fontName=_FONT_BOLD),
         )
 
         status = (invoice.payment_status or "pending").upper()
-        status_color = "#059669" if status in ("PAID", "COMPLETED") else "#d97706"
+        status_color = "#a7f3d0" if status in ("PAID", "COMPLETED") else "#fde68a"
         inv_right = Paragraph(
-            f"INVOICE<br/><font size='9' color='#64748b'>{invoice.invoice_number}</font>"
+            f"INVOICE<br/><font size='9' color='#dbeafe'>{invoice.invoice_number}</font>"
             f"<br/><font size='8' color='{status_color}'><b>{status}</b></font>",
             invoice_label,
         )
@@ -484,10 +518,10 @@ class InvoiceService:
         items_table.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), brand),
             ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
-            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTNAME", (0, 0), (-1, 0), _FONT_BOLD),
             ("FONTSIZE", (0, 0), (-1, 0), 9),
             ("FONTSIZE", (0, 1), (-1, -1), 9),
-            ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+            ("FONTNAME", (0, 1), (-1, -1), _FONT),
             ("TEXTCOLOR", (0, 1), (-1, -1), colors.HexColor("#334155")),
             ("ALIGN", (1, 0), (-1, -1), "RIGHT"),
             ("ALIGN", (0, 0), (0, -1), "LEFT"),
@@ -518,8 +552,10 @@ class InvoiceService:
         )
         totals.setStyle(TableStyle([
             ("ALIGN", (0, 0), (-1, -1), "RIGHT"),
-            ("FONTNAME", (0, 0), (-1, 1), "Helvetica"),
-            ("FONTNAME", (0, 2), (-1, 2), "Helvetica-Bold"),
+            ("FONTNAME", (0, 0), (-1, 1), _FONT),
+            ("FONTNAME", (0, 2), (0, 2), _FONT_BOLD),
+            # FreeSansBold has no taka glyph; amount cell uses regular FreeSans
+            ("FONTNAME", (1, 2), (1, 2), _FONT),
             ("FONTSIZE", (0, 0), (-1, 1), 10),
             ("FONTSIZE", (0, 2), (-1, 2), 13),
             ("TEXTCOLOR", (0, 0), (-1, 1), colors.HexColor("#475569")),

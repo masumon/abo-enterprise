@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAdminPolling } from "@/hooks/useAdminPolling";
@@ -15,6 +15,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const { user, loading, logout } = useAdmin(pathname !== "/admin/login");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    setDark(localStorage.getItem("abo_admin_theme") === "dark");
+  }, []);
+
+  const toggleTheme = () => {
+    setDark((d) => {
+      localStorage.setItem("abo_admin_theme", d ? "light" : "dark");
+      return !d;
+    });
+  };
   useAdminPolling(pathname !== "/admin/login");
 
   if (pathname === "/admin/login") {
@@ -33,7 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen admin-shell">
+    <div className={`min-h-screen admin-shell${dark ? " admin-dark" : ""}`}>
       {sidebarOpen && (
         <button
           type="button"
@@ -56,6 +68,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           adminName={user.name}
           adminRole={user.role}
           onMenuClick={() => setSidebarOpen(true)}
+          dark={dark}
+          onToggleTheme={toggleTheme}
         />
         <main className="flex-1 p-4 md:p-6 lg:p-8 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="admin-page-container">{children}</div>

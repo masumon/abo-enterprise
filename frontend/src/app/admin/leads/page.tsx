@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Loader2, Users, ChevronDown, X, Search, Download, Trash2 } from "lucide-react";
-import { leadsApi, serviceLeadsAdminApi, downloadCsv } from "@/lib/api";
+import { leadsApi, serviceLeadsAdminApi, downloadCsv, downloadPdf } from "@/lib/api";
 import type { Lead, LeadV2 } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
@@ -33,6 +33,7 @@ export default function AdminLeadsPage() {
   const [detail, setDetail] = useState<AdminLead | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [csvLoading, setCsvLoading] = useState(false);
+  const [exportPdfLoading, setExportPdfLoading] = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // V2 state
@@ -93,6 +94,17 @@ export default function AdminLeadsPage() {
       toast("error", "CSV export failed");
     } finally {
       setCsvLoading(false);
+    }
+  };
+
+  const handlePdfExport = async () => {
+    setExportPdfLoading(true);
+    try {
+      await downloadPdf("/api/v1/admin/bulk/export/leads/pdf", "service-leads.pdf");
+    } catch {
+      toast("error", "PDF export failed");
+    } finally {
+      setExportPdfLoading(false);
     }
   };
 
@@ -190,6 +202,15 @@ export default function AdminLeadsPage() {
               >
                 {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                 CSV
+              </button>
+              <button
+                onClick={handlePdfExport}
+                disabled={exportPdfLoading}
+                className="btn btn-outline btn-sm gap-1.5"
+                title="Export all leads as PDF"
+              >
+                {exportPdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                PDF
               </button>
             </>
           )}
