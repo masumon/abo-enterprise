@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -7,7 +8,6 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Users, Trophy, Zap, Code } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import { parseGoogleMapsEmbedInput } from "@/lib/maps";
-import { PAGE_BANNER_CONFIG, bannerSettingKey } from "@/lib/pageBanners";
 import { apiErrorMessage } from "@/lib/apiError";
 
 type SettingValues = Record<string, string>;
@@ -126,20 +126,6 @@ const SECTIONS: Section[] = [
   // ═══════════════════════════════════════════════════════════════════════
   // PAGE BANNERS (All 25 Pages)
   // ═══════════════════════════════════════════════════════════════════════
-  {
-    id: "page_banners",
-    title: "Page Banners (All Pages)",
-    icon: <ImageIcon className="w-4 h-4" />,
-    fields: PAGE_BANNER_CONFIG.map(({ key, label, hint }) => ({
-      key: bannerSettingKey(key),
-      label: `${label}`,
-      type: "url" as const,
-      upload: true,
-      placeholder: "https://...",
-      hint: hint ?? "1920×1080 recommended",
-    })),
-  },
-
   // ═══════════════════════════════════════════════════════════════════════
   // TRUST ASSETS
   // ═══════════════════════════════════════════════════════════════════════
@@ -545,6 +531,20 @@ export default function AdminSettingsPage() {
               savedId={savedId}
             />
           ))}
+          <div className="admin-card p-5 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <ImageIcon className="w-5 h-5 text-brand-500 flex-shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-gray-900">পেজ ব্যানার ও সব ছবি</p>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  সব পেজের ব্যানার, ব্র্যান্ড ছবি ও গ্যালারি এক জায়গা থেকে ম্যানেজ করুন — Media Library-তে।
+                </p>
+              </div>
+            </div>
+            <Link href="/admin/media" className="btn btn-outline btn-sm flex-shrink-0">
+              Media Library →
+            </Link>
+          </div>
         </div>
       )}
 

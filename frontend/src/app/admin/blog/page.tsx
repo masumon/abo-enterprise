@@ -60,6 +60,7 @@ export default function AdminBlogPage() {
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [seoOpen, setSeoOpen] = useState(false);
+  const [enOpen, setEnOpen] = useState(false);
   const [translating, setTranslating] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const toast = useToastStore((s) => s.push);
@@ -187,19 +188,47 @@ export default function AdminBlogPage() {
 
   const handleSave = async () => {
     if (!editing) return;
-    if (!editing.title_en?.trim()) { toast("error", "Title (EN) is required"); return; }
-    if (!editing.slug?.trim()) { toast("error", "Slug is required"); return; }
-    if (!editing.content_en?.trim()) { toast("error", "Content (EN) is required"); return; }
-    if (!editing.category?.trim()) { toast("error", "Category is required"); return; }
+
+    // Bangla-first flow: if English is empty but Bangla is written,
+    // auto-translate at save time so the admin never has to fill EN by hand.
+    let post = { ...editing };
+    const needsTitle = !post.title_en?.trim() && !!post.title_bn?.trim();
+    const needsContent = !post.content_en?.trim() && !!post.content_bn?.trim();
+    const needsExcerpt = !post.excerpt_en?.trim() && !!post.excerpt_bn?.trim();
+    if (needsTitle || needsContent || needsExcerpt) {
+      setSaving(true);
+      try {
+        if (needsTitle) {
+          post.title_en = await translateText(post.title_bn!.trim());
+          if (isNew || !post.slug?.trim()) post.slug = slugify(post.title_en);
+        }
+        if (needsExcerpt) post.excerpt_en = await translateText(post.excerpt_bn!.trim());
+        if (needsContent) post.content_en = await translateText(post.content_bn!.trim());
+        setEditing(post);
+        toast("info", "বাংলা থেকে ইংরেজি অনুবাদ হয়েছে — English Version সেকশনে দেখে নিতে পারেন");
+      } catch {
+        setSaving(false);
+        toast("error", "অটো-অনুবাদ ব্যর্থ — Translate বাটন চাপুন বা English নিজে লিখুন");
+        return;
+      }
+      setSaving(false);
+    }
+
+    if (!post.title_en?.trim() && !post.title_bn?.trim()) { toast("error", "Title দিন (বাংলা বা English)"); return; }
+    if (!post.title_en?.trim()) { toast("error", "Title (EN) is required"); return; }
+    if (!post.slug?.trim()) { toast("error", "Slug is required"); return; }
+    if (!post.content_en?.trim()) { toast("error", "Content দিন (বাংলা লিখলে অটো-অনুবাদ হবে)"); return; }
+    if (!post.category?.trim()) { toast("error", "Category is required"); return; }
+    const editingFinal = post;
 
     setSaving(true);
     try {
       if (isNew) {
-        await adminBlogApi.create(editing);
+        await adminBlogApi.create(editingFinal);
         try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
         toast("success", "Post created successfully");
       } else {
-        await adminBlogApi.update(editing.id!, editing);
+        await adminBlogApi.update(editingFinal.id!, editingFinal);
         toast("success", "Post updated successfully");
       }
       closeEditor();
@@ -460,20 +489,6 @@ export default function AdminBlogPage() {
                 />
               </div>
 
-              {/* Title EN */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                  Title (English) <span className="text-red-400">*</span>
-                  <span className="ml-1 text-gray-400 font-normal normal-case">(auto-filled on translate)</span>
-                </label>
-                <input
-                  value={editing.title_en ?? ""}
-                  onChange={e => handleTitleChange(e.target.value)}
-                  placeholder="Post title in English"
-                  className="input w-full"
-                />
-              </div>
-
               {/* Slug */}
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
@@ -543,21 +558,6 @@ export default function AdminBlogPage() {
                 />
               </div>
 
-              {/* Excerpt EN */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                  Excerpt (English)
-                  <span className="ml-1 text-gray-400 font-normal normal-case">(auto-filled on translate)</span>
-                </label>
-                <textarea
-                  value={editing.excerpt_en ?? ""}
-                  onChange={e => setEditing(prev => prev ? { ...prev, excerpt_en: e.target.value } : prev)}
-                  placeholder="Short summary shown in listing..."
-                  rows={2}
-                  className="input w-full resize-none text-sm"
-                />
-              </div>
-
               {/* Content BN — primary */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
@@ -584,19 +584,49 @@ export default function AdminBlogPage() {
                 />
               </div>
 
-              {/* Content EN */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                  Content (English) <span className="text-red-400">*</span>
-                  <span className="ml-1 text-gray-400 font-normal normal-case">(auto-filled on translate)</span>
-                </label>
-                <textarea
-                  value={editing.content_en ?? ""}
-                  onChange={e => setEditing(prev => prev ? { ...prev, content_en: e.target.value } : prev)}
-                  placeholder="Full article content (auto-translated or manual)..."
-                  rows={8}
-                  className="input w-full resize-y text-sm font-mono leading-relaxed"
-                />
+              {/* English version — auto-translated on save; open to review/edit */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button type="button" onClick={() => setEnOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    English Version
+                    <span className="ml-1.5 text-gray-400 font-normal normal-case">— বাংলা লিখে Save দিলে অটো-অনুবাদ হয়; দেখতে/সম্পাদনা করতে খুলুন</span>
+                  </span>
+                  {enOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                </button>
+                {enOpen && (
+                  <div className="px-4 py-4 space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Title (English)</label>
+                      <input
+                        value={editing.title_en ?? ""}
+                        onChange={e => handleTitleChange(e.target.value)}
+                        placeholder="Auto-filled from Bangla on save"
+                        className="input w-full"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Excerpt (English)</label>
+                      <textarea
+                        value={editing.excerpt_en ?? ""}
+                        onChange={e => setEditing(prev => prev ? { ...prev, excerpt_en: e.target.value } : prev)}
+                        placeholder="Auto-filled from Bangla on save"
+                        rows={2}
+                        className="input w-full resize-none text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Content (English)</label>
+                      <textarea
+                        value={editing.content_en ?? ""}
+                        onChange={e => setEditing(prev => prev ? { ...prev, content_en: e.target.value } : prev)}
+                        placeholder="Auto-filled from Bangla on save"
+                        rows={8}
+                        className="input w-full resize-y text-sm leading-relaxed"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* SEO Section */}
