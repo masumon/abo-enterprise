@@ -2,12 +2,13 @@ from collections import defaultdict, deque
 from datetime import datetime, timezone
 from time import time
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import get_db
-from app.core.security import create_access_token, require_admin, verify_password
+from app.core.security import ADMIN_SESSION_COOKIE, create_access_token, require_admin, verify_password
 from app.models.models import AdminUser
 from app.schemas.schemas import ApiResponse, LoginRequest, TokenResponse
 
@@ -43,8 +44,17 @@ def _clear_failures(ip: str) -> None:
     _login_failures.pop(ip, None)
 
 
+def _is_https(request: Request) -> bool:
+    return request.headers.get("x-forwarded-proto", request.url.scheme) == "https"
+
+
 @router.post("/login", response_model=ApiResponse)
-async def login(request: Request, payload: LoginRequest, db: AsyncSession = Depends(get_db)):
+async def login(
+    request: Request,
+    response: Response,
+    payload: LoginRequest,
+    db: AsyncSession = Depends(get_db),
+):
     ip = _client_ip(request)
 
     if _is_locked(ip):
@@ -74,10 +84,30 @@ async def login(request: Request, payload: LoginRequest, db: AsyncSession = Depe
     user.last_login = datetime.now(timezone.utc)
     await db.commit()
     token = create_access_token(str(user.id))
+    # HttpOnly session cookie (XSS-safe). Host-only on the API domain —
+    # same-site XHR from the frontend (www.aboenterprise.com ->
+    # api.aboenterprise.com) sends it with credentials. The body token stays
+    # for backward compatibility and non-browser clients.
+    response.set_cookie(
+        ADMIN_SESSION_COOKIE,
+        token,
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        httponly=True,
+        secure=_is_https(request),
+        samesite="lax",
+        path="/",
+    )
     return ApiResponse(
         data=TokenResponse(access_token=token),
         message="Login successful",
     )
+
+
+@router.post("/logout", response_model=ApiResponse)
+async def logout(response: Response):
+    """Clear the HttpOnly admin session cookie."""
+    response.delete_cookie(ADMIN_SESSION_COOKIE, path="/")
+    return ApiResponse(data=None, message="Logged out")
 
 
 @router.get("/me", response_model=ApiResponse)

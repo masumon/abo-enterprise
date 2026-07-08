@@ -14,7 +14,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get("abo_admin_token")?.value;
+  // Legacy JS-set token cookie OR the cookie-session marker (the JWT itself
+  // is an HttpOnly cookie on the API domain, invisible here by design).
+  const token =
+    request.cookies.get("abo_admin_token")?.value ||
+    request.cookies.get("abo_admin_auth")?.value;
   if (!token) {
     const loginUrl = new URL("/admin/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);

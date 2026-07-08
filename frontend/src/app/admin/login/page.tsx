@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, AlertCircle, WifiOff, Loader2, ShieldCheck } from "lucide-react";
 import { authApi } from "@/lib/api";
-import { setAdminToken } from "@/lib/adminAuth";
+import { setAdminAuthMarker, setAdminToken } from "@/lib/adminAuth";
 import { cn } from "@/lib/utils";
 import BrandLogo from "@/components/ui/BrandLogo";
 
@@ -65,7 +65,17 @@ function LoginForm() {
       const res = await authApi.login(data.email, data.password);
       const token = res.data.data?.access_token;
       if (!token) throw new Error("No token received");
-      setAdminToken(token);
+      // Cookie-session probe: localStorage has no token yet, so this getMe
+      // is authenticated ONLY by the HttpOnly cookie login just set. If it
+      // works (same-site prod, localhost dev) the JWT never touches JS
+      // storage; if not (e.g. vercel.app preview), fall back to the legacy
+      // localStorage token — self-detecting, zero lockout risk.
+      try {
+        await authApi.getMe();
+        setAdminAuthMarker();
+      } catch {
+        setAdminToken(token);
+      }
       const redirect = searchParams.get("redirect");
       const safeRedirect =
         redirect && redirect.startsWith("/admin") && redirect !== "/admin/login"
