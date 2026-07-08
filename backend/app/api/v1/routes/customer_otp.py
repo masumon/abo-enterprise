@@ -1,6 +1,6 @@
 """Lightweight phone OTP for checkout — in-memory, free-tier friendly (no SMS API required)."""
 import logging
-import random
+import secrets
 import time
 from pydantic import BaseModel, field_validator
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -49,6 +49,10 @@ def _clean_expired() -> None:
 # an attacker rotates IPs against a single victim number.
 _phone_send_limiter = RateLimiter(max_requests=3, window_seconds=600)
 
+# Per-phone verify-attempt limit — the per-IP limiter alone can be bypassed by
+# rotating IPs, letting a 4-digit code be brute-forced within its 5-min TTL.
+_phone_verify_limiter = RateLimiter(max_requests=5, window_seconds=300)
+
 
 @router.post(
     "/send-otp",
@@ -62,7 +66,7 @@ async def send_otp(payload: SendOtpRequest):
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail="Too many OTP requests for this number. Try again in 10 minutes.",
         )
-    code = f"{random.randint(1000, 9999)}"
+    code = f"{secrets.randbelow(9000) + 1000}"
     _otp_store[payload.phone] = {"code": code, "expires_at": time.time() + OTP_TTL_SECONDS}
     sms_sent = await send_sms(payload.phone, f"ABO Enterprise OTP: {code}. Valid 5 min.")
     if not sms_sent:
@@ -81,8 +85,13 @@ async def send_otp(payload: SendOtpRequest):
 )
 async def verify_otp(payload: VerifyOtpRequest):
     _clean_expired()
+    if not _phone_verify_limiter.is_allowed(payload.phone):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many attempts for this number. Request a new OTP.",
+        )
     entry = _otp_store.get(payload.phone)
-    if not entry or entry["code"] != payload.code.strip():
+    if not entry or not secrets.compare_digest(entry["code"], payload.code.strip()):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid or expired OTP")
     _otp_store.pop(payload.phone, None)
     # Token proves phone ownership — required for order-history reads

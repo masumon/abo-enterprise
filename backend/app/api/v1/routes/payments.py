@@ -13,6 +13,7 @@ from app.core.bkash import get_bkash_gateway
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.nagad import get_nagad_gateway
+from app.core.rate_limit import rate_limit
 from app.core.sslcommerz import get_sslcommerz_gateway
 from app.core.invoice import InvoiceService
 from app.models.models import BkashTransaction, NagadTransaction, Order
@@ -82,7 +83,7 @@ async def initiate_bkash_payment(
         raise
     except Exception as e:
         logger.error("bkash initiate error: %s", e, exc_info=e)
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="Payment initiation failed")
 
 
 @router.post("/bkash/verify", response_model=PaymentResponseModel)
@@ -137,7 +138,7 @@ async def verify_bkash_payment(
         raise
     except Exception as e:
         logger.error("bkash verify error: %s", e, exc_info=e)
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="Payment verification failed")
 
 
 @router.post("/nagad/initiate", response_model=PaymentResponseModel)
@@ -183,7 +184,7 @@ async def initiate_nagad_payment(
         raise
     except Exception as e:
         logger.error("nagad initiate error: %s", e, exc_info=e)
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="Payment initiation failed")
 
 
 @router.post("/nagad/verify", response_model=PaymentResponseModel)
@@ -241,7 +242,7 @@ async def verify_nagad_payment(
         raise
     except Exception as e:
         logger.error("nagad verify error: %s", e, exc_info=e)
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="Payment verification failed")
 
 
 @router.post("/sslcommerz/initiate", response_model=PaymentResponseModel)
@@ -285,7 +286,7 @@ async def initiate_sslcommerz_payment(
         raise
     except Exception as e:
         logger.error("sslcommerz initiate error: %s", e, exc_info=e)
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="Payment initiation failed")
 
 
 @router.post("/webhook/bkash")
@@ -354,7 +355,10 @@ async def nagad_webhook(
         return {"success": False, "error": str(e)}
 
 
-@router.get("/transaction/{transaction_id}")
+@router.get(
+    "/transaction/{transaction_id}",
+    dependencies=[Depends(rate_limit("payment_tx_lookup", 30, 300))],
+)
 async def get_payment_transaction(
     transaction_id: str,
     gateway: str = Query(..., pattern="^(bkash|nagad)$"),
@@ -388,4 +392,5 @@ async def get_payment_transaction(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        logger.error("transaction lookup error: %s", e, exc_info=e)
+        raise HTTPException(status_code=400, detail="Could not load transaction")

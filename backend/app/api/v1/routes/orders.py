@@ -46,11 +46,13 @@ async def _validate_and_reserve_stock(db: AsyncSession, items: list) -> dict[str
             trusted_prices[str(idx)] = float(item_data.product_price)
             continue
         result = await db.execute(
-            select(Product).where(
+            select(Product)
+            .where(
                 Product.id == product_uuid,
                 Product.is_deleted == False,  # noqa: E712
                 Product.is_active == True,  # noqa: E712
             )
+            .with_for_update()
         )
         product = result.scalar_one_or_none()
         if not product:

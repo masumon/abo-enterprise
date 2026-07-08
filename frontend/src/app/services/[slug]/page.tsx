@@ -4,6 +4,7 @@ import type { Service } from "@/types";
 import ServiceDetailClient from "./ServiceDetailClient";
 import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { jsonLdString } from "@/lib/metadata";
 
 const API_BASE = getApiBaseUrl();
 
@@ -116,7 +117,7 @@ export default async function ServiceDetailPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
       <ServiceDetailClient service={service} />
     </>

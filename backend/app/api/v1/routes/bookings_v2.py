@@ -1,6 +1,5 @@
 import uuid
-import random
-import string
+import secrets
 import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
@@ -38,10 +37,10 @@ router = APIRouter(prefix="/service-bookings", tags=["service-bookings"])
 
 
 def generate_booking_number():
-    """Generate unique booking number BK-YYYY-XXXXXX"""
+    """Generate unique booking number BK-YYYY-XXXXXX (hex — same entropy
+    approach as order numbers; far lower collision odds than 6 digits)."""
     year = datetime.now(timezone.utc).year
-    random_part = "".join(random.choices(string.digits, k=6))
-    return f"BK-{year}-{random_part}"
+    return f"BK-{year}-{secrets.token_hex(3).upper()}"
 
 
 # ==================== PUBLIC ENDPOINTS ====================

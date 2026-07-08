@@ -8,6 +8,7 @@ import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import BlogPostActions from "./BlogPostActions";
 import BlogPostBreadcrumb from "./BlogPostBreadcrumb";
+import { jsonLdString } from "@/lib/metadata";
 
 const API_BASE = getApiBaseUrl();
 
@@ -114,7 +115,7 @@ export default async function BlogPostPage({
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
       <main className="min-h-screen">
         {/* Hero */}

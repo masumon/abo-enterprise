@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { X, CheckCircle, AlertCircle, Info } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
@@ -38,7 +39,18 @@ export default function ToastProvider() {
             role="alert"
           >
             <Icon className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <p className="text-sm font-medium flex-1">{toast.message}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium">{toast.message}</p>
+              {toast.action && (
+                <Link
+                  href={toast.action.href}
+                  onClick={() => dismiss(toast.id)}
+                  className="inline-block mt-1 text-xs font-semibold underline underline-offset-2 hover:opacity-80"
+                >
+                  {toast.action.label} →
+                </Link>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => dismiss(toast.id)}

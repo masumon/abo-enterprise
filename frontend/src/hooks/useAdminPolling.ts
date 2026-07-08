@@ -35,15 +35,15 @@ export function useAdminPolling(enabled = true) {
         if (prev.current.pendingOrders >= 0) {
           if (pendingOrders > prev.current.pendingOrders) {
             const diff = pendingOrders - prev.current.pendingOrders;
-            toast("info", `${diff} new order${diff > 1 ? "s" : ""} received`);
+            toast("info", `${diff} new order${diff > 1 ? "s" : ""} received`, { label: "View", href: "/admin/orders" });
           }
           if (pendingBookings > prev.current.pendingBookings) {
             const diff = pendingBookings - prev.current.pendingBookings;
-            toast("info", `${diff} new booking${diff > 1 ? "s" : ""} received`);
+            toast("info", `${diff} new booking${diff > 1 ? "s" : ""} received`, { label: "View", href: "/admin/bookings" });
           }
           if (newLeads > prev.current.newLeads) {
             const diff = newLeads - prev.current.newLeads;
-            toast("info", `${diff} new lead${diff > 1 ? "s" : ""} received`);
+            toast("info", `${diff} new lead${diff > 1 ? "s" : ""} received`, { label: "View", href: "/admin/leads" });
           }
         }
 
@@ -64,10 +64,20 @@ export function useAdminPolling(enabled = true) {
     }
 
     poll();
-    const timer = setInterval(poll, POLL_INTERVAL);
+    const timer = setInterval(() => {
+      // Skip polls while the tab is hidden — saves backend quota and battery.
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      poll();
+    }, POLL_INTERVAL);
+    // Catch up immediately when the admin returns to the tab.
+    const onVisible = () => {
+      if (document.visibilityState === "visible") poll();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
       clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [enabled, setAlerts, toast]);
 }

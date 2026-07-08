@@ -1,8 +1,9 @@
 from uuid import UUID
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
+from app.core.http_cache import etag_json_response
 from app.core.security import require_admin, require_role
 from app.models.models import Product
 from app.schemas.schemas import ProductCreate, ProductUpdate, ProductOut, ApiResponse, PaginatedResponse, PaginatedMeta
@@ -12,6 +13,7 @@ router = APIRouter(prefix="/products", tags=["products"])
 
 @router.get("", response_model=PaginatedResponse)
 async def list_products(
+    request: Request,
     category: str | None = Query(None),
     featured: bool | None = Query(None),
     search: str | None = Query(None),
@@ -19,7 +21,7 @@ async def list_products(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-):
+) -> Response:
     conditions = [Product.is_active == True, Product.is_deleted == False]  # noqa: E712
     if category:
         conditions.append(Product.category == category)
@@ -48,10 +50,13 @@ async def list_products(
     )
     products = result.scalars().all()
 
-    return PaginatedResponse(
+    payload = PaginatedResponse(
         data=[ProductOut.model_validate(p) for p in products],
         meta=PaginatedMeta(page=page, per_page=per_page, total=total, total_pages=-(-total // per_page)),
     )
+    # ETag + short public cache: repeat catalog views become 304s — big win on
+    # slow mobile networks and Render free-tier bandwidth.
+    return etag_json_response(request, payload.model_dump(mode="json"), max_age=60)
 
 
 @router.get("/admin", response_model=PaginatedResponse)

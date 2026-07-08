@@ -1,9 +1,10 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
+from app.core.http_cache import etag_json_response
 from app.core.security import require_admin
 from app.models.models import Service, ServicePricingTier, ServiceBookingForm, ActivityLog, AdminUser
 from app.schemas.schemas import (
@@ -25,13 +26,14 @@ router = APIRouter(prefix="/services", tags=["services"])
 
 @router.get("", response_model=PaginatedResponse)
 async def list_services(
+    request: Request,
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=100),
     category: str | None = None,
     featured: bool | None = None,
     search: str | None = None,
-):
+) -> Response:
     """List all active services (public endpoint)"""
     conditions = [
         Service.is_deleted == False,  # noqa: E712
@@ -63,7 +65,7 @@ async def list_services(
     result = await db.execute(query)
     services = result.scalars().all()
 
-    return PaginatedResponse(
+    payload = PaginatedResponse(
         data=[ServiceOut.model_validate(s).model_dump() for s in services],
         message="Services fetched successfully",
         meta=PaginatedMeta(
@@ -73,6 +75,8 @@ async def list_services(
             total_pages=total_pages,
         ),
     )
+    # ETag + short public cache — repeat visits get 304s (mobile + free-tier win)
+    return etag_json_response(request, payload.model_dump(mode="json"), max_age=60)
 
 
 @router.get("/{slug}", response_model=ApiResponse)

@@ -205,7 +205,7 @@ export default function AdminDashboard() {
               stats?.recent_orders?.map((order) => (
                 <Link
                   key={order.id}
-                  href="/admin/orders"
+                  href={`/admin/orders?open=${order.id}`}
                   className="px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-gray-50/80 transition-colors"
                 >
                   <div className="min-w-0">
