@@ -15,6 +15,10 @@ const api = axios.create({
   // Default fallback timeout — overridden per-request in the interceptor below
   // so that network-quality changes (e.g. WiFi → mobile data) are always reflected.
   timeout: 30000,
+  // Send the API's HttpOnly admin session cookie on same-site requests
+  // (www.aboenterprise.com -> api.aboenterprise.com). Harmless for public
+  // calls; backend CORS already allows credentials with explicit origins.
+  withCredentials: true,
 });
 
 type RetryConfig = { __retryCount?: number; maxRetries?: number } & NonNullable<Parameters<typeof api.request>[0]>;
@@ -123,7 +127,7 @@ export const ordersApi = {
     api.post<ApiResponse<Order>>("/api/v1/orders", data),
 
   // order_status matches backend query param name
-  list: (params?: { order_status?: string; search?: string; page?: number }) =>
+  list: (params?: { order_status?: string; search?: string; days?: number; page?: number }) =>
     api.get<PaginatedResponse<Order>>("/api/v1/orders", { params }),
 
   get: (id: string) =>
@@ -276,6 +280,9 @@ export const authApi = {
 
   getMe: () =>
     api.get<ApiResponse<{ id: string; email: string; name: string; role: string }>>("/api/v1/auth/me"),
+
+  logout: () =>
+    api.post<ApiResponse<null>>("/api/v1/auth/logout"),
 };
 
 export const servicesApi = {
@@ -300,6 +307,7 @@ export async function downloadCsv(path: string, filename: string): Promise<void>
   const token = getAdminToken();
   const res = await fetch(`${API_BASE}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: "include", // cookie-session mode
   });
   if (!res.ok) throw new Error(`Export failed: ${res.statusText}`);
   const blob = await res.blob();
@@ -379,6 +387,7 @@ export async function downloadPdf(path: string, filename: string): Promise<void>
   const token = getAdminToken();
   const res = await fetch(`${API_BASE}${path}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
+    credentials: "include", // cookie-session mode
   });
   if (!res.ok) throw new Error(`PDF download failed: ${res.statusText}`);
   const blob = await res.blob();

@@ -6,6 +6,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { useAdminPolling } from "@/hooks/useAdminPolling";
 import AdminSidebar from "@/components/admin/AdminSidebar";
 import AdminTopBar from "@/components/admin/AdminTopBar";
+import AdminCommandPalette from "@/components/admin/AdminCommandPalette";
 import ToastProvider from "@/components/ui/ToastProvider";
 import DynamicFavicon from "@/components/ui/DynamicFavicon";
 import { Loader2 } from "lucide-react";
@@ -61,6 +62,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </main>
       </div>
 
+      <AdminCommandPalette role={user.role} />
       <ToastProvider />
       <DynamicFavicon />
     </div>

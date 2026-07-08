@@ -29,6 +29,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
+  const [days, setDays] = useState(0);
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
@@ -53,7 +54,7 @@ export default function AdminOrdersPage() {
     setLoading(true);
     setSelected(new Set());
     try {
-      const r = await ordersApi.list({ order_status: filter || undefined, search: search || undefined, page });
+      const r = await ordersApi.list({ order_status: filter || undefined, search: search || undefined, days: days || undefined, page });
       setOrders((r.data.data ?? []) as unknown as AdminOrder[]);
       setTotal(r.data.meta?.total ?? 0);
       setLoadError(null);
@@ -63,7 +64,7 @@ export default function AdminOrdersPage() {
     } finally {
       setLoading(false);
     }
-  }, [filter, search, page]);
+  }, [filter, search, days, page]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -236,6 +237,13 @@ export default function AdminOrdersPage() {
         onSearchChange={handleSearchChange}
         searchPlaceholder="নাম, ফোন, অর্ডার#…"
       >
+        <select value={days} onChange={(e) => { setDays(Number(e.target.value)); setPage(1); }} className="admin-input w-auto text-sm py-2" aria-label="Date range">
+          <option value={0}>All time</option>
+          <option value={1}>Today</option>
+          <option value={7}>Last 7 days</option>
+          <option value={30}>Last 30 days</option>
+          <option value={90}>Last 90 days</option>
+        </select>
         <select value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} className="admin-input w-auto text-sm py-2">
           <option value="">All Status</option>
           {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
@@ -305,7 +313,28 @@ export default function AdminOrdersPage() {
             description="Orders will appear here when customers checkout."
           />
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          {/* Mobile card view — table stays untouched for sm+ screens */}
+          <div className="sm:hidden divide-y divide-gray-50">
+            {orders.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => openDetail(o.id)}
+                className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-gray-50/80"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{o.customer_name}</p>
+                  <p className="text-xs text-gray-400">{o.order_number} · {new Date(o.created_at).toLocaleDateString("en-BD")}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-semibold text-gray-900">{formatPrice(o.total)}</p>
+                  <StatusBadge status={o.order_status} />
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="overflow-x-auto hidden sm:block">
             <table className="table-premium min-w-[580px]">
               <thead>
                 <tr>
@@ -361,6 +390,7 @@ export default function AdminOrdersPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

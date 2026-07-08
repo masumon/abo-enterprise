@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/lib/api";
-import { clearAdminToken, getAdminToken, syncAdminTokenCookie } from "@/lib/adminAuth";
+import { clearAdminToken, getAdminToken, hasAdminAuthMarker, syncAdminTokenCookie } from "@/lib/adminAuth";
 
 interface AdminUser {
   id: string;
@@ -40,7 +40,9 @@ export function useAdmin(redirectOnFail = true) {
   const checkAuth = useCallback(async () => {
     syncAdminTokenCookie();
     const token = getAdminToken();
-    if (!token) {
+    // Cookie-session mode: no JS-readable token, the HttpOnly cookie
+    // authenticates API calls and the marker cookie gates the middleware.
+    if (!token && !hasAdminAuthMarker()) {
       if (redirectOnFail && !redirectedRef.current) {
         redirectedRef.current = true;
         router.replace("/admin/login");
@@ -80,6 +82,9 @@ export function useAdmin(redirectOnFail = true) {
 
   const logout = useCallback(() => {
     clearCache();
+    // Best-effort server-side cookie clear (cookie-session mode); local
+    // cleanup below is what actually ends the client session.
+    authApi.logout().catch(() => {});
     clearAdminToken();
     router.replace("/admin/login");
   }, [router]);

@@ -288,6 +288,7 @@ async def orders_by_phone(
 async def list_orders(
     order_status: str | None = Query(None),
     search: str | None = Query(None),
+    days: int | None = Query(None, ge=1, le=365, description="Only orders from the last N days"),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -296,6 +297,9 @@ async def list_orders(
     conditions = [Order.is_deleted == False]  # noqa: E712
     if order_status:
         conditions.append(Order.order_status == order_status)
+    if days:
+        from datetime import timedelta
+        conditions.append(Order.created_at >= datetime.now(timezone.utc) - timedelta(days=days))
     if search:
         q = f"%{search}%"
         conditions.append(or_(

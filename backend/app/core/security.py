@@ -3,7 +3,7 @@ from typing import Any
 from uuid import UUID
 import bcrypt
 from jose import JWTError, jwt
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, Request, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -12,6 +12,11 @@ from app.core.database import get_db
 from app.models.models import AdminUser
 
 bearer_scheme = HTTPBearer(auto_error=False)
+
+# HttpOnly session cookie for the admin panel. Set at login alongside the
+# body token; require_admin accepts either, so old Bearer sessions keep
+# working and the frontend can migrate without a breaking change.
+ADMIN_SESSION_COOKIE = "abo_admin_session"
 
 
 def hash_password(password: str) -> str:
@@ -77,12 +82,16 @@ async def require_customer(
 
 
 async def require_admin(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> str:
-    if not credentials:
+    # Bearer header first (legacy sessions, API tools); HttpOnly session
+    # cookie as fallback (XSS-safe browser sessions).
+    token = credentials.credentials if credentials else request.cookies.get(ADMIN_SESSION_COOKIE)
+    if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-    payload = decode_token(credentials.credentials)
+    payload = decode_token(token)
     if payload.get("type") != "access":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token type")
     admin_id = payload.get("sub")
