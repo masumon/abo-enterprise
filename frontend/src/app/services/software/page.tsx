@@ -43,6 +43,7 @@ export default function SoftwarePage() {
   const [queued, setQueued] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -52,6 +53,7 @@ export default function SoftwarePage() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     setQueued(false);
+    setSubmitError(null);
     try {
       const response = await serviceLeadsApi.create({
         lead_type: toLeadV2Type(data.lead_type),
@@ -67,6 +69,12 @@ export default function SoftwarePage() {
       const created = response.data?.data as { lead_number?: string } | null;
       setReference(!wasQueued ? created?.lead_number ?? null : null);
       setIsSuccess(true);
+    } catch {
+      setSubmitError(
+        lang === "bn"
+          ? "পাঠানো যায়নি। আবার চেষ্টা করুন বা WhatsApp-এ যোগাযোগ করুন।"
+          : "Could not submit. Please try again or contact us on WhatsApp."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -229,6 +237,12 @@ export default function SoftwarePage() {
                     <p className="text-red-500 text-xs mt-1">{lang === "bn" ? "কমপক্ষে ২০ অক্ষর লিখুন" : "Please provide more details"}</p>
                   )}
                 </div>
+
+                {submitError && (
+                  <p role="alert" className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+                    {submitError}
+                  </p>
+                )}
 
                 <button type="submit" disabled={isSubmitting} className="btn btn-primary btn-lg w-full">
                   {isSubmitting

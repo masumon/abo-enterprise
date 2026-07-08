@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { isQueuedResponse, serviceLeadsApi } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/apiError";
 import { toLeadV2Type } from "@/lib/leadTypes";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 
@@ -61,6 +62,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
   const [success, setSuccess] = useState(false);
   const [queued, setQueued] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const {
     register,
     handleSubmit,
@@ -77,6 +79,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
     try {
       setSubmitting(true);
       setQueued(false);
+      setSubmitError(null);
 
       const response = await serviceLeadsApi.create({
         lead_type: toLeadV2Type(data.lead_type),
@@ -105,8 +108,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
         }, 5000);
       }
     } catch (error) {
-      console.error("Lead submission failed:", error);
-      alert("Failed to submit. Please try again.");
+      setSubmitError(apiErrorMessage(error, "Failed to submit. Please try again."));
     } finally {
       setSubmitting(false);
     }
@@ -268,6 +270,13 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
           </select>
         </div>
       </div>
+
+      {/* Error Message */}
+      {submitError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+          {submitError}
+        </div>
+      )}
 
       {/* Success Message */}
       {success && (

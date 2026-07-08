@@ -52,6 +52,7 @@ export default function LegalPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [queued, setQueued] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const { register, handleSubmit, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -64,6 +65,7 @@ export default function LegalPage() {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
     setQueued(false);
+    setSubmitError(null);
     try {
       const details = data.station
         ? `থানা/অফিস: ${data.station}\n\n${data.details}`
@@ -107,7 +109,7 @@ export default function LegalPage() {
       }
       setIsSuccess(true);
     } catch {
-      alert(lang === "bn" ? "বুকিং জমা দিতে সমস্যা হয়েছে। আবার চেষ্টা করুন।" : "Failed to submit booking. Please try again.");
+      setSubmitError(lang === "bn" ? "বুকিং জমা দেওয়া যায়নি। আবার চেষ্টা করুন।" : "Could not submit booking. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -248,6 +250,12 @@ export default function LegalPage() {
                   </p>
                 )}
               </div>
+
+              {submitError && (
+                <p role="alert" className="text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+                  {submitError}
+                </p>
+              )}
 
               <button type="submit" disabled={isSubmitting} className="btn btn-primary btn-lg w-full">
                 <Send className="w-5 h-5" />
