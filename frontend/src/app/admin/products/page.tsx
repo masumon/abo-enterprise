@@ -80,6 +80,7 @@ export default function AdminProductsPage() {
   const [extOpen, setExtOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [specs, setSpecs] = useState<{ k: string; v: string }[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalRef = useFocusTrap(showModal);
@@ -122,6 +123,7 @@ export default function AdminProductsPage() {
     });
     setImageUrl("");
     setGalleryImages([]);
+    setSpecs([]);
     setSeoOpen(false);
     setExtOpen(false);
     setShowModal(true);
@@ -166,6 +168,7 @@ export default function AdminProductsPage() {
     });
     setImageUrl(p.image_url ?? "");
     setGalleryImages(p.images ?? []);
+    setSpecs(Object.entries((p.specifications as Record<string, string>) ?? {}).map(([k, v]) => ({ k, v: String(v) })));
     setSeoOpen(false);
     setExtOpen(false);
     setShowModal(true);
@@ -197,6 +200,7 @@ export default function AdminProductsPage() {
     });
     setImageUrl(p.image_url ?? "");
     setGalleryImages([]);
+    setSpecs(Object.entries((p.specifications as Record<string, string>) ?? {}).map(([k, v]) => ({ k, v: String(v) })));
     setSeoOpen(false);
     setExtOpen(false);
     setShowModal(true);
@@ -210,6 +214,7 @@ export default function AdminProductsPage() {
         ...rest,
         tags: tagsStr ? tagsStr.split(",").map((t) => t.trim()).filter(Boolean) : [],
         images: galleryImages.filter(Boolean),
+        specifications: Object.fromEntries(specs.filter((r) => r.k.trim()).map((r) => [r.k.trim(), r.v.trim()])),
         flash_sale_ends_at: flash_sale_ends_at ? new Date(flash_sale_ends_at).toISOString() : null,
       } as Partial<Product>;
       if (editing) {
@@ -489,6 +494,44 @@ export default function AdminProductsPage() {
                       <div>
                         <label className="block text-xs font-medium text-gray-600 mb-1">Low Stock Alert</label>
                         <input {...register("low_stock_threshold")} type="number" className="input" placeholder="5" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Specifications <span className="text-gray-400 font-normal">(shown as a table on the product page)</span>
+                      </label>
+                      <div className="space-y-2">
+                        {specs.map((row, i) => (
+                          <div key={i} className="flex gap-2">
+                            <input
+                              value={row.k}
+                              onChange={(e) => setSpecs((prev) => prev.map((r, j) => (j === i ? { ...r, k: e.target.value } : r)))}
+                              className="input flex-1 text-sm"
+                              placeholder="Name (e.g. RAM, Color)"
+                            />
+                            <input
+                              value={row.v}
+                              onChange={(e) => setSpecs((prev) => prev.map((r, j) => (j === i ? { ...r, v: e.target.value } : r)))}
+                              className="input flex-1 text-sm"
+                              placeholder="Value (e.g. 8GB, Black)"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setSpecs((prev) => prev.filter((_, j) => j !== i))}
+                              className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50"
+                              aria-label="Remove specification"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setSpecs((prev) => [...prev, { k: "", v: "" }])}
+                          className="text-xs font-medium text-brand-600 hover:underline"
+                        >
+                          + Add specification
+                        </button>
                       </div>
                     </div>
                     <div>

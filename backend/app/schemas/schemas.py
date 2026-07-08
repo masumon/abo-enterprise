@@ -65,6 +65,7 @@ class ProductBase(BaseModel):
     delivery_info: str | None = None
     is_flash_sale: bool = False
     flash_sale_price: float | None = None
+    flash_sale_ends_at: datetime | None = None
     low_stock_threshold: int = 5
     is_best_seller: bool = False
     rating: float | None = None
@@ -104,6 +105,8 @@ class ProductUpdate(BaseModel):
     delivery_info: str | None = None
     is_flash_sale: bool | None = None
     flash_sale_price: float | None = None
+    flash_sale_ends_at: datetime | None = None
+    specifications: dict | None = None
     low_stock_threshold: int | None = None
     is_best_seller: bool | None = None
     rating: float | None = None

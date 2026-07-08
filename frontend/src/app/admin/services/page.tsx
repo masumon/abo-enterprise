@@ -24,6 +24,7 @@ const EMPTY_SERVICE: Partial<Service> = {
   base_price: undefined, min_price: undefined, max_price: undefined, hourly_rate: undefined,
   is_active: true, is_featured: false, sort_order: 0, lead_priority: 5,
   featured_image_url: "", icon_url: "", icon_color: "",
+  long_description_en: "", long_description_bn: "", tags: [],
 };
 
 const EMPTY_TIER: Partial<ServicePricingTier> = {
@@ -459,6 +460,23 @@ export default function AdminServicesPage() {
                 <div>
                   <label className="form-label">Full Description (বাংলা)</label>
                   <textarea value={editing.description_bn ?? ""} onChange={f("description_bn")} rows={4} placeholder="বিস্তারিত বিবরণ…" className="input w-full resize-y text-sm" dir="auto" />
+                </div>
+                <div>
+                  <label className="form-label">Long Description (EN) <span className="text-gray-400 font-normal text-xs">(optional — detail page body)</span></label>
+                  <textarea value={editing.long_description_en ?? ""} onChange={f("long_description_en")} rows={5} placeholder="In-depth service write-up shown on the service detail page…" className="input w-full resize-y text-sm" />
+                </div>
+                <div>
+                  <label className="form-label">Long Description (বাংলা) <span className="text-gray-400 font-normal text-xs">(ঐচ্ছিক)</span></label>
+                  <textarea value={editing.long_description_bn ?? ""} onChange={f("long_description_bn")} rows={5} placeholder="সার্ভিস পেজের বিস্তারিত লেখা…" className="input w-full resize-y text-sm" dir="auto" />
+                </div>
+                <div>
+                  <label className="form-label">Tags <span className="text-gray-400 font-normal text-xs">(comma-separated — search &amp; related services)</span></label>
+                  <input
+                    value={editing.tags?.join(", ") ?? ""}
+                    onChange={(e) => setEditing((prev) => prev ? { ...prev, tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) } : prev)}
+                    placeholder="printing, business card, design…"
+                    className="input w-full text-sm"
+                  />
                 </div>
               </section>
 
