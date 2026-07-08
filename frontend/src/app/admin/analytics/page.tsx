@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import api, { downloadCsv } from "@/lib/api";
+import api, { downloadCsv, downloadPdf } from "@/lib/api";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useToastStore } from "@/store/toast";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -28,7 +28,8 @@ export default function AnalyticsPage() {
   async function handleExport(path: string, filename: string, key: string) {
     setExporting(key);
     try {
-      await downloadCsv(path, filename);
+      if (filename.endsWith(".pdf")) await downloadPdf(path, filename);
+      else await downloadCsv(path, filename);
     } catch (e) {
       toast("error", apiErrorMessage(e, "Export failed"));
     } finally {
@@ -169,10 +170,14 @@ export default function AnalyticsPage() {
         <h2 className="font-bold text-gray-900 mb-4">Export Data</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: "Export Products CSV", path: "/api/v1/admin/bulk/export/products", filename: "products.csv", key: "products" },
-            { label: "Export Orders CSV", path: `/api/v1/admin/bulk/export/orders?days=${days}`, filename: `orders-${days}d.csv`, key: "orders" },
-            { label: "Export Service Leads CSV", path: "/api/v1/admin/bulk/export/leads", filename: "service-leads.csv", key: "leads" },
-            { label: "Export Service Bookings CSV", path: "/api/v1/admin/bulk/export/bookings", filename: "service-bookings.csv", key: "bookings" },
+            { label: "Products CSV", path: "/api/v1/admin/bulk/export/products", filename: "products.csv", key: "products" },
+            { label: "Products PDF", path: "/api/v1/admin/bulk/export/products/pdf", filename: "products.pdf", key: "products-pdf" },
+            { label: `Orders CSV (${days}d)`, path: `/api/v1/admin/bulk/export/orders?days=${days}`, filename: `orders-${days}d.csv`, key: "orders" },
+            { label: `Orders PDF (${days}d)`, path: `/api/v1/admin/bulk/export/orders/pdf?days=${days}`, filename: `orders-${days}d.pdf`, key: "orders-pdf" },
+            { label: "Leads CSV", path: "/api/v1/admin/bulk/export/leads", filename: "service-leads.csv", key: "leads" },
+            { label: "Leads PDF", path: "/api/v1/admin/bulk/export/leads/pdf", filename: "service-leads.pdf", key: "leads-pdf" },
+            { label: "Bookings CSV", path: "/api/v1/admin/bulk/export/bookings", filename: "service-bookings.csv", key: "bookings" },
+            { label: "Bookings PDF", path: "/api/v1/admin/bulk/export/bookings/pdf", filename: "service-bookings.pdf", key: "bookings-pdf" },
           ].map(btn => (
             <button
               key={btn.label}

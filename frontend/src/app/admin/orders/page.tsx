@@ -41,6 +41,7 @@ export default function AdminOrdersPage() {
   const [bulkStatus, setBulkStatus] = useState("");
   const [bulkLoading, setBulkLoading] = useState(false);
   const [csvLoading, setCsvLoading] = useState(false);
+  const [exportPdfLoading, setExportPdfLoading] = useState(false);
   const [csvDays, setCsvDays] = useState(30);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
@@ -139,6 +140,17 @@ export default function AdminOrdersPage() {
       toast("error", "CSV export failed");
     } finally {
       setCsvLoading(false);
+    }
+  };
+
+  const handlePdfExport = async () => {
+    setExportPdfLoading(true);
+    try {
+      await downloadPdf(`/api/v1/admin/bulk/export/orders/pdf?days=${csvDays}`, `orders_last${csvDays}days.pdf`);
+    } catch {
+      toast("error", "PDF export failed");
+    } finally {
+      setExportPdfLoading(false);
     }
   };
 
@@ -268,6 +280,15 @@ export default function AdminOrdersPage() {
           >
             {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             CSV
+          </button>
+          <button
+            onClick={handlePdfExport}
+            disabled={exportPdfLoading}
+            className="admin-btn-secondary !py-2 gap-1.5"
+            title={`Export last ${csvDays} days as PDF`}
+          >
+            {exportPdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            PDF
           </button>
         </div>
       </AdminToolbar>

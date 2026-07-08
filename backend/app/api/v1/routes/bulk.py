@@ -238,3 +238,131 @@ async def import_products(
         data={"created": created, "updated": updated, "errors": errors},
         message=f"Import complete: {created} created, {updated} updated",
     )
+
+
+# ── PDF EXPORT ────────────────────────────────────────────────────────────────
+# Mirrors each CSV export as a branded PDF table (same filters, same data).
+
+def _pdf_response(pdf: bytes, filename: str) -> StreamingResponse:
+    return StreamingResponse(
+        io.BytesIO(pdf),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )
+
+
+def _dt(d) -> str:
+    return d.strftime("%d %b %Y") if d else ""
+
+
+@router.get("/export/orders/pdf")
+async def export_orders_pdf(
+    days: int = Query(30, ge=1, le=365),
+    _admin: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Export orders as a PDF report (admin only) — same data as the CSV."""
+    from app.core.pdf_report import build_table_report
+
+    since = datetime.now(timezone.utc) - timedelta(days=days)
+    result = await db.execute(
+        select(Order)
+        .where(and_(Order.created_at >= since, Order.is_deleted == False))
+        .order_by(Order.created_at.desc())
+        .limit(MAX_EXPORT_ROWS)
+    )
+    orders = result.scalars().all()
+    total_sum = sum(float(o.total) for o in orders)
+    rows = [
+        [o.order_number, o.customer_name, o.customer_phone, o.payment_method,
+         o.payment_status, o.order_status, f"{float(o.total):,.0f}", _dt(o.created_at)]
+        for o in orders
+    ]
+    pdf = build_table_report(
+        f"Orders — Last {days} Days",
+        ["Order #", "Customer", "Phone", "Payment", "Pay Status", "Status", "Total (Tk)", "Date"],
+        rows,
+        subtitle=f"{len(rows)} orders · Total Tk {total_sum:,.0f}",
+        col_widths=[0.14, 0.18, 0.12, 0.10, 0.10, 0.10, 0.12, 0.14],
+    )
+    return _pdf_response(pdf, f"orders_last_{days}days.pdf")
+
+
+@router.get("/export/leads/pdf")
+async def export_leads_pdf(
+    _admin: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Export service leads as a PDF report (admin only)."""
+    from app.core.pdf_report import build_table_report
+
+    result = await db.execute(
+        select(LeadV2).where(LeadV2.is_deleted == False).order_by(LeadV2.created_at.desc()).limit(MAX_EXPORT_ROWS)
+    )
+    leads = result.scalars().all()
+    rows = [
+        [l.lead_number, l.name, l.phone, l.email or "", (l.lead_type or "").replace("_", " "),
+         l.budget_range or "", l.status, str(l.qualification_score), _dt(l.created_at)]
+        for l in leads
+    ]
+    pdf = build_table_report(
+        "Service Leads",
+        ["Lead #", "Name", "Phone", "Email", "Type", "Budget", "Status", "Score", "Date"],
+        rows,
+        col_widths=[0.12, 0.15, 0.11, 0.16, 0.12, 0.10, 0.08, 0.06, 0.10],
+    )
+    return _pdf_response(pdf, "service-leads.pdf")
+
+
+@router.get("/export/bookings/pdf")
+async def export_bookings_pdf(
+    _admin: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Export service bookings as a PDF report (admin only)."""
+    from app.core.pdf_report import build_table_report
+
+    result = await db.execute(
+        select(BookingV2).where(BookingV2.is_deleted == False).order_by(BookingV2.created_at.desc()).limit(MAX_EXPORT_ROWS)
+    )
+    bookings = result.scalars().all()
+    rows = [
+        [b.booking_number, b.service_name, b.customer_name, b.customer_phone,
+         f"{float(b.quoted_price):,.0f}" if b.quoted_price is not None else "—",
+         b.status, b.payment_status, _dt(b.created_at)]
+        for b in bookings
+    ]
+    pdf = build_table_report(
+        "Service Bookings",
+        ["Booking #", "Service", "Customer", "Phone", "Quoted (Tk)", "Status", "Payment", "Date"],
+        rows,
+        col_widths=[0.13, 0.19, 0.15, 0.12, 0.11, 0.10, 0.10, 0.10],
+    )
+    return _pdf_response(pdf, "service-bookings.pdf")
+
+
+@router.get("/export/products/pdf")
+async def export_products_pdf(
+    _admin: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Export products as a PDF report (admin only)."""
+    from app.core.pdf_report import build_table_report
+
+    result = await db.execute(
+        select(Product).where(Product.is_deleted == False).order_by(Product.name_en).limit(MAX_EXPORT_ROWS)
+    )
+    products = result.scalars().all()
+    rows = [
+        [p.name_en, p.category, f"{float(p.price):,.0f}",
+         f"{float(p.original_price):,.0f}" if p.original_price else "—",
+         str(p.stock_quantity), "Yes" if p.is_active else "No", "Yes" if p.is_featured else "No"]
+        for p in products
+    ]
+    pdf = build_table_report(
+        "Products Catalog",
+        ["Product", "Category", "Price (Tk)", "Original (Tk)", "Stock", "Active", "Featured"],
+        rows,
+        col_widths=[0.30, 0.14, 0.12, 0.12, 0.10, 0.11, 0.11],
+    )
+    return _pdf_response(pdf, "products.pdf")
