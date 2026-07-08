@@ -1,6 +1,7 @@
 import httpx
 import logging
 import hashlib
+import hmac
 import json
 from datetime import datetime
 from typing import Optional
@@ -158,9 +159,11 @@ class NagadGateway:
             return None
 
     def verify_webhook_signature(self, payload: str, signature: str) -> bool:
-        """Verify webhook signature from Nagad"""
+        """Verify webhook signature from Nagad (constant-time to prevent timing attacks)."""
+        if not self.merchant_key or not signature:
+            return False
         expected_signature = self._generate_signature(payload)
-        return expected_signature == signature
+        return hmac.compare_digest(expected_signature, signature)
 
 
 _nagad_instance: "NagadGateway | None" = None
