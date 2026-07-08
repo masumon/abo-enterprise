@@ -58,7 +58,15 @@ export default function TestimonialsClient() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !message.trim() || submitting) return;
+    if (submitting) return;
+    if (!name.trim()) {
+      toast("error", lang === "bn" ? "নাম দিন" : "Please enter your name");
+      return;
+    }
+    if (!message.trim()) {
+      toast("error", lang === "bn" ? "রিভিউ লিখুন" : "Please write your review");
+      return;
+    }
     setSubmitting(true);
     try {
       await reviewsApi.create({

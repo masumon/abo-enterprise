@@ -67,6 +67,18 @@ export default function AdminOrdersPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Deep link: /admin/orders?open=<order_id> opens that order's detail directly
+  const openedFromUrl = useRef(false);
+  useEffect(() => {
+    if (openedFromUrl.current || typeof window === "undefined") return;
+    const id = new URLSearchParams(window.location.search).get("open");
+    if (id) {
+      openedFromUrl.current = true;
+      openDetail(id);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Debounce search input
   const handleSearchChange = (v: string) => {
     setSearchInput(v);
@@ -355,8 +367,8 @@ export default function AdminOrdersPage() {
       {total > 20 && (
         <div className="flex justify-center gap-2">
           <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-          <span className="px-4 py-2 text-sm text-gray-600">Page {page}</span>
-          <button disabled={orders.length < 20} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">Next</button>
+          <span className="px-4 py-2 text-sm text-gray-600">Page {page} of {Math.max(1, Math.ceil(total / 20))}</span>
+          <button disabled={page >= Math.ceil(total / 20)} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">Next</button>
         </div>
       )}
 

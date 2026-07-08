@@ -28,21 +28,31 @@ def generate_order_number() -> str:
     return f"ABO-{now.year}{now.month:02d}-{secrets.token_hex(3).upper()}"
 
 
-async def _validate_and_reserve_stock(db: AsyncSession, items: list) -> None:
-    """Validate stock availability and decrement quantities atomically."""
-    for item_data in items:
+async def _validate_and_reserve_stock(db: AsyncSession, items: list) -> dict[str, float]:
+    """Validate stock, decrement quantities, and return the SERVER-trusted
+    unit price per line (keyed by list index) taken from the database.
+
+    Client-supplied prices are never trusted for the money math — only used
+    as a fallback for custom line items that have no matching product row.
+    """
+    trusted_prices: dict[str, float] = {}
+    for idx, item_data in enumerate(items):
         if not item_data.product_id:
+            trusted_prices[str(idx)] = float(item_data.product_price)
             continue
         try:
             product_uuid = UUID(str(item_data.product_id))
         except (ValueError, TypeError):
+            trusted_prices[str(idx)] = float(item_data.product_price)
             continue
         result = await db.execute(
-            select(Product).where(
+            select(Product)
+            .where(
                 Product.id == product_uuid,
                 Product.is_deleted == False,  # noqa: E712
                 Product.is_active == True,  # noqa: E712
             )
+            .with_for_update()
         )
         product = result.scalar_one_or_none()
         if not product:
@@ -56,6 +66,30 @@ async def _validate_and_reserve_stock(db: AsyncSession, items: list) -> None:
                 detail=f"Insufficient stock for {product.name_en}. Available: {product.stock_quantity}",
             )
         product.stock_quantity -= item_data.quantity
+        trusted_prices[str(idx)] = float(product.price)
+    return trusted_prices
+
+
+async def _server_side_discount(db: AsyncSession, coupon_code: str | None, subtotal: float) -> float:
+    """Re-derive the coupon discount from admin-configured coupon rules.
+
+    Mirrors the /public/coupons/validate logic so a tampered discount_amount
+    in the request body can never exceed what the coupon actually grants.
+    Returns 0 for missing/invalid/expired coupons or unmet minimums.
+    """
+    if not coupon_code:
+        return 0.0
+    from app.api.v1.routes.coupons import _load_coupons
+    coupons = await _load_coupons(db)
+    entry = coupons.get(coupon_code.strip().upper())
+    if not entry or not entry.get("active", True):
+        return 0.0
+    if subtotal < float(entry.get("min_subtotal", 0)):
+        return 0.0
+    rate = float(entry.get("discount_percent", entry.get("discount_rate", 0)))
+    if rate > 1:
+        rate = rate / 100
+    return float(round(subtotal * rate))
 
 
 @router.post(
@@ -69,7 +103,18 @@ async def create_order(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
-    await _validate_and_reserve_stock(db, payload.items)
+    trusted_prices = await _validate_and_reserve_stock(db, payload.items)
+
+    # ---- Server-authoritative money math (never trust client totals) ----
+    trusted_subtotal = float(sum(
+        trusted_prices[str(idx)] * item.quantity for idx, item in enumerate(payload.items)
+    ))
+    trusted_discount = await _server_side_discount(db, payload.coupon_code, trusted_subtotal)
+    # Delivery charge depends on admin zone settings computed client-side; the
+    # attack surface (arbitrary grand total) is closed by deriving total from
+    # trusted subtotal/discount. Clamp delivery to a non-negative number.
+    trusted_delivery = max(0.0, float(payload.delivery_charge or 0))
+    trusted_total = trusted_subtotal - trusted_discount + trusted_delivery
 
     order = Order(
         order_number=generate_order_number(),
@@ -79,24 +124,25 @@ async def create_order(
         delivery_address=payload.delivery_address,
         payment_method=payload.payment_method,
         payment_number=payload.payment_number,
-        subtotal=payload.subtotal,
-        discount_amount=payload.discount_amount or 0,
+        subtotal=trusted_subtotal,
+        discount_amount=trusted_discount,
         coupon_code=payload.coupon_code,
-        delivery_charge=payload.delivery_charge,
-        total=payload.total,
+        delivery_charge=trusted_delivery,
+        total=trusted_total,
         notes=payload.notes,
     )
     db.add(order)
     await db.flush()
 
-    for item_data in payload.items:
+    for idx, item_data in enumerate(payload.items):
+        unit_price = trusted_prices[str(idx)]
         item = OrderItem(
             order_id=order.id,
             product_id=item_data.product_id if item_data.product_id else None,
             product_name=item_data.product_name,
-            product_price=item_data.product_price,
+            product_price=unit_price,
             quantity=item_data.quantity,
-            subtotal=item_data.subtotal,
+            subtotal=unit_price * item_data.quantity,
         )
         db.add(item)
 
@@ -121,7 +167,7 @@ async def create_order(
             wa_phone = phone_digits
         wa_msg = (
             f"Hello {payload.customer_name}, your order {order.order_number} "
-            f"at ABO Enterprise (৳{float(payload.total):,.0f}) has been received. "
+            f"at ABO Enterprise (৳{float(order.total):,.0f}) has been received. "
             f"We will confirm shortly. Thank you!"
         )
         customer_wa_url = f"https://wa.me/{wa_phone}?text={quote(wa_msg)}"
@@ -130,7 +176,7 @@ async def create_order(
             order.order_number,
             payload.customer_name,
             payload.customer_phone,
-            float(payload.total),
+            float(order.total),
             items_summary,
             payment_method=payload.payment_method,
             admin_orders_url=admin_url,
@@ -144,14 +190,14 @@ async def create_order(
     # Send customer confirmation email
     if payload.customer_email:
         items = [
-            {"name": i.product_name, "quantity": i.quantity, "price": float(i.product_price)}
-            for i in payload.items
+            {"name": i.product_name, "quantity": i.quantity, "price": trusted_prices[str(idx)]}
+            for idx, i in enumerate(payload.items)
         ]
         html = customer_order_confirmation_html(
             order.order_number,
             payload.customer_name,
             items,
-            float(payload.total),
+            float(order.total),
             settings.WHATSAPP_NUMBER,
         )
         background_tasks.add_task(

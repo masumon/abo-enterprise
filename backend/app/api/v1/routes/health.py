@@ -23,8 +23,10 @@ async def db_health():
         async with AsyncSessionLocal() as db:
             await db.execute(text("SELECT 1"))
         return {"status": "ok", "database": "connected"}
-    except Exception as e:
-        return {"status": "error", "database": str(e)}
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("DB health check failed")
+        return {"status": "error", "database": "unavailable"}
 
 
 @router.get("/health/ready")

@@ -4,6 +4,7 @@ import ProductDetailShell from "./ProductDetailShell";
 
 import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { jsonLdString } from "@/lib/metadata";
 
 const API_BASE = getApiBaseUrl();
 
@@ -115,7 +116,7 @@ export default async function ProductDetailPage({
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
         />
       )}
       <ProductDetailShell slug={params.slug} initialProduct={product} />

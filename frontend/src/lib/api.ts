@@ -39,10 +39,16 @@ api.interceptors.response.use(
     const config = error.config as RetryConfig | undefined;
     const maxRetries = config?.maxRetries ?? getAdaptiveRetry(3);
     if (config && (config.__retryCount ?? 0) < maxRetries) {
-      const retryable =
-        !error.response ||
-        [408, 429, 500, 502, 503, 504].includes(error.response.status) ||
-        ["ECONNABORTED", "ERR_NETWORK", "ETIMEDOUT", "ECONNRESET"].includes(error.code);
+      // Writes (POST/PUT/PATCH/DELETE) are NOT idempotent: a timeout or 5xx
+      // can occur AFTER the server processed the request, so blindly retrying
+      // creates duplicate orders/bookings. Only 429 is provably unprocessed.
+      const method = (config.method ?? "get").toLowerCase();
+      const isIdempotent = ["get", "head", "options"].includes(method);
+      const retryable = isIdempotent
+        ? !error.response ||
+          [408, 429, 500, 502, 503, 504].includes(error.response.status) ||
+          ["ECONNABORTED", "ERR_NETWORK", "ETIMEDOUT", "ECONNRESET"].includes(error.code)
+        : error.response?.status === 429;
       if (retryable && error.response?.status !== 401) {
         config.__retryCount = (config.__retryCount ?? 0) + 1;
         const delay = Math.min(12000, 1500 * 2 ** (config.__retryCount - 1));

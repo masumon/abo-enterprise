@@ -1,6 +1,5 @@
 import uuid
-import random
-import string
+import secrets
 import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
@@ -38,10 +37,10 @@ router = APIRouter(prefix="/service-bookings", tags=["service-bookings"])
 
 
 def generate_booking_number():
-    """Generate unique booking number BK-YYYY-XXXXXX"""
+    """Generate unique booking number BK-YYYY-XXXXXX (hex — same entropy
+    approach as order numbers; far lower collision odds than 6 digits)."""
     year = datetime.now(timezone.utc).year
-    random_part = "".join(random.choices(string.digits, k=6))
-    return f"BK-{year}-{random_part}"
+    return f"BK-{year}-{secrets.token_hex(3).upper()}"
 
 
 # ==================== PUBLIC ENDPOINTS ====================
@@ -62,13 +61,34 @@ async def create_booking(
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
 
+    # ---- Server-authoritative price (never trust the client quoted_price) ----
+    # Resolve from the selected tier, else the service base price. Mirrors the
+    # booking form's own resolution but sourced from trusted DB rows.
+    from app.models.models import ServicePricingTier
+    trusted_price = None
+    if payload.service_tier:
+        tier_result = await db.execute(
+            select(ServicePricingTier).where(
+                ServicePricingTier.service_id == service.id,
+                ServicePricingTier.tier_name == payload.service_tier,
+            )
+        )
+        tier = tier_result.scalar_one_or_none()
+        if tier is not None:
+            trusted_price = float(tier.price)
+    if trusted_price is None:
+        trusted_price = float(service.base_price) if service.base_price is not None else None
+
     # Generate booking number
     booking_number = generate_booking_number()
+
+    booking_fields = payload.model_dump()
+    booking_fields["quoted_price"] = trusted_price
 
     booking = BookingV2(
         booking_number=booking_number,
         service_name=service.name_en,
-        **payload.model_dump(),
+        **booking_fields,
     )
 
     db.add(booking)
@@ -92,7 +112,7 @@ async def create_booking(
 
     if payload.customer_email:
         estimated = (
-            f"৳{payload.quoted_price:,.0f}" if payload.quoted_price else "Quote upon confirmation"
+            f"৳{trusted_price:,.0f}" if trusted_price else "Quote upon confirmation"
         )
         html = customer_booking_confirmation_html(
             booking.booking_number,
