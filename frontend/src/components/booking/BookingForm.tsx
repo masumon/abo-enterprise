@@ -66,7 +66,8 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
     resolver: zodResolver(bookingSchema),
     defaultValues: {
       service_tier: initialTier?.tier_name,
-      quoted_price: initialTier?.price ?? service.base_price,
+      // base_price from API can be null; convert to undefined so z.number().optional() passes
+      quoted_price: initialTier?.price ?? service.base_price ?? undefined,
     },
   });
 
@@ -149,8 +150,20 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
     }
   }
 
-  function onInvalidSubmit() {
-    setSubmitError("Please fix highlighted fields and try again.");
+  function onInvalidSubmit(fieldErrors: Record<string, unknown>) {
+    const first = Object.keys(fieldErrors)[0];
+    const labels: Record<string, string> = {
+      customer_name: "Full Name",
+      customer_phone: "Phone Number",
+      customer_email: "Email Address",
+      details: "Details / Requirements",
+    };
+    const fieldLabel = first ? labels[first] : null;
+    setSubmitError(
+      fieldLabel
+        ? `Please fix the "${fieldLabel}" field and try again.`
+        : "Please fill in all required fields and try again."
+    );
   }
 
   const hasTiers = Boolean(service.pricing_tiers && service.pricing_tiers.length > 0);
