@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { isQueuedResponse, serviceBookingsApi } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/apiError";
 import { saveOrderSnapshot } from "@/lib/orderSnapshot";
 import type { Service } from "@/types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
@@ -142,8 +143,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       reset();
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
-      console.error("Booking failed:", error);
-      setSubmitError("Booking failed. Please try again.");
+      setSubmitError(apiErrorMessage(error, "Booking failed. Please try again."));
     } finally {
       setSubmitting(false);
     }

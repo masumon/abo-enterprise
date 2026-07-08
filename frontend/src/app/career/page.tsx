@@ -42,8 +42,16 @@ export default function CareerPage() {
 
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !BD_PHONE_REGEX.test(phone.trim())) {
+    if (!name.trim()) {
+      toast("error", lang === "bn" ? "নাম দিন" : "Name is required");
+      return;
+    }
+    if (!BD_PHONE_REGEX.test(phone.trim())) {
       toast("error", lang === "bn" ? "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন" : "Enter a valid 11-digit BD phone number");
+      return;
+    }
+    if (!role) {
+      toast("error", lang === "bn" ? "পদ নির্বাচন করুন" : "Please select a position");
       return;
     }
 

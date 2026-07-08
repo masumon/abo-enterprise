@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { adminApi } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/apiError";
 import { Loader2, Users, Shield, Plus, Pencil, Trash2, X, Search } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -79,8 +80,8 @@ export default function AdminUsersPage() {
       }
       closeModal();
       await load();
-    } catch {
-      toast("error", modal === "create" ? "Create failed" : "Update failed");
+    } catch (err) {
+      toast("error", apiErrorMessage(err, modal === "create" ? "Create failed" : "Update failed"));
     } finally {
       setSaving(false);
     }

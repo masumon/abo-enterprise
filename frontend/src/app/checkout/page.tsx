@@ -10,6 +10,7 @@ import { z } from "zod";
 import {
   ShoppingBag, Tag, AlertCircle, ArrowLeft, Truck, Shield, ChevronRight, Copy, Check,
 } from "lucide-react";
+import { apiErrorMessage } from "@/lib/apiError";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
 import { cn, formatPrice } from "@/lib/utils";
@@ -284,11 +285,14 @@ export default function CheckoutPage() {
       router.push(
         `/order-success${orderNumber ? `?order=${orderNumber}&phone=${encodeURIComponent(data.customer_phone)}` : ""}`
       );
-    } catch {
+    } catch (err) {
       setSubmitError(
-        lang === "bn"
-          ? "অর্ডার জমা দেওয়া যায়নি। আবার চেষ্টা করুন।"
-          : "Could not submit order. Please try again."
+        apiErrorMessage(
+          err,
+          lang === "bn"
+            ? "অর্ডার জমা দেওয়া যায়নি। আবার চেষ্টা করুন।"
+            : "Could not submit order. Please try again."
+        )
       );
       setIsSubmitting(false);
     }
