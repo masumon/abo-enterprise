@@ -301,32 +301,41 @@ export default function VisitorAnalytics({ days }: { days: number }) {
   const lastSegment = (p: string) => decodeURIComponent(cleanPath(p).split("/").pop() || p).replace(/-/g, " ");
 
   const liveKpis = [
-    { label: "Live Visitors", value: liveData.active_users.toLocaleString(), icon: Radio, color: "text-green-600 bg-green-50 dark:bg-green-950/30" },
-    { label: "Live Active Pages", value: liveData.active_pages.length.toLocaleString(), icon: Eye, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30" },
-    { label: "Live Products Viewed", value: liveData.active_products.length.toLocaleString(), icon: Package, color: "text-purple-600 bg-purple-50 dark:bg-purple-950/30" },
-    { label: "Live Services Viewed", value: liveData.active_services.length.toLocaleString(), icon: Wrench, color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30" },
+    { label: "Active Visitors", value: liveData.active_users.toLocaleString(), icon: Radio, color: "text-green-600 bg-green-50 dark:bg-green-950/30" },
+    { label: "Active Pages", value: liveData.active_pages.length.toLocaleString(), icon: Eye, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30" },
+    { label: "Products Being Viewed", value: liveData.active_products.length.toLocaleString(), icon: Package, color: "text-purple-600 bg-purple-50 dark:bg-purple-950/30" },
+    { label: "Services Being Viewed", value: liveData.active_services.length.toLocaleString(), icon: Wrench, color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30" },
   ];
 
   const historicalKpis = [
-    { label: "Historical (GA4) Users", value: historical.users.toLocaleString(), icon: Users, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30" },
-    { label: "Historical (GA4) New Users", value: historical.new_users.toLocaleString(), icon: Users, color: "text-teal-600 bg-teal-50 dark:bg-teal-950/30" },
-    { label: "Historical (GA4) Sessions", value: historical.sessions.toLocaleString(), icon: Compass, color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/30" },
-    { label: "Historical (GA4) Engaged Sessions", value: historical.engaged_sessions.toLocaleString(), icon: MousePointerClick, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30" },
-    { label: "Historical (GA4) Avg Session Duration", value: fmtDuration(historical.avg_session_duration_sec), icon: Clock, color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30" },
-    { label: "Historical (GA4) Bounce Rate", value: `${historical.bounce_rate_pct}%`, icon: MousePointerClick, color: "text-red-600 bg-red-50 dark:bg-red-950/30" },
-    { label: "Historical (GA4) Engagement Rate", value: `${historical.engagement_rate_pct}%`, icon: Compass, color: "text-cyan-600 bg-cyan-50 dark:bg-cyan-950/30" },
-    { label: "Historical (GA4) Page Views", value: historical.page_views.toLocaleString(), icon: Eye, color: "text-violet-600 bg-violet-50 dark:bg-violet-950/30" },
-    { label: "Historical (GA4) Conversion Rate", value: `${historical.conversion_rate_pct}%`, icon: Users, color: "text-fuchsia-600 bg-fuchsia-50 dark:bg-fuchsia-950/30" },
-    { label: "Historical (GA4) Contact Views", value: historical.contact_views.toLocaleString(), icon: Mail, color: "text-pink-600 bg-pink-50 dark:bg-pink-950/30" },
-    { label: "Historical (GA4) Lead Generation", value: historical.lead_generation.toLocaleString(), icon: Mail, color: "text-rose-600 bg-rose-50 dark:bg-rose-950/30" },
-    { label: "Historical (GA4) Revenue", value: historical.revenue == null ? "N/A" : historical.revenue.toLocaleString(), icon: Eye, color: "text-amber-600 bg-amber-50 dark:bg-amber-950/30" },
+    { label: "Users", value: historical.users.toLocaleString(), icon: Users, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30" },
+    { label: "New Users", value: historical.new_users.toLocaleString(), icon: Users, color: "text-teal-600 bg-teal-50 dark:bg-teal-950/30" },
+    { label: "Sessions", value: historical.sessions.toLocaleString(), icon: Compass, color: "text-indigo-600 bg-indigo-50 dark:bg-indigo-950/30" },
+    { label: "Engaged Sessions", value: historical.engaged_sessions.toLocaleString(), icon: MousePointerClick, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30" },
+    { label: "Avg Session Duration", value: fmtDuration(historical.avg_session_duration_sec), icon: Clock, color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30" },
+    { label: "Bounce Rate", value: `${historical.bounce_rate_pct}%`, icon: MousePointerClick, color: "text-red-600 bg-red-50 dark:bg-red-950/30" },
+    { label: "Engagement Rate", value: `${historical.engagement_rate_pct}%`, icon: Compass, color: "text-cyan-600 bg-cyan-50 dark:bg-cyan-950/30" },
+    { label: "Page Views", value: historical.page_views.toLocaleString(), icon: Eye, color: "text-violet-600 bg-violet-50 dark:bg-violet-950/30" },
+    { label: "Conversion Rate", value: `${historical.conversion_rate_pct}%`, icon: Users, color: "text-fuchsia-600 bg-fuchsia-50 dark:bg-fuchsia-950/30" },
+    { label: "Contact Views", value: historical.contact_views.toLocaleString(), icon: Mail, color: "text-pink-600 bg-pink-50 dark:bg-pink-950/30" },
+    { label: "Lead Generation", value: historical.lead_generation.toLocaleString(), icon: Mail, color: "text-rose-600 bg-rose-50 dark:bg-rose-950/30" },
+    { label: "Revenue (GA4)", value: historical.revenue == null ? "—" : `৳${historical.revenue.toLocaleString()}`, icon: Eye, color: "text-amber-600 bg-amber-50 dark:bg-amber-950/30" },
   ];
 
   return (
     <div className="space-y-5">
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm">Live Analytics</h3>
+          <div>
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm flex items-center gap-2">
+              <span className="relative flex w-2.5 h-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
+                <span className="relative inline-flex rounded-full w-2.5 h-2.5 bg-green-500" />
+              </span>
+              Live — Right Now
+            </h3>
+            <p className="text-[11px] text-gray-400 mt-0.5">Who is on the site at this moment (GA4 Realtime)</p>
+          </div>
           <div className="flex items-center gap-2 text-xs">
             <span className="text-gray-500 dark:text-gray-400">Auto refresh</span>
             <select
@@ -359,7 +368,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 mb-4">
-          <h4 className="font-bold text-gray-900 dark:text-gray-100 mb-3 text-sm">Live Active User Timeline</h4>
+          <h4 className="font-bold text-gray-900 dark:text-gray-100 mb-3 text-sm">Active Users — Last 30 Minutes</h4>
           {liveData.timeline.length === 0 ? (
             <p className="text-xs text-gray-400 py-4 text-center">No live timeline data yet</p>
           ) : (
@@ -382,19 +391,22 @@ export default function VisitorAnalytics({ days }: { days: number }) {
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
-          <BarList title="Live Active Pages" icon={Eye} rows={liveData.active_pages as unknown as Row[]} dim="pagePath" metric="activeUsers" format={cleanPath} />
-          <BarList title="Live Products Being Viewed" icon={Package} rows={liveData.active_products as unknown as Row[]} dim="pagePath" metric="activeUsers" format={lastSegment} />
-          <BarList title="Live Services Being Viewed" icon={Wrench} rows={liveData.active_services as unknown as Row[]} dim="pagePath" metric="activeUsers" format={lastSegment} />
-          <BarList title="Live Traffic Sources" icon={Compass} rows={liveData.traffic_sources} dim="sessionSource" metric="activeUsers" />
-          <BarList title="Live Countries" icon={Globe2} rows={liveData.countries} dim="country" metric="activeUsers" />
-          <BarList title="Live Cities" icon={MapPin} rows={liveData.cities} dim="city" metric="activeUsers" />
-          <BarList title="Live Devices" icon={Smartphone} rows={liveData.devices} dim="deviceCategory" metric="activeUsers" />
-          <BarList title="Live Browsers" icon={Globe2} rows={liveData.browsers} dim="browser" metric="activeUsers" />
+          <BarList title="Active Pages" icon={Eye} rows={liveData.active_pages as unknown as Row[]} dim="pagePath" metric="activeUsers" format={cleanPath} />
+          <BarList title="Products Being Viewed" icon={Package} rows={liveData.active_products as unknown as Row[]} dim="pagePath" metric="activeUsers" format={lastSegment} />
+          <BarList title="Services Being Viewed" icon={Wrench} rows={liveData.active_services as unknown as Row[]} dim="pagePath" metric="activeUsers" format={lastSegment} />
+          <BarList title="Traffic Sources" icon={Compass} rows={liveData.traffic_sources} dim="sessionSource" metric="activeUsers" />
+          <BarList title="Countries" icon={Globe2} rows={liveData.countries} dim="country" metric="activeUsers" />
+          <BarList title="Cities" icon={MapPin} rows={liveData.cities} dim="city" metric="activeUsers" />
+          <BarList title="Devices" icon={Smartphone} rows={liveData.devices} dim="deviceCategory" metric="activeUsers" />
+          <BarList title="Browsers" icon={Globe2} rows={liveData.browsers} dim="browser" metric="activeUsers" />
         </div>
       </div>
 
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 sm:p-5">
-        <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4 text-sm">Historical (GA4)</h3>
+        <div className="mb-4">
+          <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm">Historical — Last {days} Days</h3>
+          <p className="text-[11px] text-gray-400 mt-0.5">Source: Google Analytics 4</p>
+        </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           {historicalKpis.map((k) => (
@@ -409,7 +421,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6 mb-4">
-          <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4 text-sm">Historical (GA4) Active User Trend ({days}d)</h3>
+          <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4 text-sm">Daily Visitors</h3>
           {daily.length === 0 ? (
             <p className="text-sm text-gray-400 py-8 text-center">No visitor data yet — GA4 needs 24–48h after setup</p>
           ) : (
@@ -433,7 +445,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 mb-4">
-          <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3 text-sm">Historical (GA4) New vs Returning</h3>
+          <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3 text-sm">New vs Returning Visitors</h3>
           {(() => {
             const nv = nvr["new"] ?? 0;
             const rv = nvr["returning"] ?? 0;
@@ -454,22 +466,22 @@ export default function VisitorAnalytics({ days }: { days: number }) {
         </div>
 
         <div className="grid md:grid-cols-2 gap-4 mb-4">
-          <BarList title="Historical (GA4) Top Pages" icon={Eye} rows={historical.top_pages} dim="pagePath" metric="screenPageViews" format={cleanPath} />
-          <BarList title="Historical (GA4) Landing Pages" icon={Eye} rows={historical.landing_pages} dim="landingPage" metric="sessions" format={cleanPath} />
-          <BarList title="Historical (GA4) Exit Pages" icon={Eye} rows={historical.exit_pages} dim="pagePath" metric="exits" format={cleanPath} />
-          <BarList title="Historical (GA4) Traffic Sources" icon={Compass} rows={historical.traffic_sources} dim="sessionDefaultChannelGroup" metric="sessions" />
-          <BarList title="Historical (GA4) Channels" icon={Compass} rows={historical.channels} dim="sessionDefaultChannelGroup" metric="sessions" />
-          <BarList title="Historical (GA4) Devices" icon={Smartphone} rows={historical.devices} dim="deviceCategory" metric="activeUsers" />
-          <BarList title="Historical (GA4) Browsers" icon={Globe2} rows={historical.browsers} dim="browser" metric="activeUsers" />
-          <BarList title="Historical (GA4) Operating Systems" icon={Smartphone} rows={historical.operating_systems} dim="operatingSystem" metric="activeUsers" />
-          <BarList title="Historical (GA4) Countries" icon={Globe2} rows={historical.countries} dim="country" metric="activeUsers" />
-          <BarList title="Historical (GA4) Cities" icon={MapPin} rows={historical.cities} dim="city" metric="activeUsers" />
-          <BarList title="Historical (GA4) Top Products" icon={Package} rows={historical.top_products} dim="pagePath" metric="screenPageViews" format={lastSegment} />
-          <BarList title="Historical (GA4) Top Services" icon={Wrench} rows={historical.top_services} dim="pagePath" metric="screenPageViews" format={lastSegment} />
+          <BarList title="Top Pages" icon={Eye} rows={historical.top_pages} dim="pagePath" metric="screenPageViews" format={cleanPath} />
+          <BarList title="Landing Pages" icon={Eye} rows={historical.landing_pages} dim="landingPage" metric="sessions" format={cleanPath} />
+          <BarList title="Exit Pages" icon={Eye} rows={historical.exit_pages} dim="pagePath" metric="exits" format={cleanPath} />
+          <BarList title="Traffic Sources" icon={Compass} rows={historical.traffic_sources} dim="sessionDefaultChannelGroup" metric="sessions" />
+          <BarList title="Channels" icon={Compass} rows={historical.channels} dim="sessionDefaultChannelGroup" metric="sessions" />
+          <BarList title="Devices" icon={Smartphone} rows={historical.devices} dim="deviceCategory" metric="activeUsers" />
+          <BarList title="Browsers" icon={Globe2} rows={historical.browsers} dim="browser" metric="activeUsers" />
+          <BarList title="Operating Systems" icon={Smartphone} rows={historical.operating_systems} dim="operatingSystem" metric="activeUsers" />
+          <BarList title="Countries" icon={Globe2} rows={historical.countries} dim="country" metric="activeUsers" />
+          <BarList title="Cities" icon={MapPin} rows={historical.cities} dim="city" metric="activeUsers" />
+          <BarList title="Top Products" icon={Package} rows={historical.top_products} dim="pagePath" metric="screenPageViews" format={lastSegment} />
+          <BarList title="Top Services" icon={Wrench} rows={historical.top_services} dim="pagePath" metric="screenPageViews" format={lastSegment} />
         </div>
 
         <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6">
-          <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4 text-sm">Historical (GA4) Peak Hours</h3>
+          <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4 text-sm">Peak Hours <span className="font-normal text-gray-400">(visitor activity by hour of day)</span></h3>
           {(() => {
             const hours = historical.peak_hours ?? [];
             const maxH = Math.max(...hours.map((h) => Number(h.activeUsers) || 0), 1);
@@ -494,22 +506,25 @@ export default function VisitorAnalytics({ days }: { days: number }) {
           })()}
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 text-xs">
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
-            <p className="text-gray-500 dark:text-gray-400">Historical (GA4) Order Funnel Sessions</p>
-            <p className="font-semibold text-gray-900 dark:text-gray-100">{historical.order_funnel.sessions.toLocaleString()}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
-            <p className="text-gray-500 dark:text-gray-400">Historical (GA4) Order Funnel Engaged</p>
-            <p className="font-semibold text-gray-900 dark:text-gray-100">{historical.order_funnel.engaged_sessions.toLocaleString()}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
-            <p className="text-gray-500 dark:text-gray-400">Historical (GA4) Product View Steps</p>
-            <p className="font-semibold text-gray-900 dark:text-gray-100">{historical.order_funnel.product_page_views.toLocaleString()}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
-            <p className="text-gray-500 dark:text-gray-400">Historical (GA4) Service View Steps</p>
-            <p className="font-semibold text-gray-900 dark:text-gray-100">{historical.order_funnel.service_page_views.toLocaleString()}</p>
+        <div className="mt-4">
+          <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3 text-sm">Engagement Funnel <span className="font-normal text-gray-400">(sessions → engaged → catalog views)</span></h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
+              <p className="text-gray-500 dark:text-gray-400">Sessions</p>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">{historical.order_funnel.sessions.toLocaleString()}</p>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
+              <p className="text-gray-500 dark:text-gray-400">Engaged Sessions</p>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">{historical.order_funnel.engaged_sessions.toLocaleString()}</p>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
+              <p className="text-gray-500 dark:text-gray-400">Product Page Views</p>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">{historical.order_funnel.product_page_views.toLocaleString()}</p>
+            </div>
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 border border-gray-100 dark:border-gray-700">
+              <p className="text-gray-500 dark:text-gray-400">Service Page Views</p>
+              <p className="font-semibold text-gray-900 dark:text-gray-100">{historical.order_funnel.service_page_views.toLocaleString()}</p>
+            </div>
           </div>
         </div>
       </div>

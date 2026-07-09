@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import require_admin
-from app.models.models import BookingV2, LeadV2, Order, OrderItem
+from app.models.models import BookingV2, LeadV2, Order, OrderItem, Service
 
 router = APIRouter(prefix="/admin/analytics", tags=["analytics"])
 
@@ -18,45 +18,71 @@ async def get_analytics_overview(
     db: AsyncSession = Depends(get_db),
     _admin: str = Depends(require_admin),
 ):
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=days)
+    prev_since = now - timedelta(days=days * 2)
 
     # Sequential awaits: a single AsyncSession must not run concurrent queries
     # (asyncio.gather on one session raises "concurrent operations are not permitted").
-    order_rev = await db.scalar(select(func.sum(Order.total)).where(
-        Order.created_at >= since,
-        # COD orders never reach payment_status="completed"; count delivered ones too.
-        or_(Order.payment_status == "completed", Order.order_status == "delivered"),
-        Order.is_deleted == False,  # noqa: E712
-    ))
-    booking_rev = await db.scalar(select(func.sum(BookingV2.final_price)).where(
-        BookingV2.created_at >= since,
-        BookingV2.payment_status == "completed",
-        BookingV2.is_deleted == False,  # noqa: E712
-    ))
-    new_orders = await db.scalar(select(func.count(Order.id)).where(Order.created_at >= since, Order.is_deleted == False))  # noqa: E712
-    new_bookings = await db.scalar(select(func.count(BookingV2.id)).where(BookingV2.created_at >= since, BookingV2.is_deleted == False))  # noqa: E712
-    new_leads = await db.scalar(select(func.count(LeadV2.id)).where(LeadV2.created_at >= since, LeadV2.is_deleted == False))  # noqa: E712
-    won_leads = await db.scalar(select(func.count(LeadV2.id)).where(
-        LeadV2.created_at >= since,
-        LeadV2.status == "won",
-        LeadV2.is_deleted == False,  # noqa: E712
-    ))
+    async def window_stats(start: datetime, end: datetime | None) -> dict:
+        def in_window(col):
+            conds = [col >= start]
+            if end is not None:
+                conds.append(col < end)
+            return conds
 
-    order_rev = order_rev or 0
-    booking_rev = booking_rev or 0
-    new_leads = new_leads or 0
-    won_leads = won_leads or 0
-    conversion_rate = round((won_leads / new_leads * 100) if new_leads > 0 else 0, 1)
+        order_rev = await db.scalar(select(func.sum(Order.total)).where(
+            *in_window(Order.created_at),
+            # COD orders never reach payment_status="completed"; count delivered ones too.
+            or_(Order.payment_status == "completed", Order.order_status == "delivered"),
+            Order.is_deleted == False,  # noqa: E712
+        ))
+        booking_rev = await db.scalar(select(func.sum(BookingV2.final_price)).where(
+            *in_window(BookingV2.created_at),
+            BookingV2.payment_status == "completed",
+            BookingV2.is_deleted == False,  # noqa: E712
+        ))
+        orders = await db.scalar(select(func.count(Order.id)).where(*in_window(Order.created_at), Order.is_deleted == False))  # noqa: E712
+        bookings = await db.scalar(select(func.count(BookingV2.id)).where(*in_window(BookingV2.created_at), BookingV2.is_deleted == False))  # noqa: E712
+        leads = await db.scalar(select(func.count(LeadV2.id)).where(*in_window(LeadV2.created_at), LeadV2.is_deleted == False))  # noqa: E712
+        won = await db.scalar(select(func.count(LeadV2.id)).where(
+            *in_window(LeadV2.created_at),
+            LeadV2.status == "won",
+            LeadV2.is_deleted == False,  # noqa: E712
+        ))
+        return {
+            "order_rev": float(order_rev or 0),
+            "booking_rev": float(booking_rev or 0),
+            "orders": orders or 0,
+            "bookings": bookings or 0,
+            "leads": leads or 0,
+            "won": won or 0,
+        }
+
+    cur = await window_stats(since, None)
+    prev = await window_stats(prev_since, since)
+
+    conversion_rate = round((cur["won"] / cur["leads"] * 100) if cur["leads"] > 0 else 0, 1)
+
+    def pct_change(current: float, previous: float) -> float | None:
+        """Change vs previous window, % (None when there is no baseline)."""
+        if previous <= 0:
+            return None
+        return round((current - previous) / previous * 100, 1)
 
     top_services = (await db.execute(
         select(
             BookingV2.service_id,
+            Service.name_en,
+            Service.name_bn,
             func.count(BookingV2.id).label("count"),
             func.sum(BookingV2.final_price).label("revenue"),
-        ).where(
+        ).join(Service, Service.id == BookingV2.service_id, isouter=True)
+        .where(
             BookingV2.created_at >= since,
             BookingV2.is_deleted == False,  # noqa: E712
-        ).group_by(BookingV2.service_id).order_by(text("count DESC")).limit(5)
+        ).group_by(BookingV2.service_id, Service.name_en, Service.name_bn)
+        .order_by(text("count DESC")).limit(5)
     )).all()
 
     return {
@@ -64,19 +90,35 @@ async def get_analytics_overview(
         "data": {
             "period_days": days,
             "revenue": {
-                "orders": float(order_rev),
-                "bookings": float(booking_rev),
-                "total": float(order_rev + booking_rev),
+                "orders": cur["order_rev"],
+                "bookings": cur["booking_rev"],
+                "total": cur["order_rev"] + cur["booking_rev"],
             },
             "counts": {
-                "orders": new_orders,
-                "bookings": new_bookings,
-                "leads": new_leads,
-                "leads_won": won_leads,
+                "orders": cur["orders"],
+                "bookings": cur["bookings"],
+                "leads": cur["leads"],
+                "leads_won": cur["won"],
             },
             "conversion_rate": conversion_rate,
+            # vs the immediately preceding window of the same length
+            "trends": {
+                "revenue_pct": pct_change(
+                    cur["order_rev"] + cur["booking_rev"],
+                    prev["order_rev"] + prev["booking_rev"],
+                ),
+                "orders_pct": pct_change(cur["orders"], prev["orders"]),
+                "bookings_pct": pct_change(cur["bookings"], prev["bookings"]),
+                "leads_pct": pct_change(cur["leads"], prev["leads"]),
+            },
             "top_services": [
-                {"service_id": str(s.service_id), "count": s.count, "revenue": float(s.revenue or 0)}
+                {
+                    "service_id": str(s.service_id),
+                    "name": s.name_en or "Unknown service",
+                    "name_bn": s.name_bn or s.name_en or "",
+                    "count": s.count,
+                    "revenue": float(s.revenue or 0),
+                }
                 for s in top_services
             ],
         },
@@ -157,15 +199,19 @@ async def get_lead_funnel(
 @router.get("/top-products")
 async def get_top_products(
     limit: int = Query(10, le=50),
+    days: int | None = Query(None, ge=1, le=365),
     db: AsyncSession = Depends(get_db),
     _admin: str = Depends(require_admin),
 ):
+    conditions = []
+    if days is not None:
+        conditions.append(OrderItem.created_at >= datetime.now(timezone.utc) - timedelta(days=days))
     results = (await db.execute(
         select(
             OrderItem.product_name,
             func.count(OrderItem.id).label("orders"),
             func.sum(OrderItem.subtotal).label("revenue"),
-        ).group_by(OrderItem.product_name).order_by(text("revenue DESC")).limit(limit)
+        ).where(*conditions).group_by(OrderItem.product_name).order_by(text("revenue DESC")).limit(limit)
     )).all()
 
     return {

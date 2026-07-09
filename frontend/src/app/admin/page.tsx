@@ -37,6 +37,7 @@ interface Stats {
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [revenueTotal, setRevenueTotal] = useState<number | null>(null);
+  const [revenueTrend, setRevenueTrend] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
@@ -53,6 +54,8 @@ export default function AdminDashboard() {
       setStats(statsRes.data.data as Stats);
       const rev = analyticsRes?.data?.data?.revenue?.total;
       setRevenueTotal(typeof rev === "number" ? rev : null);
+      const trend = analyticsRes?.data?.data?.trends?.revenue_pct;
+      setRevenueTrend(typeof trend === "number" ? trend : null);
       setError(false);
     } catch {
       setError(true);
@@ -133,7 +136,11 @@ export default function AdminDashboard() {
           <StatsCard
             title="Revenue (30d)"
             value={`৳${revenueTotal.toLocaleString()}`}
-            sub="orders + bookings"
+            sub={
+              revenueTrend == null
+                ? "orders + bookings"
+                : `${revenueTrend >= 0 ? "▲" : "▼"} ${Math.abs(revenueTrend)}% vs previous 30d`
+            }
             icon={DollarSign}
             color="brand"
             loading={loading}
