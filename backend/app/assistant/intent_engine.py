@@ -81,7 +81,14 @@ class IntentEngine:
             if matched and intent_key in _SYNONYM_INTENT_MAP.get(base, []):
                 score += 0.45
 
-        return score
+        # Negative keywords veto an intent: "bad service" mentions "service"
+        # but is a complaint, not a service inquiry. Each hit subtracts hard
+        # so a generic keyword match can never outweigh the negative signal.
+        for kw in config.get("negative_keywords", []):
+            if _keyword_in_text(kw.lower(), normalized_text):
+                score -= 2.0
+
+        return max(score, 0.0)
 
     def recognize(self, normalized_text: str) -> tuple[Intent, float]:
         if not normalized_text.strip():
