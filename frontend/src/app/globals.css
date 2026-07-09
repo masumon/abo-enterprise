@@ -376,7 +376,8 @@
 
   /* ── Brand logo (consistent site-wide + PWA) ── */
   .brand-logo {
-    border-radius: 0.75rem;
+    /* the logo artwork is a circle — frame it as one */
+    border-radius: 9999px;
     box-shadow: 0 2px 8px rgba(15, 45, 90, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.08);
     transition: box-shadow 0.2s ease, transform 0.2s ease;
   }
