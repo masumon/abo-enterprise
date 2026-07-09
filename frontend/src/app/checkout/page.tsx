@@ -482,7 +482,7 @@ export default function CheckoutPage() {
                   {items.map((item) => (
                     <div key={item.product_id} className="flex gap-3">
                       <div className="w-14 h-14 rounded-xl bg-brand-50 overflow-hidden flex-shrink-0">
-                        {item.image_url ? <Image src={item.image_url} alt="" width={56} height={56} className="object-cover w-full h-full" /> : <ShoppingBag className="w-6 h-6 text-brand-300 m-auto mt-4" />}
+                        {item.image_url ? <Image src={item.image_url} alt="" width={112} height={112} quality={85} className="object-cover w-full h-full" /> : <ShoppingBag className="w-6 h-6 text-brand-300 m-auto mt-4" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{lang === "bn" ? item.name_bn : item.name_en}</p>
