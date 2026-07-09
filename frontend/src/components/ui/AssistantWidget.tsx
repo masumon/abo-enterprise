@@ -222,6 +222,7 @@ export default function AssistantWidget() {
           message: trimmed,
           session_id: sessionId ?? undefined,
           language: lang,
+          page_path: typeof window !== "undefined" ? window.location.pathname : undefined,
         });
         const data = res.data.data;
         if (data?.session_id) {

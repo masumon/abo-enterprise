@@ -659,5 +659,40 @@
       "courier",
       "parcel"
     ]
+  },
+  "navigation": {
+    "keywords_en": [
+      "where is",
+      "where can i",
+      "which page",
+      "how do i go",
+      "how to go",
+      "navigate",
+      "page link",
+      "career page",
+      "privacy policy",
+      "refund policy",
+      "terms and conditions",
+      "my orders page",
+      "login page"
+    ],
+    "keywords_bn": [
+      "কোথায়",
+      "কোন পেজে",
+      "কিভাবে যাব",
+      "কীভাবে যাব",
+      "পেজ কোথায়",
+      "লিংক দিন",
+      "কোথায় পাব",
+      "কোথায় দেখব"
+    ],
+    "synonyms": [
+      "kothay",
+      "kothai",
+      "kivabe jabo",
+      "kon page",
+      "page kothay",
+      "link den"
+    ]
   }
 }

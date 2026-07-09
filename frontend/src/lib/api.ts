@@ -778,6 +778,7 @@ export const assistantApi = {
     customer_phone?: string;
     customer_email?: string;
     language?: string;
+    page_path?: string;
   }) =>
     api.post<ApiResponse<{
       message: string;

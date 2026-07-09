@@ -16,6 +16,8 @@ class ConversationContext:
     last_product_slug: str | None = None
     last_service_slug: str | None = None
     pending_action: str | None = None
+    current_page: str | None = None
+    current_module: str | None = None
     slots: dict[str, Any] = field(default_factory=dict)
 
     def has_identity(self) -> bool:
