@@ -52,6 +52,37 @@ async def test_check_connection_reports_unconfigured(monkeypatch):
     assert "GA4_PROPERTY_ID" in result["hint"]
 
 
+def _set_creds(monkeypatch, pid="987654321", email="svc@proj.iam.gserviceaccount.com",
+               key="-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----"):
+    monkeypatch.setattr(ga4.settings, "GA4_PROPERTY_ID", pid, raising=False)
+    monkeypatch.setattr(ga4.settings, "GA4_CLIENT_EMAIL", email, raising=False)
+    monkeypatch.setattr(ga4.settings, "GA4_PRIVATE_KEY", key, raising=False)
+
+
+def test_format_check_catches_measurement_id(monkeypatch):
+    _set_creds(monkeypatch, pid="G-AB12CD34")
+    problem = ga4.validate_config_format()
+    assert problem and "Measurement ID" in problem["error"]
+    assert "NUMERIC" in problem["hint"]
+
+
+def test_format_check_catches_full_json_key(monkeypatch):
+    _set_creds(monkeypatch, key='{"type": "service_account", "private_key": "..."}')
+    problem = ga4.validate_config_format()
+    assert problem and "JSON" in problem["error"]
+
+
+def test_format_check_catches_wrong_email(monkeypatch):
+    _set_creds(monkeypatch, email="me@gmail.com")
+    problem = ga4.validate_config_format()
+    assert problem and "service-account" in problem["error"]
+
+
+def test_format_check_accepts_valid_config(monkeypatch):
+    _set_creds(monkeypatch)
+    assert ga4.validate_config_format() is None
+
+
 def test_no_exits_metric_requested():
     """GA4's Data API has no 'exits' metric; requesting it 400s the whole
     batch and used to blank Landing Pages as collateral damage."""

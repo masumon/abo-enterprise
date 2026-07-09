@@ -189,6 +189,44 @@ def parse_google_error(exc: Exception) -> dict:
     return {"ok": False, "status_code": None, "error": str(exc), "hint": "Network or configuration error."}
 
 
+def validate_config_format() -> dict | None:
+    """Catch the classic env-var format mistakes before touching the network.
+
+    These are by far the most common reasons a "fully configured" GA4
+    integration returns no data, and Google's own errors for them are cryptic.
+    """
+    pid = str(settings.GA4_PROPERTY_ID or "").strip()
+    email = str(settings.GA4_CLIENT_EMAIL or "").strip()
+    key = str(settings.GA4_PRIVATE_KEY or "").strip()
+
+    if pid.upper().startswith("G-"):
+        return {
+            "error": f"GA4_PROPERTY_ID is set to a Measurement ID ({pid}).",
+            "hint": "Use the NUMERIC Property ID instead — GA4 Admin → Property → Property details (e.g. 987654321). The G-… value belongs only in the frontend tag.",
+        }
+    if not pid.isdigit():
+        return {
+            "error": f"GA4_PROPERTY_ID must be numeric, got: {pid[:24]}",
+            "hint": "Copy the numeric Property ID from GA4 Admin → Property details.",
+        }
+    if "@" not in email or not email.endswith(".iam.gserviceaccount.com"):
+        return {
+            "error": "GA4_CLIENT_EMAIL does not look like a service-account email.",
+            "hint": "It must end with .iam.gserviceaccount.com (from the Google Cloud service-account JSON, field client_email).",
+        }
+    if key.startswith("{"):
+        return {
+            "error": "GA4_PRIVATE_KEY contains the whole JSON key file.",
+            "hint": "Paste ONLY the private_key field value (starts with -----BEGIN PRIVATE KEY-----), not the entire JSON.",
+        }
+    if "BEGIN PRIVATE KEY" not in key and "BEGIN RSA PRIVATE KEY" not in key:
+        return {
+            "error": "GA4_PRIVATE_KEY is not a PEM private key.",
+            "hint": "Copy the private_key value from the service-account JSON, including the BEGIN/END lines. Literal \\n escapes are fine.",
+        }
+    return None
+
+
 async def check_connection() -> dict:
     """Live end-to-end GA4 connection test (bypasses all caches).
 
@@ -202,6 +240,9 @@ async def check_connection() -> dict:
             "error": "GA4 environment variables are not set.",
             "hint": "Set GA4_PROPERTY_ID, GA4_CLIENT_EMAIL and GA4_PRIVATE_KEY.",
         }
+    format_problem = validate_config_format()
+    if format_problem:
+        return {"ok": False, "configured": True, "status_code": None, **format_problem}
     prop = f"properties/{settings.GA4_PROPERTY_ID}"
     started = time.time()
     try:
