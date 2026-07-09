@@ -203,3 +203,25 @@ async def get_visitor_analytics(
             "data": {"configured": True, "error": True},
             "message": "Could not load visitor analytics from Google. Try again shortly.",
         }
+
+
+@router.get("/visitors/live")
+async def get_visitor_live_analytics(
+    _admin: str = Depends(require_admin),
+):
+    """Dedicated GA4 Realtime payload for the Live Analytics dashboard section."""
+    from app.core.ga4 import fetch_live_analytics, is_configured
+
+    if not is_configured():
+        return {"success": True, "data": {"configured": False}}
+    try:
+        data = await fetch_live_analytics()
+        return {"success": True, "data": {"configured": True, **data}}
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("GA4 live analytics fetch failed")
+        return {
+            "success": False,
+            "data": {"configured": True, "error": True},
+            "message": "Could not load live analytics from Google. Try again shortly.",
+        }

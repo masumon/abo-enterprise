@@ -73,7 +73,7 @@ export default function AnalyticsPage() {
       <AdminPageHeader
         title="Analytics"
         titleBn="বিজনেস রিপোর্ট"
-        description="Business reports (database) + Visitor analytics (Google Analytics 4)"
+        description="Business reports (database) + Live and Historical (GA4) visitor analytics"
         actions={
           <div className="flex items-center gap-2">
             <select
@@ -93,17 +93,19 @@ export default function AnalyticsPage() {
       />
 
       {/* Section tabs */}
-      <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+      <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
         {([
           { id: "business", label: "Business Analytics", icon: BarChart3 },
-          { id: "visitors", label: "Visitor Analytics", icon: Globe2 },
+          { id: "visitors", label: "Visitor Analytics (Live + Historical GA4)", icon: Globe2 },
         ] as const).map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              tab === t.id ? "bg-white text-brand-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+              tab === t.id
+                ? "bg-white dark:bg-gray-900 text-brand-700 dark:text-brand-300 shadow-sm"
+                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
             }`}
           >
             <t.icon className="w-4 h-4" /> {t.label}
