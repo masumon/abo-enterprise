@@ -24,9 +24,10 @@ ASSISTANT_BOOLEAN_FEATURES: dict[str, bool] = {
     "assistant_feature_delivery_info": True,
     "assistant_feature_faq": True,
     "assistant_feature_blog": True,
-    # Default OFF: keeps the assistant 100% self-contained (no external
-    # API at all). Admin can enable the DuckDuckGo fallback from Settings.
-    "assistant_feature_web_search": False,
+    # DuckDuckGo Instant Answer fallback (free, key-less, non-AI). ON by
+    # owner request — the assistant answers site questions from the DB first
+    # and falls back to the web only when nothing local matches.
+    "assistant_feature_web_search": True,
     "assistant_feature_complaints": True,
 }
 

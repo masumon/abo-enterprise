@@ -40,6 +40,7 @@ class Intent(str, Enum):
     BUSINESS_HOURS = "business_hours"
     REVIEW_REQUEST = "review_request"
     NAVIGATION = "navigation"
+    SMALL_TALK = "small_talk"
     UNKNOWN = "unknown"
 
 

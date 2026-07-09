@@ -694,5 +694,44 @@
       "page kothay",
       "link den"
     ]
+  },
+  "small_talk": {
+    "keywords_en": [
+      "thanks",
+      "thank you",
+      "bye",
+      "goodbye",
+      "who are you",
+      "what can you do",
+      "how can you help",
+      "are you a bot",
+      "are you human",
+      "good job",
+      "nice",
+      "great"
+    ],
+    "keywords_bn": [
+      "ধন্যবাদ",
+      "বিদায়",
+      "তুমি কে",
+      "আপনি কে",
+      "কি করতে পারো",
+      "কী করতে পারো",
+      "কেমন আছো",
+      "কেমন আছেন",
+      "বাহ",
+      "দারুণ"
+    ],
+    "synonyms": [
+      "dhonnobad",
+      "dhonnyobad",
+      "thik ache",
+      "tumi ke",
+      "apni ke",
+      "ki korte paro",
+      "kemon acho",
+      "bhalo",
+      "valo"
+    ]
   }
 }
