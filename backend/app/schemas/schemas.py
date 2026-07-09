@@ -969,6 +969,7 @@ class AssistantChatRequest(BaseModel):
     customer_phone: str | None = None
     customer_email: str | None = None
     language: str | None = None
+    page_path: str | None = None  # current site path — powers context awareness
 
     @field_validator("message")
     @classmethod

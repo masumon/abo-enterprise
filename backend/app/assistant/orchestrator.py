@@ -1,6 +1,7 @@
 """Main assistant pipeline — coordinates all engines."""
 
 import re
+import time
 from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -20,6 +21,7 @@ from app.assistant.response_generator import ResponseGenerator
 from app.assistant.automation_engine import AutomationEngine
 from app.assistant.action_workflow import ActionWorkflowEngine
 from app.assistant.feature_flags import load_feature_flags, is_intent_allowed, is_workflow_allowed, AssistantFeatureFlags
+from app.assistant import site_map
 
 _FOLLOW_UP_PRODUCT = frozenset({
     Intent.PRODUCT_PRICE, Intent.PRODUCT_STOCK, Intent.PRODUCT_AVAILABILITY, Intent.PRODUCT_DETAILS,
@@ -47,6 +49,46 @@ _QUERY_STOPWORDS = frozenset({
     "চাই", "লাগবে", "কিনব", "কিনতে", "নিতে", "দেখান", "দেখাও", "খুঁজুন", "সম্পর্কে",
     "পণ্য", "প্রোডাক্ট", "সেবা", "সার্ভিস", "একটা", "একটি", "টা", "টি", "এর", "কেমন",
 })
+
+
+_BN_DIGITS = str.maketrans("০১২৩৪৫৬৭৮৯", "0123456789")
+_CALC_RE = re.compile(r"^[\s\d০-৯+\-*/×÷%.()=?]+$")
+
+
+def _try_calculate(raw: str) -> str | None:
+    """Deterministic arithmetic for messages like '৫০০ x ৩' or '(120+80)/2'.
+
+    Parsed with ast (numbers + arithmetic operators only) — no eval of
+    anything else, so it is exactly a calculator and nothing more.
+    """
+    expr = raw.translate(_BN_DIGITS).replace("×", "*").replace("÷", "/")
+    expr = expr.rstrip("=?").strip()
+    if not expr or not _CALC_RE.match(expr + "?"):
+        return None
+    if not re.search(r"\d\s*[+\-*/%]\s*\d|\)\s*[+\-*/%]", expr):
+        return None  # needs an actual operation between numbers
+    import ast as _ast
+    try:
+        tree = _ast.parse(expr, mode="eval")
+    except SyntaxError:
+        return None
+    allowed = (_ast.Expression, _ast.BinOp, _ast.UnaryOp, _ast.Constant,
+               _ast.Add, _ast.Sub, _ast.Mult, _ast.Div, _ast.Mod, _ast.Pow,
+               _ast.USub, _ast.UAdd)
+    for node in _ast.walk(tree):
+        if not isinstance(node, allowed):
+            return None
+        if isinstance(node, _ast.Constant) and not isinstance(node.value, (int, float)):
+            return None
+        if isinstance(node, _ast.BinOp) and isinstance(node.op, _ast.Pow):
+            return None  # no huge exponent tricks
+    try:
+        result = eval(compile(tree, "<calc>", "eval"), {"__builtins__": {}}, {})  # noqa: S307 — AST-whitelisted arithmetic only
+    except (ZeroDivisionError, OverflowError, ValueError):
+        return None
+    if isinstance(result, float) and result.is_integer():
+        result = int(result)
+    return f"{result:,}" if isinstance(result, int) else f"{result:,.2f}"
 
 
 def _clean_search_query(text: str) -> str:
@@ -81,6 +123,7 @@ class AssistantOrchestrator:
         customer_phone: str | None = None,
         customer_email: str | None = None,
         language: str | None = None,
+        page_path: str | None = None,
     ) -> dict[str, Any]:
         msg_validation = self.validation.validate_message(message)
         if not msg_validation.valid:
@@ -112,6 +155,12 @@ class AssistantOrchestrator:
 
         lang = ctx.language
 
+        calc = _try_calculate(preprocessed["raw"])
+        if calc:
+            text = f"= {calc}"
+            await self._finalize_turn(db, conv, ctx, message, text, "calculation", {})
+            return self._build_result(lang, Intent.UNKNOWN, text, conv.session_id)
+
         # Product/service mentions are per-turn signals; stale slots from a
         # previous question must not hijack this turn's search. Follow-up
         # questions still work via last_product_slug / last_service_slug.
@@ -119,13 +168,20 @@ class AssistantOrchestrator:
         ctx.slots.pop("product_query", None)
         ctx.slots.pop("service_query", None)
 
-        products = await self.knowledge.search_products(db, "", limit=50)
-        services = await self.knowledge.search_services(db, "", limit=30)
-        categories = await self.knowledge.list_categories(db)
-        brands = await self.knowledge.list_brands(db)
+        if page_path:
+            _page, module, slug = site_map.page_for_path(page_path)
+            ctx.current_page = page_path.split("?")[0]
+            ctx.current_module = module
+            if slug and module == "product_detail":
+                prod = await self.knowledge.get_product_by_slug(db, slug)
+                if prod:
+                    ctx.last_product_slug = prod.slug
+            elif slug and module == "service_detail":
+                svc, _tiers = await self.knowledge.get_service_with_tiers(db, slug)
+                if svc:
+                    ctx.last_service_slug = svc.slug
 
-        product_names = [p.name_en for p in products] + [p.name_bn for p in products]
-        service_names = [s.name_en for s in services] + [s.name_bn for s in services]
+        product_names, service_names, categories, brands = await self._entity_vocab(db)
 
         intent, confidence = self.intent_engine.recognize(preprocessed["normalized"])
         entities = self.entity_extractor.extract(
@@ -476,6 +532,17 @@ class AssistantOrchestrator:
             port_links = [{"label": "Services", "label_bn": "সেবা", "url": "/services", "type": "page"}]
             return text, {"redirect": "/services"}, port_links
 
+        if intent == Intent.SMALL_TALK:
+            return self._small_talk(preprocessed, lang, flags), {}, links
+
+        if intent == Intent.NAVIGATION:
+            page = site_map.find_page(preprocessed["normalized"], lang)
+            if page:
+                text = site_map.navigation_answer(page, lang)
+                return text, {"page": page.path}, site_map.navigation_links(page, lang)
+            # fall through to knowledge search when no page matched
+            return await self._handle_unknown(db, ctx, preprocessed, lang, flags)
+
         if intent == Intent.REVIEW_REQUEST:
             return self.response.review_request(lang), {}, links
 
@@ -515,6 +582,10 @@ class AssistantOrchestrator:
                 svc_dicts = [self.knowledge.service_to_dict(s) for s in svcs]
                 links = self.response.service_links(svc_dicts)
                 return self.response.service_list(lang, svc_dicts), {"services": svc_dicts}, links
+
+        page = site_map.find_page(query, lang)
+        if page:
+            return site_map.navigation_answer(page, lang), {"page": page.path}, site_map.navigation_links(page, lang)
 
         if flags.web_search and cleaned:
             from app.assistant.web_search import search_web
@@ -603,6 +674,79 @@ class AssistantOrchestrator:
             else:
                 suggestions = ["Check stock", "Place order", "Delivery charges"]
         return suggestions[:4]
+
+    _vocab_cache: dict[str, Any] = {"at": 0.0, "data": None}
+    _VOCAB_TTL = 300  # 5 min — admin catalog edits surface within this window
+
+    async def _entity_vocab(self, db) -> tuple[list[str], list[str], list[str], list[str]]:
+        """Product/service names + categories + brands for entity matching.
+
+        These four queries used to run on EVERY message; the vocabulary only
+        changes when the catalog does, so a short in-process cache removes
+        ~4 queries per turn (single worker — see rate_limit.py note).
+        """
+        now = time.time()
+        cache = AssistantOrchestrator._vocab_cache
+        if cache["data"] and now - cache["at"] < self._VOCAB_TTL:
+            return cache["data"]
+        products = await self.knowledge.search_products(db, "", limit=50)
+        services = await self.knowledge.search_services(db, "", limit=30)
+        categories = await self.knowledge.list_categories(db)
+        brands = await self.knowledge.list_brands(db)
+        data = (
+            [p.name_en for p in products] + [p.name_bn for p in products],
+            [s.name_en for s in services] + [s.name_bn for s in services],
+            categories,
+            brands,
+        )
+        cache["at"] = now
+        cache["data"] = data
+        return data
+
+    def _small_talk(self, preprocessed: dict, lang: str, flags: AssistantFeatureFlags) -> str:
+        q = preprocessed["normalized"]
+        raw = preprocessed["raw"].lower()
+
+        def has(*words: str) -> bool:
+            return any(w in q or w in raw for w in words)
+
+        if has("thanks", "thank", "ধন্যবাদ", "dhonnobad", "dhonnyobad"):
+            return ("আপনাকে স্বাগতম! আর কিছু জানতে চাইলে বলুন। 😊"
+                    if lang == "bn" else "You're most welcome! Ask me anything else anytime. 😊")
+        if has("bye", "goodbye", "বিদায়", "allah hafez", "আল্লাহ হাফেজ"):
+            return ("আল্লাহ হাফেজ! আবার দরকার হলে আমি এখানেই আছি। 👋"
+                    if lang == "bn" else "Goodbye! I'm right here whenever you need me. 👋")
+        if has("who are you", "are you a bot", "are you human", "তুমি কে", "আপনি কে", "tumi ke", "apni ke"):
+            return ("আমি ABO Enterprise-এর ভার্চুয়াল সহকারী — এই ওয়েবসাইটের সবকিছু আমি জানি: পণ্য, সেবা, অর্ডার, বুকিং, ডেলিভারি। কী জানতে চান?"
+                    if lang == "bn"
+                    else "I'm the ABO Enterprise virtual assistant — I know this website inside out: products, services, orders, bookings, delivery. What would you like to know?")
+        if has("kemon acho", "কেমন আছো", "কেমন আছেন", "how are you"):
+            return ("আলহামদুলিল্লাহ, ভালো আছি! আপনাকে কীভাবে সাহায্য করতে পারি?"
+                    if lang == "bn" else "I'm doing great, thanks for asking! How can I help you today?")
+        if has("good job", "nice", "great", "বাহ", "দারুণ", "bhalo", "valo"):
+            return ("অনেক ধন্যবাদ! 🙏 আর কিছু লাগলে বলুন।"
+                    if lang == "bn" else "Thank you! 🙏 Let me know if you need anything else.")
+        # capabilities ("what can you do") — built from LIVE feature flags,
+        # so a disabled feature is never promised.
+        caps_bn, caps_en = [], []
+        if flags.product_search:
+            caps_bn.append("পণ্য খোঁজা, দাম ও স্টক"); caps_en.append("find products, prices & stock")
+        if flags.orders:
+            caps_bn.append("চ্যাটেই অর্ডার করা"); caps_en.append("place an order right here")
+        if flags.bookings:
+            caps_bn.append("সেবা বুক করা"); caps_en.append("book a service")
+        if flags.order_tracking:
+            caps_bn.append("অর্ডার/বুকিং ট্র্যাক"); caps_en.append("track orders & bookings")
+        if flags.coupons:
+            caps_bn.append("কুপন ও অফার"); caps_en.append("coupons & offers")
+        if flags.delivery_info:
+            caps_bn.append("ডেলিভারি চার্জ ও সময়"); caps_en.append("delivery charges & times")
+        caps_bn.append("যেকোনো পেজ খুঁজে দেওয়া"); caps_en.append("guide you to any page")
+        if flags.web_search:
+            caps_bn.append("সাধারণ প্রশ্নের ওয়েব-উত্তর"); caps_en.append("answer general questions from the web")
+        if lang == "bn":
+            return "আমি যা যা পারি:\n" + "\n".join(f"• {c}" for c in caps_bn) + "\n\nকোনটা দিয়ে শুরু করবেন?"
+        return "Here's what I can do:\n" + "\n".join(f"• {c}" for c in caps_en) + "\n\nWhere shall we start?"
 
     def _build_result(self, lang: str, intent: Intent, text: str, session_id: str) -> dict:
         result = self.response.format_response(lang, intent, text)

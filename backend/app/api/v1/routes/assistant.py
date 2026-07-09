@@ -85,6 +85,7 @@ async def chat(
         customer_phone=payload.customer_phone,
         customer_email=payload.customer_email,
         language=payload.language,
+        page_path=payload.page_path,
     )
 
     if result.get("success") is False:
