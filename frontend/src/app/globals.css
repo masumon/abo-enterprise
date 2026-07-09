@@ -834,6 +834,7 @@
 /* Hardcoded utility overrides inside the admin shell */
 .admin-dark :is(.bg-white) { background-color: #101828; }
 .admin-dark :is(.bg-gray-50, .bg-gray-100, .bg-gray-50\/60, .bg-gray-50\/80) { background-color: #0d1524; }
+.admin-dark :is(.bg-gray-200, .bg-gray-300) { background-color: rgba(255, 255, 255, 0.08); }
 .admin-dark :is(.hover\:bg-gray-50):hover,
 .admin-dark :is(.hover\:bg-gray-100):hover,
 .admin-dark :is(.hover\:bg-gray-50\/80):hover,
@@ -858,7 +859,15 @@
    shell has its own .admin-dark system and is untouched). Components that
    already declare dark: variants win via Tailwind's own .dark rules. */
 .dark #page-content :is(.bg-white) { background-color: var(--surface-card); }
-.dark #page-content :is(.bg-gray-50, .bg-gray-100, .bg-gray-50\/80, .bg-gray-50\/60) { background-color: color-mix(in srgb, var(--surface-card) 88%, white 4%); }
+/* Near-opaque white panels (cards/toolbars) — keep the translucency intent
+   but over the dark surface. Low-alpha whites (/5–/25) are glass overlays
+   on gradients and are intentionally left alone. */
+.dark #page-content :is(.bg-white\/60, .bg-white\/72, .bg-white\/80, .bg-white\/84, .bg-white\/90, .bg-white\/95, .bg-white\/97) {
+  background-color: color-mix(in srgb, var(--surface-card) 92%, transparent);
+}
+.dark #page-content :is(.bg-gray-50, .bg-gray-100, .bg-gray-50\/80, .bg-gray-50\/60, .bg-gray-100\/80) { background-color: color-mix(in srgb, var(--surface-card) 88%, white 4%); }
+/* Skeleton/pulse blocks — soft dark shimmer instead of glaring light gray */
+.dark #page-content :is(.bg-gray-200, .bg-gray-300) { background-color: rgba(255, 255, 255, 0.08); }
 .dark #page-content :is(.text-gray-900, .text-gray-800, .text-heading) { color: rgb(226 232 240); }
 .dark #page-content :is(.text-gray-700, .text-gray-600) { color: rgb(203 213 225); }
 .dark #page-content :is(.text-gray-500, .text-muted) { color: rgb(148 163 184); }
