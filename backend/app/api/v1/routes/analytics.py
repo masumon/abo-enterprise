@@ -175,3 +175,31 @@ async def get_top_products(
             for r in results
         ],
     }
+
+
+@router.get("/visitors")
+async def get_visitor_analytics(
+    days: int = Query(30, ge=1, le=365),
+    _admin: str = Depends(require_admin),
+):
+    """Visitor Analytics (GA4 Data API) — admin only.
+
+    Returns {configured: false} when the GA4 service account isn't set up,
+    so the UI can show setup guidance instead of an error. Results are
+    cached in-process for 5 minutes (see app.core.ga4).
+    """
+    from app.core.ga4 import fetch_visitor_analytics, is_configured
+
+    if not is_configured():
+        return {"success": True, "data": {"configured": False}}
+    try:
+        data = await fetch_visitor_analytics(days)
+        return {"success": True, "data": data}
+    except Exception:
+        import logging
+        logging.getLogger(__name__).exception("GA4 visitor analytics fetch failed")
+        return {
+            "success": False,
+            "data": {"configured": True, "error": True},
+            "message": "Could not load visitor analytics from Google. Try again shortly.",
+        }

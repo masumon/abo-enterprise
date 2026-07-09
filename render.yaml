@@ -73,3 +73,9 @@ services:
         sync: false
       - key: NAGAD_CALLBACK_URL
         sync: false
+      - key: GA4_PROPERTY_ID
+        sync: false
+      - key: GA4_CLIENT_EMAIL
+        sync: false
+      - key: GA4_PRIVATE_KEY
+        sync: false
