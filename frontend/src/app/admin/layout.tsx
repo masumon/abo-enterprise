@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { getAdminPageTitle } from "@/lib/adminNav";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAdminPolling } from "@/hooks/useAdminPolling";
 import AdminSidebar from "@/components/admin/AdminSidebar";
@@ -20,6 +21,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     setDark(localStorage.getItem("abo_admin_theme") === "dark");
   }, []);
+
+  // Per-page browser tab title — every admin page used to share the site title.
+  useEffect(() => {
+    if (pathname !== "/admin/login") {
+      document.title = `${getAdminPageTitle(pathname)} · ABO Admin`;
+    }
+  }, [pathname]);
 
   const toggleTheme = () => {
     setDark((d) => {
