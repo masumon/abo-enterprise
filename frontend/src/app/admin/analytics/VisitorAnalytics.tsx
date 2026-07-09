@@ -6,6 +6,7 @@ import { apiErrorMessage } from "@/lib/apiError";
 import {
   Users, Radio, Eye, Clock, MousePointerClick, Globe2,
   Smartphone, Compass, MapPin, Package, Wrench, Mail, RefreshCw,
+  PlugZap, CheckCircle2, XCircle, AlertTriangle,
 } from "lucide-react";
 
 interface Row { [k: string]: string | number }
@@ -145,6 +146,79 @@ function BarList({ title, icon: Icon, rows, dim, metric, format }: {
   );
 }
 
+interface Ga4Status {
+  ok: boolean;
+  configured: boolean;
+  property_id_masked?: string;
+  active_users_7d?: number;
+  page_views_7d?: number;
+  latency_ms?: number;
+  status_code?: number | null;
+  error?: string;
+  hint?: string;
+}
+
+/** One-click end-to-end GA4 test — proves whether real data is flowing. */
+function Ga4ConnectionCheck() {
+  const [checking, setChecking] = useState(false);
+  const [status, setStatus] = useState<Ga4Status | null>(null);
+
+  const run = async () => {
+    setChecking(true);
+    setStatus(null);
+    try {
+      const r = await api.get("/api/v1/admin/analytics/visitors/status");
+      setStatus(r.data.data as Ga4Status);
+    } catch (e) {
+      setStatus({ ok: false, configured: true, error: apiErrorMessage(e, "Status check failed") });
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  return (
+    <div className="text-left">
+      <button
+        type="button"
+        onClick={run}
+        disabled={checking}
+        className="btn btn-outline btn-sm inline-flex items-center gap-1.5"
+      >
+        <PlugZap className={`w-3.5 h-3.5 ${checking ? "animate-pulse" : ""}`} />
+        {checking ? "Testing GA4 connection…" : "Test GA4 Connection"}
+      </button>
+      {status && (
+        <div
+          className={`mt-3 rounded-lg border p-3 text-xs leading-relaxed ${
+            status.ok
+              ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900 text-emerald-800 dark:text-emerald-300"
+              : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900 text-red-700 dark:text-red-300"
+          }`}
+        >
+          {status.ok ? (
+            <p className="flex items-start gap-1.5">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <span>
+                <strong>Connected — real data is flowing.</strong> Property {status.property_id_masked} answered in{" "}
+                {status.latency_ms}ms: {status.active_users_7d?.toLocaleString()} users and{" "}
+                {status.page_views_7d?.toLocaleString()} page views in the last 7 days.
+              </span>
+            </p>
+          ) : (
+            <div className="flex items-start gap-1.5">
+              <XCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <div>
+                <p><strong>Not connected{status.status_code ? ` (HTTP ${status.status_code})` : ""}.</strong> {status.error}</p>
+                {status.hint && <p className="mt-1 opacity-80">{status.hint}</p>}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function Skeleton() {
   return (
     <div className="space-y-4">
@@ -224,14 +298,17 @@ export default function VisitorAnalytics({ days }: { days: number }) {
           Google Cloud Console → Service Account তৈরি → JSON key → GA4 Property-তে
           সেই email-কে Viewer access দিন। সম্পূর্ণ ফ্রি।
         </p>
-        <a
-          href="https://analytics.google.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="btn btn-brand btn-sm inline-flex"
-        >
-          Google Analytics খুলুন →
-        </a>
+        <div className="flex flex-col items-center gap-3">
+          <a
+            href="https://analytics.google.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-brand btn-sm inline-flex"
+          >
+            Google Analytics খুলুন →
+          </a>
+          <Ga4ConnectionCheck />
+        </div>
       </div>
     );
   }
@@ -240,9 +317,12 @@ export default function VisitorAnalytics({ days }: { days: number }) {
     return (
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-8 text-center">
         <p className="text-sm text-red-600 mb-3">{loadError ?? "Could not load visitor analytics"}</p>
-        <button type="button" onClick={loadHistorical} className="btn btn-outline btn-sm inline-flex items-center gap-1.5">
-          <RefreshCw className="w-3.5 h-3.5" /> Retry
-        </button>
+        <div className="flex flex-col items-center gap-3">
+          <button type="button" onClick={loadHistorical} className="btn btn-outline btn-sm inline-flex items-center gap-1.5">
+            <RefreshCw className="w-3.5 h-3.5" /> Retry
+          </button>
+          <Ga4ConnectionCheck />
+        </div>
       </div>
     );
   }
@@ -324,6 +404,23 @@ export default function VisitorAnalytics({ days }: { days: number }) {
 
   return (
     <div className="space-y-5">
+      {data.error && (
+        <div className="rounded-xl border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 p-4">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1 text-sm text-amber-800 dark:text-amber-300">
+              <p className="font-semibold">Google Analytics could not be reached — the numbers below are placeholder zeros, not real data.</p>
+              <p className="text-xs mt-0.5 opacity-80">Run the connection test to see the exact reason, then retry.</p>
+              <div className="flex flex-wrap items-center gap-3 mt-3">
+                <button type="button" onClick={loadHistorical} className="btn btn-outline btn-sm inline-flex items-center gap-1.5">
+                  <RefreshCw className="w-3.5 h-3.5" /> Retry
+                </button>
+                <Ga4ConnectionCheck />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
@@ -468,7 +565,6 @@ export default function VisitorAnalytics({ days }: { days: number }) {
         <div className="grid md:grid-cols-2 gap-4 mb-4">
           <BarList title="Top Pages" icon={Eye} rows={historical.top_pages} dim="pagePath" metric="screenPageViews" format={cleanPath} />
           <BarList title="Landing Pages" icon={Eye} rows={historical.landing_pages} dim="landingPage" metric="sessions" format={cleanPath} />
-          <BarList title="Exit Pages" icon={Eye} rows={historical.exit_pages} dim="pagePath" metric="exits" format={cleanPath} />
           <BarList title="Traffic Sources" icon={Compass} rows={historical.traffic_sources} dim="sessionDefaultChannelGroup" metric="sessions" />
           <BarList title="Channels" icon={Compass} rows={historical.channels} dim="sessionDefaultChannelGroup" metric="sessions" />
           <BarList title="Devices" icon={Smartphone} rows={historical.devices} dim="deviceCategory" metric="activeUsers" />

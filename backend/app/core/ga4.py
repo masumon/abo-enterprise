@@ -164,6 +164,72 @@ async def _run_realtime(
     return _rows(r.json())
 
 
+def parse_google_error(exc: Exception) -> dict:
+    """Extract a human-actionable reason from a failed GA4 API call."""
+    if isinstance(exc, httpx.HTTPStatusError):
+        status = exc.response.status_code
+        try:
+            err = exc.response.json().get("error", {})
+            message = err.get("message") or str(exc)
+        except Exception:
+            message = str(exc)
+        hints = {
+            400: "The request was rejected — usually a wrong GA4_PROPERTY_ID (must be the numeric property id).",
+            401: "Authentication failed — check GA4_CLIENT_EMAIL / GA4_PRIVATE_KEY.",
+            403: "Permission denied — add the service-account email as a Viewer on the GA4 property.",
+            404: "Property not found — check GA4_PROPERTY_ID.",
+            429: "Google Analytics API quota exceeded — try again later.",
+        }
+        return {
+            "ok": False,
+            "status_code": status,
+            "error": message,
+            "hint": hints.get(status, "See the Google error message above."),
+        }
+    return {"ok": False, "status_code": None, "error": str(exc), "hint": "Network or configuration error."}
+
+
+async def check_connection() -> dict:
+    """Live end-to-end GA4 connection test (bypasses all caches).
+
+    Authenticates with the service account and runs a minimal real report,
+    so the result proves whether genuine data is flowing — and if not, why.
+    """
+    if not is_configured():
+        return {
+            "ok": False,
+            "configured": False,
+            "error": "GA4 environment variables are not set.",
+            "hint": "Set GA4_PROPERTY_ID, GA4_CLIENT_EMAIL and GA4_PRIVATE_KEY.",
+        }
+    prop = f"properties/{settings.GA4_PROPERTY_ID}"
+    started = time.time()
+    try:
+        async with httpx.AsyncClient() as client:
+            token = await _access_token(client)
+            headers = {"Authorization": f"Bearer {token}"}
+            r = await client.post(
+                f"{_API}/{prop}:runReport",
+                json=_req(["activeUsers", "screenPageViews"], days=7, limit=1),
+                headers=headers,
+                timeout=15,
+            )
+            r.raise_for_status()
+            row = (_rows(r.json()) or [{}])[0]
+        pid = str(settings.GA4_PROPERTY_ID)
+        return {
+            "ok": True,
+            "configured": True,
+            "property_id_masked": f"{pid[:3]}…{pid[-2:]}" if len(pid) > 5 else pid,
+            "active_users_7d": int(row.get("activeUsers", 0) or 0),
+            "page_views_7d": int(row.get("screenPageViews", 0) or 0),
+            "latency_ms": int((time.time() - started) * 1000),
+        }
+    except Exception as exc:  # noqa: BLE001 — diagnostics must never raise
+        logger.warning("GA4 connection check failed", exc_info=True)
+        return {"configured": True, **parse_google_error(exc)}
+
+
 async def fetch_live_analytics() -> dict:
     """Dedicated GA4 realtime analytics payload for 10–30s dashboard refresh."""
     cache_key = "visitors:live"
@@ -313,6 +379,9 @@ async def fetch_visitor_analytics(days: int = 30) -> dict:
             _req(["activeUsers"], ["newVsReturning"], days=days, limit=3),
             _req(["activeUsers"], ["hour"], days=days, limit=24),
         ]
+        # NOTE: no "exits" request — the GA4 Data API has no exits metric, and
+        # one invalid request 400s the whole batchRunReports call, which used
+        # to silently blank Landing Pages as collateral damage.
         batch3 = [
             _req(["screenPageViews"], ["pagePath"], days=days, limit=8,
                  order_metric="screenPageViews", dim_filter=_path_filter("/products/")),
@@ -322,8 +391,6 @@ async def fetch_visitor_analytics(days: int = 30) -> dict:
                  dim_filter=_path_filter("/contact")),
             _req(["sessions"], ["landingPage"], days=days, limit=10,
                  order_metric="sessions"),
-            _req(["exits"], ["pagePath"], days=days, limit=10,
-                 order_metric="exits"),
         ]
 
         try:
@@ -373,12 +440,11 @@ async def fetch_visitor_analytics(days: int = 30) -> dict:
         try:
             reports3 = await _run_batch(client, prop, headers, batch3)
         except Exception:
-            # Some properties do not expose optional dimensions/metrics (landing/exit pages).
-            # Fall back to legacy, guaranteed-compatible requests.
-            logger.warning("GA4 optional batch failed; retrying with fallback reports", exc_info=True)
-            fallback3 = batch3[:3]
-            reports3 = await _run_batch(client, prop, headers, fallback3)
-            reports3.extend([{}, {}])
+            # landingPage is unavailable on some properties; retry without it
+            # so products/services/contact reports still come through.
+            logger.warning("GA4 optional batch failed; retrying without landingPage", exc_info=True)
+            reports3 = await _run_batch(client, prop, headers, batch3[:3])
+            reports3.append({})
 
         try:
             live = await fetch_live_analytics()
@@ -402,7 +468,8 @@ async def fetch_visitor_analytics(days: int = 30) -> dict:
     totals = (_rows(reports1[0]) or [{}])[0]
     daily = sorted(_rows(reports1[1]), key=lambda r: r.get("date", ""))
     landing_pages = _rows(reports3[3]) if len(reports3) > 3 else []
-    exit_pages = _rows(reports3[4]) if len(reports3) > 4 else []
+    # GA4 has no exits metric; key kept empty for payload compatibility.
+    exit_pages: list[dict] = []
 
     users = int(totals.get("activeUsers", 0) or 0)
     sessions = int(totals.get("sessions", 0) or 0)

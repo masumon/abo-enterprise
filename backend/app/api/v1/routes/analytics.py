@@ -335,6 +335,22 @@ async def get_visitor_analytics(
         }
 
 
+@router.get("/visitors/status")
+async def get_visitor_analytics_status(
+    _admin: str = Depends(require_admin),
+):
+    """Uncached end-to-end GA4 connection test.
+
+    Runs a real minimal report against the Data API and returns either the
+    live numbers it got back (proof that real data is flowing) or the exact
+    Google error with a fix hint. Lets admins verify the integration from
+    the panel without reading server logs.
+    """
+    from app.core.ga4 import check_connection
+
+    return {"success": True, "data": await check_connection()}
+
+
 @router.get("/visitors/live")
 async def get_visitor_live_analytics(
     _admin: str = Depends(require_admin),
