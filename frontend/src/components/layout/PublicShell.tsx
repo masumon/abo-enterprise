@@ -9,7 +9,6 @@ import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import CartDrawer from "@/components/features/CartDrawer";
 import AssistantWidget from "@/components/ui/AssistantWidget";
 import CompareBar from "@/components/ui/CompareBar";
-import ApiWarmup from "@/components/ui/ApiWarmup";
 import ToastProvider from "@/components/ui/ToastProvider";
 import BackToTop from "@/components/ui/BackToTop";
 import CookieConsent from "@/components/ui/CookieConsent";
@@ -58,7 +57,6 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <DelayedMount delayMs={4000}>
         <CookieConsent />
       </DelayedMount>
-      <ApiWarmup />
       <OfflineSubmissionBadge />
       <MobileBottomNav />
       <ToastProvider />
