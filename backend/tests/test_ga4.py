@@ -90,3 +90,16 @@ def test_no_exits_metric_requested():
 
     source = inspect.getsource(ga4.fetch_visitor_analytics)
     assert '["exits"]' not in source
+
+
+def test_realtime_uses_only_supported_dimensions():
+    """The GA4 Realtime API supports only a small dimension set. pagePath,
+    browser and sessionSource are NOT in it — requesting them silently
+    blanked the live panels (the regression that killed live data)."""
+    import inspect
+
+    source = inspect.getsource(ga4.fetch_live_analytics)
+    for unsupported in ("pagePath", "browser", "sessionSource"):
+        pattern = f'{{"name": "{unsupported}"}}'
+        assert pattern not in source, f"realtime request uses unsupported dimension {unsupported}"
+    assert '{"name": "unifiedScreenName"}' in source

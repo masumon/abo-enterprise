@@ -13,12 +13,15 @@ interface Row { [k: string]: string | number }
 
 interface LiveData {
   active_users: number;
+  page_views_30min?: number;
+  events_30min?: number;
   active_pages: { pagePath: string; activeUsers: number }[];
   active_products: { pagePath: string; activeUsers: number }[];
   active_services: { pagePath: string; activeUsers: number }[];
   countries: Row[];
   cities: Row[];
   devices: Row[];
+  platforms?: Row[];
   browsers: Row[];
   traffic_sources: Row[];
   timeline: { minutesAgo: number; activeUsers: number }[];
@@ -363,12 +366,15 @@ export default function VisitorAnalytics({ days }: { days: number }) {
 
   const liveData: LiveData = live ?? {
     active_users: Number(data.realtime_active_users ?? 0),
+    page_views_30min: 0,
+    events_30min: 0,
     active_pages: [],
     active_products: [],
     active_services: [],
     countries: [],
     cities: [],
     devices: [],
+    platforms: [],
     browsers: [],
     traffic_sources: [],
     timeline: [],
@@ -382,9 +388,9 @@ export default function VisitorAnalytics({ days }: { days: number }) {
 
   const liveKpis = [
     { label: "Active Visitors", value: liveData.active_users.toLocaleString(), icon: Radio, color: "text-green-600 bg-green-50 dark:bg-green-950/30" },
-    { label: "Active Pages", value: liveData.active_pages.length.toLocaleString(), icon: Eye, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30" },
-    { label: "Products Being Viewed", value: liveData.active_products.length.toLocaleString(), icon: Package, color: "text-purple-600 bg-purple-50 dark:bg-purple-950/30" },
-    { label: "Services Being Viewed", value: liveData.active_services.length.toLocaleString(), icon: Wrench, color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30" },
+    { label: "Page Views (30 min)", value: (liveData.page_views_30min ?? 0).toLocaleString(), icon: Eye, color: "text-blue-600 bg-blue-50 dark:bg-blue-950/30" },
+    { label: "Events (30 min)", value: (liveData.events_30min ?? 0).toLocaleString(), icon: MousePointerClick, color: "text-purple-600 bg-purple-50 dark:bg-purple-950/30" },
+    { label: "Active Pages", value: liveData.active_pages.length.toLocaleString(), icon: Compass, color: "text-orange-600 bg-orange-50 dark:bg-orange-950/30" },
   ];
 
   const historicalKpis = [
@@ -488,14 +494,10 @@ export default function VisitorAnalytics({ days }: { days: number }) {
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
-          <BarList title="Active Pages" icon={Eye} rows={liveData.active_pages as unknown as Row[]} dim="pagePath" metric="activeUsers" format={cleanPath} />
-          <BarList title="Products Being Viewed" icon={Package} rows={liveData.active_products as unknown as Row[]} dim="pagePath" metric="activeUsers" format={lastSegment} />
-          <BarList title="Services Being Viewed" icon={Wrench} rows={liveData.active_services as unknown as Row[]} dim="pagePath" metric="activeUsers" format={lastSegment} />
-          <BarList title="Traffic Sources" icon={Compass} rows={liveData.traffic_sources} dim="sessionSource" metric="activeUsers" />
+          <BarList title="Active Pages" icon={Eye} rows={liveData.active_pages as unknown as Row[]} dim="pagePath" metric="activeUsers" />
           <BarList title="Countries" icon={Globe2} rows={liveData.countries} dim="country" metric="activeUsers" />
           <BarList title="Cities" icon={MapPin} rows={liveData.cities} dim="city" metric="activeUsers" />
           <BarList title="Devices" icon={Smartphone} rows={liveData.devices} dim="deviceCategory" metric="activeUsers" />
-          <BarList title="Browsers" icon={Globe2} rows={liveData.browsers} dim="browser" metric="activeUsers" />
         </div>
       </div>
 

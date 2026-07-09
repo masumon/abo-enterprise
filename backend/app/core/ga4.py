@@ -293,11 +293,20 @@ async def fetch_live_analytics() -> dict:
                 logger.warning("GA4 optional realtime report failed", exc_info=True)
                 return []
 
-        totals_rows = await safe_realtime({"metrics": [{"name": "activeUsers"}]}, essential=True)
+        # IMPORTANT: the GA4 Realtime API supports only a small dimension set
+        # (country, city, deviceCategory, unifiedScreenName, minutesAgo,
+        # platform, eventName, ...). pagePath / browser / sessionSource are
+        # NOT among them — requesting those returned 400s that were silently
+        # swallowed, which is why the live panels went permanently blank
+        # after they were added.
+        totals_rows = await safe_realtime(
+            {"metrics": [{"name": "activeUsers"}, {"name": "screenPageViews"}, {"name": "eventCount"}]},
+            essential=True,
+        )
 
         pages_rows = await safe_realtime(
             {
-                "dimensions": [{"name": "pagePath"}],
+                "dimensions": [{"name": "unifiedScreenName"}],
                 "metrics": [{"name": "activeUsers"}],
                 "limit": "20",
                 "orderBys": [{"metric": {"metricName": "activeUsers"}, "desc": True}],
@@ -328,19 +337,11 @@ async def fetch_live_analytics() -> dict:
                 "orderBys": [{"metric": {"metricName": "activeUsers"}, "desc": True}],
             },
         )
-        browsers = await safe_realtime(
+        platforms = await safe_realtime(
             {
-                "dimensions": [{"name": "browser"}],
+                "dimensions": [{"name": "platform"}],
                 "metrics": [{"name": "activeUsers"}],
-                "limit": "8",
-                "orderBys": [{"metric": {"metricName": "activeUsers"}, "desc": True}],
-            },
-        )
-        traffic_sources = await safe_realtime(
-            {
-                "dimensions": [{"name": "sessionSource"}],
-                "metrics": [{"name": "activeUsers"}],
-                "limit": "10",
+                "limit": "6",
                 "orderBys": [{"metric": {"metricName": "activeUsers"}, "desc": True}],
             },
         )
@@ -353,20 +354,27 @@ async def fetch_live_analytics() -> dict:
             },
         )
 
+    totals = totals_rows[0] if totals_rows else {}
     active_pages = [
-        {"pagePath": r.get("pagePath", ""), "activeUsers": int(r.get("activeUsers", 0) or 0)}
+        # Realtime reports pages by screen name (page title), not URL path.
+        {"pagePath": r.get("unifiedScreenName", ""), "activeUsers": int(r.get("activeUsers", 0) or 0)}
         for r in pages_rows
     ]
     payload = {
-        "active_users": int(totals_rows[0].get("activeUsers", 0)) if totals_rows else 0,
+        "active_users": int(totals.get("activeUsers", 0) or 0),
+        "page_views_30min": int(totals.get("screenPageViews", 0) or 0),
+        "events_30min": int(totals.get("eventCount", 0) or 0),
         "active_pages": active_pages,
-        "active_products": [r for r in active_pages if str(r.get("pagePath", "")).startswith("/products/")][:10],
-        "active_services": [r for r in active_pages if str(r.get("pagePath", "")).startswith("/services/")][:10],
+        # kept for payload compatibility — realtime has no URL-path dimension,
+        # so per-catalog live lists cannot be derived any more
+        "active_products": [],
+        "active_services": [],
         "countries": countries,
         "cities": cities,
         "devices": devices,
-        "browsers": browsers,
-        "traffic_sources": traffic_sources,
+        "platforms": platforms,
+        "browsers": [],
+        "traffic_sources": [],
         "timeline": sorted(
             [
                 {
@@ -493,12 +501,15 @@ async def fetch_visitor_analytics(days: int = 30) -> dict:
             logger.warning("GA4 live payload unavailable; continuing with historical only", exc_info=True)
             live = {
                 "active_users": 0,
+                "page_views_30min": 0,
+                "events_30min": 0,
                 "active_pages": [],
                 "active_products": [],
                 "active_services": [],
                 "countries": [],
                 "cities": [],
                 "devices": [],
+                "platforms": [],
                 "browsers": [],
                 "traffic_sources": [],
                 "timeline": [],
