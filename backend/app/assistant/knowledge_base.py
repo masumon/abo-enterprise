@@ -44,7 +44,7 @@ class KnowledgeBase:
     def list_faq_topics(self) -> list[str]:
         return sorted({k.rsplit("_", 1)[0] for k in self._faq if k.endswith(("_en", "_bn"))})
 
-    def search_faq(self, query: str, language: str = "en", limit: int = 3) -> list[dict]:
+    def search_faq(self, query: str, language: str = "en", limit: int = 3, min_score: float = 0.0) -> list[dict]:
         """Keyword search across FAQ keys, admin-defined questions, and answers.
 
         The `{key}_q` field holds customer questions/keywords the admin
@@ -76,7 +76,7 @@ class KnowledgeBase:
             for token in tokens:
                 if token in haystack:
                     score += 1.0
-            if score > 0:
+            if score > max(min_score, 0):
                 seen.add(topic)
                 results.append((score, {"key": topic, "answer": answer}))
 

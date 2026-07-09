@@ -35,7 +35,13 @@
       "show product",
       "looking for",
       "browse",
-      "catalog"
+      "catalog",
+      "products",
+      "show products",
+      "all products",
+      "product list",
+      "what do you sell",
+      "items"
     ],
     "keywords_bn": [
       "পণ্য খুঁজুন",
@@ -44,7 +50,10 @@
       "কি কি পণ্য",
       "কি আছে",
       "পণ্য আছে",
-      "কি কি আছে"
+      "কি কি আছে",
+      "কি বিক্রি করেন",
+      "পণ্য তালিকা",
+      "কি কি বিক্রি"
     ],
     "synonyms": [
       "product search",
@@ -52,7 +61,30 @@
       "item search",
       "ki ache",
       "ki produkt",
-      "product dekhan"
+      "product dekhan",
+      "ki bikri koren",
+      "ki paoya jay",
+      "ki ki ache"
+    ],
+    "negative_keywords": [
+      "bad",
+      "খারাপ",
+      "kharap",
+      "বাজে",
+      "baje",
+      "worst",
+      "complaint",
+      "অভিযোগ",
+      "problem",
+      "issue",
+      "সমস্যা",
+      "নষ্ট",
+      "nosto",
+      "broken",
+      "ভাঙা",
+      "not working",
+      "kaj korche na",
+      "কাজ করছে না"
     ]
   },
   "product_details": {
@@ -71,6 +103,26 @@
     "synonyms": [
       "details",
       "info about product"
+    ],
+    "negative_keywords": [
+      "bad",
+      "খারাপ",
+      "kharap",
+      "বাজে",
+      "baje",
+      "worst",
+      "complaint",
+      "অভিযোগ",
+      "problem",
+      "issue",
+      "সমস্যা",
+      "নষ্ট",
+      "nosto",
+      "broken",
+      "ভাঙা",
+      "not working",
+      "kaj korche na",
+      "কাজ করছে না"
     ]
   },
   "product_price": {
@@ -98,6 +150,15 @@
       "dam koto",
       "koto dam",
       "price koto"
+    ],
+    "negative_keywords": [
+      "banate",
+      "banabo",
+      "banaben",
+      "বানাতে",
+      "তৈরি করতে",
+      "বানিয়ে",
+      "kore diben"
     ]
   },
   "product_stock": {
@@ -134,6 +195,26 @@
     ],
     "synonyms": [
       "avail"
+    ],
+    "negative_keywords": [
+      "bad",
+      "খারাপ",
+      "kharap",
+      "বাজে",
+      "baje",
+      "worst",
+      "complaint",
+      "অভিযোগ",
+      "problem",
+      "issue",
+      "সমস্যা",
+      "নষ্ট",
+      "nosto",
+      "broken",
+      "ভাঙা",
+      "not working",
+      "kaj korche na",
+      "কাজ করছে না"
     ]
   },
   "category": {
@@ -175,10 +256,36 @@
       "সেবা",
       "সার্ভিস",
       "কি সেবা",
-      "সলিউশন"
+      "সলিউশন",
+      "কি কি সেবা",
+      "সেবা দেন",
+      "কি সেবা দেন"
     ],
     "synonyms": [
-      "svc"
+      "svc",
+      "ki ki seba",
+      "seba den",
+      "what do you offer"
+    ],
+    "negative_keywords": [
+      "bad",
+      "খারাপ",
+      "kharap",
+      "বাজে",
+      "baje",
+      "worst",
+      "complaint",
+      "অভিযোগ",
+      "problem",
+      "issue",
+      "সমস্যা",
+      "নষ্ট",
+      "nosto",
+      "broken",
+      "ভাঙা",
+      "not working",
+      "kaj korche na",
+      "কাজ করছে না"
     ]
   },
   "service_price": {
@@ -230,10 +337,23 @@
     "keywords_bn": [
       "কোট",
       "কোটেশন",
-      "অনুমান"
+      "অনুমান",
+      "বানাতে",
+      "তৈরি করতে",
+      "বানিয়ে দিতে",
+      "কত লাগবে",
+      "খরচ কত হবে"
     ],
     "synonyms": [
-      "qte"
+      "qte",
+      "koto lagbe",
+      "banate",
+      "banabo",
+      "banaben",
+      "kore diben",
+      "develop",
+      "how much to make",
+      "how much to build"
     ]
   },
   "order_creation": {
@@ -494,14 +614,26 @@
       "support",
       "help me",
       "customer service",
-      "assist"
+      "assist",
+      "cancel",
+      "cancel order",
+      "cancel booking",
+      "how to cancel"
     ],
     "keywords_bn": [
       "সাপোর্ট",
       "সাহায্য করুন",
-      "কাস্টমার সার্ভিস"
+      "কাস্টমার সার্ভিস",
+      "বাতিল",
+      "অর্ডার বাতিল",
+      "বাতিল করতে চাই"
     ],
-    "synonyms": []
+    "synonyms": [
+      "cancel korte chai",
+      "cancel korbo",
+      "batil korbo",
+      "batil"
+    ]
   },
   "complaint": {
     "keywords_en": [
@@ -510,20 +642,44 @@
       "issue",
       "not working",
       "bad service",
-      "unhappy"
+      "unhappy",
+      "broken",
+      "damaged",
+      "defective",
+      "wrong product",
+      "not happy",
+      "worst",
+      "poor service",
+      "cheated",
+      "fraud"
     ],
     "keywords_bn": [
       "অভিযোগ",
       "সমস্যা",
       "খারাপ সেবা",
       "কাজ করছে না",
-      "নষ্ট"
+      "নষ্ট",
+      "খারাপ",
+      "বাজে",
+      "ভাঙা",
+      "নষ্ট পণ্য",
+      "প্রতারণা",
+      "ঠকেছি",
+      "ভুল পণ্য"
     ],
     "synonyms": [
       "complain",
       "kaj korche na",
       "kharap",
-      "nosto"
+      "nosto",
+      "kharap seba",
+      "baje",
+      "bhanga",
+      "vanga",
+      "thokechi",
+      "nosto hoye geche",
+      "problem hocche",
+      "somossa hocche"
     ]
   },
   "lead_creation": {

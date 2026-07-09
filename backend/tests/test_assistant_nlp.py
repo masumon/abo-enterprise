@@ -75,6 +75,77 @@ def test_unrelated_text_is_unknown(intent_engine):
     assert intent.value in ("unknown", "faq")
 
 
+# Complaints must never be answered with a service/product list — "bad
+# service" mentions "service" but is a complaint (negative_keywords fix).
+COMPLAINT_CASES = [
+    "bad service",
+    "খারাপ সেবা পেয়েছি",
+    "আপনাদের সার্ভিস খুব খারাপ",
+    "আমার প্রোডাক্ট নষ্ট",
+    "prodcut ta kaj korche na",
+]
+
+
+@pytest.mark.parametrize("message", COMPLAINT_CASES)
+def test_complaints_not_misrouted_to_info_intents(intent_engine, message):
+    pre = preprocess_text(message)
+    intent, _ = intent_engine.recognize(pre["normalized"])
+    assert intent.value == "complaint", f"{message!r} → {intent.value}"
+
+
+@pytest.mark.parametrize("message", [
+    "order cancel korte chai",
+    "অর্ডার বাতিল করতে চাই",
+    "how to cancel my order",
+])
+def test_cancellation_routes_to_support(intent_engine, message):
+    """Cancellation had no intent at all and fell through to 'unknown' —
+    route it to customer_support so the user gets contact info."""
+    pre = preprocess_text(message)
+    intent, _ = intent_engine.recognize(pre["normalized"])
+    assert intent.value == "customer_support", f"{message!r} → {intent.value}"
+
+
+def test_build_cost_question_is_quote_not_product_price(intent_engine):
+    pre = preprocess_text("website banate koto lagbe?")
+    intent, _ = intent_engine.recognize(pre["normalized"])
+    assert intent.value == "quote", f"→ {intent.value}"
+
+
+def test_show_products_is_product_search(intent_engine):
+    pre = preprocess_text("show me your products")
+    intent, _ = intent_engine.recognize(pre["normalized"])
+    assert intent.value == "product_search", f"→ {intent.value}"
+
+
+def test_reference_number_overrides_intent(orchestrator):
+    """An explicit ABO-/BK-/LF- number must route to tracking regardless of
+    what the surrounding words score ("ABO-2026-0001 কোথায়?" went to
+    navigation before)."""
+    from app.assistant.context_manager import ConversationContext
+
+    cases = [
+        ("ABO-2026-0001 কোথায়?", "order_tracking"),
+        ("BK-2026-A3F2B1 status", "booking_tracking"),
+        ("LF-2026-000123 er khobor ki", "lead_tracking"),
+    ]
+    for message, expected in cases:
+        pre = preprocess_text(message)
+        intent, _ = orchestrator.intent_engine.recognize(pre["normalized"])
+        ctx = ConversationContext(session_id="t")
+        resolved = orchestrator._resolve_follow_up_intent(intent, ctx, pre)
+        assert resolved.value == expected, f"{message!r} → {resolved.value}"
+
+
+def test_generic_catalog_questions_clean_to_empty_query():
+    """'কি কি সেবা দেন আপনারা?' must list the catalog, not search for the
+    junk tokens 'দেন আপনারা' (which found nothing and answered 'no services
+    found')."""
+    for message in ("কি কি সেবা দেন আপনারা?", "show me your products", "কি কি পণ্য আছে?"):
+        pre = preprocess_text(message)
+        assert _clean_search_query(pre["normalized"]) == "", message
+
+
 # ── Preprocessing ─────────────────────────────────────────────────────
 
 def test_bengali_digits_phone():

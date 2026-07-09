@@ -45,9 +45,11 @@ _QUERY_STOPWORDS = frozenset({
     "product", "products", "item", "items", "service", "services",
     "er", "ta", "ti", "ki", "ki?", "koto", "dam", "daam", "ache", "ase", "chai", "lagbe",
     "kinbo", "kinte", "korbo", "nibo", "nite", "koi", "kothay", "vai", "bhai", "apni",
+    "apnara", "den", "koren", "kore", "hobe", "jabe", "all", "sell", "offer", "list",
     "আমি", "আমার", "আপনার", "আপনি", "কি", "কী", "কত", "দাম", "মূল্য", "স্টক", "আছে",
     "চাই", "লাগবে", "কিনব", "কিনতে", "নিতে", "দেখান", "দেখাও", "খুঁজুন", "সম্পর্কে",
     "পণ্য", "প্রোডাক্ট", "সেবা", "সার্ভিস", "একটা", "একটি", "টা", "টি", "এর", "কেমন",
+    "আপনারা", "দেন", "দিয়ে", "থাকেন", "করেন", "হবে", "যাবে", "তালিকা", "বিক্রি",
 })
 
 
@@ -276,18 +278,34 @@ class AssistantOrchestrator:
         tokens = [t for t in tokens if t]
         return bool(tokens) and len(tokens) <= 6 and all(t in _SHORT_FOLLOW_UP for t in tokens)
 
+    # Intents that already know what to do with an explicit reference number.
+    _ORDER_NUM_INTENTS = frozenset({
+        Intent.ORDER_TRACKING, Intent.ORDER_STATUS, Intent.COURIER_TRACKING,
+        Intent.INVOICE, Intent.ORDER_CREATION, Intent.ORDER_CONFIRMATION,
+    })
+
     def _resolve_follow_up_intent(self, intent: Intent, ctx: ConversationContext, preprocessed: dict) -> Intent:
+        # An explicit reference number (ABO-/BK-/LF-) is the strongest signal
+        # in the message — "ABO-2026-0001 কোথায়?" must track that order, not
+        # be routed to whatever intent the surrounding words happen to score.
+        if preprocessed.get("order_numbers") and intent not in self._ORDER_NUM_INTENTS:
+            return Intent.ORDER_TRACKING
+        if preprocessed.get("booking_numbers") and intent != Intent.BOOKING_TRACKING:
+            return Intent.BOOKING_TRACKING
+        if preprocessed.get("lead_numbers") and intent != Intent.LEAD_TRACKING:
+            return Intent.LEAD_TRACKING
+
         if self._is_short_follow_up(preprocessed) and ctx.last_product_slug:
             if intent == Intent.UNKNOWN:
                 tokens = set(preprocessed["normalized"].split())
                 price_words = {"price", "cost", "rate", "দাম", "মূল্য", "কত", "dam", "koto", "much"}
                 return Intent.PRODUCT_PRICE if tokens & price_words else Intent.PRODUCT_DETAILS
 
-        if ctx.pending_action == "order_tracking" and (preprocessed.get("order_numbers") or preprocessed.get("phones")):
+        if ctx.pending_action == "order_tracking" and preprocessed.get("phones"):
             return Intent.ORDER_TRACKING
-        if ctx.pending_action == "booking_tracking" and (preprocessed.get("booking_numbers") or preprocessed.get("phones")):
+        if ctx.pending_action == "booking_tracking" and preprocessed.get("phones"):
             return Intent.BOOKING_TRACKING
-        if ctx.pending_action == "lead_tracking" and (preprocessed.get("lead_numbers") or preprocessed.get("phones")):
+        if ctx.pending_action == "lead_tracking" and preprocessed.get("phones"):
             return Intent.LEAD_TRACKING
 
         return intent
@@ -350,15 +368,22 @@ class AssistantOrchestrator:
             ctx.last_product_slug = product.slug
             pd = self.knowledge.product_to_dict(product)
             links = [self.response._product_link(product.slug)]
+            # Always name the product being answered about — the query is
+            # resolved by fuzzy search, and a bare "৳500" reads as a wrong
+            # answer whenever the match wasn't the product the user meant.
+            display_name = (pd.get("name_bn") if lang == "bn" else pd.get("name_en")) or pd.get("name_en") or ""
             if intent == Intent.PRODUCT_PRICE:
-                text = f"৳{float(product.price):,.0f}" if lang == "en" else f"দাম: ৳{float(product.price):,.0f}"
+                if lang == "bn":
+                    text = f"**{display_name}** এর দাম: ৳{float(product.price):,.0f}"
+                else:
+                    text = f"**{display_name}** — price: ৳{float(product.price):,.0f}"
                 return text, {"product": pd}, links
             if intent in (Intent.PRODUCT_STOCK, Intent.PRODUCT_AVAILABILITY):
                 avail = product.stock_quantity > 0
                 if lang == "bn":
-                    text = f"স্টক: {product.stock_quantity}" + (" (উপলব্ধ)" if avail else " (স্টক নেই)")
+                    text = f"**{display_name}** — স্টক: {product.stock_quantity}" + (" (উপলব্ধ)" if avail else " (স্টক নেই)")
                 else:
-                    text = f"Stock: {product.stock_quantity}" + (" (available)" if avail else " (out of stock)")
+                    text = f"**{display_name}** — stock: {product.stock_quantity}" + (" (available)" if avail else " (out of stock)")
                 return text, {"product": pd}, links
             return self.response.product_detail(lang, pd), {"product": pd}, links
 
@@ -557,7 +582,11 @@ class AssistantOrchestrator:
         links: list[dict] = []
 
         if flags.faq:
-            faq_hits = self.knowledge.search_faq(query, lang, limit=1)
+            # min_score=2: a single stray token appearing somewhere in an
+            # answer body must not pick that FAQ — require a phrase match, a
+            # hit in the admin-defined questions, or 2+ token hits. Weakly
+            # matched FAQs were the main source of off-topic replies here.
+            faq_hits = self.knowledge.search_faq(query, lang, limit=1, min_score=2.0)
             if faq_hits:
                 return self.response.faq_search_results(lang, faq_hits), {"faq": faq_hits}, links
 

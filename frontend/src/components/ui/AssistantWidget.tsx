@@ -87,7 +87,7 @@ function AssistantAvatar({ size = 32, className }: { size?: number; className?: 
       size={brandSize}
       href={false}
       variant="brand"
-      className={cn("!rounded-xl", className)}
+      className={cn("!rounded-full", className)}
     />
   );
 }
@@ -95,7 +95,7 @@ function AssistantAvatar({ size = 32, className }: { size?: number; className?: 
 function TypingIndicator({ label }: { label: string }) {
   return (
     <div className="flex items-end gap-2.5 animate-fade-in" aria-live="polite" aria-label={label}>
-      <div className="w-8 h-8 rounded-xl overflow-hidden flex-shrink-0 ring-2 ring-brand-200/50">
+      <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-brand-200/50">
         <AssistantAvatar size={32} className="w-full h-full" />
       </div>
       <div className="px-4 py-3 rounded-2xl rounded-bl-md bg-white/90 dark:bg-white/10 border border-gray-100/80 dark:border-white/10 shadow-sm">
@@ -290,7 +290,7 @@ export default function AssistantWidget() {
             <div className="relative flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
                 <div className="relative flex-shrink-0">
-                  <div className="w-11 h-11 rounded-2xl overflow-hidden ring-2 ring-white/30 shadow-lg">
+                  <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-white/30 shadow-lg">
                     <AssistantAvatar size={44} className="w-full h-full" />
                   </div>
                   <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-400 border-2 border-brand-700 rounded-full" />
@@ -364,7 +364,7 @@ export default function AssistantWidget() {
                 )}
               >
                 {msg.role === "assistant" && (
-                  <div className="w-8 h-8 rounded-xl overflow-hidden flex-shrink-0 mt-0.5 ring-1 ring-brand-100">
+                  <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 mt-0.5 ring-1 ring-brand-100">
                     <AssistantAvatar size={32} className="w-full h-full" />
                   </div>
                 )}
