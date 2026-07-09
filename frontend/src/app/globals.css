@@ -525,8 +525,9 @@
   }
   .sticky-cta-bar {
     @apply fixed left-0 right-0 z-[45] lg:hidden;
+    /* --mobile-chrome-bottom already includes env(safe-area-inset-bottom);
+       adding it again here doubled the inset and left a blank strip. */
     bottom: var(--mobile-chrome-bottom);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
     background: rgba(255,255,255,0.92);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
@@ -850,3 +851,29 @@
 .admin-dark :is(.bg-amber-50) { background-color: rgba(245, 158, 11, 0.12); }
 .admin-dark :is(.bg-emerald-50, .bg-green-50) { background-color: rgba(16, 185, 129, 0.12); }
 .admin-dark .form-label { color: rgb(148 163 184); }
+
+/* ── Public-site Dark Mode Consistency Layer ─────────────────────────────
+   Safety net for components that use raw light-theme utilities without a
+   dark: variant. Scoped to #page-content (public pages only — the admin
+   shell has its own .admin-dark system and is untouched). Components that
+   already declare dark: variants win via Tailwind's own .dark rules. */
+.dark #page-content :is(.bg-white) { background-color: var(--surface-card); }
+.dark #page-content :is(.bg-gray-50, .bg-gray-100, .bg-gray-50\/80, .bg-gray-50\/60) { background-color: color-mix(in srgb, var(--surface-card) 88%, white 4%); }
+.dark #page-content :is(.text-gray-900, .text-gray-800, .text-heading) { color: rgb(226 232 240); }
+.dark #page-content :is(.text-gray-700, .text-gray-600) { color: rgb(203 213 225); }
+.dark #page-content :is(.text-gray-500, .text-muted) { color: rgb(148 163 184); }
+.dark #page-content :is(.text-gray-400, .text-gray-300) { color: rgb(100 116 139); }
+.dark #page-content :is(.border-gray-100, .border-gray-200, .border-gray-100\/80, .border-gray-50) { border-color: rgba(255, 255, 255, 0.1); }
+.dark #page-content :is(.divide-gray-100, .divide-gray-50) > * + * { border-color: rgba(255, 255, 255, 0.08); }
+.dark #page-content :is(.hover\:bg-gray-50):hover,
+.dark #page-content :is(.hover\:bg-gray-100):hover { background-color: rgba(96, 165, 250, 0.08); }
+.dark #page-content :is(.bg-brand-50, .bg-brand-50\/40, .bg-blue-50) { background-color: rgba(59, 130, 246, 0.14); }
+.dark #page-content :is(.text-brand-700) { color: rgb(147 197 253); }
+.dark #page-content :is(.text-brand-600) { color: rgb(96 165 250); }
+.dark #page-content :is(.bg-green-50, .bg-emerald-50) { background-color: rgba(16, 185, 129, 0.14); }
+.dark #page-content :is(.text-green-700) { color: rgb(110 231 183); }
+.dark #page-content :is(.bg-red-50) { background-color: rgba(239, 68, 68, 0.14); }
+.dark #page-content :is(.text-red-700) { color: rgb(252 165 165); }
+.dark #page-content :is(.bg-amber-50) { background-color: rgba(245, 158, 11, 0.14); }
+.dark #page-content :is(.text-amber-700, .text-amber-800) { color: rgb(252 211 77); }
+.dark #page-content :is(.border-green-100, .border-red-200, .border-amber-100, .border-amber-200, .border-brand-100) { border-color: rgba(255, 255, 255, 0.12); }

@@ -51,13 +51,13 @@ export default function Stats() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {stats.map(({ icon: Icon, end, suffix, key }) => (
             <GlassCard key={key} hover className="p-6 text-center">
-              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-brand-50 flex items-center justify-center">
-                <Icon className="w-6 h-6 text-brand-600" aria-hidden />
+              <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-brand-50 dark:bg-brand-500/15 flex items-center justify-center">
+                <Icon className="w-6 h-6 text-brand-600 dark:text-brand-300" aria-hidden />
               </div>
-              <p className="text-3xl font-bold text-brand-700">
+              <p className="text-3xl font-bold text-brand-700 dark:text-brand-200">
                 <AnimatedCounter end={end} suffix={suffix} />
               </p>
-              <p className="text-sm text-gray-500 mt-1">{t(key)}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{t(key)}</p>
             </GlassCard>
           ))}
         </div>

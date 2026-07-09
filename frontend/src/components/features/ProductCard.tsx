@@ -79,7 +79,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
     return (
       <article className="card-hover group flex gap-4 p-4 relative">
         <Link href={`/products/${product.slug}`} className="absolute inset-0 z-0" aria-hidden tabIndex={-1} />
-        <div className="relative w-28 aspect-square rounded-xl overflow-hidden bg-brand-50 flex-shrink-0">
+        <div className="relative w-28 aspect-square rounded-xl overflow-hidden bg-brand-50 flex-shrink-0 pointer-events-none">
           <Image src={imageSrc} alt={alt} fill className="object-cover" sizes="112px" />
         </div>
         <div className="flex-1 min-w-0 relative z-10">
@@ -146,7 +146,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
         </Link>
       </div>
 
-      <div className="relative aspect-[4/5] sm:aspect-square bg-gradient-to-br from-brand-50 via-blue-50 to-brand-100 overflow-hidden">
+      <div className="relative aspect-[4/5] sm:aspect-square bg-gradient-to-br from-brand-50 via-blue-50 to-brand-100 overflow-hidden pointer-events-none">
         <Image src={imageSrc} alt={alt} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 50vw, 25vw" />
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2">
@@ -156,7 +156,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
               target="_blank"
               rel="noopener noreferrer"
               onClick={(e) => e.stopPropagation()}
-              className="text-[10px] bg-green-600 text-white px-2 py-1 rounded-lg relative z-20"
+              className="text-[10px] bg-green-600 text-white px-2 py-1 rounded-lg relative z-20 pointer-events-auto"
             >
               {lang === "bn" ? "নোটিফাই" : "Notify me"}
             </a>

@@ -114,7 +114,7 @@ export default function CartDrawer() {
               <div key={item.product_id} className={cn("flex gap-4 p-3.5 rounded-2xl border transition-colors bg-white/80 dark:bg-white/5", stockWarnings.includes(item.product_id) ? "border-amber-200 dark:border-amber-800" : "border-gray-100 dark:border-white/10 hover:border-brand-100 dark:hover:border-brand-800")}>
                 <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                   {item.image_url ? (
-                    <Image src={item.image_url} alt={item.name_en} width={64} height={64} className="object-cover w-full h-full" />
+                    <Image src={item.image_url} alt={item.name_en} width={128} height={128} quality={85} className="object-cover w-full h-full" />
                   ) : (
                     <ShoppingBag className="w-7 h-7 text-brand-300" aria-hidden />
                   )}

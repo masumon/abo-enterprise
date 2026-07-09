@@ -75,6 +75,11 @@ class Settings(BaseSettings):
     SMS_API_URL: str = ""
     SMS_API_KEY: str = ""
 
+    # GA4 Data API (optional — admin Visitor Analytics tab)
+    GA4_PROPERTY_ID: str = ""
+    GA4_CLIENT_EMAIL: str = ""
+    GA4_PRIVATE_KEY: str = ""
+
     # Frontend URL for payment callbacks
     FRONTEND_URL: str = "https://abo-enterprise.vercel.app"
 

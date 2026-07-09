@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import api, { downloadCsv, downloadPdf } from "@/lib/api";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useToastStore } from "@/store/toast";
 import { apiErrorMessage } from "@/lib/apiError";
-import { TrendingUp, ShoppingCart, Calendar, Users, Download, RefreshCw } from "lucide-react";
+import { TrendingUp, ShoppingCart, Calendar, Users, Download, RefreshCw, BarChart3, Globe2 } from "lucide-react";
+
+// Lazy: GA4 dashboard code only downloads when the Visitors tab is opened
+const VisitorAnalytics = dynamic(() => import("./VisitorAnalytics"), {
+  loading: () => <div className="h-64 bg-gray-100 rounded-xl animate-pulse" />,
+});
 
 interface Overview {
   revenue: { orders: number; bookings: number; total: number };
@@ -18,6 +24,7 @@ interface ChartDay { date: string; orders: number; bookings: number; total: numb
 
 export default function AnalyticsPage() {
   const [days, setDays] = useState(30);
+  const [tab, setTab] = useState<"business" | "visitors">("business");
   const [overview, setOverview] = useState<Overview | null>(null);
   const [chart, setChart] = useState<ChartDay[]>([]);
   const [funnel, setFunnel] = useState<Record<string, number>>({});
@@ -37,7 +44,7 @@ export default function AnalyticsPage() {
     }
   }
 
-  useEffect(() => { fetchAll(); }, [days]);
+  useEffect(() => { if (tab === "business") fetchAll(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [days, tab]);
 
   async function fetchAll() {
     setLoading(true);
@@ -66,7 +73,7 @@ export default function AnalyticsPage() {
       <AdminPageHeader
         title="Analytics"
         titleBn="বিজনেস রিপোর্ট"
-        description="Revenue, orders, bookings, leads & export"
+        description="Business reports (database) + Visitor analytics (Google Analytics 4)"
         actions={
           <div className="flex items-center gap-2">
             <select
@@ -85,6 +92,28 @@ export default function AnalyticsPage() {
         }
       />
 
+      {/* Section tabs */}
+      <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit">
+        {([
+          { id: "business", label: "Business Analytics", icon: BarChart3 },
+          { id: "visitors", label: "Visitor Analytics", icon: Globe2 },
+        ] as const).map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => setTab(t.id)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              tab === t.id ? "bg-white text-brand-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            <t.icon className="w-4 h-4" /> {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "visitors" && <VisitorAnalytics days={days} />}
+
+      {tab === "business" && (<>
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
@@ -192,6 +221,7 @@ export default function AnalyticsPage() {
           ))}
         </div>
       </div>
+      </>)}
     </div>
   );
 }
