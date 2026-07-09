@@ -24,7 +24,9 @@ ASSISTANT_BOOLEAN_FEATURES: dict[str, bool] = {
     "assistant_feature_delivery_info": True,
     "assistant_feature_faq": True,
     "assistant_feature_blog": True,
-    "assistant_feature_web_search": True,
+    # Default OFF: keeps the assistant 100% self-contained (no external
+    # API at all). Admin can enable the DuckDuckGo fallback from Settings.
+    "assistant_feature_web_search": False,
     "assistant_feature_complaints": True,
 }
 
