@@ -326,8 +326,49 @@ async def fetch_visitor_analytics(days: int = 30) -> dict:
                  order_metric="exits"),
         ]
 
-        reports1 = await _run_batch(client, prop, headers, batch1)
-        reports2 = await _run_batch(client, prop, headers, batch2)
+        try:
+            reports1 = await _run_batch(client, prop, headers, batch1)
+        except Exception:
+            # Some properties can reject newer engagement metrics.
+            logger.warning("GA4 primary batch failed; retrying with legacy metrics", exc_info=True)
+            batch1_legacy = [
+                _req(["activeUsers", "newUsers", "sessions", "screenPageViews",
+                      "averageSessionDuration", "bounceRate"], days=days, limit=1),
+                _req(["activeUsers"], ["date"], days=days, limit=400),
+                _req(["sessions"], ["sessionDefaultChannelGroup"], days=days,
+                     limit=10, order_metric="sessions"),
+                _req(["screenPageViews", "activeUsers"], ["pagePath"], days=days,
+                     limit=10, order_metric="screenPageViews"),
+                _req(["activeUsers"], ["deviceCategory"], days=days, limit=5,
+                     order_metric="activeUsers"),
+            ]
+            reports1 = await _run_batch(client, prop, headers, batch1_legacy)
+
+        try:
+            reports2 = await _run_batch(client, prop, headers, batch2)
+        except Exception:
+            # operatingSystem can fail on some properties; keep other dimensions available.
+            logger.warning("GA4 secondary batch failed; retrying with compatible dimensions", exc_info=True)
+            batch2_legacy = [
+                _req(["activeUsers"], ["browser"], days=days, limit=6,
+                     order_metric="activeUsers"),
+                _req(["activeUsers"], ["country"], days=days, limit=10,
+                     order_metric="activeUsers"),
+                _req(["activeUsers"], ["city"], days=days, limit=10,
+                     order_metric="activeUsers"),
+                _req(["activeUsers"], ["newVsReturning"], days=days, limit=3),
+                _req(["activeUsers"], ["hour"], days=days, limit=24),
+            ]
+            reports2_legacy = await _run_batch(client, prop, headers, batch2_legacy)
+            # Keep the same shape as batch2 indexes expected below.
+            reports2 = [
+                reports2_legacy[0] if len(reports2_legacy) > 0 else {},  # browser
+                {},  # operatingSystem unavailable
+                reports2_legacy[1] if len(reports2_legacy) > 1 else {},  # country
+                reports2_legacy[2] if len(reports2_legacy) > 2 else {},  # city
+                reports2_legacy[3] if len(reports2_legacy) > 3 else {},  # newVsReturning
+                reports2_legacy[4] if len(reports2_legacy) > 4 else {},  # hour
+            ]
         reports3: list[dict] = []
         try:
             reports3 = await _run_batch(client, prop, headers, batch3)
