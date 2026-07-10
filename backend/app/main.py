@@ -1,3 +1,4 @@
+"""ABO Enterprise Backend API - v1.0.1 (migration hotfix)"""
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
