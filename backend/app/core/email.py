@@ -88,6 +88,8 @@ async def send_email(
                 logger.error(
                     "Email to %s failed after %d attempts: %s", to, attempt + 1, e
                 )
+                from app.core.ops_events import record_failed_email
+                record_failed_email(to, subject, str(e))
                 return
             logger.warning(
                 "Email to %s failed on attempt %d (%s); retrying in %.0fs",

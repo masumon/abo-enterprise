@@ -11,6 +11,10 @@ from app.core.monitoring import init_sentry
 
 # Best-effort — no-op unless SENTRY_DSN is configured.
 init_sentry()
+# Ring-buffer capture of ERROR-level logs for the admin Operations panel.
+from app.core.ops_events import install_error_capture  # noqa: E402
+
+install_error_capture()
 from app.core.exceptions import ABOException, to_http_exception
 from app.core.security import require_admin
 from app.core.bootstrap import bootstrap_admin

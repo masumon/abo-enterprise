@@ -8,11 +8,16 @@ import { useToastStore } from "@/store/toast";
 import { apiErrorMessage } from "@/lib/apiError";
 import {
   TrendingUp, TrendingDown, ShoppingCart, Calendar, Users, Download,
-  RefreshCw, BarChart3, Globe2, Package, Wrench, Trophy,
+  RefreshCw, BarChart3, Globe2, Package, Wrench, Trophy, Activity,
 } from "lucide-react";
 
 // Lazy: GA4 dashboard code only downloads when the Visitors tab is opened
 const VisitorAnalytics = dynamic(() => import("./VisitorAnalytics"), {
+  loading: () => <div className="h-64 bg-gray-100 rounded-xl animate-pulse" />,
+});
+
+// Lazy: Operations code only downloads when that tab is opened
+const OperationsPanel = dynamic(() => import("./OperationsPanel"), {
   loading: () => <div className="h-64 bg-gray-100 rounded-xl animate-pulse" />,
 });
 
@@ -93,7 +98,7 @@ function TopList({ title, icon: Icon, rows, emptyText }: {
 
 export default function AnalyticsPage() {
   const [days, setDays] = useState(30);
-  const [tab, setTab] = useState<"business" | "visitors">("business");
+  const [tab, setTab] = useState<"business" | "visitors" | "operations">("business");
   const [overview, setOverview] = useState<Overview | null>(null);
   const [chart, setChart] = useState<ChartDay[]>([]);
   const [funnel, setFunnel] = useState<Record<string, number>>({});
@@ -171,6 +176,7 @@ export default function AnalyticsPage() {
         {([
           { id: "business", label: "Business Analytics", icon: BarChart3 },
           { id: "visitors", label: "Visitor Analytics (Live + Historical GA4)", icon: Globe2 },
+          { id: "operations", label: "Operations", icon: Activity },
         ] as const).map((t) => (
           <button
             key={t.id}
@@ -188,6 +194,8 @@ export default function AnalyticsPage() {
       </div>
 
       {tab === "visitors" && <VisitorAnalytics days={days} />}
+
+      {tab === "operations" && <OperationsPanel />}
 
       {tab === "business" && (<>
       {/* KPI Cards */}
