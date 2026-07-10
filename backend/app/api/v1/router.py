@@ -14,6 +14,7 @@ from app.api.v1.routes import (
     invoices,
     payments,
     analytics,
+    ops,
     bulk,
     reviews,
     blog,
@@ -40,6 +41,7 @@ api_router.include_router(settings.router)
 api_router.include_router(invoices.router)
 api_router.include_router(payments.router)
 api_router.include_router(analytics.router)
+api_router.include_router(ops.router)
 api_router.include_router(bulk.router)
 api_router.include_router(admin.router)
 api_router.include_router(admin_settings.router)

@@ -70,6 +70,8 @@ async def login(
 
     if not user or not verify_password(payload.password, user.password_hash):
         _record_failure(ip)
+        from app.core.ops_events import record_failed_login
+        record_failed_login(ip, payload.email)
         if _is_locked(ip):
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
