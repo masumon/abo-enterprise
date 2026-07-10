@@ -1,0 +1,51 @@
+# Weekly independent database backup (free tier).
+#
+# Runs only when the BACKUP_DATABASE_URL repo secret is set
+# (Settings → Secrets and variables → Actions). The dump is stored as a
+# GitHub Actions artifact (private to the repo) for 30 days.
+name: Weekly DB Backup
+
+on:
+  schedule:
+    - cron: "30 21 * * 5" # every Friday 21:30 UTC (Saturday 03:30 BDT)
+  workflow_dispatch: {}
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check secret is configured
+        id: check
+        env:
+          DB_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          if [ -z "$DB_URL" ]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "BACKUP_DATABASE_URL secret not set — skipping backup."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install postgres client
+        if: steps.check.outputs.configured == 'true'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+
+      - name: Dump database
+        if: steps.check.outputs.configured == 'true'
+        env:
+          DB_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          # SQLAlchemy-style URLs (postgresql+asyncpg://) → plain postgres URL
+          CLEAN_URL=$(echo "$DB_URL" | sed 's|postgresql+asyncpg://|postgresql://|')
+          pg_dump "$CLEAN_URL" --no-owner --no-privileges -Fc \
+            -f "abo-db-$(date -u +%Y%m%d).dump"
+          ls -lh abo-db-*.dump
+
+      - name: Upload backup artifact
+        if: steps.check.outputs.configured == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_id }}
+          path: abo-db-*.dump
+          retention-days: 30
+          if-no-files-found: error

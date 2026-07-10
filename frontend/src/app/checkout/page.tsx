@@ -11,6 +11,7 @@ import {
   ShoppingBag, Tag, AlertCircle, ArrowLeft, Truck, Shield, ChevronRight, Copy, Check,
 } from "lucide-react";
 import { apiErrorMessage } from "@/lib/apiError";
+import { trackEvent } from "@/components/analytics/GoogleAnalytics";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
 import { cn, formatPrice } from "@/lib/utils";
@@ -93,6 +94,11 @@ export default function CheckoutPage() {
       setValue("payment_gateway", paymentOptions[0].gateway);
     }
   }, [paymentOptions, selectedGateway, setValue]);
+
+  // GA4 funnel: fire once when checkout opens.
+  useEffect(() => {
+    trackEvent("begin_checkout", { currency: "BDT" });
+  }, []);
 
   // District drives the upazila/thana list — clear the pick if it no longer belongs to the new district.
   useEffect(() => {

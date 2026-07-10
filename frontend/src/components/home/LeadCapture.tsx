@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { BD_PHONE_REGEX, BD_PHONE_ERROR_BN } from "@/lib/phone";
+import { trackEvent } from "@/components/analytics/GoogleAnalytics";
 import { Send, CheckCircle, Bot, Code, Cog } from "lucide-react";
 import { isQueuedResponse, serviceLeadsApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
@@ -70,6 +71,7 @@ export default function LeadCapture() {
       const created = response.data?.data as { lead_number?: string } | null;
       setReference(!wasQueued ? created?.lead_number ?? null : null);
       setIsSubmitted(true);
+      trackEvent("generate_lead", { lead_type: data.lead_type });
     } catch {
       setSubmitError(
         lang === "bn"

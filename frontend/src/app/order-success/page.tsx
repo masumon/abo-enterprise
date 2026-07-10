@@ -6,6 +6,7 @@ import Link from "next/link";
 import { CheckCircle2, Package, ArrowRight, Share2, Download, Loader2, X, FileText } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { trackPurchase } from "@/components/analytics/FacebookPixel";
+import { trackEvent } from "@/components/analytics/GoogleAnalytics";
 import { downloadPublicOrderInvoice, publicInvoicesApi, type PublicInvoiceData } from "@/lib/api";
 import { readOrderSnapshot, snapshotToInvoice } from "@/lib/orderSnapshot";
 import PageHero from "@/components/ui/PageHero";
@@ -54,7 +55,10 @@ function OrderSuccessContent() {
     const ph = params.get("phone");
     setOrderNumber(order);
     setPhone(ph);
-    if (order) trackPurchase(0, order);
+    if (order) {
+      trackPurchase(0, order);
+      trackEvent("purchase", { currency: "BDT", transaction_id: order });
+    }
     const t = setTimeout(() => setShowConfetti(false), 3000);
     return () => clearTimeout(t);
   }, [params]);

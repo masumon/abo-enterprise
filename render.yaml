@@ -79,3 +79,6 @@ services:
         sync: false
       - key: GA4_PRIVATE_KEY
         sync: false
+      # Optional — error monitoring activates only when set (free Sentry tier)
+      - key: SENTRY_DSN
+        sync: false
