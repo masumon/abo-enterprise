@@ -73,6 +73,8 @@ interface Section {
   title: string;
   icon: React.ReactNode;
   fields: SettingField[];
+  /** Info line rendered under the section header (e.g. Image Manager pointer). */
+  note?: string;
 }
 
 const SECTIONS: Section[] = [
@@ -83,13 +85,12 @@ const SECTIONS: Section[] = [
     id: "brand_core",
     title: "Brand Identity",
     icon: <Building2 className="w-4 h-4" />,
+    // Logo/favicon/PWA icon/OG image moved to the Image Manager — one place
+    // for every image, with size guides, preview and auto-optimize.
+    note: "লোগো, ফ্যাভিকন, PWA আইকন ও OG ছবি এখন Image Manager-এ (ছবি ব্যবস্থাপনা) — সব ছবি এক জায়গায়।",
     fields: [
       { key: "site_name", label: "Company Name", placeholder: "ABO Enterprise" },
       { key: "site_tagline", label: "Tagline", placeholder: "সহজ সমাধান" },
-      { key: "logo_url", label: "Logo (PNG/SVG)", type: "url", upload: true, placeholder: "https://..." },
-      { key: "favicon_url", label: "Favicon (ICO/PNG)", type: "url", upload: true, placeholder: "https://.../favicon.ico" },
-      { key: "app_icon_url", label: "PWA Icon (192×192 or 512×512)", type: "url", upload: true, placeholder: "https://..." },
-      { key: "default_og_image_url", label: "Default OG Image (1200×630)", type: "url", upload: true, placeholder: "https://...", hint: "Fallback for social shares" },
     ],
   },
   {
@@ -119,8 +120,8 @@ const SECTIONS: Section[] = [
       { key: "hero_subtitle_bn", label: "Subtitle (বাংলা)", type: "textarea", placeholder: "সহজ সমাধান — পণ্য, সেবা, সফটওয়্যার ও AI এক প্ল্যাটফর্মে।" },
       { key: "hero_cta_text", label: "CTA Button Text", placeholder: "Shop Now" },
       { key: "hero_cta_url", label: "CTA Button Link", type: "url", placeholder: "/products" },
-      { key: "hero_image_url", label: "Hero Image (1920×1080)", type: "url", upload: true, placeholder: "https://..." },
     ],
+    note: "হোমপেজ ব্যানার ছবি এখন Image Manager → Brand & Site ট্যাবে।",
   },
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -143,9 +144,8 @@ const SECTIONS: Section[] = [
     id: "additional_assets",
     title: "Additional Assets",
     icon: <ImageIcon className="w-4 h-4" />,
+    note: "অফিস ফটো ও About Story ছবি এখন Image Manager → Brand & Site ট্যাবে।",
     fields: [
-      { key: "gallery_office_image_url", label: "Office Photo (1920×1080)", type: "url", upload: true, placeholder: "https://..." },
-      { key: "about_story_image_url", label: "About Story Image (1920×1080)", type: "url", upload: true, placeholder: "https://..." },
       { key: "trade_license", label: "Trade License / TIN", placeholder: "TL-XXXXX", hint: "Footer trust badge" },
     ],
   },
@@ -320,6 +320,15 @@ function SectionCard({
           {isSaving ? "Saving…" : isSaved ? "Saved!" : "Save"}
         </button>
       </div>
+      {section.note && (
+        <div className="px-6 py-2.5 bg-brand-50/50 border-b border-brand-100/60 text-xs text-brand-800 flex items-center gap-2 flex-wrap">
+          <ImageIcon className="w-3.5 h-3.5 flex-shrink-0" />
+          <span>{section.note}</span>
+          <Link href="/admin/media" className="font-semibold underline hover:no-underline">
+            Image Manager খুলুন →
+          </Link>
+        </div>
+      )}
       <div className="divide-y divide-gray-50">
         {section.fields.map((field) => (
           <div key={field.key} className="px-6 py-4">

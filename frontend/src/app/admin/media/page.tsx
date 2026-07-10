@@ -83,6 +83,7 @@ function SlotEditor({
         onChange={onChange}
         folder={MEDIA_UPLOAD_FOLDER}
         hint={slot.hint}
+        guide={slot.guide}
         previewSize="lg"
       />
     </div>
@@ -290,6 +291,15 @@ export default function AdminMediaPage() {
         titleBn="ছবি ব্যবস্থাপনা"
         description="Upload, update, or remove all website images from one place — brand, banners, team, projects, products, services, blog & reviews."
       />
+
+      <div className="rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3 text-xs text-gray-600 leading-relaxed">
+        <p className="font-semibold text-brand-800 mb-0.5">📸 এটাই সাইটের সব ছবির একমাত্র জায়গা</p>
+        <p>
+          এখানে ছবি বদলালে <strong>মূল ওয়েবসাইটে সাথে সাথে পরিবর্তন হয়</strong> · সাপোর্টেড: JPG, PNG, WebP (সর্বোচ্চ 5MB) ·
+          আপলোডের সময় <strong>অটো-অপ্টিমাইজ</strong> হয় (কোয়ালিটি ও ফরম্যাট) · আপলোডের আগে প্রিভিউ দেখে নিশ্চিত করুন ·
+          প্রতিটি অপশনের নিচে সুপারিশকৃত সাইজ ও ফরম্যাট দেওয়া আছে।
+        </p>
+      </div>
 
       <div className="flex flex-wrap gap-2">
         {TABS.map((t) => (
