@@ -26,16 +26,16 @@ jobs:
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Install postgres client
+      - name: Install postgres 17 client
         if: steps.check.outputs.configured == 'true'
         run: |
-          sudo apt-get install -y -qq curl gnupg
           curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
             | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
           echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
             | sudo tee /etc/apt/sources.list.d/pgdg.list
           sudo apt-get update -qq
           sudo apt-get install -y -qq postgresql-client-17
+          /usr/lib/postgresql/17/bin/pg_dump --version
 
       - name: Dump database
         if: steps.check.outputs.configured == 'true'
@@ -44,7 +44,9 @@ jobs:
         run: |
           # SQLAlchemy-style URLs (postgresql+asyncpg://) → plain postgres URL
           CLEAN_URL=$(echo "$DB_URL" | sed 's|postgresql+asyncpg://|postgresql://|')
-          pg_dump "$CLEAN_URL" --no-owner --no-privileges -Fc \
+          # Explicit v17 binary — the runner also ships pg 16, and the
+          # /usr/bin/pg_dump wrapper picking 16 aborts on version mismatch.
+          /usr/lib/postgresql/17/bin/pg_dump "$CLEAN_URL" --no-owner --no-privileges -Fc \
             -f "abo-db-$(date -u +%Y%m%d).dump"
           ls -lh abo-db-*.dump
 
