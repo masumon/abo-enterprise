@@ -7,18 +7,20 @@ export interface ImageSlotDef {
   labelBn: string;
   hint?: string;
   usedOn?: string;
+  /** Recommended dimensions + format, shown under the upload control. */
+  guide?: string;
 }
 
 export const MEDIA_UPLOAD_FOLDER = "abo-enterprise/media";
 
 export const BRAND_IMAGE_SLOTS: ImageSlotDef[] = [
-  { key: "logo_url", label: "Site Logo", labelBn: "সাইট লোগো", usedOn: "Navbar, Footer, Hero, Invoice" },
-  { key: "favicon_url", label: "Favicon", labelBn: "ফ্যাভিকন", usedOn: "Browser tab icon" },
-  { key: "app_icon_url", label: "PWA App Icon", labelBn: "PWA অ্যাপ আইকন", usedOn: "Mobile home screen, manifest" },
-  { key: "default_og_image_url", label: "Default Social Share Image", labelBn: "সোশ্যাল শেয়ার ছবি", usedOn: "Facebook/Twitter preview fallback" },
-  { key: "hero_image_url", label: "Homepage Banner", labelBn: "হোমপেজ ব্যানার", usedOn: "Homepage hero" },
-  { key: "gallery_office_image_url", label: "Gallery Office Photo", labelBn: "গ্যালারি অফিস ছবি", usedOn: "/gallery office tab" },
-  { key: "about_story_image_url", label: "About Story Image", labelBn: "আমাদের গল্প ছবি", usedOn: "/about Our Story" },
+  { key: "logo_url", label: "Site Logo", labelBn: "সাইট লোগো", usedOn: "Navbar, Footer, Hero, Invoice", guide: "512×512px (1:1) · PNG স্বচ্ছ ব্যাকগ্রাউন্ড" },
+  { key: "favicon_url", label: "Favicon", labelBn: "ফ্যাভিকন", usedOn: "Browser tab icon", guide: "64×64px (1:1) · PNG/ICO" },
+  { key: "app_icon_url", label: "PWA App Icon", labelBn: "PWA অ্যাপ আইকন", usedOn: "Mobile home screen, manifest", guide: "512×512px (1:1) · PNG" },
+  { key: "default_og_image_url", label: "Default Social Share Image", labelBn: "সোশ্যাল শেয়ার ছবি", usedOn: "Facebook/Twitter preview fallback", guide: "1200×630px (1.91:1) · JPG/PNG" },
+  { key: "hero_image_url", label: "Homepage Banner", labelBn: "হোমপেজ ব্যানার", usedOn: "Homepage hero", guide: "1920×1080px (16:9) · JPG/WebP" },
+  { key: "gallery_office_image_url", label: "Gallery Office Photo", labelBn: "গ্যালারি অফিস ছবি", usedOn: "/gallery office tab", guide: "1920×1080px (16:9) · JPG/WebP" },
+  { key: "about_story_image_url", label: "About Story Image", labelBn: "আমাদের গল্প ছবি", usedOn: "/about Our Story", guide: "1200×800px (3:2) · JPG/WebP" },
 ];
 
 export const PAGE_BANNER_SLOTS: ImageSlotDef[] = PAGE_BANNER_CONFIG.map(({ key, label, hint }) => ({
@@ -27,6 +29,7 @@ export const PAGE_BANNER_SLOTS: ImageSlotDef[] = PAGE_BANNER_CONFIG.map(({ key, 
   labelBn: `${label} ব্যানার`,
   hint: hint ?? "Page hero background",
   usedOn: `/${key === "legal" ? "services/legal" : key === "printing" ? "services/printing" : key === "software" ? "services/software" : key}`,
+  guide: "1920×600px (wide) · JPG/WebP",
 }));
 
 export const JSON_IMAGE_SETTINGS = {
