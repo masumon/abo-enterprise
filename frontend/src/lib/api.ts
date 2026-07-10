@@ -272,11 +272,18 @@ export const serviceLeadsAdminApi = {
 };
 
 export const authApi = {
-  login: (email: string, password: string) =>
+  login: (email: string, password: string, totpCode?: string) =>
     api.post<ApiResponse<{ access_token: string; token_type: string }>>("/api/v1/auth/login", {
       email,
       password,
+      ...(totpCode ? { totp_code: totpCode } : {}),
     }),
+
+  totpStatus: () => api.get<ApiResponse<{ enabled: boolean }>>("/api/v1/auth/2fa/status"),
+  totpSetup: () =>
+    api.post<ApiResponse<{ secret: string; otpauth_uri: string; qr_data_uri: string }>>("/api/v1/auth/2fa/setup"),
+  totpEnable: (code: string) => api.post<ApiResponse<{ enabled: boolean }>>("/api/v1/auth/2fa/enable", { code }),
+  totpDisable: (code: string) => api.post<ApiResponse<{ enabled: boolean }>>("/api/v1/auth/2fa/disable", { code }),
 
   getMe: () =>
     api.get<ApiResponse<{ id: string; email: string; name: string; role: string }>>("/api/v1/auth/me"),

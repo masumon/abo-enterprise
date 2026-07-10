@@ -53,6 +53,8 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [errorInfo, setErrorInfo] = useState<{ type: ErrorType; msg: string } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [totpRequired, setTotpRequired] = useState(false);
+  const [totpCode, setTotpCode] = useState("");
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -62,7 +64,7 @@ function LoginForm() {
     setLoading(true);
     setErrorInfo(null);
     try {
-      const res = await authApi.login(data.email, data.password);
+      const res = await authApi.login(data.email, data.password, totpCode || undefined);
       const token = res.data.data?.access_token;
       if (!token) throw new Error("No token received");
       // Cookie-session probe: localStorage has no token yet, so this getMe
@@ -83,7 +85,14 @@ function LoginForm() {
           : "/admin";
       router.replace(safeRedirect);
     } catch (e: unknown) {
-      setErrorInfo(getErrorInfo(e));
+      const info = getErrorInfo(e);
+      // Password correct, account has 2FA — reveal the code field.
+      if (info.msg === "totp_required") {
+        setTotpRequired(true);
+        setErrorInfo(null);
+      } else {
+        setErrorInfo(info);
+      }
     } finally {
       setLoading(false);
     }
@@ -145,9 +154,27 @@ function LoginForm() {
             </div>
           </div>
 
+          {totpRequired && (
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-1.5">
+                Authenticator Code <span className="text-gray-500">(2FA)</span>
+              </label>
+              <input
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                autoFocus
+                className="w-full px-4 py-3 bg-white/5 border border-brand-500/50 rounded-xl text-white text-center text-xl tracking-[0.4em] placeholder-gray-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40"
+                placeholder="000000"
+              />
+              <p className="text-gray-500 text-xs mt-1.5">অথেনটিকেটর অ্যাপের ৬-সংখ্যার কোড দিন</p>
+            </div>
+          )}
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (totpRequired && totpCode.length !== 6)}
             className="w-full mt-2 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold transition-colors disabled:opacity-60"
           >
             {loading ? (

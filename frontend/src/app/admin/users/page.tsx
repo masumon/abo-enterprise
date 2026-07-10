@@ -6,6 +6,7 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { Loader2, Users, Shield, Plus, Pencil, Trash2, X, Search } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import TwoFactorCard from "@/components/admin/TwoFactorCard";
 
 interface AdminUser {
   id: string;
@@ -118,6 +119,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
+      <TwoFactorCard />
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <Users className="w-6 h-6 text-brand-600" />

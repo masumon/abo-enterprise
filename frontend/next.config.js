@@ -1,5 +1,6 @@
 // @ts-check
-const withPWA = require("next-pwa");
+// Maintained fork of next-pwa (same Workbox engine, patched dependencies)
+const withPWA = require("@ducanh2912/next-pwa").default;
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -67,11 +68,12 @@ const nextConfig = {
 module.exports = withPWA({
   dest: "public",
   register: true,
-  skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
   fallbacks: {
     document: "/offline.html",
   },
+  workboxOptions: {
+  skipWaiting: true,
   // Custom runtime caching — cross-origin backend API (Render) is intentionally
   // excluded so the browser's native fetch (60 s axios timeout) handles it
   // without the SW's 10 s timeout killing slow/mobile connections on cold start.
@@ -144,4 +146,5 @@ module.exports = withPWA({
     // which caches to IndexedDB for slow/mobile networks, while axios
     // timeout (adaptive: 30s fast, 60s+ slow) handles backend latency.
   ],
+  },
 })(nextConfig);
