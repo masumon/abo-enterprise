@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CartItem } from "@/types";
+import { trackEvent } from "@/components/analytics/GoogleAnalytics";
 
 interface CartStore {
   items: CartItem[];
@@ -27,6 +28,8 @@ export const useCartStore = create<CartStore>()(
       stockWarnings: [],
 
       addItem: (newItem) => {
+        // GA4 e-commerce funnel signal
+        trackEvent("add_to_cart", { currency: "BDT", value: Number(newItem.price) || 0 });
         const maxQty = newItem.stock_quantity ?? 99;
         const existing = get().items.find((i) => i.product_id === newItem.product_id);
         if (existing) {
