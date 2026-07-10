@@ -342,6 +342,8 @@ class LeadOut(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+    # Required only when the account has TOTP 2FA enabled
+    totp_code: str | None = None
 
 
 class TokenResponse(BaseModel):

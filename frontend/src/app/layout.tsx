@@ -71,6 +71,10 @@ export async function generateMetadata(): Promise<Metadata> {
       images: [ogImage],
     },
     robots: { index: true, follow: true },
+    // Google Search Console HTML-tag verification (optional; DNS also works)
+    ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+      ? { verification: { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } }
+      : {}),
     icons: {
       icon: favicon
         ? [{ url: favicon, sizes: "any" }]

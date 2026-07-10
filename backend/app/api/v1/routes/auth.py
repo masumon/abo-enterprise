@@ -80,6 +80,17 @@ async def login(
             detail="Invalid email or password",
         )
 
+    # Optional TOTP second factor — only for accounts that enabled it.
+    if user.totp_enabled and user.totp_secret:
+        import pyotp
+
+        if not payload.totp_code:
+            # Password verified; the client should now prompt for the code.
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="totp_required")
+        if not pyotp.TOTP(user.totp_secret).verify(payload.totp_code.strip(), valid_window=1):
+            _record_failure(ip)
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authenticator code")
+
     _clear_failures(ip)
     user.last_login = datetime.now(timezone.utc)
     await db.commit()
@@ -108,6 +119,99 @@ async def logout(response: Response):
     """Clear the HttpOnly admin session cookie."""
     response.delete_cookie(ADMIN_SESSION_COOKIE, path="/")
     return ApiResponse(data=None, message="Logged out")
+
+
+def _totp_qr_data_uri(uri: str) -> str:
+    """Provisioning URI → PNG QR code as a data URI (rendered client-side)."""
+    import base64
+    from io import BytesIO
+
+    import qrcode
+
+    img = qrcode.make(uri, box_size=6, border=2)
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    return "data:image/png;base64," + base64.b64encode(buf.getvalue()).decode()
+
+
+@router.get("/2fa/status", response_model=ApiResponse)
+async def totp_status(
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    from uuid import UUID
+
+    user = (await db.execute(select(AdminUser).where(AdminUser.id == UUID(admin_id)))).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return ApiResponse(data={"enabled": bool(user.totp_enabled)})
+
+
+@router.post("/2fa/setup", response_model=ApiResponse)
+async def totp_setup(
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Generate (or regenerate) a TOTP secret — NOT enabled until verified."""
+    from uuid import UUID
+
+    import pyotp
+
+    user = (await db.execute(select(AdminUser).where(AdminUser.id == UUID(admin_id)))).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.totp_enabled:
+        raise HTTPException(status_code=400, detail="2FA is already enabled. Disable it first.")
+    secret = pyotp.random_base32()
+    user.totp_secret = secret
+    await db.commit()
+    uri = pyotp.TOTP(secret).provisioning_uri(name=user.email, issuer_name="ABO Enterprise Admin")
+    return ApiResponse(data={"secret": secret, "otpauth_uri": uri, "qr_data_uri": _totp_qr_data_uri(uri)})
+
+
+@router.post("/2fa/enable", response_model=ApiResponse)
+async def totp_enable(
+    payload: dict,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Confirm the authenticator app works, then turn 2FA on."""
+    from uuid import UUID
+
+    import pyotp
+
+    code = str(payload.get("code", "")).strip()
+    user = (await db.execute(select(AdminUser).where(AdminUser.id == UUID(admin_id)))).scalar_one_or_none()
+    if not user or not user.totp_secret:
+        raise HTTPException(status_code=400, detail="Run 2FA setup first")
+    if not pyotp.TOTP(user.totp_secret).verify(code, valid_window=1):
+        raise HTTPException(status_code=400, detail="Invalid authenticator code")
+    user.totp_enabled = True
+    await db.commit()
+    return ApiResponse(data={"enabled": True}, message="Two-factor authentication enabled")
+
+
+@router.post("/2fa/disable", response_model=ApiResponse)
+async def totp_disable(
+    payload: dict,
+    admin_id: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Disabling requires a valid current code (protects a hijacked session)."""
+    from uuid import UUID
+
+    import pyotp
+
+    code = str(payload.get("code", "")).strip()
+    user = (await db.execute(select(AdminUser).where(AdminUser.id == UUID(admin_id)))).scalar_one_or_none()
+    if not user or not user.totp_enabled or not user.totp_secret:
+        raise HTTPException(status_code=400, detail="2FA is not enabled")
+    if not pyotp.TOTP(user.totp_secret).verify(code, valid_window=1):
+        raise HTTPException(status_code=400, detail="Invalid authenticator code")
+    user.totp_enabled = False
+    user.totp_secret = None
+    await db.commit()
+    return ApiResponse(data={"enabled": False}, message="Two-factor authentication disabled")
 
 
 @router.get("/me", response_model=ApiResponse)

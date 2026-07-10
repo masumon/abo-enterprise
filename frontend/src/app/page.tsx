@@ -48,6 +48,32 @@ const organizationJsonLd = {
   sameAs: [...SOCIAL_PROFILES],
 };
 
+// Local-pack / Maps visibility for the Sylhet storefront
+const localBusinessJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "LocalBusiness",
+  "@id": `${SITE_URL}/#localbusiness`,
+  name: "ABO Enterprise",
+  image: DEFAULT_OG_IMAGE,
+  url: SITE_URL,
+  telephone: "+8801825007977",
+  priceRange: "৳৳",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170",
+    addressLocality: "Beanibazar",
+    addressRegion: "Sylhet",
+    postalCode: "3170",
+    addressCountry: "BD",
+  },
+  openingHoursSpecification: {
+    "@type": "OpeningHoursSpecification",
+    dayOfWeek: ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
+    opens: "09:00",
+    closes: "21:00",
+  },
+};
+
 const websiteJsonLd = {
   "@context": "https://schema.org",
   "@type": "WebSite",
@@ -77,6 +103,10 @@ export default function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdString(websiteJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: jsonLdString(localBusinessJsonLd) }}
       />
       <Hero />
       <QuickCategories />
