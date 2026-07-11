@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import AdminTitle from "@/components/admin/AdminTitle";
 import {
   Loader2, Plus, Pencil, Trash2, X, ToggleLeft, ToggleRight,
   CreditCard, Check, AlertCircle, Receipt,
@@ -225,7 +226,7 @@ export default function AdminPaymentsPage() {
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Payments</h1>
+          <AdminTitle en="Payments" bn="পেমেন্ট" />
           <p className="text-gray-500 text-sm mt-1">
             {tab === "gateways"
               ? "Configure checkout payment methods"

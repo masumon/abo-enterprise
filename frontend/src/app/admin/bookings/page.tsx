@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, Briefcase, ChevronDown, X, Search, Download, Trash2 } from "lucide-react";
 import { bookingsApi, serviceBookingsAdminApi, downloadCsv, downloadPdf } from "@/lib/api";
 import type { Booking, BookingV2 } from "@/types";
@@ -183,7 +184,7 @@ export default function AdminBookingsPage() {
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Bookings</h1>
+          <AdminTitle en="Bookings" bn="বুকিং" />
           <p className="text-gray-500 text-sm mt-1">{tab === "v1" ? total : totalV2} total bookings</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

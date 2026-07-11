@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, Star, CheckCircle, XCircle, Trash2, Shield, ShieldCheck, Pencil, X, MessageSquare, Plus, Search } from "lucide-react";
 import api, { reviewsApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -193,7 +194,7 @@ export default function AdminReviewsPage() {
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reviews</h1>
+          <AdminTitle en="Reviews" bn="রিভিউ" />
           <p className="text-gray-500 text-sm mt-1">{total} total reviews</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

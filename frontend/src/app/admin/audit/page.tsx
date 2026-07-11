@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import AdminTitle from "@/components/admin/AdminTitle";
 import { adminApi } from "@/lib/api";
 import { Loader2, ScrollText, Search } from "lucide-react";
 
@@ -77,7 +78,7 @@ export default function AdminAuditPage() {
         <div className="flex items-center gap-3">
           <ScrollText className="w-6 h-6 text-brand-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Audit Logs</h1>
+            <AdminTitle en="Audit Logs" bn="অডিট" />
             <p className="text-gray-500 text-sm">{total} total entries</p>
           </div>
         </div>

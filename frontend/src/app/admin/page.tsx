@@ -14,6 +14,7 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminQuickActions from "@/components/admin/AdminQuickActions";
 import { formatPrice } from "@/lib/utils";
 import { useAlertStore } from "@/store/alerts";
+import { useLanguageStore } from "@/store/language";
 import { ADMIN_QUICK_ACTIONS } from "@/lib/adminNav";
 
 interface Stats {
@@ -84,19 +85,17 @@ export default function AdminDashboard() {
       a.href === "/admin/leads" ? newLeads : undefined,
   }));
 
-  const greeting = (() => {
-    const h = new Date().getHours();
-    if (h < 12) return "সুপ্রভাত";
-    if (h < 17) return "শুভ অপরাহ্ন";
-    return "শুভ সন্ধ্যা";
-  })();
+  const h = new Date().getHours();
+  const greetBn = h < 12 ? "সুপ্রভাত" : h < 17 ? "শুভ অপরাহ্ন" : "শুভ সন্ধ্যা";
+  const greetEn = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
 
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title={`${greeting}!`}
-        titleBn="Admin Dashboard"
-        description="আপনার ব্যবসার সারাংশ — অর্ডার, বুকিং, লিড ও রিভেন্যু এক নজরে"
+        title={`${greetEn}!`}
+        titleBn={`${greetBn}!`}
+        description="Business overview — orders, bookings, leads & revenue at a glance"
+        descriptionBn="আপনার ব্যবসার সারাংশ — অর্ডার, বুকিং, লিড ও রিভেন্যু এক নজরে"
         actions={
           <div className="flex items-center gap-2">
             {updatedLabel && (
