@@ -331,7 +331,7 @@ async def update_booking(
         action="update",
         entity_type="booking",
         entity_id=booking.id,
-        new_values=update_data,
+        new_values={k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in update_data.items()},
     )
     db.add(log)
     await db.commit()

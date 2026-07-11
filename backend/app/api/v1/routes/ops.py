@@ -69,14 +69,28 @@ async def system_health(
     mail_email = mail_cfg.get("user") or mail_cfg.get("from_addr") or ""
     if is_smtp_configured(mail_cfg):
         import asyncio
+        import smtplib
+
+        _h, _p = mail_cfg["host"], int(mail_cfg["port"] or 587)
+
+        def _smtp_probe() -> str | None:
+            """Return None on success, error string on failure."""
+            try:
+                with smtplib.SMTP(_h, _p, timeout=8) as _s:
+                    _s.ehlo()
+                return None
+            except Exception as _e:  # noqa: BLE001
+                return str(_e)[:200]
 
         try:
-            _, writer = await asyncio.wait_for(
-                asyncio.open_connection(mail_cfg["host"], int(mail_cfg["port"] or 587)),
-                timeout=5,
+            smtp_err = await asyncio.wait_for(
+                asyncio.get_running_loop().run_in_executor(None, _smtp_probe),
+                timeout=12,
             )
-            writer.close()
-            checks["smtp"] = {"ok": True, "host": mail_cfg["host"], "email": mail_email}
+            if smtp_err is None:
+                checks["smtp"] = {"ok": True, "host": _h, "email": mail_email}
+            else:
+                checks["smtp"] = {"ok": False, "error": smtp_err, "email": mail_email}
         except Exception as exc:  # noqa: BLE001
             checks["smtp"] = {"ok": False, "error": str(exc)[:200], "email": mail_email}
     else:
