@@ -65,6 +65,30 @@ const schema = z.object({
 );
 type FormData = z.infer<typeof schema>;
 
+/** Product thumbnail that falls back to a placeholder icon when the image
+ * URL is empty OR fails to load (previously a broken URL showed overflowing
+ * alt text in the tiny box). */
+function ProductThumb({ src, alt }: { src?: string | null; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!src || failed) {
+    return (
+      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+        <Package className="w-4 h-4 text-gray-400" />
+      </div>
+    );
+  }
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      width={40}
+      height={40}
+      onError={() => setFailed(true)}
+      className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0 bg-gray-50"
+    />
+  );
+}
+
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -299,13 +323,7 @@ export default function AdminProductsPage() {
                   <tr key={p.id} onClick={() => openEdit(p)} className="cursor-pointer hover:bg-brand-50/30 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
-                        {p.image_url ? (
-                          <Image src={p.image_url} alt={p.name_en} width={40} height={40} className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0" />
-                        ) : (
-                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-                            <Package className="w-4 h-4 text-gray-400" />
-                          </div>
-                        )}
+                        <ProductThumb src={p.image_url} alt={p.name_en} />
                         <div className="min-w-0">
                           <p className="font-medium text-gray-900 truncate">{p.name_en}</p>
                           <p className="text-xs text-gray-400 truncate">{p.slug}</p>

@@ -217,9 +217,13 @@ export default function OperationsPanel() {
           {loading ? <div className="h-32 bg-gray-50 rounded-lg animate-pulse" /> : errors && (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1.5">Runtime Errors ({(errors.runtime_errors as { at: string; message: string }[]).length})</p>
+                <p className="text-xs font-semibold text-gray-500 mb-1.5">Runtime Errors ({(errors.runtime_errors as unknown[]).length})</p>
                 <EventList
-                  rows={(errors.runtime_errors as { at: string; message: string }[]).map((e) => ({ at: e.at, text: e.message, tone: "error" }))}
+                  rows={(errors.runtime_errors as { at: string; message: string; count?: number }[]).map((e) => ({
+                    at: e.at,
+                    text: (e.count && e.count > 1 ? `[×${e.count}] ` : "") + e.message,
+                    tone: "error",
+                  }))}
                   empty="রিস্টার্টের পর কোনো রানটাইম এরর নেই ✓"
                 />
               </div>

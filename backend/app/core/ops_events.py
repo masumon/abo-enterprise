@@ -43,16 +43,39 @@ def record_failed_login(ip: str, email: str) -> None:
     })
 
 
+def _clean_message(record: logging.LogRecord) -> str:
+    """Human-scannable one-liner: the log message + exception type/first line,
+    NOT the full multi-line traceback (that flooded the ops panel)."""
+    msg = record.getMessage()
+    if record.exc_info and record.exc_info[1] is not None:
+        exc = record.exc_info[1]
+        exc_str = str(exc).splitlines()[0] if str(exc) else ""
+        summary = f"{type(exc).__name__}: {exc_str}".strip().rstrip(":")
+        if summary and summary not in msg:
+            msg = f"{msg} — {summary}" if msg else summary
+    return msg[:300]
+
+
 class RecentErrorsHandler(logging.Handler):
-    """Captures ERROR+ records app-wide into the ring buffer."""
+    """Captures ERROR+ records app-wide into the ring buffer, collapsing
+    identical repeats into a single entry with a count."""
 
     def emit(self, record: logging.LogRecord) -> None:  # noqa: D102
         try:
+            message = _clean_message(record)
+            # De-duplicate: if the same logger+message is already buffered,
+            # bump its count and timestamp instead of adding a new row.
+            for entry in recent_errors:
+                if entry["logger"] == record.name and entry["message"] == message:
+                    entry["count"] += 1
+                    entry["at"] = record.created
+                    return
             recent_errors.appendleft({
                 "at": record.created,
                 "logger": record.name,
                 "level": record.levelname,
-                "message": self.format(record)[:500],
+                "message": message,
+                "count": 1,
             })
         except Exception:  # noqa: BLE001 — a logging handler must never raise
             pass

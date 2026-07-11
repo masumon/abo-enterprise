@@ -21,9 +21,35 @@ def test_error_capture_handler():
     logging.getLogger("test.ops").error("boom-%s", "x")
     assert len(ops_events.recent_errors) == before + 1
     assert ops_events.recent_errors[0]["message"].startswith("boom-x")
+    assert ops_events.recent_errors[0]["count"] == 1
     # INFO must not be captured
     logging.getLogger("test.ops").info("quiet")
     assert len(ops_events.recent_errors) == before + 1
+
+
+def test_identical_errors_are_deduplicated_with_count():
+    ops_events.install_error_capture()
+    ops_events.recent_errors.clear()
+    log = logging.getLogger("test.ops.dedup")
+    for _ in range(5):
+        log.error("repeated failure")
+    # One entry, count 5 — not five separate rows flooding the panel
+    matching = [e for e in ops_events.recent_errors if e["message"] == "repeated failure"]
+    assert len(matching) == 1
+    assert matching[0]["count"] == 5
+
+
+def test_exception_message_is_summarized_not_full_traceback():
+    ops_events.install_error_capture()
+    ops_events.recent_errors.clear()
+    try:
+        raise ConnectionRefusedError("[Errno 111] Connection refused")
+    except ConnectionRefusedError:
+        logging.getLogger("test.ops.exc").error("db call failed", exc_info=True)
+    msg = ops_events.recent_errors[0]["message"]
+    assert "ConnectionRefusedError" in msg
+    assert "Traceback" not in msg  # the multi-line dump must NOT be stored
+    assert len(msg) <= 300
 
 
 def test_failed_email_and_login_are_masked():
