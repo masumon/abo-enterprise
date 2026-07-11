@@ -127,33 +127,33 @@ export default function Navbar() {
                     className="w-36 xs:w-44 sm:w-56 px-3 py-1.5 pr-8 rounded-xl text-sm input max-w-[calc(100vw-8rem)]"
                   />
                   <button type="submit" aria-label="Submit search" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-600">
-                    <Search className="w-4 h-4" />
+                    <Search className="w-4 h-4" strokeWidth={2.5} />
                   </button>
                   <SearchSuggestions query={searchQuery} onSelect={() => { setSearchOpen(false); setSearchQuery(""); }} />
                 </div>
                 <button type="button" aria-label="Close search" onClick={() => setSearchOpen(false)}
                   className="ml-1 w-11 h-11 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100/80 dark:hover:bg-white/10 transition-all duration-200 touch-manipulation">
-                  <X className="w-4 h-4" />
+                  <X className="w-4 h-4" strokeWidth={2.5} />
                 </button>
               </form>
             ) : (
               <button type="button" onClick={() => setSearchOpen(true)}
                 className="w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation"
                 aria-label={t("nav_search")}>
-                <Search className="w-[17px] h-[17px]" />
+                <Search className="w-[19px] h-[19px]" strokeWidth={2.5} />
               </button>
             )}
 
             <button type="button" onClick={toggleTheme}
               className="w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation"
               aria-label="Toggle dark mode">
-              {theme === "dark" ? <Sun className="w-[17px] h-[17px]" /> : <Moon className="w-[17px] h-[17px]" />}
+              {theme === "dark" ? <Sun className="w-[19px] h-[19px]" strokeWidth={2.5} /> : <Moon className="w-[19px] h-[19px]" strokeWidth={2.5} />}
             </button>
 
             <button type="button" onClick={toggle}
               className="flex items-center gap-1 px-3 h-11 rounded-full text-[10px] sm:text-xs font-semibold border border-brand-200/80 text-brand-700 hover:bg-brand-50/80 hover:scale-105 active:scale-95 transition-all duration-200 dark:border-brand-700/70 dark:text-brand-300 touch-manipulation"
               aria-label="Toggle language">
-              <Globe className="w-3 h-3" />
+              <Globe className="w-3.5 h-3.5" strokeWidth={2.5} />
               {lang === "en" ? "বাং" : "EN"}
             </button>
 
@@ -164,7 +164,7 @@ export default function Navbar() {
               className="relative w-8 h-8 hidden lg:flex items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 hover:scale-110 active:scale-95 transition-all duration-200 shadow-md shadow-brand-500/25"
               aria-label={`${t("nav_cart")} (${count})`}
             >
-              <ShoppingCart className="w-[16px] h-[16px]" />
+              <ShoppingCart className="w-[18px] h-[18px]" strokeWidth={2.5} />
               {count > 0 && (
                 <span className="absolute -top-1 -right-1 w-[17px] h-[17px] bg-accent-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-1 ring-white/80 dark:ring-[#0b1f3a]/80">
                   {count > 9 ? "9+" : count}
@@ -173,7 +173,7 @@ export default function Navbar() {
             </Link>
 
             <Link href="/projects" className="hidden md:inline-flex btn btn-primary btn-sm btn-ripple">
-              <Briefcase className="w-4 h-4" />
+              <Briefcase className="w-4 h-4" strokeWidth={2.5} />
               {t("nav_get_quote")}
             </Link>
 
@@ -181,7 +181,7 @@ export default function Navbar() {
               className="lg:hidden w-11 h-11 flex items-center justify-center rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation"
               aria-label={mobileOpen ? "Close menu" : "Open menu"}
               aria-expanded={mobileOpen}>
-              {mobileOpen ? <X className="w-[18px] h-[18px]" /> : <Menu className="w-[18px] h-[18px]" />}
+              {mobileOpen ? <X className="w-[20px] h-[20px]" strokeWidth={2.5} /> : <Menu className="w-[20px] h-[20px]" strokeWidth={2.5} />}
             </button>
           </div>
         </nav>
@@ -199,7 +199,7 @@ export default function Navbar() {
             </div>
             <div className="px-4 pt-2">
               <form onSubmit={handleSearch} className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" strokeWidth={2.5} />
                 <input
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -222,7 +222,7 @@ export default function Navbar() {
                       aria-expanded={isOpen}
                     >
                       {title}
-                      <ChevronDown className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")} />
+                      <ChevronDown className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")} strokeWidth={2.5} />
                     </button>
                     {isOpen && (
                       <ul className="ml-3 mt-1 space-y-0.5 border-l border-brand-100 dark:border-white/10 pl-3">
@@ -266,7 +266,7 @@ export default function Navbar() {
             <div className="px-4 pb-4">
               <Link href="/projects" onClick={() => setMobileOpen(false)}
                 className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent-500 text-white text-sm font-medium">
-                <Briefcase className="w-4 h-4" />
+                <Briefcase className="w-4 h-4" strokeWidth={2.5} />
                 {t("nav_get_quote")}
               </Link>
             </div>
