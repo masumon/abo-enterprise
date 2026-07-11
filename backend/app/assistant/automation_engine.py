@@ -237,11 +237,13 @@ class AutomationEngine:
         except Exception as exc:
             logger.warning("Assistant order invoice failed: %s", exc)
 
-        if settings.ADMIN_NOTIFY_EMAIL:
+        from app.core.email_config import resolve_notify_email
+        _notify_to = await resolve_notify_email(db)
+        if _notify_to:
             try:
                 items_summary = ", ".join(f"{i.product_name} x{i.quantity}" for i in order.items)
                 await send_email(
-                    settings.ADMIN_NOTIFY_EMAIL,
+                    _notify_to,
                     f"New Order {order.order_number} (Assistant)",
                     f"<p>Assistant order from {customer_name} ({customer_phone})</p><p>{items_summary}</p><p>Total: ৳{total:,.0f}</p>",
                 )
@@ -369,10 +371,18 @@ class AutomationEngine:
         ]
 
     async def notify_admin(self, subject: str, body: str) -> bool:
-        if not settings.ADMIN_NOTIFY_EMAIL:
+        from app.core.database import AsyncSessionLocal
+        from app.core.email_config import resolve_notify_email
+
+        try:
+            async with AsyncSessionLocal() as db:
+                notify_to = await resolve_notify_email(db)
+        except Exception:  # noqa: BLE001
+            notify_to = settings.ADMIN_NOTIFY_EMAIL
+        if not notify_to:
             return False
         try:
-            await send_email(settings.ADMIN_NOTIFY_EMAIL, subject, f"<p>{body}</p>")
+            await send_email(notify_to, subject, f"<p>{body}</p>")
             return True
         except Exception:
             return False

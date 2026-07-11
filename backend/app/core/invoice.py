@@ -27,7 +27,7 @@ _COMPANY_ADDRESS = (
     "Beanibazar, Sylhet, Bangladesh"
 )
 _COMPANY_PHONE = "+880 1825 007977"
-_COMPANY_EMAIL = "abo.enterprise@gmail.com"
+_COMPANY_EMAIL = "info.aboenterprise@gmail.com"
 
 
 def _find_logo_path() -> Path | None:
@@ -287,8 +287,35 @@ class InvoiceService:
 
         return invoice
 
+    async def _company_info(self) -> dict:
+        """Company details for the invoice — admin-editable settings first,
+        module constants as fallback (nothing hardcoded on the rendered PDF)."""
+        info = {
+            "name": _COMPANY_NAME,
+            "address": _COMPANY_ADDRESS,
+            "phone": _COMPANY_PHONE,
+            "email": _COMPANY_EMAIL,
+        }
+        try:
+            from app.models.models import Setting
+
+            keys = ["site_name", "contact_address", "business_address",
+                    "contact_phone", "business_phone", "contact_email", "business_email"]
+            rows = (await self.db.execute(
+                select(Setting).where(Setting.key.in_(keys), Setting.is_deleted == False)  # noqa: E712
+            )).scalars().all()
+            s = {r.key: (r.value or "").strip() for r in rows if (r.value or "").strip()}
+            info["name"] = s.get("site_name") or info["name"]
+            info["address"] = s.get("contact_address") or s.get("business_address") or info["address"]
+            info["phone"] = s.get("contact_phone") or s.get("business_phone") or info["phone"]
+            info["email"] = s.get("contact_email") or s.get("business_email") or info["email"]
+        except Exception:  # noqa: BLE001 — never let settings break invoice rendering
+            pass
+        return info
+
     async def generate_pdf(self, invoice: Invoice) -> bytes:
         """Generate premium branded PDF invoice with logo."""
+        company = await self._company_info()
         try:
             from reportlab.lib.pagesizes import A4
             from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -616,7 +643,7 @@ class InvoiceService:
         elements.append(Paragraph("Thank you for choosing ABO Enterprise!", thank))
         elements.append(Spacer(1, 0.07 * inch))
         elements.append(Paragraph(
-            f"{_COMPANY_ADDRESS}<br/>{_COMPANY_PHONE} · {_COMPANY_EMAIL}",
+            f"{company['address']}<br/>{company['phone']} · {company['email']}",
             footer,
         ))
 

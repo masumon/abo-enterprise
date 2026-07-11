@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
     WHATSAPP_NUMBER: str = "8801825007977"
-    BUSINESS_EMAIL: str = "abo.enterprise@gmail.com"
+    BUSINESS_EMAIL: str = "info.aboenterprise@gmail.com"
 
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587

@@ -60,21 +60,24 @@ async def system_health(
     except Exception as exc:  # noqa: BLE001
         checks["database"] = {"ok": False, "error": str(exc)[:200]}
 
-    # SMTP — config presence + TCP reachability (no email sent)
-    if settings.SMTP_HOST and settings.SMTP_USER and settings.SMTP_PASSWORD:
+    # SMTP — effective config (admin DB settings → env) + TCP reachability
+    from app.core.email_config import is_smtp_configured, resolve_email_config
+
+    mail_cfg = await resolve_email_config(db)
+    if is_smtp_configured(mail_cfg):
         import asyncio
 
         try:
             _, writer = await asyncio.wait_for(
-                asyncio.open_connection(settings.SMTP_HOST, int(settings.SMTP_PORT or 587)),
+                asyncio.open_connection(mail_cfg["host"], int(mail_cfg["port"] or 587)),
                 timeout=5,
             )
             writer.close()
-            checks["smtp"] = {"ok": True, "host": settings.SMTP_HOST}
+            checks["smtp"] = {"ok": True, "host": mail_cfg["host"]}
         except Exception as exc:  # noqa: BLE001
             checks["smtp"] = {"ok": False, "error": str(exc)[:200]}
     else:
-        checks["smtp"] = {"ok": False, "error": "SMTP env vars not configured"}
+        checks["smtp"] = {"ok": False, "error": "SMTP not configured — set it in Settings → Email & SMTP"}
 
     # Cloudinary — config + API ping
     if settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY:

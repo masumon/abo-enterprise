@@ -104,7 +104,9 @@ async def create_lead(
         else "Not specified"
     )
 
-    if settings.ADMIN_NOTIFY_EMAIL:
+    from app.core.email_config import resolve_notify_email
+    _notify_to = await resolve_notify_email(db)
+    if _notify_to:
         html = lead_notification_html(
             payload.name,
             payload.phone,
@@ -114,7 +116,7 @@ async def create_lead(
         )
         background_tasks.add_task(
             send_email,
-            settings.ADMIN_NOTIFY_EMAIL,
+            _notify_to,
             f"New Lead {lead.lead_number} (Score: {lead.qualification_score}) — ABO Enterprise",
             html,
         )
