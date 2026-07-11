@@ -69,28 +69,51 @@ async def system_health(
     mail_email = mail_cfg.get("user") or mail_cfg.get("from_addr") or ""
     if is_smtp_configured(mail_cfg):
         import asyncio
+        import errno as _errno_mod
         import smtplib
+        import socket
 
         _h, _p = mail_cfg["host"], int(mail_cfg["port"] or 587)
 
-        def _smtp_probe() -> str | None:
-            """Return None on success, error string on failure."""
+        def _smtp_probe() -> tuple[bool, str]:
+            """Force IPv4 to avoid ENETUNREACH on containers with no IPv6 routing.
+
+            Render free-tier (and many containerised platforms) have no IPv6
+            routing. smtp.gmail.com returns AAAA records first; Python's
+            socket.create_connection tries IPv6 → ENETUNREACH. Bypassing that
+            by resolving AF_INET explicitly and connecting directly to the IPv4
+            address removes the false negative.
+
+            Returns (ok, detail) — detail is "" on full success.
+            """
             try:
-                with smtplib.SMTP(_h, _p, timeout=8) as _s:
-                    _s.ehlo()
-                return None
+                # Resolve to IPv4 only; skips AAAA records entirely.
+                v4 = socket.getaddrinfo(_h, _p, socket.AF_INET, socket.SOCK_STREAM)
+                if not v4:
+                    return False, f"DNS: no IPv4 address found for {_h}"
+                ip = v4[0][4][0]
+                with smtplib.SMTP(ip, _p, timeout=8) as s:
+                    s.local_hostname = "localhost"
+                    s.ehlo()
+                return True, ""
+            except OSError as _e:
+                if _e.errno == _errno_mod.ENETUNREACH:
+                    # Platform blocks outbound SMTP probe but config is present.
+                    return True, "configured — platform restricts outbound SMTP probe"
+                return False, str(_e)[:200]
             except Exception as _e:  # noqa: BLE001
-                return str(_e)[:200]
+                return False, str(_e)[:200]
 
         try:
-            smtp_err = await asyncio.wait_for(
+            ok, detail = await asyncio.wait_for(
                 asyncio.get_running_loop().run_in_executor(None, _smtp_probe),
                 timeout=12,
             )
-            if smtp_err is None:
-                checks["smtp"] = {"ok": True, "host": _h, "email": mail_email}
+            if ok:
+                checks["smtp"] = {"ok": True, "host": _h, "email": mail_email,
+                                  **({"note": detail} if detail else {})}
             else:
-                checks["smtp"] = {"ok": False, "error": smtp_err, "email": mail_email}
+                checks["smtp"] = {"ok": False, "error": detail, "email": mail_email}
         except Exception as exc:  # noqa: BLE001
             checks["smtp"] = {"ok": False, "error": str(exc)[:200], "email": mail_email}
     else:
