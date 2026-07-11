@@ -161,7 +161,8 @@ async def error_center(
 
     return {"success": True, "data": {
         "runtime_errors": [
-            {"at": _iso(e["at"]), "logger": e["logger"], "level": e["level"], "message": e["message"]}
+            {"at": _iso(e["at"]), "logger": e["logger"], "level": e["level"],
+             "message": e["message"], "count": e.get("count", 1)}
             for e in list(recent_errors)[:50]
         ],
         "failed_emails": [{**e, "at": _iso(e["at"])} for e in list(failed_emails)[:20]],
@@ -330,7 +331,9 @@ async def notification_center(
     since24h = now - timedelta(hours=24)
 
     for e in list(recent_errors)[:5]:
-        items.append({"severity": "error", "kind": "runtime_error", "at": _iso(e["at"]), "text": e["message"][:160]})
+        n = e.get("count", 1)
+        suffix = f" (×{n})" if n > 1 else ""
+        items.append({"severity": "error", "kind": "runtime_error", "at": _iso(e["at"]), "text": e["message"][:160] + suffix})
     for e in list(failed_emails)[:5]:
         items.append({"severity": "error", "kind": "failed_email", "at": _iso(e["at"]),
                       "text": f"Email failed: {e['subject'][:60]} → {e['to']}"})
