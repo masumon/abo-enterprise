@@ -64,6 +64,9 @@ async def system_health(
     from app.core.email_config import is_smtp_configured, resolve_email_config
 
     mail_cfg = await resolve_email_config(db)
+    # The configured sender address, shown so the admin can confirm WHICH
+    # account is active (password is never exposed).
+    mail_email = mail_cfg.get("user") or mail_cfg.get("from_addr") or ""
     if is_smtp_configured(mail_cfg):
         import asyncio
 
@@ -73,11 +76,11 @@ async def system_health(
                 timeout=5,
             )
             writer.close()
-            checks["smtp"] = {"ok": True, "host": mail_cfg["host"]}
+            checks["smtp"] = {"ok": True, "host": mail_cfg["host"], "email": mail_email}
         except Exception as exc:  # noqa: BLE001
-            checks["smtp"] = {"ok": False, "error": str(exc)[:200]}
+            checks["smtp"] = {"ok": False, "error": str(exc)[:200], "email": mail_email}
     else:
-        checks["smtp"] = {"ok": False, "error": "SMTP not configured — set it in Settings → Email & SMTP"}
+        checks["smtp"] = {"ok": False, "error": "SMTP not configured — set SMTP_* env vars or Settings → Email & SMTP"}
 
     # Cloudinary — config + API ping
     if settings.CLOUDINARY_CLOUD_NAME and settings.CLOUDINARY_API_KEY:
