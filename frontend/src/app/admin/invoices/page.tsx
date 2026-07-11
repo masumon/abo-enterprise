@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, FileText, X, Trash2, Download, ChevronDown, Plus, RefreshCw, Stethoscope, CheckCircle2, AlertCircle } from "lucide-react";
 import api, { invoicesAdminApi, downloadPdf } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -210,7 +211,7 @@ export default function AdminInvoicesPage() {
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+          <AdminTitle en="Invoices" bn="ইনভয়েস" />
           <p className="text-gray-500 text-sm mt-1">{total} total invoices</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

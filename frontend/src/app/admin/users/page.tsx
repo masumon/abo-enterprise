@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AdminTitle from "@/components/admin/AdminTitle";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { Loader2, Users, Shield, Plus, Pencil, Trash2, X, Search } from "lucide-react";
@@ -124,7 +125,7 @@ export default function AdminUsersPage() {
         <div className="flex items-center gap-3">
           <Users className="w-6 h-6 text-brand-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Users</h1>
+            <AdminTitle en="Users" bn="ইউজার" />
             <p className="text-gray-500 text-sm">{users.length} admin accounts</p>
           </div>
         </div>

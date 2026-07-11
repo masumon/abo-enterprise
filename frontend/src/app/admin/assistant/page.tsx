@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import AdminTitle from "@/components/admin/AdminTitle";
 import {
   Bot, Loader2, Save, RefreshCw, Check, Trash2, Plus, Pencil, X,
   MessageSquare, Zap, BookOpen, Settings2, Eye, Search, Link2, Database,
@@ -291,7 +292,7 @@ export default function AdminAssistantPage() {
         <div>
           <div className="flex items-center gap-2">
             <Bot className="w-7 h-7 text-brand-600" />
-            <h1 className="text-2xl font-bold text-gray-900">AI Assistant</h1>
+            <AdminTitle en="AI Assistant" bn="AI সহকারী" />
           </div>
           <p className="text-gray-500 text-sm mt-1">
             Manage automation assistant, WhatsApp integration, conversations and knowledge base

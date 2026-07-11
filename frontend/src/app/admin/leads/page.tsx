@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, Users, ChevronDown, X, Search, Download, Trash2 } from "lucide-react";
 import { leadsApi, serviceLeadsAdminApi, downloadCsv, downloadPdf } from "@/lib/api";
 import type { Lead, LeadV2 } from "@/types";
@@ -171,7 +172,7 @@ export default function AdminLeadsPage() {
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Leads</h1>
+          <AdminTitle en="Leads" bn="লিড" />
           <p className="text-gray-500 text-sm mt-1">{tab === "v1" ? total : totalV2} total leads</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">

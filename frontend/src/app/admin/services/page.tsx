@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import AdminTitle from "@/components/admin/AdminTitle";
 import {
   Loader2, Briefcase, Plus, Pencil, Trash2, X,
   ToggleLeft, ToggleRight, Star, ChevronDown, ChevronUp,
@@ -260,7 +261,7 @@ export default function AdminServicesPage() {
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Services</h1>
+          <AdminTitle en="Services" bn="সেবা" />
           <p className="text-gray-500 text-sm mt-1">{total} total services</p>
         </div>
         <button onClick={openNew} className="btn btn-primary btn-sm gap-1.5">

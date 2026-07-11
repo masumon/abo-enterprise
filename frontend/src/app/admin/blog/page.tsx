@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp, ExternalLink, Globe, Copy } from "lucide-react";
 import { adminBlogApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -265,7 +266,7 @@ export default function AdminBlogPage() {
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Blog</h1>
+          <AdminTitle en="Blog" bn="ব্লগ" />
           <p className="text-gray-500 text-sm mt-1">{total} total posts</p>
         </div>
         <div className="flex items-center gap-2">

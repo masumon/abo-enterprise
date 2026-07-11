@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, Mail, Plus, Pencil, Trash2, X, CheckCircle, XCircle, Eye, Code } from "lucide-react";
 import { emailTemplatesAdminApi, type EmailTemplateRecord } from "@/lib/api";
 import { useToastStore } from "@/store/toast";
@@ -137,7 +138,7 @@ export default function AdminEmailTemplatesPage() {
         <div className="flex items-center gap-3">
           <Mail className="w-6 h-6 text-brand-600" />
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Email Templates</h1>
+            <AdminTitle en="Email Templates" bn="ইমেইল টেমপ্লেট" />
             <p className="text-gray-500 text-sm">{templates.length} templates</p>
           </div>
         </div>
