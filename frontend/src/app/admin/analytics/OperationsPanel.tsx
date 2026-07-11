@@ -199,7 +199,7 @@ export default function OperationsPanel() {
                   {key === "storage" && c.ok ? `DB ${String(c.database_mb)}MB · Media ${String(c.media_files)} files (${String(c.media_mb)}MB)` : null}
                   {key === "cache" && c.ok ? `${String(c.ga4_cached_reports)} GA4 reports cached` : null}
                   {key === "backup_cron" ? "Weekly (GitHub Actions)" : null}
-                  {key === "smtp" && c.ok ? String(c.host ?? "connected") : null}
+                  {key === "smtp" && c.ok ? String(c.email || c.host || "connected") : null}
                   {(key === "cloudinary" || key === "ga4" || key === "sentry") && c.ok ? "Connected" : null}
                   {!c.ok ? String(c.error ?? "Unavailable") : null}
                 </p>
