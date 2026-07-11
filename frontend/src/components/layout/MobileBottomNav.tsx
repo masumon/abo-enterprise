@@ -65,7 +65,7 @@ export default function MobileBottomNav() {
         aria-current={isActive ? "page" : undefined}
       >
         <Icon
-          strokeWidth={isActive ? 2.4 : 1.8}
+          strokeWidth={isActive ? 2.4 : 2.3}
           className={cn(
             "w-[20px] h-[20px] transition-all duration-250",
             isActive ? "-translate-y-px" : ""
@@ -121,7 +121,7 @@ export default function MobileBottomNav() {
                 : ""
             )}
           >
-            <ShoppingCart className="w-[18px] h-[18px]" strokeWidth={2.2} />
+            <ShoppingCart className="w-[18px] h-[18px]" strokeWidth={2.5} />
             {showBadge && (
               <span
                 className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-[#0b1f3a]"

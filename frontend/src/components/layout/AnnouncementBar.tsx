@@ -89,7 +89,7 @@ export default function AnnouncementBar() {
           href={current.href}
           className="flex-1 text-center font-medium hover:text-white/90 transition-colors flex items-center justify-center gap-2"
         >
-          <Zap className="w-3.5 h-3.5 flex-shrink-0 text-yellow-300" />
+          <Zap className="w-3.5 h-3.5 flex-shrink-0 text-yellow-300" strokeWidth={2.2} />
           <span className="truncate">
             {lang === "bn" ? current.bn : current.en}
           </span>
@@ -101,7 +101,7 @@ export default function AnnouncementBar() {
           className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-white/20 transition-colors"
           aria-label="Close announcement"
         >
-          <X className="w-3.5 h-3.5" />
+          <X className="w-3.5 h-3.5" strokeWidth={2.2} />
         </button>
       </div>
     </div>
