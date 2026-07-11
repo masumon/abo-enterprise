@@ -49,3 +49,5 @@ env/
 
 # Alembic
 backend/alembic/versions/*.pyc
+
+backend/_smtp_audit.py
