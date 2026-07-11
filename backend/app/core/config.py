@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import field_validator
+from pydantic import AliasChoices, Field, field_validator
 
 
 class Settings(BaseSettings):
@@ -42,9 +42,15 @@ class Settings(BaseSettings):
 
     SMTP_HOST: str = ""
     SMTP_PORT: int = 587
-    SMTP_USER: str = ""
+    # Accept either SMTP_USER or SMTP_USERNAME from the environment.
+    SMTP_USER: str = Field(
+        default="", validation_alias=AliasChoices("SMTP_USER", "SMTP_USERNAME")
+    )
     SMTP_PASSWORD: str = ""
-    SMTP_FROM: str = "noreply@aboenterprise.com"
+    # From address falls back to the login user when not set separately.
+    SMTP_FROM: str = Field(
+        default="", validation_alias=AliasChoices("SMTP_FROM", "SMTP_FROM_EMAIL")
+    )
     SMTP_TLS: bool = True
     EMAIL_SENDER_NAME: str = "ABO Enterprise"
     ADMIN_NOTIFY_EMAIL: str = ""

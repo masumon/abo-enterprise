@@ -52,12 +52,14 @@ async def resolve_email_config(db: AsyncSession) -> dict:
         or settings.BUSINESS_EMAIL
     )
 
+    user = o.get("smtp_user") or settings.SMTP_USER
     return {
         "host": o.get("smtp_host") or settings.SMTP_HOST,
         "port": port,
-        "user": o.get("smtp_user") or settings.SMTP_USER,
+        "user": user,
         "password": o.get("smtp_password") or settings.SMTP_PASSWORD,
-        "from_addr": o.get("smtp_from") or settings.SMTP_FROM,
+        # Gmail requires From to match the authenticated user, so fall back to it.
+        "from_addr": o.get("smtp_from") or settings.SMTP_FROM or user,
         "from_name": o.get("smtp_from_name") or settings.EMAIL_SENDER_NAME,
         "tls": tls,
         "notify": notify,
@@ -72,7 +74,7 @@ def env_email_config() -> dict:
         "port": settings.SMTP_PORT or 587,
         "user": settings.SMTP_USER,
         "password": settings.SMTP_PASSWORD,
-        "from_addr": settings.SMTP_FROM,
+        "from_addr": settings.SMTP_FROM or settings.SMTP_USER,
         "from_name": settings.EMAIL_SENDER_NAME,
         "tls": settings.SMTP_TLS,
         "notify": settings.ADMIN_NOTIFY_EMAIL or settings.BUSINESS_EMAIL,

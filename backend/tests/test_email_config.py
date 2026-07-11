@@ -78,3 +78,23 @@ async def test_env_fallback_when_no_db_rows(monkeypatch):
     cfg = await email_config.resolve_email_config(_FakeDB([]))
     assert cfg["host"] == "env-host"
     assert cfg["user"] == "env-user"
+
+
+def test_smtp_username_alias(monkeypatch):
+    """Render env may use SMTP_USERNAME instead of SMTP_USER — both must work."""
+    monkeypatch.setenv("SECRET_KEY", "x")
+    monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://x:x@localhost/x")
+    monkeypatch.setenv("SMTP_USERNAME", "info.aboenterprise@gmail.com")
+    monkeypatch.delenv("SMTP_USER", raising=False)
+    from app.core.config import Settings
+
+    s = Settings()  # type: ignore[call-arg]
+    assert s.SMTP_USER == "info.aboenterprise@gmail.com"
+
+
+@pytest.mark.asyncio
+async def test_from_falls_back_to_user(monkeypatch):
+    monkeypatch.setattr(email_config.settings, "SMTP_FROM", "", raising=False)
+    db = _FakeDB([_FakeSetting("smtp_user", "info.aboenterprise@gmail.com")])
+    cfg = await email_config.resolve_email_config(db)
+    assert cfg["from_addr"] == "info.aboenterprise@gmail.com"
