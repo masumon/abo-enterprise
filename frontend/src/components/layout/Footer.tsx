@@ -129,7 +129,7 @@ export default function Footer() {
 
   const tradeLicense = getSettingValue(settings, "trade_license");
   const phoneRaw = getSettingValue(settings, "contact_phone", "01825007977");
-  const emailAddr = getSettingValue(settings, "contact_email", "abo.enterprise@gmail.com");
+  const emailAddr = getSettingValue(settings, "contact_email", "info.aboenterprise@gmail.com");
   const address = getSettingValue(
     settings,
     "contact_address",

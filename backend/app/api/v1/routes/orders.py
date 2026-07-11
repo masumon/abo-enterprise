@@ -155,8 +155,10 @@ async def create_order(
     order = result.scalar_one()
     await db.commit()
 
-    # Send admin notification
-    if settings.ADMIN_NOTIFY_EMAIL:
+    # Send admin notification (recipient is admin-editable: Settings → Email)
+    from app.core.email_config import resolve_notify_email
+    _notify_to = await resolve_notify_email(db)
+    if _notify_to:
         items_summary = ", ".join(f"{i.product_name} x{i.quantity}" for i in payload.items)
         phone_digits = payload.customer_phone.replace("+", "").replace(" ", "")
         if phone_digits.startswith("0"):
@@ -183,7 +185,7 @@ async def create_order(
             customer_whatsapp_url=customer_wa_url,
         )
         background_tasks.add_task(
-            send_email, settings.ADMIN_NOTIFY_EMAIL,
+            send_email, _notify_to,
             f"New Order {order.order_number} — ABO Enterprise", html,
         )
 

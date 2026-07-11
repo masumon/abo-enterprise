@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Users, Trophy, Zap, Code } from "lucide-react";
+import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Users, Trophy, Zap, Code, Mail } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import { parseGoogleMapsEmbedInput } from "@/lib/maps";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -62,7 +62,7 @@ interface SettingField {
   key: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "url" | "email" | "tel" | "number" | "textarea" | "boolean" | "datetime-local";
+  type?: "text" | "url" | "email" | "tel" | "number" | "textarea" | "boolean" | "datetime-local" | "password";
   hint?: string;
   upload?: boolean;
   accept?: "image" | "video" | "both";
@@ -99,10 +99,25 @@ const SECTIONS: Section[] = [
     icon: <MapPin className="w-4 h-4" />,
     fields: [
       { key: "contact_phone", label: "Phone", type: "tel", placeholder: "01825007977" },
-      { key: "contact_email", label: "Email", type: "email", placeholder: "info@aboenterprise.com" },
+      { key: "contact_email", label: "Email", type: "email", placeholder: "info.aboenterprise@gmail.com", hint: "Shown on the site (footer, contact, invoices). Editable here — no redeploy." },
       { key: "contact_address", label: "Address", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh" },
       { key: "google_maps_embed", label: "Google Maps Embed", type: "textarea", hint: "Share → Embed a map", placeholder: "Paste iframe or URL" },
       { key: "google_maps_api_key", label: "Google Maps API Key", placeholder: "AIza..." },
+    ],
+  },
+  {
+    id: "email_smtp",
+    title: "Email & SMTP",
+    icon: <Mail className="w-4 h-4" />,
+    note: "এখানে সেট করলে ইমেইল পাঠানো চালু হয় — env ছাড়াই। Gmail: Host smtp.gmail.com · Port 587 · User আপনার Gmail · Password একটি Gmail App Password (সাধারণ পাসওয়ার্ড নয়)।",
+    fields: [
+      { key: "smtp_host", label: "SMTP Host", placeholder: "smtp.gmail.com" },
+      { key: "smtp_port", label: "SMTP Port", type: "number", placeholder: "587" },
+      { key: "smtp_user", label: "SMTP User", placeholder: "info.aboenterprise@gmail.com" },
+      { key: "smtp_password", label: "SMTP Password / App Password", type: "password", placeholder: "•••• •••• •••• ••••", hint: "Gmail: 16-char App Password. Stored masked; not shown again." },
+      { key: "smtp_from", label: "From Address", type: "email", placeholder: "info.aboenterprise@gmail.com" },
+      { key: "smtp_from_name", label: "From Name", placeholder: "ABO Enterprise" },
+      { key: "admin_notify_email", label: "Notifications To", type: "email", placeholder: "info.aboenterprise@gmail.com", hint: "New orders/bookings/leads are emailed here." },
     ],
   },
 
@@ -371,6 +386,7 @@ function SectionCard({
               <input
                 type={field.type ?? "text"}
                 min={field.type === "number" ? 0 : undefined}
+                autoComplete={field.type === "password" ? "new-password" : undefined}
                 value={values[field.key] ?? ""}
                 onChange={(e) => onChange(field.key, e.target.value)}
                 placeholder={field.placeholder}
@@ -560,10 +576,10 @@ export default function AdminSettingsPage() {
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
         <h3 className="font-semibold text-amber-800 mb-2">Environment Variables</h3>
         <p className="text-sm text-amber-700">
-          Secrets like <code className="bg-amber-100 px-1 rounded">JWT_SECRET_KEY</code>,{" "}
-          <code className="bg-amber-100 px-1 rounded">SMTP_PASSWORD</code>, and{" "}
-          <code className="bg-amber-100 px-1 rounded">DATABASE_URL</code> are managed via
-          Render environment variables — not stored here.
+          Core secrets like <code className="bg-amber-100 px-1 rounded">SECRET_KEY</code> and{" "}
+          <code className="bg-amber-100 px-1 rounded">DATABASE_URL</code> are managed via Render
+          environment variables. Email/SMTP can now be set here (Email &amp; SMTP section) — those
+          values override the env defaults, and the SMTP password is stored masked.
         </p>
       </div>
     </div>

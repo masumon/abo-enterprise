@@ -3,10 +3,14 @@
 import { useLanguageStore } from "@/store/language";
 import LegalPageLayout, { type LegalSection } from "@/components/layout/LegalPageLayout";
 import PageHero from "@/components/ui/PageHero";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 
 export default function PrivacyPage() {
   const { lang } = useLanguageStore();
   const isBn = lang === "bn";
+  const { settings } = usePublicSettings(["contact_email", "contact_phone"]);
+  const contactEmail = getSettingValue(settings, "contact_email", "info.aboenterprise@gmail.com");
+  const contactPhone = getSettingValue(settings, "contact_phone", "+880 1825 007977");
 
   const sections: LegalSection[] = [
     {
@@ -32,7 +36,7 @@ export default function PrivacyPage() {
     {
       id: "contact",
       title: isBn ? "যোগাযোগ" : "Contact",
-      content: <p>abo.enterprise@gmail.com | +880 1825 007977</p>,
+      content: <p>{contactEmail} | {contactPhone}</p>,
     },
   ];
 

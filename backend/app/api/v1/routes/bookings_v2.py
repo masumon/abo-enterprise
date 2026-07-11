@@ -95,7 +95,9 @@ async def create_booking(
     await db.commit()
     await db.refresh(booking)
 
-    if settings.ADMIN_NOTIFY_EMAIL:
+    from app.core.email_config import resolve_notify_email
+    _notify_to = await resolve_notify_email(db)
+    if _notify_to:
         html = booking_notification_html(
             booking.booking_number,
             payload.customer_name,
@@ -105,7 +107,7 @@ async def create_booking(
         )
         background_tasks.add_task(
             send_email,
-            settings.ADMIN_NOTIFY_EMAIL,
+            _notify_to,
             f"New Booking {booking.booking_number} — ABO Enterprise",
             html,
         )

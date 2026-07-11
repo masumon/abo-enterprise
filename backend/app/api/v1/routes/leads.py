@@ -24,13 +24,15 @@ async def create_lead(
     await db.flush()
     await db.refresh(lead)
 
-    if settings.ADMIN_NOTIFY_EMAIL:
+    from app.core.email_config import resolve_notify_email
+    _notify_to = await resolve_notify_email(db)
+    if _notify_to:
         html = lead_notification_html(
             payload.name, payload.phone, payload.lead_type,
             payload.project_description or "", payload.budget_range or "",
         )
         background_tasks.add_task(
-            send_email, settings.ADMIN_NOTIFY_EMAIL,
+            send_email, _notify_to,
             f"New Lead: {payload.name} ({payload.lead_type.replace('_', ' ')}) — ABO Enterprise", html,
         )
 

@@ -15,48 +15,57 @@ logger = logging.getLogger(__name__)
 
 
 def _send_sync(
+    cfg: dict,
     to: str,
     subject: str,
     html: str,
     attachments: Optional[list] = None,
 ) -> None:
-    """Send email synchronously"""
-    if not settings.SMTP_HOST or not settings.SMTP_USER:
+    """Send email synchronously using a resolved config (DB → env)."""
+    if not cfg.get("host") or not cfg.get("user"):
         logger.warning("SMTP not configured, skipping email send")
         return
 
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = f"{cfg['from_name']} <{cfg['from_addr']}>"
+    msg["To"] = to
+    msg.attach(MIMEText(html, "html", "utf-8"))
+
+    if attachments:
+        for attachment in attachments:
+            part = MIMEBase("application", "octet-stream")
+            part.set_payload(attachment["content"])
+            encoders.encode_base64(part)
+            part.add_header(
+                "Content-Disposition",
+                f'attachment; filename= {attachment["filename"]}',
+            )
+            msg.attach(part)
+
+    # Raises on failure so send_email's retry/failure logging can act on it.
+    with smtplib.SMTP(cfg["host"], cfg["port"]) as server:
+        server.ehlo()
+        if cfg.get("tls"):
+            server.starttls()
+        if cfg.get("user") and cfg.get("password"):
+            server.login(cfg["user"], cfg["password"])
+        server.sendmail(cfg["from_addr"], to, msg.as_string())
+    logger.info("Email sent successfully to %s", to)
+
+
+async def _resolve_cfg() -> dict:
+    """Effective SMTP config: DB admin overrides, else env. Never raises."""
+    from app.core.email_config import env_email_config, resolve_email_config
+
     try:
-        msg = MIMEMultipart("alternative")
-        msg["Subject"] = subject
-        msg["From"] = f"{settings.EMAIL_SENDER_NAME} <{settings.SMTP_FROM}>"
-        msg["To"] = to
+        from app.core.database import AsyncSessionLocal
 
-        # Add HTML body
-        msg.attach(MIMEText(html, "html", "utf-8"))
-
-        # Add attachments if any
-        if attachments:
-            for attachment in attachments:
-                part = MIMEBase("application", "octet-stream")
-                part.set_payload(attachment["content"])
-                encoders.encode_base64(part)
-                part.add_header(
-                    "Content-Disposition",
-                    f'attachment; filename= {attachment["filename"]}',
-                )
-                msg.attach(part)
-
-        with smtplib.SMTP(settings.SMTP_HOST, settings.SMTP_PORT) as server:
-            server.ehlo()
-            if settings.SMTP_TLS:
-                server.starttls()
-            if settings.SMTP_USER and settings.SMTP_PASSWORD:
-                server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
-            server.sendmail(settings.SMTP_FROM, to, msg.as_string())
-
-        logger.info(f"Email sent successfully to {to}")
-    except Exception as e:
-        logger.error(f"Failed to send email to {to}: {str(e)}")
+        async with AsyncSessionLocal() as db:
+            return await resolve_email_config(db)
+    except Exception:  # noqa: BLE001 — fall back to env if DB is unavailable
+        logger.warning("Email config: DB unavailable, using env values", exc_info=True)
+        return env_email_config()
 
 
 async def send_email(
@@ -74,11 +83,12 @@ async def send_email(
     inside a FastAPI BackgroundTask, so retries don't extend the API response.
     """
     loop = asyncio.get_event_loop()
+    cfg = await _resolve_cfg()
     delays = [2.0, 5.0]
     for attempt in range(retries + 1):
         try:
             await loop.run_in_executor(
-                None, _send_sync, to, subject, html, attachments
+                None, _send_sync, cfg, to, subject, html, attachments
             )
             if attempt:
                 logger.info("Email to %s delivered on retry %d", to, attempt)

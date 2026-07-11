@@ -14,7 +14,7 @@ export default function ContactSection() {
   const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address"]);
   const mapsEmbed = resolveGoogleMapsEmbed(getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED));
   const phone = getSettingValue(settings, "contact_phone", "01825007977");
-  const email = getSettingValue(settings, "contact_email", "abo.enterprise@gmail.com");
+  const email = getSettingValue(settings, "contact_email", "info.aboenterprise@gmail.com");
   const address = getSettingValue(settings, "contact_address", lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN);
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
 

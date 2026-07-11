@@ -105,6 +105,12 @@ async def get_all_settings(request: Request, db: AsyncSession = Depends(get_db))
     return ApiResponse(success=True, data=settings_dict, message="Settings retrieved")
 
 
+def _is_secret_key(key: str) -> bool:
+    """Keys whose value must never be returned to the client in plaintext."""
+    k = key.lower()
+    return any(tok in k for tok in ("password", "secret", "api_key", "private_key", "_token"))
+
+
 @router.post("/upsert", response_model=ApiResponse, dependencies=[Depends(require_admin)])
 async def upsert_settings(payload: list[SettingCreate], db: AsyncSession = Depends(get_db)):
     """Create or update multiple settings at once (admin only)"""
@@ -124,8 +130,13 @@ async def upsert_settings(payload: list[SettingCreate], db: AsyncSession = Depen
                 setting.data_type = item.data_type
             if item.description is not None:
                 setting.description = item.description
+            # Ensure sensitive keys stay masked in API responses.
+            if _is_secret_key(item.key):
+                setting.is_secret = True
         else:
             setting = Setting(**item.model_dump())
+            if _is_secret_key(item.key):
+                setting.is_secret = True
             db.add(setting)
         results.append({"key": item.key, "value": item.value})
 
