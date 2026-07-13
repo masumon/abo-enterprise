@@ -7,33 +7,33 @@ import GlassCard from "@/components/ui/GlassCard";
 const REASONS = [
   {
     icon: Award,
-    title: { en: "Experience", bn: "অভিজ্ঞতা" },
-    desc: { en: "Years of trusted service across Bangladesh.", bn: "বাংলাদেশ জুড়ে বছরের অভিজ্ঞতা ও বিশ্বাস।" },
+    title: { en: "Multi-Vertical Expertise", bn: "বহুমুখী দক্ষতা" },
+    desc: { en: "One team handling products, printing, legal and software services.", bn: "এক টিমে পণ্য, প্রিন্টিং, আইনি ও সফটওয়্যার সেবা।" },
   },
   {
     icon: Shield,
-    title: { en: "Quality", bn: "মান" },
-    desc: { en: "Premium products and professional delivery.", bn: "প্রিমিয়াম পণ্য ও পেশাদার সেবা।" },
+    title: { en: "Reliable Quality", bn: "নির্ভরযোগ্য মান" },
+    desc: { en: "Consistent quality standards across products and services.", bn: "পণ্য ও সেবা জুড়ে একই মান নিয়ন্ত্রণ।" },
   },
   {
     icon: Tag,
-    title: { en: "Affordable Pricing", bn: "সাশ্রয়ী মূল্য" },
-    desc: { en: "Best value without compromising quality.", bn: "মান বজায় রেখে সেরা দাম।" },
+    title: { en: "Value Pricing", bn: "ভ্যালু প্রাইসিং" },
+    desc: { en: "Transparent and practical pricing for growing businesses.", bn: "বর্ধনশীল ব্যবসার জন্য স্বচ্ছ ও বাস্তবসম্মত মূল্য।" },
   },
   {
     icon: Truck,
     title: { en: "Fast Delivery", bn: "দ্রুত ডেলিভারি" },
-    desc: { en: "Same-day in Sylhet, nationwide in 2–3 days.", bn: "সিলেটে একই দিনে, সারাদেশে ২–৩ দিনে।" },
+    desc: { en: "Responsive delivery and service follow-up from Sylhet.", bn: "সিলেট থেকে দ্রুত ডেলিভারি ও সার্ভিস ফলো-আপ।" },
   },
   {
     icon: Lock,
-    title: { en: "Security", bn: "নিরাপত্তা" },
-    desc: { en: "Secure payments and data protection.", bn: "নিরাপদ পেমেন্ট ও ডেটা সুরক্ষা।" },
+    title: { en: "Secure Operations", bn: "নিরাপদ অপারেশন" },
+    desc: { en: "Customer payments, data and documents are handled with care.", bn: "গ্রাহকের পেমেন্ট, ডেটা ও ডকুমেন্ট নিরাপদভাবে পরিচালিত হয়।" },
   },
   {
     icon: Headphones,
-    title: { en: "Customer Support", bn: "গ্রাহক সেবা" },
-    desc: { en: "24/7 WhatsApp and phone support.", bn: "২৪/৭ WhatsApp ও ফোন সাপোর্ট।" },
+    title: { en: "Dedicated Support", bn: "ডেডিকেটেড সাপোর্ট" },
+    desc: { en: "Quick guidance for orders, services and project queries.", bn: "অর্ডার, সেবা ও প্রজেক্টে দ্রুত সহায়তা।" },
   },
 ];
 

@@ -20,9 +20,16 @@ import { cacheApiResponse, servicesCacheKey } from "@/lib/apiCache";
 
 const FEATURED = [
   {
+    icon: Briefcase,
+    title: { en: "Digital Service Center", bn: "ডিজিটাল সার্ভিস সেন্টার" },
+    subtitle: { en: "Online forms, govt applications and office support", bn: "অনলাইন ফর্ম, সরকারি আবেদন ও অফিস সাপোর্ট" },
+    href: "/services/legal",
+    color: "bg-sky-600",
+  },
+  {
     icon: Printer,
     title: { en: "Printing Services", bn: "প্রিন্টিং সেবা" },
-    subtitle: { en: "Professional quality, fast turnaround", bn: "পেশাদার মান, দ্রুত ডেলিভারি" },
+    subtitle: { en: "Professional quality with quick turnaround", bn: "পেশাদার মান ও দ্রুত ডেলিভারি" },
     href: "/services/printing",
     color: "bg-brand-600",
   },
@@ -35,8 +42,8 @@ const FEATURED = [
   },
   {
     icon: Code2,
-    title: { en: "Software Development", bn: "সফটওয়্যার ডেভেলপমেন্ট" },
-    subtitle: { en: "Web, mobile & enterprise solutions", bn: "ওয়েব, মোবাইল ও এন্টারপ্রাইজ সমাধান" },
+    title: { en: "Software & Automation", bn: "সফটওয়্যার ও অটোমেশন" },
+    subtitle: { en: "Web, mobile, POS/ERP and AI-powered solutions", bn: "ওয়েব, মোবাইল, POS/ERP ও AI ভিত্তিক সমাধান" },
     href: "/services/software",
     color: "bg-green-600",
   },
@@ -221,7 +228,7 @@ export default function ServicesPageClient({
             {[Bot, Code2, Cog, Smartphone, Megaphone, Briefcase].map((Icon, i) => (
               <div key={i} className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl">
                 <Icon className="w-4 h-4 text-brand-400" />
-                <span className="text-sm font-medium">{["AI", "Web", "Automation", "Mobile", "Marketing", "Consulting"][i]}</span>
+                <span className="text-sm font-medium">{["AI", "Web", "Automation", "Mobile", "Business Ops", "Consulting"][i]}</span>
               </div>
             ))}
           </div>

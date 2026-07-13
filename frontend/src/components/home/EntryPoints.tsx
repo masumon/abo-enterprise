@@ -11,10 +11,10 @@ const ENTRIES = [
     lightText: "text-blue-700",
     border: "border-blue-100",
     emoji: "🛒",
-    title: { en: "Shop Products", bn: "পণ্য কিনুন" },
-    desc: {
-      en: "Mobile accessories, gadgets, cables, cases & more. Fast delivery across Sylhet.",
-      bn: "মোবাইল এক্সেসরিজ, গ্যাজেট, কেবল ও আরও অনেক পণ্য। সিলেটে দ্রুত ডেলিভারি।",
+      title: { en: "Shop Tech Products", bn: "টেক পণ্য কিনুন" },
+      desc: {
+        en: "Accessories, gadgets & daily business devices", 
+        bn: "অ্যাকসেসরিজ, গ্যাজেট ও ব্যবসায়িক ডিভাইস" 
     },
     cta: { en: "Browse Products", bn: "পণ্য দেখুন" },
     href: "/products",
@@ -31,10 +31,10 @@ const ENTRIES = [
     lightText: "text-green-700",
     border: "border-green-100",
     emoji: "📅",
-    title: { en: "Book a Service", bn: "সেবা বুক করুন" },
-    desc: {
-      en: "Printing, case writing, passport assistance, website design & digital services.",
-      bn: "প্রিন্টিং, কেস রাইটিং, পাসপোর্ট, ওয়েবসাইট ডিজাইন ও ডিজিটাল সেবা।",
+      title: { en: "Book Service Center", bn: "সার্ভিস সেন্টার বুক করুন" },
+      desc: {
+        en: "Printing, legal, digital and software support", 
+        bn: "প্রিন্টিং, আইনি, ডিজিটাল ও সফটওয়্যার সেবা" 
     },
     cta: { en: "Book a Service", bn: "সেবা বুক করুন" },
     href: "/services",
@@ -51,10 +51,10 @@ const ENTRIES = [
     lightText: "text-purple-700",
     border: "border-purple-100",
     emoji: "💼",
-    title: { en: "Build Your Business", bn: "ব্যবসা তৈরি করুন" },
-    desc: {
-      en: "Custom POS, ERP, CRM, AI automation & software solutions for your business.",
-      bn: "কাস্টম POS, ERP, CRM, AI অটোমেশন ও সফটওয়্যার সমাধান আপনার ব্যবসার জন্য।",
+      title: { en: "Business Solutions", bn: "ব্যবসা সমাধান" },
+      desc: {
+        en: "AI, automation and custom software implementations", 
+        bn: "AI, অটোমেশন ও কাস্টম সফটওয়্যার বাস্তবায়ন" 
     },
     cta: { en: "Get a Free Quote", bn: "ফ্রি কোটেশন নিন" },
     href: "/projects",

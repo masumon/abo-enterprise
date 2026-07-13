@@ -36,13 +36,22 @@ export default function MegaMenu({ onNavigate }: MegaMenuProps) {
     { href: "/products?category=gadgets", label: lang === "bn" ? "গ্যাজেট" : "Gadgets" },
     { href: "/products?category=electronics", label: lang === "bn" ? "ইলেকট্রনিক্স" : "Electronics" },
     { href: "/products?category=computer", label: lang === "bn" ? "কম্পিউটার" : "Computer" },
+    { href: "/products?category=mobile", label: lang === "bn" ? "মোবাইল" : "Mobile" },
+    { href: "/products?category=mobile-software", label: lang === "bn" ? "মোবাইল সফটওয়্যার" : "Mobile Software" },
+    { href: "/products?category=computer-software", label: lang === "bn" ? "কম্পিউটার সফটওয়্যার" : "Computer Software" },
+    { href: "/products?category=office", label: lang === "bn" ? "অফিস সামগ্রী" : "Office Supplies" },
+    { href: "/products?category=industrial", label: lang === "bn" ? "ইন্ডাস্ট্রিয়াল" : "Industrial" },
+    { href: "/products?category=home-appliance", label: lang === "bn" ? "হোম অ্যাপ্লায়েন্স" : "Home Appliance" },
+    { href: "/products?category=retail", label: lang === "bn" ? "রিটেইল" : "Retail" },
   ];
 
   const serviceLinks = [
     { href: "/services", label: lang === "bn" ? "সব সেবা" : "All Services", icon: Building2 },
-    { href: "/services/printing", label: lang === "bn" ? "প্রিন্টিং" : "Printing", icon: Printer },
-    { href: "/services/legal", label: lang === "bn" ? "আইনি" : "Legal", icon: Scale },
-    { href: "/services/software", label: lang === "bn" ? "সফটওয়্যার" : "Software", icon: Code2 },
+    { href: "/services/legal", label: lang === "bn" ? "ডিজিটাল সার্ভিস সেন্টার" : "Digital Service Center", icon: Building2 },
+    { href: "/services/printing", label: lang === "bn" ? "প্রিন্টিং ও ডকুমেন্ট" : "Printing & Documentation", icon: Printer },
+    { href: "/services/legal", label: lang === "bn" ? "আইনি ও অফিস সহায়তা" : "Legal & Office Assistance", icon: Scale },
+    { href: "/services/software", label: lang === "bn" ? "ওয়েব ও সফটওয়্যার" : "Web & Software", icon: Code2 },
+    { href: "/services/software", label: lang === "bn" ? "AI অটোমেশন" : "AI Automation", icon: Code2 },
     { href: "/book", label: lang === "bn" ? "সেবা বুক করুন" : "Book a Service", icon: Building2 },
   ];
 
@@ -54,11 +63,11 @@ export default function MegaMenu({ onNavigate }: MegaMenuProps) {
       icon: ShoppingBag,
       columns: [
         {
-          title: lang === "bn" ? "কেনাকাটা" : "Shop",
+          title: lang === "bn" ? "প্রোডাক্ট ক্যাটাগরি" : "Product Categories",
           links: productCategories,
         },
         {
-          title: lang === "bn" ? "আরও" : "More",
+          title: lang === "bn" ? "একাউন্ট ও টুলস" : "Account & Tools",
           links: [
             { href: "/profile/wishlist", label: lang === "bn" ? "উইশলিস্ট" : "Wishlist", icon: Heart },
             { href: "/compare", label: lang === "bn" ? "তুলনা" : "Compare", icon: GitCompare },

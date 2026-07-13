@@ -23,6 +23,13 @@ const CATEGORIES: { value: string; label: { en: string; bn: string } }[] = [
   { value: "gadgets", label: { en: "Gadgets", bn: "গ্যাজেট" } },
   { value: "electronics", label: { en: "Electronics", bn: "ইলেকট্রনিক্স" } },
   { value: "computer", label: { en: "Computer", bn: "কম্পিউটার" } },
+  { value: "mobile", label: { en: "Mobile", bn: "মোবাইল" } },
+  { value: "mobile-software", label: { en: "Mobile Software", bn: "মোবাইল সফটওয়্যার" } },
+  { value: "computer-software", label: { en: "Computer Software", bn: "কম্পিউটার সফটওয়্যার" } },
+  { value: "office", label: { en: "Office", bn: "অফিস" } },
+  { value: "industrial", label: { en: "Industrial", bn: "ইন্ডাস্ট্রিয়াল" } },
+  { value: "home-appliance", label: { en: "Home Appliance", bn: "হোম অ্যাপ্লায়েন্স" } },
+  { value: "retail", label: { en: "Retail", bn: "রিটেইল" } },
 ];
 
 interface Props {

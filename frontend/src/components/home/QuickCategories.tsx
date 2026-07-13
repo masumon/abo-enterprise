@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import {
-  ShoppingBag, Printer, Scale, Sparkles, Brain, Code2,
+  ShoppingBag, Printer, Scale, Sparkles, Brain, Code2, Smartphone, Monitor, Building2,
   type LucideIcon,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
@@ -24,26 +24,53 @@ interface Vertical {
 const VERTICALS: Vertical[] = [
   {
     icon: ShoppingBag,
-    label: { en: "Products", bn: "পণ্য" },
-    desc: { en: "Mobile accessories", bn: "মোবাইল অ্যাকসেসরিজ" },
+    label: { en: "Premium Tech Store", bn: "প্রিমিয়াম টেক স্টোর" },
+    desc: { en: "Accessories · Gadgets · Electronics", bn: "অ্যাকসেসরিজ · গ্যাজেট · ইলেকট্রনিক্স" },
     href: "/products",
     ring: "ring-blue-100 dark:ring-blue-800/40 hover:ring-blue-200",
     tint: "bg-blue-50/60 dark:bg-blue-900/20",
     iconWrap: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
   },
   {
+    icon: Building2,
+    label: { en: "Digital Service Center", bn: "ডিজিটাল সার্ভিস সেন্টার" },
+    desc: { en: "Online forms · Govt support", bn: "অনলাইন ফর্ম · সরকারি সহায়তা" },
+    href: "/services/legal",
+    ring: "ring-cyan-100 dark:ring-cyan-800/40 hover:ring-cyan-200",
+    tint: "bg-cyan-50/60 dark:bg-cyan-900/20",
+    iconWrap: "bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300",
+  },
+  {
     icon: Printer,
-    label: { en: "Printing", bn: "প্রিন্টিং" },
-    desc: { en: "Cards · Banners · Books", bn: "কার্ড · ব্যানার · বই" },
+    label: { en: "Printing & Docs", bn: "প্রিন্টিং ও ডকুমেন্ট" },
+    desc: { en: "Cards · Banners · Documentation", bn: "কার্ড · ব্যানার · ডকুমেন্টেশন" },
     href: "/services/printing",
     ring: "ring-orange-100 dark:ring-orange-800/40 hover:ring-orange-200",
     tint: "bg-orange-50/60 dark:bg-orange-900/20",
     iconWrap: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
   },
   {
+    icon: Smartphone,
+    label: { en: "Mobile Software Lab", bn: "মোবাইল সফটওয়্যার ল্যাব" },
+    desc: { en: "Firmware · Recovery · Repair", bn: "ফার্মওয়্যার · রিকভারি · রিপেয়ার" },
+    href: "/services/software",
+    ring: "ring-fuchsia-100 dark:ring-fuchsia-800/40 hover:ring-fuchsia-200",
+    tint: "bg-fuchsia-50/60 dark:bg-fuchsia-900/20",
+    iconWrap: "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-300",
+  },
+  {
+    icon: Monitor,
+    label: { en: "Computer Software", bn: "কম্পিউটার সফটওয়্যার" },
+    desc: { en: "OS · Drivers · Optimization", bn: "OS · ড্রাইভার · অপ্টিমাইজেশন" },
+    href: "/services/software",
+    ring: "ring-slate-100 dark:ring-slate-700/40 hover:ring-slate-200",
+    tint: "bg-slate-50/60 dark:bg-slate-800/30",
+    iconWrap: "bg-slate-100 text-slate-700 dark:bg-slate-700/40 dark:text-slate-200",
+  },
+  {
     icon: Scale,
-    label: { en: "Legal", bn: "লিগ্যাল" },
-    desc: { en: "Cases · Passport · Docs", bn: "মামলা · পাসপোর্ট · ডকুমেন্ট" },
+    label: { en: "Legal & Office", bn: "লিগ্যাল ও অফিস" },
+    desc: { en: "Case writing · Office services", bn: "কেস রাইটিং · অফিস সেবা" },
     href: "/services/legal",
     ring: "ring-red-100 dark:ring-red-800/40 hover:ring-red-200",
     tint: "bg-red-50/60 dark:bg-red-900/20",
@@ -51,9 +78,9 @@ const VERTICALS: Vertical[] = [
   },
   {
     icon: Sparkles,
-    label: { en: "Digital Services", bn: "ডিজিটাল সেবা" },
-    desc: { en: "Websites · Social · SEO", bn: "ওয়েবসাইট · সোশ্যাল · SEO" },
-    href: "/services",
+    label: { en: "Business Software", bn: "বিজনেস সফটওয়্যার" },
+    desc: { en: "POS · ERP · CRM · Billing", bn: "POS · ERP · CRM · বিলিং" },
+    href: "/projects",
     ring: "ring-emerald-100 dark:ring-emerald-800/40 hover:ring-emerald-200",
     tint: "bg-emerald-50/60 dark:bg-emerald-900/20",
     iconWrap: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
@@ -61,7 +88,7 @@ const VERTICALS: Vertical[] = [
   {
     icon: Brain,
     label: { en: "AI Solutions", bn: "AI সমাধান" },
-    desc: { en: "Chatbots · Automation", bn: "চ্যাটবট · অটোমেশন" },
+    desc: { en: "Automation · Intelligent workflows", bn: "অটোমেশন · স্মার্ট ওয়ার্কফ্লো" },
     href: "/projects?category=ai",
     ring: "ring-purple-100 dark:ring-purple-800/40 hover:ring-purple-200",
     tint: "bg-purple-50/60 dark:bg-purple-900/20",
@@ -69,12 +96,21 @@ const VERTICALS: Vertical[] = [
   },
   {
     icon: Code2,
-    label: { en: "Custom Software", bn: "কাস্টম সফটওয়্যার" },
-    desc: { en: "ERP · POS · Apps", bn: "ERP · POS · অ্যাপ" },
+    label: { en: "Web & Custom Software", bn: "ওয়েব ও কাস্টম সফটওয়্যার" },
+    desc: { en: "Website · App · API development", bn: "ওয়েবসাইট · অ্যাপ · API ডেভেলপমেন্ট" },
     href: "/services/software",
     ring: "ring-indigo-100 dark:ring-indigo-800/40 hover:ring-indigo-200",
     tint: "bg-indigo-50/60 dark:bg-indigo-900/20",
     iconWrap: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",
+  },
+  {
+    icon: Sparkles,
+    label: { en: "Business & IT Support", bn: "বিজনেস ও আইটি সাপোর্ট" },
+    desc: { en: "Consulting · On-call support", bn: "কনসাল্টিং · অন-কল সাপোর্ট" },
+    href: "/contact",
+    ring: "ring-amber-100 dark:ring-amber-800/40 hover:ring-amber-200",
+    tint: "bg-amber-50/60 dark:bg-amber-900/20",
+    iconWrap: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
   },
 ];
 
@@ -95,8 +131,8 @@ export default function QuickCategories() {
             </p>
             <h2 id="verticals-heading" className="text-lg sm:text-xl font-bold text-heading mt-0.5">
               {bn
-                ? "পণ্য থেকে সফটওয়্যার — এক প্ল্যাটফর্মে"
-                : "From products to software — one platform"}
+                ? "ABO Enterprise-এর মূল ব্যবসা ইউনিট"
+                : "ABO Enterprise Core Business Units"}
             </h2>
           </div>
         </div>

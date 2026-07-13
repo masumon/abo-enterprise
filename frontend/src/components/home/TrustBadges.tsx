@@ -4,12 +4,12 @@ import { Shield, Truck, CreditCard, Headphones, Award, Lock } from "lucide-react
 import { useLanguageStore } from "@/store/language";
 
 const BADGES = [
-  { icon: Shield, label: { en: "Verified Business", bn: "যাচাইকৃত ব্যবসা" } },
+  { icon: Shield, label: { en: "Verified Brand in Sylhet", bn: "সিলেটে যাচাইকৃত ব্র্যান্ড" } },
   { icon: Truck, label: { en: "Fast Delivery", bn: "দ্রুত ডেলিভারি" } },
-  { icon: CreditCard, label: { en: "Secure Payment", bn: "নিরাপদ পেমেন্ট" } },
-  { icon: Headphones, label: { en: "24/7 Support", bn: "২৪/৭ সাপোর্ট" } },
-  { icon: Award, label: { en: "5+ Years", bn: "৫+ বছর" } },
-  { icon: Lock, label: { en: "Data Protected", bn: "ডেটা সুরক্ষিত" } },
+  { icon: CreditCard, label: { en: "Secure Payment Options", bn: "নিরাপদ পেমেন্ট অপশন" } },
+  { icon: Headphones, label: { en: "Extended Support Hours", bn: "বর্ধিত সাপোর্ট সময়" } },
+  { icon: Award, label: { en: "Multi-Service Experience", bn: "বহুমুখী সেবার অভিজ্ঞতা" } },
+  { icon: Lock, label: { en: "Data & Document Safety", bn: "ডেটা ও ডকুমেন্ট নিরাপত্তা" } },
 ];
 
 export default function TrustBadges() {
