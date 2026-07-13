@@ -16,6 +16,27 @@ function serviceHref(slug: string): string {
   return `/services/${slug}`;
 }
 
+// Homepage priority order for featured services, matched by keywords in the
+// service category/name: Digital Services → Software Lab → Business Software → AI.
+const SERVICE_PRIORITY: { keywords: string[] }[] = [
+  { keywords: ["digital", "passport", "nid", "bkash", "nagad", "print", "birth"] },
+  { keywords: ["software lab", "flash", "firmware", "frp", "repair", "recovery", "windows", "driver"] },
+  { keywords: ["business", "pos", "erp", "iptv", "isp", "billing"] },
+  { keywords: ["ai", "automation"] },
+];
+
+function servicePriority(service: Service): number {
+  const haystack = `${service.category ?? ""} ${service.name_en ?? ""}`.toLowerCase();
+  const idx = SERVICE_PRIORITY.findIndex((group) =>
+    group.keywords.some((kw) => haystack.includes(kw))
+  );
+  return idx === -1 ? SERVICE_PRIORITY.length : idx;
+}
+
+function prioritizeServices(items: Service[]): Service[] {
+  return [...items].sort((a, b) => servicePriority(a) - servicePriority(b));
+}
+
 export default function ServicesOverview() {
   const { lang } = useLanguageStore();
   const [services, setServices] = useState<Service[]>([]);
@@ -23,8 +44,8 @@ export default function ServicesOverview() {
 
   useEffect(() => {
     servicesApi
-      .list({ per_page: 6, page: 1 })
-      .then((r) => setServices((r.data.data ?? []).slice(0, 6)))
+      .list({ per_page: 12, page: 1 })
+      .then((r) => setServices(prioritizeServices(r.data.data ?? []).slice(0, 6)))
       .catch(() => setServices([]))
       .finally(() => setLoading(false));
   }, []);
@@ -33,12 +54,12 @@ export default function ServicesOverview() {
     <section id="services" className="py-16">
       <div className="container mx-auto px-4">
         <div className="section-title text-center mb-10">
-          <h2>{lang === "bn" ? "মূল সেবাসমূহ" : "Core Services"}</h2>
+          <h2>{lang === "bn" ? "ব্যবসার মূল সেবাসমূহ" : "Core Business Services"}</h2>
           <div className="section-divider" />
           <p className="text-gray-500 text-sm max-w-lg mx-auto">
             {lang === "bn"
-              ? "আমাদের প্রধান সেবা — প্রতিটি কার্ড আপনার ব্যবসার জন্য প্রাসঙ্গিক সমাধান।"
-              : "Our core services — each card shows a solution tailored to your business."}
+              ? "ডিজিটাল সেবা, সফটওয়্যার ল্যাব, বিজনেস সফটওয়্যার ও AI — ব্যবসার জন্য একীভূত সমাধান।"
+              : "Digital services, software lab, business software and AI — one integrated business platform."}
           </p>
         </div>
 

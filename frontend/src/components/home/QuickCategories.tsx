@@ -1,15 +1,15 @@
 "use client";
 import Link from "next/link";
 import {
-  ShoppingBag, Printer, Scale, Sparkles, Brain, Code2,
+  Smartphone, FileText, Wrench, Briefcase, Bot, Globe,
   type LucideIcon,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 
 /**
- * The six business verticals ABO Enterprise offers — placed directly under
- * the hero so a first-time visitor can identify (and tap into) each within
- * five seconds. Order and labels match the audit brief.
+ * The six core business verticals ABO Enterprise offers — placed directly
+ * under the hero so a first-time visitor can identify (and tap into) each
+ * within five seconds. Order and labels match the business brief.
  */
 interface Vertical {
   icon: LucideIcon;
@@ -23,58 +23,58 @@ interface Vertical {
 
 const VERTICALS: Vertical[] = [
   {
-    icon: ShoppingBag,
-    label: { en: "Products", bn: "পণ্য" },
-    desc: { en: "Mobile accessories", bn: "মোবাইল অ্যাকসেসরিজ" },
+    icon: Smartphone,
+    label: { en: "Tech Store", bn: "টেক স্টোর" },
+    desc: { en: "Accessories · Gadgets · Electronics", bn: "এক্সেসরিজ · গ্যাজেট · ইলেকট্রনিক্স" },
     href: "/products",
     ring: "ring-blue-100 dark:ring-blue-800/40 hover:ring-blue-200",
     tint: "bg-blue-50/60 dark:bg-blue-900/20",
     iconWrap: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
   },
   {
-    icon: Printer,
-    label: { en: "Printing", bn: "প্রিন্টিং" },
-    desc: { en: "Cards · Banners · Books", bn: "কার্ড · ব্যানার · বই" },
-    href: "/services/printing",
-    ring: "ring-orange-100 dark:ring-orange-800/40 hover:ring-orange-200",
-    tint: "bg-orange-50/60 dark:bg-orange-900/20",
-    iconWrap: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
-  },
-  {
-    icon: Scale,
-    label: { en: "Legal", bn: "লিগ্যাল" },
-    desc: { en: "Cases · Passport · Docs", bn: "মামলা · পাসপোর্ট · ডকুমেন্ট" },
-    href: "/services/legal",
-    ring: "ring-red-100 dark:ring-red-800/40 hover:ring-red-200",
-    tint: "bg-red-50/60 dark:bg-red-900/20",
-    iconWrap: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-  },
-  {
-    icon: Sparkles,
+    icon: FileText,
     label: { en: "Digital Services", bn: "ডিজিটাল সেবা" },
-    desc: { en: "Websites · Social · SEO", bn: "ওয়েবসাইট · সোশ্যাল · SEO" },
-    href: "/services",
+    desc: { en: "Passport · NID · bKash · Print", bn: "পাসপোর্ট · NID · বিকাশ · প্রিন্ট" },
+    href: "/services#digital-services",
     ring: "ring-emerald-100 dark:ring-emerald-800/40 hover:ring-emerald-200",
     tint: "bg-emerald-50/60 dark:bg-emerald-900/20",
     iconWrap: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300",
   },
   {
-    icon: Brain,
+    icon: Wrench,
+    label: { en: "Software Lab", bn: "সফটওয়্যার ল্যাব" },
+    desc: { en: "Mobile · Computer software", bn: "মোবাইল · কম্পিউটার সফটওয়্যার" },
+    href: "/services#software-lab",
+    ring: "ring-orange-100 dark:ring-orange-800/40 hover:ring-orange-200",
+    tint: "bg-orange-50/60 dark:bg-orange-900/20",
+    iconWrap: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
+  },
+  {
+    icon: Briefcase,
+    label: { en: "Business Software", bn: "বিজনেস সফটওয়্যার" },
+    desc: { en: "POS · ERP · IPTV · ISP Billing", bn: "POS · ERP · IPTV · ISP বিলিং" },
+    href: "/services#business-software",
+    ring: "ring-indigo-100 dark:ring-indigo-800/40 hover:ring-indigo-200",
+    tint: "bg-indigo-50/60 dark:bg-indigo-900/20",
+    iconWrap: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",
+  },
+  {
+    icon: Bot,
     label: { en: "AI Solutions", bn: "AI সমাধান" },
-    desc: { en: "Chatbots · Automation", bn: "চ্যাটবট · অটোমেশন" },
-    href: "/projects?category=ai",
+    desc: { en: "Assistant · Automation · Custom AI", bn: "অ্যাসিস্ট্যান্ট · অটোমেশন · কাস্টম AI" },
+    href: "/services#ai-solutions",
     ring: "ring-purple-100 dark:ring-purple-800/40 hover:ring-purple-200",
     tint: "bg-purple-50/60 dark:bg-purple-900/20",
     iconWrap: "bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300",
   },
   {
-    icon: Code2,
-    label: { en: "Custom Software", bn: "কাস্টম সফটওয়্যার" },
-    desc: { en: "ERP · POS · Apps", bn: "ERP · POS · অ্যাপ" },
-    href: "/services/software",
-    ring: "ring-indigo-100 dark:ring-indigo-800/40 hover:ring-indigo-200",
-    tint: "bg-indigo-50/60 dark:bg-indigo-900/20",
-    iconWrap: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300",
+    icon: Globe,
+    label: { en: "Web Development", bn: "ওয়েব ডেভেলপমেন্ট" },
+    desc: { en: "Websites · Web apps · Software", bn: "ওয়েবসাইট · ওয়েব অ্যাপ · সফটওয়্যার" },
+    href: "/services#web-software",
+    ring: "ring-sky-100 dark:ring-sky-800/40 hover:ring-sky-200",
+    tint: "bg-sky-50/60 dark:bg-sky-900/20",
+    iconWrap: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
   },
 ];
 

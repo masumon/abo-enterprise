@@ -6,8 +6,8 @@ import ServicesPageClient from "./ServicesPageClient";
 import { fetchWithRetry } from "@/lib/fetchRetry";
 
 export const metadata: Metadata = pageMeta(
-  "Services — Printing, Legal & Software",
-  "Professional printing, legal assistance, software development and enterprise solutions from ABO Enterprise, Bangladesh.",
+  "Services — Digital, Software Lab, Business Software & AI",
+  "Digital services (Passport, NID, bKash), mobile & computer software lab, business software (POS, ERP, IPTV, ISP billing), AI solutions and web development from ABO Enterprise, Bangladesh.",
   "/services"
 );
 

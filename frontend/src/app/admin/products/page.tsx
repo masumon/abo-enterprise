@@ -19,7 +19,17 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
-const CATEGORIES = ["accessories", "gadgets", "electronics", "computer"];
+// Values are the backend product-category slugs (do not change); labels are the
+// customer-facing names, kept in sync with the storefront category filters.
+const CATEGORIES: { value: string; label: string }[] = [
+  { value: "accessories", label: "Mobile Accessories" },
+  { value: "gadgets", label: "Premium Gadgets" },
+  { value: "electronics", label: "Electronics" },
+  { value: "computer", label: "Computer Accessories" },
+];
+const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
+  CATEGORIES.map((c) => [c.value, c.label])
+);
 const BADGES = ["", "HOT", "NEW", "SALE"];
 
 const schema = z.object({
@@ -327,11 +337,11 @@ export default function AdminProductsPage() {
                         <div className="min-w-0">
                           <p className="font-medium text-gray-900 truncate">{p.name_en}</p>
                           <p className="text-xs text-gray-400 truncate">{p.slug}</p>
-                          <p className="text-xs text-gray-400 sm:hidden capitalize">{p.category}</p>
+                          <p className="text-xs text-gray-400 sm:hidden">{CATEGORY_LABELS[p.category] ?? p.category}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-gray-600 capitalize hidden sm:table-cell">{p.category}</td>
+                    <td className="px-5 py-3 text-gray-600 hidden sm:table-cell">{CATEGORY_LABELS[p.category] ?? p.category}</td>
                     <td className="px-5 py-3 font-semibold text-gray-900">৳{p.price}</td>
                     <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{p.stock_quantity}</td>
                     <td className="px-5 py-3">
@@ -435,7 +445,7 @@ export default function AdminProductsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
                   <select {...register("category")} className="input">
                     <option value="">Select category</option>
-                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                    {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                   {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
                 </div>

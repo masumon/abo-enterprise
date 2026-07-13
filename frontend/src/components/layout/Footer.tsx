@@ -30,11 +30,12 @@ import { getBrandName, getBrandTagline } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
 const SERVICES = [
-  { href: "/products", label: { en: "Mobile Accessories", bn: "মোবাইল এক্সেসরিজ" } },
-  { href: "/services/printing", label: { en: "Printing", bn: "প্রিন্টিং" } },
-  { href: "/services/legal", label: { en: "Legal", bn: "আইনি" } },
-  { href: "/services/software", label: { en: "Software", bn: "সফটওয়্যার" } },
-  { href: "/projects", label: { en: "Enterprise Solutions", bn: "এন্টারপ্রাইজ সমাধান" } },
+  { href: "/products", label: { en: "Tech Store", bn: "টেক স্টোর" } },
+  { href: "/services#digital-services", label: { en: "Digital Services", bn: "ডিজিটাল সেবা" } },
+  { href: "/services#software-lab", label: { en: "Software Lab", bn: "সফটওয়্যার ল্যাব" } },
+  { href: "/services#business-software", label: { en: "Business Software", bn: "বিজনেস সফটওয়্যার" } },
+  { href: "/services#ai-solutions", label: { en: "AI Solutions", bn: "AI সমাধান" } },
+  { href: "/contact", label: { en: "Support", bn: "সাপোর্ট" } },
 ];
 
 const COMPANY = [
@@ -285,7 +286,7 @@ export default function Footer() {
           </div>
 
           <div className="xl:col-span-2">
-            <FooterColumn title={lang === "bn" ? "সেবা" : "Services"}>
+            <FooterColumn title={lang === "bn" ? "ব্যবসা" : "Business"}>
               <ul className="space-y-2.5">
                 {SERVICES.map((s) => (
                   <li key={s.href + s.label.en}>

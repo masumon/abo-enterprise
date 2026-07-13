@@ -15,6 +15,21 @@ import DemoModeBanner from "@/components/ui/DemoModeBanner";
 import type { CatalogSource } from "@/lib/catalogLoader";
 import { loadProducts, peekCachedProducts } from "@/lib/catalogLoader";
 
+// Homepage priority: Premium Gadgets → Mobile Accessories → Electronics → rest.
+const CATEGORY_PRIORITY: Record<string, number> = {
+  gadgets: 0,
+  accessories: 1,
+  electronics: 2,
+  computer: 3,
+};
+
+function prioritizeProducts(items: Product[]): Product[] {
+  return [...items].sort(
+    (a, b) =>
+      (CATEGORY_PRIORITY[a.category] ?? 99) - (CATEGORY_PRIORITY[b.category] ?? 99)
+  );
+}
+
 export default function FeaturedProducts() {
   const { lang } = useLanguageStore();
   const { openCart } = useCartStore();
@@ -39,7 +54,7 @@ export default function FeaturedProducts() {
 
     peekCachedProducts(params).then((cached) => {
       if (cached) {
-        setProducts(cached.products);
+        setProducts(prioritizeProducts(cached.products));
         setCatalogSource(cached.source);
         setLoading(false);
       }
@@ -48,14 +63,14 @@ export default function FeaturedProducts() {
     loadProducts(params)
       .then(async (result) => {
         if (result.products.length > 0) {
-          setProducts(result.products);
+          setProducts(prioritizeProducts(result.products));
           setCatalogSource(result.source);
           setError(false);
           return;
         }
         const fallback = await loadProducts({ per_page: 8 });
         if (fallback.products.length > 0) {
-          setProducts(fallback.products);
+          setProducts(prioritizeProducts(fallback.products));
           setCatalogSource(fallback.source);
           setError(false);
         }
@@ -63,7 +78,7 @@ export default function FeaturedProducts() {
       .catch(async () => {
         const cached = await peekCachedProducts(params);
         if (cached) {
-          setProducts(cached.products);
+          setProducts(prioritizeProducts(cached.products));
           setCatalogSource(cached.source);
           setError(false);
         } else {

@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  Printer, Scale, Code2, Megaphone, Briefcase,
-  ArrowRight, Bot, Cog, Smartphone,
+  Printer, Code2, Megaphone, Briefcase,
+  Bot, Cog, Smartphone, FileText, Wrench, Monitor, Globe,
 } from "lucide-react";
 import type { Service } from "@/types";
 import { useLanguageStore } from "@/store/language";
@@ -18,27 +18,102 @@ import type { CatalogSource } from "@/lib/catalogLoader";
 import { loadServices, peekCachedServices } from "@/lib/catalogLoader";
 import { cacheApiResponse, servicesCacheKey } from "@/lib/apiCache";
 
-const FEATURED = [
+/**
+ * The seven service groups ABO Enterprise offers. Rendered as a static
+ * catalogue above the live (API-driven) service list so visitors can see the
+ * full breadth of the business at a glance. The `anchor` ids are the jump
+ * targets used by the homepage Quick Categories cards.
+ */
+const SERVICE_GROUPS = [
   {
+    anchor: "digital-services",
+    icon: FileText,
+    color: "bg-emerald-600",
+    title: { en: "Digital Services", bn: "ডিজিটাল সেবা" },
+    items: [
+      { en: "Passport", bn: "পাসপোর্ট" },
+      { en: "NID", bn: "NID" },
+      { en: "Birth Registration", bn: "জন্ম নিবন্ধন" },
+      { en: "Online Application", bn: "অনলাইন আবেদন" },
+      { en: "bKash", bn: "বিকাশ" },
+      { en: "Nagad", bn: "নগদ" },
+      { en: "Recharge", bn: "রিচার্জ" },
+    ],
+  },
+  {
+    anchor: "print-documentation",
     icon: Printer,
-    title: { en: "Printing Services", bn: "প্রিন্টিং সেবা" },
-    subtitle: { en: "Professional quality, fast turnaround", bn: "পেশাদার মান, দ্রুত ডেলিভারি" },
-    href: "/services/printing",
     color: "bg-brand-600",
+    title: { en: "Print & Documentation", bn: "প্রিন্ট ও ডকুমেন্টেশন" },
+    items: [
+      { en: "Printing", bn: "প্রিন্টিং" },
+      { en: "Photocopy", bn: "ফটোকপি" },
+      { en: "Scan", bn: "স্ক্যান" },
+      { en: "Lamination", bn: "ল্যামিনেশন" },
+      { en: "Typing", bn: "টাইপিং" },
+    ],
   },
   {
-    icon: Scale,
-    title: { en: "Legal Assistance", bn: "আইনি সহায়তা" },
-    subtitle: { en: "Government documents & legal filings", bn: "সরকারি ডকুমেন্ট ও আইনি কাজ" },
-    href: "/services/legal",
-    color: "bg-accent-500",
+    anchor: "software-lab",
+    icon: Wrench,
+    color: "bg-orange-600",
+    title: { en: "Mobile Software Lab", bn: "মোবাইল সফটওয়্যার ল্যাব" },
+    items: [
+      { en: "Android Flash", bn: "অ্যান্ড্রয়েড ফ্ল্যাশ" },
+      { en: "Firmware", bn: "ফার্মওয়্যার" },
+      { en: "Apple ID", bn: "অ্যাপল আইডি" },
+      { en: "FRP", bn: "FRP" },
+      { en: "Data Recovery", bn: "ডেটা রিকভারি" },
+      { en: "Software Repair", bn: "সফটওয়্যার রিপেয়ার" },
+    ],
   },
   {
-    icon: Code2,
-    title: { en: "Software Development", bn: "সফটওয়্যার ডেভেলপমেন্ট" },
-    subtitle: { en: "Web, mobile & enterprise solutions", bn: "ওয়েব, মোবাইল ও এন্টারপ্রাইজ সমাধান" },
-    href: "/services/software",
-    color: "bg-green-600",
+    anchor: "computer-software",
+    icon: Monitor,
+    color: "bg-cyan-600",
+    title: { en: "Computer Software", bn: "কম্পিউটার সফটওয়্যার" },
+    items: [
+      { en: "Windows Install", bn: "উইন্ডোজ ইন্সটল" },
+      { en: "Driver Install", bn: "ড্রাইভার ইন্সটল" },
+      { en: "Office Install", bn: "অফিস ইন্সটল" },
+      { en: "Virus Removal", bn: "ভাইরাস রিমুভাল" },
+      { en: "PC Optimization", bn: "পিসি অপটিমাইজেশন" },
+    ],
+  },
+  {
+    anchor: "business-software",
+    icon: Briefcase,
+    color: "bg-indigo-600",
+    title: { en: "Business Software", bn: "বিজনেস সফটওয়্যার" },
+    items: [
+      { en: "POS", bn: "POS" },
+      { en: "ERP", bn: "ERP" },
+      { en: "IPTV", bn: "IPTV" },
+      { en: "ISP Billing", bn: "ISP বিলিং" },
+    ],
+  },
+  {
+    anchor: "ai-solutions",
+    icon: Bot,
+    color: "bg-purple-600",
+    title: { en: "AI Solutions", bn: "AI সমাধান" },
+    items: [
+      { en: "AI Assistant", bn: "AI অ্যাসিস্ট্যান্ট" },
+      { en: "Automation", bn: "অটোমেশন" },
+      { en: "Custom AI", bn: "কাস্টম AI" },
+      { en: "Business AI", bn: "বিজনেস AI" },
+    ],
+  },
+  {
+    anchor: "web-software",
+    icon: Globe,
+    color: "bg-sky-600",
+    title: { en: "Web & Software", bn: "ওয়েব ও সফটওয়্যার" },
+    items: [
+      { en: "Website", bn: "ওয়েবসাইট" },
+      { en: "Web App", bn: "ওয়েব অ্যাপ" },
+      { en: "Custom Software", bn: "কাস্টম সফটওয়্যার" },
+    ],
   },
 ];
 
@@ -139,8 +214,8 @@ export default function ServicesPageClient({
         pageKey="services"
         title={t({ en: "Our Services", bn: "আমাদের সেবা" })}
         subtitle={t({
-          en: "From printing to legal help to full-stack software — everything under one roof.",
-          bn: "প্রিন্টিং থেকে আইনি সহায়তা ও সফটওয়্যার — সব এক ছাদের নিচে।",
+          en: "Digital services, mobile & computer software, business software, AI and web development — all under one roof.",
+          bn: "ডিজিটাল সেবা, মোবাইল ও কম্পিউটার সফটওয়্যার, বিজনেস সফটওয়্যার, AI ও ওয়েব ডেভেলপমেন্ট — সব এক ছাদের নিচে।",
         })}
         breadcrumbs={[
           { label: lang === "bn" ? "হোম" : "Home", href: "/" },
@@ -150,19 +225,25 @@ export default function ServicesPageClient({
 
       <section className="enterprise-section-alt">
         <div className="container mx-auto px-4 max-w-6xl">
-          <h2 className="text-xl font-bold text-heading mb-6">{t({ en: "Printing, Legal & Digital Services", bn: "প্রিন্টিং, আইনি ও ডিজিটাল সেবা" })}</h2>
-          <div className="grid md:grid-cols-3 gap-4 mb-10">
-            {FEATURED.map(({ icon: Icon, title, subtitle, href, color }) => (
-              <Link key={href} href={href} className="enterprise-card-hover p-5 block group">
-                <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-white", color)}>
-                  <Icon className="w-6 h-6" />
+          <h2 className="text-xl font-bold text-heading mb-2">{t({ en: "What We Offer", bn: "আমরা যা দিই" })}</h2>
+          <p className="text-sm text-muted mb-6">{t({ en: "Digital services, software lab, business software & AI — all under one roof.", bn: "ডিজিটাল সেবা, সফটওয়্যার ল্যাব, বিজনেস সফটওয়্যার ও AI — সব এক ছাদের নিচে।" })}</p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+            {SERVICE_GROUPS.map(({ anchor, icon: Icon, title, items, color }) => (
+              <div key={anchor} id={anchor} className="enterprise-card p-5 scroll-mt-24">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0", color)}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-heading">{t(title)}</h3>
                 </div>
-                <h3 className="font-bold text-heading mb-1 group-hover:text-brand-600 transition-colors">{t(title)}</h3>
-                <p className="text-sm text-muted mb-3">{t(subtitle)}</p>
-                <span className="text-sm font-semibold text-brand-600 inline-flex items-center gap-1">
-                  {t({ en: "Explore", bn: "দেখুন" })} <ArrowRight className="w-4 h-4" />
-                </span>
-              </Link>
+                <div className="flex flex-wrap gap-1.5">
+                  {items.map((item) => (
+                    <span key={item.en} className="inline-block px-2.5 py-1 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 rounded-lg">
+                      {t(item)}
+                    </span>
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
 
