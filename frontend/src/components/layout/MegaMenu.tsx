@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
-import { ChevronDown, ShoppingBag, Printer, Scale, Code2, Building2, Heart, GitCompare } from "lucide-react";
+import { ChevronDown, ShoppingBag, Building2, Heart, GitCompare, FileText, Wrench, Briefcase, Bot, Headphones } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { cn } from "@/lib/utils";
@@ -32,18 +32,19 @@ export default function MegaMenu({ onNavigate }: MegaMenuProps) {
 
   const productCategories = [
     { href: "/products", label: lang === "bn" ? "সব পণ্য" : "All Products" },
-    { href: "/products?category=accessories", label: lang === "bn" ? "এক্সেসরিজ" : "Accessories" },
-    { href: "/products?category=gadgets", label: lang === "bn" ? "গ্যাজেট" : "Gadgets" },
+    { href: "/products?category=accessories", label: lang === "bn" ? "মোবাইল এক্সেসরিজ" : "Mobile Accessories" },
+    { href: "/products?category=gadgets", label: lang === "bn" ? "প্রিমিয়াম গ্যাজেট" : "Premium Gadgets" },
     { href: "/products?category=electronics", label: lang === "bn" ? "ইলেকট্রনিক্স" : "Electronics" },
-    { href: "/products?category=computer", label: lang === "bn" ? "কম্পিউটার" : "Computer" },
+    { href: "/products?category=computer", label: lang === "bn" ? "কম্পিউটার এক্সেসরিজ" : "Computer Accessories" },
   ];
 
   const serviceLinks = [
     { href: "/services", label: lang === "bn" ? "সব সেবা" : "All Services", icon: Building2 },
-    { href: "/services/printing", label: lang === "bn" ? "প্রিন্টিং" : "Printing", icon: Printer },
-    { href: "/services/legal", label: lang === "bn" ? "আইনি" : "Legal", icon: Scale },
-    { href: "/services/software", label: lang === "bn" ? "সফটওয়্যার" : "Software", icon: Code2 },
-    { href: "/book", label: lang === "bn" ? "সেবা বুক করুন" : "Book a Service", icon: Building2 },
+    { href: "/services#digital-services", label: lang === "bn" ? "ডিজিটাল সেবা" : "Digital Services", icon: FileText },
+    { href: "/services#software-lab", label: lang === "bn" ? "সফটওয়্যার ল্যাব" : "Software Lab", icon: Wrench },
+    { href: "/services#business-software", label: lang === "bn" ? "বিজনেস সফটওয়্যার" : "Business Software", icon: Briefcase },
+    { href: "/services#ai-solutions", label: lang === "bn" ? "AI সমাধান" : "AI Solutions", icon: Bot },
+    { href: "/contact", label: lang === "bn" ? "সাপোর্ট" : "Support", icon: Headphones },
   ];
 
   const menus = [

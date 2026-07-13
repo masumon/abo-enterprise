@@ -1,39 +1,39 @@
 "use client";
 
-import { Award, Shield, Tag, Truck, Lock, Headphones } from "lucide-react";
+import { Award, Store, Globe, Wrench, Bot, Truck } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import GlassCard from "@/components/ui/GlassCard";
 
 const REASONS = [
   {
     icon: Award,
-    title: { en: "Experience", bn: "অভিজ্ঞতা" },
-    desc: { en: "Years of trusted service across Bangladesh.", bn: "বাংলাদেশ জুড়ে বছরের অভিজ্ঞতা ও বিশ্বাস।" },
+    title: { en: "8+ Years Experience", bn: "৮+ বছরের অভিজ্ঞতা" },
+    desc: { en: "Nearly a decade serving customers with trust and consistency.", bn: "প্রায় এক দশক ধরে বিশ্বাস ও ধারাবাহিকতার সাথে গ্রাহক সেবা।" },
   },
   {
-    icon: Shield,
-    title: { en: "Quality", bn: "মান" },
-    desc: { en: "Premium products and professional delivery.", bn: "প্রিমিয়াম পণ্য ও পেশাদার সেবা।" },
+    icon: Store,
+    title: { en: "Trusted Local Business", bn: "বিশ্বস্ত স্থানীয় ব্যবসা" },
+    desc: { en: "An established name in Sylhet with a real storefront.", bn: "সিলেটে বাস্তব দোকানসহ একটি প্রতিষ্ঠিত নাম।" },
   },
   {
-    icon: Tag,
-    title: { en: "Affordable Pricing", bn: "সাশ্রয়ী মূল্য" },
-    desc: { en: "Best value without compromising quality.", bn: "মান বজায় রেখে সেরা দাম।" },
+    icon: Globe,
+    title: { en: "Online + Offline Service", bn: "অনলাইন + অফলাইন সেবা" },
+    desc: { en: "Visit our shop or order online — the choice is yours.", bn: "দোকানে আসুন বা অনলাইনে অর্ডার করুন — পছন্দ আপনার।" },
+  },
+  {
+    icon: Wrench,
+    title: { en: "Experienced Engineers", bn: "অভিজ্ঞ ইঞ্জিনিয়ার" },
+    desc: { en: "Skilled technicians for mobile, computer & software work.", bn: "মোবাইল, কম্পিউটার ও সফটওয়্যারের দক্ষ টেকনিশিয়ান।" },
+  },
+  {
+    icon: Bot,
+    title: { en: "AI Powered Solutions", bn: "AI চালিত সমাধান" },
+    desc: { en: "Modern automation and AI to grow your business.", bn: "আপনার ব্যবসা বাড়াতে আধুনিক অটোমেশন ও AI।" },
   },
   {
     icon: Truck,
-    title: { en: "Fast Delivery", bn: "দ্রুত ডেলিভারি" },
-    desc: { en: "Same-day in Sylhet, nationwide in 2–3 days.", bn: "সিলেটে একই দিনে, সারাদেশে ২–৩ দিনে।" },
-  },
-  {
-    icon: Lock,
-    title: { en: "Security", bn: "নিরাপত্তা" },
-    desc: { en: "Secure payments and data protection.", bn: "নিরাপদ পেমেন্ট ও ডেটা সুরক্ষা।" },
-  },
-  {
-    icon: Headphones,
-    title: { en: "Customer Support", bn: "গ্রাহক সেবা" },
-    desc: { en: "24/7 WhatsApp and phone support.", bn: "২৪/৭ WhatsApp ও ফোন সাপোর্ট।" },
+    title: { en: "Nationwide Service", bn: "সারাদেশে সেবা" },
+    desc: { en: "Products and services delivered across Bangladesh.", bn: "সারা বাংলাদেশে পণ্য ও সেবা পৌঁছে দেওয়া।" },
   },
 ];
 

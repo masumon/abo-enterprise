@@ -30,8 +30,8 @@ async function fetchProducts(category?: string): Promise<{ products: Product[]; 
 }
 
 export const metadata: Metadata = pageMeta(
-  "Products — Mobile Accessories & Gadgets",
-  "Browse quality mobile accessories, gadgets and electronics at the best prices in Bangladesh.",
+  "Tech Store — Mobile Accessories, Premium Gadgets & Electronics",
+  "Shop premium mobile accessories, gadgets, electronics and computer accessories at the best prices in Bangladesh.",
   "/products"
 );
 

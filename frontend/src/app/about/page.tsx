@@ -24,17 +24,17 @@ const VALUES = [
 ];
 
 const TIMELINE = [
-  { year: "2019", title: { en: "Founded in Sylhet", bn: "সিলেটে প্রতিষ্ঠা" }, desc: { en: "Started as a mobile accessories shop at Hazi Bahar Uddin Market.", bn: "হাজি বাহার উদ্দিন মার্কেটে মোবাইল এক্সেসরিজ দোকান হিসেবে শুরু।" } },
-  { year: "2021", title: { en: "Services Expansion", bn: "সেবা সম্প্রসারণ" }, desc: { en: "Added printing, legal assistance, and business consulting.", bn: "প্রিন্টিং, আইনি সহায়তা ও ব্যবসায়িক পরামর্শ যোগ।" } },
-  { year: "2023", title: { en: "Software Division", bn: "সফটওয়্যার বিভাগ" }, desc: { en: "Launched custom software, POS, ERP, and AI solutions.", bn: "কাস্টম সফটওয়্যার, POS, ERP ও AI সমাধান চালু।" } },
-  { year: "2025", title: { en: "Digital Platform", bn: "ডিজিটাল প্ল্যাটফর্ম" }, desc: { en: "Full e-commerce platform with AI assistant and nationwide reach.", bn: "AI সহকারী ও সারাদেশে পৌঁছানোর পূর্ণ ই-কমার্স প্ল্যাটফর্ম।" } },
+  { year: "2017", title: { en: "Founded in Sylhet", bn: "সিলেটে প্রতিষ্ঠা" }, desc: { en: "Started as a mobile accessories & digital service center at Hazi Bahar Uddin Market.", bn: "হাজি বাহার উদ্দিন মার্কেটে মোবাইল এক্সেসরিজ ও ডিজিটাল সার্ভিস সেন্টার হিসেবে শুরু।" } },
+  { year: "2020", title: { en: "Digital & Software Lab", bn: "ডিজিটাল ও সফটওয়্যার ল্যাব" }, desc: { en: "Added digital services, printing, and mobile & computer software repair.", bn: "ডিজিটাল সেবা, প্রিন্টিং এবং মোবাইল ও কম্পিউটার সফটওয়্যার রিপেয়ার যোগ।" } },
+  { year: "2023", title: { en: "Business Software Division", bn: "বিজনেস সফটওয়্যার বিভাগ" }, desc: { en: "Launched POS, ERP, IPTV, ISP billing and custom software.", bn: "POS, ERP, IPTV, ISP বিলিং ও কাস্টম সফটওয়্যার চালু।" } },
+  { year: "2025", title: { en: "AI & Automation", bn: "AI ও অটোমেশন" }, desc: { en: "AI assistant, automation and custom development with nationwide reach.", bn: "AI সহকারী, অটোমেশন ও কাস্টম ডেভেলপমেন্ট — সারাদেশে পৌঁছানো।" } },
 ];
 
 const ACHIEVEMENTS = [
-  { icon: Users, value: "500+", label: { en: "Happy Clients", bn: "সন্তুষ্ট গ্রাহক" } },
+  { icon: Users, value: "10,000+", label: { en: "Happy Customers", bn: "সন্তুষ্ট গ্রাহক" } },
   { icon: Briefcase, value: "50+", label: { en: "Projects Delivered", bn: "সম্পন্ন প্রজেক্ট" } },
   { icon: ShoppingCart, value: "200+", label: { en: "Products", bn: "পণ্য" } },
-  { icon: Award, value: "5+", label: { en: "Years Experience", bn: "বছরের অভিজ্ঞতা" } },
+  { icon: Award, value: "8+", label: { en: "Years Experience", bn: "বছরের অভিজ্ঞতা" } },
 ];
 
 const TEAM_FALLBACK: CmsTeamMember[] = [
@@ -74,14 +74,14 @@ export default function AboutPage() {
             <div className="section-title"><h2>{t({ en: "Our Story", bn: "আমাদের গল্প" })}</h2></div>
             <p className="text-muted leading-relaxed mt-4">
               {t({
-                en: "ABO Enterprise began in Sylhet as a trusted mobile accessories retailer. Today we are Bangladesh's complete technology ecosystem — combining quality products, professional printing, legal document assistance, custom software development, and AI-powered business solutions under one roof.",
-                bn: "ABO Enterprise সিলেটে একটি বিশ্বস্ত মোবাইল এক্সেসরিজ রিটেইলার হিসেবে শুরু হয়। আজ আমরা বাংলাদেশের সম্পূর্ণ টেকনোলজি ইকোসিস্টেম — মানসম্মত পণ্য, পেশাদার প্রিন্টিং, আইনি ডকুমেন্ট সহায়তা, কাস্টম সফটওয়্যার ও AI-চালিত ব্যবসায়িক সমাধান এক ছাদের নিচে।",
+                en: "ABO Enterprise started in Sylhet as a mobile accessories & digital service center. Over 8+ years we have grown with our customers — adding a software lab for mobile and computer repair, digital services, and professional documentation.",
+                bn: "ABO Enterprise সিলেটে একটি মোবাইল এক্সেসরিজ ও ডিজিটাল সার্ভিস সেন্টার হিসেবে শুরু হয়। ৮+ বছরে আমরা গ্রাহকদের সাথে বেড়ে উঠেছি — মোবাইল ও কম্পিউটার রিপেয়ারের সফটওয়্যার ল্যাব, ডিজিটাল সেবা ও পেশাদার ডকুমেন্টেশন যুক্ত করেছি।",
               })}
             </p>
             <p className="text-muted leading-relaxed mt-4">
               {t({
-                en: "From shop owners needing POS systems to businesses requiring ERP, CRM, or e-commerce — we deliver affordable, reliable technology that grows with you.",
-                bn: "POS সিস্টেম প্রয়োজনীয় দোকানদার থেকে ERP, CRM বা ই-কমার্স চাওয়া ব্যবসায়ীদের — আমরা সাশ্রয়ী, নির্ভরযোগ্য প্রযুক্তি দিই যা আপনার সাথে বাড়ে।",
+                en: "Today we have expanded into business software — POS, ERP, IPTV and ISP billing — along with AI, automation, and custom development. From a single shop to a complete technology partner, we deliver affordable, reliable solutions that grow with you.",
+                bn: "আজ আমরা বিজনেস সফটওয়্যার — POS, ERP, IPTV ও ISP বিলিং — এবং AI, অটোমেশন ও কাস্টম ডেভেলপমেন্টে সম্প্রসারিত হয়েছি। একটি দোকান থেকে সম্পূর্ণ টেকনোলজি পার্টনার — আমরা সাশ্রয়ী, নির্ভরযোগ্য সমাধান দিই যা আপনার সাথে বাড়ে।",
               })}
             </p>
           </div>

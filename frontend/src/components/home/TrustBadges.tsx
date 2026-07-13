@@ -1,15 +1,15 @@
 "use client";
 
-import { Shield, Truck, CreditCard, Headphones, Award, Lock } from "lucide-react";
+import { Shield, Users, CreditCard, Headphones, Award, Globe } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 
 const BADGES = [
+  { icon: Award, label: { en: "8+ Years Experience", bn: "৮+ বছরের অভিজ্ঞতা" } },
+  { icon: Users, label: { en: "10,000+ Customers", bn: "১০,০০০+ গ্রাহক" } },
+  { icon: Globe, label: { en: "Online & Offline", bn: "অনলাইন ও অফলাইন" } },
+  { icon: Headphones, label: { en: "Professional Support", bn: "পেশাদার সাপোর্ট" } },
   { icon: Shield, label: { en: "Verified Business", bn: "যাচাইকৃত ব্যবসা" } },
-  { icon: Truck, label: { en: "Fast Delivery", bn: "দ্রুত ডেলিভারি" } },
   { icon: CreditCard, label: { en: "Secure Payment", bn: "নিরাপদ পেমেন্ট" } },
-  { icon: Headphones, label: { en: "24/7 Support", bn: "২৪/৭ সাপোর্ট" } },
-  { icon: Award, label: { en: "5+ Years", bn: "৫+ বছর" } },
-  { icon: Lock, label: { en: "Data Protected", bn: "ডেটা সুরক্ষিত" } },
 ];
 
 export default function TrustBadges() {

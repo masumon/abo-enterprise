@@ -20,7 +20,8 @@ const ClientLogos = dynamic(() => import("@/components/home/ClientLogos"), { loa
 
 export const metadata: Metadata = {
   title: getBrandFullTitle("bn"),
-  description: getBrandFullTitle("bn"),
+  description:
+    "ABO Enterprise — premium tech products, digital services & AI business solutions. Mobile accessories, digital services (Passport, NID, bKash), mobile & computer software, POS, ERP, AI and web development in Bangladesh.",
   alternates: { canonical: SITE_URL },
   openGraph: {
     images: [{ url: DEFAULT_OG_IMAGE, width: 512, height: 512, alt: "ABO Enterprise" }],

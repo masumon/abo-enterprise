@@ -3,20 +3,43 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Search, Package, Calendar, Briefcase } from "lucide-react";
+import { Search, Package, Calendar, Briefcase, BookOpen } from "lucide-react";
 import { loadProducts, loadServices, peekCachedProducts, peekCachedServices } from "@/lib/catalogLoader";
-import type { Product, Service } from "@/types";
+import type { Product, Service, BlogPost } from "@/types";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Result {
-  type: "product" | "service" | "project";
+  type: "product" | "service" | "project" | "blog";
   id: string;
   title: string;
   subtitle: string;
   href: string;
   price?: number;
+}
+
+// Blog isn't in the catalog loader, so query the public blog endpoint and
+// filter client-side by title/excerpt/content. Read-only, best-effort.
+async function searchBlog(query: string): Promise<BlogPost[]> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/blog?per_page=50`, {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const posts = (json.data ?? []) as BlogPost[];
+    const q = query.toLowerCase();
+    return posts
+      .filter((p) => {
+        const hay = `${p.title_en ?? ""} ${p.title_bn ?? ""} ${p.excerpt_en ?? ""} ${p.excerpt_bn ?? ""} ${p.content_en ?? ""} ${(p.tags ?? []).join(" ")}`.toLowerCase();
+        return hay.includes(q);
+      })
+      .slice(0, 6);
+  } catch {
+    return [];
+  }
 }
 
 const SERVICE_SLUG_MAP: Record<string, string> = {
@@ -33,7 +56,7 @@ function resolveServiceHref(slug: string, category?: string): string {
   return `/services/${slug}`;
 }
 
-function toResults(products: Product[], services: Service[], lang: string): Result[] {
+function toResults(products: Product[], services: Service[], posts: BlogPost[], lang: string): Result[] {
   const items: Result[] = [];
   products.forEach((p) => items.push({
     type: "product",
@@ -49,6 +72,13 @@ function toResults(products: Product[], services: Service[], lang: string): Resu
     title: lang === "bn" && s.name_bn ? s.name_bn : s.name_en,
     subtitle: s.category ?? "",
     href: resolveServiceHref(s.slug, s.category),
+  }));
+  posts.forEach((p) => items.push({
+    type: "blog",
+    id: p.id ?? p.slug,
+    title: lang === "bn" && p.title_bn ? p.title_bn : p.title_en,
+    subtitle: (lang === "bn" ? p.excerpt_bn : p.excerpt_en) || p.category || "",
+    href: `/blog/${p.slug}`,
   }));
   return items;
 }
@@ -73,7 +103,7 @@ function SearchResults() {
       peekCachedServices(searchParams),
     ]).then(([prodCache, svcCache]) => {
       if (prodCache || svcCache) {
-        setResults(toResults(prodCache?.products ?? [], svcCache?.services ?? [], lang));
+        setResults(toResults(prodCache?.products ?? [], svcCache?.services ?? [], [], lang));
         setFromCache(true);
         setLoading(false);
       }
@@ -82,10 +112,12 @@ function SearchResults() {
     Promise.allSettled([
       loadProducts(searchParams),
       loadServices(searchParams),
-    ]).then(([prod, svc]) => {
+      searchBlog(q),
+    ]).then(([prod, svc, blog]) => {
       const products = prod.status === "fulfilled" ? prod.value.products : [];
       const services = svc.status === "fulfilled" ? svc.value.services : [];
-      setResults(toResults(products, services, lang));
+      const posts = blog.status === "fulfilled" ? blog.value : [];
+      setResults(toResults(products, services, posts, lang));
       setFromCache(
         (prod.status === "fulfilled" && prod.value.source === "cache") ||
         (svc.status === "fulfilled" && svc.value.source === "cache")
@@ -94,8 +126,8 @@ function SearchResults() {
     });
   }, [q, lang]);
 
-  const ICONS = { product: Package, service: Calendar, project: Briefcase };
-  const COLORS = { product: "text-blue-600 bg-blue-50", service: "text-green-600 bg-green-50", project: "text-purple-600 bg-purple-50" };
+  const ICONS = { product: Package, service: Calendar, project: Briefcase, blog: BookOpen };
+  const COLORS = { product: "text-blue-600 bg-blue-50", service: "text-green-600 bg-green-50", project: "text-purple-600 bg-purple-50", blog: "text-amber-600 bg-amber-50" };
 
   const title = q
     ? lang === "bn" ? `"${q}" এর ফলাফল` : `Results for "${q}"`
@@ -106,7 +138,7 @@ function SearchResults() {
       <PageHero
         pageKey="search"
         title={title}
-        subtitle={q ? (lang === "bn" ? `${results.length}টি ফলাফল` : `${results.length} results found`) : (lang === "bn" ? "পণ্য ও সেবা খুঁজুন" : "Find products and services")}
+        subtitle={q ? (lang === "bn" ? `${results.length}টি ফলাফল` : `${results.length} results found`) : (lang === "bn" ? "পণ্য, সেবা, সফটওয়্যার ও ব্লগ খুঁজুন" : "Find products, services, software & blog")}
         breadcrumbs={[
           { label: lang === "bn" ? "হোম" : "Home", href: "/" },
           { label: lang === "bn" ? "খুঁজুন" : "Search" },

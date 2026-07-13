@@ -19,10 +19,10 @@ import { cacheApiResponse, productsCacheKey } from "@/lib/apiCache";
 
 const CATEGORIES: { value: string; label: { en: string; bn: string } }[] = [
   { value: "", label: { en: "All", bn: "সব" } },
-  { value: "accessories", label: { en: "Accessories", bn: "এক্সেসরিজ" } },
-  { value: "gadgets", label: { en: "Gadgets", bn: "গ্যাজেট" } },
+  { value: "accessories", label: { en: "Mobile Accessories", bn: "মোবাইল এক্সেসরিজ" } },
+  { value: "gadgets", label: { en: "Premium Gadgets", bn: "প্রিমিয়াম গ্যাজেট" } },
   { value: "electronics", label: { en: "Electronics", bn: "ইলেকট্রনিক্স" } },
-  { value: "computer", label: { en: "Computer", bn: "কম্পিউটার" } },
+  { value: "computer", label: { en: "Computer Accessories", bn: "কম্পিউটার এক্সেসরিজ" } },
 ];
 
 interface Props {
