@@ -14,7 +14,27 @@ import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
-const CATEGORIES = ["printing", "legal", "web_development", "ai_solutions", "automation", "software", "general"];
+// Business-aligned service categories shown first; legacy values are retained
+// so existing services keep displaying (and remain editable) without any data
+// migration. Values are the stored slugs; labels are what admins see.
+const CATEGORIES: { value: string; label: string }[] = [
+  { value: "digital_services", label: "Digital Services" },
+  { value: "print_documentation", label: "Print & Documentation" },
+  { value: "mobile_software", label: "Mobile Software Lab" },
+  { value: "computer_software", label: "Computer Software" },
+  { value: "business_software", label: "Business Software" },
+  { value: "ai_solutions", label: "AI Solutions" },
+  { value: "web_software", label: "Web & Software" },
+  { value: "automation", label: "Automation" },
+  { value: "printing", label: "Printing" },
+  { value: "legal", label: "Legal" },
+  { value: "web_development", label: "Web Development" },
+  { value: "software", label: "Software" },
+  { value: "general", label: "General" },
+];
+const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
+  CATEGORIES.map((c) => [c.value, c.label])
+);
 const PRICING_TYPES = ["fixed", "hourly", "package", "custom"] as const;
 
 const EMPTY_SERVICE: Partial<Service> = {
@@ -301,7 +321,7 @@ export default function AdminServicesPage() {
                     <p className="font-medium text-gray-900">{s.name_en}</p>
                     <p className="text-xs text-gray-400">{s.slug}</p>
                   </td>
-                  <td className="px-5 py-3 text-gray-600 capitalize hidden sm:table-cell">{(s.category ?? "").replace(/_/g, " ")}</td>
+                  <td className="px-5 py-3 text-gray-600 hidden sm:table-cell">{CATEGORY_LABELS[s.category ?? ""] ?? (s.category ?? "").replace(/_/g, " ")}</td>
                   <td className="px-5 py-3 hidden md:table-cell">
                     <p className="text-gray-600 capitalize text-sm">{s.pricing_type}</p>
                     {s.base_price != null && <p className="text-xs text-gray-400">{formatPrice(s.base_price)}</p>}
@@ -417,7 +437,7 @@ export default function AdminServicesPage() {
                   <div>
                     <label className="form-label">Category <span className="text-red-400">*</span></label>
                     <select value={editing.category ?? ""} onChange={f("category")} className="input w-full text-sm">
-                      {CATEGORIES.map(c => <option key={c} value={c}>{c.replace(/_/g, " ")}</option>)}
+                      {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                     </select>
                   </div>
                   <div>

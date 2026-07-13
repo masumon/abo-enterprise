@@ -25,19 +25,21 @@ const MOBILE_LINKS = [
 
 const MOBILE_PRODUCT_LINKS = [
   { href: "/products", label: { en: "All Products", bn: "সব পণ্য" } },
-  { href: "/products?category=accessories", label: { en: "Accessories", bn: "এক্সেসরিজ" } },
-  { href: "/products?category=gadgets", label: { en: "Gadgets", bn: "গ্যাজেট" } },
+  { href: "/products?category=accessories", label: { en: "Mobile Accessories", bn: "মোবাইল এক্সেসরিজ" } },
+  { href: "/products?category=gadgets", label: { en: "Premium Gadgets", bn: "প্রিমিয়াম গ্যাজেট" } },
   { href: "/products?category=electronics", label: { en: "Electronics", bn: "ইলেকট্রনিক্স" } },
+  { href: "/products?category=computer", label: { en: "Computer Accessories", bn: "কম্পিউটার এক্সেসরিজ" } },
   { href: "/profile/wishlist", label: { en: "Wishlist", bn: "উইশলিস্ট" } },
   { href: "/compare", label: { en: "Compare", bn: "তুলনা" } },
 ];
 
 const MOBILE_SERVICE_LINKS = [
   { href: "/services", label: { en: "All Services", bn: "সব সেবা" } },
-  { href: "/services/printing", label: { en: "Printing", bn: "প্রিন্টিং" } },
-  { href: "/services/legal", label: { en: "Legal", bn: "আইনি" } },
-  { href: "/services/software", label: { en: "Software", bn: "সফটওয়্যার" } },
-  { href: "/book", label: { en: "Book a Service", bn: "সেবা বুক করুন" } },
+  { href: "/services#digital-services", label: { en: "Digital Services", bn: "ডিজিটাল সেবা" } },
+  { href: "/services#software-lab", label: { en: "Software Lab", bn: "সফটওয়্যার ল্যাব" } },
+  { href: "/services#business-software", label: { en: "Business Software", bn: "বিজনেস সফটওয়্যার" } },
+  { href: "/services#ai-solutions", label: { en: "AI Solutions", bn: "AI সমাধান" } },
+  { href: "/contact", label: { en: "Support", bn: "সাপোর্ট" } },
 ];
 
 export default function Navbar() {

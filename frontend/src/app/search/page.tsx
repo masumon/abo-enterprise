@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Search, Package, Calendar, Briefcase, BookOpen } from "lucide-react";
@@ -90,11 +90,22 @@ function SearchResults() {
   const [results, setResults] = useState<Result[]>([]);
   const [loading, setLoading] = useState(false);
   const [fromCache, setFromCache] = useState(false);
+  // Core (product + service) and blog results are tracked separately so a slow
+  // blog request — e.g. a cold-starting free-tier backend — never delays the
+  // main results. Each resolves independently and is merged as it arrives.
+  const coreRef = useRef<Result[]>([]);
+  const blogRef = useRef<Result[]>([]);
 
   useEffect(() => {
-    if (!q.trim()) return;
+    if (!q.trim()) {
+      setResults([]);
+      return;
+    }
     setLoading(true);
     setFromCache(false);
+    coreRef.current = [];
+    blogRef.current = [];
+    let active = true;
 
     const searchParams = { search: q, per_page: 6 };
 
@@ -102,28 +113,42 @@ function SearchResults() {
       peekCachedProducts(searchParams),
       peekCachedServices(searchParams),
     ]).then(([prodCache, svcCache]) => {
+      if (!active) return;
       if (prodCache || svcCache) {
-        setResults(toResults(prodCache?.products ?? [], svcCache?.services ?? [], [], lang));
+        coreRef.current = toResults(prodCache?.products ?? [], svcCache?.services ?? [], [], lang);
+        setResults([...coreRef.current, ...blogRef.current]);
         setFromCache(true);
         setLoading(false);
       }
     });
 
+    // Products + services drive the visible results; blog is appended when it
+    // arrives so it can never block the core search on a slow backend.
     Promise.allSettled([
       loadProducts(searchParams),
       loadServices(searchParams),
-      searchBlog(q),
-    ]).then(([prod, svc, blog]) => {
+    ]).then(([prod, svc]) => {
+      if (!active) return;
       const products = prod.status === "fulfilled" ? prod.value.products : [];
       const services = svc.status === "fulfilled" ? svc.value.services : [];
-      const posts = blog.status === "fulfilled" ? blog.value : [];
-      setResults(toResults(products, services, posts, lang));
+      coreRef.current = toResults(products, services, [], lang);
+      setResults([...coreRef.current, ...blogRef.current]);
       setFromCache(
         (prod.status === "fulfilled" && prod.value.source === "cache") ||
         (svc.status === "fulfilled" && svc.value.source === "cache")
       );
       setLoading(false);
     });
+
+    searchBlog(q).then((posts) => {
+      if (!active || posts.length === 0) return;
+      blogRef.current = toResults([], [], posts, lang);
+      setResults([...coreRef.current, ...blogRef.current]);
+    });
+
+    return () => {
+      active = false;
+    };
   }, [q, lang]);
 
   const ICONS = { product: Package, service: Calendar, project: Briefcase, blog: BookOpen };

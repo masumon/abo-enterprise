@@ -54,12 +54,12 @@ export default function ServicesOverview() {
     <section id="services" className="py-16">
       <div className="container mx-auto px-4">
         <div className="section-title text-center mb-10">
-          <h2>{lang === "bn" ? "মূল সেবাসমূহ" : "Core Services"}</h2>
+          <h2>{lang === "bn" ? "ব্যবসার মূল সেবাসমূহ" : "Core Business Services"}</h2>
           <div className="section-divider" />
           <p className="text-gray-500 text-sm max-w-lg mx-auto">
             {lang === "bn"
-              ? "আমাদের প্রধান সেবা — প্রতিটি কার্ড আপনার ব্যবসার জন্য প্রাসঙ্গিক সমাধান।"
-              : "Our core services — each card shows a solution tailored to your business."}
+              ? "ডিজিটাল সেবা, সফটওয়্যার ল্যাব, বিজনেস সফটওয়্যার ও AI — ব্যবসার জন্য একীভূত সমাধান।"
+              : "Digital services, software lab, business software and AI — one integrated business platform."}
           </p>
         </div>
 

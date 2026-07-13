@@ -55,11 +55,11 @@ export default function MegaMenu({ onNavigate }: MegaMenuProps) {
       icon: ShoppingBag,
       columns: [
         {
-          title: lang === "bn" ? "কেনাকাটা" : "Shop",
+          title: lang === "bn" ? "প্রোডাক্ট ক্যাটাগরি" : "Product Categories",
           links: productCategories,
         },
         {
-          title: lang === "bn" ? "আরও" : "More",
+          title: lang === "bn" ? "একাউন্ট ও টুলস" : "Account & Tools",
           links: [
             { href: "/profile/wishlist", label: lang === "bn" ? "উইশলিস্ট" : "Wishlist", icon: Heart },
             { href: "/compare", label: lang === "bn" ? "তুলনা" : "Compare", icon: GitCompare },
