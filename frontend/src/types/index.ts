@@ -16,6 +16,8 @@ export interface Product {
   price: number;
   original_price?: number;
   category: ProductCategory;
+  category_id?: string | null;
+  subcategory_id?: string | null;
   badge?: string;
   image_url?: string;
   images?: string[];
@@ -166,6 +168,8 @@ export interface Service {
   image_url?: string;
   featured_image_url?: string;
   category?: string;
+  category_id?: string | null;
+  subcategory_id?: string | null;
   tags?: string[];
   sort_order?: number;
   lead_priority?: number;

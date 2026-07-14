@@ -6,10 +6,10 @@ import {
   Loader2, Briefcase, Plus, Pencil, Trash2, X,
   ToggleLeft, ToggleRight, Star, ChevronDown, ChevronUp,
 } from "lucide-react";
-import { servicesAdminApi } from "@/lib/api";
+import { servicesAdminApi, categoriesApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
-import type { Service, ServicePricingTier, ServiceBookingFormField } from "@/types";
+import type { Service, ServicePricingTier, ServiceBookingFormField, Category } from "@/types";
 import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -87,6 +87,7 @@ export default function AdminServicesPage() {
   const [deletingFieldId, setDeletingFieldId] = useState<string | null>(null);
   const toast = useToastStore((s) => s.push);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
+  const [taxonomy, setTaxonomy] = useState<Category[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -100,6 +101,15 @@ export default function AdminServicesPage() {
   }, [page]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Shared taxonomy (service-applicable) for the optional Category/Subcategory
+  // selectors. Non-fatal on failure — the form works without it.
+  useEffect(() => {
+    categoriesApi
+      .list({ applies_to: "service" })
+      .then((r) => setTaxonomy(r.data.data ?? []))
+      .catch(() => setTaxonomy([]));
+  }, []);
 
   const openNew = () => { setEditing({ ...EMPTY_SERVICE }); setIsNew(true); setTierFormOpen(false); setNewTier(EMPTY_TIER); setSeoOpen(false); setExtOpen(false); setFieldFormOpen(false); setNewField(EMPTY_FIELD); };
 
@@ -445,6 +455,40 @@ export default function AdminServicesPage() {
                     <input type="number" value={editing.sort_order ?? 0} onChange={fNum("sort_order")} className="input w-full" />
                   </div>
                 </div>
+
+                {taxonomy.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="form-label">Taxonomy Category <span className="text-gray-400 font-normal">(optional)</span></label>
+                      <select
+                        value={editing.category_id ?? ""}
+                        onChange={(e) =>
+                          setEditing((prev) => (prev ? { ...prev, category_id: e.target.value || null, subcategory_id: null } : prev))
+                        }
+                        className="input w-full text-sm"
+                      >
+                        <option value="">— None —</option>
+                        {taxonomy.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name_en}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label">Subcategory <span className="text-gray-400 font-normal">(optional)</span></label>
+                      <select
+                        value={editing.subcategory_id ?? ""}
+                        onChange={(e) => setEditing((prev) => (prev ? { ...prev, subcategory_id: e.target.value || null } : prev))}
+                        className="input w-full text-sm"
+                        disabled={!editing.category_id}
+                      >
+                        <option value="">— None —</option>
+                        {(taxonomy.find((c) => c.id === editing.category_id)?.subcategories ?? []).map((s) => (
+                          <option key={s.id} value={s.id}>{s.name_en}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <ImageUpload
