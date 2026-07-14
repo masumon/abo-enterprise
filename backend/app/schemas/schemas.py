@@ -115,6 +115,9 @@ class ProductUpdate(BaseModel):
 class ProductOut(ProductBase):
     id: uuid.UUID
     created_at: datetime
+    # Unified taxonomy links (additive; null until associated).
+    category_id: uuid.UUID | None = None
+    subcategory_id: uuid.UUID | None = None
 
     model_config = {"from_attributes": True}
 
@@ -544,6 +547,9 @@ class ServiceOut(ServiceBase):
     booking_forms: list[ServiceBookingFormOut] = []
     created_at: datetime
     updated_at: datetime
+    # Unified taxonomy links (additive; null until associated).
+    category_id: uuid.UUID | None = None
+    subcategory_id: uuid.UUID | None = None
 
     model_config = {"from_attributes": True}
 

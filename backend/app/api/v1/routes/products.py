@@ -15,6 +15,8 @@ router = APIRouter(prefix="/products", tags=["products"])
 async def list_products(
     request: Request,
     category: str | None = Query(None),
+    category_id: UUID | None = Query(None),
+    subcategory_id: UUID | None = Query(None),
     featured: bool | None = Query(None),
     search: str | None = Query(None),
     sort_by: str | None = Query(None),  # price_asc | price_desc | newest
@@ -25,6 +27,12 @@ async def list_products(
     conditions = [Product.is_active == True, Product.is_deleted == False]  # noqa: E712
     if category:
         conditions.append(Product.category == category)
+    # Additive taxonomy filters — used only when provided; the legacy string
+    # `category` filter above keeps working unchanged.
+    if category_id is not None:
+        conditions.append(Product.category_id == category_id)
+    if subcategory_id is not None:
+        conditions.append(Product.subcategory_id == subcategory_id)
     if featured is not None:
         conditions.append(Product.is_featured == featured)
     if search:
