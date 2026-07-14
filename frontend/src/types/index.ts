@@ -335,3 +335,37 @@ export interface DashboardStats {
   recent_orders: unknown[];
   recent_leads: unknown[];
 }
+
+// ---- Commerce taxonomy (Category -> Subcategory) ----
+export interface Subcategory {
+  id: string;
+  category_id: string;
+  slug: string;
+  name_en: string;
+  name_bn?: string | null;
+  description_en?: string | null;
+  description_bn?: string | null;
+  icon?: string | null;
+  image_url?: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Category {
+  id: string;
+  slug: string;
+  name_en: string;
+  name_bn?: string | null;
+  description_en?: string | null;
+  description_bn?: string | null;
+  icon?: string | null;
+  image_url?: string | null;
+  applies_to: string[];
+  sort_order: number;
+  is_active: boolean;
+  subcategories: Subcategory[];
+  created_at?: string;
+  updated_at?: string;
+}

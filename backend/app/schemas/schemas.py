@@ -1131,3 +1131,82 @@ class CareerApplicationResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ==================== COMMERCE TAXONOMY SCHEMAS ====================
+# Normalized Category -> Subcategory taxonomy shared by products & services.
+
+class SubcategoryBase(BaseModel):
+    slug: str
+    name_en: str
+    name_bn: str | None = None
+    description_en: str | None = None
+    description_bn: str | None = None
+    icon: str | None = None
+    image_url: str | None = None
+    sort_order: int = 0
+    is_active: bool = True
+
+
+class SubcategoryCreate(SubcategoryBase):
+    category_id: uuid.UUID
+
+
+class SubcategoryUpdate(BaseModel):
+    slug: str | None = None
+    name_en: str | None = None
+    name_bn: str | None = None
+    description_en: str | None = None
+    description_bn: str | None = None
+    icon: str | None = None
+    image_url: str | None = None
+    sort_order: int | None = None
+    is_active: bool | None = None
+
+
+class SubcategoryOut(SubcategoryBase):
+    id: uuid.UUID
+    category_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class CategoryBase(BaseModel):
+    slug: str
+    name_en: str
+    name_bn: str | None = None
+    description_en: str | None = None
+    description_bn: str | None = None
+    icon: str | None = None
+    image_url: str | None = None
+    applies_to: list[str] = []
+    sort_order: int = 0
+    is_active: bool = True
+
+
+class CategoryCreate(CategoryBase):
+    pass
+
+
+class CategoryUpdate(BaseModel):
+    slug: str | None = None
+    name_en: str | None = None
+    name_bn: str | None = None
+    description_en: str | None = None
+    description_bn: str | None = None
+    icon: str | None = None
+    image_url: str | None = None
+    applies_to: list[str] | None = None
+    sort_order: int | None = None
+    is_active: bool | None = None
+
+
+class CategoryOut(CategoryBase):
+    id: uuid.UUID
+    subcategories: list[SubcategoryOut] = []
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}

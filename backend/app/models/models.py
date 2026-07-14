@@ -39,6 +39,13 @@ class Product(Base):
     barcode: Mapped[str | None] = mapped_column(String(100))
     brand: Mapped[str | None] = mapped_column(String(100))
     sub_category: Mapped[str | None] = mapped_column(String(100))
+    # Unified taxonomy FKs (additive; `category`/`sub_category` strings kept as cache).
+    category_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), index=True
+    )
+    subcategory_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("subcategories.id", ondelete="SET NULL"), index=True
+    )
     tags: Mapped[list] = mapped_column(JSON, default=list)
     weight: Mapped[float | None] = mapped_column(Numeric(8, 3))
     warranty_info: Mapped[str | None] = mapped_column(Text)
@@ -209,6 +216,13 @@ class Service(Base):
     long_description_en: Mapped[str | None] = mapped_column(Text)
     long_description_bn: Mapped[str | None] = mapped_column(Text)
     category: Mapped[str] = mapped_column(String(50), nullable=False)
+    # Unified taxonomy FKs (additive; `category` string kept as cache).
+    category_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="SET NULL"), index=True
+    )
+    subcategory_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("subcategories.id", ondelete="SET NULL"), index=True
+    )
     icon_url: Mapped[str | None] = mapped_column(Text)
     featured_image_url: Mapped[str | None] = mapped_column(Text)
     icon_color: Mapped[str | None] = mapped_column(String(20))
@@ -687,3 +701,60 @@ class CareerApplication(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+# ---------------------------------------------------------------------------
+# Unified commerce taxonomy — normalized Category → Subcategory → Item.
+#
+# Additive layer over the existing denormalized string columns
+# (Product.category / Product.sub_category / Service.category). The string
+# columns are retained as a backward-compatible cache so every existing
+# query, filter and URL keeps working unchanged; these tables give a single
+# managed taxonomy shared by products and services.
+# ---------------------------------------------------------------------------
+class Category(Base):
+    __tablename__ = "categories"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    slug: Mapped[str] = mapped_column(String(120), unique=True, nullable=False, index=True)
+    name_en: Mapped[str] = mapped_column(String(255), nullable=False)
+    name_bn: Mapped[str | None] = mapped_column(String(255))
+    description_en: Mapped[str | None] = mapped_column(Text)
+    description_bn: Mapped[str | None] = mapped_column(Text)
+    icon: Mapped[str | None] = mapped_column(String(80))
+    image_url: Mapped[str | None] = mapped_column(Text)
+    # Which item kinds this category applies to, e.g. ["product"], ["service"]
+    # or both. JSON keeps it flexible without extra join tables.
+    applies_to: Mapped[list] = mapped_column(JSON, default=list)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    subcategories: Mapped[list["Subcategory"]] = relationship(
+        back_populates="category", cascade="all, delete-orphan"
+    )
+
+
+class Subcategory(Base):
+    __tablename__ = "subcategories"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    category_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="CASCADE"), index=True
+    )
+    slug: Mapped[str] = mapped_column(String(120), nullable=False, index=True)
+    name_en: Mapped[str] = mapped_column(String(255), nullable=False)
+    name_bn: Mapped[str | None] = mapped_column(String(255))
+    description_en: Mapped[str | None] = mapped_column(Text)
+    description_bn: Mapped[str | None] = mapped_column(Text)
+    icon: Mapped[str | None] = mapped_column(String(80))
+    image_url: Mapped[str | None] = mapped_column(Text)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    category: Mapped["Category"] = relationship(back_populates="subcategories")

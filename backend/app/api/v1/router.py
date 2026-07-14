@@ -25,6 +25,7 @@ from app.api.v1.routes import (
     coupons,
     career,
     media,
+    categories,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -54,3 +55,4 @@ api_router.include_router(customer_otp.router)
 api_router.include_router(coupons.router)
 api_router.include_router(career.router)
 api_router.include_router(media.router)
+api_router.include_router(categories.router)
