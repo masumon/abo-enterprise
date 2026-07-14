@@ -428,6 +428,15 @@ export default function AdminServicesPage() {
                     </div>
                     <span className="text-sm text-gray-700">Featured</span>
                   </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none" title="Also let customers buy/order this service like a product">
+                    <div className="relative">
+                      <input type="checkbox" className="sr-only" checked={!!editing.is_orderable}
+                        onChange={e => setEditing(prev => prev ? { ...prev, is_orderable: e.target.checked ? true : null } : prev)} />
+                      <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_orderable ? "bg-brand-500" : "bg-gray-300"}`} />
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_orderable ? "translate-x-5" : "translate-x-1"}`} />
+                    </div>
+                    <span className="text-sm text-gray-700">Also orderable</span>
+                  </label>
                 </div>
 
                 <div>

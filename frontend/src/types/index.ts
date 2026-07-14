@@ -18,6 +18,8 @@ export interface Product {
   category: ProductCategory;
   category_id?: string | null;
   subcategory_id?: string | null;
+  is_orderable?: boolean | null;
+  is_bookable?: boolean | null;
   badge?: string;
   image_url?: string;
   images?: string[];
@@ -170,6 +172,8 @@ export interface Service {
   category?: string;
   category_id?: string | null;
   subcategory_id?: string | null;
+  is_orderable?: boolean | null;
+  is_bookable?: boolean | null;
   tags?: string[];
   sort_order?: number;
   lead_priority?: number;
