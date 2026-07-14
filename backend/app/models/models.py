@@ -46,6 +46,10 @@ class Product(Base):
     subcategory_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("subcategories.id", ondelete="SET NULL"), index=True
     )
+    # Commerce capability overrides (NULL = infer from type; see core/capabilities.py).
+    # A product is orderable by default; set is_bookable=True to ALSO offer booking.
+    is_orderable: Mapped[bool | None] = mapped_column(Boolean)
+    is_bookable: Mapped[bool | None] = mapped_column(Boolean)
     tags: Mapped[list] = mapped_column(JSON, default=list)
     weight: Mapped[float | None] = mapped_column(Numeric(8, 3))
     warranty_info: Mapped[str | None] = mapped_column(Text)
@@ -223,6 +227,10 @@ class Service(Base):
     subcategory_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), ForeignKey("subcategories.id", ondelete="SET NULL"), index=True
     )
+    # Commerce capability overrides (NULL = infer from type; see core/capabilities.py).
+    # A service is bookable by default; set is_orderable=True to ALSO sell it like a product.
+    is_orderable: Mapped[bool | None] = mapped_column(Boolean)
+    is_bookable: Mapped[bool | None] = mapped_column(Boolean)
     icon_url: Mapped[str | None] = mapped_column(Text)
     featured_image_url: Mapped[str | None] = mapped_column(Text)
     icon_color: Mapped[str | None] = mapped_column(String(20))

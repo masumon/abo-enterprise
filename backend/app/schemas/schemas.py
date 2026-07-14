@@ -85,6 +85,8 @@ class ProductUpdate(BaseModel):
     category: str | None = None
     category_id: uuid.UUID | None = None
     subcategory_id: uuid.UUID | None = None
+    is_orderable: bool | None = None
+    is_bookable: bool | None = None
     stock_quantity: int | None = None
     is_active: bool | None = None
     is_featured: bool | None = None
@@ -120,6 +122,8 @@ class ProductOut(ProductBase):
     # Unified taxonomy links (additive; null until associated).
     category_id: uuid.UUID | None = None
     subcategory_id: uuid.UUID | None = None
+    is_orderable: bool | None = None
+    is_bookable: bool | None = None
 
     model_config = {"from_attributes": True}
 
@@ -520,6 +524,8 @@ class ServiceUpdate(BaseModel):
     category: str | None = None
     category_id: uuid.UUID | None = None
     subcategory_id: uuid.UUID | None = None
+    is_orderable: bool | None = None
+    is_bookable: bool | None = None
     pricing_type: str | None = None
     base_price: float | None = None
     min_price: float | None = None
@@ -554,6 +560,8 @@ class ServiceOut(ServiceBase):
     # Unified taxonomy links (additive; null until associated).
     category_id: uuid.UUID | None = None
     subcategory_id: uuid.UUID | None = None
+    is_orderable: bool | None = None
+    is_bookable: bool | None = None
 
     model_config = {"from_attributes": True}
 

@@ -68,6 +68,7 @@ const schema = z.object({
   flash_sale_ends_at: z.string().optional(),
   low_stock_threshold: z.coerce.number().min(0).optional(),
   is_best_seller: z.boolean().optional(),
+  is_bookable: z.boolean().optional(),
 }).refine(
   (d) => !d.original_price || d.original_price >= d.price,
   { message: "Original price must be ≥ sale price", path: ["original_price"] }
@@ -216,6 +217,7 @@ export default function AdminProductsPage() {
         : "",
       low_stock_threshold: p.low_stock_threshold ?? 5,
       is_best_seller: p.is_best_seller ?? false,
+      is_bookable: p.is_bookable ?? false,
     });
     setImageUrl(p.image_url ?? "");
     setGalleryImages(p.images ?? []);
@@ -260,12 +262,15 @@ export default function AdminProductsPage() {
   const onSubmit = async (data: FormData) => {
     setSaving(true);
     try {
-      const { tags: tagsStr, flash_sale_ends_at, category_id, subcategory_id, ...rest } = data;
+      const { tags: tagsStr, flash_sale_ends_at, category_id, subcategory_id, is_bookable, ...rest } = data;
       const payload: Partial<Product> = {
         ...rest,
         // Empty selector → null (clears the association); otherwise pass the id.
         category_id: category_id ? category_id : null,
         subcategory_id: subcategory_id ? subcategory_id : null,
+        // Cross-capability: checked → also bookable; unchecked → null (default,
+        // never sends false so the product's ordering is never disabled).
+        is_bookable: is_bookable ? true : null,
         tags: tagsStr ? tagsStr.split(",").map((t) => t.trim()).filter(Boolean) : [],
         images: galleryImages.filter(Boolean),
         specifications: Object.fromEntries(specs.filter((r) => r.k.trim()).map((r) => [r.k.trim(), r.v.trim()])),
@@ -693,6 +698,10 @@ export default function AdminProductsPage() {
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input {...register("is_featured")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
                   <span className="text-sm text-gray-700">Featured</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer" title="Also let customers book/request this item as a service">
+                  <input {...register("is_bookable")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
+                  <span className="text-sm text-gray-700">Also bookable</span>
                 </label>
               </div>
             </form>
