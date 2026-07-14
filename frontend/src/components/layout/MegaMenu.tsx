@@ -44,7 +44,7 @@ export default function MegaMenu({ onNavigate }: MegaMenuProps) {
     { href: "/services#software-lab", label: lang === "bn" ? "সফটওয়্যার ল্যাব" : "Software Lab", icon: Wrench },
     { href: "/services#business-software", label: lang === "bn" ? "বিজনেস সফটওয়্যার" : "Business Software", icon: Briefcase },
     { href: "/services#ai-solutions", label: lang === "bn" ? "AI সমাধান" : "AI Solutions", icon: Bot },
-    { href: "/contact", label: lang === "bn" ? "সাপোর্ট" : "Support", icon: Headphones },
+    { href: "/services#it-support", label: lang === "bn" ? "আইটি সাপোর্ট" : "IT Support", icon: Headphones },
   ];
 
   const menus = [

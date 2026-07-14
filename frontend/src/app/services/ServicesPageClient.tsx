@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Printer, Code2, Megaphone, Briefcase,
-  Bot, Cog, Smartphone, FileText, Wrench, Monitor, Globe,
+  Bot, Cog, Smartphone, FileText, Wrench, Monitor, Globe, Headphones,
 } from "lucide-react";
 import type { Service } from "@/types";
 import { useLanguageStore } from "@/store/language";
@@ -115,6 +115,19 @@ const SERVICE_GROUPS = [
       { en: "Custom Software", bn: "কাস্টম সফটওয়্যার" },
     ],
   },
+  {
+    anchor: "it-support",
+    icon: Headphones,
+    color: "bg-rose-600",
+    title: { en: "Business & IT Support", bn: "বিজনেস ও আইটি সাপোর্ট" },
+    items: [
+      { en: "Networking", bn: "নেটওয়ার্কিং" },
+      { en: "CCTV", bn: "CCTV" },
+      { en: "PC & Printer Servicing", bn: "পিসি ও প্রিন্টার সার্ভিসিং" },
+      { en: "Maintenance", bn: "রক্ষণাবেক্ষণ" },
+      { en: "AMC Support", bn: "AMC সাপোর্ট" },
+    ],
+  },
 ];
 
 interface Props {
@@ -214,8 +227,8 @@ export default function ServicesPageClient({
         pageKey="services"
         title={t({ en: "Our Services", bn: "আমাদের সেবা" })}
         subtitle={t({
-          en: "Digital services, mobile & computer software, business software, AI and web development — all under one roof.",
-          bn: "ডিজিটাল সেবা, মোবাইল ও কম্পিউটার সফটওয়্যার, বিজনেস সফটওয়্যার, AI ও ওয়েব ডেভেলপমেন্ট — সব এক ছাদের নিচে।",
+          en: "Digital services, mobile & computer software, business software, AI, web development and IT support — all under one roof.",
+          bn: "ডিজিটাল সেবা, মোবাইল ও কম্পিউটার সফটওয়্যার, বিজনেস সফটওয়্যার, AI, ওয়েব ডেভেলপমেন্ট ও আইটি সাপোর্ট — সব এক ছাদের নিচে।",
         })}
         breadcrumbs={[
           { label: lang === "bn" ? "হোম" : "Home", href: "/" },

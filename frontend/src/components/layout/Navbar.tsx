@@ -39,7 +39,7 @@ const MOBILE_SERVICE_LINKS = [
   { href: "/services#software-lab", label: { en: "Software Lab", bn: "সফটওয়্যার ল্যাব" } },
   { href: "/services#business-software", label: { en: "Business Software", bn: "বিজনেস সফটওয়্যার" } },
   { href: "/services#ai-solutions", label: { en: "AI Solutions", bn: "AI সমাধান" } },
-  { href: "/contact", label: { en: "Support", bn: "সাপোর্ট" } },
+  { href: "/services#it-support", label: { en: "IT Support", bn: "আইটি সাপোর্ট" } },
 ];
 
 export default function Navbar() {

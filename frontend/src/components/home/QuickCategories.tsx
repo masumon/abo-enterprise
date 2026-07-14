@@ -1,13 +1,13 @@
 "use client";
 import Link from "next/link";
 import {
-  Smartphone, FileText, Wrench, Briefcase, Bot, Globe,
+  Smartphone, FileText, Wrench, Briefcase, Bot, Globe, Headphones,
   type LucideIcon,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 
 /**
- * The six core business verticals ABO Enterprise offers — placed directly
+ * The seven core business verticals ABO Enterprise offers — placed directly
  * under the hero so a first-time visitor can identify (and tap into) each
  * within five seconds. Order and labels match the business brief.
  */
@@ -76,6 +76,15 @@ const VERTICALS: Vertical[] = [
     tint: "bg-sky-50/60 dark:bg-sky-900/20",
     iconWrap: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
   },
+  {
+    icon: Headphones,
+    label: { en: "IT Support", bn: "আইটি সাপোর্ট" },
+    desc: { en: "Networking · CCTV · Maintenance", bn: "নেটওয়ার্কিং · CCTV · রক্ষণাবেক্ষণ" },
+    href: "/services#it-support",
+    ring: "ring-rose-100 dark:ring-rose-800/40 hover:ring-rose-200",
+    tint: "bg-rose-50/60 dark:bg-rose-900/20",
+    iconWrap: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
+  },
 ];
 
 export default function QuickCategories() {
@@ -101,7 +110,7 @@ export default function QuickCategories() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 sm:gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 sm:gap-3">
           {VERTICALS.map((v) => {
             const Icon = v.icon;
             return (
