@@ -242,6 +242,7 @@ export default function AdminProductsPage() {
       stock_quantity: 0,
       is_active: false,
       is_featured: false,
+      is_bookable: p.is_bookable ?? false,
       image_url: p.image_url ?? "",
       seo_title: "", seo_description: "", seo_keywords: "", canonical_url: "", og_image: "",
       sku: "", barcode: "", brand: p.brand ?? "", sub_category: p.sub_category ?? "",

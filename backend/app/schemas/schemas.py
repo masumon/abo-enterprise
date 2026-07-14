@@ -72,7 +72,9 @@ class ProductBase(BaseModel):
 
 
 class ProductCreate(ProductBase):
-    pass
+    # Capability overrides can be set at creation too (additive; default NULL).
+    is_orderable: bool | None = None
+    is_bookable: bool | None = None
 
 
 class ProductUpdate(BaseModel):
@@ -509,7 +511,9 @@ class ServiceBase(BaseModel):
 
 
 class ServiceCreate(ServiceBase):
-    pass
+    # Capability overrides can be set at creation too (additive; default NULL).
+    is_orderable: bool | None = None
+    is_bookable: bool | None = None
 
 
 class ServiceUpdate(BaseModel):
