@@ -1,6 +1,6 @@
 import axios from "axios";
 import type { AxiosResponse } from "axios";
-import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier, BookingV2, LeadV2, Review, BlogPost, ServiceBookingFormField } from "@/types";
+import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier, BookingV2, LeadV2, Review, BlogPost, ServiceBookingFormField, Category, Subcategory } from "@/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { clearAdminToken, getAdminToken, isAdminProtectedPath } from "@/lib/adminAuth";
 import { getAdaptiveTimeout, getAdaptiveRetry } from "@/lib/networkAwareApi";
@@ -456,6 +456,37 @@ export const servicesAdminApi = {
 
   deleteFormField: (serviceId: string, fieldId: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/services/admin/services/${serviceId}/form-fields/${fieldId}`),
+};
+
+export const categoriesApi = {
+  /** Public taxonomy tree. `applies_to` filters to 'product' or 'service'. */
+  list: (params?: { applies_to?: "product" | "service"; include_inactive?: boolean }) =>
+    api.get<ApiResponse<Category[]>>("/api/v1/categories", { params }),
+
+  getBySlug: (slug: string) =>
+    api.get<ApiResponse<Category>>(`/api/v1/categories/${slug}`),
+};
+
+export const categoriesAdminApi = {
+  list: () => api.get<ApiResponse<Category[]>>("/api/v1/categories/admin/all"),
+
+  create: (data: Partial<Category>) =>
+    api.post<ApiResponse<Category>>("/api/v1/categories/admin", data),
+
+  update: (id: string, data: Partial<Category>) =>
+    api.put<ApiResponse<Category>>(`/api/v1/categories/admin/${id}`, data),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<{ id: string }>>(`/api/v1/categories/admin/${id}`),
+
+  createSub: (data: Partial<Subcategory> & { category_id: string }) =>
+    api.post<ApiResponse<Subcategory>>("/api/v1/categories/admin/subcategories", data),
+
+  updateSub: (id: string, data: Partial<Subcategory>) =>
+    api.put<ApiResponse<Subcategory>>(`/api/v1/categories/admin/subcategories/${id}`, data),
+
+  deleteSub: (id: string) =>
+    api.delete<ApiResponse<{ id: string }>>(`/api/v1/categories/admin/subcategories/${id}`),
 };
 
 export const adminApi = {

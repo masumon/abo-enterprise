@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
-import { productsApi } from "@/lib/api";
+import { productsApi, categoriesApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -14,7 +14,7 @@ import AdminToolbar from "@/components/admin/AdminToolbar";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useToastStore } from "@/store/toast";
-import type { Product } from "@/types";
+import type { Product, Category } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/lib/useFocusTrap";
@@ -41,6 +41,8 @@ const schema = z.object({
   price: z.coerce.number().min(1, "Required"),
   original_price: z.coerce.number().min(0).optional(),
   category: z.string().min(1, "Required"),
+  category_id: z.string().optional(),
+  subcategory_id: z.string().optional(),
   badge: z.string().optional(),
   stock_quantity: z.coerce.number().min(0),
   is_active: z.boolean(),
@@ -115,6 +117,7 @@ export default function AdminProductsPage() {
   const [imageUrl, setImageUrl] = useState("");
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [specs, setSpecs] = useState<{ k: string; v: string }[]>([]);
+  const [taxonomy, setTaxonomy] = useState<Category[]>([]);
   const [searchInput, setSearchInput] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalRef = useFocusTrap(showModal);
@@ -125,6 +128,8 @@ export default function AdminProductsPage() {
   });
 
   const currentImage = watch("image_url");
+  const selectedTaxCat = watch("category_id");
+  const taxSubcategories = taxonomy.find((c) => c.id === selectedTaxCat)?.subcategories ?? [];
 
   const load = async (pageNum = page, search?: string) => {
     setLoading(true);
@@ -141,6 +146,16 @@ export default function AdminProductsPage() {
   };
 
   useEffect(() => { load(page); }, [page]);
+
+  // Load the shared taxonomy once (product-applicable categories) for the
+  // optional Category/Subcategory selectors. Failure is non-fatal — the form
+  // works without it, so existing behaviour is preserved.
+  useEffect(() => {
+    categoriesApi
+      .list({ applies_to: "product" })
+      .then((r) => setTaxonomy(r.data.data ?? []))
+      .catch(() => setTaxonomy([]));
+  }, []);
 
   const handleSearchChange = (v: string) => {
     setSearchInput(v);
@@ -174,6 +189,8 @@ export default function AdminProductsPage() {
       price: p.price,
       original_price: p.original_price ?? undefined,
       category: p.category,
+      category_id: p.category_id ?? "",
+      subcategory_id: p.subcategory_id ?? "",
       badge: p.badge ?? "",
       stock_quantity: p.stock_quantity,
       is_active: p.is_active,
@@ -243,9 +260,12 @@ export default function AdminProductsPage() {
   const onSubmit = async (data: FormData) => {
     setSaving(true);
     try {
-      const { tags: tagsStr, flash_sale_ends_at, ...rest } = data;
+      const { tags: tagsStr, flash_sale_ends_at, category_id, subcategory_id, ...rest } = data;
       const payload: Partial<Product> = {
         ...rest,
+        // Empty selector → null (clears the association); otherwise pass the id.
+        category_id: category_id ? category_id : null,
+        subcategory_id: subcategory_id ? subcategory_id : null,
         tags: tagsStr ? tagsStr.split(",").map((t) => t.trim()).filter(Boolean) : [],
         images: galleryImages.filter(Boolean),
         specifications: Object.fromEntries(specs.filter((r) => r.k.trim()).map((r) => [r.k.trim(), r.v.trim()])),
@@ -449,6 +469,36 @@ export default function AdminProductsPage() {
                   </select>
                   {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
                 </div>
+                {taxonomy.length > 0 && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Taxonomy Category <span className="text-gray-400 font-normal">(optional)</span>
+                      </label>
+                      <select
+                        {...register("category_id")}
+                        className="input"
+                        onChange={(e) => { setValue("category_id", e.target.value); setValue("subcategory_id", ""); }}
+                      >
+                        <option value="">— None —</option>
+                        {taxonomy.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name_en}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Subcategory <span className="text-gray-400 font-normal">(optional)</span>
+                      </label>
+                      <select {...register("subcategory_id")} className="input" disabled={!selectedTaxCat}>
+                        <option value="">— None —</option>
+                        {taxSubcategories.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name_en}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Name (English)</label>
                   <input {...register("name_en")} className={cn("input", errors.name_en && "input-error")} placeholder="Phone Case" />

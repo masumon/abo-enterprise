@@ -31,6 +31,8 @@ async def list_services(
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=100),
     category: str | None = None,
+    category_id: uuid.UUID | None = None,
+    subcategory_id: uuid.UUID | None = None,
     featured: bool | None = None,
     search: str | None = None,
 ) -> Response:
@@ -41,6 +43,11 @@ async def list_services(
     ]
     if category:
         conditions.append(Service.category == category)
+    # Additive taxonomy filters — legacy string `category` above still works.
+    if category_id is not None:
+        conditions.append(Service.category_id == category_id)
+    if subcategory_id is not None:
+        conditions.append(Service.subcategory_id == subcategory_id)
     if featured is not None:
         conditions.append(Service.is_featured == featured)
     if search:

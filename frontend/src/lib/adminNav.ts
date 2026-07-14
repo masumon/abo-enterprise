@@ -19,6 +19,7 @@ import {
   Send,
   UserPlus,
   Percent,
+  FolderTree,
   ExternalLink,
   type LucideIcon,
 } from "lucide-react";
@@ -95,6 +96,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Catalog",
     labelBn: "ক্যাটালগ",
     items: [
+      { href: "/admin/categories", icon: FolderTree, label: "Categories", labelBn: "ক্যাটাগরি", minRole: "admin" },
       { href: "/admin/products", icon: Package, label: "Products", labelBn: "পণ্য" },
       { href: "/admin/services", icon: Wrench, label: "Services", labelBn: "সেবা" },
       { href: "/admin/reviews", icon: Star, label: "Reviews", labelBn: "রিভিউ" },
