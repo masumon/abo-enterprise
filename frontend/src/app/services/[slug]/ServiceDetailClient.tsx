@@ -130,6 +130,17 @@ export default function ServiceDetailClient({ service }: Props) {
             {t("Book Now", "বুকিং করুন")}
             <ArrowRight className="w-5 h-5" />
           </Link>
+          {/* Cross-capability: a service an admin marked "Also orderable" can be
+              purchased at its fixed price via the same booking flow. */}
+          {service.is_orderable && (
+            <Link
+              href={`/book?service=${service.slug}&mode=order`}
+              className="btn btn-md bg-white text-brand-700 hover:bg-brand-50 font-bold gap-2"
+            >
+              {t("Order Now", "এখনই অর্ডার করুন")}
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          )}
         </div>
       </PageHero>
 
