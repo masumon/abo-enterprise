@@ -83,6 +83,8 @@ class ProductUpdate(BaseModel):
     price: float | None = None
     original_price: float | None = None
     category: str | None = None
+    category_id: uuid.UUID | None = None
+    subcategory_id: uuid.UUID | None = None
     stock_quantity: int | None = None
     is_active: bool | None = None
     is_featured: bool | None = None
@@ -516,6 +518,8 @@ class ServiceUpdate(BaseModel):
     long_description_en: str | None = None
     long_description_bn: str | None = None
     category: str | None = None
+    category_id: uuid.UUID | None = None
+    subcategory_id: uuid.UUID | None = None
     pricing_type: str | None = None
     base_price: float | None = None
     min_price: float | None = None
