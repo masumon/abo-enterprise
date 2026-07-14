@@ -214,6 +214,19 @@ export default function ProductDetailClient({ product }: Props) {
                   <Zap className="w-5 h-5" aria-hidden />
                   {t("buy_now")}
                 </button>
+                {/* Cross-capability: a product an admin marked "Also bookable"
+                    offers a service/installation request via WhatsApp (no live
+                    checkout or payment path is touched). */}
+                {product.is_bookable && (
+                  <a
+                    href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lang === "bn" ? `আমি "${product.name_bn || product.name_en}" এর জন্য একটি সেবা/ইনস্টলেশন বুক করতে চাই।` : `I'd like to book a service/installation for "${product.name_en}".`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-outline btn-md w-full gap-2"
+                  >
+                    {lang === "bn" ? "সেবা / ইনস্টলেশন বুক করুন" : "Book a service / installation"}
+                  </a>
+                )}
                 <p className="text-center text-xs text-gray-400">{lang === "bn" ? "অ্যাকাউন্ট ছাড়াই অর্ডার — গেস্ট চেকআউট" : "No account needed — guest checkout"}</p>
                 <p className="text-center text-xs text-muted mt-2">
                   <Link href="/legal/refund" className="text-brand-600 hover:underline">
