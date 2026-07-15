@@ -20,6 +20,8 @@ export interface Product {
   subcategory_id?: string | null;
   is_orderable?: boolean | null;
   is_bookable?: boolean | null;
+  /** Computed by the API (single source: core/capabilities.py): e.g. ["orderable","bookable"]. */
+  capabilities?: string[];
   badge?: string;
   image_url?: string;
   images?: string[];
@@ -174,6 +176,8 @@ export interface Service {
   subcategory_id?: string | null;
   is_orderable?: boolean | null;
   is_bookable?: boolean | null;
+  /** Computed by the API (single source: core/capabilities.py): e.g. ["bookable","orderable"]. */
+  capabilities?: string[];
   tags?: string[];
   sort_order?: number;
   lead_priority?: number;

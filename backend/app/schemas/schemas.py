@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Any
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, computed_field, field_validator
 import re
 
 
@@ -128,6 +128,13 @@ class ProductOut(ProductBase):
     is_bookable: bool | None = None
 
     model_config = {"from_attributes": True}
+
+    @computed_field
+    @property
+    def capabilities(self) -> list[str]:
+        """What the customer can do with this product (single source: core/capabilities.py)."""
+        from app.core.capabilities import capabilities_for
+        return sorted(c.value for c in capabilities_for("product", self.is_orderable, self.is_bookable))
 
     @field_validator("images", mode="before")
     @classmethod
@@ -568,6 +575,13 @@ class ServiceOut(ServiceBase):
     is_bookable: bool | None = None
 
     model_config = {"from_attributes": True}
+
+    @computed_field
+    @property
+    def capabilities(self) -> list[str]:
+        """What the customer can do with this service (single source: core/capabilities.py)."""
+        from app.core.capabilities import capabilities_for
+        return sorted(c.value for c in capabilities_for("service", self.is_orderable, self.is_bookable))
 
 
 # ==================== BOOKING V2 SCHEMAS ====================
