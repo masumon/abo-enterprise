@@ -235,6 +235,10 @@ class Service(Base):
     featured_image_url: Mapped[str | None] = mapped_column(Text)
     icon_color: Mapped[str | None] = mapped_column(String(20))
     pricing_type: Mapped[str] = mapped_column(String(20), nullable=False)  # fixed|hourly|package|custom_quote
+    # CTA override (NULL = infer from pricing_type/capabilities; see schemas.resolve_service_cta).
+    cta_type: Mapped[str | None] = mapped_column(String(20))  # book|order|quote|contact
+    cta_label_en: Mapped[str | None] = mapped_column(String(120))
+    cta_label_bn: Mapped[str | None] = mapped_column(String(120))
     base_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
     min_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
     max_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
@@ -329,6 +333,8 @@ class BookingV2(Base):
     hours_worked: Mapped[float | None] = mapped_column(Numeric(5, 2))
     details: Mapped[str | None] = mapped_column(Text)
     requirements: Mapped[str | None] = mapped_column(Text)
+    # Answers to the service's dynamic booking form (service_booking_forms).
+    form_data: Mapped[dict] = mapped_column(JSON, default=dict)
     attachments: Mapped[list] = mapped_column(JSON, default=list)
     status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
     payment_status: Mapped[str] = mapped_column(String(20), default="pending")

@@ -14,9 +14,15 @@ from app.core.email import (
     customer_booking_confirmation_html,
 )
 from app.core.invoice import InvoiceService
+from app.core.booking_form import (
+    BookingFormValidationError,
+    summarize_form_data,
+    validate_form_data,
+)
 from app.models.models import (
     BookingV2,
     Service,
+    ServiceBookingForm,
     ActivityLog,
     AdminUser,
     Invoice,
@@ -61,6 +67,27 @@ async def create_booking(
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
 
+    # ---- Dynamic booking form validation (admin-defined fields) ----
+    # Validates the submitted form_data against the service's active
+    # service_booking_forms config; unknown keys / bad values are rejected.
+    fields_result = await db.execute(
+        select(ServiceBookingForm).where(
+            and_(
+                ServiceBookingForm.service_id == service.id,
+                ServiceBookingForm.is_deleted == False,  # noqa: E712
+                ServiceBookingForm.is_active == True,  # noqa: E712
+            )
+        )
+    )
+    form_fields = fields_result.scalars().all()
+    try:
+        cleaned_form_data = validate_form_data(form_fields, payload.form_data)
+    except BookingFormValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "Invalid booking form data", "errors": exc.errors},
+        )
+
     # ---- Server-authoritative price (never trust the client quoted_price) ----
     # Resolve from the selected tier, else the service base price. Mirrors the
     # booking form's own resolution but sourced from trusted DB rows.
@@ -84,6 +111,7 @@ async def create_booking(
 
     booking_fields = payload.model_dump()
     booking_fields["quoted_price"] = trusted_price
+    booking_fields["form_data"] = cleaned_form_data
 
     booking = BookingV2(
         booking_number=booking_number,
@@ -98,12 +126,15 @@ async def create_booking(
     from app.core.email_config import resolve_notify_email
     _notify_to = await resolve_notify_email(db)
     if _notify_to:
+        # Include the dynamic form answers in the admin notification.
+        form_summary = summarize_form_data(form_fields, cleaned_form_data)
+        details_with_form = "\n\n".join(x for x in (payload.details, form_summary) if x)
         html = booking_notification_html(
             booking.booking_number,
             payload.customer_name,
             payload.customer_phone,
             service.name_en,
-            payload.details or "",
+            details_with_form,
         )
         background_tasks.add_task(
             send_email,
