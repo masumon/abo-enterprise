@@ -35,35 +35,50 @@ def _is_service(entity: Any) -> bool:
     return entity.__class__.__name__ == "Service" or getattr(entity, "__tablename__", None) == "services"
 
 
-def get_capabilities(entity: Any) -> set[Capability]:
-    """Infer the set of capabilities for a commerce entity instance.
+def capabilities_for(
+    kind: str,
+    is_orderable: bool | None,
+    is_bookable: bool | None,
+) -> set[Capability]:
+    """Single source of the capability rule, working on plain flags.
 
-    Inference is based on fields that already exist on the model:
-    - a sellable product (has a numeric ``price``) is ORDERABLE;
-    - a service (has a ``pricing_type``) is BOOKABLE.
+    ``kind`` is ``"product"`` or ``"service"``. Rule:
+    - an explicit ``True`` override always grants the capability;
+    - otherwise a product is ORDERABLE by default and a service is BOOKABLE by
+      default (``None`` = infer from kind);
+    - an explicit ``False`` disables the inferred capability.
 
-    Explicit per-entity overrides are honoured first via optional columns
-    (``is_orderable`` / ``is_bookable``) if a future migration adds them, so
-    admins can flip capability without code changes. Absent those columns the
-    rule falls back to structural inference.
+    Both the ORM helper below and the API schemas call this, so the rule lives
+    in exactly one place.
     """
     caps: set[Capability] = set()
 
-    explicit_orderable = getattr(entity, "is_orderable", None)
-    explicit_bookable = getattr(entity, "is_bookable", None)
-
-    if explicit_orderable is True:
+    if is_orderable is True or (is_orderable is None and kind == "product"):
         caps.add(Capability.ORDERABLE)
-    if explicit_bookable is True:
-        caps.add(Capability.BOOKABLE)
-
-    # Structural inference (only when not explicitly overridden).
-    if explicit_orderable is None and _is_product(entity) and getattr(entity, "price", None) is not None:
-        caps.add(Capability.ORDERABLE)
-    if explicit_bookable is None and _is_service(entity) and getattr(entity, "pricing_type", None):
+    if is_bookable is True or (is_bookable is None and kind == "service"):
         caps.add(Capability.BOOKABLE)
 
     return caps
+
+
+def get_capabilities(entity: Any) -> set[Capability]:
+    """Infer the set of capabilities for a commerce entity ORM instance.
+
+    Delegates the rule to :func:`capabilities_for`; this wrapper only resolves
+    the entity ``kind`` and reads the optional override columns.
+    """
+    if _is_product(entity):
+        kind = "product"
+    elif _is_service(entity):
+        kind = "service"
+    else:
+        return set()
+
+    return capabilities_for(
+        kind,
+        getattr(entity, "is_orderable", None),
+        getattr(entity, "is_bookable", None),
+    )
 
 
 def is_orderable(entity: Any) -> bool:

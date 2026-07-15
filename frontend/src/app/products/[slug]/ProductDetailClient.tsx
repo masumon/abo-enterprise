@@ -18,6 +18,7 @@ import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
 import { formatPrice, discountPercent, cn, WHATSAPP_NUMBER } from "@/lib/utils";
 import ImageZoom from "@/components/ui/ImageZoom";
+import ProductBookingModal from "@/components/products/ProductBookingModal";
 import ProductCard from "@/components/features/ProductCard";
 import ProductFAQ from "@/components/features/ProductFAQ";
 import ProductReviews from "@/components/features/ProductReviews";
@@ -36,6 +37,9 @@ export default function ProductDetailClient({ product }: Props) {
   const [reviewCount, setReviewCount] = useState(product.review_count ?? 0);
   const [avgRating, setAvgRating] = useState(product.rating ?? 4.5);
   const [showStickyBar, setShowStickyBar] = useState(false);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  // Single source: the API-computed capabilities array, with a flag fallback.
+  const canBook = product.capabilities?.includes("bookable") ?? !!product.is_bookable;
   const buySectionRef = useRef<HTMLDivElement>(null);
   const { addItem, openCart } = useCartStore();
   const { toggle: toggleWish, has: wished } = useWishlistStore();
@@ -215,17 +219,16 @@ export default function ProductDetailClient({ product }: Props) {
                   {t("buy_now")}
                 </button>
                 {/* Cross-capability: a product an admin marked "Also bookable"
-                    offers a service/installation request via WhatsApp (no live
-                    checkout or payment path is touched). */}
-                {product.is_bookable && (
-                  <a
-                    href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lang === "bn" ? `আমি "${product.name_bn || product.name_en}" এর জন্য একটি সেবা/ইনস্টলেশন বুক করতে চাই।` : `I'd like to book a service/installation for "${product.name_en}".`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    opens a real booking request tracked in Admin → Bookings
+                    (reuses the v1 bookings API — no cart/checkout/payment). */}
+                {canBook && (
+                  <button
+                    type="button"
+                    onClick={() => setBookingOpen(true)}
                     className="btn btn-outline btn-md w-full gap-2"
                   >
                     {lang === "bn" ? "সেবা / ইনস্টলেশন বুক করুন" : "Book a service / installation"}
-                  </a>
+                  </button>
                 )}
                 <p className="text-center text-xs text-gray-400">{lang === "bn" ? "অ্যাকাউন্ট ছাড়াই অর্ডার — গেস্ট চেকআউট" : "No account needed — guest checkout"}</p>
                 <p className="text-center text-xs text-muted mt-2">
@@ -259,6 +262,10 @@ export default function ProductDetailClient({ product }: Props) {
           <button type="button" onClick={handleAdd} className="btn btn-outline btn-sm flex-shrink-0">{t("add_to_cart")}</button>
           <button type="button" onClick={handleBuyNow} className="btn btn-primary btn-sm flex-shrink-0">{t("buy_now")}</button>
         </div>
+      )}
+
+      {canBook && (
+        <ProductBookingModal product={product} open={bookingOpen} onClose={() => setBookingOpen(false)} />
       )}
     </main>
   );
