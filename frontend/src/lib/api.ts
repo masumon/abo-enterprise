@@ -15,10 +15,12 @@ const api = axios.create({
   // Default fallback timeout — overridden per-request in the interceptor below
   // so that network-quality changes (e.g. WiFi → mobile data) are always reflected.
   timeout: 30000,
-  // Send the API's HttpOnly admin session cookie on same-site requests
-  // (www.aboenterprise.com -> api.aboenterprise.com). Harmless for public
-  // calls; backend CORS already allows credentials with explicit origins.
-  withCredentials: true,
+  // withCredentials deliberately stays OFF by default: some BD mobile-carrier
+  // proxies (GP/Robi/Banglalink) strip Access-Control-Allow-Credentials from
+  // responses, making the browser reject every credentialed API call on
+  // cellular data. Public pages never need cookies. The request interceptor
+  // below turns credentials on ONLY under /admin, where the HttpOnly
+  // cookie-session (see admin/login) requires them.
 });
 
 type RetryConfig = { __retryCount?: number; maxRetries?: number } & NonNullable<Parameters<typeof api.request>[0]>;
@@ -30,6 +32,13 @@ api.interceptors.request.use((config) => {
   // 30 000 ms on fast WiFi — call it here so changes in network type are honoured.
   if (!config.timeout || config.timeout === 30000) {
     config.timeout = getAdaptiveTimeout(30000);
+  }
+  // Admin panel only (including /admin/login, so the login response's
+  // Set-Cookie and the cookie-session probe work): send the HttpOnly
+  // session cookie. Everywhere else requests stay credential-less so
+  // carrier proxies that strip ACA-Credentials can't break the site.
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
+    config.withCredentials = true;
   }
   const token = getAdminToken();
   // Don't clobber an explicit per-request token (e.g. the customer OTP token)
