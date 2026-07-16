@@ -161,24 +161,30 @@ export default function ContactPage() {
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="form-label">{t("contact_name")} *</label>
-                      <input {...register("name")} className={cn("input", errors.name && "input-error")} />
-                      {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
+                      <label htmlFor="contact-name" className="form-label">{t("contact_name")} *</label>
+                      <input id="contact-name" {...register("name")} className={cn("input", errors.name && "input-error")}
+                        aria-invalid={errors.name ? true : undefined}
+                        aria-describedby={errors.name ? "contact-name-error" : undefined} />
+                      {errors.name && <p id="contact-name-error" className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
                     </div>
                     <div>
-                      <label className="form-label">{t("contact_phone")} *</label>
-                      <input {...register("phone")} className={cn("input", errors.phone && "input-error")} placeholder="01XXXXXXXXX" />
-                      {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
+                      <label htmlFor="contact-phone" className="form-label">{t("contact_phone")} *</label>
+                      <input id="contact-phone" {...register("phone")} type="tel" className={cn("input", errors.phone && "input-error")} placeholder="01XXXXXXXXX"
+                        aria-invalid={errors.phone ? true : undefined}
+                        aria-describedby={errors.phone ? "contact-phone-error" : undefined} />
+                      {errors.phone && <p id="contact-phone-error" className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
                     </div>
                   </div>
                   <div>
-                    <label className="form-label">{t("contact_email")}</label>
-                    <input {...register("email")} type="email" className="input" />
+                    <label htmlFor="contact-email" className="form-label">{t("contact_email")}</label>
+                    <input id="contact-email" {...register("email")} type="email" className="input" />
                   </div>
                   <div>
-                    <label className="form-label">{t("contact_message")} *</label>
-                    <textarea {...register("project_description")} rows={5} className={cn("input resize-none", errors.project_description && "input-error")} />
-                    {errors.project_description && <p className="text-red-500 text-xs mt-1">{errors.project_description.message}</p>}
+                    <label htmlFor="contact-message" className="form-label">{t("contact_message")} *</label>
+                    <textarea id="contact-message" {...register("project_description")} rows={5} className={cn("input resize-none", errors.project_description && "input-error")}
+                      aria-invalid={errors.project_description ? true : undefined}
+                      aria-describedby={errors.project_description ? "contact-message-error" : undefined} />
+                    {errors.project_description && <p id="contact-message-error" className="text-red-500 text-xs mt-1">{errors.project_description.message}</p>}
                   </div>
                   <button type="submit" disabled={loading} className="btn btn-brand btn-md w-full btn-ripple">
                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

@@ -166,45 +166,58 @@ export default function SoftwarePage() {
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="form-label">
+                    <label htmlFor="sw-name" className="form-label">
                       {lang === "bn" ? "নাম *" : "Name *"}
                     </label>
-                    <input {...register("name")} className={cn("input", errors.name && "input-error")}
-                      placeholder={lang === "bn" ? "আপনার নাম" : "Your name"} />
+                    <input id="sw-name" {...register("name")} className={cn("input", errors.name && "input-error")}
+                      placeholder={lang === "bn" ? "আপনার নাম" : "Your name"}
+                      aria-invalid={errors.name ? true : undefined}
+                      aria-describedby={errors.name ? "sw-name-error" : undefined} />
+                    {errors.name && (
+                      <p id="sw-name-error" className="text-red-500 text-xs mt-1">
+                        {lang === "bn" ? "কমপক্ষে ২ অক্ষরের নাম দিন" : "Please enter your name"}
+                      </p>
+                    )}
                   </div>
                   <div>
-                    <label className="form-label">
+                    <label htmlFor="sw-company" className="form-label">
                       {lang === "bn" ? "কোম্পানি" : "Company"}
                     </label>
-                    <input {...register("company")} className="input"
+                    <input id="sw-company" {...register("company")} className="input"
                       placeholder={lang === "bn" ? "কোম্পানির নাম" : "Company name"} />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="form-label">
+                    <label htmlFor="sw-phone" className="form-label">
                       {lang === "bn" ? "মোবাইল *" : "Mobile *"}
                     </label>
-                    <input {...register("phone")} type="tel" className={cn("input", errors.phone && "input-error")}
-                      placeholder="01XXXXXXXXX" />
-                    {errors.phone && <p className="text-red-500 text-xs mt-1">সঠিক নম্বর দিন</p>}
+                    <input id="sw-phone" {...register("phone")} type="tel" className={cn("input", errors.phone && "input-error")}
+                      placeholder="01XXXXXXXXX"
+                      aria-invalid={errors.phone ? true : undefined}
+                      aria-describedby={errors.phone ? "sw-phone-error" : undefined} />
+                    {errors.phone && (
+                      <p id="sw-phone-error" className="text-red-500 text-xs mt-1">
+                        {lang === "bn" ? "সঠিক নম্বর দিন" : "Enter a valid Bangladesh number"}
+                      </p>
+                    )}
                   </div>
                   <div>
-                    <label className="form-label">
+                    <label htmlFor="sw-email" className="form-label">
                       Email
                     </label>
-                    <input {...register("email")} type="email" className="input"
+                    <input id="sw-email" {...register("email")} type="email" className="input"
                       placeholder="email@example.com" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="form-label">
+                    <label htmlFor="sw-lead-type" className="form-label">
                       {lang === "bn" ? "সেবার ধরন *" : "Service Type *"}
                     </label>
-                    <select {...register("lead_type")} className="input">
+                    <select id="sw-lead-type" {...register("lead_type")} className="input">
                       <option value="software_development">{lang === "bn" ? "কাস্টম সফটওয়্যার" : "Custom Software"}</option>
                       <option value="ai_solutions">{lang === "bn" ? "AI সমাধান" : "AI Solutions"}</option>
                       <option value="automation">{lang === "bn" ? "অটোমেশন" : "Automation"}</option>
@@ -213,10 +226,10 @@ export default function SoftwarePage() {
                     </select>
                   </div>
                   <div>
-                    <label className="form-label">
+                    <label htmlFor="sw-budget" className="form-label">
                       {lang === "bn" ? "বাজেট" : "Budget Range"}
                     </label>
-                    <select {...register("budget_range")} className="input">
+                    <select id="sw-budget" {...register("budget_range")} className="input">
                       <option value="">{lang === "bn" ? "বাজেট বেছে নিন" : "Select budget"}</option>
                       {BUDGET_OPTIONS.map((b) => (
                         <option key={b.value} value={b.value}>
@@ -228,13 +241,15 @@ export default function SoftwarePage() {
                 </div>
 
                 <div>
-                  <label className="form-label">
+                  <label htmlFor="sw-description" className="form-label">
                     {lang === "bn" ? "প্রজেক্টের বিবরণ *" : "Project Description *"}
                   </label>
-                  <textarea {...register("project_description")} rows={4} className={cn("input resize-none", errors.project_description && "input-error")}
-                    placeholder={lang === "bn" ? "আপনার প্রজেক্ট সম্পর্কে বিস্তারিত লিখুন..." : "Describe your project in detail..."} />
+                  <textarea id="sw-description" {...register("project_description")} rows={4} className={cn("input resize-none", errors.project_description && "input-error")}
+                    placeholder={lang === "bn" ? "আপনার প্রজেক্ট সম্পর্কে বিস্তারিত লিখুন..." : "Describe your project in detail..."}
+                    aria-invalid={errors.project_description ? true : undefined}
+                    aria-describedby={errors.project_description ? "sw-description-error" : undefined} />
                   {errors.project_description && (
-                    <p className="text-red-500 text-xs mt-1">{lang === "bn" ? "কমপক্ষে ২০ অক্ষর লিখুন" : "Please provide more details"}</p>
+                    <p id="sw-description-error" className="text-red-500 text-xs mt-1">{lang === "bn" ? "কমপক্ষে ২০ অক্ষর লিখুন" : "Please provide more details"}</p>
                   )}
                 </div>
 
