@@ -12,7 +12,8 @@ import { useLanguageStore } from "@/store/language";
 interface BookPageClientProps {
   serviceSlug?: string;
   tierId?: string;
-  /** "order" when the visitor came from an orderable service's "Order Now" CTA. */
+  /** "order" from an orderable service's "Order Now" CTA; "quote" from a
+      custom-quote service's "Request Quote" CTA. */
   mode?: string;
 }
 
@@ -26,7 +27,6 @@ function normalizeServiceSlug(raw?: string): string {
 
 export default function BookPageClient({ serviceSlug, tierId, mode }: BookPageClientProps) {
   const { lang } = useLanguageStore();
-  const isOrder = mode === "order";
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,6 +62,13 @@ export default function BookPageClient({ serviceSlug, tierId, mode }: BookPageCl
     };
   }, [normalizedSlug, lang]);
 
+  // The URL param wins when present (deep link intent); otherwise the mode is
+  // derived from the service's own API-computed CTA, so a stale bookmark or a
+  // link minted before an admin changed the CTA still shows consistent copy.
+  const ctaType = service?.cta?.type;
+  const isOrder = mode === "order" || (!mode && ctaType === "order");
+  const isQuote = mode === "quote" || (!mode && ctaType === "quote");
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -89,7 +96,9 @@ export default function BookPageClient({ serviceSlug, tierId, mode }: BookPageCl
         <h1 className="text-2xl font-bold text-heading mb-2">
           {isOrder
             ? lang === "bn" ? "অর্ডার নিশ্চিত!" : "Order Confirmed!"
-            : lang === "bn" ? "বুকিং নিশ্চিত!" : "Booking Confirmed!"}
+            : isQuote
+              ? lang === "bn" ? "কোটেশনের অনুরোধ পাঠানো হয়েছে!" : "Quote Requested!"
+              : lang === "bn" ? "বুকিং নিশ্চিত!" : "Booking Confirmed!"}
         </h1>
         <p className="text-muted mb-6">
           {lang === "bn"
@@ -113,7 +122,9 @@ export default function BookPageClient({ serviceSlug, tierId, mode }: BookPageCl
         title={
           isOrder
             ? lang === "bn" ? "অর্ডার নিশ্চিত করুন" : "Confirm Order"
-            : lang === "bn" ? "বুকিং করুন" : "Book Service"
+            : isQuote
+              ? lang === "bn" ? "কোটেশন নিন" : "Request a Quote"
+              : lang === "bn" ? "বুকিং করুন" : "Book Service"
         }
         subtitle={name}
         breadcrumbs={[
@@ -138,6 +149,13 @@ export default function BookPageClient({ serviceSlug, tierId, mode }: BookPageCl
             {lang === "bn"
               ? "আপনি এই সেবাটি নির্ধারিত মূল্যে অর্ডার করছেন। নিচের তথ্য দিন — আমরা নিশ্চিত করে যোগাযোগ করব।"
               : "You're ordering this service at its fixed price. Fill in the details below and we'll confirm."}
+          </div>
+        )}
+        {isQuote && (
+          <div className="mb-4 rounded-xl border border-brand-100 bg-brand-50 dark:bg-brand-900/20 dark:border-brand-800/40 px-4 py-3 text-sm text-brand-700 dark:text-brand-200">
+            {lang === "bn"
+              ? "আপনার প্রয়োজন জানান — আমরা পর্যালোচনা করে একটি কাস্টম কোটেশন পাঠাব।"
+              : "Tell us your requirements — we'll review and send you a custom quote."}
           </div>
         )}
 

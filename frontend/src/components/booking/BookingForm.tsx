@@ -8,12 +8,13 @@ import { z } from "zod";
 import { isQueuedResponse, serviceBookingsApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { saveOrderSnapshot } from "@/lib/orderSnapshot";
-import type { Service } from "@/types";
+import type { Service, ServiceBookingFormField } from "@/types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
 import { BD_DISTRICTS } from "@/lib/bdDistricts";
 import { getUpazilasForDistrict } from "@/lib/bdUpazilas";
+import { useLanguageStore } from "@/store/language";
 
 const bookingSchema = z.object({
   customer_name: z.string().min(2, "Name must be at least 2 characters"),
@@ -48,13 +49,129 @@ function resolveInitialTier(service: Service, initialTierId?: string) {
   return service.pricing_tiers[0];
 }
 
+type DynamicValue = string | boolean | string[];
+
+/** Field types whose value is not a plain string (string defaults don't apply). */
+const NON_TEXT_TYPES = new Set(["checkbox", "boolean", "multiselect", "checkbox_group"]);
+
+/** Active dynamic fields for this service, in admin-defined order. */
+function activeDynamicFields(service: Service): ServiceBookingFormField[] {
+  return (service.booking_forms ?? [])
+    .filter((f) => f.is_active !== false)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+}
+
+/** Mirrors the server's show_if conditional logic (core/booking_form.py). */
+function isFieldVisible(
+  field: ServiceBookingFormField,
+  values: Record<string, DynamicValue>
+): boolean {
+  const logic = field.conditional_logic as { show_if?: { field?: string; equals?: unknown; not_equals?: unknown; in?: unknown[] } } | null | undefined;
+  const showIf = logic?.show_if;
+  if (!showIf?.field) return true;
+  const actual = values[showIf.field];
+  if ("equals" in showIf) return actual === showIf.equals;
+  if ("not_equals" in showIf) return actual !== showIf.not_equals;
+  if (Array.isArray(showIf.in)) return showIf.in.includes(actual as string);
+  return true;
+}
+
+function isEmptyValue(v: DynamicValue | undefined): boolean {
+  if (v === undefined || v === null) return true;
+  if (typeof v === "string") return v.trim() === "";
+  if (Array.isArray(v)) return v.length === 0;
+  return false; // booleans are never "empty"
+}
+
 export default function BookingForm({ service, initialTierId, onSuccess }: BookingFormProps) {
   const router = useRouter();
+  const { lang } = useLanguageStore();
   const initialTier = resolveInitialTier(service, initialTierId);
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [queued, setQueued] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // ---- Dynamic (admin-defined) booking form fields ----
+  const dynamicFields = useMemo(() => activeDynamicFields(service), [service]);
+  const [dynamicValues, setDynamicValues] = useState<Record<string, DynamicValue>>(() => {
+    const init: Record<string, DynamicValue> = {};
+    for (const f of dynamicFields) {
+      // String defaults only apply to text-like fields: seeding "true" into a
+      // checkbox would submit a value the customer never visibly selected.
+      if (f.default_value && !NON_TEXT_TYPES.has((f.field_type || "text").toLowerCase())) {
+        init[f.field_name] = f.default_value;
+      }
+    }
+    return init;
+  });
+  const [dynamicErrors, setDynamicErrors] = useState<Record<string, string>>({});
+
+  const setDynamicValue = (name: string, value: DynamicValue) => {
+    setDynamicValues((prev) => ({ ...prev, [name]: value }));
+    setDynamicErrors((prev) => {
+      if (!prev[name]) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+  };
+
+  const fixFieldsMsg =
+    lang === "bn"
+      ? "অনুগ্রহ করে চিহ্নিত ঘরগুলো ঠিক করে আবার চেষ্টা করুন।"
+      : "Please fix the highlighted fields and try again.";
+
+  /** Client-side mirror of the server validation; server stays authoritative. */
+  function validateDynamicFields(): Record<string, DynamicValue> | null {
+    const errors: Record<string, string> = {};
+    const cleaned: Record<string, DynamicValue> = {};
+    for (const field of dynamicFields) {
+      if (!isFieldVisible(field, dynamicValues)) continue;
+      const value = dynamicValues[field.field_name];
+      const ftype = (field.field_type || "text").toLowerCase();
+      // Mirror of the server rule: a required checkbox must actually be checked.
+      if ((ftype === "checkbox" || ftype === "boolean") && field.is_required && value !== true) {
+        errors[field.field_name] =
+          lang === "bn" ? "এই ঘরটি টিক দেওয়া আবশ্যক" : "This field must be checked";
+        continue;
+      }
+      if (isEmptyValue(value)) {
+        if (field.is_required) {
+          errors[field.field_name] =
+            lang === "bn" ? "এই ঘরটি পূরণ করা আবশ্যক" : "This field is required";
+        }
+        continue;
+      }
+      const rules = (field.validation_rules ?? {}) as { pattern?: string; pattern_message?: string; min_length?: number; max_length?: number };
+      if (typeof value === "string") {
+        if (rules.min_length != null && value.trim().length < rules.min_length) {
+          errors[field.field_name] =
+            lang === "bn" ? `কমপক্ষে ${rules.min_length} অক্ষর দিন` : `Must be at least ${rules.min_length} characters`;
+          continue;
+        }
+        if (rules.pattern) {
+          try {
+            if (!new RegExp(rules.pattern).test(value.trim())) {
+              errors[field.field_name] =
+                rules.pattern_message || (lang === "bn" ? "সঠিক ফরম্যাটে লিখুন" : "Invalid format");
+              continue;
+            }
+          } catch {
+            /* bad admin regex — let the server decide */
+          }
+        }
+        cleaned[field.field_name] = value.trim();
+      } else {
+        cleaned[field.field_name] = value;
+      }
+    }
+    if (Object.keys(errors).length > 0) {
+      setDynamicErrors(errors);
+      return null;
+    }
+    return cleaned;
+  }
   const {
     register,
     handleSubmit,
@@ -83,6 +200,13 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       setSubmitError(null);
       setQueued(false);
 
+      const formData = validateDynamicFields();
+      if (formData === null) {
+        setSubmitError(fixFieldsMsg);
+        setSubmitting(false);
+        return;
+      }
+
       const selectedTier = service.pricing_tiers?.find((t) => t.tier_name === data.service_tier);
       const quotedPrice = selectedTier?.price ?? service.base_price ?? data.quoted_price;
       const location = [data.upazila, data.district].filter(Boolean).join(", ");
@@ -99,6 +223,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         pricing_type: service.pricing_type,
         quoted_price: quotedPrice,
         details,
+        form_data: formData,
       });
 
       if (isQueuedResponse(r)) {
@@ -144,7 +269,15 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       reset();
       setTimeout(() => setSuccess(false), 3000);
     } catch (error) {
-      setSubmitError(apiErrorMessage(error, "Booking failed. Please try again."));
+      // Surface per-field validation errors from the server's dynamic form check.
+      const detail = (error as { response?: { data?: { detail?: { errors?: Record<string, string> } } } })
+        ?.response?.data?.detail;
+      if (detail?.errors && typeof detail.errors === "object") {
+        setDynamicErrors(detail.errors);
+        setSubmitError(fixFieldsMsg);
+      } else {
+        setSubmitError(apiErrorMessage(error, "Booking failed. Please try again."));
+      }
     } finally {
       setSubmitting(false);
     }
@@ -276,6 +409,115 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         </div>
       )}
 
+      {/* Dynamic fields defined by the admin for this specific service */}
+      {dynamicFields.filter((f) => isFieldVisible(f, dynamicValues)).map((field) => {
+        const label = lang === "bn" && field.field_label_bn ? field.field_label_bn : field.field_label_en;
+        const err = dynamicErrors[field.field_name];
+        const value = dynamicValues[field.field_name];
+        const ftype = (field.field_type || "text").toLowerCase();
+        const options = field.options ?? [];
+
+        return (
+          <div key={field.id}>
+            {ftype !== "checkbox" && (
+              <label className="form-label">
+                {label} {field.is_required && "*"}
+              </label>
+            )}
+            {ftype === "textarea" ? (
+              <textarea
+                rows={3}
+                value={typeof value === "string" ? value : ""}
+                onChange={(e) => setDynamicValue(field.field_name, e.target.value)}
+                className={cn("input resize-none", err && "input-error")}
+                placeholder={field.placeholder ?? undefined}
+              />
+            ) : ftype === "select" ? (
+              <select
+                value={typeof value === "string" ? value : ""}
+                onChange={(e) => setDynamicValue(field.field_name, e.target.value)}
+                className={cn("input", err && "input-error")}
+              >
+                <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select"}</option>
+                {options.map((o) => (
+                  <option key={o} value={o}>{o}</option>
+                ))}
+              </select>
+            ) : ftype === "radio" ? (
+              <div className="space-y-2">
+                {options.map((o) => (
+                  <label key={o} className="flex items-center gap-2 text-sm text-heading cursor-pointer">
+                    <input
+                      type="radio"
+                      name={`dyn_${field.field_name}`}
+                      checked={value === o}
+                      onChange={() => setDynamicValue(field.field_name, o)}
+                      className="w-4 h-4 text-brand-600"
+                    />
+                    <span>{o}</span>
+                  </label>
+                ))}
+              </div>
+            ) : ftype === "multiselect" || ftype === "checkbox_group" ? (
+              <div className="space-y-2">
+                {options.map((o) => {
+                  const selected = Array.isArray(value) ? value : [];
+                  return (
+                    <label key={o} className="flex items-center gap-2 text-sm text-heading cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={selected.includes(o)}
+                        onChange={(e) =>
+                          setDynamicValue(
+                            field.field_name,
+                            e.target.checked ? [...selected, o] : selected.filter((v) => v !== o)
+                          )
+                        }
+                        className="w-4 h-4 text-brand-600 rounded"
+                      />
+                      <span>{o}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            ) : ftype === "checkbox" || ftype === "boolean" ? (
+              <label className="flex items-center gap-2 text-sm text-heading cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={value === true}
+                  onChange={(e) => setDynamicValue(field.field_name, e.target.checked)}
+                  className="w-4 h-4 text-brand-600 rounded"
+                />
+                <span>
+                  {label} {field.is_required && "*"}
+                </span>
+              </label>
+            ) : (
+              <input
+                type={
+                  ftype === "number" || ftype === "integer"
+                    ? "number"
+                    : ftype === "email"
+                      ? "email"
+                      : ftype === "phone" || ftype === "tel"
+                        ? "tel"
+                        : ftype === "url"
+                          ? "url"
+                          : ftype === "date"
+                            ? "date"
+                            : "text"
+                }
+                value={typeof value === "string" ? value : ""}
+                onChange={(e) => setDynamicValue(field.field_name, e.target.value)}
+                className={cn("input", err && "input-error")}
+                placeholder={field.placeholder ?? undefined}
+              />
+            )}
+            {err && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{err}</p>}
+          </div>
+        );
+      })}
+
       <div>
         <label className="form-label">Details / Requirements *</label>
         <textarea
@@ -305,7 +547,8 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
             <LoadingSpinner /> Submitting...
           </>
         ) : (
-          "Book This Service"
+          /* Dynamic CTA — computed by the API per service (book/order/quote/contact) */
+          (lang === "bn" ? service.cta?.label_bn : service.cta?.label_en) ?? "Book This Service"
         )}
       </button>
     </form>

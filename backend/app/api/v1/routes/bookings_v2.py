@@ -1,3 +1,4 @@
+import html as html_escape_mod
 import uuid
 import secrets
 import logging
@@ -5,6 +6,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
+from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.security import require_admin
 from app.core.config import settings
@@ -14,6 +16,11 @@ from app.core.email import (
     customer_booking_confirmation_html,
 )
 from app.core.invoice import InvoiceService
+from app.core.booking_form import (
+    BookingFormValidationError,
+    summarize_form_data,
+    validate_form_data,
+)
 from app.models.models import (
     BookingV2,
     Service,
@@ -52,14 +59,31 @@ async def create_booking(
     db: AsyncSession = Depends(get_db),
 ):
     """Create new booking (public)"""
-    # Verify service exists
+    # Verify service exists (booking form fields ride along in one query)
     service_result = await db.execute(
-        select(Service).where(Service.id == payload.service_id)
+        select(Service)
+        .where(Service.id == payload.service_id)
+        .options(selectinload(Service.booking_forms))
     )
     service = service_result.scalar_one_or_none()
 
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
+
+    # ---- Dynamic booking form validation (admin-defined fields) ----
+    # Validates the submitted form_data against the service's active
+    # service_booking_forms config; stale/unknown keys are dropped, bad
+    # values are rejected with per-field errors.
+    form_fields = [
+        f for f in service.booking_forms if not f.is_deleted and f.is_active
+    ]
+    try:
+        cleaned_form_data = validate_form_data(form_fields, payload.form_data)
+    except BookingFormValidationError as exc:
+        raise HTTPException(
+            status_code=422,
+            detail={"message": "Invalid booking form data", "errors": exc.errors},
+        )
 
     # ---- Server-authoritative price (never trust the client quoted_price) ----
     # Resolve from the selected tier, else the service base price. Mirrors the
@@ -84,6 +108,7 @@ async def create_booking(
 
     booking_fields = payload.model_dump()
     booking_fields["quoted_price"] = trusted_price
+    booking_fields["form_data"] = cleaned_form_data
 
     booking = BookingV2(
         booking_number=booking_number,
@@ -98,12 +123,21 @@ async def create_booking(
     from app.core.email_config import resolve_notify_email
     _notify_to = await resolve_notify_email(db)
     if _notify_to:
+        # Include the dynamic form answers in the admin notification. The
+        # template interpolates into HTML, so escape and use <br/> — plain
+        # newlines would collapse and run the answers together.
+        form_summary = summarize_form_data(form_fields, cleaned_form_data)
+        details_with_form = "<br/><br/>".join(
+            html_escape_mod.escape(x).replace("\n", "<br/>")
+            for x in (payload.details, form_summary)
+            if x
+        )
         html = booking_notification_html(
             booking.booking_number,
             payload.customer_name,
             payload.customer_phone,
             service.name_en,
-            payload.details or "",
+            details_with_form,
         )
         background_tasks.add_task(
             send_email,
@@ -317,8 +351,12 @@ async def update_booking(
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
 
-    # Update fields
+    # Update fields. form_data holds the customer's dynamic-form answers —
+    # only overwrite it when the admin explicitly sent it, otherwise a routine
+    # edit (e.g. fixing a phone typo) would wipe the answers to the default {}.
     update_data = payload.dict(exclude={"service_id"})
+    if "form_data" not in payload.model_fields_set:
+        update_data.pop("form_data", None)
     for field, value in update_data.items():
         setattr(booking, field, value)
 

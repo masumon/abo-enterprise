@@ -88,6 +88,14 @@ export default function ServiceDetailClient({ service }: Props) {
     )
   );
 
+  // Dynamic CTA — computed by the API per service (book/order/quote/contact).
+  const cta = service.cta;
+  const ctaLabel = (lang === "bn" ? cta?.label_bn : cta?.label_en) ?? t("Book Now", "বুকিং করুন");
+  const ctaHref =
+    cta?.type === "contact"
+      ? "/contact"
+      : `/book?service=${service.slug}${cta?.type === "order" ? "&mode=order" : cta?.type === "quote" ? "&mode=quote" : ""}`;
+
   const hasTiers =
     service.pricing_tiers && service.pricing_tiers.length > 0;
   const activeTierData = hasTiers
@@ -124,16 +132,17 @@ export default function ServiceDetailClient({ service }: Props) {
             {t("Chat on WhatsApp", "WhatsApp-এ কথা বলুন")}
           </a>
           <Link
-            href={`/book?service=${service.slug}`}
+            href={ctaHref}
             className="btn btn-md btn-outline text-white border-white/60 hover:bg-white/10 gap-2"
           >
-            {t("Book Now", "বুকিং করুন")}
+            {ctaLabel}
             <ArrowRight className="w-5 h-5" />
           </Link>
           {/* Cross-capability: a service an admin marked "Also orderable" is
               confirmed at its fixed price via the booking flow in "order" mode
-              (single source: API-computed capabilities, flag fallback). */}
-          {(service.capabilities?.includes("orderable") ?? service.is_orderable) && (
+              (single source: API-computed capabilities, flag fallback). Hidden
+              when the primary CTA is already the order action. */}
+          {cta?.type !== "order" && (service.capabilities?.includes("orderable") ?? service.is_orderable) && (
             <Link
               href={`/book?service=${service.slug}&mode=order`}
               className="btn btn-md bg-white text-brand-700 hover:bg-brand-50 font-bold gap-2"
@@ -269,8 +278,8 @@ export default function ServiceDetailClient({ service }: Props) {
             )}
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href={`/book?service=${service.slug}`} className="btn btn-primary btn-lg gap-2">
-              {t("Book Service", "সেবা বুক করুন")}
+            <Link href={ctaHref} className="btn btn-primary btn-lg gap-2">
+              {ctaLabel}
               <ArrowRight className="w-5 h-5" />
             </Link>
             <a

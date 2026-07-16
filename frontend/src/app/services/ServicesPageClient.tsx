@@ -5,8 +5,9 @@ import Link from "next/link";
 import {
   Printer, Code2, Megaphone, Briefcase,
   Bot, Cog, Smartphone, FileText, Wrench, Monitor, Globe, Headphones,
+  type LucideIcon,
 } from "lucide-react";
-import type { Service } from "@/types";
+import type { Category, Service } from "@/types";
 import { useLanguageStore } from "@/store/language";
 import ServiceCard from "@/components/services/ServiceCard";
 import ServiceFilters from "@/components/services/ServiceFilters";
@@ -130,16 +131,58 @@ const SERVICE_GROUPS = [
   },
 ];
 
+/** Maps the icon name stored on a DB category to a Lucide component. */
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  FileText, Printer, Globe, Smartphone, Headphones, Megaphone,
+  Briefcase, Bot, Cog, Wrench, Monitor, Code2,
+};
+
+/** Rotating accents for DB-driven category cards (same palette as the static groups). */
+const CATEGORY_COLORS = [
+  "bg-emerald-600", "bg-brand-600", "bg-sky-600", "bg-orange-600",
+  "bg-rose-600", "bg-pink-600", "bg-indigo-600", "bg-purple-600", "bg-cyan-600",
+];
+
+/**
+ * Navbar/Footer/MegaMenu/QuickCategories deep-link to /services#<legacy-anchor>.
+ * The live cards use DB slugs as ids, so each card also exposes its legacy
+ * anchor(s) as invisible jump targets to keep every existing link working.
+ */
+const LEGACY_ANCHOR_ALIASES: Record<string, string[]> = {
+  "digital-e-services": ["digital-services"],
+  "printing-documentation": ["print-documentation"],
+  "mobile-lab": ["software-lab"],
+  "it-support": ["computer-software"],
+  "business-consultancy": ["business-software"],
+  "ai-automation": ["ai-solutions"],
+};
+
+/** One shape for both the live (DB) cards and the static fallback cards. */
+interface CategoryCardModel {
+  key: string;
+  anchorId: string;
+  extraAnchorIds: string[];
+  Icon: LucideIcon;
+  color: string;
+  title: string;
+  /** Set on live cards only — title/chips become links into the nested routes. */
+  titleHref?: string;
+  chips: { key: string; label: string; href?: string }[];
+}
+
 interface Props {
   initialServices: Service[];
   initialTotal: number;
   initialIsDemo?: boolean;
+  /** Live taxonomy (Category → Subcategory) from the API; falls back to the static groups when empty. */
+  initialCategories?: Category[];
 }
 
 export default function ServicesPageClient({
   initialServices,
   initialTotal,
   initialIsDemo = false,
+  initialCategories = [],
 }: Props) {
   const { lang } = useLanguageStore();
   const t = (o: { en: string; bn: string }) => (lang === "bn" ? o.bn : o.en);
@@ -161,6 +204,35 @@ export default function ServicesPageClient({
       ).catch(() => {});
     }
   }, [initialIsDemo, initialServices, initialTotal]);
+
+  // Normalize live DB categories (or the static fallback) into one card model.
+  const categoryCards: CategoryCardModel[] =
+    initialCategories.length > 0
+      ? initialCategories.map((cat, i) => ({
+          key: cat.id,
+          anchorId: cat.slug,
+          extraAnchorIds: LEGACY_ANCHOR_ALIASES[cat.slug] ?? [],
+          Icon: (cat.icon && CATEGORY_ICONS[cat.icon]) || Cog,
+          color: CATEGORY_COLORS[i % CATEGORY_COLORS.length],
+          title: lang === "bn" && cat.name_bn ? cat.name_bn : cat.name_en,
+          titleHref: `/services/${cat.slug}`,
+          chips: (cat.subcategories ?? [])
+            .filter((s) => s.is_active !== false)
+            .map((s) => ({
+              key: s.id,
+              label: lang === "bn" && s.name_bn ? s.name_bn : s.name_en,
+              href: `/services/${cat.slug}/${s.slug}`,
+            })),
+        }))
+      : SERVICE_GROUPS.map((g) => ({
+          key: g.anchor,
+          anchorId: g.anchor,
+          extraAnchorIds: [],
+          Icon: g.icon,
+          color: g.color,
+          title: t(g.title),
+          chips: g.items.map((item) => ({ key: item.en, label: t(item) })),
+        }));
 
   const categories = [
     { id: null, label: lang === "bn" ? "সব" : "All", en: "All" },
@@ -240,21 +312,50 @@ export default function ServicesPageClient({
         <div className="container mx-auto px-4 max-w-6xl">
           <h2 className="text-xl font-bold text-heading mb-2">{t({ en: "What We Offer", bn: "আমরা যা দিই" })}</h2>
           <p className="text-sm text-muted mb-6">{t({ en: "Digital services, software lab, business software & AI — all under one roof.", bn: "ডিজিটাল সেবা, সফটওয়্যার ল্যাব, বিজনেস সফটওয়্যার ও AI — সব এক ছাদের নিচে।" })}</p>
+          {/* One renderer for both sources: live DB taxonomy (cards/chips are
+              links into the nested routes) or the static fallback when the
+              taxonomy is empty/unreachable. */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
-            {SERVICE_GROUPS.map(({ anchor, icon: Icon, title, items, color }) => (
-              <div key={anchor} id={anchor} className="enterprise-card p-5 scroll-mt-24">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0", color)}>
-                    <Icon className="w-5 h-5" />
+            {categoryCards.map(({ key, anchorId, extraAnchorIds, Icon, color, title, titleHref, chips }) => (
+              <div key={key} id={anchorId} className="enterprise-card p-5 scroll-mt-24 relative">
+                {/* Invisible legacy anchors so old /services#... links keep scrolling here */}
+                {extraAnchorIds.map((a) => (
+                  <span key={a} id={a} aria-hidden className="absolute top-0 scroll-mt-24" />
+                ))}
+                {titleHref ? (
+                  <Link href={titleHref} className="flex items-center gap-3 mb-3 group">
+                    <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0", color)}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <h3 className="font-bold text-heading group-hover:text-brand-600 transition-colors">{title}</h3>
+                  </Link>
+                ) : (
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0", color)}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <h3 className="font-bold text-heading">{title}</h3>
                   </div>
-                  <h3 className="font-bold text-heading">{t(title)}</h3>
-                </div>
+                )}
                 <div className="flex flex-wrap gap-1.5">
-                  {items.map((item) => (
-                    <span key={item.en} className="inline-block px-2.5 py-1 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 rounded-lg">
-                      {t(item)}
-                    </span>
-                  ))}
+                  {chips.map((chip) =>
+                    chip.href ? (
+                      <Link
+                        key={chip.key}
+                        href={chip.href}
+                        className="inline-block px-2.5 py-1 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors"
+                      >
+                        {chip.label}
+                      </Link>
+                    ) : (
+                      <span
+                        key={chip.key}
+                        className="inline-block px-2.5 py-1 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 rounded-lg"
+                      >
+                        {chip.label}
+                      </span>
+                    )
+                  )}
                 </div>
               </div>
             ))}

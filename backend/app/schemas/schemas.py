@@ -495,6 +495,10 @@ class ServiceBase(BaseModel):
     featured_image_url: str | None = None
     icon_color: str | None = None
     pricing_type: str
+    # CTA override (None = infer from pricing_type/capabilities).
+    cta_type: str | None = None
+    cta_label_en: str | None = None
+    cta_label_bn: str | None = None
     base_price: float | None = None
     min_price: float | None = None
     max_price: float | None = None
@@ -521,6 +525,9 @@ class ServiceCreate(ServiceBase):
     # Capability overrides can be set at creation too (additive; default NULL).
     is_orderable: bool | None = None
     is_bookable: bool | None = None
+    # Taxonomy links can be set at creation too (additive; default NULL).
+    category_id: uuid.UUID | None = None
+    subcategory_id: uuid.UUID | None = None
 
 
 class ServiceUpdate(BaseModel):
@@ -538,6 +545,9 @@ class ServiceUpdate(BaseModel):
     is_orderable: bool | None = None
     is_bookable: bool | None = None
     pricing_type: str | None = None
+    cta_type: str | None = None
+    cta_label_en: str | None = None
+    cta_label_bn: str | None = None
     base_price: float | None = None
     min_price: float | None = None
     max_price: float | None = None
@@ -566,6 +576,17 @@ class ServiceOut(ServiceBase):
     id: uuid.UUID
     pricing_tiers: list[ServicePricingTierOut] = []
     booking_forms: list[ServiceBookingFormOut] = []
+
+    @field_validator("pricing_tiers", "booking_forms", mode="before")
+    @classmethod
+    def _drop_soft_deleted(cls, v):
+        """Soft-deleted rows must never reach clients: a deleted booking-form
+        field that still renders would be filled in and then rejected by the
+        booking validator, blocking the whole booking."""
+        try:
+            return [item for item in v if not getattr(item, "is_deleted", False)]
+        except TypeError:
+            return v
     created_at: datetime
     updated_at: datetime
     # Unified taxonomy links (additive; null until associated).
@@ -583,6 +604,16 @@ class ServiceOut(ServiceBase):
         from app.core.capabilities import capabilities_for
         return sorted(c.value for c in capabilities_for("service", self.is_orderable, self.is_bookable))
 
+    @computed_field
+    @property
+    def cta(self) -> dict:
+        """Effective Call-To-Action (single source: core/capabilities.py)."""
+        from app.core.capabilities import resolve_service_cta
+        return resolve_service_cta(
+            self.cta_type, self.cta_label_en, self.cta_label_bn,
+            self.pricing_type, self.is_orderable, self.is_bookable,
+        )
+
 
 # ==================== BOOKING V2 SCHEMAS ====================
 
@@ -599,6 +630,9 @@ class BookingV2Create(BaseModel):
     quoted_price: float | None = None
     details: str | None = None
     requirements: str | None = None
+    # Answers to the service's dynamic booking form; validated server-side
+    # against service_booking_forms config (core/booking_form.py).
+    form_data: dict = {}
     attachments: list[str] = []
 
     @field_validator("customer_phone")
@@ -629,6 +663,7 @@ class BookingV2Out(BaseModel):
     hours_worked: float | None
     details: str | None
     requirements: str | None
+    form_data: dict = {}
     status: str
     payment_status: str
     payment_method: str | None

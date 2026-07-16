@@ -68,6 +68,8 @@ export default function ServiceCard({ service, lang = "en" }: ServiceCardProps) 
 
           <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-white/10">
             <span className="text-sm font-semibold text-brand-600 flex items-center gap-1">
+              {/* The card navigates to the detail page, so its label must
+                  promise navigation — the CTA button lives on the detail page. */}
               {lang === "bn" ? "বিস্তারিত" : "Learn More"} <ArrowRight className="w-3 h-3" />
             </span>
             {service.is_featured && <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" aria-hidden />}

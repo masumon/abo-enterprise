@@ -87,3 +87,50 @@ def is_orderable(entity: Any) -> bool:
 
 def is_bookable(entity: Any) -> bool:
     return Capability.BOOKABLE in get_capabilities(entity)
+
+
+# ==================== SERVICE CTA RESOLUTION ====================
+
+# Default bilingual labels per CTA type. An admin label override always wins.
+CTA_DEFAULT_LABELS: dict[str, tuple[str, str]] = {
+    "book": ("Book Now", "বুকিং করুন"),
+    "order": ("Order Now", "এখনই অর্ডার করুন"),
+    "quote": ("Request Quote", "কোটেশন নিন"),
+    "contact": ("Contact Us", "যোগাযোগ করুন"),
+}
+
+
+def resolve_service_cta(
+    cta_type: str | None,
+    cta_label_en: str | None,
+    cta_label_bn: str | None,
+    pricing_type: str | None,
+    is_orderable: bool | None,
+    is_bookable: bool | None,
+) -> dict:
+    """Resolve the effective Call-To-Action for a service.
+
+    Single source of truth used by the API (ServiceOut.cta) so every surface
+    (cards, detail page, booking form) renders the same button. Rule:
+    - an explicit admin ``cta_type`` override wins;
+    - otherwise infer: ``custom_quote`` pricing → "quote"; orderable-but-not-
+      bookable → "order"; not bookable at all → "contact"; default → "book".
+    Admin label overrides replace the default bilingual labels.
+    """
+    ctype = cta_type if cta_type in CTA_DEFAULT_LABELS else None
+    if ctype is None:
+        caps = capabilities_for("service", is_orderable, is_bookable)
+        if pricing_type == "custom_quote":
+            ctype = "quote"
+        elif Capability.ORDERABLE in caps and Capability.BOOKABLE not in caps:
+            ctype = "order"
+        elif Capability.BOOKABLE not in caps:
+            ctype = "contact"
+        else:
+            ctype = "book"
+    default_en, default_bn = CTA_DEFAULT_LABELS[ctype]
+    return {
+        "type": ctype,
+        "label_en": cta_label_en or default_en,
+        "label_bn": cta_label_bn or default_bn,
+    }

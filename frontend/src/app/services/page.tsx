@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { Service } from "@/types";
+import type { Category, Service } from "@/types";
 import { pageMeta } from "@/lib/metadata";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import ServicesPageClient from "./ServicesPageClient";
@@ -27,7 +27,32 @@ async function fetchServices(): Promise<{ services: Service[]; total: number; is
   return { services: [], total: 0, isDemo: false };
 }
 
+async function fetchServiceTaxonomy(): Promise<Category[]> {
+  try {
+    const res = await fetchWithRetry(`${getApiBaseUrl()}/api/v1/categories?applies_to=service`, {
+      next: { revalidate: 300 },
+      signal: AbortSignal.timeout(55000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    return (json.data ?? []) as Category[];
+  } catch (err) {
+    console.error("services_page_taxonomy_fetch_failed", err);
+    return [];
+  }
+}
+
 export default async function ServicesPage() {
-  const { services, total, isDemo } = await fetchServices();
-  return <ServicesPageClient initialServices={services} initialTotal={total} initialIsDemo={isDemo} />;
+  const [{ services, total, isDemo }, categories] = await Promise.all([
+    fetchServices(),
+    fetchServiceTaxonomy(),
+  ]);
+  return (
+    <ServicesPageClient
+      initialServices={services}
+      initialTotal={total}
+      initialIsDemo={isDemo}
+      initialCategories={categories}
+    />
+  );
 }
