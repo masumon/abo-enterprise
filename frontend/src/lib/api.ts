@@ -94,7 +94,7 @@ export function isQueuedResponse(
 }
 
 export const productsApi = {
-  list: (params?: { category?: string; featured?: boolean; search?: string; sort_by?: string; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
+  list: (params?: { category?: string; category_slug?: string; subcategory_slug?: string; featured?: boolean; search?: string; sort_by?: string; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
     api.get<PaginatedResponse<Product>>("/api/v1/products", { params, ...opts }),
 
   adminList: (params?: { category?: string; search?: string; is_active?: boolean; page?: number; per_page?: number }) =>

@@ -42,6 +42,9 @@ async def _init_db_and_bootstrap() -> None:
     await bootstrap_admin()
     await bootstrap_content()
 
+    from app.core.maintenance import prune_old_activity_logs
+    await prune_old_activity_logs()
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

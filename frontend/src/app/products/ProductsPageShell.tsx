@@ -4,20 +4,18 @@ import PageHero from "@/components/ui/PageHero";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import ProductsClient from "./ProductsClient";
-import type { Product, ProductCategory } from "@/types";
+import type { Category, Product } from "@/types";
 
+// Legacy string categories — fallback when the taxonomy is empty/unreachable.
 const VALID_CATEGORIES = new Set(["accessories", "gadgets", "electronics", "computer"]);
-
-function parseCategory(value?: string): ProductCategory | "" {
-  if (!value || !VALID_CATEGORIES.has(value)) return "";
-  return value as ProductCategory;
-}
 
 interface Props {
   initialProducts: Product[];
   initialTotal: number;
   initialCategory?: string;
   initialIsDemo?: boolean;
+  /** Live product taxonomy (Category → Subcategory) for the filter chips. */
+  initialCategories?: Category[];
 }
 
 export default function ProductsPageShell({
@@ -25,10 +23,17 @@ export default function ProductsPageShell({
   initialTotal,
   initialCategory = "",
   initialIsDemo = false,
+  initialCategories = [],
 }: Props) {
   const { lang } = useLanguageStore();
   const t = useT();
-  const category = parseCategory(initialCategory);
+  // A category param is honored when it names a taxonomy category or one of
+  // the legacy hardcoded values; anything else falls back to "All".
+  const category =
+    initialCategory &&
+    (initialCategories.some((c) => c.slug === initialCategory) || VALID_CATEGORIES.has(initialCategory))
+      ? initialCategory
+      : "";
 
   return (
     <>
@@ -46,6 +51,7 @@ export default function ProductsPageShell({
         initialTotal={initialTotal}
         initialCategory={category}
         initialIsDemo={initialIsDemo}
+        initialCategories={initialCategories}
       />
     </>
   );

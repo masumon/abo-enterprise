@@ -1,18 +1,39 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import type { Product } from "@/types";
+import type { Category, Product } from "@/types";
 import ProductsPageShell from "./ProductsPageShell";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { pageMeta } from "@/lib/metadata";
 import { fetchWithRetry } from "@/lib/fetchRetry";
 
 const API_BASE = getApiBaseUrl();
+// Legacy string categories — kept as fallback when the taxonomy is empty or
+// unreachable, so old ?category= links and offline visits keep working.
 const VALID_CATEGORIES = new Set(["accessories", "gadgets", "electronics", "computer"]);
 
-async function fetchProducts(category?: string): Promise<{ products: Product[]; total: number; isDemo: boolean }> {
-  const cat = category && VALID_CATEGORIES.has(category) ? category : undefined;
+async function fetchProductTaxonomy(): Promise<Category[]> {
+  try {
+    const res = await fetchWithRetry(`${API_BASE}/api/v1/categories?applies_to=product`, {
+      next: { revalidate: 300 },
+      signal: AbortSignal.timeout(55000),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const json = await res.json();
+    return (json.data ?? []) as Category[];
+  } catch (err) {
+    console.error("products_page_taxonomy_fetch_failed", err);
+    return [];
+  }
+}
+
+async function fetchProducts(
+  category: string | undefined,
+  taxonomySlugs: Set<string>
+): Promise<{ products: Product[]; total: number; isDemo: boolean }> {
   const qs = new URLSearchParams({ page: "1", per_page: "20" });
-  if (cat) qs.set("category", cat);
+  // Taxonomy slug wins (DB-driven chips); legacy strings keep old links alive.
+  if (category && taxonomySlugs.has(category)) qs.set("category_slug", category);
+  else if (category && VALID_CATEGORIES.has(category)) qs.set("category", category);
 
   try {
     const res = await fetchWithRetry(`${API_BASE}/api/v1/products?${qs}`, {
@@ -41,7 +62,9 @@ export default async function ProductsPage({
   searchParams: { category?: string };
 }) {
   const category = searchParams.category ?? "";
-  const { products, total, isDemo } = await fetchProducts(category);
+  const categories = await fetchProductTaxonomy();
+  const taxonomySlugs = new Set(categories.map((c) => c.slug));
+  const { products, total, isDemo } = await fetchProducts(category || undefined, taxonomySlugs);
 
   return (
     <main className="min-h-screen">
@@ -51,6 +74,7 @@ export default async function ProductsPage({
           initialTotal={total}
           initialCategory={category}
           initialIsDemo={isDemo}
+          initialCategories={categories}
         />
       </Suspense>
     </main>

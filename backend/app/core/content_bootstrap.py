@@ -26,7 +26,16 @@ from app.core.placeholder_assets import (
     service_featured,
     service_icon,
 )
-from app.models.models import BlogPost, PaymentMethod, Product, Review, Service, Setting
+from app.models.models import (
+    BlogPost,
+    Category,
+    PaymentMethod,
+    Product,
+    Review,
+    Service,
+    Setting,
+    Subcategory,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -152,14 +161,41 @@ PRODUCT_SEED = [
     ("bt-speaker-waterproof", "Waterproof BT Speaker", "ওয়াটারপ্রুফ স্পিকার", 1499, 2000, "gadgets", None, 10, False, 8),
 ]
 
+# Single source with migrations/004_services_system.sql — the SAME 12 curated
+# services (same slugs), so a fresh boot can never create duplicates of the
+# migration-seeded catalog again. Seeded only when the services table is empty.
 SERVICE_SEED = [
-    ("printing", "Printing Services", "প্রিন্টিং সেবা", "printing", "fixed", 500, True, 1),
-    ("legal", "Legal Assistance", "আইনি সহায়তা", "legal", "custom_quote", None, True, 2),
-    ("software", "Software Development", "সফটওয়্যার ডেভেলপমেন্ট", "software", "custom_quote", None, True, 3),
-    ("web-design", "Website Design", "ওয়েবসাইট ডিজাইন", "software", "package", 15000, False, 4),
-    ("mobile-app", "Mobile App Development", "মোবাইল অ্যাপ ডেভেলপমেন্ট", "software", "custom_quote", None, False, 5),
-    ("digital-marketing", "Digital Marketing", "ডিজিটাল মার্কেটিং", "marketing", "package", 8000, False, 6),
+    ("printing-service", "Printing Service", "প্রিন্টিং সেবা", "printing", "fixed", 500, True, 1),
+    ("website-development", "Website Development", "ওয়েবসাইট ডেভেলপমেন্ট", "web", "package", 15000, True, 2),
+    ("mobile-app-development", "Mobile App Development", "মোবাইল অ্যাপ ডেভেলপমেন্ট", "software", "custom_quote", None, True, 3),
+    ("digital-marketing", "Digital Marketing", "ডিজিটাল মার্কেটিং", "marketing", "package", 8000, True, 4),
+    ("branding-design", "Branding & Design", "ব্র্যান্ডিং ও ডিজাইন", "design", "package", None, True, 5),
+    ("business-consultation", "Business Consultation", "ব্যবসায়িক পরামর্শ", "consulting", "hourly", None, True, 6),
+    ("custom-software", "Custom Software Development", "কাস্টম সফটওয়্যার ডেভেলপমেন্ট", "software", "custom_quote", None, True, 7),
+    ("ai-solutions", "AI Solutions", "কৃত্রিম বুদ্ধিমত্তা সমাধান", "ai", "custom_quote", None, True, 8),
+    ("python-automation", "Python Automation", "পাইথন অটোমেশন", "automation", "custom_quote", None, False, 9),
+    ("legal-services", "Legal Case Writing", "আইনি কেস লেখা", "legal", "fixed", None, False, 10),
+    ("nid-passport", "NID/Passport Services", "এনআইডি/পাসপোর্ট সেবা", "documents", "fixed", None, False, 11),
+    ("future-service", "Future Services", "ভবিষ্যত সেবা", "other", "custom_quote", None, False, 12),
 ]
+
+# service slug → (taxonomy category slug, subcategory slug or None); mirrors
+# SERVICE_PLACEMENT_SEED in alembic 0006 so freshly bootstrapped services are
+# born already linked to the nested taxonomy.
+SERVICE_TAXONOMY_PLACEMENT: dict[str, tuple[str, str | None]] = {
+    "printing-service": ("printing-documentation", "printing-photocopy"),
+    "website-development": ("web-software", "website-design"),
+    "mobile-app-development": ("mobile-lab", "app-development"),
+    "digital-marketing": ("marketing-design", "social-media-campaign"),
+    "branding-design": ("marketing-design", "logo-branding"),
+    "business-consultation": ("business-consultancy", None),
+    "custom-software": ("web-software", "custom-software"),
+    "ai-solutions": ("ai-automation", "business-ai-tools"),
+    "python-automation": ("ai-automation", "python-automation"),
+    "legal-services": ("printing-documentation", "legal-drafting"),
+    "nid-passport": ("digital-e-services", "nid"),
+    "future-service": ("others", "future-services"),
+}
 
 BLOG_SEED = [
     {
@@ -361,11 +397,33 @@ async def bootstrap_content() -> None:
             )).scalar() or 0
 
             if service_count == 0:
+                # Resolve taxonomy links once so bootstrapped services are
+                # born inside the nested Category → Subcategory structure.
+                taxonomy: dict[tuple[str, str | None], tuple] = {}
+                for cat_slug, sub_slug in set(SERVICE_TAXONOMY_PLACEMENT.values()):
+                    cat_row = (await db.execute(
+                        select(Category).where(Category.slug == cat_slug, Category.is_deleted == False)  # noqa: E712
+                    )).scalar_one_or_none()
+                    sub_row = None
+                    if cat_row is not None and sub_slug:
+                        sub_row = (await db.execute(
+                            select(Subcategory).where(
+                                Subcategory.category_id == cat_row.id,
+                                Subcategory.slug == sub_slug,
+                                Subcategory.is_deleted == False,  # noqa: E712
+                            )
+                        )).scalar_one_or_none()
+                    taxonomy[(cat_slug, sub_slug)] = (cat_row, sub_row)
+
                 for row in SERVICE_SEED:
                     slug, name_en, name_bn, cat, pricing_type, base_price, featured, sort = row
+                    placement = SERVICE_TAXONOMY_PLACEMENT.get(slug)
+                    cat_row, sub_row = taxonomy.get(placement, (None, None)) if placement else (None, None)
                     featured_label, icon_label = SERVICE_IMAGE_MAP.get(slug, (name_en, name_en))
                     db.add(Service(
                         slug=slug,
+                        category_id=cat_row.id if cat_row is not None else None,
+                        subcategory_id=sub_row.id if sub_row is not None else None,
                         name_en=name_en,
                         name_bn=name_bn,
                         short_description_en=f"Professional {name_en.lower()} from ABO Enterprise.",

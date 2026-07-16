@@ -5,7 +5,7 @@ from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
 from app.core.http_cache import etag_json_response
 from app.core.security import require_admin, require_role
-from app.models.models import Product
+from app.models.models import Category, Product, Subcategory
 from app.schemas.schemas import ProductCreate, ProductUpdate, ProductOut, ApiResponse, PaginatedResponse, PaginatedMeta
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -17,6 +17,8 @@ async def list_products(
     category: str | None = Query(None),
     category_id: UUID | None = Query(None),
     subcategory_id: UUID | None = Query(None),
+    category_slug: str | None = Query(None),
+    subcategory_slug: str | None = Query(None),
     featured: bool | None = Query(None),
     search: str | None = Query(None),
     sort_by: str | None = Query(None),  # price_asc | price_desc | newest
@@ -33,6 +35,31 @@ async def list_products(
         conditions.append(Product.category_id == category_id)
     if subcategory_id is not None:
         conditions.append(Product.subcategory_id == subcategory_id)
+    # Slug-based taxonomy filters — same pattern as the services list; power
+    # the taxonomy-driven category chips on the public products page.
+    if category_slug:
+        conditions.append(
+            Product.category_id.in_(
+                select(Category.id).where(
+                    Category.slug == category_slug,
+                    Category.is_deleted == False,  # noqa: E712
+                    Category.is_active == True,  # noqa: E712
+                )
+            )
+        )
+    if subcategory_slug:
+        sub_query = (
+            select(Subcategory.id)
+            .join(Category, Subcategory.category_id == Category.id)
+            .where(
+                Subcategory.slug == subcategory_slug,
+                Subcategory.is_deleted == False,  # noqa: E712
+                Subcategory.is_active == True,  # noqa: E712
+            )
+        )
+        if category_slug:
+            sub_query = sub_query.where(Category.slug == category_slug)
+        conditions.append(Product.subcategory_id.in_(sub_query))
     if featured is not None:
         conditions.append(Product.is_featured == featured)
     if search:
