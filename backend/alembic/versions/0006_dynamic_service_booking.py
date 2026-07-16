@@ -12,10 +12,18 @@ Three additive pieces that complete the nested Service Booking architecture:
 
 3. Seed of the 9-category service taxonomy (Category → Subcategory) into the
    ``categories`` / ``subcategories`` tables from migration 0004. Fully
-   idempotent (ON CONFLICT DO NOTHING) and non-destructive: existing rows are
-   never updated or deleted.
+   idempotent (ON CONFLICT DO NOTHING).
 
-Idempotent (IF NOT EXISTS / ON CONFLICT) and additive; no-op downgrade.
+4. Re-link: migration 0004 auto-generated categories from the legacy
+   ``services.category`` strings (slug/name like ``printing``, ``web``,
+   ``digital-services``) and pointed ``services.category_id`` at them. Those
+   machine rows are superseded by the curated seed, so services are re-pointed
+   onto the new taxonomy — but ONLY where ``category_id`` is NULL or still
+   points at a known machine-generated row, so any manual admin assignment is
+   preserved. Superseded machine categories that end up unreferenced are
+   deactivated (``is_active = FALSE`` — reversible, never deleted).
+
+Idempotent (IF NOT EXISTS / ON CONFLICT / guarded UPDATEs); no-op downgrade.
 
 Revision ID: 0006
 Revises: 0005
@@ -121,6 +129,32 @@ SERVICE_TAXONOMY_SEED: list[tuple[str, str, str, str, int, list[tuple[str, str, 
 ]
 
 
+# legacy `services.category` string → (0004 machine slug, new seed category slug).
+# Covers both the original seed strings (printing, web, ...) and the admin-UI
+# values (digital_services, print_documentation, ...).
+LEGACY_CATEGORY_MAP: list[tuple[str, str, str]] = [
+    ("printing", "printing", "printing-documentation"),
+    ("legal", "legal", "printing-documentation"),
+    ("documents", "documents", "digital-e-services"),
+    ("web", "web", "web-software"),
+    ("software", "software", "web-software"),
+    ("marketing", "marketing", "marketing-design"),
+    ("design", "design", "marketing-design"),
+    ("consulting", "consulting", "business-consultancy"),
+    ("ai", "ai", "ai-automation"),
+    ("automation", "automation", "ai-automation"),
+    ("other", "other", "others"),
+    ("digital_services", "digital-services", "digital-e-services"),
+    ("print_documentation", "print-documentation", "printing-documentation"),
+    ("mobile_software", "mobile-software", "mobile-lab"),
+    ("computer_software", "computer-software", "it-support"),
+    ("business_software", "business-software", "business-consultancy"),
+    ("ai_solutions", "ai-solutions", "ai-automation"),
+    ("web_software", "web-software", "web-software"),
+    ("general", "general", "others"),
+]
+
+
 def upgrade() -> None:
     # 1. Dynamic booking answers (admin-defined form fields → customer values).
     op.execute(
@@ -134,6 +168,21 @@ def upgrade() -> None:
 
     # 3. Service taxonomy seed (only inserts what is missing).
     bind = op.get_bind()
+    # A machine-generated row from 0004 may already occupy a seed slug (e.g.
+    # legacy 'web_software' → slug 'web-software'): normalize its display data
+    # only while it is provably untouched (name_en still equals the raw legacy
+    # string), then insert whatever is still missing.
+    normalize_sql = sa.text(
+        """
+        UPDATE categories
+        SET name_en = :name_en, name_bn = :name_bn, icon = :icon, sort_order = :sort_order,
+            applies_to = CASE
+              WHEN applies_to @> '["service"]'::jsonb THEN applies_to
+              ELSE applies_to || '["service"]'::jsonb
+            END
+        WHERE slug = :slug AND name_en = :machine_name
+        """
+    )
     cat_sql = sa.text(
         """
         INSERT INTO categories (slug, name_en, name_bn, icon, applies_to, sort_order, is_active)
@@ -150,7 +199,17 @@ def upgrade() -> None:
         ON CONFLICT (category_id, slug) DO NOTHING
         """
     )
+    machine_names = {new_slug: legacy for legacy, _machine, new_slug in LEGACY_CATEGORY_MAP}
     for slug, name_en, name_bn, icon, sort_order, subs in SERVICE_TAXONOMY_SEED:
+        if slug in machine_names:
+            bind.execute(
+                normalize_sql,
+                {
+                    "slug": slug, "name_en": name_en, "name_bn": name_bn,
+                    "icon": icon, "sort_order": sort_order,
+                    "machine_name": machine_names[slug],
+                },
+            )
         bind.execute(
             cat_sql,
             {"slug": slug, "name_en": name_en, "name_bn": name_bn, "icon": icon, "sort_order": sort_order},
@@ -166,6 +225,60 @@ def upgrade() -> None:
                     "category_slug": slug,
                 },
             )
+
+    # 4. Re-link services from 0004's machine-generated categories onto the
+    #    curated taxonomy. Only touches rows whose category_id is NULL or
+    #    still points at the machine row for that same legacy string — a
+    #    manually assigned category_id is never overwritten.
+    relink_sql = sa.text(
+        """
+        UPDATE services sv
+        SET category_id = new_c.id
+        FROM categories new_c
+        WHERE new_c.slug = :new_slug
+          AND new_c.is_deleted = FALSE
+          AND sv.category = :legacy
+          AND sv.is_deleted = FALSE
+          AND (
+            sv.category_id IS NULL
+            OR sv.category_id IN (
+              SELECT id FROM categories mc
+              WHERE mc.slug = :machine_slug AND mc.slug <> :new_slug
+            )
+          )
+        """
+    )
+    for legacy, machine_slug, new_slug in LEGACY_CATEGORY_MAP:
+        bind.execute(
+            relink_sql,
+            {"legacy": legacy, "machine_slug": machine_slug, "new_slug": new_slug},
+        )
+
+    # 5. Deactivate superseded machine categories that nothing references any
+    #    more (service-only rows; reversible via is_active, never deleted).
+    machine_slugs = sorted(
+        {m for _l, m, new in LEGACY_CATEGORY_MAP if m != new}
+    )
+    bind.execute(
+        sa.text(
+            """
+            UPDATE categories c
+            SET is_active = FALSE
+            WHERE c.slug = ANY(:slugs)
+              AND c.applies_to = '["service"]'::jsonb
+              AND c.is_deleted = FALSE
+              AND NOT EXISTS (
+                SELECT 1 FROM services s
+                WHERE s.category_id = c.id AND s.is_deleted = FALSE
+              )
+              AND NOT EXISTS (
+                SELECT 1 FROM products p
+                WHERE p.category_id = c.id AND p.is_deleted = FALSE
+              )
+            """
+        ),
+        {"slugs": machine_slugs},
+    )
 
 
 def downgrade() -> None:

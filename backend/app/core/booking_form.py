@@ -21,16 +21,19 @@ and any submitted value for it is dropped.
 
 from __future__ import annotations
 
+import math
 import re
 from datetime import date, datetime
 from typing import Any, Iterable
+
+from pydantic import TypeAdapter
+from pydantic.networks import EmailStr
 
 
 class BookingFormValidationError(Exception):
     """Raised when submitted form_data violates the service's form config.
 
-    ``errors`` maps field_name → human-readable message ("_form" for
-    form-level problems such as unknown fields).
+    ``errors`` maps field_name → human-readable message.
     """
 
     def __init__(self, errors: dict[str, str]):
@@ -38,10 +41,15 @@ class BookingFormValidationError(Exception):
         super().__init__("; ".join(f"{k}: {v}" for k, v in errors.items()))
 
 
-_EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+# Reuse the same email semantics as the rest of the backend (EmailStr is
+# already the standard on lead/contact endpoints) instead of a second regex.
+_EMAIL_ADAPTER: TypeAdapter = TypeAdapter(EmailStr)
 
 # Field types that accept a list of selected options.
 _MULTI_TYPES = {"multiselect", "checkbox_group"}
+
+# Field types whose "required" means the customer must actively check the box.
+_BOOL_TYPES = {"checkbox", "boolean"}
 
 
 def _is_empty(value: Any) -> bool:
@@ -76,6 +84,12 @@ def _condition_met(logic: dict | None, form_data: dict) -> bool:
     return True
 
 
+def _allowed_options(field: Any) -> list[str] | None:
+    """The whitelist for select-like fields, or None when unconstrained."""
+    options = field.options if isinstance(field.options, list) else []
+    return [str(o) for o in options] if options else None
+
+
 def _validate_scalar(field: Any, value: Any, errors: dict[str, str]) -> Any:
     """Type-check and coerce one submitted value; returns the cleaned value."""
     name = field.field_name
@@ -86,6 +100,11 @@ def _validate_scalar(field: Any, value: Any, errors: dict[str, str]) -> Any:
         try:
             num = float(value)
         except (TypeError, ValueError):
+            errors[name] = "Must be a number"
+            return None
+        # NaN/inf parse as floats but are not valid answers (and are not
+        # JSON-encodable by Postgres), so reject them before any comparison.
+        if not math.isfinite(num):
             errors[name] = "Must be a number"
             return None
         if ftype == "integer":
@@ -116,8 +135,22 @@ def _validate_scalar(field: Any, value: Any, errors: dict[str, str]) -> Any:
     text = str(value).strip()
 
     if ftype == "email":
-        if not _EMAIL_RE.match(text):
+        try:
+            _EMAIL_ADAPTER.validate_python(text)
+        except Exception:
             errors[name] = "Invalid email address"
+            return None
+    elif ftype in ("phone", "tel"):
+        # Same normalization as every other phone input in the system.
+        from app.schemas.schemas import bd_phone
+        try:
+            text = bd_phone(text)
+        except ValueError:
+            errors[name] = "Invalid Bangladesh phone number"
+            return None
+    elif ftype == "url":
+        if not re.match(r"^https?://\S+$", text):
+            errors[name] = "Invalid URL (must start with http:// or https://)"
             return None
     elif ftype in ("date", "datetime"):
         try:
@@ -129,12 +162,12 @@ def _validate_scalar(field: Any, value: Any, errors: dict[str, str]) -> Any:
             errors[name] = "Invalid date"
             return None
     elif ftype in ("select", "radio"):
-        options = field.options if isinstance(field.options, list) else []
-        if options and text not in [str(o) for o in options]:
+        allowed = _allowed_options(field)
+        if allowed is not None and text not in allowed:
             errors[name] = "Invalid option"
             return None
 
-    max_len = rules.get("max_length") or 2000
+    max_len = rules.get("max_length") if rules.get("max_length") is not None else 2000
     if len(text) > int(max_len):
         errors[name] = f"Must be at most {int(max_len)} characters"
         return None
@@ -166,9 +199,9 @@ def validate_form_data(fields: Iterable[Any], form_data: dict | None) -> dict:
 
     field_map = {f.field_name: f for f in fields}
 
-    unknown = [k for k in submitted if k not in field_map]
-    if unknown:
-        errors["_form"] = f"Unknown fields: {', '.join(sorted(unknown))}"
+    # Unknown keys are silently dropped rather than rejected: the customer may
+    # be submitting a form rendered before an admin renamed/removed a field
+    # (service pages are cached), and their booking must not be lost for it.
 
     for name, field in field_map.items():
         visible = _condition_met(field.conditional_logic, submitted)
@@ -177,20 +210,27 @@ def validate_form_data(fields: Iterable[Any], form_data: dict | None) -> dict:
         if not visible:
             continue  # hidden field: ignore any submitted value
 
+        ftype = (field.field_type or "text").lower()
+
+        # For a required checkbox, "required" means the box must actually be
+        # checked (consent semantics) — a submitted False is as bad as absent.
+        if ftype in _BOOL_TYPES and field.is_required and value is not True:
+            if not (isinstance(value, str) and value.lower() in ("true", "1", "yes")):
+                errors[name] = "This field must be checked"
+                continue
+
         if _is_empty(value):
             if field.is_required:
                 errors[name] = "This field is required"
             continue
 
-        ftype = (field.field_type or "text").lower()
         if ftype in _MULTI_TYPES:
             values = value if isinstance(value, list) else [value]
-            options = field.options if isinstance(field.options, list) else []
-            allowed = [str(o) for o in options]
+            allowed = _allowed_options(field)
             picked: list[str] = []
             for v in values:
                 text = str(v).strip()
-                if options and text not in allowed:
+                if allowed is not None and text not in allowed:
                     errors[name] = "Invalid option"
                     break
                 picked.append(text)

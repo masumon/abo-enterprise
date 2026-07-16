@@ -51,6 +51,9 @@ function resolveInitialTier(service: Service, initialTierId?: string) {
 
 type DynamicValue = string | boolean | string[];
 
+/** Field types whose value is not a plain string (string defaults don't apply). */
+const NON_TEXT_TYPES = new Set(["checkbox", "boolean", "multiselect", "checkbox_group"]);
+
 /** Active dynamic fields for this service, in admin-defined order. */
 function activeDynamicFields(service: Service): ServiceBookingFormField[] {
   return (service.booking_forms ?? [])
@@ -94,7 +97,11 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
   const [dynamicValues, setDynamicValues] = useState<Record<string, DynamicValue>>(() => {
     const init: Record<string, DynamicValue> = {};
     for (const f of dynamicFields) {
-      if (f.default_value) init[f.field_name] = f.default_value;
+      // String defaults only apply to text-like fields: seeding "true" into a
+      // checkbox would submit a value the customer never visibly selected.
+      if (f.default_value && !NON_TEXT_TYPES.has((f.field_type || "text").toLowerCase())) {
+        init[f.field_name] = f.default_value;
+      }
     }
     return init;
   });
@@ -110,6 +117,11 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
     });
   };
 
+  const fixFieldsMsg =
+    lang === "bn"
+      ? "অনুগ্রহ করে চিহ্নিত ঘরগুলো ঠিক করে আবার চেষ্টা করুন।"
+      : "Please fix the highlighted fields and try again.";
+
   /** Client-side mirror of the server validation; server stays authoritative. */
   function validateDynamicFields(): Record<string, DynamicValue> | null {
     const errors: Record<string, string> = {};
@@ -117,6 +129,13 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
     for (const field of dynamicFields) {
       if (!isFieldVisible(field, dynamicValues)) continue;
       const value = dynamicValues[field.field_name];
+      const ftype = (field.field_type || "text").toLowerCase();
+      // Mirror of the server rule: a required checkbox must actually be checked.
+      if ((ftype === "checkbox" || ftype === "boolean") && field.is_required && value !== true) {
+        errors[field.field_name] =
+          lang === "bn" ? "এই ঘরটি টিক দেওয়া আবশ্যক" : "This field must be checked";
+        continue;
+      }
       if (isEmptyValue(value)) {
         if (field.is_required) {
           errors[field.field_name] =
@@ -183,11 +202,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
 
       const formData = validateDynamicFields();
       if (formData === null) {
-        setSubmitError(
-          lang === "bn"
-            ? "অনুগ্রহ করে চিহ্নিত ঘরগুলো ঠিক করে আবার চেষ্টা করুন।"
-            : "Please fix the highlighted fields and try again."
-        );
+        setSubmitError(fixFieldsMsg);
         setSubmitting(false);
         return;
       }
@@ -259,11 +274,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         ?.response?.data?.detail;
       if (detail?.errors && typeof detail.errors === "object") {
         setDynamicErrors(detail.errors);
-        setSubmitError(
-          lang === "bn"
-            ? "অনুগ্রহ করে চিহ্নিত ঘরগুলো ঠিক করে আবার চেষ্টা করুন।"
-            : "Please fix the highlighted fields and try again."
-        );
+        setSubmitError(fixFieldsMsg);
       } else {
         setSubmitError(apiErrorMessage(error, "Booking failed. Please try again."));
       }
@@ -490,9 +501,11 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
                       ? "email"
                       : ftype === "phone" || ftype === "tel"
                         ? "tel"
-                        : ftype === "date"
-                          ? "date"
-                          : "text"
+                        : ftype === "url"
+                          ? "url"
+                          : ftype === "date"
+                            ? "date"
+                            : "text"
                 }
                 value={typeof value === "string" ? value : ""}
                 onChange={(e) => setDynamicValue(field.field_name, e.target.value)}

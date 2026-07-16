@@ -84,36 +84,6 @@ async def get_category(slug: str, db: AsyncSession = Depends(get_db)):
     return ApiResponse(data=data, message="ok")
 
 
-@router.get("/{category_slug}/subcategories/{sub_slug}", response_model=ApiResponse)
-async def get_subcategory(
-    category_slug: str,
-    sub_slug: str,
-    db: AsyncSession = Depends(get_db),
-):
-    """Resolve a nested category/subcategory slug pair (public).
-
-    Powers the /services/{categorySlug}/{subCategorySlug} pages: returns the
-    subcategory with its parent category embedded for breadcrumbs/SEO.
-    """
-    result = await db.execute(
-        select(Subcategory)
-        .join(Category, Subcategory.category_id == Category.id)
-        .where(
-            Category.slug == category_slug,
-            Category.is_deleted == False,  # noqa: E712
-            Subcategory.slug == sub_slug,
-            Subcategory.is_deleted == False,  # noqa: E712
-        )
-        .options(selectinload(Subcategory.category))
-    )
-    sub = result.scalar_one_or_none()
-    if not sub:
-        raise HTTPException(status_code=404, detail="Subcategory not found")
-    data = SubcategoryOut.model_validate(sub).model_dump()
-    data["category"] = CategoryOut.model_validate(sub.category).model_dump()
-    return ApiResponse(data=data, message="ok")
-
-
 # ==================== ADMIN — CATEGORIES ====================
 
 @router.get("/admin/all", response_model=ApiResponse)

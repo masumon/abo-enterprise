@@ -20,6 +20,15 @@ interface Props {
 
 const PER_PAGE = 12;
 
+function chipClass(active: boolean): string {
+  return cn(
+    "px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors",
+    active
+      ? "bg-brand-600 text-white border-brand-600"
+      : "bg-white dark:bg-white/5 text-heading border-gray-200 dark:border-white/10 hover:border-brand-400"
+  );
+}
+
 /**
  * Nested taxonomy browsing — category landing and subcategory listing pages.
  * The subcategory chips deep-link into /services/{cat}/{sub}; the grid pulls
@@ -98,27 +107,14 @@ export default function CategoryBrowseClient({
                 {lang === "bn" ? "সাব-ক্যাটাগরি" : "Browse by Subcategory"}
               </h2>
               <div className="flex flex-wrap gap-2">
-                <Link
-                  href={`/services/${category.slug}`}
-                  className={cn(
-                    "px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors",
-                    !subcategory
-                      ? "bg-brand-600 text-white border-brand-600"
-                      : "bg-white dark:bg-white/5 text-heading border-gray-200 dark:border-white/10 hover:border-brand-400"
-                  )}
-                >
+                <Link href={`/services/${category.slug}`} className={chipClass(!subcategory)}>
                   {lang === "bn" ? "সব" : "All"}
                 </Link>
                 {subcategories.map((sub) => (
                   <Link
                     key={sub.id}
                     href={`/services/${category.slug}/${sub.slug}`}
-                    className={cn(
-                      "px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors",
-                      subcategory?.id === sub.id
-                        ? "bg-brand-600 text-white border-brand-600"
-                        : "bg-white dark:bg-white/5 text-heading border-gray-200 dark:border-white/10 hover:border-brand-400"
-                    )}
+                    className={chipClass(subcategory?.id === sub.id)}
                   >
                     {lang === "bn" && sub.name_bn ? sub.name_bn : sub.name_en}
                   </Link>

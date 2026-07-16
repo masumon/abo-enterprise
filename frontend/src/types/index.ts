@@ -375,8 +375,6 @@ export interface Subcategory {
   image_url?: string | null;
   sort_order: number;
   is_active: boolean;
-  /** Parent category, embedded by the nested slug resolver endpoint. */
-  category?: Category;
   created_at?: string;
   updated_at?: string;
 }

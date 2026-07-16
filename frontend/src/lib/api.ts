@@ -467,10 +467,6 @@ export const categoriesApi = {
 
   getBySlug: (slug: string) =>
     api.get<ApiResponse<Category>>(`/api/v1/categories/${slug}`),
-
-  /** Resolve a nested category/subcategory slug pair (parent embedded). */
-  getSubcategory: (categorySlug: string, subSlug: string) =>
-    api.get<ApiResponse<Subcategory>>(`/api/v1/categories/${categorySlug}/subcategories/${subSlug}`),
 };
 
 export const categoriesAdminApi = {

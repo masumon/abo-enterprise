@@ -6,6 +6,7 @@ import CategoryBrowseClient from "@/components/services/CategoryBrowseClient";
 import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { jsonLdString } from "@/lib/metadata";
+import { fetchWithRetry } from "@/lib/fetchRetry";
 
 const API_BASE = getApiBaseUrl();
 
@@ -20,27 +21,41 @@ const API_BASE = getApiBaseUrl();
  * do we try the taxonomy.
  */
 
-async function fetchJson<T>(url: string): Promise<T | null> {
+interface Envelope<T> {
+  data: T | null;
+  meta?: { total?: number };
+}
+
+async function fetchEnvelope<T>(url: string): Promise<Envelope<T>> {
   try {
-    const res = await fetch(url, { next: { revalidate: 60 } });
-    if (!res.ok) return null;
-    const json = await res.json();
-    return (json.data ?? null) as T | null;
+    // fetchWithRetry absorbs transient 5xx/cold-starts so a blip never turns
+    // a valid URL into a hard 404 (which crawlers may deindex).
+    const res = await fetchWithRetry(url, { next: { revalidate: 60 } });
+    if (!res.ok) return { data: null };
+    return (await res.json()) as Envelope<T>;
   } catch {
-    return null;
+    return { data: null };
   }
 }
 
-const fetchService = (slug: string) =>
-  fetchJson<Service>(`${API_BASE}/api/v1/services/${encodeURIComponent(slug)}`);
+const fetchService = async (slug: string) =>
+  (await fetchEnvelope<Service>(`${API_BASE}/api/v1/services/${encodeURIComponent(slug)}`)).data;
 
-const fetchCategory = (slug: string) =>
-  fetchJson<Category>(`${API_BASE}/api/v1/categories/${encodeURIComponent(slug)}`);
+/** Active, service-applicable category — anything else is not publicly routable. */
+async function fetchServiceCategory(slug: string): Promise<Category | null> {
+  const cat = (await fetchEnvelope<Category>(`${API_BASE}/api/v1/categories/${encodeURIComponent(slug)}`)).data;
+  if (!cat) return null;
+  if (cat.is_active === false) return null;
+  if (!(cat.applies_to ?? []).includes("service")) return null;
+  return cat;
+}
 
-const fetchSubcategory = (categorySlug: string, subSlug: string) =>
-  fetchJson<Subcategory>(
-    `${API_BASE}/api/v1/categories/${encodeURIComponent(categorySlug)}/subcategories/${encodeURIComponent(subSlug)}`
-  );
+/** Resolve an active subcategory from its parent's embedded list (no extra endpoint needed). */
+function findActiveSubcategory(category: Category, subSlug: string): Subcategory | null {
+  const sub = (category.subcategories ?? []).find((s) => s.slug === subSlug);
+  if (!sub || sub.is_active === false) return null;
+  return sub;
+}
 
 async function fetchTaxonomyServices(
   categorySlug: string,
@@ -48,15 +63,9 @@ async function fetchTaxonomyServices(
 ): Promise<{ services: Service[]; total: number }> {
   const params = new URLSearchParams({ page: "1", per_page: "12", category_slug: categorySlug });
   if (subcategorySlug) params.set("subcategory_slug", subcategorySlug);
-  try {
-    const res = await fetch(`${API_BASE}/api/v1/services?${params}`, { next: { revalidate: 60 } });
-    if (!res.ok) return { services: [], total: 0 };
-    const json = await res.json();
-    const services = (json.data ?? []) as Service[];
-    return { services, total: json.meta?.total ?? services.length };
-  } catch {
-    return { services: [], total: 0 };
-  }
+  const env = await fetchEnvelope<Service[]>(`${API_BASE}/api/v1/services?${params}`);
+  const services = env.data ?? [];
+  return { services, total: env.meta?.total ?? services.length };
 }
 
 interface PageParams {
@@ -98,9 +107,12 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
   const segments = params.segments ?? [];
 
   if (segments.length === 1) {
-    const service = await fetchService(segments[0]);
+    // Both lookups are independent probes on the same slug — run them together.
+    const [service, category] = await Promise.all([
+      fetchService(segments[0]),
+      fetchServiceCategory(segments[0]),
+    ]);
     if (service) return serviceMetadata(service);
-    const category = await fetchCategory(segments[0]);
     if (category) {
       const title = `${category.name_en} Services | ABO Enterprise`;
       const description =
@@ -112,12 +124,12 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
   }
 
   if (segments.length === 2) {
-    const sub = await fetchSubcategory(segments[0], segments[1]);
-    if (sub) {
-      const catName = sub.category?.name_en ?? segments[0];
-      const title = `${sub.name_en} — ${catName} | ABO Enterprise`;
+    const category = await fetchServiceCategory(segments[0]);
+    const sub = category ? findActiveSubcategory(category, segments[1]) : null;
+    if (category && sub) {
+      const title = `${sub.name_en} — ${category.name_en} | ABO Enterprise`;
       const description =
-        sub.description_en ?? `${sub.name_en} (${catName}) services by ABO Enterprise, Bangladesh.`;
+        sub.description_en ?? `${sub.name_en} (${category.name_en}) services by ABO Enterprise, Bangladesh.`;
       const url = `${SITE_URL}/services/${segments[0]}/${segments[1]}`;
       return { title, description, alternates: { canonical: url }, openGraph: { title, description, url, type: "website" } };
     }
@@ -173,7 +185,11 @@ export default async function ServicesCatchAllPage({ params }: { params: PagePar
 
   // /services/{serviceSlug} — service detail wins (legacy behaviour).
   if (segments.length === 1) {
-    const service = await fetchService(segments[0]);
+    const [service, category] = await Promise.all([
+      fetchService(segments[0]),
+      fetchServiceCategory(segments[0]),
+    ]);
+
     if (service) {
       const jsonLd = buildJsonLd(service);
       return (
@@ -188,7 +204,6 @@ export default async function ServicesCatchAllPage({ params }: { params: PagePar
     }
 
     // /services/{categorySlug} — category landing page.
-    const category = await fetchCategory(segments[0]);
     if (category) {
       const { services, total } = await fetchTaxonomyServices(category.slug);
       return (
@@ -205,21 +220,21 @@ export default async function ServicesCatchAllPage({ params }: { params: PagePar
 
   // /services/{categorySlug}/{subCategorySlug} — subcategory listing.
   if (segments.length === 2) {
-    const sub = await fetchSubcategory(segments[0], segments[1]);
-    if (sub) {
-      // Full category fetch — the chip navigation needs the subcategory list.
-      const category = await fetchCategory(segments[0]);
-      if (category) {
-        const { services, total } = await fetchTaxonomyServices(segments[0], segments[1]);
-        return (
-          <CategoryBrowseClient
-            category={category}
-            subcategory={sub}
-            initialServices={services}
-            initialTotal={total}
-          />
-        );
-      }
+    // Both depend only on the URL segments — fully parallel.
+    const [category, listing] = await Promise.all([
+      fetchServiceCategory(segments[0]),
+      fetchTaxonomyServices(segments[0], segments[1]),
+    ]);
+    const sub = category ? findActiveSubcategory(category, segments[1]) : null;
+    if (category && sub) {
+      return (
+        <CategoryBrowseClient
+          category={category}
+          subcategory={sub}
+          initialServices={listing.services}
+          initialTotal={listing.total}
+        />
+      );
     }
     notFound();
   }

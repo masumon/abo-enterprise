@@ -27,8 +27,6 @@ function normalizeServiceSlug(raw?: string): string {
 
 export default function BookPageClient({ serviceSlug, tierId, mode }: BookPageClientProps) {
   const { lang } = useLanguageStore();
-  const isOrder = mode === "order";
-  const isQuote = mode === "quote";
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +61,13 @@ export default function BookPageClient({ serviceSlug, tierId, mode }: BookPageCl
       cancelled = true;
     };
   }, [normalizedSlug, lang]);
+
+  // The URL param wins when present (deep link intent); otherwise the mode is
+  // derived from the service's own API-computed CTA, so a stale bookmark or a
+  // link minted before an admin changed the CTA still shows consistent copy.
+  const ctaType = service?.cta?.type;
+  const isOrder = mode === "order" || (!mode && ctaType === "order");
+  const isQuote = mode === "quote" || (!mode && ctaType === "quote");
 
   if (loading) {
     return (

@@ -576,6 +576,17 @@ class ServiceOut(ServiceBase):
     id: uuid.UUID
     pricing_tiers: list[ServicePricingTierOut] = []
     booking_forms: list[ServiceBookingFormOut] = []
+
+    @field_validator("pricing_tiers", "booking_forms", mode="before")
+    @classmethod
+    def _drop_soft_deleted(cls, v):
+        """Soft-deleted rows must never reach clients: a deleted booking-form
+        field that still renders would be filled in and then rejected by the
+        booking validator, blocking the whole booking."""
+        try:
+            return [item for item in v if not getattr(item, "is_deleted", False)]
+        except TypeError:
+            return v
     created_at: datetime
     updated_at: datetime
     # Unified taxonomy links (additive; null until associated).

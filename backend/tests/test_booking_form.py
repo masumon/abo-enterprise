@@ -44,10 +44,11 @@ class TestValidateFormData:
     def test_optional_field_missing_ok(self):
         assert validate_form_data([make_field(is_required=False)], {}) == {}
 
-    def test_unknown_field_rejected(self):
-        with pytest.raises(BookingFormValidationError) as exc:
-            validate_form_data([make_field()], {"nid_number": "123", "evil": "x"})
-        assert "_form" in exc.value.errors
+    def test_unknown_field_silently_dropped(self):
+        # Stale keys (field renamed/removed while the customer had the cached
+        # form open) must not block the booking — they are dropped, not saved.
+        cleaned = validate_form_data([make_field()], {"nid_number": "123", "stale_field": "x"})
+        assert cleaned == {"nid_number": "123"}
 
     def test_valid_text_passes_and_strips(self):
         cleaned = validate_form_data([make_field()], {"nid_number": " 1234567890 "})
@@ -108,6 +109,43 @@ class TestValidateFormData:
         f = make_field(field_type="checkbox", is_required=False)
         assert validate_form_data([f], {"nid_number": True}) == {"nid_number": True}
         assert validate_form_data([f], {"nid_number": "false"}) == {"nid_number": False}
+
+    def test_required_checkbox_must_be_checked(self):
+        # Consent semantics: a required checkbox submitted as False is as
+        # invalid as one never submitted at all.
+        f = make_field(field_type="checkbox", is_required=True)
+        assert validate_form_data([f], {"nid_number": True}) == {"nid_number": True}
+        with pytest.raises(BookingFormValidationError):
+            validate_form_data([f], {"nid_number": False})
+        with pytest.raises(BookingFormValidationError):
+            validate_form_data([f], {})
+
+    def test_number_rejects_nan_and_inf(self):
+        f = make_field(field_type="number")
+        for bad in ("nan", "inf", "-inf", "Infinity"):
+            with pytest.raises(BookingFormValidationError):
+                validate_form_data([f], {"nid_number": bad})
+        fi = make_field(field_type="integer")
+        with pytest.raises(BookingFormValidationError):
+            validate_form_data([fi], {"nid_number": "nan"})
+
+    def test_phone_field_normalized_bd(self):
+        f = make_field(field_type="phone")
+        cleaned = validate_form_data([f], {"nid_number": "01712345678"})
+        assert cleaned["nid_number"].endswith("1712345678")
+        with pytest.raises(BookingFormValidationError):
+            validate_form_data([f], {"nid_number": "12345"})
+
+    def test_url_field(self):
+        f = make_field(field_type="url")
+        assert validate_form_data([f], {"nid_number": "https://example.com/x"})
+        with pytest.raises(BookingFormValidationError):
+            validate_form_data([f], {"nid_number": "not-a-url"})
+
+    def test_max_length_zero_is_honored(self):
+        f = make_field(validation_rules={"max_length": 0})
+        with pytest.raises(BookingFormValidationError):
+            validate_form_data([f], {"nid_number": "x"})
 
     def test_conditional_hidden_field_not_required(self):
         addr = make_field(

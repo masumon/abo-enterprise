@@ -27,8 +27,17 @@ ALTER TABLE services ADD COLUMN IF NOT EXISTS cta_label_bn VARCHAR(120);
 
 -- ---------------------------------------------------------------------------
 -- 3. Service taxonomy seed — ৯টি মূল ক্যাটাগরি + সাব-ক্যাটাগরি
---    (আগে থেকে থাকলে স্কিপ হবে; কিছুই ওভাররাইট হয় না)
+--    (আগে থেকে থাকলে স্কিপ হবে; শুধু 0004-এর মেশিন-জেনারেটেড 'web_software'
+--    নামটা নরমালাইজ হয় — অ্যাডমিনের হাতে বদলানো কিছুই ওভাররাইট হয় না)
 -- ---------------------------------------------------------------------------
+-- 0004-এর অটো-তৈরি row যদি seed slug দখল করে থাকে (web_software → web-software),
+-- নাম/আইকন নরমালাইজ করি — শুধু যখন name_en এখনো মেশিন-নাম।
+UPDATE categories SET
+    name_en = 'Web & Software', name_bn = 'ওয়েব ও সফটওয়্যার', icon = 'Globe', sort_order = 3,
+    applies_to = CASE WHEN applies_to @> '["service"]'::jsonb THEN applies_to
+                      ELSE applies_to || '["service"]'::jsonb END
+WHERE slug = 'web-software' AND name_en = 'web_software';
+
 INSERT INTO categories (slug, name_en, name_bn, icon, applies_to, sort_order, is_active) VALUES
     ('digital-e-services',      'Digital & E-Services',     'ডিজিটাল ও ই-সেবা',        'FileText',   '["service"]'::jsonb, 1, TRUE),
     ('printing-documentation',  'Printing & Documentation', 'প্রিন্টিং ও ডকুমেন্টেশন', 'Printer',    '["service"]'::jsonb, 2, TRUE),
@@ -94,5 +103,60 @@ FROM (VALUES
 ) AS s(category_slug, slug, name_en, name_bn, sort_order)
 JOIN categories c ON c.slug = s.category_slug
 ON CONFLICT (category_id, slug) DO NOTHING;
+
+-- ---------------------------------------------------------------------------
+-- 4. Legacy সার্ভিসগুলোকে নতুন taxonomy-তে রি-লিংক
+--    (0004-এর অটো-ক্যাটাগরিতে পয়েন্ট করা বা NULL হলে তবেই; অ্যাডমিনের
+--    ম্যানুয়াল অ্যাসাইনমেন্ট কখনো বদলায় না)
+-- ---------------------------------------------------------------------------
+UPDATE services sv
+SET category_id = new_c.id
+FROM (VALUES
+    ('printing',           'printing',            'printing-documentation'),
+    ('legal',              'legal',               'printing-documentation'),
+    ('documents',          'documents',           'digital-e-services'),
+    ('web',                'web',                 'web-software'),
+    ('software',           'software',            'web-software'),
+    ('marketing',          'marketing',           'marketing-design'),
+    ('design',             'design',              'marketing-design'),
+    ('consulting',         'consulting',          'business-consultancy'),
+    ('ai',                 'ai',                  'ai-automation'),
+    ('automation',         'automation',          'ai-automation'),
+    ('other',              'other',               'others'),
+    ('digital_services',   'digital-services',    'digital-e-services'),
+    ('print_documentation','print-documentation', 'printing-documentation'),
+    ('mobile_software',    'mobile-software',     'mobile-lab'),
+    ('computer_software',  'computer-software',   'it-support'),
+    ('business_software',  'business-software',   'business-consultancy'),
+    ('ai_solutions',       'ai-solutions',        'ai-automation'),
+    ('web_software',       'web-software',        'web-software'),
+    ('general',            'general',             'others')
+) AS m(legacy, machine_slug, new_slug)
+JOIN categories new_c ON new_c.slug = m.new_slug AND new_c.is_deleted = FALSE
+WHERE sv.category = m.legacy
+  AND sv.is_deleted = FALSE
+  AND (
+    sv.category_id IS NULL
+    OR sv.category_id IN (
+      SELECT id FROM categories mc
+      WHERE mc.slug = m.machine_slug AND mc.slug <> m.new_slug
+    )
+  );
+
+-- ---------------------------------------------------------------------------
+-- 5. খালি হয়ে যাওয়া মেশিন-জেনারেটেড ক্যাটাগরি নিষ্ক্রিয় (ডিলিট নয় — reversible)
+-- ---------------------------------------------------------------------------
+UPDATE categories c
+SET is_active = FALSE
+WHERE c.slug IN (
+    'printing','legal','documents','web','software','marketing','design',
+    'consulting','ai','automation','other','digital-services',
+    'print-documentation','mobile-software','computer-software',
+    'business-software','ai-solutions','general'
+  )
+  AND c.applies_to = '["service"]'::jsonb
+  AND c.is_deleted = FALSE
+  AND NOT EXISTS (SELECT 1 FROM services s WHERE s.category_id = c.id AND s.is_deleted = FALSE)
+  AND NOT EXISTS (SELECT 1 FROM products p WHERE p.category_id = c.id AND p.is_deleted = FALSE);
 
 COMMIT;

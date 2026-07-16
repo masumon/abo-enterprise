@@ -66,6 +66,7 @@ async def list_services(
                 select(Category.id).where(
                     Category.slug == category_slug,
                     Category.is_deleted == False,  # noqa: E712
+                    Category.is_active == True,  # noqa: E712
                 )
             )
         )
@@ -76,6 +77,7 @@ async def list_services(
             .where(
                 Subcategory.slug == subcategory_slug,
                 Subcategory.is_deleted == False,  # noqa: E712
+                Subcategory.is_active == True,  # noqa: E712
             )
         )
         if category_slug:
