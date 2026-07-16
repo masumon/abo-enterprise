@@ -1,73 +1,79 @@
 "use client";
 import Link from "next/link";
-import { ShoppingBag, Calendar, Briefcase, ArrowRight } from "lucide-react";
+import { ShoppingBag, Calendar, Briefcase, Bot, Wrench, Globe, ArrowRight, type LucideIcon } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
+import { usePublicSettings } from "@/hooks/usePublicSettings";
+import { SITE_ENTRY_POINTS_KEY, getEntryPoints, type CmsEntryPoint } from "@/lib/cmsContent";
 
-const ENTRIES = [
+/** Icon names usable from the admin JSON (site_entry_points_json). */
+const ICONS: Record<string, LucideIcon> = {
+  "shopping-bag": ShoppingBag,
+  calendar: Calendar,
+  briefcase: Briefcase,
+  bot: Bot,
+  wrench: Wrench,
+  globe: Globe,
+};
+
+/** Colour treatments cycle by position so admin-edited cards stay on palette. */
+const STYLES = [
   {
-    icon: ShoppingBag,
     gradient: "from-blue-600 to-blue-700",
     lightBg: "bg-blue-50",
     lightText: "text-blue-700",
     border: "border-blue-100",
-    emoji: "🛒",
-    title: { en: "Shop Tech Products", bn: "টেক পণ্য কিনুন" },
-    desc: {
-      en: "Mobile accessories, premium gadgets & electronics. Fast delivery across Sylhet.",
-      bn: "মোবাইল এক্সেসরিজ, প্রিমিয়াম গ্যাজেট ও ইলেকট্রনিক্স। সিলেটে দ্রুত ডেলিভারি।",
-    },
-    cta: { en: "Browse Products", bn: "পণ্য দেখুন" },
-    href: "/products",
-    tags: [
-      { en: "Accessories", bn: "এক্সেসরিজ" },
-      { en: "Gadgets", bn: "গ্যাজেট" },
-      { en: "Electronics", bn: "ইলেকট্রনিক্স" },
-    ],
   },
   {
-    icon: Calendar,
     gradient: "from-green-600 to-emerald-700",
     lightBg: "bg-green-50",
     lightText: "text-green-700",
     border: "border-green-100",
-    emoji: "📅",
-    title: { en: "Digital Service Center", bn: "ডিজিটাল সার্ভিস সেন্টার" },
-    desc: {
-      en: "Passport, NID, bKash, printing plus mobile & computer software support.",
-      bn: "পাসপোর্ট, NID, বিকাশ, প্রিন্টিং এবং মোবাইল ও কম্পিউটার সফটওয়্যার সেবা।",
-    },
-    cta: { en: "Explore Services", bn: "সেবা দেখুন" },
-    href: "/services",
-    tags: [
-      { en: "Digital Services", bn: "ডিজিটাল সেবা" },
-      { en: "Printing", bn: "প্রিন্টিং" },
-      { en: "Software Lab", bn: "সফটওয়্যার ল্যাব" },
-    ],
   },
   {
-    icon: Briefcase,
     gradient: "from-purple-600 to-violet-700",
     lightBg: "bg-purple-50",
     lightText: "text-purple-700",
     border: "border-purple-100",
-    emoji: "💼",
-    title: { en: "Business Solutions", bn: "ব্যবসা সমাধান" },
-    desc: {
-      en: "POS, ERP, IPTV, ISP billing, AI automation & custom software for your business.",
-      bn: "POS, ERP, IPTV, ISP বিলিং, AI অটোমেশন ও কাস্টম সফটওয়্যার আপনার ব্যবসার জন্য।",
-    },
-    cta: { en: "Get a Free Quote", bn: "ফ্রি কোটেশন নিন" },
+  },
+];
+
+const FALLBACK: CmsEntryPoint[] = [
+  {
+    icon: "shopping-bag",
+    title_en: "Shop Tech Products", title_bn: "টেক পণ্য কিনুন",
+    desc_en: "Mobile accessories, premium gadgets & electronics. Fast delivery across Sylhet.",
+    desc_bn: "মোবাইল এক্সেসরিজ, প্রিমিয়াম গ্যাজেট ও ইলেকট্রনিক্স। সিলেটে দ্রুত ডেলিভারি।",
+    cta_en: "Browse Products", cta_bn: "পণ্য দেখুন",
+    href: "/products",
+    tags_en: ["Accessories", "Gadgets", "Electronics"],
+    tags_bn: ["এক্সেসরিজ", "গ্যাজেট", "ইলেকট্রনিক্স"],
+  },
+  {
+    icon: "calendar",
+    title_en: "Digital Service Center", title_bn: "ডিজিটাল সার্ভিস সেন্টার",
+    desc_en: "Passport, NID, bKash, printing plus mobile & computer software support.",
+    desc_bn: "পাসপোর্ট, NID, বিকাশ, প্রিন্টিং এবং মোবাইল ও কম্পিউটার সফটওয়্যার সেবা।",
+    cta_en: "Explore Services", cta_bn: "সেবা দেখুন",
+    href: "/services",
+    tags_en: ["Digital Services", "Printing", "Software Lab"],
+    tags_bn: ["ডিজিটাল সেবা", "প্রিন্টিং", "সফটওয়্যার ল্যাব"],
+  },
+  {
+    icon: "briefcase",
+    title_en: "Business Solutions", title_bn: "ব্যবসা সমাধান",
+    desc_en: "POS, ERP, IPTV, ISP billing, AI automation & custom software for your business.",
+    desc_bn: "POS, ERP, IPTV, ISP বিলিং, AI অটোমেশন ও কাস্টম সফটওয়্যার আপনার ব্যবসার জন্য।",
+    cta_en: "Get a Free Quote", cta_bn: "ফ্রি কোটেশন নিন",
     href: "/projects",
-    tags: [
-      { en: "POS / ERP", bn: "POS / ERP" },
-      { en: "AI Solutions", bn: "AI সমাধান" },
-      { en: "Custom Software", bn: "কাস্টম সফটওয়্যার" },
-    ],
+    tags_en: ["POS / ERP", "AI Solutions", "Custom Software"],
+    tags_bn: ["POS / ERP", "AI সমাধান", "কাস্টম সফটওয়্যার"],
   },
 ];
 
 export default function EntryPoints() {
   const { lang } = useLanguageStore();
+  const { settings } = usePublicSettings([SITE_ENTRY_POINTS_KEY]);
+  const entries = getEntryPoints(settings, FALLBACK);
 
   return (
     <section className="enterprise-section-alt">
@@ -84,50 +90,54 @@ export default function EntryPoints() {
           </p>
         </div>
 
-        {/* 3 Cards */}
+        {/* Cards */}
         <div className="grid md:grid-cols-3 gap-6">
-          {ENTRIES.map((entry) => {
-            const Icon = entry.icon;
+          {entries.map((entry, i) => {
+            const Icon = ICONS[entry.icon ?? ""] ?? Briefcase;
+            const style = STYLES[i % STYLES.length];
+            const tags = (lang === "bn" ? entry.tags_bn ?? entry.tags_en : entry.tags_en ?? entry.tags_bn) ?? [];
             return (
               <Link
-                key={entry.href}
+                key={`${entry.href}-${entry.title_en || entry.title_bn}`}
                 href={entry.href}
                 className="group card-hover overflow-hidden flex flex-col hover:-translate-y-1.5"
               >
                 {/* Card top gradient strip */}
-                <div className={`h-1 w-full bg-gradient-to-r ${entry.gradient}`} />
+                <div className={`h-1 w-full bg-gradient-to-r ${style.gradient}`} />
 
                 <div className="p-6 flex flex-col flex-1">
                   {/* Icon */}
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${entry.gradient} flex items-center justify-center mb-5 shadow-lg group-hover:scale-105 transition-transform`}>
+                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${style.gradient} flex items-center justify-center mb-5 shadow-lg group-hover:scale-105 transition-transform`}>
                     <Icon className="w-7 h-7 text-white" />
                   </div>
 
                   {/* Title */}
                   <h3 className="text-xl font-bold text-heading mb-2">
-                    {lang === "bn" ? entry.title.bn : entry.title.en}
+                    {lang === "bn" ? entry.title_bn || entry.title_en : entry.title_en || entry.title_bn}
                   </h3>
 
                   {/* Description */}
                   <p className="text-gray-500 text-sm leading-relaxed mb-5 flex-1">
-                    {lang === "bn" ? entry.desc.bn : entry.desc.en}
+                    {lang === "bn" ? entry.desc_bn || entry.desc_en : entry.desc_en || entry.desc_bn}
                   </p>
 
                   {/* Tags */}
-                  <div className="flex flex-wrap gap-2 mb-5">
-                    {entry.tags.map((tag) => (
-                      <span
-                        key={tag.en}
-                        className={`text-xs font-medium px-2.5 py-1 rounded-full ${entry.lightBg} ${entry.lightText} border ${entry.border}`}
-                      >
-                        {lang === "bn" ? tag.bn : tag.en}
-                      </span>
-                    ))}
-                  </div>
+                  {tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-5">
+                      {tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className={`text-xs font-medium px-2.5 py-1 rounded-full ${style.lightBg} ${style.lightText} border ${style.border}`}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
 
                   {/* CTA */}
-                  <div className={`flex items-center gap-2 font-semibold text-sm ${entry.lightText} group-hover:gap-3 transition-all`}>
-                    {lang === "bn" ? entry.cta.bn : entry.cta.en}
+                  <div className={`flex items-center gap-2 font-semibold text-sm ${style.lightText} group-hover:gap-3 transition-all`}>
+                    {lang === "bn" ? entry.cta_bn || entry.cta_en : entry.cta_en || entry.cta_bn}
                     <ArrowRight className="w-4 h-4" />
                   </div>
                 </div>

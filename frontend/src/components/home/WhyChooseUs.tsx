@@ -1,44 +1,61 @@
 "use client";
 
-import { Award, Store, Globe, Wrench, Bot, Truck } from "lucide-react";
+import { Award, Store, Globe, Wrench, Bot, Truck, Shield, Users, Headphones, type LucideIcon } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import GlassCard from "@/components/ui/GlassCard";
+import { usePublicSettings } from "@/hooks/usePublicSettings";
+import { SITE_WHY_CHOOSE_KEY, getWhyChooseReasons, type CmsReason } from "@/lib/cmsContent";
 
-const REASONS = [
+/** Icon names usable from the admin JSON (site_why_choose_json). */
+const ICONS: Record<string, LucideIcon> = {
+  award: Award,
+  store: Store,
+  globe: Globe,
+  wrench: Wrench,
+  bot: Bot,
+  truck: Truck,
+  shield: Shield,
+  users: Users,
+  headphones: Headphones,
+};
+
+const FALLBACK: CmsReason[] = [
   {
-    icon: Award,
-    title: { en: "8+ Years Experience", bn: "৮+ বছরের অভিজ্ঞতা" },
-    desc: { en: "Nearly a decade serving customers with trust and consistency.", bn: "প্রায় এক দশক ধরে বিশ্বাস ও ধারাবাহিকতার সাথে গ্রাহক সেবা।" },
+    icon: "award",
+    title_en: "8+ Years Experience", title_bn: "৮+ বছরের অভিজ্ঞতা",
+    desc_en: "Nearly a decade serving customers with trust and consistency.", desc_bn: "প্রায় এক দশক ধরে বিশ্বাস ও ধারাবাহিকতার সাথে গ্রাহক সেবা।",
   },
   {
-    icon: Store,
-    title: { en: "Trusted Local Business", bn: "বিশ্বস্ত স্থানীয় ব্যবসা" },
-    desc: { en: "An established name in Sylhet with a real storefront.", bn: "সিলেটে বাস্তব দোকানসহ একটি প্রতিষ্ঠিত নাম।" },
+    icon: "store",
+    title_en: "Trusted Local Business", title_bn: "বিশ্বস্ত স্থানীয় ব্যবসা",
+    desc_en: "An established name in Sylhet with a real storefront.", desc_bn: "সিলেটে বাস্তব দোকানসহ একটি প্রতিষ্ঠিত নাম।",
   },
   {
-    icon: Globe,
-    title: { en: "Online + Offline Service", bn: "অনলাইন + অফলাইন সেবা" },
-    desc: { en: "Visit our shop or order online — the choice is yours.", bn: "দোকানে আসুন বা অনলাইনে অর্ডার করুন — পছন্দ আপনার।" },
+    icon: "globe",
+    title_en: "Online + Offline Service", title_bn: "অনলাইন + অফলাইন সেবা",
+    desc_en: "Visit our shop or order online — the choice is yours.", desc_bn: "দোকানে আসুন বা অনলাইনে অর্ডার করুন — পছন্দ আপনার।",
   },
   {
-    icon: Wrench,
-    title: { en: "Experienced Engineers", bn: "অভিজ্ঞ ইঞ্জিনিয়ার" },
-    desc: { en: "Skilled technicians for mobile, computer & software work.", bn: "মোবাইল, কম্পিউটার ও সফটওয়্যারের দক্ষ টেকনিশিয়ান।" },
+    icon: "wrench",
+    title_en: "Experienced Engineers", title_bn: "অভিজ্ঞ ইঞ্জিনিয়ার",
+    desc_en: "Skilled technicians for mobile, computer & software work.", desc_bn: "মোবাইল, কম্পিউটার ও সফটওয়্যারের দক্ষ টেকনিশিয়ান।",
   },
   {
-    icon: Bot,
-    title: { en: "AI Powered Solutions", bn: "AI চালিত সমাধান" },
-    desc: { en: "Modern automation and AI to grow your business.", bn: "আপনার ব্যবসা বাড়াতে আধুনিক অটোমেশন ও AI।" },
+    icon: "bot",
+    title_en: "AI Powered Solutions", title_bn: "AI চালিত সমাধান",
+    desc_en: "Modern automation and AI to grow your business.", desc_bn: "আপনার ব্যবসা বাড়াতে আধুনিক অটোমেশন ও AI।",
   },
   {
-    icon: Truck,
-    title: { en: "Nationwide Service", bn: "সারাদেশে সেবা" },
-    desc: { en: "Products and services delivered across Bangladesh.", bn: "সারা বাংলাদেশে পণ্য ও সেবা পৌঁছে দেওয়া।" },
+    icon: "truck",
+    title_en: "Nationwide Service", title_bn: "সারাদেশে সেবা",
+    desc_en: "Products and services delivered across Bangladesh.", desc_bn: "সারা বাংলাদেশে পণ্য ও সেবা পৌঁছে দেওয়া।",
   },
 ];
 
 export default function WhyChooseUs() {
   const { lang } = useLanguageStore();
+  const { settings } = usePublicSettings([SITE_WHY_CHOOSE_KEY]);
+  const reasons = getWhyChooseReasons(settings, FALLBACK);
 
   return (
     <section className="py-16">
@@ -49,19 +66,22 @@ export default function WhyChooseUs() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {REASONS.map(({ icon: Icon, title, desc }) => (
-            <GlassCard key={title.en} hover className="p-6">
-              <div className="w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center mb-4">
-                <Icon className="w-5 h-5 text-brand-600" />
-              </div>
-              <h3 className="font-bold text-heading mb-2 text-sm">
-                {lang === "bn" ? title.bn : title.en}
-              </h3>
-              <p className="text-gray-500 text-sm leading-relaxed">
-                {lang === "bn" ? desc.bn : desc.en}
-              </p>
-            </GlassCard>
-          ))}
+          {reasons.map((reason) => {
+            const Icon = ICONS[reason.icon ?? ""] ?? Award;
+            return (
+              <GlassCard key={reason.title_en || reason.title_bn} hover className="p-6">
+                <div className="w-11 h-11 rounded-xl bg-brand-50 flex items-center justify-center mb-4">
+                  <Icon className="w-5 h-5 text-brand-600" />
+                </div>
+                <h3 className="font-bold text-heading mb-2 text-sm">
+                  {lang === "bn" ? reason.title_bn || reason.title_en : reason.title_en || reason.title_bn}
+                </h3>
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  {lang === "bn" ? reason.desc_bn || reason.desc_en : reason.desc_en || reason.desc_bn}
+                </p>
+              </GlassCard>
+            );
+          })}
         </div>
       </div>
     </section>
