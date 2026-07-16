@@ -18,8 +18,8 @@ export default function ContactSection() {
   const address = getSettingValue(settings, "contact_address", lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN);
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
   const hours = lang === "bn"
-    ? getSettingValue(settings, "contact_hours_bn", "শনি–বৃহঃ, সকাল ৯টা–রাত ৮টা")
-    : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 8:00 PM");
+    ? getSettingValue(settings, "contact_hours_bn", "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা")
+    : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 9:00 PM");
 
   return (
     <section id="contact" className="py-16 gradient-surface">

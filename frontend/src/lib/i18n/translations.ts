@@ -56,7 +56,7 @@ const translations = {
     contact_message: "How can we help?",
     contact_send: "Send Message",
     contact_hours: "Business Hours",
-    contact_hours_val: "Saturday – Thursday, 9:00 AM – 8:00 PM",
+    contact_hours_val: "Saturday – Thursday, 9:00 AM – 9:00 PM",
     // Footer
     footer_newsletter: "Newsletter",
     footer_newsletter_sub: "Get updates on products & offers",
@@ -151,7 +151,7 @@ const translations = {
     contact_message: "কীভাবে সাহায্য করতে পারি?",
     contact_send: "বার্তা পাঠান",
     contact_hours: "কার্যঘণ্টা",
-    contact_hours_val: "শনিবার – বৃহস্পতিবার, সকাল ৯টা – রাত ৮টা",
+    contact_hours_val: "শনিবার – বৃহস্পতিবার, সকাল ৯টা – রাত ৯টা",
     footer_newsletter: "নিউজলেটার",
     footer_newsletter_sub: "পণ্য ও অফারের আপডেট পান",
     footer_subscribe: "সাবস্ক্রাইব",

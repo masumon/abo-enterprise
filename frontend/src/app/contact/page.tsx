@@ -24,7 +24,7 @@ export default function ContactPage() {
   const { lang } = useLanguageStore();
   const t = useT();
   const toast = useToastStore((s) => s.push);
-  const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address"]);
+  const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address", "contact_hours_en", "contact_hours_bn"]);
   const mapsEmbed = resolveGoogleMapsEmbed(getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED));
   const phone = getSettingValue(settings, "contact_phone", "01825007977");
   const email = getSettingValue(settings, "contact_email", "info.aboenterprise@gmail.com");
@@ -123,7 +123,9 @@ export default function ContactPage() {
               <Clock className="w-5 h-5 text-brand-600 flex-shrink-0" />
               <div>
                 <p className="text-sm font-medium text-heading">{t("contact_hours")}</p>
-                <p className="text-sm text-muted mt-1">{t("contact_hours_val")}</p>
+                <p className="text-sm text-muted mt-1">
+                  {getSettingValue(settings, lang === "bn" ? "contact_hours_bn" : "contact_hours_en", t("contact_hours_val"))}
+                </p>
               </div>
             </GlassCard>
             <GlassCard className="overflow-hidden p-0">

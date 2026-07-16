@@ -118,6 +118,8 @@ export default function Footer() {
   const { settings } = usePublicSettings([
     "trade_license",
     "whatsapp_number",
+    "contact_hours_en",
+    "contact_hours_bn",
     "contact_phone",
     "contact_email",
     "contact_address",
@@ -140,7 +142,9 @@ export default function Footer() {
   const whatsappDigits = normalizePhoneDigits(getSettingValue(settings, "whatsapp_number", phoneRaw));
   const phoneDigits = normalizePhoneDigits(phoneRaw);
   const phoneDisplay = formatPhoneDisplay(phoneRaw);
-  const hours = lang === "bn" ? "শনি–বৃহঃ, সকাল ৯টা–রাত ৮টা" : "Sat–Thu, 9 AM – 8 PM";
+  const hours = lang === "bn"
+    ? getSettingValue(settings, "contact_hours_bn", "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা")
+    : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 9:00 PM");
 
   const quickActions = [
     {
