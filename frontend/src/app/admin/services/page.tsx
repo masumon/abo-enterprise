@@ -35,7 +35,16 @@ const CATEGORIES: { value: string; label: string }[] = [
 const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
   CATEGORIES.map((c) => [c.value, c.label])
 );
-const PRICING_TYPES = ["fixed", "hourly", "package", "custom"] as const;
+const PRICING_TYPES = ["fixed", "hourly", "package", "custom", "custom_quote"] as const;
+
+// Call-To-Action options; "" = Auto (inferred from pricing type + capabilities).
+const CTA_TYPES: { value: string; label: string }[] = [
+  { value: "", label: "Auto (recommended)" },
+  { value: "book", label: "Book Now" },
+  { value: "order", label: "Order Now" },
+  { value: "quote", label: "Request Quote" },
+  { value: "contact", label: "Contact Us" },
+];
 
 const EMPTY_SERVICE: Partial<Service> = {
   slug: "", name_en: "", name_bn: "",
@@ -680,6 +689,46 @@ export default function AdminServicesPage() {
                 </div>
               </section>
 
+              {/* ── Call-To-Action ──────────────────────── */}
+              <section className="space-y-4">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Call-To-Action Button</h3>
+                <p className="text-xs text-gray-400 -mt-2">
+                  Controls the button shown on the public service page. &quot;Auto&quot; infers it:
+                  custom-quote pricing → Request Quote, orderable → Order Now, otherwise Book Now.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="form-label">CTA Type</label>
+                    <select
+                      value={editing.cta_type ?? ""}
+                      onChange={(e) => setEditing(prev => prev ? { ...prev, cta_type: e.target.value || null } : prev)}
+                      className="input w-full text-sm"
+                    >
+                      {CTA_TYPES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Custom Label (EN)</label>
+                    <input
+                      value={editing.cta_label_en ?? ""}
+                      onChange={(e) => setEditing(prev => prev ? { ...prev, cta_label_en: e.target.value || null } : prev)}
+                      placeholder="e.g. Get Started"
+                      className="input w-full text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Custom Label (বাংলা)</label>
+                    <input
+                      value={editing.cta_label_bn ?? ""}
+                      onChange={(e) => setEditing(prev => prev ? { ...prev, cta_label_bn: e.target.value || null } : prev)}
+                      placeholder="যেমন: শুরু করুন"
+                      className="input w-full text-sm"
+                      dir="auto"
+                    />
+                  </div>
+                </div>
+              </section>
+
               {/* ── Booking Form Fields (edit only) ─────── */}
               {!isNew && (
                 <section className="space-y-3">
@@ -790,6 +839,49 @@ export default function AdminServicesPage() {
                             onChange={e => setNewField(p => ({ ...p, options: e.target.value.split("\n").filter(Boolean) }))}
                             placeholder={"Option 1\nOption 2\nOption 3"}
                             className="input w-full text-sm resize-none font-mono"
+                          />
+                        </div>
+                      )}
+                      {/* Validation rules — enforced server-side on every booking */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div>
+                          <label className="form-label text-[11px]">Min Length</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={(newField.validation_rules?.min_length as number | undefined) ?? ""}
+                            onChange={e => setNewField(p => ({ ...p, validation_rules: { ...(p.validation_rules ?? {}), min_length: e.target.value ? Number(e.target.value) : undefined } }))}
+                            className="input w-full text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="form-label text-[11px]">Max Length</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={(newField.validation_rules?.max_length as number | undefined) ?? ""}
+                            onChange={e => setNewField(p => ({ ...p, validation_rules: { ...(p.validation_rules ?? {}), max_length: e.target.value ? Number(e.target.value) : undefined } }))}
+                            className="input w-full text-sm"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <label className="form-label text-[11px]">Pattern (regex) <span className="text-gray-400 font-normal">e.g. ^\d{"{"}10{"}"}$ for NID</span></label>
+                          <input
+                            value={(newField.validation_rules?.pattern as string | undefined) ?? ""}
+                            onChange={e => setNewField(p => ({ ...p, validation_rules: { ...(p.validation_rules ?? {}), pattern: e.target.value || undefined } }))}
+                            placeholder="^[0-9]{10,17}$"
+                            className="input w-full text-sm font-mono"
+                          />
+                        </div>
+                      </div>
+                      {(newField.validation_rules?.pattern as string | undefined) && (
+                        <div>
+                          <label className="form-label text-[11px]">Pattern Error Message</label>
+                          <input
+                            value={(newField.validation_rules?.pattern_message as string | undefined) ?? ""}
+                            onChange={e => setNewField(p => ({ ...p, validation_rules: { ...(p.validation_rules ?? {}), pattern_message: e.target.value || undefined } }))}
+                            placeholder="e.g. Enter a valid 10-17 digit NID number"
+                            className="input w-full text-sm"
                           />
                         </div>
                       )}

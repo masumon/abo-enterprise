@@ -130,6 +130,13 @@ export interface ServicePricingTier {
   sort_order?: number;
 }
 
+/** Effective Call-To-Action, computed by the API (single source: core/capabilities.py). */
+export interface ServiceCta {
+  type: "book" | "order" | "quote" | "contact";
+  label_en: string;
+  label_bn: string;
+}
+
 export interface ServiceBookingFormField {
   id: string;
   service_id: string;
@@ -178,6 +185,11 @@ export interface Service {
   is_bookable?: boolean | null;
   /** Computed by the API (single source: core/capabilities.py): e.g. ["bookable","orderable"]. */
   capabilities?: string[];
+  /** CTA override columns (null = infer) + the API-computed effective CTA. */
+  cta_type?: string | null;
+  cta_label_en?: string | null;
+  cta_label_bn?: string | null;
+  cta?: ServiceCta;
   tags?: string[];
   sort_order?: number;
   lead_priority?: number;
@@ -301,6 +313,8 @@ export interface BookingV2 {
   hours_worked?: number | null;
   details?: string | null;
   requirements?: string | null;
+  /** Customer answers to the service's dynamic booking form. */
+  form_data?: Record<string, unknown> | null;
   status: string;
   payment_status: string;
   payment_method?: string | null;
@@ -361,6 +375,8 @@ export interface Subcategory {
   image_url?: string | null;
   sort_order: number;
   is_active: boolean;
+  /** Parent category, embedded by the nested slug resolver endpoint. */
+  category?: Category;
   created_at?: string;
   updated_at?: string;
 }

@@ -5,8 +5,9 @@ import Link from "next/link";
 import {
   Printer, Code2, Megaphone, Briefcase,
   Bot, Cog, Smartphone, FileText, Wrench, Monitor, Globe, Headphones,
+  type LucideIcon,
 } from "lucide-react";
-import type { Service } from "@/types";
+import type { Category, Service } from "@/types";
 import { useLanguageStore } from "@/store/language";
 import ServiceCard from "@/components/services/ServiceCard";
 import ServiceFilters from "@/components/services/ServiceFilters";
@@ -130,16 +131,31 @@ const SERVICE_GROUPS = [
   },
 ];
 
+/** Maps the icon name stored on a DB category to a Lucide component. */
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  FileText, Printer, Globe, Smartphone, Headphones, Megaphone,
+  Briefcase, Bot, Cog, Wrench, Monitor, Code2,
+};
+
+/** Rotating accents for DB-driven category cards (same palette as the static groups). */
+const CATEGORY_COLORS = [
+  "bg-emerald-600", "bg-brand-600", "bg-sky-600", "bg-orange-600",
+  "bg-rose-600", "bg-pink-600", "bg-indigo-600", "bg-purple-600", "bg-cyan-600",
+];
+
 interface Props {
   initialServices: Service[];
   initialTotal: number;
   initialIsDemo?: boolean;
+  /** Live taxonomy (Category → Subcategory) from the API; falls back to the static groups when empty. */
+  initialCategories?: Category[];
 }
 
 export default function ServicesPageClient({
   initialServices,
   initialTotal,
   initialIsDemo = false,
+  initialCategories = [],
 }: Props) {
   const { lang } = useLanguageStore();
   const t = (o: { en: string; bn: string }) => (lang === "bn" ? o.bn : o.en);
@@ -240,25 +256,60 @@ export default function ServicesPageClient({
         <div className="container mx-auto px-4 max-w-6xl">
           <h2 className="text-xl font-bold text-heading mb-2">{t({ en: "What We Offer", bn: "আমরা যা দিই" })}</h2>
           <p className="text-sm text-muted mb-6">{t({ en: "Digital services, software lab, business software & AI — all under one roof.", bn: "ডিজিটাল সেবা, সফটওয়্যার ল্যাব, বিজনেস সফটওয়্যার ও AI — সব এক ছাদের নিচে।" })}</p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
-            {SERVICE_GROUPS.map(({ anchor, icon: Icon, title, items, color }) => (
-              <div key={anchor} id={anchor} className="enterprise-card p-5 scroll-mt-24">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0", color)}>
-                    <Icon className="w-5 h-5" />
+          {initialCategories.length > 0 ? (
+            /* Live taxonomy — every card/chip deep-links into the nested
+               /services/{cat}/{sub} routes; fully admin-managed. */
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+              {initialCategories.map((cat, i) => {
+                const Icon = (cat.icon && CATEGORY_ICONS[cat.icon]) || Cog;
+                const subs = (cat.subcategories ?? []).filter((s) => s.is_active !== false);
+                return (
+                  <div key={cat.id} id={cat.slug} className="enterprise-card p-5 scroll-mt-24">
+                    <Link href={`/services/${cat.slug}`} className="flex items-center gap-3 mb-3 group">
+                      <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0", CATEGORY_COLORS[i % CATEGORY_COLORS.length])}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <h3 className="font-bold text-heading group-hover:text-brand-600 transition-colors">
+                        {lang === "bn" && cat.name_bn ? cat.name_bn : cat.name_en}
+                      </h3>
+                    </Link>
+                    <div className="flex flex-wrap gap-1.5">
+                      {subs.map((sub) => (
+                        <Link
+                          key={sub.id}
+                          href={`/services/${cat.slug}/${sub.slug}`}
+                          className="inline-block px-2.5 py-1 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors"
+                        >
+                          {lang === "bn" && sub.name_bn ? sub.name_bn : sub.name_en}
+                        </Link>
+                      ))}
+                    </div>
                   </div>
-                  <h3 className="font-bold text-heading">{t(title)}</h3>
+                );
+              })}
+            </div>
+          ) : (
+            /* Fallback: static catalogue (offline / taxonomy not yet seeded). */
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+              {SERVICE_GROUPS.map(({ anchor, icon: Icon, title, items, color }) => (
+                <div key={anchor} id={anchor} className="enterprise-card p-5 scroll-mt-24">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0", color)}>
+                      <Icon className="w-5 h-5" />
+                    </div>
+                    <h3 className="font-bold text-heading">{t(title)}</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {items.map((item) => (
+                      <span key={item.en} className="inline-block px-2.5 py-1 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 rounded-lg">
+                        {t(item)}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {items.map((item) => (
-                    <span key={item.en} className="inline-block px-2.5 py-1 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 rounded-lg">
-                      {t(item)}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <h2 className="text-xl font-bold text-heading">{t({ en: "All Services", bn: "সব সেবা" })}</h2>

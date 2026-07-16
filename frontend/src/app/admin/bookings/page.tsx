@@ -545,10 +545,31 @@ export default function AdminBookingsPage() {
                   {detailV2.hours_worked != null && <div><p className="text-gray-500 text-xs">Hours</p><p className="font-medium">{detailV2.hours_worked}h</p></div>}
                   <div><p className="text-gray-500 text-xs">Created</p><p className="font-medium">{new Date(detailV2.created_at).toLocaleDateString("en-BD")}</p></div>
                 </div>
+                {detailV2.details && (
+                  <div className="pt-3 border-t border-gray-200 mt-3">
+                    <p className="text-gray-500 text-xs mb-1">Details</p>
+                    <p className="text-sm text-gray-800 whitespace-pre-wrap">{detailV2.details}</p>
+                  </div>
+                )}
                 {detailV2.requirements && (
                   <div className="pt-3 border-t border-gray-200 mt-3">
                     <p className="text-gray-500 text-xs mb-1">Requirements</p>
                     <p className="text-sm text-gray-800 whitespace-pre-wrap">{detailV2.requirements}</p>
+                  </div>
+                )}
+                {detailV2.form_data && Object.keys(detailV2.form_data).length > 0 && (
+                  <div className="pt-3 border-t border-gray-200 mt-3">
+                    <p className="text-gray-500 text-xs mb-2">Booking Form Answers</p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      {Object.entries(detailV2.form_data).map(([key, value]) => (
+                        <div key={key}>
+                          <p className="text-gray-500 text-xs">{key.replace(/_/g, " ")}</p>
+                          <p className="font-medium break-words">
+                            {Array.isArray(value) ? value.join(", ") : String(value)}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
                 {detailV2.notes && (
