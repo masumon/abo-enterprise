@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import String, Text, Boolean, Integer, Numeric, ForeignKey, DateTime, JSON
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
@@ -334,7 +334,7 @@ class BookingV2(Base):
     details: Mapped[str | None] = mapped_column(Text)
     requirements: Mapped[str | None] = mapped_column(Text)
     # Answers to the service's dynamic booking form (service_booking_forms).
-    form_data: Mapped[dict] = mapped_column(JSON, default=dict)
+    form_data: Mapped[dict] = mapped_column(JSONB, default=dict)
     attachments: Mapped[list] = mapped_column(JSON, default=list)
     status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
     payment_status: Mapped[str] = mapped_column(String(20), default="pending")
