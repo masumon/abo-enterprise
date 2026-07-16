@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Briefcase, Calendar } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
+import { categoriesApi } from "@/lib/api";
 
 const HIDE_ON = ["/checkout", "/cart", "/login", "/register", "/admin"];
 
@@ -14,19 +15,60 @@ const SHOW_ON_PREFIXES = ["/services", "/projects"];
 // These are static informational pages under /services, not bookable service slugs.
 const NON_BOOKABLE_SERVICE_SLUGS = new Set(["legal", "printing", "software"]);
 
+// Taxonomy category slugs share the /services/{slug} namespace with services.
+// Cached module-wide so the (ETag-cached) list is fetched at most once per load.
+let categorySlugsCache: Set<string> | null = null;
+let categorySlugsPromise: Promise<Set<string>> | null = null;
+
+function loadCategorySlugs(): Promise<Set<string>> {
+  if (categorySlugsCache) return Promise.resolve(categorySlugsCache);
+  if (!categorySlugsPromise) {
+    categorySlugsPromise = categoriesApi
+      .list({ applies_to: "service" })
+      .then((r) => {
+        categorySlugsCache = new Set((r.data.data ?? []).map((c) => c.slug));
+        return categorySlugsCache;
+      })
+      .catch(() => {
+        categorySlugsPromise = null; // allow retry on next page view
+        return new Set<string>();
+      });
+  }
+  return categorySlugsPromise;
+}
+
 export default function StickyCTA() {
   const pathname = usePathname();
   const { lang } = useLanguageStore();
   const t = useT();
   const [visible, setVisible] = useState(false);
+  const [categorySlugs, setCategorySlugs] = useState<Set<string>>(
+    () => categorySlugsCache ?? new Set()
+  );
 
   const allowed = SHOW_ON_PREFIXES.some(
     (p) => pathname === p || pathname?.startsWith(`${p}/`)
   );
 
   const serviceSlugMatch = pathname?.match(/^\/services\/([^/]+)\/?$/);
+
+  // A single /services/{slug} segment may be a CATEGORY landing page — its
+  // slug must not be passed to /book as if it were a bookable service.
+  useEffect(() => {
+    if (!serviceSlugMatch || categorySlugsCache) return;
+    let cancelled = false;
+    loadCategorySlugs().then((slugs) => {
+      if (!cancelled) setCategorySlugs(slugs);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [serviceSlugMatch?.[1]]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const activeServiceSlug =
-    serviceSlugMatch && !NON_BOOKABLE_SERVICE_SLUGS.has(serviceSlugMatch[1])
+    serviceSlugMatch &&
+    !NON_BOOKABLE_SERVICE_SLUGS.has(serviceSlugMatch[1]) &&
+    !categorySlugs.has(serviceSlugMatch[1])
       ? serviceSlugMatch[1]
       : null;
   const bookHref = activeServiceSlug ? `/book?service=${activeServiceSlug}` : "/services";

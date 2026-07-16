@@ -105,7 +105,47 @@ JOIN categories c ON c.slug = s.category_slug
 ON CONFLICT (category_id, slug) DO NOTHING;
 
 -- ---------------------------------------------------------------------------
--- 4. Legacy সার্ভিসগুলোকে নতুন taxonomy-তে রি-লিংক
+-- 4a. পরিচিত ১২টি সেবাকে সঠিক ক্যাটাগরি + সাব-ক্যাটাগরিতে বসানো
+--     (subcategory অ্যাডমিন আগে সেট করে থাকলে স্কিপ; ম্যানুয়াল প্লেসমেন্ট অক্ষত)
+-- ---------------------------------------------------------------------------
+UPDATE services sv
+SET category_id = c.id,
+    subcategory_id = COALESCE(s.id, sv.subcategory_id)
+FROM (VALUES
+    ('printing-service',       'printing-documentation', 'printing-photocopy'),
+    ('website-development',    'web-software',           'website-design'),
+    ('mobile-app-development', 'mobile-lab',             'app-development'),
+    ('digital-marketing',      'marketing-design',       'social-media-campaign'),
+    ('branding-design',        'marketing-design',       'logo-branding'),
+    ('business-consultation',  'business-consultancy',   NULL),
+    ('custom-software',        'web-software',           'custom-software'),
+    ('ai-solutions',           'ai-automation',          'business-ai-tools'),
+    ('python-automation',      'ai-automation',          'python-automation'),
+    ('legal-services',         'printing-documentation', 'legal-drafting'),
+    ('nid-passport',           'digital-e-services',     'nid'),
+    ('future-service',         'others',                 'future-services')
+) AS pl(service_slug, cat_slug, sub_slug)
+JOIN categories c ON c.slug = pl.cat_slug AND c.is_deleted = FALSE
+LEFT JOIN subcategories s
+       ON s.category_id = c.id AND s.slug = pl.sub_slug AND s.is_deleted = FALSE
+WHERE sv.slug = pl.service_slug
+  AND sv.is_deleted = FALSE
+  AND sv.subcategory_id IS NULL
+  AND (
+    sv.category_id IS NULL
+    OR sv.category_id = c.id
+    OR sv.category_id IN (
+      SELECT id FROM categories mc WHERE mc.slug IN (
+        'printing','legal','documents','web','software','marketing','design',
+        'consulting','ai','automation','other','digital-services',
+        'print-documentation','mobile-software','computer-software',
+        'business-software','ai-solutions','web-software','general'
+      )
+    )
+  );
+
+-- ---------------------------------------------------------------------------
+-- 4b. বাকি legacy সার্ভিসগুলোকে নতুন taxonomy-তে রি-লিংক
 --    (0004-এর অটো-ক্যাটাগরিতে পয়েন্ট করা বা NULL হলে তবেই; অ্যাডমিনের
 --    ম্যানুয়াল অ্যাসাইনমেন্ট কখনো বদলায় না)
 -- ---------------------------------------------------------------------------
