@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, Loader2, LayoutGrid, List } from "lucide-react";
-import type { Product, ProductCategory } from "@/types";
+import type { Category, Product } from "@/types";
 import ProductCard from "@/components/features/ProductCard";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import LoadingProgress from "@/components/ui/LoadingProgress";
@@ -17,6 +17,7 @@ import type { CatalogSource } from "@/lib/catalogLoader";
 import { loadProducts, peekCachedProducts } from "@/lib/catalogLoader";
 import { cacheApiResponse, productsCacheKey } from "@/lib/apiCache";
 
+// Legacy hardcoded chips — fallback when the DB taxonomy is empty/unreachable.
 const CATEGORIES: { value: string; label: { en: string; bn: string } }[] = [
   { value: "", label: { en: "All", bn: "সব" } },
   { value: "accessories", label: { en: "Mobile Accessories", bn: "মোবাইল এক্সেসরিজ" } },
@@ -29,8 +30,10 @@ interface Props {
   initialProducts: Product[];
   initialTotal: number;
   initialPage?: number;
-  initialCategory?: ProductCategory | "";
+  initialCategory?: string;
   initialIsDemo?: boolean;
+  /** Live product taxonomy — chip values are category slugs when present. */
+  initialCategories?: Category[];
 }
 
 export default function ProductsClient({
@@ -39,6 +42,7 @@ export default function ProductsClient({
   initialPage = 1,
   initialCategory = "",
   initialIsDemo = false,
+  initialCategories = [],
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -48,7 +52,8 @@ export default function ProductsClient({
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(false);
-  const [category, setCategory] = useState<ProductCategory | "">(initialCategory);
+  const [category, setCategory] = useState<string>(initialCategory);
+  const [subcategory, setSubcategory] = useState<string>("");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortBy, setSortBy] = useState("");
@@ -62,6 +67,25 @@ export default function ProductsClient({
   const isFirstLoad = useRef(true);
   const needsApiRefresh = useRef(initialProducts.length === 0);
   const urlCategory = searchParams.get("category") ?? "";
+  const urlSubcategory = searchParams.get("sub") ?? "";
+
+  // Chips come from the live taxonomy when available; legacy list otherwise.
+  const taxonomyMode = initialCategories.length > 0;
+  const chips: { value: string; label: { en: string; bn: string } }[] = taxonomyMode
+    ? [
+        { value: "", label: { en: "All", bn: "সব" } },
+        ...initialCategories.map((c) => ({
+          value: c.slug,
+          label: { en: c.name_en, bn: c.name_bn || c.name_en },
+        })),
+      ]
+    : CATEGORIES;
+  const selectedTaxonomyCategory = taxonomyMode
+    ? initialCategories.find((c) => c.slug === category)
+    : undefined;
+  const subcategoryChips = (selectedTaxonomyCategory?.subcategories ?? []).filter(
+    (s) => s.is_active !== false
+  );
 
   useEffect(() => {
     if (initialProducts.length > 0) {
@@ -83,20 +107,32 @@ export default function ProductsClient({
   }, [initialProducts, initialTotal, initialCategory]);
 
   useEffect(() => {
-    const next =
-      urlCategory && CATEGORIES.some((c) => c.value === urlCategory)
-        ? (urlCategory as ProductCategory)
-        : "";
+    const next = urlCategory && chips.some((c) => c.value === urlCategory) ? urlCategory : "";
     setCategory((prev) => (prev === next ? prev : next));
-  }, [urlCategory]);
+    const nextSub = next && urlSubcategory ? urlSubcategory : "";
+    setSubcategory((prev) => (prev === nextSub ? prev : nextSub));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlCategory, urlSubcategory]);
 
-  const handleCategoryChange = (value: ProductCategory | "") => {
-    setCategory(value);
+  const syncUrl = (cat: string, sub: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value) params.set("category", value);
+    if (cat) params.set("category", cat);
     else params.delete("category");
+    if (sub) params.set("sub", sub);
+    else params.delete("sub");
     const qs = params.toString();
     router.replace(qs ? `/products?${qs}` : "/products", { scroll: false });
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setCategory(value);
+    setSubcategory("");
+    syncUrl(value, "");
+  };
+
+  const handleSubcategoryChange = (value: string) => {
+    setSubcategory(value);
+    syncUrl(category, value);
   };
 
   useEffect(() => {
@@ -109,8 +145,12 @@ export default function ProductsClient({
     else setLoading(true);
     setError(false);
 
+    // Taxonomy chips filter by slug; legacy chips keep the old string filter.
+    const isTaxonomy = taxonomyMode && !!category;
     const params = {
-      category: category || undefined,
+      category: !isTaxonomy ? category || undefined : undefined,
+      category_slug: isTaxonomy ? category : undefined,
+      subcategory_slug: isTaxonomy && subcategory ? subcategory : undefined,
       search: debouncedSearch || undefined,
       sort_by: sortBy || undefined,
       page: pageNum,
@@ -147,7 +187,7 @@ export default function ProductsClient({
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [category, debouncedSearch, sortBy]);
+  }, [category, subcategory, taxonomyMode, debouncedSearch, sortBy]);
 
   useEffect(() => {
     if (isFirstLoad.current) {
@@ -200,11 +240,11 @@ export default function ProductsClient({
             to a second row (saves ~44px of above-the-fold space) */}
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 py-0.5 sm:flex-wrap sm:overflow-visible">
           <SlidersHorizontal className="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden />
-          {CATEGORIES.map((c) => (
+          {chips.map((c) => (
             <button
               key={c.value}
               type="button"
-              onClick={() => handleCategoryChange(c.value as ProductCategory | "")}
+              onClick={() => handleCategoryChange(c.value)}
               className={cn(
                 "px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap flex-shrink-0",
                 category === c.value ? "bg-brand-600 text-white" : "bg-white text-gray-600 hover:bg-brand-50 border border-gray-100"
@@ -237,6 +277,35 @@ export default function ProductsClient({
           </div>
         </div>
       </div>
+
+      {/* Subcategory chips — shown when a taxonomy category with subs is selected */}
+      {subcategoryChips.length > 0 && (
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 -mt-4 mb-8">
+          <button
+            type="button"
+            onClick={() => handleSubcategoryChange("")}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0",
+              !subcategory ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-700 hover:bg-brand-100"
+            )}
+          >
+            {lang === "bn" ? "সব" : "All"}
+          </button>
+          {subcategoryChips.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => handleSubcategoryChange(s.slug)}
+              className={cn(
+                "px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0",
+                subcategory === s.slug ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-700 hover:bg-brand-100"
+              )}
+            >
+              {lang === "bn" && s.name_bn ? s.name_bn : s.name_en}
+            </button>
+          ))}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3" aria-busy="true">

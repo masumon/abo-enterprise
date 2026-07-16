@@ -25,6 +25,9 @@ export interface ServicesLoadResult {
 
 interface ProductLoadParams {
   category?: string;
+  /** Taxonomy filters (Category → Subcategory slugs); additive to `category`. */
+  category_slug?: string;
+  subcategory_slug?: string;
   search?: string;
   sort_by?: string;
   featured?: boolean;
