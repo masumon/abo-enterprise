@@ -4,7 +4,8 @@ import { pageMeta } from "@/lib/metadata";
 export const metadata: Metadata = pageMeta(
   "Customer Dashboard",
   "Manage your ABO Enterprise account, orders, wishlist and settings.",
-  "/dashboard"
+  "/dashboard",
+  { noindex: true }
 );
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

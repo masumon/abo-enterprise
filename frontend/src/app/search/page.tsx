@@ -42,17 +42,11 @@ async function searchBlog(query: string): Promise<BlogPost[]> {
   }
 }
 
-const SERVICE_SLUG_MAP: Record<string, string> = {
-  printing: "/services/printing",
-  legal: "/services/legal",
-  software: "/services/software",
-  website: "/services/software",
-  "case-writing": "/services/legal",
-};
-
-function resolveServiceHref(slug: string, category?: string): string {
-  if (SERVICE_SLUG_MAP[slug]) return SERVICE_SLUG_MAP[slug];
-  if (category && SERVICE_SLUG_MAP[category]) return SERVICE_SLUG_MAP[category]!;
+// Every service links to its exact detail URL — /services/[...segments]
+// resolves a service slug first, so this is always the canonical page.
+// (Slugs colliding with the static booking routes printing/legal/software
+// land on those pages by Next.js routing precedence, same URL either way.)
+function resolveServiceHref(slug: string): string {
   return `/services/${slug}`;
 }
 
@@ -71,7 +65,7 @@ function toResults(products: Product[], services: Service[], posts: BlogPost[], 
     id: s.id,
     title: lang === "bn" && s.name_bn ? s.name_bn : s.name_en,
     subtitle: s.category ?? "",
-    href: resolveServiceHref(s.slug, s.category),
+    href: resolveServiceHref(s.slug),
   }));
   posts.forEach((p) => items.push({
     type: "blog",
