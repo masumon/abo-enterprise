@@ -133,10 +133,10 @@ export default function LeadCapture() {
                 </p>
               )}
               {/* Service Type */}
-              <div>
-                <label className="block text-sm font-medium text-white mb-3">
+              <fieldset>
+                <legend className="block text-sm font-medium text-white mb-3">
                   {lang === "bn" ? "কোন সেবা প্রয়োজন?" : "What service do you need?"}
-                </label>
+                </legend>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {LEAD_TYPES.map((type) => {
                     const Icon = type.icon;
@@ -162,25 +162,29 @@ export default function LeadCapture() {
                     );
                   })}
                 </div>
-              </div>
+              </fieldset>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-white mb-1">
+                  <label htmlFor="lead-name" className="block text-sm font-medium text-white mb-1">
                     {lang === "bn" ? "আপনার নাম *" : "Your Name *"}
                   </label>
                   <input
+                    id="lead-name"
                     {...register("name")}
                     className={cn("input", errors.name && "input-error")}
                     placeholder={lang === "bn" ? "নাম লিখুন" : "Full name"}
+                    aria-invalid={errors.name ? true : undefined}
+                    aria-describedby={errors.name ? "lead-name-error" : undefined}
                   />
-                  {errors.name && <p className="text-red-300 text-xs mt-1">{errors.name.message}</p>}
+                  {errors.name && <p id="lead-name-error" className="text-red-300 text-xs mt-1">{errors.name.message}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-white mb-1">
+                  <label htmlFor="lead-company" className="block text-sm font-medium text-white mb-1">
                     {lang === "bn" ? "কোম্পানি" : "Company (optional)"}
                   </label>
                   <input
+                    id="lead-company"
                     {...register("company")}
                     className="input"
                     placeholder={lang === "bn" ? "কোম্পানির নাম" : "Company name"}
@@ -189,36 +193,43 @@ export default function LeadCapture() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-1">
+                <label htmlFor="lead-phone" className="block text-sm font-medium text-white mb-1">
                   {lang === "bn" ? "মোবাইল নম্বর *" : "Mobile Number *"}
                 </label>
                 <input
+                  id="lead-phone"
                   {...register("phone")}
                   type="tel"
                   className={cn("input", errors.phone && "input-error")}
                   placeholder="01XXXXXXXXX"
+                  aria-invalid={errors.phone ? true : undefined}
+                  aria-describedby={errors.phone ? "lead-phone-error" : undefined}
                 />
-                {errors.phone && <p className="text-red-300 text-xs mt-1">{errors.phone.message}</p>}
+                {errors.phone && <p id="lead-phone-error" className="text-red-300 text-xs mt-1">{errors.phone.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-1">
+                <label htmlFor="lead-email" className="block text-sm font-medium text-white mb-1">
                   {lang === "bn" ? "ইমেইল (ঐচ্ছিক)" : "Email (optional)"}
                 </label>
                 <input
+                  id="lead-email"
                   {...register("email")}
                   type="email"
                   className={cn("input", errors.email && "input-error")}
                   placeholder="your@email.com"
+                  aria-invalid={errors.email ? true : undefined}
+                  aria-describedby={errors.email ? "lead-email-error" : undefined}
                 />
-                {errors.email && <p className="text-red-300 text-xs mt-1">{errors.email.message}</p>}
+                {errors.email && <p id="lead-email-error" className="text-red-300 text-xs mt-1">{errors.email.message}</p>}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-white mb-1">
+                <label htmlFor="lead-description" className="block text-sm font-medium text-white mb-1">
                   {lang === "bn" ? "প্রজেক্টের বিবরণ *" : "Project Description *"}
                 </label>
                 <textarea
+                  id="lead-description"
                   {...register("project_description")}
                   rows={3}
                   className={cn("input resize-none", errors.project_description && "input-error")}
@@ -227,9 +238,11 @@ export default function LeadCapture() {
                       ? "আপনার প্রজেক্ট সম্পর্কে বিস্তারিত লিখুন..."
                       : "Describe your project requirements in detail..."
                   }
+                  aria-invalid={errors.project_description ? true : undefined}
+                  aria-describedby={errors.project_description ? "lead-description-error" : undefined}
                 />
                 {errors.project_description && (
-                  <p className="text-red-300 text-xs mt-1">{errors.project_description.message}</p>
+                  <p id="lead-description-error" className="text-red-300 text-xs mt-1">{errors.project_description.message}</p>
                 )}
               </div>
 

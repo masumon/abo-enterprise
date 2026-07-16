@@ -300,12 +300,15 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
   }
 
   const hasTiers = Boolean(service.pricing_tiers && service.pricing_tiers.length > 0);
+  const bn = lang === "bn";
+  const L = (en: string, bnText: string) => (bn ? bnText : en);
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="space-y-6">
       <div className="alert-info">
         <p className="text-sm text-muted">
-          <span className="font-semibold text-heading">Service:</span> {service.name_en}
+          <span className="font-semibold text-heading">{L("Service:", "সেবা:")}</span>{" "}
+          {bn && service.name_bn ? service.name_bn : service.name_en}
         </p>
         {service.pricing_type === "fixed" && service.base_price && !hasTiers && (
           <p className="text-lg font-bold text-brand-600 dark:text-brand-300 mt-2">৳{service.base_price}</p>
@@ -313,63 +316,74 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       </div>
 
       <div>
-        <label className="form-label">Full Name *</label>
+        <label htmlFor="booking-name" className="form-label">{L("Full Name *", "পূর্ণ নাম *")}</label>
         <input
+          id="booking-name"
           type="text"
           {...register("customer_name")}
           className={cn("input", errors.customer_name && "input-error")}
-          placeholder="Your full name"
+          placeholder={L("Your full name", "আপনার পূর্ণ নাম")}
+          aria-invalid={errors.customer_name ? true : undefined}
+          aria-describedby={errors.customer_name ? "booking-name-error" : undefined}
         />
         {errors.customer_name && (
-          <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.customer_name.message}</p>
+          <p id="booking-name-error" className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.customer_name.message}</p>
         )}
       </div>
 
       <div>
-        <label className="form-label">Phone Number (BD) *</label>
+        <label htmlFor="booking-phone" className="form-label">{L("Phone Number (BD) *", "মোবাইল নম্বর (BD) *")}</label>
         <input
+          id="booking-phone"
           type="tel"
           {...register("customer_phone")}
           className={cn("input", errors.customer_phone && "input-error")}
           placeholder="01XXXXXXXXX"
+          aria-invalid={errors.customer_phone ? true : undefined}
+          aria-describedby={errors.customer_phone ? "booking-phone-error" : undefined}
         />
         {errors.customer_phone && (
-          <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.customer_phone.message}</p>
+          <p id="booking-phone-error" className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.customer_phone.message}</p>
         )}
       </div>
 
       <div>
-        <label className="form-label">Email Address (Optional)</label>
+        <label htmlFor="booking-email" className="form-label">{L("Email Address (Optional)", "ইমেইল (ঐচ্ছিক)")}</label>
         <input
+          id="booking-email"
           type="email"
           {...register("customer_email")}
           className={cn("input", errors.customer_email && "input-error")}
           placeholder="your@email.com"
+          aria-invalid={errors.customer_email ? true : undefined}
+          aria-describedby={errors.customer_email ? "booking-email-error" : undefined}
         />
         {errors.customer_email && (
-          <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.customer_email.message}</p>
+          <p id="booking-email-error" className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.customer_email.message}</p>
         )}
       </div>
 
       <div>
-        <label className="form-label">Company (Optional)</label>
+        <label htmlFor="booking-company" className="form-label">{L("Company (Optional)", "কোম্পানি (ঐচ্ছিক)")}</label>
         <input
+          id="booking-company"
           type="text"
           {...register("customer_company")}
           className="input"
-          placeholder="Company name"
+          placeholder={L("Company name", "কোম্পানির নাম")}
         />
       </div>
 
       <div>
-        <label className="form-label">Preferred Booking Date (Optional)</label>
-        <input type="date" {...register("booking_date")} className="input" />
+        <label htmlFor="booking-date" className="form-label">{L("Preferred Booking Date (Optional)", "পছন্দের তারিখ (ঐচ্ছিক)")}</label>
+        <input id="booking-date" type="date" {...register("booking_date")} className="input" />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="form-label">District (Optional)</label>
+          <label htmlFor="booking-district" className="form-label">{L("District (Optional)", "জেলা (ঐচ্ছিক)")}</label>
           <select
+            id="booking-district"
             {...register("district")}
             onChange={(e) => {
               register("district").onChange(e);
@@ -377,22 +391,22 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
             }}
             className="input"
           >
-            <option value="">Select</option>
+            <option value="">{L("Select", "নির্বাচন করুন")}</option>
             {BD_DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
           </select>
         </div>
         <div>
-          <label className="form-label">Upazila / Thana (Optional)</label>
-          <select {...register("upazila")} className="input" disabled={!selectedDistrict}>
-            <option value="">Select</option>
+          <label htmlFor="booking-upazila" className="form-label">{L("Upazila / Thana (Optional)", "উপজেলা / থানা (ঐচ্ছিক)")}</label>
+          <select id="booking-upazila" {...register("upazila")} className="input" disabled={!selectedDistrict}>
+            <option value="">{L("Select", "নির্বাচন করুন")}</option>
             {upazilaOptions.map((u) => <option key={u} value={u}>{u}</option>)}
           </select>
         </div>
       </div>
 
       {hasTiers && (
-        <div>
-          <label className="form-label mb-3">Choose Package</label>
+        <fieldset>
+          <legend className="form-label mb-3">{L("Choose Package", "প্যাকেজ বেছে নিন")}</legend>
           <div className="space-y-2">
             {service.pricing_tiers!.map((tier) => (
               <label key={tier.id} className="flex items-center gap-2 text-sm text-heading cursor-pointer">
@@ -406,7 +420,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
               </label>
             ))}
           </div>
-        </div>
+        </fieldset>
       )}
 
       {/* Dynamic fields defined by the admin for this specific service */}
@@ -417,76 +431,101 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         const ftype = (field.field_type || "text").toLowerCase();
         const options = field.options ?? [];
 
+        const inputId = `dyn-${field.id}`;
+        const errId = `dyn-${field.id}-error`;
+        // Radio/checkbox groups get fieldset+legend; single controls get label↔id.
+        const isGroup = ftype === "radio" || ftype === "multiselect" || ftype === "checkbox_group";
+        const errorText = err && (
+          <p id={errId} className="text-red-500 dark:text-red-400 text-sm mt-1">{err}</p>
+        );
+
+        if (isGroup) {
+          return (
+            <fieldset key={field.id} aria-describedby={err ? errId : undefined}>
+              <legend className="form-label">
+                {label} {field.is_required && "*"}
+              </legend>
+              <div className="space-y-2">
+                {ftype === "radio"
+                  ? options.map((o) => (
+                      <label key={o} className="flex items-center gap-2 text-sm text-heading cursor-pointer">
+                        <input
+                          type="radio"
+                          name={`dyn_${field.field_name}`}
+                          checked={value === o}
+                          onChange={() => setDynamicValue(field.field_name, o)}
+                          className="w-4 h-4 text-brand-600"
+                        />
+                        <span>{o}</span>
+                      </label>
+                    ))
+                  : options.map((o) => {
+                      const selected = Array.isArray(value) ? value : [];
+                      return (
+                        <label key={o} className="flex items-center gap-2 text-sm text-heading cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selected.includes(o)}
+                            onChange={(e) =>
+                              setDynamicValue(
+                                field.field_name,
+                                e.target.checked ? [...selected, o] : selected.filter((v) => v !== o)
+                              )
+                            }
+                            className="w-4 h-4 text-brand-600 rounded"
+                          />
+                          <span>{o}</span>
+                        </label>
+                      );
+                    })}
+              </div>
+              {errorText}
+            </fieldset>
+          );
+        }
+
         return (
           <div key={field.id}>
-            {ftype !== "checkbox" && (
-              <label className="form-label">
+            {ftype !== "checkbox" && ftype !== "boolean" && (
+              <label htmlFor={inputId} className="form-label">
                 {label} {field.is_required && "*"}
               </label>
             )}
             {ftype === "textarea" ? (
               <textarea
+                id={inputId}
                 rows={3}
                 value={typeof value === "string" ? value : ""}
                 onChange={(e) => setDynamicValue(field.field_name, e.target.value)}
                 className={cn("input resize-none", err && "input-error")}
                 placeholder={field.placeholder ?? undefined}
+                aria-invalid={err ? true : undefined}
+                aria-describedby={err ? errId : undefined}
               />
             ) : ftype === "select" ? (
               <select
+                id={inputId}
                 value={typeof value === "string" ? value : ""}
                 onChange={(e) => setDynamicValue(field.field_name, e.target.value)}
                 className={cn("input", err && "input-error")}
+                aria-invalid={err ? true : undefined}
+                aria-describedby={err ? errId : undefined}
               >
                 <option value="">{lang === "bn" ? "নির্বাচন করুন" : "Select"}</option>
                 {options.map((o) => (
                   <option key={o} value={o}>{o}</option>
                 ))}
               </select>
-            ) : ftype === "radio" ? (
-              <div className="space-y-2">
-                {options.map((o) => (
-                  <label key={o} className="flex items-center gap-2 text-sm text-heading cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`dyn_${field.field_name}`}
-                      checked={value === o}
-                      onChange={() => setDynamicValue(field.field_name, o)}
-                      className="w-4 h-4 text-brand-600"
-                    />
-                    <span>{o}</span>
-                  </label>
-                ))}
-              </div>
-            ) : ftype === "multiselect" || ftype === "checkbox_group" ? (
-              <div className="space-y-2">
-                {options.map((o) => {
-                  const selected = Array.isArray(value) ? value : [];
-                  return (
-                    <label key={o} className="flex items-center gap-2 text-sm text-heading cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={selected.includes(o)}
-                        onChange={(e) =>
-                          setDynamicValue(
-                            field.field_name,
-                            e.target.checked ? [...selected, o] : selected.filter((v) => v !== o)
-                          )
-                        }
-                        className="w-4 h-4 text-brand-600 rounded"
-                      />
-                      <span>{o}</span>
-                    </label>
-                  );
-                })}
-              </div>
             ) : ftype === "checkbox" || ftype === "boolean" ? (
               <label className="flex items-center gap-2 text-sm text-heading cursor-pointer">
                 <input
+                  id={inputId}
                   type="checkbox"
                   checked={value === true}
                   onChange={(e) => setDynamicValue(field.field_name, e.target.checked)}
                   className="w-4 h-4 text-brand-600 rounded"
+                  aria-invalid={err ? true : undefined}
+                  aria-describedby={err ? errId : undefined}
                 />
                 <span>
                   {label} {field.is_required && "*"}
@@ -494,6 +533,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
               </label>
             ) : (
               <input
+                id={inputId}
                 type={
                   ftype === "number" || ftype === "integer"
                     ? "number"
@@ -511,40 +551,45 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
                 onChange={(e) => setDynamicValue(field.field_name, e.target.value)}
                 className={cn("input", err && "input-error")}
                 placeholder={field.placeholder ?? undefined}
+                aria-invalid={err ? true : undefined}
+                aria-describedby={err ? errId : undefined}
               />
             )}
-            {err && <p className="text-red-500 dark:text-red-400 text-sm mt-1">{err}</p>}
+            {errorText}
           </div>
         );
       })}
 
       <div>
-        <label className="form-label">Details / Requirements *</label>
+        <label htmlFor="booking-details" className="form-label">{L("Details / Requirements *", "বিস্তারিত / প্রয়োজন *")}</label>
         <textarea
+          id="booking-details"
           {...register("details")}
           rows={4}
           className={cn("input resize-none", errors.details && "input-error")}
-          placeholder="Please describe your requirements in detail..."
+          placeholder={L("Please describe your requirements in detail...", "আপনার প্রয়োজন বিস্তারিত লিখুন...")}
+          aria-invalid={errors.details ? true : undefined}
+          aria-describedby={errors.details ? "booking-details-error" : undefined}
         />
         {errors.details && (
-          <p className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.details.message}</p>
+          <p id="booking-details-error" className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.details.message}</p>
         )}
       </div>
 
-      {submitError && <div className="alert-error">{submitError}</div>}
+      {submitError && <div className="alert-error" role="alert">{submitError}</div>}
 
       {success && (
-        <div className="alert-success">
+        <div className="alert-success" role="status">
           {queued
-            ? "Booking queued offline. It will sync automatically when you're back online."
-            : "Booking submitted successfully! We will contact you soon."}
+            ? L("Booking queued offline. It will sync automatically when you're back online.", "বুকিং অফলাইনে সংরক্ষিত হয়েছে। ইন্টারনেট ফিরলে স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।")
+            : L("Booking submitted successfully! We will contact you soon.", "বুকিং সফলভাবে জমা হয়েছে! আমরা শীঘ্রই যোগাযোগ করব।")}
         </div>
       )}
 
       <button type="submit" disabled={submitting} className="btn btn-brand btn-lg w-full">
         {submitting ? (
           <>
-            <LoadingSpinner /> Submitting...
+            <LoadingSpinner /> {L("Submitting...", "জমা হচ্ছে...")}
           </>
         ) : (
           /* Dynamic CTA — computed by the API per service (book/order/quote/contact) */

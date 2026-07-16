@@ -101,6 +101,8 @@ const SECTIONS: Section[] = [
       { key: "contact_phone", label: "Phone", type: "tel", placeholder: "01825007977" },
       { key: "contact_email", label: "Email", type: "email", placeholder: "info.aboenterprise@gmail.com", hint: "Shown on the site (footer, contact, invoices). Editable here — no redeploy." },
       { key: "contact_address", label: "Address", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh" },
+      { key: "contact_hours_en", label: "Business Hours (EN)", placeholder: "Sat–Thu, 9:00 AM – 9:00 PM", hint: "Shown in the footer, homepage and contact page" },
+      { key: "contact_hours_bn", label: "Business Hours (বাংলা)", placeholder: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা" },
       { key: "google_maps_embed", label: "Google Maps Embed", type: "textarea", hint: "Share → Embed a map", placeholder: "Paste iframe or URL" },
       { key: "google_maps_api_key", label: "Google Maps API Key", placeholder: "AIza..." },
     ],
@@ -137,6 +139,60 @@ const SECTIONS: Section[] = [
       { key: "hero_cta_url", label: "CTA Button Link", type: "url", placeholder: "/products" },
     ],
     note: "হোমপেজ ব্যানার ছবি এখন Image Manager → Brand & Site ট্যাবে।",
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // HOMEPAGE SECTIONS (JSON)
+  // ═══════════════════════════════════════════════════════════════════════
+  {
+    id: "homepage_sections",
+    title: "Homepage Sections (JSON)",
+    icon: <ImageIcon className="w-4 h-4" />,
+    note: "খালি রাখলে ডিফল্ট কনটেন্ট দেখাবে। JSON সেট করলে সেই সেকশন Admin থেকে চলবে।",
+    fields: [
+      {
+        key: "site_announcements_json",
+        label: "Announcement Bar Messages",
+        type: "textarea",
+        placeholder: '[{"en":"Free delivery over ৳2000","bn":"৳২০০০+ ফ্রি ডেলিভারি","href":"/products"}]',
+        hint: "Array with en, bn, href",
+      },
+      {
+        key: "site_trust_badges_json",
+        label: "Trust Badges",
+        type: "textarea",
+        placeholder: '[{"icon":"award","en":"8+ Years Experience","bn":"৮+ বছরের অভিজ্ঞতা"}]',
+        hint: "Icons: award, users, globe, headphones, shield, credit-card, truck, store, clock",
+      },
+      {
+        key: "site_why_choose_json",
+        label: "Why Choose Us Cards",
+        type: "textarea",
+        placeholder: '[{"icon":"award","title_en":"...","title_bn":"...","desc_en":"...","desc_bn":"..."}]',
+        hint: "Icons: award, store, globe, wrench, bot, truck, shield, users, headphones",
+      },
+      {
+        key: "site_faq_json",
+        label: "FAQ Items (Home + FAQ page)",
+        type: "textarea",
+        placeholder: '[{"q_en":"...","q_bn":"...","a_en":"...","a_bn":"...","category":"general"}]',
+        hint: "Categories: general, products, services, software, payment, shipping",
+      },
+      {
+        key: "site_quick_categories_json",
+        label: "Quick Category Tiles",
+        type: "textarea",
+        placeholder: '[{"icon":"smartphone","label_en":"...","label_bn":"...","desc_en":"...","desc_bn":"...","href":"/products"}]',
+        hint: "Icons: smartphone, file-text, wrench, briefcase, bot, globe, headphones, shopping-bag, printer, calendar",
+      },
+      {
+        key: "site_entry_points_json",
+        label: "Entry Point Cards",
+        type: "textarea",
+        placeholder: '[{"icon":"shopping-bag","title_en":"...","title_bn":"...","desc_en":"...","desc_bn":"...","cta_en":"...","cta_bn":"...","href":"/products","tags_en":["..."],"tags_bn":["..."]}]',
+        hint: "Icons: shopping-bag, calendar, briefcase, bot, wrench, globe",
+      },
+    ],
   },
 
   // ═══════════════════════════════════════════════════════════════════════

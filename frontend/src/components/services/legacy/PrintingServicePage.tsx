@@ -141,10 +141,10 @@ export default function PrintingPage() {
                 </p>
               )}
               <div>
-                <label className="form-label mb-2">
+                <label htmlFor="print-subtype" className="form-label mb-2">
                   {lang === "bn" ? "সেবার ধরন *" : "Service Type *"}
                 </label>
-                <select {...register("service_subtype")} className="input">
+                <select id="print-subtype" {...register("service_subtype")} className="input">
                   {PRINT_SERVICES.map((s) => (
                     <option key={s.value} value={s.value}>
                       {lang === "bn" ? s.label.bn : s.label.en}
@@ -154,38 +154,50 @@ export default function PrintingPage() {
               </div>
 
               <div>
-                <label className="form-label">
+                <label htmlFor="print-name" className="form-label">
                   {lang === "bn" ? "আপনার নাম *" : "Full Name *"}
                 </label>
                 <input
+                  id="print-name"
                   {...register("customer_name")}
                   className={cn("input", errors.customer_name && "input-error")}
                   placeholder={lang === "bn" ? "নাম লিখুন" : "Your name"}
+                  aria-invalid={errors.customer_name ? true : undefined}
+                  aria-describedby={errors.customer_name ? "print-name-error" : undefined}
                 />
+                {errors.customer_name && (
+                  <p id="print-name-error" className="text-red-500 text-xs mt-1">
+                    {lang === "bn" ? "কমপক্ষে ২ অক্ষরের নাম দিন" : "Please enter your name"}
+                  </p>
+                )}
               </div>
 
               <div>
-                <label className="form-label">
+                <label htmlFor="print-phone" className="form-label">
                   {lang === "bn" ? "মোবাইল নম্বর *" : "Mobile Number *"}
                 </label>
                 <input
+                  id="print-phone"
                   {...register("customer_phone")}
                   type="tel"
                   className={cn("input", errors.customer_phone && "input-error")}
                   placeholder="01XXXXXXXXX"
+                  aria-invalid={errors.customer_phone ? true : undefined}
+                  aria-describedby={errors.customer_phone ? "print-phone-error" : undefined}
                 />
                 {errors.customer_phone && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p id="print-phone-error" className="text-red-500 text-xs mt-1">
                     {lang === "bn" ? "সঠিক নম্বর দিন" : "Enter a valid Bangladesh number"}
                   </p>
                 )}
               </div>
 
               <div>
-                <label className="form-label">
+                <label htmlFor="print-details" className="form-label">
                   {lang === "bn" ? "বিস্তারিত তথ্য *" : "Details / Requirements *"}
                 </label>
                 <textarea
+                  id="print-details"
                   {...register("details")}
                   rows={4}
                   className={cn("input resize-none", errors.details && "input-error")}
@@ -194,9 +206,11 @@ export default function PrintingPage() {
                       ? "পরিমাণ, সাইজ, ডিজাইন সম্পর্কে বিস্তারিত লিখুন..."
                       : "Quantity, size, design requirements, delivery date..."
                   }
+                  aria-invalid={errors.details ? true : undefined}
+                  aria-describedby={errors.details ? "print-details-error" : undefined}
                 />
                 {errors.details && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p id="print-details-error" className="text-red-500 text-xs mt-1">
                     {lang === "bn" ? "কমপক্ষে ১০ অক্ষরে লিখুন" : "Please provide more details"}
                   </p>
                 )}

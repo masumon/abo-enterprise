@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import BookingForm from "@/components/booking/BookingForm";
 import { serviceBookingsApi } from "@/lib/api";
+import { useLanguageStore } from "@/store/language";
 
 jest.mock("@/lib/api", () => ({
   serviceBookingsApi: {
@@ -35,6 +36,9 @@ describe("Booking Form", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockCreate.mockResolvedValue({ status: 201, data: { data: {} } });
+    // The form is bilingual (defaults to bn); the assertions below query the
+    // English labels/placeholders, so pin the language for the test run.
+    useLanguageStore.setState({ lang: "en" });
   });
 
   it("should render booking form with service info", () => {

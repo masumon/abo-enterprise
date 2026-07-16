@@ -1,11 +1,15 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import type { ComponentType } from "react";
 import type { Category, Service, Subcategory } from "@/types";
 import ServiceDetailClient from "./ServiceDetailClient";
 import CategoryBrowseClient from "@/components/services/CategoryBrowseClient";
+import PrintingServicePage from "@/components/services/legacy/PrintingServicePage";
+import LegalServicePage from "@/components/services/legacy/LegalServicePage";
+import SoftwareServicePage from "@/components/services/legacy/SoftwareServicePage";
 import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { jsonLdString } from "@/lib/metadata";
+import { jsonLdString, pageMeta } from "@/lib/metadata";
 import { fetchWithRetry } from "@/lib/fetchRetry";
 
 const API_BASE = getApiBaseUrl();
@@ -19,7 +23,30 @@ const API_BASE = getApiBaseUrl();
  * A single segment is resolved as a service slug FIRST so every pre-existing
  * service URL keeps working exactly as before; only when no service matches
  * do we try the taxonomy.
+ *
+ * printing / legal / software used to be standalone static routes shadowing
+ * this resolver. They now resolve through the same DB-first pipeline; the
+ * original booking pages render only as the final fallback, so the moment the
+ * admin publishes a matching service or category, the canonical taxonomy page
+ * takes over at the exact same URL — one route system, no redirects needed.
  */
+const LEGACY_STATIC_PAGES: Record<string, { Component: ComponentType; title: string; description: string }> = {
+  printing: {
+    Component: PrintingServicePage,
+    title: "Printing Services",
+    description: "Professional printing — business cards, banners, brochures and more in Sylhet.",
+  },
+  legal: {
+    Component: LegalServicePage,
+    title: "Legal Assistance",
+    description: "GD filing, FIR applications, legal documents and government assistance in Bangladesh.",
+  },
+  software: {
+    Component: SoftwareServicePage,
+    title: "Software Development",
+    description: "Web, mobile, AI and enterprise software development by ABO Enterprise.",
+  },
+};
 
 interface Envelope<T> {
   data: T | null;
@@ -121,6 +148,8 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
       const url = `${SITE_URL}/services/${category.slug}`;
       return { title, description, alternates: { canonical: url }, openGraph: { title, description, url, type: "website" } };
     }
+    const legacy = LEGACY_STATIC_PAGES[segments[0]];
+    if (legacy) return pageMeta(legacy.title, legacy.description, `/services/${segments[0]}`);
   }
 
   if (segments.length === 2) {
@@ -213,6 +242,14 @@ export default async function ServicesCatchAllPage({ params }: { params: PagePar
           initialTotal={total}
         />
       );
+    }
+
+    // Final fallback: the original printing/legal/software booking pages keep
+    // serving their URLs until the taxonomy covers those slugs.
+    const legacy = LEGACY_STATIC_PAGES[segments[0]];
+    if (legacy) {
+      const Legacy = legacy.Component;
+      return <Legacy />;
     }
 
     notFound();

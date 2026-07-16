@@ -168,10 +168,10 @@ export default function LegalPage() {
           ) : (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               {/* Service Selector */}
-              <div>
-                <label className="form-label mb-2">
+              <fieldset>
+                <legend className="form-label mb-2">
                   {lang === "bn" ? "সেবার ধরন *" : "Service Type *"}
-                </label>
+                </legend>
                 <div className="grid grid-cols-1 gap-2">
                   {LEGAL_SERVICES.map((s) => (
                     <label
@@ -193,37 +193,54 @@ export default function LegalPage() {
                     </label>
                   ))}
                 </div>
-              </div>
+              </fieldset>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="form-label">
+                  <label htmlFor="legal-name" className="form-label">
                     {lang === "bn" ? "আপনার নাম *" : "Full Name *"}
                   </label>
                   <input
+                    id="legal-name"
                     {...register("customer_name")}
                     className={cn("input", errors.customer_name && "input-error")}
                     placeholder={lang === "bn" ? "নাম লিখুন" : "Your name"}
+                    aria-invalid={errors.customer_name ? true : undefined}
+                    aria-describedby={errors.customer_name ? "legal-name-error" : undefined}
                   />
+                  {errors.customer_name && (
+                    <p id="legal-name-error" className="text-red-500 text-xs mt-1">
+                      {lang === "bn" ? "কমপক্ষে ২ অক্ষরের নাম দিন" : "Please enter your name"}
+                    </p>
+                  )}
                 </div>
                 <div>
-                  <label className="form-label">
+                  <label htmlFor="legal-phone" className="form-label">
                     {lang === "bn" ? "মোবাইল নম্বর *" : "Mobile *"}
                   </label>
                   <input
+                    id="legal-phone"
                     {...register("customer_phone")}
                     type="tel"
                     className={cn("input", errors.customer_phone && "input-error")}
                     placeholder="01XXXXXXXXX"
+                    aria-invalid={errors.customer_phone ? true : undefined}
+                    aria-describedby={errors.customer_phone ? "legal-phone-error" : undefined}
                   />
+                  {errors.customer_phone && (
+                    <p id="legal-phone-error" className="text-red-500 text-xs mt-1">
+                      {lang === "bn" ? "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন" : "Enter a valid 11-digit mobile number"}
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div>
-                <label className="form-label">
+                <label htmlFor="legal-station" className="form-label">
                   {lang === "bn" ? "থানা / অফিস (যদি প্রযোজ্য)" : "Police Station / Office (if applicable)"}
                 </label>
                 <input
+                  id="legal-station"
                   {...register("station")}
                   className="input"
                   placeholder={lang === "bn" ? "থানার নাম" : "Station name"}
@@ -231,10 +248,11 @@ export default function LegalPage() {
               </div>
 
               <div>
-                <label className="form-label">
+                <label htmlFor="legal-details" className="form-label">
                   {lang === "bn" ? "ঘটনার বিবরণ *" : "Incident Details *"}
                 </label>
                 <textarea
+                  id="legal-details"
                   {...register("details")}
                   rows={5}
                   className={cn("input resize-none", errors.details && "input-error")}
@@ -243,9 +261,11 @@ export default function LegalPage() {
                       ? "ঘটনার তারিখ, সময়, স্থান ও বিস্তারিত বর্ণনা দিন..."
                       : "Date, time, location, and full description of the incident..."
                   }
+                  aria-invalid={errors.details ? true : undefined}
+                  aria-describedby={errors.details ? "legal-details-error" : undefined}
                 />
                 {errors.details && (
-                  <p className="text-red-500 text-xs mt-1">
+                  <p id="legal-details-error" className="text-red-500 text-xs mt-1">
                     {lang === "bn" ? "কমপক্ষে ২০ অক্ষরে বিবরণ দিন" : "Please provide more details"}
                   </p>
                 )}

@@ -6,22 +6,25 @@ import { Search, MessageCircle } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import Accordion from "@/components/ui/Accordion";
-import { FAQ_ITEMS, FAQ_CATEGORIES } from "@/lib/data/faq";
+import { resolveFaqItems, FAQ_CATEGORIES } from "@/lib/data/faq";
+import { usePublicSettings } from "@/hooks/usePublicSettings";
+import { SITE_FAQ_KEY } from "@/lib/cmsContent";
 
 export default function FaqClient() {
   const { lang } = useLanguageStore();
+  const { settings } = usePublicSettings([SITE_FAQ_KEY]);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return FAQ_ITEMS.filter((item) => {
+    return resolveFaqItems(settings).filter((item) => {
       const matchCat = category === "all" || item.category === category;
       if (!q) return matchCat;
       const text = `${item.q.en} ${item.q.bn} ${item.a.en} ${item.a.bn}`.toLowerCase();
       return matchCat && text.includes(q);
     });
-  }, [query, category]);
+  }, [query, category, settings]);
 
   const accordionItems = filtered.map((item, i) => ({
     id: `faq-${i}`,

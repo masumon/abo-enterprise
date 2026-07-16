@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useLanguageStore } from "@/store/language";
 import SectionHeader from "@/components/ui/SectionHeader";
 import Accordion from "@/components/ui/Accordion";
-import { FAQ_ITEMS } from "@/lib/data/faq";
+import { resolveFaqItems } from "@/lib/data/faq";
+import { usePublicSettings } from "@/hooks/usePublicSettings";
+import { SITE_FAQ_KEY } from "@/lib/cmsContent";
 
 export default function FAQ() {
   const { lang } = useLanguageStore();
+  const { settings } = usePublicSettings([SITE_FAQ_KEY]);
 
-  const items = FAQ_ITEMS.slice(0, 6).map((faq, i) => ({
+  const items = resolveFaqItems(settings).slice(0, 6).map((faq, i) => ({
     id: `home-faq-${i}`,
     question: lang === "bn" ? faq.q.bn : faq.q.en,
     answer: lang === "bn" ? faq.a.bn : faq.a.en,

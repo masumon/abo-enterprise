@@ -1,3 +1,5 @@
+import { getSiteFaq } from "@/lib/cmsContent";
+
 export interface FaqItem {
   q: { en: string; bn: string };
   a: { en: string; bn: string };
@@ -70,6 +72,20 @@ export const FAQ_ITEMS: FaqItem[] = [
     },
   },
 ];
+
+const VALID_CATEGORIES = new Set(["general", "products", "services", "software", "payment", "shipping"]);
+
+/** Resolve FAQ items from admin settings (site_faq_json), falling back to the
+ * built-in list. Invalid/unknown categories degrade to "general". */
+export function resolveFaqItems(settings: Record<string, string>): FaqItem[] {
+  const cms = getSiteFaq(settings, []);
+  if (cms.length === 0) return FAQ_ITEMS;
+  return cms.map((item) => ({
+    category: (VALID_CATEGORIES.has(item.category ?? "") ? item.category : "general") as FaqItem["category"],
+    q: { en: item.q_en || item.q_bn, bn: item.q_bn || item.q_en },
+    a: { en: item.a_en || item.a_bn, bn: item.a_bn || item.a_en },
+  }));
+}
 
 export const FAQ_CATEGORIES = [
   { id: "all" as const, label: { en: "All", bn: "সব" } },

@@ -4,12 +4,14 @@ import { SITE_URL } from "@/lib/tokens";
 export function pageMeta(
   title: string,
   description: string,
-  path?: string
+  path?: string,
+  opts?: { noindex?: boolean }
 ): Metadata {
   return {
     title,
     description,
     alternates: path ? { canonical: `${SITE_URL}${path}` } : undefined,
+    robots: opts?.noindex ? { index: false, follow: true } : undefined,
     openGraph: {
       title: `${title} | ABO Enterprise`,
       description,

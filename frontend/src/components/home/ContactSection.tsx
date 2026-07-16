@@ -11,12 +11,15 @@ import MapEmbed from "@/components/common/MapEmbed";
 
 export default function ContactSection() {
   const { lang } = useLanguageStore();
-  const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address"]);
+  const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address", "contact_hours_en", "contact_hours_bn", "facebook_url", "whatsapp_number"]);
   const mapsEmbed = resolveGoogleMapsEmbed(getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED));
   const phone = getSettingValue(settings, "contact_phone", "01825007977");
   const email = getSettingValue(settings, "contact_email", "info.aboenterprise@gmail.com");
   const address = getSettingValue(settings, "contact_address", lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN);
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
+  const hours = lang === "bn"
+    ? getSettingValue(settings, "contact_hours_bn", "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা")
+    : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 9:00 PM");
 
   return (
     <section id="contact" className="py-16 gradient-surface">
@@ -36,7 +39,7 @@ export default function ContactSection() {
                 { icon: MapPin, label: address, href: mapsLink },
                 { icon: Phone, label: `+880 ${phone.slice(0, 4)} ${phone.slice(4)}`, href: `tel:+880${phone}` },
                 { icon: Mail, label: email, href: `mailto:${email}` },
-                { icon: Clock, label: lang === "bn" ? "শনি–বৃহঃ, সকাল ৯টা–রাত ৮টা" : "Sat–Thu, 9:00 AM – 8:00 PM", href: null },
+                { icon: Clock, label: hours, href: null },
               ].map(({ icon: Icon, label, href }) => (
                 <div key={label} className="flex items-start gap-3">
                   <div className="w-9 h-9 bg-accent-50 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -51,10 +54,10 @@ export default function ContactSection() {
               ))}
             </div>
             <div className="flex gap-2 pt-2">
-              <a href="https://www.facebook.com/abo.enterprise" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white hover:bg-blue-700" aria-label="Facebook">
+              <a href={getSettingValue(settings, "facebook_url", "https://www.facebook.com/abo.enterprise")} target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white hover:bg-blue-700" aria-label="Facebook">
                 <Facebook className="w-4 h-4" />
               </a>
-              <a href="https://wa.me/8801825007977" target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-green-500 rounded-lg flex items-center justify-center text-white hover:bg-green-600" aria-label="WhatsApp">
+              <a href={`https://wa.me/${getSettingValue(settings, "whatsapp_number", "8801825007977").replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-green-500 rounded-lg flex items-center justify-center text-white hover:bg-green-600" aria-label="WhatsApp">
                 <MessageCircle className="w-4 h-4" />
               </a>
             </div>
