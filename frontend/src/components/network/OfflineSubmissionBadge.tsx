@@ -40,7 +40,12 @@ export default function OfflineSubmissionBadge() {
   if (!hasQueued && !showSynced) return null;
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 max-w-xs rounded-2xl border bg-white/95 px-4 py-3 shadow-lg backdrop-blur sm:bottom-6 dark:bg-gray-950/95">
+    // Sits above the assistant FAB (bottom-mobile-float / lg:bottom-6) so the
+    // two floating elements never overlap on any breakpoint.
+    <div
+      role="status"
+      className="fixed bottom-[calc(var(--mobile-float-bottom)+4.5rem)] right-4 z-50 max-w-xs rounded-2xl border bg-white/95 px-4 py-3 shadow-lg backdrop-blur lg:bottom-24 lg:right-6 dark:bg-gray-950/95"
+    >
       <div className="flex items-start gap-3">
         <div
           className={`mt-0.5 flex h-9 w-9 items-center justify-center rounded-full ${
