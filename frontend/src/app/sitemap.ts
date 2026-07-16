@@ -29,8 +29,9 @@ const STATIC_PATHS: { path: string; priority: number; changeFrequency: MetadataR
   // excluded — they carry noindex metadata and have no search-landing value.
 ];
 
-/** Dynamic service slugs that collide with the static /services/* booking
- * routes above — skipped to keep each URL listed exactly once. */
+/** These /services/* URLs are already listed in STATIC_PATHS above (they
+ * resolve via the catch-all with a legacy fallback) — skip matching dynamic
+ * service slugs so each URL is listed exactly once. */
 const STATIC_SERVICE_SLUGS = new Set(["printing", "legal", "software"]);
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

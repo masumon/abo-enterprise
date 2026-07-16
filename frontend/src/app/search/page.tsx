@@ -43,9 +43,8 @@ async function searchBlog(query: string): Promise<BlogPost[]> {
 }
 
 // Every service links to its exact detail URL — /services/[...segments]
-// resolves a service slug first, so this is always the canonical page.
-// (Slugs colliding with the static booking routes printing/legal/software
-// land on those pages by Next.js routing precedence, same URL either way.)
+// resolves every slug (service first, then category, then the legacy
+// printing/legal/software fallbacks), so this is always the canonical page.
 function resolveServiceHref(slug: string): string {
   return `/services/${slug}`;
 }
