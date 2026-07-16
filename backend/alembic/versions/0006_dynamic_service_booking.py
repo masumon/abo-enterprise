@@ -155,6 +155,26 @@ LEGACY_CATEGORY_MAP: list[tuple[str, str, str]] = [
 ]
 
 
+# Known seed services (004_services_system.sql) → curated taxonomy placement.
+# (service slug, category slug, subcategory slug or None). Runs BEFORE the
+# generic legacy relink so e.g. mobile-app-development lands in mobile-lab
+# rather than web-software; guarded so manual admin placements are kept.
+SERVICE_PLACEMENT_SEED: list[tuple[str, str, str | None]] = [
+    ("printing-service", "printing-documentation", "printing-photocopy"),
+    ("website-development", "web-software", "website-design"),
+    ("mobile-app-development", "mobile-lab", "app-development"),
+    ("digital-marketing", "marketing-design", "social-media-campaign"),
+    ("branding-design", "marketing-design", "logo-branding"),
+    ("business-consultation", "business-consultancy", None),
+    ("custom-software", "web-software", "custom-software"),
+    ("ai-solutions", "ai-automation", "business-ai-tools"),
+    ("python-automation", "ai-automation", "python-automation"),
+    ("legal-services", "printing-documentation", "legal-drafting"),
+    ("nid-passport", "digital-e-services", "nid"),
+    ("future-service", "others", "future-services"),
+]
+
+
 def upgrade() -> None:
     # 1. Dynamic booking answers (admin-defined form fields → customer values).
     op.execute(
@@ -226,10 +246,51 @@ def upgrade() -> None:
                 },
             )
 
-    # 4. Re-link services from 0004's machine-generated categories onto the
-    #    curated taxonomy. Only touches rows whose category_id is NULL or
-    #    still points at the machine row for that same legacy string — a
-    #    manually assigned category_id is never overwritten.
+    # 4a. Place the known seed services into their exact category AND
+    #     subcategory so every nested /services/{cat}/{sub} page has content
+    #     from day one. Guarded: skipped as soon as an admin has assigned a
+    #     subcategory, or moved the service to a non-machine category.
+    machine_slug_list = sorted({m for _l, m, _n in LEGACY_CATEGORY_MAP})
+    placement_sql = sa.text(
+        """
+        UPDATE services sv
+        SET category_id = c.id,
+            subcategory_id = COALESCE(
+              (SELECT s.id FROM subcategories s
+               WHERE s.category_id = c.id AND s.slug = :sub_slug
+                 AND s.is_deleted = FALSE),
+              sv.subcategory_id
+            )
+        FROM categories c
+        WHERE c.slug = :cat_slug
+          AND c.is_deleted = FALSE
+          AND sv.slug = :service_slug
+          AND sv.is_deleted = FALSE
+          AND sv.subcategory_id IS NULL
+          AND (
+            sv.category_id IS NULL
+            OR sv.category_id = c.id
+            OR sv.category_id IN (
+              SELECT id FROM categories mc WHERE mc.slug = ANY(:machine_slugs)
+            )
+          )
+        """
+    )
+    for service_slug, cat_slug, sub_slug in SERVICE_PLACEMENT_SEED:
+        bind.execute(
+            placement_sql,
+            {
+                "service_slug": service_slug,
+                "cat_slug": cat_slug,
+                "sub_slug": sub_slug or "",
+                "machine_slugs": machine_slug_list,
+            },
+        )
+
+    # 4b. Re-link remaining services from 0004's machine-generated categories
+    #    onto the curated taxonomy. Only touches rows whose category_id is
+    #    NULL or still points at the machine row for that same legacy string —
+    #    a manually assigned category_id is never overwritten.
     relink_sql = sa.text(
         """
         UPDATE services sv

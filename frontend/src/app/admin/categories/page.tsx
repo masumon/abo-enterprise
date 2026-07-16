@@ -15,6 +15,13 @@ function slugify(v: string): string {
 
 const APPLIES = ["product", "service"] as const;
 
+// Icon names the public services page can render (see ServicesPageClient
+// CATEGORY_ICONS); anything else falls back to a generic gear icon.
+const ICON_OPTIONS = [
+  "", "FileText", "Printer", "Globe", "Smartphone", "Headphones",
+  "Megaphone", "Briefcase", "Bot", "Cog", "Wrench", "Monitor", "Code2",
+] as const;
+
 /**
  * Unified taxonomy manager — Category → Subcategory. Shared by products and
  * services. Backed by the /categories admin API; the existing string category
@@ -158,10 +165,15 @@ function CategoryCard({ category, onChanged }: { category: Category; onChanged: 
     sort_order: category.sort_order,
     is_active: category.is_active,
     applies_to: category.applies_to ?? [],
+    icon: category.icon ?? "",
+    description_en: category.description_en ?? "",
+    description_bn: category.description_bn ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [newSub, setNewSub] = useState("");
+  const [newSubBn, setNewSubBn] = useState("");
   const [open, setOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   const save = async () => {
     setSaving(true);
@@ -173,6 +185,9 @@ function CategoryCard({ category, onChanged }: { category: Category; onChanged: 
         sort_order: Number(form.sort_order) || 0,
         is_active: form.is_active,
         applies_to: form.applies_to,
+        icon: form.icon || null,
+        description_en: form.description_en.trim() || null,
+        description_bn: form.description_bn.trim() || null,
       });
       toast("success", "Category saved");
       onChanged();
@@ -202,8 +217,10 @@ function CategoryCard({ category, onChanged }: { category: Category; onChanged: 
         category_id: category.id,
         slug: slugify(name),
         name_en: name,
+        name_bn: newSubBn.trim() || undefined,
       });
       setNewSub("");
+      setNewSubBn("");
       toast("success", "Subcategory added");
       onChanged();
     } catch (err) {
@@ -286,6 +303,54 @@ function CategoryCard({ category, onChanged }: { category: Category; onChanged: 
         </div>
       </div>
 
+      {/* Icon & descriptions — shown on the public category pages */}
+      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/10">
+        <button
+          onClick={() => setDetailsOpen((o) => !o)}
+          className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600"
+        >
+          <ChevronRight className={`w-3.5 h-3.5 transition-transform ${detailsOpen ? "rotate-90" : ""}`} />
+          Icon &amp; Description
+        </button>
+        {detailsOpen && (
+          <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <label className="text-[11px] text-muted block mb-1">Icon (public card)</label>
+              <select
+                value={form.icon}
+                onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
+                className="admin-input text-sm w-full"
+              >
+                {ICON_OPTIONS.map((i) => (
+                  <option key={i} value={i}>{i || "Default (gear)"}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-[11px] text-muted block mb-1">Description (EN)</label>
+              <textarea
+                rows={2}
+                value={form.description_en}
+                onChange={(e) => setForm((f) => ({ ...f, description_en: e.target.value }))}
+                className="admin-input text-sm w-full resize-none"
+                placeholder="Shown as the category page subtitle"
+              />
+            </div>
+            <div>
+              <label className="text-[11px] text-muted block mb-1">বিবরণ (বাংলা)</label>
+              <textarea
+                rows={2}
+                value={form.description_bn}
+                onChange={(e) => setForm((f) => ({ ...f, description_bn: e.target.value }))}
+                className="admin-input text-sm w-full resize-none"
+                placeholder="ক্যাটাগরি পেজের সাবটাইটেল"
+                dir="auto"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Subcategories */}
       <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/10">
         <button
@@ -301,14 +366,22 @@ function CategoryCard({ category, onChanged }: { category: Category; onChanged: 
             {(category.subcategories ?? []).map((sub) => (
               <SubcategoryRow key={sub.id} sub={sub} onChanged={onChanged} />
             ))}
-            <div className="flex items-center gap-2 pt-1">
+            <div className="flex items-center gap-2 pt-1 flex-wrap">
               <CornerDownRight className="w-3.5 h-3.5 text-gray-400" />
               <input
                 value={newSub}
                 onChange={(e) => setNewSub(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && addSub()}
                 className="admin-input text-sm flex-1 max-w-xs"
-                placeholder="New subcategory name"
+                placeholder="New subcategory (EN)"
+              />
+              <input
+                value={newSubBn}
+                onChange={(e) => setNewSubBn(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && addSub()}
+                className="admin-input text-sm flex-1 max-w-xs"
+                placeholder="নাম (বাংলা, ঐচ্ছিক)"
+                dir="auto"
               />
               <button onClick={addSub} className="admin-btn-secondary gap-1 text-xs">
                 <Plus className="w-3.5 h-3.5" />
@@ -325,6 +398,10 @@ function CategoryCard({ category, onChanged }: { category: Category; onChanged: 
 function SubcategoryRow({ sub, onChanged }: { sub: Subcategory; onChanged: () => void }) {
   const toast = useToastStore((s) => s.push);
   const [name, setName] = useState(sub.name_en);
+  const [nameBn, setNameBn] = useState(sub.name_bn ?? "");
+  // Slug is edited explicitly — renaming a subcategory must NOT silently
+  // change its public /services/{cat}/{sub} URL.
+  const [slug, setSlug] = useState(sub.slug);
   const [active, setActive] = useState(sub.is_active);
   const [busy, setBusy] = useState(false);
 
@@ -333,7 +410,8 @@ function SubcategoryRow({ sub, onChanged }: { sub: Subcategory; onChanged: () =>
     try {
       await categoriesAdminApi.updateSub(sub.id, {
         name_en: name.trim(),
-        slug: slugify(name),
+        name_bn: nameBn.trim() || null,
+        slug: slugify(slug || name),
         is_active: active,
       });
       toast("success", "Subcategory saved");
@@ -357,12 +435,27 @@ function SubcategoryRow({ sub, onChanged }: { sub: Subcategory; onChanged: () =>
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap">
       <CornerDownRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
       <input
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="admin-input text-sm flex-1 max-w-xs"
+        className="admin-input text-sm flex-1 max-w-[11rem]"
+        placeholder="Name (EN)"
+      />
+      <input
+        value={nameBn}
+        onChange={(e) => setNameBn(e.target.value)}
+        className="admin-input text-sm flex-1 max-w-[11rem]"
+        placeholder="নাম (বাংলা)"
+        dir="auto"
+      />
+      <input
+        value={slug}
+        onChange={(e) => setSlug(e.target.value)}
+        className="admin-input text-sm flex-1 max-w-[10rem] font-mono"
+        placeholder="slug"
+        title="Public URL segment — changing this changes the page address"
       />
       <label className="inline-flex items-center gap-1 cursor-pointer text-[11px] text-muted">
         <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="w-3.5 h-3.5 accent-brand-600" />
