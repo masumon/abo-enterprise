@@ -52,26 +52,23 @@ class OfflineDataSync {
         this.initPromise = null;
         reject(request.error);
       };
-      request.onsuccess = async () => {
+      request.onsuccess = () => {
         this.db = request.result;
-        try {
-          try {
-            await this.clearExpiredCache();
-          } catch (error) {
-            throw new Error(`Cache cleanup failed: ${error instanceof Error ? error.message : String(error)}`);
-          }
-          try {
-            await this.syncPendingActions();
-          } catch (error) {
-            throw new Error(`Pending action sync failed: ${error instanceof Error ? error.message : String(error)}`);
-          }
-          resolve();
-        } catch (error) {
-          this.db = null;
-          reject(error);
-        } finally {
-          this.initPromise = null;
-        }
+        this.initPromise = null;
+        // The DB is usable the moment it opens — resolve immediately so cache
+        // reads/writes never wait behind housekeeping. Cleanup and pending-
+        // submission sync run in the background: syncPendingActions makes
+        // network calls (up to 45s timeouts per action on slow connections),
+        // and awaiting it here used to stall EVERY cache operation on mobile
+        // data — and a sync failure rejected init and nulled this.db,
+        // disabling offline caching entirely.
+        resolve();
+        this.clearExpiredCache().catch((error) => {
+          console.error("Expired cache cleanup failed:", error);
+        });
+        this.syncPendingActions().catch((error) => {
+          console.error("Pending action sync failed:", error);
+        });
       };
 
       request.onupgradeneeded = (event: any) => {
