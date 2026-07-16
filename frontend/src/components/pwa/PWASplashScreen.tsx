@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { BRAND_LOGO_PATH } from "@/lib/brand";
 
-const SESSION_KEY = "abo_pwa_splash_shown";
+const STORAGE_KEY = "abo_pwa_splash_shown";
 const SHOW_MS = 1400;
 const FADE_MS = 450;
 
@@ -14,8 +14,11 @@ type Phase = "hidden" | "visible" | "fading";
  * Branded launch splash for the installed PWA.
  *
  * Renders ONLY when the app runs in standalone display-mode (home-screen
- * launch) and only once per app session — regular browser visitors never
- * see it, so web vitals are unaffected.
+ * launch) and only ONCE per install (localStorage). Android already shows
+ * the OS splash generated from the manifest on every launch — persisting
+ * the flag in sessionStorage made this custom splash replay right after it
+ * on each open, because a standalone launch starts a fresh browser session.
+ * Regular browser visitors never see it, so web vitals are unaffected.
  */
 export default function PWASplashScreen() {
   const [phase, setPhase] = useState<Phase>("hidden");
@@ -33,8 +36,12 @@ export default function PWASplashScreen() {
         // iOS Safari legacy flag
         (window.navigator as { standalone?: boolean }).standalone === true;
       if (!standalone) return;
-      if (sessionStorage.getItem(SESSION_KEY) === "1") return;
-      sessionStorage.setItem(SESSION_KEY, "1");
+      try {
+        if (localStorage.getItem(STORAGE_KEY) === "1") return;
+        localStorage.setItem(STORAGE_KEY, "1");
+      } catch {
+        return; // storage unavailable — skip the splash rather than loop it
+      }
       setPhase("visible");
       return;
     }
