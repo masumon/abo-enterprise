@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
+from app.core.json_util import to_json_safe
 from app.core.security import require_admin
 from app.core.config import settings
 from app.core.email import (
@@ -369,7 +370,7 @@ async def update_booking(
         action="update",
         entity_type="booking",
         entity_id=booking.id,
-        new_values={k: (v.isoformat() if hasattr(v, "isoformat") else v) for k, v in update_data.items()},
+        new_values=to_json_safe(update_data),
     )
     db.add(log)
     await db.commit()

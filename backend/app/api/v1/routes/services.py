@@ -5,6 +5,7 @@ from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.http_cache import etag_json_response
+from app.core.json_util import to_json_safe
 from app.core.security import require_admin
 from app.models.models import (
     Service,
@@ -194,7 +195,7 @@ async def create_service(
         action="create",
         entity_type="service",
         entity_id=service.id,
-        new_values=payload.model_dump(),
+        new_values=to_json_safe(payload.model_dump()),
     )
     db.add(log)
     await db.commit()
@@ -290,12 +291,12 @@ async def update_service(
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
 
-    old_values = {
+    old_values = to_json_safe({
         "name_en": service.name_en,
         "name_bn": service.name_bn,
         "base_price": service.base_price,
         "is_active": service.is_active,
-    }
+    })
 
     # Update fields
     update_data = payload.dict(exclude_unset=True)
@@ -311,7 +312,7 @@ async def update_service(
         entity_type="service",
         entity_id=service.id,
         old_values=old_values,
-        new_values=update_data,
+        new_values=to_json_safe(update_data),
     )
     db.add(log)
     await db.commit()

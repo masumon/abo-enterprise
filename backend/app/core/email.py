@@ -1,6 +1,7 @@
 import smtplib
 import asyncio
 import logging
+import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
@@ -44,13 +45,29 @@ def _send_sync(
             msg.attach(part)
 
     # Raises on failure so send_email's retry/failure logging can act on it.
-    with smtplib.SMTP(cfg["host"], cfg["port"]) as server:
-        server.ehlo()
-        if cfg.get("tls"):
-            server.starttls()
-        if cfg.get("user") and cfg.get("password"):
-            server.login(cfg["user"], cfg["password"])
-        server.sendmail(cfg["from_addr"], to, msg.as_string())
+    _timeout = 30  # seconds — prevents indefinite hangs on unreachable hosts
+    if settings.DEBUG:
+        logger.debug(
+            "SMTP connect: host=%s port=%s tls=%s timeout=%s",
+            cfg["host"], cfg["port"], cfg.get("tls"), _timeout,
+        )
+    use_ssl = int(cfg.get("port") or 587) == 465
+    if use_ssl:
+        # Port 465 uses implicit SSL (SMTP_SSL); starttls not called.
+        ctx = ssl.create_default_context()
+        with smtplib.SMTP_SSL(cfg["host"], cfg["port"], timeout=_timeout, context=ctx) as server:
+            server.ehlo()
+            if cfg.get("user") and cfg.get("password"):
+                server.login(cfg["user"], cfg["password"])
+            server.sendmail(cfg["from_addr"], to, msg.as_string())
+    else:
+        with smtplib.SMTP(cfg["host"], cfg["port"], timeout=_timeout) as server:
+            server.ehlo()
+            if cfg.get("tls"):
+                server.starttls()
+            if cfg.get("user") and cfg.get("password"):
+                server.login(cfg["user"], cfg["password"])
+            server.sendmail(cfg["from_addr"], to, msg.as_string())
     logger.info("Email sent successfully to %s", to)
 
 
