@@ -5,15 +5,20 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
+  CheckCircle2,
   ChevronDown,
   ChevronRight,
+  CircleDashed,
+  FilterX,
   FolderTree,
   ImageOff,
   Loader2,
+  Package,
   Pencil,
   Plus,
   RefreshCw,
   Save,
+  Shapes,
   Trash2,
   X,
 } from "lucide-react";
@@ -78,6 +83,14 @@ interface TreeRow {
   scope: string[];
 }
 
+interface StatCardProps {
+  label: string;
+  value: string | number;
+  hint: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone?: "brand" | "emerald" | "amber" | "slate";
+}
+
 const EMPTY_FORM: FormState = {
   name_en: "",
   name_bn: "",
@@ -106,6 +119,30 @@ function HierarchyGuides({ depth }: { depth: number }) {
         <span key={index} className="w-px self-stretch rounded-full bg-gradient-to-b from-brand-100 via-brand-200/80 to-transparent" />
       ))}
     </span>
+  );
+}
+
+function StatCard({ label, value, hint, icon: Icon, tone = "brand" }: StatCardProps) {
+  const toneClasses = {
+    brand: "bg-brand-50 text-brand-700 border-brand-100",
+    emerald: "bg-emerald-50 text-emerald-700 border-emerald-100",
+    amber: "bg-amber-50 text-amber-700 border-amber-100",
+    slate: "bg-slate-50 text-slate-700 border-slate-100",
+  } as const;
+
+  return (
+    <div className="admin-card p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">{label}</p>
+          <p className="mt-1 text-2xl font-bold text-gray-900">{value}</p>
+          <p className="mt-1 text-xs text-gray-500">{hint}</p>
+        </div>
+        <span className={cn("inline-flex h-10 w-10 items-center justify-center rounded-2xl border", toneClasses[tone])}>
+          <Icon className="w-5 h-5" />
+        </span>
+      </div>
+    </div>
   );
 }
 
@@ -621,6 +658,25 @@ export default function AdminCategoriesPage() {
   const canReorder = sortKey === "sort_order" && sortDirection === "asc";
   const activeFilterCount = Number(normalizedQuery.length > 0) + Number(statusFilter !== "all") + Number(scopeFilter !== "all");
   const rootCount = filteredTree.length;
+  const activeNodeCount = rows.filter((row) => row.node.is_active).length;
+  const totalMappedItems = Array.from(metricsMap.values()).reduce(
+    (sum, metric) => sum + metric.products + metric.services,
+    0
+  );
+
+  const resetView = () => {
+    setSearchValue("");
+    setStatusFilter("all");
+    setScopeFilter("all");
+    setSortKey("sort_order");
+    setSortDirection("asc");
+    setExpanded(new Set());
+  };
+
+  const sortIcon = (key: SortKey) => {
+    if (sortKey !== key) return <ArrowUpDown className="w-3.5 h-3.5" />;
+    return sortDirection === "asc" ? <ArrowUp className="w-3.5 h-3.5" /> : <ArrowDown className="w-3.5 h-3.5" />;
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -643,6 +699,13 @@ export default function AdminCategoriesPage() {
         }
       />
 
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Roots" value={rootCount} hint="Top-level vertical groups" icon={Shapes} tone="brand" />
+        <StatCard label="Visible Rows" value={rows.length} hint="Current filtered tree rows" icon={FolderTree} tone="slate" />
+        <StatCard label="Active Nodes" value={activeNodeCount} hint="Currently enabled categories" icon={CheckCircle2} tone="emerald" />
+        <StatCard label="Mapped Items" value={metricsLoading && !countsReady ? "..." : totalMappedItems} hint="Products + services across tree" icon={Package} tone="amber" />
+      </div>
+
       <AdminToolbar
         searchValue={searchValue}
         onSearchChange={setSearchValue}
@@ -658,6 +721,11 @@ export default function AdminCategoriesPage() {
           <option value="product">Products</option>
           <option value="service">Services</option>
         </select>
+        {activeFilterCount > 0 && (
+          <button type="button" onClick={resetView} className="admin-btn-secondary">
+            <FilterX className="w-4 h-4" /> Reset View
+          </button>
+        )}
       </AdminToolbar>
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
@@ -680,6 +748,9 @@ export default function AdminCategoriesPage() {
             Move actions unlock in Sort Order ascending view
           </span>
         )}
+        <span className="inline-flex items-center rounded-full bg-slate-50 border border-slate-100 px-3 py-1 font-medium text-slate-600">
+          View state persists per browser
+        </span>
       </div>
 
       <div className="admin-card overflow-hidden">
@@ -703,6 +774,13 @@ export default function AdminCategoriesPage() {
             icon={FolderTree}
             title="কোনো ফলাফল পাওয়া যায়নি"
             description="Search, status বা scope filter পরিবর্তন করে আবার চেষ্টা করুন।"
+            action={
+              activeFilterCount > 0 ? (
+                <button type="button" onClick={resetView} className="admin-btn-secondary">
+                  <FilterX className="w-4 h-4" /> Reset View
+                </button>
+              ) : undefined
+            }
           />
         ) : (
           <div className="overflow-x-auto">
@@ -719,14 +797,17 @@ export default function AdminCategoriesPage() {
                       ["Status", "status"],
                       ["Sort Order", "sort_order"],
                     ].map(([label, key]) => (
-                      <th key={key} className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/85">
+                      <th key={key} className={cn("sticky top-0 z-10 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/85", key === "category" && "left-0 z-20")}>
                         <button
                           type="button"
                           onClick={() => handleSort(key as SortKey)}
-                          className="inline-flex items-center gap-1.5 hover:text-gray-800 transition-colors"
+                          className={cn(
+                            "inline-flex items-center gap-1.5 transition-colors",
+                            sortKey === key ? "text-gray-900" : "hover:text-gray-800"
+                          )}
                         >
                           <span>{label}</span>
-                          <ArrowUpDown className="w-3.5 h-3.5" />
+                          {sortIcon(key as SortKey)}
                         </button>
                       </th>
                     ))}
@@ -751,10 +832,11 @@ export default function AdminCategoriesPage() {
                         onDoubleClick={() => openEdit(row.node)}
                         className={cn(
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-inset",
+                          index % 2 === 1 && "bg-white/70",
                           row.depth === 0 && "bg-brand-50/30"
                         )}
                       >
-                        <td className="px-5 py-3">
+                        <td className="sticky left-0 z-10 px-5 py-3 bg-inherit backdrop-blur-[1px]">
                           <div className="flex items-start gap-3" style={{ paddingLeft: `${row.depth * 10}px` }}>
                             <HierarchyGuides depth={row.depth} />
                             <button
