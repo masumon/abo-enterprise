@@ -751,9 +751,13 @@ export default function AdminCategoriesPage() {
         <span className="inline-flex items-center rounded-full bg-slate-50 border border-slate-100 px-3 py-1 font-medium text-slate-600">
           View state persists per browser
         </span>
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-white border border-brand-100 px-3 py-1 font-medium text-brand-700">
+          <CircleDashed className="h-3.5 w-3.5" />
+          Premium tree navigation enabled
+        </span>
       </div>
 
-      <div className="admin-card overflow-hidden">
+      <div className="admin-card overflow-hidden border border-brand-100/70 shadow-[0_10px_30px_rgba(30,91,168,0.08)]">
         {loading ? (
           <div className="p-12 flex justify-center">
             <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
@@ -783,7 +787,20 @@ export default function AdminCategoriesPage() {
             }
           />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto bg-gradient-to-b from-white to-brand-50/20">
+            <div className="border-b border-brand-100/60 bg-white/85 px-5 py-2.5 text-xs text-gray-600 backdrop-blur">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-200 bg-brand-50 px-2.5 py-0.5 font-semibold text-brand-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-brand-500" /> Root vertical
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-0.5 font-medium text-slate-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-slate-500" /> Sub-branch
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 font-medium text-emerald-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Live taxonomy health
+                </span>
+              </div>
+            </div>
             <div className="max-h-[72vh] overflow-auto">
               <table role="treegrid" aria-label="Admin Categories Tree Grid" className="table-premium min-w-[1120px]">
                 <thead>
@@ -831,18 +848,32 @@ export default function AdminCategoriesPage() {
                         onKeyDown={(event) => handleRowKeyDown(event, row, index)}
                         onDoubleClick={() => openEdit(row.node)}
                         className={cn(
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-inset",
+                          "group relative border-b border-gray-100/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-inset transition-colors",
                           index % 2 === 1 && "bg-white/70",
-                          row.depth === 0 && "bg-brand-50/30"
+                          row.depth === 0 && "bg-brand-50/35",
+                          row.depth === 1 && "bg-white",
+                          row.depth >= 2 && "bg-slate-50/40 hover:bg-slate-50/70"
                         )}
                       >
                         <td className="sticky left-0 z-10 px-5 py-3 bg-inherit backdrop-blur-[1px]">
-                          <div className="flex items-start gap-3" style={{ paddingLeft: `${row.depth * 10}px` }}>
+                          <div
+                            className={cn(
+                              "flex items-start gap-3 rounded-xl border px-2.5 py-2 transition-all",
+                              row.depth === 0
+                                ? "border-brand-100 bg-white/95 shadow-[0_2px_10px_rgba(30,91,168,0.08)]"
+                                : "border-gray-100 bg-white/90 group-hover:border-brand-100"
+                            )}
+                            style={{ paddingLeft: `${row.depth * 10}px` }}
+                          >
                             <HierarchyGuides depth={row.depth} />
                             <button
                               type="button"
                               onClick={() => row.hasChildren && toggle(row.node.id)}
-                              className={cn("mt-1 w-5 h-5 flex items-center justify-center rounded text-muted hover:bg-gray-100", !row.hasChildren && "invisible")}
+                              className={cn(
+                                "mt-1 w-5 h-5 flex items-center justify-center rounded-md text-muted hover:bg-gray-100",
+                                row.hasChildren && "text-brand-700/90 bg-brand-50/70 hover:bg-brand-100",
+                                !row.hasChildren && "invisible"
+                              )}
                               aria-label={row.isExpanded ? "Collapse row" : "Expand row"}
                             >
                               {row.isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
@@ -860,11 +891,16 @@ export default function AdminCategoriesPage() {
 
                             <div className="min-w-0 flex-1">
                               <button type="button" onClick={() => openEdit(row.node)} className="text-left min-w-0 max-w-full">
-                                <span className="block font-semibold text-gray-900 truncate">
+                                <span className="block truncate font-semibold text-gray-900">
                                   {getNodeLabel(row.node)}
                                   {row.depth === 0 && (
                                     <span className="ml-2 inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700">
                                       Root
+                                    </span>
+                                  )}
+                                  {row.depth > 0 && !row.hasChildren && (
+                                    <span className="ml-2 inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">
+                                      Leaf
                                     </span>
                                   )}
                                 </span>
@@ -901,7 +937,7 @@ export default function AdminCategoriesPage() {
                               disabled={!canReorder || siblingIndex <= 0}
                               aria-label={`Move ${getNodeLabel(row.node)} up`}
                               title={canReorder ? "Move up" : "Sort by Sort Order to move items"}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
+                                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
                             >
                               <ArrowUp className="w-4 h-4" />
                             </button>
@@ -911,7 +947,7 @@ export default function AdminCategoriesPage() {
                               disabled={!canReorder || siblingIndex === siblings.length - 1}
                               aria-label={`Move ${getNodeLabel(row.node)} down`}
                               title={canReorder ? "Move down" : "Sort by Sort Order to move items"}
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
+                                  className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 disabled:opacity-30"
                             >
                               <ArrowDown className="w-4 h-4" />
                             </button>
@@ -920,7 +956,7 @@ export default function AdminCategoriesPage() {
                               onClick={() => openCreate(row.node)}
                               aria-label={`Add child to ${getNodeLabel(row.node)}`}
                               title="Add Child"
-                              className="p-1.5 rounded-lg text-brand-600 hover:text-brand-700 hover:bg-brand-50"
+                                  className="p-1.5 rounded-lg text-brand-600 hover:text-brand-700 hover:bg-brand-50"
                             >
                               <Plus className="w-4 h-4" />
                             </button>
@@ -929,7 +965,7 @@ export default function AdminCategoriesPage() {
                               onClick={() => openEdit(row.node)}
                               aria-label={`Edit ${getNodeLabel(row.node)}`}
                               title="Edit"
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50"
+                                  className="p-1.5 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50"
                             >
                               <Pencil className="w-4 h-4" />
                             </button>
@@ -938,7 +974,7 @@ export default function AdminCategoriesPage() {
                               onClick={() => void remove(row.node)}
                               aria-label={`Delete ${getNodeLabel(row.node)}`}
                               title="Delete"
-                              className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
