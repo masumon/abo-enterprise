@@ -1258,7 +1258,7 @@ class CategoryBase(BaseModel):
 
 
 class CategoryCreate(CategoryBase):
-    pass
+    parent_id: uuid.UUID | None = None
 
 
 class CategoryUpdate(BaseModel):
@@ -1272,11 +1272,15 @@ class CategoryUpdate(BaseModel):
     applies_to: list[str] | None = None
     sort_order: int | None = None
     is_active: bool | None = None
+    parent_id: uuid.UUID | None = None
 
 
 class CategoryOut(CategoryBase):
     id: uuid.UUID
-    subcategories: list[SubcategoryOut] = []
+    parent_id: uuid.UUID | None = None
+    # Children (recursive tree) — key kept as "subcategories" for backward
+    # compatibility with every existing consumer.
+    subcategories: list["CategoryOut"] = []
     created_at: datetime
     updated_at: datetime
 
