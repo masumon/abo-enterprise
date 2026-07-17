@@ -495,6 +495,47 @@
            transition-colors;
   }
 
+  /* ── Admin Forms (global, logic-safe) ── */
+  .admin-shell :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
+    select,
+    textarea
+  ) {
+    @apply rounded-xl border border-gray-200 bg-white text-gray-900 shadow-sm transition-colors;
+  }
+
+  .admin-shell :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
+    select,
+    textarea
+  ):focus {
+    @apply border-brand-400 ring-2 ring-brand-100 outline-none;
+  }
+
+  .admin-shell :is(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
+    textarea
+  )::placeholder {
+    @apply text-gray-400;
+  }
+
+  .admin-shell .form-label {
+    @apply mb-1.5 inline-flex items-center text-xs font-semibold uppercase tracking-wide text-gray-500;
+  }
+
+  .admin-shell fieldset {
+    @apply rounded-2xl border border-gray-100 bg-white/80 p-3 sm:p-4;
+  }
+
+  .admin-shell legend.form-label,
+  .admin-shell fieldset > legend {
+    @apply px-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500;
+  }
+
+  .admin-shell .form-help {
+    @apply mt-1 text-xs text-gray-400;
+  }
+
   .admin-btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
            bg-gradient-to-r from-brand-600 to-brand-700 text-white hover:from-brand-700 hover:to-brand-800 disabled:opacity-50 transition-colors;
@@ -854,6 +895,30 @@
   border-color: rgba(255, 255, 255, 0.1);
   color: rgb(226 232 240);
 }
+.admin-dark :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
+  select,
+  textarea
+) {
+  background: #0d1524;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgb(226 232 240);
+}
+.admin-dark :is(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="hidden"]),
+  select,
+  textarea
+):focus {
+  border-color: rgba(96, 165, 250, 0.65);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+  outline: none;
+}
+.admin-dark .form-label { color: rgb(148 163 184); }
+.admin-dark fieldset {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+.admin-dark .form-help { color: rgb(148 163 184); }
 .admin-dark .admin-btn-secondary {
   background: #16203a;
   border-color: rgba(255, 255, 255, 0.1);
