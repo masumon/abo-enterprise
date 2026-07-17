@@ -77,19 +77,28 @@ async function fetchServiceCategory(slug: string): Promise<Category | null> {
   return cat;
 }
 
-/** Resolve an active subcategory from its parent's embedded list (no extra endpoint needed). */
-function findActiveSubcategory(category: Category, subSlug: string): Subcategory | null {
-  const sub = (category.subcategories ?? []).find((s) => s.slug === subSlug);
-  if (!sub || sub.is_active === false) return null;
-  return sub;
+/**
+ * Walk the remaining URL segments down the node's children (unlimited depth).
+ * Returns the root-first trail, or null when any segment doesn't resolve.
+ */
+function resolveTrail(category: Category, rest: string[]): Subcategory[] | null {
+  // The single-node endpoint ships the ancestors, so short URLs to deep
+  // nodes still render with a complete breadcrumb trail.
+  const trail: Subcategory[] = [...(category.ancestors ?? []), category as unknown as Subcategory];
+  let node: Subcategory = category as unknown as Subcategory;
+  for (const seg of rest) {
+    const next = (node.subcategories ?? []).find((s) => s.slug === seg && s.is_active !== false);
+    if (!next) return null;
+    trail.push(next);
+    node = next;
+  }
+  return trail;
 }
 
 async function fetchTaxonomyServices(
-  categorySlug: string,
-  subcategorySlug?: string
+  nodeSlug: string
 ): Promise<{ services: Service[]; total: number }> {
-  const params = new URLSearchParams({ page: "1", per_page: "12", category_slug: categorySlug });
-  if (subcategorySlug) params.set("subcategory_slug", subcategorySlug);
+  const params = new URLSearchParams({ page: "1", per_page: "12", category_slug: nodeSlug });
   const env = await fetchEnvelope<Service[]>(`${API_BASE}/api/v1/services?${params}`);
   const services = env.data ?? [];
   return { services, total: env.meta?.total ?? services.length };
@@ -145,21 +154,28 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
       const description =
         category.description_en ??
         `${category.name_en} services by ABO Enterprise, Bangladesh.`;
-      const url = `${SITE_URL}/services/${category.slug}`;
+      // Canonical is always the full tree path, even when a deep node is
+      // reached by its short slug.
+      const path = [...(category.ancestors ?? []).map((a) => a.slug), category.slug].join("/");
+      const url = `${SITE_URL}/services/${path}`;
       return { title, description, alternates: { canonical: url }, openGraph: { title, description, url, type: "website" } };
     }
     const legacy = LEGACY_STATIC_PAGES[segments[0]];
     if (legacy) return pageMeta(legacy.title, legacy.description, `/services/${segments[0]}`);
   }
 
-  if (segments.length === 2) {
+  if (segments.length >= 2) {
     const category = await fetchServiceCategory(segments[0]);
-    const sub = category ? findActiveSubcategory(category, segments[1]) : null;
-    if (category && sub) {
-      const title = `${sub.name_en} — ${category.name_en} | ABO Enterprise`;
+    const trail = category ? resolveTrail(category, segments.slice(1)) : null;
+    if (trail) {
+      const node = trail[trail.length - 1];
+      const parent = trail.length > 1 ? trail[trail.length - 2] : null;
+      const title = parent
+        ? `${node.name_en} — ${parent.name_en} | ABO Enterprise`
+        : `${node.name_en} Services | ABO Enterprise`;
       const description =
-        sub.description_en ?? `${sub.name_en} (${category.name_en}) services by ABO Enterprise, Bangladesh.`;
-      const url = `${SITE_URL}/services/${segments[0]}/${segments[1]}`;
+        node.description_en ?? `${node.name_en} services by ABO Enterprise, Bangladesh.`;
+      const url = `${SITE_URL}/services/${trail.map((n) => n.slug).join("/")}`;
       return { title, description, alternates: { canonical: url }, openGraph: { title, description, url, type: "website" } };
     }
   }
@@ -232,16 +248,12 @@ export default async function ServicesCatchAllPage({ params }: { params: PagePar
       );
     }
 
-    // /services/{categorySlug} — category landing page.
+    // /services/{categorySlug} — category landing page (trail includes any
+    // ancestors so deep nodes reached by short slug still get breadcrumbs).
     if (category) {
+      const trail = resolveTrail(category, [])!;
       const { services, total } = await fetchTaxonomyServices(category.slug);
-      return (
-        <CategoryBrowseClient
-          category={category}
-          initialServices={services}
-          initialTotal={total}
-        />
-      );
+      return <CategoryBrowseClient trail={trail} initialServices={services} initialTotal={total} />;
     }
 
     // Final fallback: the original printing/legal/software booking pages keep
@@ -255,26 +267,13 @@ export default async function ServicesCatchAllPage({ params }: { params: PagePar
     notFound();
   }
 
-  // /services/{categorySlug}/{subCategorySlug} — subcategory listing.
-  if (segments.length === 2) {
-    // Both depend only on the URL segments — fully parallel.
-    const [category, listing] = await Promise.all([
-      fetchServiceCategory(segments[0]),
-      fetchTaxonomyServices(segments[0], segments[1]),
-    ]);
-    const sub = category ? findActiveSubcategory(category, segments[1]) : null;
-    if (category && sub) {
-      return (
-        <CategoryBrowseClient
-          category={category}
-          subcategory={sub}
-          initialServices={listing.services}
-          initialTotal={listing.total}
-        />
-      );
-    }
-    notFound();
+  // /services/{category}/{child}/... — any depth down the tree.
+  const category = await fetchServiceCategory(segments[0]);
+  const trail = category ? resolveTrail(category, segments.slice(1)) : null;
+  if (trail) {
+    const node = trail[trail.length - 1];
+    const { services, total } = await fetchTaxonomyServices(node.slug);
+    return <CategoryBrowseClient trail={trail} initialServices={services} initialTotal={total} />;
   }
-
   notFound();
 }

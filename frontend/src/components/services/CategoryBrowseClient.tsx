@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import type { Category, Service, Subcategory } from "@/types";
+import type { Service, Subcategory } from "@/types";
 import { servicesApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import ServiceCard from "@/components/services/ServiceCard";
@@ -11,9 +11,8 @@ import { ServiceCardSkeleton } from "@/components/common/Skeletons";
 import { cn } from "@/lib/utils";
 
 interface Props {
-  category: Category;
-  /** Present on /services/{categorySlug}/{subCategorySlug} pages. */
-  subcategory?: Subcategory;
+  /** Root-first chain of taxonomy nodes; the last entry is the page's node. */
+  trail: Subcategory[];
   initialServices: Service[];
   initialTotal: number;
 }
@@ -30,42 +29,31 @@ function chipClass(active: boolean): string {
 }
 
 /**
- * Nested taxonomy browsing — category landing and subcategory listing pages.
- * The subcategory chips deep-link into /services/{cat}/{sub}; the grid pulls
- * live services filtered by taxonomy slugs.
+ * Taxonomy browsing at any depth. The chips link one level deeper; the
+ * breadcrumb walks back up. The service grid shows everything under the
+ * current node (the API filter includes all descendants).
  */
-export default function CategoryBrowseClient({
-  category,
-  subcategory,
-  initialServices,
-  initialTotal,
-}: Props) {
+export default function CategoryBrowseClient({ trail, initialServices, initialTotal }: Props) {
   const { lang } = useLanguageStore();
   const [services, setServices] = useState<Service[]>(initialServices);
   const [total, setTotal] = useState(initialTotal);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  const catName = lang === "bn" && category.name_bn ? category.name_bn : category.name_en;
-  const subName = subcategory
-    ? lang === "bn" && subcategory.name_bn
-      ? subcategory.name_bn
-      : subcategory.name_en
-    : null;
+  const node = trail[trail.length - 1];
+  const name = (n: Subcategory) => (lang === "bn" && n.name_bn ? n.name_bn : n.name_en);
+  const pathFor = (i: number) => `/services/${trail.slice(0, i + 1).map((n) => n.slug).join("/")}`;
+  const nodePath = pathFor(trail.length - 1);
   const description =
-    (lang === "bn"
-      ? subcategory?.description_bn ?? category.description_bn
-      : subcategory?.description_en ?? category.description_en) ?? undefined;
-
-  const subcategories = (category.subcategories ?? []).filter((s) => s.is_active !== false);
+    (lang === "bn" ? node.description_bn : node.description_en) ?? undefined;
+  const children = (node.subcategories ?? []).filter((s) => s.is_active !== false);
 
   const load = useCallback(
     async (pageNum: number) => {
       setLoading(true);
       try {
         const res = await servicesApi.list({
-          category_slug: category.slug,
-          subcategory_slug: subcategory?.slug,
+          category_slug: node.slug,
           page: pageNum,
           per_page: PER_PAGE,
         });
@@ -78,7 +66,7 @@ export default function CategoryBrowseClient({
         setLoading(false);
       }
     },
-    [category.slug, subcategory?.slug]
+    [node.slug]
   );
 
   const totalPages = Math.max(1, Math.ceil(total / PER_PAGE));
@@ -87,36 +75,30 @@ export default function CategoryBrowseClient({
     <main className="min-h-screen">
       <PageHero
         pageKey="services"
-        imageUrl={subcategory?.image_url ?? category.image_url ?? undefined}
-        title={subName ?? catName}
+        imageUrl={node.image_url ?? trail[0]?.image_url ?? undefined}
+        title={name(node)}
         subtitle={description}
         breadcrumbs={[
           { label: lang === "bn" ? "হোম" : "Home", href: "/" },
           { label: lang === "bn" ? "সেবা" : "Services", href: "/services" },
-          ...(subcategory
-            ? [{ label: catName, href: `/services/${category.slug}` }, { label: subName! }]
-            : [{ label: catName }]),
+          ...trail.map((n, i) =>
+            i === trail.length - 1 ? { label: name(n) } : { label: name(n), href: pathFor(i) }
+          ),
         ]}
       />
 
       <section className="enterprise-section-alt">
         <div className="container mx-auto px-4 max-w-6xl">
-          {subcategories.length > 0 && (
+          {children.length > 0 && (
             <div className="mb-8">
               <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">
-                {lang === "bn" ? "সাব-ক্যাটাগরি" : "Browse by Subcategory"}
+                {lang === "bn" ? "আরও নির্দিষ্ট করুন" : "Browse deeper"}
               </h2>
               <div className="flex flex-wrap gap-2">
-                <Link href={`/services/${category.slug}`} className={chipClass(!subcategory)}>
-                  {lang === "bn" ? "সব" : "All"}
-                </Link>
-                {subcategories.map((sub) => (
-                  <Link
-                    key={sub.id}
-                    href={`/services/${category.slug}/${sub.slug}`}
-                    className={chipClass(subcategory?.id === sub.id)}
-                  >
-                    {lang === "bn" && sub.name_bn ? sub.name_bn : sub.name_en}
+                <span className={chipClass(true)}>{lang === "bn" ? "সব" : "All"}</span>
+                {children.map((sub) => (
+                  <Link key={sub.id} href={`${nodePath}/${sub.slug}`} className={chipClass(false)}>
+                    {name(sub)}
                   </Link>
                 ))}
               </div>
@@ -147,7 +129,7 @@ export default function CategoryBrowseClient({
               </p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {services.map((s) => (
-                  <ServiceCard key={s.id} service={s} lang={lang} categoryLabel={catName} />
+                  <ServiceCard key={s.id} service={s} lang={lang} categoryLabel={name(trail[0])} />
                 ))}
               </div>
               {totalPages > 1 && (
