@@ -48,7 +48,7 @@ const COLOR_MAP = {
 export default function StatsCard({ title, value, sub, icon: Icon, color = "brand", loading, alert, href }: Props) {
   const c = COLOR_MAP[color];
   const cardClassName = cn(
-    "admin-card p-5 group hover:-translate-y-0.5 transition-all duration-200",
+    "admin-card p-5 group hover:-translate-y-0.5 transition-all duration-200 overflow-hidden relative",
     href && "block cursor-pointer hover:shadow-md"
   );
 
@@ -67,12 +67,13 @@ export default function StatsCard({ title, value, sub, icon: Icon, color = "bran
         {sub && <p className="text-xs text-gray-400 mt-1.5 font-medium">{sub}</p>}
       </div>
       <div className={cn(
-        "w-12 h-12 rounded-2xl flex items-center justify-center border flex-shrink-0",
+        "w-12 h-12 rounded-2xl flex items-center justify-center border flex-shrink-0 relative z-10",
         "shadow-md transition-transform duration-200 group-hover:scale-110",
         c.bg, c.ring, c.glow
       )}>
         <Icon className={cn("w-6 h-6", c.icon)} />
       </div>
+      <div className={cn("absolute -right-6 -top-6 w-24 h-24 rounded-full blur-2xl opacity-30 pointer-events-none", c.bg)} />
     </div>
   );
 

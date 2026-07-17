@@ -22,7 +22,7 @@ export default function AdminToolbar({
   return (
     <div className={cn("admin-toolbar", className)}>
       {onSearchChange !== undefined && (
-        <div className="relative flex-1 min-w-[180px] max-w-md">
+        <div className="relative flex-1 min-w-[200px] max-w-xl">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
             type="search"
@@ -34,7 +34,7 @@ export default function AdminToolbar({
         </div>
       )}
       {children && (
-        <div className="flex flex-wrap items-center gap-2">{children}</div>
+        <div className="flex flex-wrap items-center gap-2 lg:justify-end">{children}</div>
       )}
     </div>
   );
