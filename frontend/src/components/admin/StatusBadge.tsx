@@ -25,8 +25,8 @@ const STATUS_MAP: Record<string, { label: string; class: string }> = {
 export default function StatusBadge({ status }: { status: string }) {
   const config = STATUS_MAP[status] ?? { label: status, class: "bg-gray-100 text-gray-600 border-gray-200" };
   return (
-    <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border whitespace-nowrap", config.class)}>
-      <span className="w-1.5 h-1.5 rounded-full bg-current opacity-75" />
+    <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold shadow-sm", config.class)}>
+      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-75" />
       {config.label}
     </span>
   );

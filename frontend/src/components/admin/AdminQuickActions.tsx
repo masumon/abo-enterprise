@@ -5,10 +5,10 @@ import { type LucideIcon, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const COLOR_MAP = {
-  brand: "from-brand-500/10 to-brand-600/5 border-brand-100 text-brand-700 hover:border-brand-200",
-  accent: "from-accent-500/10 to-accent-600/5 border-accent-100 text-accent-700 hover:border-accent-200",
-  green: "from-green-500/10 to-green-600/5 border-green-100 text-green-700 hover:border-green-200",
-  amber: "from-amber-500/10 to-amber-600/5 border-amber-100 text-amber-700 hover:border-amber-200",
+  brand: "from-brand-500/12 via-brand-500/6 to-white border-brand-100 text-brand-700 hover:border-brand-200",
+  accent: "from-accent-500/12 via-accent-500/6 to-white border-accent-100 text-accent-700 hover:border-accent-200",
+  green: "from-green-500/12 via-green-500/6 to-white border-green-100 text-green-700 hover:border-green-200",
+  amber: "from-amber-500/12 via-amber-500/6 to-white border-amber-100 text-amber-700 hover:border-amber-200",
 };
 
 interface Action {
@@ -32,8 +32,8 @@ export default function AdminQuickActions({ actions }: Props) {
           key={href}
           href={href}
           className={cn(
-            "group relative flex flex-col gap-2 p-4 rounded-2xl border bg-gradient-to-br transition-all duration-200",
-            "hover:-translate-y-0.5 hover:shadow-md",
+            "group relative flex flex-col gap-2 rounded-2xl border bg-gradient-to-br p-4 transition-all duration-200",
+            "shadow-sm hover:-translate-y-0.5 hover:shadow-md",
             COLOR_MAP[color]
           )}
         >
