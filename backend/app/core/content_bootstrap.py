@@ -5,8 +5,19 @@ from datetime import datetime, timezone
 from sqlalchemy import func, or_, select
 
 from app.core.database import AsyncSessionLocal
+from app.core.demo_content import (
+    EXTRA_BLOG_PHOTO_KEYS,
+    EXTRA_BLOG_SEED,
+    PRODUCT_CONTENT,
+    REVIEW_SEED,
+    REVIEW_SEED_PHOTO_KEYS,
+    SERVICE_CONTENT,
+    SERVICE_TIER_SEED,
+    site_section_settings,
+)
 from app.core.placeholder_assets import (
     BLOG_IMAGE_MAP,
+    FEATURED_16_9,
     PRODUCT_IMAGE_MAP,
     REVIEW_PHOTO_MAP,
     SERVICE_IMAGE_MAP,
@@ -19,6 +30,7 @@ from app.core.placeholder_assets import (
     build_demo_services_json,
     build_showcase_projects_json,
     build_software_service_cards_json,
+    demo_img,
     og_image,
     product_gallery,
     product_image,
@@ -33,6 +45,7 @@ from app.models.models import (
     Product,
     Review,
     Service,
+    ServicePricingTier,
     Setting,
     Subcategory,
 )
@@ -282,6 +295,8 @@ async def _seed_placeholder_settings(db) -> None:
     ]
     for key, value, data_type, description in seeds:
         await _ensure_setting_if_empty(db, key=key, value=value, data_type=data_type, description=description)
+    for item in site_section_settings():
+        await _ensure_setting_if_empty(db, **item)
 
 
 def _needs_demo(url: str | None) -> bool:
@@ -353,6 +368,133 @@ async def _ensure_demo_images(db) -> None:
         if _needs_demo(review.photo_url):
             label = REVIEW_PHOTO_MAP.get(review.customer_name, review.customer_name)
             review.photo_url = review_avatar(label)
+
+
+def _blank(value: str | None) -> bool:
+    return not (value or "").strip()
+
+
+async def _ensure_demo_text_content(db) -> None:
+    """Fill empty text/spec slots on seed-catalog products & services.
+
+    Keyed by seed slug, so admin-created items are untouched; on seed items
+    only fields that are still empty are filled — admin edits always win.
+    """
+    products = (await db.execute(select(Product).where(Product.is_deleted == False))).scalars().all()  # noqa: E712
+    for product in products:
+        content = PRODUCT_CONTENT.get(product.slug)
+        if not content:
+            continue
+        if _blank(product.description_en):
+            product.description_en = content["description_en"]
+        if _blank(product.description_bn):
+            product.description_bn = content["description_bn"]
+        if not product.specifications:
+            product.specifications = content["specifications"]
+        if not product.tags:
+            product.tags = content["tags"]
+        if _blank(product.brand):
+            product.brand = content["brand"]
+        if _blank(product.warranty_info):
+            product.warranty_info = content["warranty_info"]
+        if _blank(product.delivery_info):
+            product.delivery_info = content["delivery_info"]
+        if product.rating is None:
+            product.rating = content["rating"]
+
+    services = (await db.execute(select(Service).where(Service.is_deleted == False))).scalars().all()  # noqa: E712
+    for service in services:
+        content = SERVICE_CONTENT.get(service.slug)
+        if not content:
+            continue
+        if _blank(service.description_en) and _blank(service.long_description_en):
+            service.description_en = content["description_en"]
+        if _blank(service.description_bn) and _blank(service.long_description_bn):
+            service.description_bn = content["description_bn"]
+        if not service.process_steps:
+            service.process_steps = content.get("process_steps", [])
+        if not service.benefits:
+            service.benefits = content.get("benefits", [])
+        if not service.requirements:
+            service.requirements = content.get("requirements", [])
+        if not service.required_documents:
+            service.required_documents = content.get("required_documents", [])
+        if not service.faq:
+            service.faq = content.get("faq", [])
+        if not service.tags:
+            service.tags = content.get("tags", [])
+
+
+async def _ensure_demo_pricing_tiers(db) -> None:
+    """Seed demo pricing tiers for services that have none yet."""
+    for slug, tiers in SERVICE_TIER_SEED.items():
+        service = (await db.execute(
+            select(Service).where(Service.slug == slug, Service.is_deleted == False)  # noqa: E712
+        )).scalar_one_or_none()
+        if service is None:
+            continue
+        tier_count = (await db.execute(
+            select(func.count(ServicePricingTier.id)).where(
+                ServicePricingTier.service_id == service.id,
+                ServicePricingTier.is_deleted == False,  # noqa: E712
+            )
+        )).scalar() or 0
+        if tier_count:
+            continue
+        for tier in tiers:
+            db.add(ServicePricingTier(service_id=service.id, is_active=True, **tier))
+        logger.info("Content bootstrap: seeded %d pricing tiers for '%s'", len(tiers), slug)
+
+
+async def _ensure_demo_reviews(db) -> None:
+    """Seed demo reviews only while the reviews table is completely empty."""
+    review_count = (await db.execute(select(func.count(Review.id)))).scalar() or 0
+    if review_count:
+        return
+    for seed in REVIEW_SEED:
+        seed = dict(seed)
+        product_slug = seed.pop("product_slug", None)
+        product_id = None
+        if product_slug:
+            product = (await db.execute(
+                select(Product).where(Product.slug == product_slug, Product.is_deleted == False)  # noqa: E712
+            )).scalar_one_or_none()
+            if product is not None:
+                product_id = product.id
+        name = seed["customer_name"]
+        if name in REVIEW_PHOTO_MAP:
+            photo_url = review_avatar(name)
+        else:
+            photo_url = demo_img(REVIEW_SEED_PHOTO_KEYS.get(name, "review-1"), 256, 256)
+        db.add(Review(product_id=product_id, photo_url=photo_url, is_active=True, **seed))
+    logger.info("Content bootstrap: seeded %d demo reviews", len(REVIEW_SEED))
+
+
+async def _ensure_extra_blog_posts(db) -> None:
+    """Add the extra demo posts only while the blog contains nothing but seed posts."""
+    existing_slugs = set((await db.execute(
+        select(BlogPost.slug).where(BlogPost.is_deleted == False)  # noqa: E712
+    )).scalars().all())
+    seed_slugs = {p["slug"] for p in BLOG_SEED} | {p["slug"] for p in EXTRA_BLOG_SEED}
+    if existing_slugs - seed_slugs:
+        return  # admin has authored real posts — never inject demo content
+    now = datetime.now(timezone.utc)
+    added = 0
+    for post in EXTRA_BLOG_SEED:
+        if post["slug"] in existing_slugs:
+            continue
+        w, h = FEATURED_16_9
+        db.add(BlogPost(
+            **post,
+            featured_image_url=demo_img(EXTRA_BLOG_PHOTO_KEYS.get(post["slug"], "blog"), w, h),
+            og_image=og_image(post["title_en"]),
+            author_name="ABO Enterprise",
+            published_at=now,
+            tags=[],
+        ))
+        added += 1
+    if added:
+        logger.info("Content bootstrap: seeded %d extra blog posts", added)
 
 
 async def bootstrap_content() -> None:
@@ -468,6 +610,10 @@ async def bootstrap_content() -> None:
                 logger.info("Content bootstrap: seeded %d blog posts", len(BLOG_SEED))
 
             await _ensure_demo_images(db)
+            await _ensure_demo_text_content(db)
+            await _ensure_demo_pricing_tiers(db)
+            await _ensure_demo_reviews(db)
+            await _ensure_extra_blog_posts(db)
 
             pm_count = (await db.execute(select(func.count(PaymentMethod.id)))).scalar() or 0
             if pm_count == 0:
