@@ -1,0 +1,175 @@
+{
+  "generated_at": "2026-07-18T02:08:16.850281",
+  "products": [
+    {
+      "id": "a96554be-8c6f-4241-90c4-6216be857412",
+      "slug": "bt-speaker-waterproof",
+      "image_url": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=800&h=1000&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=800&h=1000&q=80",
+        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&h=1000&q=80"
+      ],
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "d455687f-7fc6-431b-a321-5e1fbde73928",
+      "slug": "car-holder-magnetic",
+      "image_url": "https://res.cloudinary.com/sarvx4fm/image/upload/v1784079159/abo-enterprise/products/file_iuccya.png",
+      "images": [
+        "https://res.cloudinary.com/sarvx4fm/image/upload/v1784079170/abo-enterprise/products/file_b3qq9t.jpg",
+        "https://res.cloudinary.com/sarvx4fm/image/upload/v1784079188/abo-enterprise/products/file_x9pqo3.jpg",
+        "https://res.cloudinary.com/sarvx4fm/image/upload/v1784079211/abo-enterprise/products/file_i9dzft.jpg",
+        "https://res.cloudinary.com/sarvx4fm/image/upload/v1784079220/abo-enterprise/products/file_trhche.jpg",
+        "https://res.cloudinary.com/sarvx4fm/image/upload/v1784079227/abo-enterprise/products/file_hpom6t.jpg",
+        "https://res.cloudinary.com/sarvx4fm/image/upload/v1784079237/abo-enterprise/products/file_sldutz.jpg"
+      ],
+      "og_image": "https://res.cloudinary.com/sarvx4fm/image/upload/v1784079673/abo-enterprise/products/file_f6ybxj.png"
+    },
+    {
+      "id": "f5046068-3eb1-4813-8162-8ae4c41c9f29",
+      "slug": "earbuds-tws-pro",
+      "image_url": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&h=1000&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&h=1000&q=80",
+        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&h=1000&q=80"
+      ],
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "98314007-41ef-44ce-ae49-247f9c6cd018",
+      "slug": "fast-charger-65w",
+      "image_url": "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=800&h=1000&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=800&h=1000&q=80",
+        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&h=1000&q=80"
+      ],
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "76f7eb66-394e-4b58-a128-cb29f50e7a6c",
+      "slug": "glass-protector",
+      "image_url": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&h=1000&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=800&h=1000&q=80"
+      ],
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "e854a67c-1524-4121-871e-8c2d6c97ae2f",
+      "slug": "phone-case-premium",
+      "image_url": "https://res.cloudinary.com/sarvx4fm/image/upload/v1784076509/abo-enterprise/products/file_mdjcot.jpg",
+      "images": [
+        "https://res.cloudinary.com/sarvx4fm/image/upload/v1784076522/abo-enterprise/products/file_lfinni.jpg",
+        "https://res.cloudinary.com/sarvx4fm/image/upload/v1784076547/abo-enterprise/products/file_fi6xjp.jpg",
+        "https://res.cloudinary.com/sarvx4fm/image/upload/v1784076561/abo-enterprise/products/file_lgb8jw.jpg"
+      ],
+      "og_image": "https://res.cloudinary.com/sarvx4fm/image/upload/v1784077150/abo-enterprise/products/file_i76fxf.jpg"
+    },
+    {
+      "id": "01e1d408-b1fb-4100-bc17-eddf57d8b0a1",
+      "slug": "power-bank-20000",
+      "image_url": "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=800&h=1000&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=800&h=1000&q=80",
+        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&h=1000&q=80"
+      ],
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "106f2570-4ebf-4091-bac1-ccb81de54655",
+      "slug": "type-c-cable-3m",
+      "image_url": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&h=1000&q=80",
+      "images": [
+        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&h=1000&q=80",
+        "https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=800&h=1000&q=80"
+      ],
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    }
+  ],
+  "services": [
+    {
+      "id": "ed5cf70c-79b5-4d1e-ae7a-6281e82c5dc7",
+      "slug": "ai-solutions",
+      "featured_image_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&h=1080&q=80",
+      "icon_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=256&h=256&q=80",
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "eaf72f98-a287-4e3b-9029-ff9daf255b57",
+      "slug": "branding-design",
+      "featured_image_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&h=1080&q=80",
+      "icon_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=256&h=256&q=80",
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "84529d28-6232-42de-a58c-58b956714b03",
+      "slug": "business-consultation",
+      "featured_image_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&h=1080&q=80",
+      "icon_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=256&h=256&q=80",
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "fb56263b-59e5-42af-bb6f-dbdb205c672b",
+      "slug": "custom-software",
+      "featured_image_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&h=1080&q=80",
+      "icon_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=256&h=256&q=80",
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "1327eb24-a6cc-4867-929f-b8bcda8c8493",
+      "slug": "digital-marketing",
+      "featured_image_url": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1920&h=1080&q=80",
+      "icon_url": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=256&h=256&q=80",
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "61d030e1-8470-467d-8c20-6de6526ca2fc",
+      "slug": "future-service",
+      "featured_image_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&h=1080&q=80",
+      "icon_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=256&h=256&q=80",
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "485aff30-d9cb-4926-8ba9-2f57f285e9c2",
+      "slug": "legal-services",
+      "featured_image_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&h=1080&q=80",
+      "icon_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=256&h=256&q=80",
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "73eff226-eb59-4aa8-9598-94ec484069b6",
+      "slug": "mobile-app-development",
+      "featured_image_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&h=1080&q=80",
+      "icon_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=256&h=256&q=80",
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "037c664e-11b8-41f0-97d3-dae40e1104cb",
+      "slug": "nid-passport",
+      "featured_image_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&h=1080&q=80",
+      "icon_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=256&h=256&q=80",
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "4df97121-eff8-4b71-8c98-0dbc22ba9f21",
+      "slug": "printing-service",
+      "featured_image_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&h=1080&q=80",
+      "icon_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=256&h=256&q=80",
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "a0a6134c-d298-4680-b9de-13de24ca8fca",
+      "slug": "python-automation",
+      "featured_image_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&h=1080&q=80",
+      "icon_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=256&h=256&q=80",
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    },
+    {
+      "id": "11643c1e-08f9-4053-b371-abd845267c2b",
+      "slug": "website-development",
+      "featured_image_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1920&h=1080&q=80",
+      "icon_url": "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=256&h=256&q=80",
+      "og_image": "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=1200&h=630&q=80"
+    }
+  ]
+}
