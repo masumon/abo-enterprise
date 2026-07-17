@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import Link from "next/link";
 import Image from "next/image";
 import type { BlogPost } from "@/types";
 
@@ -8,6 +7,7 @@ import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import BlogPostActions from "./BlogPostActions";
 import BlogPostBreadcrumb from "./BlogPostBreadcrumb";
+import BlogPostMeta from "./BlogPostMeta";
 import { jsonLdString } from "@/lib/metadata";
 
 const API_BASE = getApiBaseUrl();
@@ -92,15 +92,6 @@ function buildArticleJsonLd(post: BlogPost) {
   };
 }
 
-function formatDate(dateStr?: string) {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString("en-BD", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
 export default async function BlogPostPage({
   params,
 }: {
@@ -144,26 +135,11 @@ export default async function BlogPostPage({
             </span>
           )}
 
-          {/* Meta */}
-          <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-6 pb-6 border-b border-gray-100">
-            <span className="font-medium text-gray-600">{post.author_name}</span>
-            <span>·</span>
-            <time dateTime={post.published_at ?? post.created_at}>
-              {formatDate(post.published_at ?? post.created_at)}
-            </time>
-            {post.tags && post.tags.length > 0 && (
-              <>
-                <span>·</span>
-                <div className="flex flex-wrap gap-1">
-                  {post.tags.map((tag) => (
-                    <span key={tag} className="px-2 py-0.5 bg-gray-100 rounded-full text-xs">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
+          <BlogPostMeta
+            authorName={post.author_name}
+            dateStr={post.published_at ?? post.created_at}
+            tags={post.tags}
+          />
 
           {/* Title + Content + Print/Translate (client interactive) */}
           <BlogPostActions
@@ -173,15 +149,6 @@ export default async function BlogPostPage({
             contentBn={post.content_bn ?? null}
           />
 
-          {/* Back link */}
-          <div className="mt-12 pt-6 border-t border-gray-100">
-            <Link
-              href="/blog"
-              className="inline-flex items-center gap-2 text-brand-600 hover:text-brand-700 font-medium text-sm"
-            >
-              ← Back to Blog
-            </Link>
-          </div>
         </div>
       </main>
     </>

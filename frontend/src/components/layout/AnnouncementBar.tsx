@@ -44,19 +44,21 @@ export default function AnnouncementBar() {
   const { settings } = usePublicSettings([SITE_ANNOUNCEMENTS_KEY]);
   const announcements = getAnnouncements(settings, FALLBACK_ANNOUNCEMENTS);
   const pathname = usePathname();
+  const suppressedPrefixes = ["/admin", "/cart", "/checkout", "/login", "/register", "/profile", "/track"];
+  const isSuppressed = suppressedPrefixes.some((prefix) => pathname === prefix || pathname?.startsWith(`${prefix}/`));
   // Promotional bar belongs only where the visitor is browsing, not
   // mid-purchase or mid-account-action.
-  const isHome = pathname === "/";
+  const shouldShow = !isSuppressed;
 
   useEffect(() => {
     const dismissed = localStorage.getItem(STORAGE_KEY) === "1";
-    const active = !dismissed && isHome;
+    const active = !dismissed && shouldShow;
     setVisible(active);
     setAnnouncementHeight(active);
-  }, [isHome]);
+  }, [shouldShow]);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || announcements.length <= 1) return;
     const timer = setInterval(() => {
       setIdx((i) => (i + 1) % announcements.length);
     }, 6000);
@@ -76,13 +78,13 @@ export default function AnnouncementBar() {
   return (
     <div className="bg-gradient-to-r from-brand-700 via-brand-600 to-accent-600 text-white text-xs sm:text-sm relative z-40 h-9">
       <div className="container mx-auto px-4 h-9 flex items-center justify-between gap-4">
-        <div className="hidden sm:flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           {announcements.map((_, i) => (
             <button
               key={i}
               type="button"
               onClick={() => setIdx(i)}
-              aria-label={`Announcement ${i + 1}`}
+              aria-label={lang === "bn" ? `ঘোষণা ${i + 1}` : `Announcement ${i + 1}`}
               className={`w-1.5 h-1.5 rounded-full transition-all ${
                 i === idx ? "bg-white scale-125" : "bg-white/40"
               }`}
@@ -104,7 +106,7 @@ export default function AnnouncementBar() {
           type="button"
           onClick={dismiss}
           className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-white/20 transition-colors"
-          aria-label="Close announcement"
+          aria-label={lang === "bn" ? "ঘোষণা বন্ধ করুন" : "Close announcement"}
         >
           <X className="w-3.5 h-3.5" strokeWidth={2.2} />
         </button>

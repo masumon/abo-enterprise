@@ -6,7 +6,8 @@ import { useLanguageStore } from "@/store/language";
 import GlassCard from "@/components/ui/GlassCard";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
-import { mapsPlaceUrl, resolveGoogleMapsEmbed, resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
+import { resolveGoogleMapsEmbed, resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
+import { formatBdPhoneDisplay, toBdTelHref } from "@/lib/phone";
 import MapEmbed from "@/components/common/MapEmbed";
 
 export default function ContactSection() {
@@ -14,6 +15,8 @@ export default function ContactSection() {
   const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address", "contact_hours_en", "contact_hours_bn", "facebook_url", "whatsapp_number"]);
   const mapsEmbed = resolveGoogleMapsEmbed(getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED));
   const phone = getSettingValue(settings, "contact_phone", "01825007977");
+  const phoneDisplay = formatBdPhoneDisplay(phone);
+  const phoneHref = toBdTelHref(phone);
   const email = getSettingValue(settings, "contact_email", "info.aboenterprise@gmail.com");
   const address = getSettingValue(settings, "contact_address", lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN);
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
@@ -37,7 +40,7 @@ export default function ContactSection() {
             <div className="space-y-3">
               {[
                 { icon: MapPin, label: address, href: mapsLink },
-                { icon: Phone, label: `+880 ${phone.slice(0, 4)} ${phone.slice(4)}`, href: `tel:+880${phone}` },
+                { icon: Phone, label: phoneDisplay, href: phoneHref },
                 { icon: Mail, label: email, href: `mailto:${email}` },
                 { icon: Clock, label: hours, href: null },
               ].map(({ icon: Icon, label, href }) => (

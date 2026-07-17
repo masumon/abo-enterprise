@@ -13,6 +13,7 @@ import { useToastStore } from "@/store/toast";
 import GlassCard from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
+import { formatBdPhoneDisplay, toBdTelHref, toBdWhatsappHref } from "@/lib/phone";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
 import { resolveGoogleMapsEmbed, resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
@@ -24,9 +25,12 @@ export default function ContactPage() {
   const { lang } = useLanguageStore();
   const t = useT();
   const toast = useToastStore((s) => s.push);
-  const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address", "contact_hours_en", "contact_hours_bn"]);
+  const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address", "contact_hours_en", "contact_hours_bn", "whatsapp_number"]);
   const mapsEmbed = resolveGoogleMapsEmbed(getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED));
   const phone = getSettingValue(settings, "contact_phone", "01825007977");
+  const phoneDisplay = formatBdPhoneDisplay(phone);
+  const phoneHref = toBdTelHref(phone);
+  const whatsappHref = toBdWhatsappHref(getSettingValue(settings, "whatsapp_number", phone));
   const email = getSettingValue(settings, "contact_email", "info.aboenterprise@gmail.com");
   const address = getSettingValue(settings, "contact_address", lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN);
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
@@ -85,10 +89,10 @@ export default function ContactPage() {
   };
 
   const contactInfo = [
-    { icon: Phone, label: lang === "bn" ? "ফোন / WhatsApp" : "Phone / WhatsApp", value: `+880 ${phone.slice(0, 4)}-${phone.slice(4)}`, href: `tel:+880${phone}` },
+    { icon: Phone, label: lang === "bn" ? "ফোন / WhatsApp" : "Phone / WhatsApp", value: phoneDisplay, href: phoneHref },
     { icon: Mail, label: lang === "bn" ? "ইমেইল" : "Email", value: email, href: `mailto:${email}` },
     { icon: MapPin, label: lang === "bn" ? "ঠিকানা" : "Location", value: address, href: mapsLink },
-    { icon: MessageSquare, label: "WhatsApp", value: lang === "bn" ? "সরাসরি চ্যাট করুন" : "Chat with us directly", href: "https://wa.me/8801825007977" },
+    { icon: MessageSquare, label: "WhatsApp", value: lang === "bn" ? "সরাসরি চ্যাট করুন" : "Chat with us directly", href: whatsappHref },
   ];
 
   return (

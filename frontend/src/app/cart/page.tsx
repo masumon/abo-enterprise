@@ -30,7 +30,10 @@ export default function CartPage() {
   const cartTotal = cartSubtotal - discount;
 
   useEffect(() => {
-    if (items.length === 0) return;
+    if (items.length === 0) {
+      setStockWarnings([]);
+      return;
+    }
     setValidating(true);
     productsApi.validateStock(items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })))
       .then((r) => {
@@ -44,7 +47,7 @@ export default function CartPage() {
       })
       .catch(() => {})
       .finally(() => setValidating(false));
-  }, [items.length, setStockWarnings, updateQuantity]);
+  }, [items, setStockWarnings, updateQuantity]);
 
   const applyCoupon = async () => {
     if (!couponsEnabled || !coupon.trim()) return;

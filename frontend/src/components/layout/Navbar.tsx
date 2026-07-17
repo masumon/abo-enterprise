@@ -15,6 +15,7 @@ import MegaMenu from "@/components/layout/MegaMenu";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { getBrandFullTitle, getBrandName, getBrandTagline } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
+import { useTaxonomy } from "@/hooks/useTaxonomy";
 
 const MOBILE_LINKS = [
   { href: "/blog", key: "nav_blog" as const },
@@ -56,6 +57,27 @@ export default function Navbar() {
   const { lang, toggle } = useLanguageStore();
   const { theme, toggle: toggleTheme } = useThemeStore();
   const count = itemCount();
+  const productRoots = useTaxonomy("product");
+  const serviceRoots = useTaxonomy("service");
+  const searchListId = "site-search-suggestions";
+
+  const mobileProductLinks =
+    productRoots.length > 0
+      ? [
+          { href: "/products", label: { en: "All Products", bn: "সব পণ্য" } },
+          ...productRoots.map((c) => ({ href: `/products?category=${c.slug}`, label: { en: c.name_en, bn: c.name_bn || c.name_en } })),
+          { href: "/profile/wishlist", label: { en: "Wishlist", bn: "উইশলিস্ট" } },
+          { href: "/compare", label: { en: "Compare", bn: "তুলনা" } },
+        ]
+      : MOBILE_PRODUCT_LINKS;
+
+  const mobileServiceLinks =
+    serviceRoots.length > 0
+      ? [
+          { href: "/services", label: { en: "All Services", bn: "সব সেবা" } },
+          ...serviceRoots.map((c) => ({ href: `/services/${c.slug}`, label: { en: c.name_en, bn: c.name_bn || c.name_en } })),
+        ]
+      : MOBILE_SERVICE_LINKS;
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 10);
@@ -126,12 +148,16 @@ export default function Navbar() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder={t("nav_search") + "..."}
+                    role="combobox"
+                    aria-expanded={searchQuery.trim().length >= 2}
+                    aria-controls={searchListId}
+                    aria-autocomplete="list"
                     className="w-36 xs:w-44 sm:w-56 px-3 py-1.5 pr-8 rounded-xl text-sm input max-w-[calc(100vw-8rem)]"
                   />
                   <button type="submit" aria-label="Submit search" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-600">
                     <Search className="w-4 h-4" strokeWidth={2.5} />
                   </button>
-                  <SearchSuggestions query={searchQuery} onSelect={() => { setSearchOpen(false); setSearchQuery(""); }} />
+                  <SearchSuggestions listboxId={searchListId} query={searchQuery} onSelect={() => { setSearchOpen(false); setSearchQuery(""); }} />
                 </div>
                 <button type="button" aria-label="Close search" onClick={() => setSearchOpen(false)}
                   className="ml-1 w-11 h-11 flex items-center justify-center rounded-full text-gray-600 hover:bg-gray-100/80 dark:hover:bg-white/10 transition-all duration-200 touch-manipulation">
@@ -214,7 +240,7 @@ export default function Navbar() {
               {(["products", "services"] as const).map((section) => {
                 const isOpen = mobileMega === section;
                 const title = section === "products" ? t("nav_products") : t("nav_services");
-                const links = section === "products" ? MOBILE_PRODUCT_LINKS : MOBILE_SERVICE_LINKS;
+                const links = section === "products" ? mobileProductLinks : mobileServiceLinks;
                 return (
                   <li key={section}>
                     <button
