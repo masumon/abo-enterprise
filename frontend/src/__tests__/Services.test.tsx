@@ -49,6 +49,19 @@ describe("Services Page", () => {
     expect(screen.getByText("AI Solutions")).toBeInTheDocument();
   });
 
+  it("should build the All Services filter chips from the live taxonomy", () => {
+    render(
+      <ServicesPageClient
+        initialServices={[]}
+        initialTotal={0}
+        initialCategories={mockCategories}
+      />
+    );
+    const chip = screen.getByRole("button", { name: "Print & Documentation" });
+    expect(chip).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();
+  });
+
   it("should link live taxonomy cards into the nested category routes", () => {
     render(
       <ServicesPageClient initialServices={[]} initialTotal={0} initialCategories={mockCategories} />

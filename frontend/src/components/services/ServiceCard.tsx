@@ -9,9 +9,13 @@ import { resolveServiceImage } from "@/lib/demoImages";
 interface ServiceCardProps {
   service: Service;
   lang?: Language;
+  /** Taxonomy category name for the tag; falls back to the legacy flat
+   * service.category string when not provided (unassigned services). */
+  categoryLabel?: string;
 }
 
-export default function ServiceCard({ service, lang = "en" }: ServiceCardProps) {
+export default function ServiceCard({ service, lang = "en", categoryLabel }: ServiceCardProps) {
+  const tag = categoryLabel ?? service.category;
   const name = lang === "bn" && service.name_bn ? service.name_bn : service.name_en;
   const description =
     (lang === "bn" ? service.short_description_bn || service.description_bn : null) ||
@@ -34,9 +38,9 @@ export default function ServiceCard({ service, lang = "en" }: ServiceCardProps) 
         </div>
 
         <div className="p-5">
-          {service.category && (
+          {tag && (
             <span className="inline-block px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 text-xs font-semibold rounded-full mb-2">
-              {service.category}
+              {tag}
             </span>
           )}
 
