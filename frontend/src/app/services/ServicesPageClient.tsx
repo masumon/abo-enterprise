@@ -234,22 +234,43 @@ export default function ServicesPageClient({
           chips: g.items.map((item) => ({ key: item.en, label: t(item) })),
         }));
 
+  // One classification system everywhere: the filter chips reuse the same live
+  // taxonomy as the category cards above (bilingual names, filtered via
+  // category_slug). The legacy flat service.category strings remain only as a
+  // fallback when the taxonomy is empty/unreachable.
+  const usingTaxonomy = initialCategories.length > 0;
   const categories = [
     { id: null, label: lang === "bn" ? "সব" : "All", en: "All" },
-    ...Array.from(
-      new Set([...initialServices, ...services].map((s) => s.category).filter(Boolean))
-    ).map((c) => ({
-      id: c!,
-      label: c!,
-      en: c!,
-    })),
+    ...(usingTaxonomy
+      ? initialCategories.map((c) => ({
+          id: c.slug,
+          label: lang === "bn" && c.name_bn ? c.name_bn : c.name_en,
+          en: c.name_en,
+        }))
+      : Array.from(
+          new Set([...initialServices, ...services].map((s) => s.category).filter(Boolean))
+        ).map((c) => ({
+          id: c!,
+          label: c!,
+          en: c!,
+        }))),
   ];
+
+  // Taxonomy names for the tag on each service card (falls back to the raw
+  // legacy category string inside ServiceCard when a service is unassigned).
+  const categoryLabelById = new Map(
+    initialCategories.map((c) => [c.id, lang === "bn" && c.name_bn ? c.name_bn : c.name_en])
+  );
 
   const load = useCallback(async (pageNum: number, cat: string | null) => {
     setLoading(true);
     setError(false);
 
-    const params = { category: cat || undefined, page: pageNum, per_page: 12 };
+    const params = {
+      ...(usingTaxonomy ? { category_slug: cat || undefined } : { category: cat || undefined }),
+      page: pageNum,
+      per_page: 12,
+    };
 
     if (pageNum === 1) {
       const cached = await peekCachedServices(params);
@@ -281,7 +302,7 @@ export default function ServicesPageClient({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [usingTaxonomy]);
 
   useEffect(() => {
     if (skipInitial.current && category === null) {
@@ -388,7 +409,12 @@ export default function ServicesPageClient({
               <p className="text-sm text-muted mb-4">{total} {lang === "bn" ? "টি সেবা" : "services"}</p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {services.map((s) => (
-                  <ServiceCard key={s.id} service={s} lang={lang} />
+                  <ServiceCard
+                    key={s.id}
+                    service={s}
+                    lang={lang}
+                    categoryLabel={s.category_id ? categoryLabelById.get(s.category_id) : undefined}
+                  />
                 ))}
               </div>
               {totalPages > 1 && (

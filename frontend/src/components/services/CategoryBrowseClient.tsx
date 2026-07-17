@@ -147,7 +147,7 @@ export default function CategoryBrowseClient({
               </p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {services.map((s) => (
-                  <ServiceCard key={s.id} service={s} lang={lang} />
+                  <ServiceCard key={s.id} service={s} lang={lang} categoryLabel={catName} />
                 ))}
               </div>
               {totalPages > 1 && (
