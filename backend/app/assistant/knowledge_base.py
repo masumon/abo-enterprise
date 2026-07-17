@@ -2,6 +2,7 @@
 
 import json
 import re
+import time
 from pathlib import Path
 
 from sqlalchemy import select, and_, or_
@@ -22,11 +23,17 @@ class KnowledgeBase:
     def __init__(self) -> None:
         with open(_FAQ_PATH, encoding="utf-8") as f:
             self._faq = json.load(f)
+        self._faq_loaded_at = 0.0
+        self._faq_cache_ttl = 60.0
 
     def reload_faq(self, flat: dict) -> None:
         self._faq = flat
+        self._faq_loaded_at = time.time()
 
     async def load_faq_from_db(self, db: AsyncSession) -> None:
+        now = time.time()
+        if self._faq_loaded_at and now - self._faq_loaded_at < self._faq_cache_ttl:
+            return
         result = await db.execute(
             select(Setting).where(Setting.key == "assistant_faq_knowledge", Setting.is_deleted == False)  # noqa: E712
         )
@@ -36,6 +43,7 @@ class KnowledgeBase:
                 self._faq = json.loads(setting.value)
             except json.JSONDecodeError:
                 pass
+        self._faq_loaded_at = now
 
     def get_faq(self, key: str, language: str = "en") -> str | None:
         suffix = "_bn" if language == "bn" else "_en"

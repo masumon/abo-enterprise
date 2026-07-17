@@ -823,6 +823,7 @@ export const assistantApi = {
   chat: (data: {
     message: string;
     session_id?: string;
+    session_token?: string;
     customer_name?: string;
     customer_phone?: string;
     customer_email?: string;
@@ -834,14 +835,15 @@ export const assistantApi = {
       intent: string;
       language: string;
       session_id: string;
+      session_token?: string;
       data?: Record<string, unknown>;
       suggestions?: string[];
     }>>("/api/v1/assistant/chat", data),
 
-  history: (sessionId: string, limit = 20) =>
+  history: (sessionId: string, sessionToken: string, limit = 20) =>
     api.get<ApiResponse<{ role: string; content: string; intent?: string }[]>>(
       `/api/v1/assistant/conversations/${sessionId}/history`,
-      { params: { limit } }
+      { params: { limit, session_token: sessionToken } }
     ),
 
   health: () =>

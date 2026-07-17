@@ -22,6 +22,7 @@ from app.assistant.automation_engine import AutomationEngine
 from app.assistant.action_workflow import ActionWorkflowEngine
 from app.assistant.feature_flags import load_feature_flags, is_intent_allowed, is_workflow_allowed, AssistantFeatureFlags
 from app.assistant import site_map
+from app.assistant.session_security import build_assistant_session_token
 
 _FOLLOW_UP_PRODUCT = frozenset({
     Intent.PRODUCT_PRICE, Intent.PRODUCT_STOCK, Intent.PRODUCT_AVAILABILITY, Intent.PRODUCT_DETAILS,
@@ -33,6 +34,19 @@ _SHORT_FOLLOW_UP = frozenset({
     "how", "much", "dam", "koto", "ache", "mojud", "stok",
 })
 _COUPON_CODE_RE = re.compile(r"\b[A-Z0-9]{3,20}\b")
+_WORKFLOW_START_INTENTS = frozenset({
+    Intent.ORDER_CREATION,
+    Intent.SERVICE_BOOKING,
+    Intent.LEAD_CREATION,
+    Intent.QUOTE,
+})
+_SITE_DOMAIN_TERMS = frozenset({
+    "product", "products", "service", "services", "order", "orders", "booking", "bookings",
+    "lead", "invoice", "coupon", "delivery", "warranty", "return", "payment", "contact",
+    "blog", "portfolio", "track", "shipping", "abo", "website", "page", "shop", "store",
+    "পণ্য", "সেবা", "অর্ডার", "বুকিং", "লিড", "ইনভয়েস", "কুপন", "ডেলিভারি", "ওয়ারেন্টি",
+    "রিটার্ন", "পেমেন্ট", "যোগাযোগ", "ব্লগ", "ট্র্যাক", "ওয়েবসাইট", "ওয়েবসাইট", "পাতা", "শপ",
+})
 
 # Filler words stripped from product/service search queries so
 # "laptop er dam koto" searches for "laptop", not the whole sentence.
@@ -207,12 +221,13 @@ class AssistantOrchestrator:
             wf_result = await self.action_workflow.handle_turn(db, ctx, preprocessed, lang, entities)
             if wf_result:
                 text, action_data, links = wf_result
-                response_data: dict[str, Any] = {"workflow": True}
-                response_data.update(action_data or {})
-                await self._finalize_turn(db, conv, ctx, message, text, ctx.slots.get("workflow", {}).get("type", "workflow"), response_data)
+                workflow_response_data: dict[str, Any] = {"workflow": True}
+                workflow_response_data.update(action_data or {})
+                await self._finalize_turn(db, conv, ctx, message, text, ctx.slots.get("workflow", {}).get("type", "workflow"), workflow_response_data)
                 suggestions = self._suggestions(Intent.ORDER_CREATION if ctx.slots.get("workflow", {}).get("type") == "order" else Intent.GREETING, lang, ctx)
-                result = self.response.format_response(lang, Intent.ORDER_CREATION, text, data=response_data, suggestions=suggestions, links=links)
+                result = self.response.format_response(lang, Intent.ORDER_CREATION, text, data=workflow_response_data, suggestions=suggestions, links=links)
                 result["session_id"] = conv.session_id
+                result["session_token"] = build_assistant_session_token(conv.session_id)
                 return result
 
         ctx.last_intent = intent.value
@@ -250,6 +265,22 @@ class AssistantOrchestrator:
                 f"Session {conv.session_id}: flags={rule_result.flags}, intent={intent.value}",
             )
 
+        has_reference_identity = bool(
+            preprocessed.get("order_numbers")
+            or preprocessed.get("booking_numbers")
+            or preprocessed.get("lead_numbers")
+        )
+        perm = self.permissions.check_automation(
+            intent,
+            has_identity=bool(ctx.customer_name and ctx.customer_phone) or has_reference_identity,
+            business_blocked=rule_result.block_automation,
+            allow_identity_collection=intent in _WORKFLOW_START_INTENTS,
+        )
+        if not perm.allowed:
+            text = self.response.permission_denied(lang, perm.reason)
+            await self._finalize_turn(db, conv, ctx, message, text, intent.value, {"blocked": True, "permission": True})
+            return self._build_result(lang, intent, text, conv.session_id)
+
         response_data: dict[str, Any] = {
             "confidence": round(confidence, 2),
             "entities": [{"type": e.type.value, "value": e.value} for e in entities.entities],
@@ -266,6 +297,7 @@ class AssistantOrchestrator:
         suggestions = self._suggestions(intent, lang, ctx)
         result = self.response.format_response(lang, intent, text, data=response_data, suggestions=suggestions, links=links)
         result["session_id"] = conv.session_id
+        result["session_token"] = build_assistant_session_token(conv.session_id)
         return result
 
     @staticmethod
@@ -429,8 +461,8 @@ class AssistantOrchestrator:
                     lines = [self.response.order_status(lang, o) for o in orders]
                     return "\n\n".join(lines), {"orders": orders}, links
             ctx.pending_action = "order_tracking"
-            need = ["order number or phone"] if lang == "en" else ["অর্ডার নম্বর বা ফোন"]
-            return self.response.need_more_info(lang, need), {}, links
+            order_need = ["order number or phone"] if lang == "en" else ["অর্ডার নম্বর বা ফোন"]
+            return self.response.need_more_info(lang, order_need), {}, links
 
         if intent == Intent.BOOKING_TRACKING:
             ctx.pending_action = None
@@ -448,8 +480,8 @@ class AssistantOrchestrator:
                     lines = [self.response.booking_status(lang, b) for b in bookings]
                     return "\n\n".join(lines), {"bookings": bookings}, links
             ctx.pending_action = "booking_tracking"
-            need = ["booking number or phone"] if lang == "en" else ["বুকিং নম্বর বা ফোন"]
-            return self.response.need_more_info(lang, need), {}, links
+            booking_need = ["booking number or phone"] if lang == "en" else ["বুকিং নম্বর বা ফোন"]
+            return self.response.need_more_info(lang, booking_need), {}, links
 
         if intent == Intent.LEAD_TRACKING:
             ctx.pending_action = None
@@ -467,8 +499,8 @@ class AssistantOrchestrator:
                     lines = [self.response.lead_status(lang, l) for l in leads]
                     return "\n\n".join(lines), {"leads": leads}, links
             ctx.pending_action = "lead_tracking"
-            need = ["lead reference or phone"] if lang == "en" else ["লিড রেফারেন্স বা ফোন"]
-            return self.response.need_more_info(lang, need), {}, links
+            lead_need = ["lead reference or phone"] if lang == "en" else ["লিড রেফারেন্স বা ফোন"]
+            return self.response.need_more_info(lang, lead_need), {}, links
 
         if intent == Intent.INVOICE:
             order_num = ctx.slots.get("order_number") or (
@@ -616,7 +648,7 @@ class AssistantOrchestrator:
         if page:
             return site_map.navigation_answer(page, lang), {"page": page.path}, site_map.navigation_links(page, lang)
 
-        if flags.web_search and cleaned:
+        if flags.web_search and cleaned and self._should_use_web_search(cleaned):
             from app.assistant.web_search import search_web
             web = await search_web(cleaned)
             if web:
@@ -660,6 +692,15 @@ class AssistantOrchestrator:
                 continue
             candidates.append(code)
         return candidates
+
+    @staticmethod
+    def _should_use_web_search(query: str) -> bool:
+        tokens = [t for t in re.findall(r"[\wঀ-৿]+", query.lower()) if len(t) >= 2]
+        if len(tokens) < 3:
+            return False
+        if any(token in _SITE_DOMAIN_TERMS for token in tokens):
+            return False
+        return any(token in {"what", "who", "when", "where", "why", "how", "meaning", "define", "কি", "কে", "কেন", "কিভাবে"} for token in tokens)
 
     async def _finalize_turn(self, db, conv, ctx, user_msg, assistant_msg, intent, metadata):
         await self.conversation_mgr.save_turn(db, conv, ctx, user_msg, assistant_msg, intent, metadata)
@@ -780,6 +821,7 @@ class AssistantOrchestrator:
     def _build_result(self, lang: str, intent: Intent, text: str, session_id: str) -> dict:
         result = self.response.format_response(lang, intent, text)
         result["session_id"] = session_id
+        result["session_token"] = build_assistant_session_token(session_id)
         return result
 
     def _error_response(self, lang: str, error: str) -> dict:

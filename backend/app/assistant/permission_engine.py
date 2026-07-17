@@ -14,7 +14,7 @@ class PermissionResult:
 
 
 class PermissionEngine:
-    ADMIN_ONLY_INTENTS = frozenset()  # extend when admin assistant actions added
+    ADMIN_ONLY_INTENTS: frozenset[Intent] = frozenset()  # extend when admin assistant actions added
 
     def check_public_intent(self, intent: Intent) -> PermissionResult:
         if intent in self.ADMIN_ONLY_INTENTS:
@@ -26,10 +26,11 @@ class PermissionEngine:
         intent: Intent,
         has_identity: bool,
         business_blocked: bool,
+        allow_identity_collection: bool = False,
     ) -> PermissionResult:
         if business_blocked:
             return PermissionResult(allowed=False, reason="Action blocked by business rules")
-        if intent in SENSITIVE_INTENTS and not has_identity:
+        if intent in SENSITIVE_INTENTS and not has_identity and not allow_identity_collection:
             return PermissionResult(
                 allowed=False,
                 reason="Name and phone required for this action",

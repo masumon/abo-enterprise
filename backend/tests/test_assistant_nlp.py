@@ -216,6 +216,12 @@ def test_clean_search_query_strips_fillers():
     assert _clean_search_query("show me the business card") == "business card"
 
 
+def test_web_search_guard_prefers_site_grounded_answers(orchestrator):
+    assert orchestrator._should_use_web_search("delivery charge in dhaka") is False
+    assert orchestrator._should_use_web_search("order tracking help") is False
+    assert orchestrator._should_use_web_search("who is alan turing") is True
+
+
 # ── FAQ knowledge base with admin-defined trigger questions ──────────
 
 def _kb_with(faq: dict):

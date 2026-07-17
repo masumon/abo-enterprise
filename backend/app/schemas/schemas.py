@@ -1038,6 +1038,7 @@ class BlogPostOut(BlogPostBase):
 class AssistantChatRequest(BaseModel):
     message: str
     session_id: str | None = None
+    session_token: str | None = None
     customer_name: str | None = None
     customer_phone: str | None = None
     customer_email: str | None = None
@@ -1067,6 +1068,7 @@ class AssistantChatResponse(BaseModel):
     intent: str
     language: str
     session_id: str
+    session_token: str | None = None
     data: dict | None = None
     suggestions: list[str] | None = None
 
