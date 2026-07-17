@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun } from "lucide-react";
 import { getAdminPageTitle } from "@/lib/adminNav";
 import { useAlertStore } from "@/store/alerts";
@@ -18,6 +18,7 @@ interface Props {
 
 export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, onToggleTheme }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
   const { lang, toggle: toggleLang } = useLanguageStore();
   const pageTitle = getAdminPageTitle(pathname, lang);
   const { pendingOrders, pendingBookings, newLeads } = useAlertStore();
@@ -27,7 +28,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      window.location.reload();
+      router.refresh();
     } finally {
       setIsRefreshing(false);
     }
@@ -88,6 +89,15 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
           >
             <RotateCw className={`w-4 h-4 text-gray-600 ${isRefreshing ? "animate-spin" : ""}`} />
           </button>
+          {alertTotal > 0 && (
+            <div
+              className="sm:hidden w-8 h-8 rounded-full bg-amber-50 border border-amber-100 text-amber-800 text-[10px] font-bold flex items-center justify-center"
+              title={lang === "bn" ? "অপেক্ষমান আইটেম" : "Pending items"}
+              aria-label={lang === "bn" ? `${alertTotal} অপেক্ষমান` : `${alertTotal} pending`}
+            >
+              {alertTotal > 99 ? "99+" : alertTotal}
+            </div>
+          )}
           {alertTotal > 0 && (
             <div
               className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-100 text-amber-800 text-xs font-medium"

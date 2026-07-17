@@ -383,13 +383,13 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => openClone(p)} title="Duplicate" className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
+                        <button onClick={() => openClone(p)} aria-label={`Duplicate ${p.name_en}`} title="Duplicate" className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
                           <Copy className="w-4 h-4" />
                         </button>
-                        <button onClick={() => openEdit(p)} title="Edit" className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
+                        <button onClick={() => openEdit(p)} aria-label={`Edit ${p.name_en}`} title="Edit" className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
                           <Pencil className="w-4 h-4" />
                         </button>
-                        <button onClick={() => setDeleteId(p.id ?? null)} title="Delete" className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+                        <button onClick={() => setDeleteId(p.id ?? null)} aria-label={`Delete ${p.name_en}`} title="Delete" className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>

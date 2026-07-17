@@ -844,7 +844,7 @@
 .admin-dark :is(.text-gray-900, .text-gray-800) { color: rgb(226 232 240); }
 .admin-dark :is(.text-gray-700, .text-gray-600) { color: rgb(203 213 225); }
 .admin-dark :is(.text-gray-500) { color: rgb(148 163 184); }
-.admin-dark :is(.text-gray-400, .text-gray-300) { color: rgb(100 116 139); }
+.admin-dark :is(.text-gray-400, .text-gray-300) { color: rgb(148 163 184); }
 .admin-dark :is(.text-heading) { color: rgb(226 232 240); }
 .admin-dark :is(.border-gray-100, .border-gray-200, .border-gray-100\/80, .border-gray-50) { border-color: rgba(255, 255, 255, 0.08); }
 .admin-dark :is(.divide-gray-50, .divide-gray-100) > * + * { border-color: rgba(255, 255, 255, 0.06); }

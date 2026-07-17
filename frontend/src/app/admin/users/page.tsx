@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
-import { Loader2, Users, Shield, Plus, Pencil, Trash2, X, Search } from "lucide-react";
+import { Loader2, Users, Shield, Plus, Pencil, X, Search } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import TwoFactorCard from "@/components/admin/TwoFactorCard";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface AdminUser {
   id: string;
@@ -33,6 +34,10 @@ export default function AdminUsersPage() {
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; message: string; action: () => void } | null>(null);
+  const modalRef = useFocusTrap(!!modal, () => {
+    setModal(null);
+    setEditing(null);
+  });
 
   const load = async () => {
     setLoading(true);
@@ -150,7 +155,43 @@ export default function AdminUsersPage() {
         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>
       ) : (
         <div className="admin-card overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="sm:hidden divide-y divide-gray-100">
+            {filtered.map((u) => (
+              <div key={u.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <button onClick={() => openEdit(u)} className="text-left min-w-0 flex-1">
+                    <p className="font-medium text-gray-900 truncate">{u.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="badge bg-brand-50 text-brand-700 capitalize">{u.role.replace(/_/g, " ")}</span>
+                      <span className={`text-xs font-medium ${u.is_active ? "text-green-600" : "text-red-500"}`}>
+                        {u.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => openEdit(u)}
+                      aria-label={`Edit ${u.name}`}
+                      className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleToggleActive(u)}
+                      disabled={busyId === u.id}
+                      aria-label={u.is_active ? `Deactivate ${u.name}` : `Activate ${u.name}`}
+                      className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-40"
+                    >
+                      {busyId === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="overflow-x-auto hidden sm:block">
             <table className="table-premium min-w-[500px]">
               <thead>
                 <tr>
@@ -201,7 +242,7 @@ export default function AdminUsersPage() {
                           aria-label={u.is_active ? `Deactivate ${u.name}` : `Activate ${u.name}`}
                           className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-40"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <X className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -226,7 +267,7 @@ export default function AdminUsersPage() {
           style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div ref={modalRef} className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Shield className="w-5 h-5 text-brand-600" />

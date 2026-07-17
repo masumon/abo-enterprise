@@ -5,6 +5,7 @@ import dynamic from "next/dynamic";
 import api, { downloadCsv, downloadPdf } from "@/lib/api";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useToastStore } from "@/store/toast";
+import { useLanguageStore } from "@/store/language";
 import { apiErrorMessage } from "@/lib/apiError";
 import {
   TrendingUp, TrendingDown, ShoppingCart, Calendar, Users, Download,
@@ -106,6 +107,8 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState<string | null>(null);
   const toast = useToastStore((s) => s.push);
+  const { lang } = useLanguageStore();
+  const bn = lang === "bn";
 
   async function handleExport(path: string, filename: string, key: string) {
     setExporting(key);
@@ -153,6 +156,7 @@ export default function AnalyticsPage() {
         title="Analytics"
         titleBn="বিজনেস রিপোর্ট"
         description="Business reports (database) + Live and Historical (GA4) visitor analytics"
+        descriptionBn="বিজনেস রিপোর্ট (ডাটাবেজ) + ভিজিটর অ্যানালিটিক্স (লাইভ ও হিস্টোরিক্যাল GA4)"
         actions={
           <div className="flex items-center gap-2">
             <select
@@ -160,11 +164,11 @@ export default function AnalyticsPage() {
               onChange={e => setDays(Number(e.target.value))}
               className="admin-input w-auto py-2"
             >
-              <option value={7}>Last 7 days</option>
-              <option value={30}>Last 30 days</option>
-              <option value={90}>Last 90 days</option>
+              <option value={7}>{bn ? "শেষ ৭ দিন" : "Last 7 days"}</option>
+              <option value={30}>{bn ? "শেষ ৩০ দিন" : "Last 30 days"}</option>
+              <option value={90}>{bn ? "শেষ ৯০ দিন" : "Last 90 days"}</option>
             </select>
-            <button type="button" onClick={fetchAll} className="admin-btn-secondary !py-2 !px-3">
+            <button type="button" onClick={fetchAll} className="admin-btn-secondary !py-2 !px-3" aria-label={bn ? "রিফ্রেশ" : "Refresh"} title={bn ? "রিফ্রেশ" : "Refresh"}>
               <RefreshCw className="w-4 h-4 text-gray-500" />
             </button>
           </div>
@@ -174,9 +178,9 @@ export default function AnalyticsPage() {
       {/* Section tabs */}
       <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
         {([
-          { id: "business", label: "Business Analytics", icon: BarChart3 },
-          { id: "visitors", label: "Visitor Analytics (Live + Historical GA4)", icon: Globe2 },
-          { id: "operations", label: "Operations", icon: Activity },
+          { id: "business", label: bn ? "বিজনেস অ্যানালিটিক্স" : "Business Analytics", icon: BarChart3 },
+          { id: "visitors", label: bn ? "ভিজিটর অ্যানালিটিক্স (লাইভ + হিস্টোরিক্যাল GA4)" : "Visitor Analytics (Live + Historical GA4)", icon: Globe2 },
+          { id: "operations", label: bn ? "অপারেশনস" : "Operations", icon: Activity },
         ] as const).map((t) => (
           <button
             key={t.id}
@@ -202,30 +206,34 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
-            label: "Total Revenue",
+            label: bn ? "মোট রেভিনিউ" : "Total Revenue",
             value: `৳${((overview?.revenue.total || 0)).toLocaleString()}`,
-            sub: `Orders ৳${(overview?.revenue.orders || 0).toLocaleString()} · Bookings ৳${(overview?.revenue.bookings || 0).toLocaleString()}`,
+            sub: bn
+              ? `অর্ডার ৳${(overview?.revenue.orders || 0).toLocaleString()} · বুকিং ৳${(overview?.revenue.bookings || 0).toLocaleString()}`
+              : `Orders ৳${(overview?.revenue.orders || 0).toLocaleString()} · Bookings ৳${(overview?.revenue.bookings || 0).toLocaleString()}`,
             trend: overview?.trends?.revenue_pct,
             icon: TrendingUp, color: "text-blue-600 bg-blue-50",
           },
           {
-            label: "Orders",
+            label: bn ? "অর্ডার" : "Orders",
             value: overview?.counts.orders || 0,
             sub: null,
             trend: overview?.trends?.orders_pct,
             icon: ShoppingCart, color: "text-green-600 bg-green-50",
           },
           {
-            label: "Bookings",
+            label: bn ? "বুকিং" : "Bookings",
             value: overview?.counts.bookings || 0,
             sub: null,
             trend: overview?.trends?.bookings_pct,
             icon: Calendar, color: "text-purple-600 bg-purple-50",
           },
           {
-            label: "Lead Conversion",
+            label: bn ? "লিড কনভার্সন" : "Lead Conversion",
             value: `${overview?.conversion_rate || 0}%`,
-            sub: `${overview?.counts.leads_won || 0} won of ${overview?.counts.leads || 0} leads`,
+            sub: bn
+              ? `${overview?.counts.leads_won || 0} জয় / ${overview?.counts.leads || 0} লিড`
+              : `${overview?.counts.leads_won || 0} won of ${overview?.counts.leads || 0} leads`,
             trend: overview?.trends?.leads_pct,
             icon: Users, color: "text-orange-600 bg-orange-50",
           },
@@ -249,13 +257,13 @@ export default function AnalyticsPage() {
       {/* Revenue Chart — stacked orders + bookings */}
       <div className="bg-white rounded-xl border border-gray-100 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
-          <h2 className="font-bold text-gray-900">Revenue ({days}d)</h2>
+          <h2 className="font-bold text-gray-900">{bn ? `রেভিনিউ (${days} দিন)` : `Revenue (${days}d)`}</h2>
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1.5 text-xs text-gray-500">
-              <span className="w-2.5 h-2.5 rounded-sm bg-blue-500" /> Orders
+              <span className="w-2.5 h-2.5 rounded-sm bg-blue-500" /> {bn ? "অর্ডার" : "Orders"}
             </span>
             <span className="flex items-center gap-1.5 text-xs text-gray-500">
-              <span className="w-2.5 h-2.5 rounded-sm bg-purple-400" /> Bookings
+              <span className="w-2.5 h-2.5 rounded-sm bg-purple-400" /> {bn ? "বুকিং" : "Bookings"}
             </span>
             <button
               type="button"
@@ -263,12 +271,12 @@ export default function AnalyticsPage() {
               disabled={exporting === "chart-orders"}
               className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 disabled:opacity-50"
             >
-              <Download className="w-3.5 h-3.5" /> {exporting === "chart-orders" ? "Exporting…" : "Export CSV"}
+              <Download className="w-3.5 h-3.5" /> {exporting === "chart-orders" ? (bn ? "এক্সপোর্ট হচ্ছে…" : "Exporting…") : (bn ? "CSV এক্সপোর্ট" : "Export CSV")}
             </button>
           </div>
         </div>
         <p className="text-xs text-gray-400 mb-4">
-          {loading ? " " : <>Period total <span className="font-semibold text-gray-600">৳{periodTotal.toLocaleString()}</span> · Daily average ৳{Math.round(dailyAvg).toLocaleString()}</>}
+          {loading ? " " : <>{bn ? "মোট" : "Period total"} <span className="font-semibold text-gray-600">৳{periodTotal.toLocaleString()}</span> · {bn ? "দৈনিক গড়" : "Daily average"} ৳{Math.round(dailyAvg).toLocaleString()}</>}
         </p>
         {loading ? (
           <div className="h-40 flex items-center justify-center text-gray-400">Loading...</div>

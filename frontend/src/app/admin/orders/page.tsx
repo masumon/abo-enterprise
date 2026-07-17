@@ -11,6 +11,7 @@ import { apiErrorMessage } from "@/lib/apiError";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice, buildCustomerWhatsAppLink } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface AdminOrderItem { product_name: string; quantity: number; product_price: number; subtotal: number; }
 interface AdminOrder {
@@ -50,6 +51,7 @@ export default function AdminOrdersPage() {
   const [courierTracking, setCourierTracking] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const toast = useToastStore((s) => s.push);
+  const detailRef = useFocusTrap(!!detail || detailLoading, () => setDetail(null));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -425,8 +427,20 @@ export default function AdminOrdersPage() {
 
       {/* Order Detail Modal */}
       {(detail || detailLoading) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }} onClick={() => setDetail(null)}>
-          <div className="rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col animate-scale-in" style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)" }} onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          onClick={() => setDetail(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Order details"
+        >
+          <div
+            ref={detailRef}
+            className="rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col animate-scale-in"
+            style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)" }}
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">
                 {detail ? `Order ${detail.order_number}` : "Loading..."}

@@ -13,6 +13,7 @@ import type { Service, ServicePricingTier, ServiceBookingFormField, Category } f
 import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 // Business-aligned service categories shown first; legacy values are retained
 // so existing services keep displaying (and remain editable) without any data
@@ -97,6 +98,10 @@ export default function AdminServicesPage() {
   const toast = useToastStore((s) => s.push);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const [taxonomy, setTaxonomy] = useState<Category[]>([]);
+  const editorRef = useFocusTrap(editing !== null, () => {
+    setEditing(null);
+    setIsNew(false);
+  });
 
   // Flattened tree ("— " per depth) so a service can sit at any depth.
   const treeOptions: { id: string; label: string }[] = [];
@@ -382,6 +387,7 @@ export default function AdminServicesPage() {
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => openEdit(s)}
+                        aria-label={`Edit ${s.name_en}`}
                         className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
                         title="Edit"
                       >
@@ -390,6 +396,7 @@ export default function AdminServicesPage() {
                       <button
                         onClick={() => handleDelete(s.id)}
                         disabled={deletingId === s.id}
+                        aria-label={`Delete ${s.name_en}`}
                         className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete"
                       >
@@ -415,8 +422,14 @@ export default function AdminServicesPage() {
 
       {/* Create / Edit panel */}
       {editing !== null && (
-        <div className="fixed inset-0 z-50 flex" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div className="ml-auto w-full max-w-2xl h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
+        <div
+          className="fixed inset-0 z-50 flex"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          role="dialog"
+          aria-modal="true"
+          aria-label={isNew ? "Create service" : "Edit service"}
+        >
+          <div ref={editorRef} className="ml-auto w-full max-w-2xl h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-lg font-semibold text-gray-900">{isNew ? "New Service" : "Edit Service"}</h2>
