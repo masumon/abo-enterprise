@@ -121,6 +121,9 @@ export default function AdminSidebar({
 
   return (
     <aside
+      role={mobileOpen ? "dialog" : undefined}
+      aria-modal={mobileOpen ? true : undefined}
+      aria-label={mobileOpen ? (bn ? "অ্যাডমিন মেনু" : "Admin menu") : undefined}
       className={cn(
         "fixed inset-y-0 left-0 z-40 w-64 flex flex-col transition-transform duration-300 lg:translate-x-0 admin-sidebar",
         mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"

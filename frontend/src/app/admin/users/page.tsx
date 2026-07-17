@@ -155,7 +155,43 @@ export default function AdminUsersPage() {
         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>
       ) : (
         <div className="admin-card overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="sm:hidden divide-y divide-gray-100">
+            {filtered.map((u) => (
+              <div key={u.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <button onClick={() => openEdit(u)} className="text-left min-w-0 flex-1">
+                    <p className="font-medium text-gray-900 truncate">{u.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{u.email}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="badge bg-brand-50 text-brand-700 capitalize">{u.role.replace(/_/g, " ")}</span>
+                      <span className={`text-xs font-medium ${u.is_active ? "text-green-600" : "text-red-500"}`}>
+                        {u.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => openEdit(u)}
+                      aria-label={`Edit ${u.name}`}
+                      className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleToggleActive(u)}
+                      disabled={busyId === u.id}
+                      aria-label={u.is_active ? `Deactivate ${u.name}` : `Activate ${u.name}`}
+                      className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-40"
+                    >
+                      {busyId === u.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="overflow-x-auto hidden sm:block">
             <table className="table-premium min-w-[500px]">
               <thead>
                 <tr>

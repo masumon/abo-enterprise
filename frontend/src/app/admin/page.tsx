@@ -43,6 +43,8 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
   const { lastUpdated, pendingOrders, pendingBookings, newLeads } = useAlertStore();
+  const { lang } = useLanguageStore();
+  const bn = lang === "bn";
 
   const fetchStats = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
@@ -74,7 +76,7 @@ export default function AdminDashboard() {
   }, [lastUpdated]);
 
   const updatedLabel = lastUpdated
-    ? lastUpdated.toLocaleTimeString("en-BD", { hour: "2-digit", minute: "2-digit" })
+    ? lastUpdated.toLocaleTimeString(bn ? "bn-BD" : "en-BD", { hour: "2-digit", minute: "2-digit" })
     : null;
 
   const quickActions = ADMIN_QUICK_ACTIONS.map((a) => ({
@@ -99,13 +101,14 @@ export default function AdminDashboard() {
         actions={
           <div className="flex items-center gap-2">
             {updatedLabel && (
-              <span className="text-xs text-gray-400 hidden sm:inline">Updated {updatedLabel}</span>
+              <span className="text-xs text-gray-400 hidden sm:inline">{bn ? "আপডেট" : "Updated"} {updatedLabel}</span>
             )}
             <button
               onClick={() => fetchStats(true)}
               disabled={refreshing}
               className="admin-btn-secondary !py-2 !px-3"
-              title="Refresh"
+              title={bn ? "রিফ্রেশ" : "Refresh"}
+              aria-label={bn ? "রিফ্রেশ" : "Refresh"}
             >
               <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
             </button>
@@ -116,7 +119,7 @@ export default function AdminDashboard() {
       {error && (
         <div role="alert" className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">
           <AlertCircle className="w-4 h-4 flex-shrink-0" />
-          ড্যাশবোর্ড লোড হয়নি। Refresh চাপুন।
+          {bn ? "ড্যাশবোর্ড লোড হয়নি। রিফ্রেশ চাপুন।" : "Dashboard failed to load. Press refresh."}
         </div>
       )}
 
@@ -124,7 +127,7 @@ export default function AdminDashboard() {
       <section>
         <div className="flex items-center gap-2 mb-3">
           <Sparkles className="w-4 h-4 text-brand-500" />
-          <h2 className="text-sm font-semibold text-gray-700">দ্রুত কাজ</h2>
+          <h2 className="text-sm font-semibold text-gray-700">{bn ? "দ্রুত কাজ" : "Quick Actions"}</h2>
         </div>
         <AdminQuickActions actions={quickActions} />
       </section>
@@ -133,12 +136,12 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {revenueTotal !== null && (
           <StatsCard
-            title="Revenue (30d)"
+            title={bn ? "রেভিনিউ (৩০ দিন)" : "Revenue (30d)"}
             value={`৳${revenueTotal.toLocaleString()}`}
             sub={
               revenueTrend == null
-                ? "orders + bookings"
-                : `${revenueTrend >= 0 ? "▲" : "▼"} ${Math.abs(revenueTrend)}% vs previous 30d`
+                ? (bn ? "অর্ডার + বুকিং" : "orders + bookings")
+                : `${revenueTrend >= 0 ? "▲" : "▼"} ${Math.abs(revenueTrend)}% ${bn ? "গত ৩০ দিনের তুলনায়" : "vs previous 30d"}`
             }
             icon={DollarSign}
             color="brand"
@@ -147,9 +150,9 @@ export default function AdminDashboard() {
           />
         )}
         <StatsCard
-          title="Orders"
+          title={bn ? "অর্ডার" : "Orders"}
           value={stats?.total_orders ?? 0}
-          sub={`${stats?.pending_orders ?? 0} pending`}
+          sub={bn ? `${stats?.pending_orders ?? 0} অপেক্ষমান` : `${stats?.pending_orders ?? 0} pending`}
           icon={ShoppingCart}
           color="brand"
           loading={loading}
@@ -157,9 +160,9 @@ export default function AdminDashboard() {
           href="/admin/orders"
         />
         <StatsCard
-          title="Bookings"
+          title={bn ? "বুকিং" : "Bookings"}
           value={stats?.total_bookings ?? 0}
-          sub={`${stats?.pending_bookings ?? 0} pending`}
+          sub={bn ? `${stats?.pending_bookings ?? 0} অপেক্ষমান` : `${stats?.pending_bookings ?? 0} pending`}
           icon={Briefcase}
           color="accent"
           loading={loading}
@@ -167,9 +170,9 @@ export default function AdminDashboard() {
           href="/admin/bookings"
         />
         <StatsCard
-          title="Leads"
+          title={bn ? "লিড" : "Leads"}
           value={stats?.total_leads ?? 0}
-          sub={`${stats?.new_leads ?? 0} new`}
+          sub={bn ? `${stats?.new_leads ?? 0} নতুন` : `${stats?.new_leads ?? 0} new`}
           icon={Users}
           color="green"
           loading={loading}
@@ -177,9 +180,9 @@ export default function AdminDashboard() {
           href="/admin/leads"
         />
         <StatsCard
-          title="Products"
+          title={bn ? "পণ্য" : "Products"}
           value={stats?.total_products ?? 0}
-          sub="active"
+          sub={bn ? "সক্রিয়" : "active"}
           icon={Package}
           color="amber"
           loading={loading}
@@ -192,10 +195,10 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-gray-100">
             <h2 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base">
               <Clock className="w-4 h-4 text-gray-400" />
-              Recent Orders
+              {bn ? "সাম্প্রতিক অর্ডার" : "Recent Orders"}
             </h2>
             <Link href="/admin/orders" className="text-xs text-brand-600 hover:underline font-medium">
-              সব দেখুন →
+              {bn ? "সব দেখুন" : "View all"} →
             </Link>
           </div>
           <div className="divide-y divide-gray-50">
@@ -206,7 +209,7 @@ export default function AdminDashboard() {
                 </div>
               ))
             ) : stats?.recent_orders?.length === 0 ? (
-              <p className="px-5 py-10 text-center text-gray-400 text-sm">No orders yet</p>
+              <p className="px-5 py-10 text-center text-gray-400 text-sm">{bn ? "এখনও কোনো অর্ডার নেই" : "No orders yet"}</p>
             ) : (
               stats?.recent_orders?.map((order) => (
                 <Link
@@ -232,10 +235,10 @@ export default function AdminDashboard() {
           <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-gray-100">
             <h2 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base">
               <TrendingUp className="w-4 h-4 text-gray-400" />
-              Recent Leads
+              {bn ? "সাম্প্রতিক লিড" : "Recent Leads"}
             </h2>
             <Link href="/admin/leads" className="text-xs text-brand-600 hover:underline font-medium">
-              সব দেখুন →
+              {bn ? "সব দেখুন" : "View all"} →
             </Link>
           </div>
           <div className="divide-y divide-gray-50">
@@ -244,7 +247,7 @@ export default function AdminDashboard() {
                 <div key={i} className="px-5 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></div>
               ))
             ) : stats?.recent_leads?.length === 0 ? (
-              <p className="px-5 py-10 text-center text-gray-400 text-sm">No leads yet</p>
+              <p className="px-5 py-10 text-center text-gray-400 text-sm">{bn ? "এখনও কোনো লিড নেই" : "No leads yet"}</p>
             ) : (
               stats?.recent_leads?.map((lead) => (
                 <Link

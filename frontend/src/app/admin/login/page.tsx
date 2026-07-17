@@ -183,7 +183,7 @@ function LoginForm() {
                 সংযোগ হচ্ছে…
               </>
             ) : (
-              "Sign In"
+              "সাইন ইন"
             )}
           </button>
         </form>
@@ -191,7 +191,7 @@ function LoginForm() {
 
       <p className="text-center text-gray-600 text-xs mt-6 flex items-center justify-center gap-1.5">
         <ShieldCheck className="w-3.5 h-3.5" />
-        Secure admin access only
+        শুধু নিরাপদ অ্যাডমিন অ্যাক্সেস
       </p>
     </div>
   );
