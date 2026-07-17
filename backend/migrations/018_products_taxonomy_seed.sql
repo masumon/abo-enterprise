@@ -1,10 +1,51 @@
 -- 018_products_taxonomy_seed.sql
 -- Seeds the full Products taxonomy tree (3 top categories x 10 branches x 3
--- leaves) into the unified nested `categories` table. Requires alembic 0008
--- (categories.parent_id) — deployed automatically with the backend.
--- Idempotent: ON CONFLICT (slug) DO NOTHING; safe to run multiple times.
+-- leaves) into the unified nested `categories` table.
+-- SELF-SUFFICIENT: section 0 applies the same schema changes as alembic 0008
+-- (all IF NOT EXISTS / WHERE NOT EXISTS guarded), so this file works whether
+-- it runs before or after the backend deploy — alembic 0008 simply no-ops on
+-- whatever already exists.
+-- Idempotent throughout; safe to run multiple times.
 -- Run manually in the Supabase SQL Editor.
 BEGIN;
+
+-- ── 0. Schema (mirror of alembic 0008_nested_categories) ──────────────────
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS parent_id UUID;
+
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.table_constraints
+    WHERE constraint_name = 'fk_categories_parent'
+  ) THEN
+    ALTER TABLE categories
+      ADD CONSTRAINT fk_categories_parent
+      FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE CASCADE;
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_categories_parent_id ON categories(parent_id);
+
+-- Unify legacy subcategories into the tree (same UUIDs → item FKs stay valid)
+INSERT INTO categories (
+    id, slug, name_en, name_bn, description_en, description_bn,
+    icon, image_url, applies_to, sort_order, is_active,
+    created_at, updated_at, is_deleted, parent_id
+)
+SELECT
+    s.id,
+    CASE WHEN EXISTS (SELECT 1 FROM categories c2 WHERE c2.slug = s.slug)
+         THEN s.slug || '-' || substr(s.id::text, 1, 4)
+         ELSE s.slug END,
+    s.name_en, s.name_bn, s.description_en, s.description_bn,
+    s.icon, s.image_url,
+    COALESCE(p.applies_to, '[]'::jsonb),
+    s.sort_order, s.is_active,
+    s.created_at, s.updated_at, s.is_deleted, s.category_id
+FROM subcategories s
+JOIN categories p ON p.id = s.category_id
+WHERE NOT EXISTS (SELECT 1 FROM categories c WHERE c.id = s.id);
+
+-- ── 1. Products tree seed ─────────────────────────────────────────────────
 INSERT INTO categories (slug,name_en,name_bn,applies_to,sort_order,is_active,parent_id)
 VALUES ('mobile-accessories','Mobile Accessories','মোবাইল অ্যাক্সেসরিজ','["product"]'::jsonb,0,TRUE,NULL)
 ON CONFLICT (slug) DO NOTHING;
