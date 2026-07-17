@@ -536,6 +536,46 @@
     @apply mt-1 text-xs text-gray-400;
   }
 
+  .admin-shell input[type="checkbox"]:not(.sr-only),
+  .admin-shell input[type="radio"]:not(.sr-only) {
+    @apply h-4 w-4 border border-gray-300 bg-white shadow-sm;
+    accent-color: #1e5ba8;
+  }
+
+  .admin-shell input[type="checkbox"]:not(.sr-only) {
+    @apply rounded;
+  }
+
+  .admin-shell input[type="radio"]:not(.sr-only) {
+    @apply rounded-full;
+  }
+
+  .admin-shell input[type="checkbox"]:not(.sr-only):focus,
+  .admin-shell input[type="radio"]:not(.sr-only):focus {
+    @apply outline-none ring-2 ring-brand-200;
+  }
+
+  .admin-shell input[type="file"]:not(.hidden):not([hidden]) {
+    @apply w-full rounded-xl border border-gray-200 bg-white p-2 text-sm text-gray-600 shadow-sm;
+  }
+
+  .admin-shell input[type="file"]:not(.hidden):not([hidden])::file-selector-button {
+    @apply mr-3 rounded-lg border border-brand-200 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700;
+  }
+
+  .admin-shell input.sr-only:focus-visible + div {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+    outline: none;
+  }
+
+  .admin-shell input.sr-only:checked + div {
+    box-shadow: 0 3px 10px rgba(30, 91, 168, 0.22);
+  }
+
+  .admin-shell input.sr-only + div + div {
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.24);
+  }
+
   .admin-btn-primary {
     @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold
            bg-gradient-to-r from-brand-600 to-brand-700 text-white hover:from-brand-700 hover:to-brand-800 disabled:opacity-50 transition-colors;
@@ -919,6 +959,33 @@
   border-color: rgba(255, 255, 255, 0.08);
 }
 .admin-dark .form-help { color: rgb(148 163 184); }
+.admin-dark input[type="checkbox"]:not(.sr-only),
+.admin-dark input[type="radio"]:not(.sr-only) {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: #0d1524;
+  box-shadow: none;
+  accent-color: #60a5fa;
+}
+.admin-dark input[type="checkbox"]:not(.sr-only):focus,
+.admin-dark input[type="radio"]:not(.sr-only):focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.24);
+}
+.admin-dark input[type="file"]:not(.hidden):not([hidden]) {
+  background: #0d1524;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgb(203 213 225);
+}
+.admin-dark input[type="file"]:not(.hidden):not([hidden])::file-selector-button {
+  background: rgba(59, 130, 246, 0.16);
+  border-color: rgba(96, 165, 250, 0.35);
+  color: rgb(191 219 254);
+}
+.admin-dark input.sr-only:focus-visible + div {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+}
+.admin-dark input.sr-only:checked + div {
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.26);
+}
 .admin-dark .admin-btn-secondary {
   background: #16203a;
   border-color: rgba(255, 255, 255, 0.1);
