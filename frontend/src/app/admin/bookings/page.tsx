@@ -8,6 +8,7 @@ import type { Booking, BookingV2 } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 const STATUSES_V1 = ["pending", "contacted", "in_progress", "completed", "cancelled"];
 const STATUSES_V2 = ["pending", "in_progress", "completed", "cancelled", "on_hold"];
@@ -51,6 +52,8 @@ export default function AdminBookingsPage() {
   const toast = useToastStore((s) => s.push);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
+  const detailRef = useFocusTrap(!!detail || detailLoading, () => setDetail(null));
+  const detailV2Ref = useFocusTrap(!!detailV2, () => setDetailV2(null));
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -422,8 +425,20 @@ export default function AdminBookingsPage() {
 
       {/* V1 Booking Detail Modal */}
       {(detail || detailLoading) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }} onClick={() => setDetail(null)}>
-          <div className="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in" style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)" }} onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          onClick={() => setDetail(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Booking details"
+        >
+          <div
+            ref={detailRef}
+            className="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in"
+            style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)" }}
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">
                 {detail ? `Booking ${detail.booking_number}` : "Loading..."}
@@ -493,8 +508,20 @@ export default function AdminBookingsPage() {
 
       {/* V2 Booking Detail Modal */}
       {detailV2 && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }} onClick={() => setDetailV2(null)}>
-          <div className="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in" style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)" }} onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          onClick={() => setDetailV2(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Service booking details"
+        >
+          <div
+            ref={detailV2Ref}
+            className="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in"
+            style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)" }}
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">Booking {detailV2.booking_number}</h2>
               <button onClick={() => setDetailV2(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>

@@ -9,6 +9,7 @@ import type { BlogPost } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 const CATEGORIES = ["technology", "business", "tips", "news", "case-study", "announcement"];
 const DRAFT_KEY = "admin_blog_new_draft";
@@ -66,6 +67,10 @@ export default function AdminBlogPage() {
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const toast = useToastStore((s) => s.push);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const editorRef = useFocusTrap(editing !== null, () => {
+    setEditing(null);
+    setIsNew(false);
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -346,6 +351,7 @@ export default function AdminBlogPage() {
                             href={`/blog/${p.slug}`}
                             target="_blank"
                             rel="noopener noreferrer"
+                            aria-label={`View ${p.title_en} on website`}
                             className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                             title="View on site"
                             onClick={(e) => e.stopPropagation()}
@@ -355,6 +361,7 @@ export default function AdminBlogPage() {
                         )}
                         <button
                           onClick={(e) => { e.stopPropagation(); handleClone(p); }}
+                          aria-label={`Duplicate ${p.title_en}`}
                           className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
                           title="Clone / Duplicate"
                         >
@@ -362,6 +369,7 @@ export default function AdminBlogPage() {
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); openEdit(p); }}
+                          aria-label={`Edit ${p.title_en}`}
                           className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
                           title="Edit"
                         >
@@ -370,6 +378,7 @@ export default function AdminBlogPage() {
                         <button
                           onClick={(e) => { e.stopPropagation(); handleDelete(p.id!); }}
                           disabled={deletingId === p.id}
+                          aria-label={`Delete ${p.title_en}`}
                           className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                           title="Delete"
                         >
@@ -395,8 +404,14 @@ export default function AdminBlogPage() {
 
       {/* Create / Edit Panel */}
       {editing !== null && (
-        <div className="fixed inset-0 z-50 flex" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div className="ml-auto w-full max-w-2xl h-full flex flex-col bg-white shadow-2xl overflow-hidden animate-slide-in-right">
+        <div
+          className="fixed inset-0 z-50 flex"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          role="dialog"
+          aria-modal="true"
+          aria-label={isNew ? "Create blog post" : "Edit blog post"}
+        >
+          <div ref={editorRef} className="ml-auto w-full max-w-2xl h-full flex flex-col bg-white shadow-2xl overflow-hidden animate-slide-in-right">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-lg font-semibold text-gray-900">

@@ -10,6 +10,7 @@ import { paymentMethodsAdminApi, adminApi, type PaymentMethodRecord } from "@/li
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { cn } from "@/lib/utils";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 const GATEWAY_LABELS: Record<string, string> = {
   bkash: "bKash",
@@ -91,6 +92,10 @@ export default function AdminPaymentsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const toast = useToastStore((s) => s.push);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
+  const panelRef = useFocusTrap(editing !== null, () => {
+    setEditing(null);
+    setIsNew(false);
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -424,6 +429,7 @@ export default function AdminPaymentsPage() {
                       <div className="flex items-center gap-1 flex-shrink-0">
                         <button
                           onClick={() => openEdit(m)}
+                          aria-label={`Edit ${label} gateway`}
                           className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
                         >
                           <Pencil className="w-3.5 h-3.5" />
@@ -431,6 +437,7 @@ export default function AdminPaymentsPage() {
                         <button
                           onClick={() => handleDelete(m.id)}
                           disabled={deletingId === m.id}
+                          aria-label={`Delete ${label} gateway`}
                           className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           {deletingId === m.id
@@ -441,6 +448,7 @@ export default function AdminPaymentsPage() {
                         <button
                           onClick={() => handleToggle(m)}
                           disabled={togglingId === m.id}
+                          aria-label={m.is_active ? `Disable ${label} gateway` : `Enable ${label} gateway`}
                           className="ml-1 text-gray-400 hover:text-brand-600 transition-colors"
                         >
                           {togglingId === m.id
@@ -496,8 +504,14 @@ export default function AdminPaymentsPage() {
 
       {/* Edit/Create Panel */}
       {editing !== null && (
-        <div className="fixed inset-0 z-50 flex" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div className="ml-auto w-full max-w-md h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
+        <div
+          className="fixed inset-0 z-50 flex"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          role="dialog"
+          aria-modal="true"
+          aria-label={isNew ? "Add payment gateway" : "Edit payment gateway"}
+        >
+          <div ref={panelRef} className="ml-auto w-full max-w-md h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-lg font-semibold text-gray-900">
                 {isNew ? "Add Payment Gateway" : `Edit ${GATEWAY_LABELS[editing.payment_gateway ?? ""] ?? editing.payment_gateway}`}

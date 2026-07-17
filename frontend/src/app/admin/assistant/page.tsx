@@ -474,11 +474,13 @@ export default function AdminAssistantPage() {
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button onClick={() => viewConversation(c.id)} className="p-1.5 rounded-lg hover:bg-brand-50 text-brand-600" title="View">
+                              <span className="sr-only">View conversation</span>
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => deleteConversation(c.id)}
                               disabled={deletingConvId === c.id}
+                              aria-label="Delete conversation"
                               className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"
                               title="Delete"
                             >
@@ -503,7 +505,13 @@ export default function AdminAssistantPage() {
           )}
 
           {(convDetail || convDetailLoading) && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setConvDetail(null)}>
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+              onClick={() => setConvDetail(null)}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Conversation detail"
+            >
               <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-5 py-4 border-b">
                   <h3 className="font-semibold">Conversation Detail</h3>
@@ -640,11 +648,13 @@ export default function AdminAssistantPage() {
                       </div>
                       <div className="flex gap-1 flex-shrink-0">
                         <button onClick={() => openEditFaq(entry)} className="p-1.5 rounded-lg hover:bg-brand-50 text-brand-600">
+                          <span className="sr-only">Edit FAQ entry {entry.key}</span>
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => deleteFaq(entry.key)}
                           disabled={deletingFaqKey === entry.key}
+                          aria-label={`Delete FAQ entry ${entry.key}`}
                           className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"
                         >
                           {deletingFaqKey === entry.key ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -658,7 +668,13 @@ export default function AdminAssistantPage() {
           </div>
 
           {faqEditing && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={() => setFaqEditing(null)}>
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+              onClick={() => setFaqEditing(null)}
+              role="dialog"
+              aria-modal="true"
+              aria-label={faqIsNew ? "Add FAQ entry" : "Edit FAQ entry"}
+            >
               <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-5 py-4 border-b">
                   <h3 className="font-semibold">{faqIsNew ? "Add FAQ Entry" : `Edit: ${faqEditing.key}`}</h3>

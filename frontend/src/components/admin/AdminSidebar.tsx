@@ -107,7 +107,13 @@ export default function AdminSidebar({
     }
 
     return (
-      <Link key={item.href} href={item.href} onClick={onClose} className={linkClass}>
+      <Link
+        key={item.href}
+        href={item.href}
+        onClick={onClose}
+        className={linkClass}
+        aria-current={active ? "page" : undefined}
+      >
         {content}
       </Link>
     );
@@ -148,6 +154,7 @@ export default function AdminSidebar({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={bn ? "মেনু খুঁজুন…" : "Search menu…"}
+            aria-label={bn ? "মেনু খুঁজুন" : "Search admin menu"}
             className="w-full pl-8 pr-3 py-2 text-xs rounded-lg bg-white/[0.06] border border-white/[0.08] text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30"
           />
         </div>

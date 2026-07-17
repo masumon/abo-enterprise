@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
-import { Loader2, Users, Shield, Plus, Pencil, Trash2, X, Search } from "lucide-react";
+import { Loader2, Users, Shield, Plus, Pencil, X, Search } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import TwoFactorCard from "@/components/admin/TwoFactorCard";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface AdminUser {
   id: string;
@@ -33,6 +34,10 @@ export default function AdminUsersPage() {
   const [saving, setSaving] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<{ title: string; message: string; action: () => void } | null>(null);
+  const modalRef = useFocusTrap(!!modal, () => {
+    setModal(null);
+    setEditing(null);
+  });
 
   const load = async () => {
     setLoading(true);
@@ -201,7 +206,7 @@ export default function AdminUsersPage() {
                           aria-label={u.is_active ? `Deactivate ${u.name}` : `Activate ${u.name}`}
                           className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-40"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <X className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -226,7 +231,7 @@ export default function AdminUsersPage() {
           style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
-          <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div ref={modalRef} className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Shield className="w-5 h-5 text-brand-600" />

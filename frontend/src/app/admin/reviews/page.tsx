@@ -7,6 +7,7 @@ import api, { reviewsApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { useFocusTrap } from "@/lib/useFocusTrap";
 
 interface AdminReview {
   id: string;
@@ -40,6 +41,11 @@ export default function AdminReviewsPage() {
   const [search, setSearch] = useState("");
   const [ratingFilter, setRatingFilter] = useState("");
   const [confirm, setConfirm] = useState<{ title: string; message: string; action: () => void } | null>(null);
+  const editorRef = useFocusTrap(!!editing || creating, () => {
+    setEditing(null);
+    setCreating(false);
+    setDraft({});
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -349,6 +355,7 @@ export default function AdminReviewsPage() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => openEdit(r)}
+                            aria-label={`Edit review by ${r.customer_name}`}
                             title="Edit / Reply"
                             className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
                           >
@@ -357,6 +364,7 @@ export default function AdminReviewsPage() {
                           <button
                             onClick={() => handleDelete(r.id, r.customer_name)}
                             disabled={busy}
+                            aria-label={`Delete review by ${r.customer_name}`}
                             title="Delete review"
                             className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
                           >
@@ -405,8 +413,14 @@ export default function AdminReviewsPage() {
 
       {/* Edit / Create slide-in panel */}
       {(editing || creating) && (
-        <div className="fixed inset-0 z-50 flex" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div className="ml-auto w-full max-w-lg h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
+        <div
+          className="fixed inset-0 z-50 flex"
+          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          role="dialog"
+          aria-modal="true"
+          aria-label={creating ? "Create review" : "Edit review"}
+        >
+          <div ref={editorRef} className="ml-auto w-full max-w-lg h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-lg font-semibold text-gray-900">{creating ? "New Review" : "Edit Review"}</h2>
               <button onClick={closeEdit} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>

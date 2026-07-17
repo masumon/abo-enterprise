@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun } from "lucide-react";
 import { getAdminPageTitle } from "@/lib/adminNav";
 import { useAlertStore } from "@/store/alerts";
@@ -18,6 +18,7 @@ interface Props {
 
 export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, onToggleTheme }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
   const { lang, toggle: toggleLang } = useLanguageStore();
   const pageTitle = getAdminPageTitle(pathname, lang);
   const { pendingOrders, pendingBookings, newLeads } = useAlertStore();
@@ -27,7 +28,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      window.location.reload();
+      router.refresh();
     } finally {
       setIsRefreshing(false);
     }
