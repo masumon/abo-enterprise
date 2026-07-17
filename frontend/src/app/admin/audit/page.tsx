@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
 import { adminApi } from "@/lib/api";
 import { Loader2, ScrollText, Search } from "lucide-react";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminToolbar from "@/components/admin/AdminToolbar";
 
 interface AuditLog {
   id: string;
@@ -74,45 +76,43 @@ export default function AdminAuditPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <ScrollText className="w-6 h-6 text-brand-600" />
-          <div>
-            <AdminTitle en="Audit Logs" bn="অডিট" />
-            <p className="text-gray-500 text-sm">{total} total entries</p>
+      <AdminPageHeader
+        title="Audit Logs"
+        titleBn="অডিট লগ"
+        description={`${total} total entries — review activity, entity changes, and admin actions`}
+        descriptionBn={`${total}টি এন্ট্রি — activity, entity change এবং admin action পর্যালোচনা করুন`}
+        actions={
+          <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-3 py-2 text-brand-700">
+            <ScrollText className="w-4 h-4" />
+            <span className="text-sm font-semibold">{total} entries</span>
           </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-            <input
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Search logs…"
-              aria-label="Search audit logs"
-              className="input pl-8 text-sm w-full sm:w-48"
-            />
-          </div>
-          <select
-            value={actionFilter}
-            onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
-            aria-label="Filter by action"
-            className="input text-sm w-auto"
-          >
-            <option value="">All Actions</option>
-            {allActions.map((a) => <option key={a} value={a}>{a}</option>)}
-          </select>
-          <select
-            value={entityFilter}
-            onChange={(e) => { setEntityFilter(e.target.value); setPage(1); }}
-            aria-label="Filter by entity"
-            className="input text-sm w-auto"
-          >
-            <option value="">All Entities</option>
-            {allEntities.map((e) => <option key={e} value={e}>{e}</option>)}
-          </select>
-        </div>
-      </div>
+        }
+      />
+
+      <AdminToolbar
+        searchValue={search}
+        onSearchChange={(value) => { setSearch(value); setPage(1); }}
+        searchPlaceholder="Search logs…"
+      >
+        <select
+          value={actionFilter}
+          onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
+          aria-label="Filter by action"
+          className="admin-input text-sm w-auto"
+        >
+          <option value="">All Actions</option>
+          {allActions.map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+        <select
+          value={entityFilter}
+          onChange={(e) => { setEntityFilter(e.target.value); setPage(1); }}
+          aria-label="Filter by entity"
+          className="admin-input text-sm w-auto"
+        >
+          <option value="">All Entities</option>
+          {allEntities.map((e) => <option key={e} value={e}>{e}</option>)}
+        </select>
+      </AdminToolbar>
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>

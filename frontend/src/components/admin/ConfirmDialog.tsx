@@ -84,13 +84,14 @@ export default function ConfirmDialog({
       style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div ref={dialogRef} className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 animate-scale-in">
+      <div ref={dialogRef} className="w-full max-w-md animate-scale-in rounded-3xl border border-gray-100 bg-white p-6 shadow-2xl">
+        <div className="pointer-events-none -mx-6 -mt-6 mb-4 h-px bg-gradient-to-r from-transparent via-brand-300/60 to-transparent" />
         <div className="flex items-start gap-4">
-          <div className={`p-3 rounded-xl flex-shrink-0 ${colors.icon}`}>
+          <div className={`p-3 rounded-2xl border flex-shrink-0 ${colors.icon}`}>
             {variant === "danger" ? <Trash2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 id="confirm-title" className="text-base font-semibold text-gray-900 mb-1">{title}</h3>
+            <h3 id="confirm-title" className="text-base font-semibold text-gray-900 mb-1 text-balance">{title}</h3>
             <p className="text-sm text-gray-500 leading-relaxed">{message}</p>
           </div>
           <button
@@ -101,7 +102,7 @@ export default function ConfirmDialog({
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="flex justify-end gap-3 mt-6">
+        <div className="flex justify-end gap-3 mt-6 pt-1 border-t border-gray-100">
           <button
             ref={cancelRef}
             onClick={onCancel}

@@ -9,6 +9,8 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminToolbar from "@/components/admin/AdminToolbar";
 
 const STATUSES_V1 = ["pending", "contacted", "in_progress", "completed", "cancelled"];
 const STATUSES_V2 = ["pending", "in_progress", "completed", "cancelled", "on_hold"];
@@ -185,65 +187,64 @@ export default function AdminBookingsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <AdminTitle en="Bookings" bn="বুকিং" />
-          <p className="text-gray-500 text-sm mt-1">{tab === "v1" ? total : totalV2} total bookings</p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {tab === "v1" && (
-            <>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                <input
-                  value={searchInput}
-                  onChange={e => handleSearchChange(e.target.value)}
-                  placeholder="Search name, phone, booking#…"
-                  className="input pl-9 text-sm w-full sm:w-56"
-                />
-              </div>
-              <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="input w-auto text-sm">
-                <option value="">All Services</option>
-                {SERVICE_TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
-              </select>
-              <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="input w-auto text-sm">
-                <option value="">All Status</option>
-                {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-              </select>
-              <button
-                onClick={handleCsvExport}
-                disabled={csvLoading}
-                className="btn btn-outline btn-sm gap-1.5"
-                title="Export all bookings to CSV"
-              >
-                {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                CSV
-              </button>
-              <button
-                onClick={handlePdfExport}
-                disabled={exportPdfLoading}
-                className="btn btn-outline btn-sm gap-1.5"
-                title="Export all bookings as PDF"
-              >
-                {exportPdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                PDF
-              </button>
-            </>
-          )}
-          {tab === "v2" && (
-            <>
-              <select value={statusFilterV2} onChange={(e) => { setStatusFilterV2(e.target.value); setPageV2(1); }} className="input w-auto text-sm">
-                <option value="">All Status</option>
-                {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-              </select>
-              <select value={paymentFilterV2} onChange={(e) => { setPaymentFilterV2(e.target.value); setPageV2(1); }} className="input w-auto text-sm">
-                <option value="">All Payment</option>
-                {PAYMENT_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-              </select>
-            </>
-          )}
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Bookings"
+        titleBn="বুকিং ব্যবস্থাপনা"
+        description={`${tab === "v1" ? total : totalV2} total bookings — service intake, status management, receipts, and fulfillment tracking`}
+        descriptionBn={`${tab === "v1" ? total : totalV2}টি বুকিং — service intake, status management, receipt এবং fulfillment tracking`}
+        actions={
+          <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-3 py-2 text-brand-700">
+            <Briefcase className="w-4 h-4" />
+            <span className="text-sm font-semibold">{tab === "v1" ? total : totalV2} bookings</span>
+          </div>
+        }
+      />
+
+      {tab === "v1" ? (
+        <AdminToolbar
+          searchValue={searchInput}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder="Search name, phone, booking#…"
+        >
+          <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="admin-input w-auto text-sm">
+            <option value="">All Services</option>
+            {SERVICE_TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
+          </select>
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="admin-input w-auto text-sm">
+            <option value="">All Status</option>
+            {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+          </select>
+          <button
+            onClick={handleCsvExport}
+            disabled={csvLoading}
+            className="admin-btn-secondary !py-2 gap-1.5"
+            title="Export all bookings to CSV"
+          >
+            {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            CSV
+          </button>
+          <button
+            onClick={handlePdfExport}
+            disabled={exportPdfLoading}
+            className="admin-btn-secondary !py-2 gap-1.5"
+            title="Export all bookings as PDF"
+          >
+            {exportPdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            PDF
+          </button>
+        </AdminToolbar>
+      ) : (
+        <AdminToolbar>
+          <select value={statusFilterV2} onChange={(e) => { setStatusFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
+            <option value="">All Status</option>
+            {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+          </select>
+          <select value={paymentFilterV2} onChange={(e) => { setPaymentFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
+            <option value="">All Payment</option>
+            {PAYMENT_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+          </select>
+        </AdminToolbar>
+      )}
 
       {/* Tab switcher */}
       <div className="flex gap-1 border-b border-gray-200">

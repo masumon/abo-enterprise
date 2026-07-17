@@ -20,21 +20,22 @@ export default function AdminToolbar({
   className,
 }: Props) {
   return (
-    <div className={cn("admin-toolbar", className)}>
+    <div className={cn("admin-toolbar relative overflow-hidden", className)}>
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-200/60 to-transparent" />
       {onSearchChange !== undefined && (
-        <div className="relative flex-1 min-w-[180px] max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+        <div className="relative flex-1 min-w-[200px] max-w-xl">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="search"
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}
-            className="admin-input pl-9 w-full"
+            className="admin-input w-full pl-9"
           />
         </div>
       )}
       {children && (
-        <div className="flex flex-wrap items-center gap-2">{children}</div>
+        <div className="flex flex-wrap items-center gap-2 lg:justify-end">{children}</div>
       )}
     </div>
   );

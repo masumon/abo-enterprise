@@ -9,6 +9,8 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminToolbar from "@/components/admin/AdminToolbar";
 
 const STATUSES_V1 = ["new", "contacted", "qualified", "proposal_sent", "negotiation", "won", "lost"];
 const STATUSES_V2 = ["new", "contacted", "qualified", "proposal_sent", "negotiation", "won", "lost", "archived"];
@@ -173,65 +175,64 @@ export default function AdminLeadsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <AdminTitle en="Leads" bn="লিড" />
-          <p className="text-gray-500 text-sm mt-1">{tab === "v1" ? total : totalV2} total leads</p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          {tab === "v1" && (
-            <>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                <input
-                  value={searchInput}
-                  onChange={e => handleSearchChange(e.target.value)}
-                  placeholder="Search name, phone, company…"
-                  className="input pl-9 text-sm w-full sm:w-56"
-                />
-              </div>
-              <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="input w-auto text-sm">
-                <option value="">All Types</option>
-                {TYPES_V1.map(t => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
-              </select>
-              <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="input w-auto text-sm">
-                <option value="">All Status</option>
-                {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-              </select>
-              <button
-                onClick={handleCsvExport}
-                disabled={csvLoading}
-                className="btn btn-outline btn-sm gap-1.5"
-                title="Export all leads to CSV"
-              >
-                {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                CSV
-              </button>
-              <button
-                onClick={handlePdfExport}
-                disabled={exportPdfLoading}
-                className="btn btn-outline btn-sm gap-1.5"
-                title="Export all leads as PDF"
-              >
-                {exportPdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                PDF
-              </button>
-            </>
-          )}
-          {tab === "v2" && (
-            <>
-              <select value={typeFilterV2} onChange={(e) => { setTypeFilterV2(e.target.value); setPageV2(1); }} className="input w-auto text-sm">
-                <option value="">All Types</option>
-                {TYPES_V2.map(t => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
-              </select>
-              <select value={statusFilterV2} onChange={(e) => { setStatusFilterV2(e.target.value); setPageV2(1); }} className="input w-auto text-sm">
-                <option value="">All Status</option>
-                {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-              </select>
-            </>
-          )}
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Leads"
+        titleBn="লিড ব্যবস্থাপনা"
+        description={`${tab === "v1" ? total : totalV2} total leads — qualification, follow-up, export, and lifecycle management`}
+        descriptionBn={`${tab === "v1" ? total : totalV2}টি লিড — qualification, follow-up, export এবং lifecycle management`}
+        actions={
+          <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-3 py-2 text-brand-700">
+            <Users className="w-4 h-4" />
+            <span className="text-sm font-semibold">{tab === "v1" ? total : totalV2} leads</span>
+          </div>
+        }
+      />
+
+      {tab === "v1" ? (
+        <AdminToolbar
+          searchValue={searchInput}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder="Search name, phone, company…"
+        >
+          <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="admin-input w-auto text-sm">
+            <option value="">All Types</option>
+            {TYPES_V1.map(t => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
+          </select>
+          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="admin-input w-auto text-sm">
+            <option value="">All Status</option>
+            {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+          </select>
+          <button
+            onClick={handleCsvExport}
+            disabled={csvLoading}
+            className="admin-btn-secondary !py-2 gap-1.5"
+            title="Export all leads to CSV"
+          >
+            {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            CSV
+          </button>
+          <button
+            onClick={handlePdfExport}
+            disabled={exportPdfLoading}
+            className="admin-btn-secondary !py-2 gap-1.5"
+            title="Export all leads as PDF"
+          >
+            {exportPdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            PDF
+          </button>
+        </AdminToolbar>
+      ) : (
+        <AdminToolbar>
+          <select value={typeFilterV2} onChange={(e) => { setTypeFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
+            <option value="">All Types</option>
+            {TYPES_V2.map(t => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
+          </select>
+          <select value={statusFilterV2} onChange={(e) => { setStatusFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
+            <option value="">All Status</option>
+            {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+          </select>
+        </AdminToolbar>
+      )}
 
       {/* Tab switcher */}
       <div className="flex gap-1 border-b border-gray-200">
