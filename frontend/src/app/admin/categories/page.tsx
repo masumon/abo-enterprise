@@ -36,6 +36,7 @@ function slugify(v: string): string {
 
 const APPLIES = ["product", "service"] as const;
 const PAGE_SIZE = 100;
+const VIEW_STATE_KEY = "abo_admin_categories_treegrid_state_v1";
 
 type Node = Category | Subcategory;
 type SortKey = "category" | "parent" | "products" | "services" | "children" | "status" | "sort_order";
@@ -95,6 +96,17 @@ function getChildren(node: Node): Node[] {
 
 function getNodeLabel(node: Node): string {
   return node.name_bn || node.name_en;
+}
+
+function HierarchyGuides({ depth }: { depth: number }) {
+  if (depth <= 0) return <span className="w-0" aria-hidden />;
+  return (
+    <span className="flex items-stretch gap-2 pr-1.5" aria-hidden>
+      {Array.from({ length: depth }).map((_, index) => (
+        <span key={index} className="w-px self-stretch rounded-full bg-gradient-to-b from-brand-100 via-brand-200/80 to-transparent" />
+      ))}
+    </span>
+  );
 }
 
 function countByAssignedNode<T extends { category_id?: string | null; subcategory_id?: string | null }>(items: T[]): Map<string, number> {
@@ -167,6 +179,47 @@ export default function AdminCategoriesPage() {
   const toast = useToastStore((s) => s.push);
   const rowRefs = useRef<Record<string, HTMLTableRowElement | null>>({});
   const editorRef = useFocusTrap(editor !== null, () => setEditor(null));
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(VIEW_STATE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as {
+        expanded?: string[];
+        searchValue?: string;
+        statusFilter?: StatusFilter;
+        scopeFilter?: ScopeFilter;
+        sortKey?: SortKey;
+        sortDirection?: SortDirection;
+      };
+      if (saved.expanded?.length) setExpanded(new Set(saved.expanded));
+      if (saved.searchValue) setSearchValue(saved.searchValue);
+      if (saved.statusFilter) setStatusFilter(saved.statusFilter);
+      if (saved.scopeFilter) setScopeFilter(saved.scopeFilter);
+      if (saved.sortKey) setSortKey(saved.sortKey);
+      if (saved.sortDirection) setSortDirection(saved.sortDirection);
+    } catch {
+      // Ignore invalid localStorage state.
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        VIEW_STATE_KEY,
+        JSON.stringify({
+          expanded: Array.from(expanded),
+          searchValue,
+          statusFilter,
+          scopeFilter,
+          sortKey,
+          sortDirection,
+        })
+      );
+    } catch {
+      // Ignore storage issues.
+    }
+  }, [expanded, scopeFilter, searchValue, sortDirection, sortKey, statusFilter]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -566,6 +619,8 @@ export default function AdminCategoriesPage() {
   };
 
   const canReorder = sortKey === "sort_order" && sortDirection === "asc";
+  const activeFilterCount = Number(normalizedQuery.length > 0) + Number(statusFilter !== "all") + Number(scopeFilter !== "all");
+  const rootCount = filteredTree.length;
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -604,6 +659,28 @@ export default function AdminCategoriesPage() {
           <option value="service">Services</option>
         </select>
       </AdminToolbar>
+
+      <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+        <span className="inline-flex items-center rounded-full bg-white border border-gray-200 px-3 py-1 font-medium text-gray-600">
+          {rows.length} visible rows
+        </span>
+        <span className="inline-flex items-center rounded-full bg-white border border-gray-200 px-3 py-1 font-medium text-gray-600">
+          {rootCount} root groups
+        </span>
+        <span className="inline-flex items-center rounded-full bg-white border border-gray-200 px-3 py-1 font-medium text-gray-600">
+          Sorted by {sortKey.replace("_", " ")} ({sortDirection})
+        </span>
+        {activeFilterCount > 0 && (
+          <span className="inline-flex items-center rounded-full bg-brand-50 border border-brand-100 px-3 py-1 font-medium text-brand-700">
+            {activeFilterCount} active filter{activeFilterCount === 1 ? "" : "s"}
+          </span>
+        )}
+        {!canReorder && (
+          <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-100 px-3 py-1 font-medium text-amber-700">
+            Move actions unlock in Sort Order ascending view
+          </span>
+        )}
+      </div>
 
       <div className="admin-card overflow-hidden">
         {loading ? (
@@ -672,10 +749,14 @@ export default function AdminCategoriesPage() {
                         aria-expanded={row.hasChildren ? row.isExpanded : undefined}
                         onKeyDown={(event) => handleRowKeyDown(event, row, index)}
                         onDoubleClick={() => openEdit(row.node)}
-                        className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-inset"
+                        className={cn(
+                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-inset",
+                          row.depth === 0 && "bg-brand-50/30"
+                        )}
                       >
                         <td className="px-5 py-3">
-                          <div className="flex items-start gap-3" style={{ paddingLeft: `${row.depth * 18}px` }}>
+                          <div className="flex items-start gap-3" style={{ paddingLeft: `${row.depth * 10}px` }}>
+                            <HierarchyGuides depth={row.depth} />
                             <button
                               type="button"
                               onClick={() => row.hasChildren && toggle(row.node.id)}
@@ -697,7 +778,14 @@ export default function AdminCategoriesPage() {
 
                             <div className="min-w-0 flex-1">
                               <button type="button" onClick={() => openEdit(row.node)} className="text-left min-w-0 max-w-full">
-                                <span className="block font-semibold text-gray-900 truncate">{getNodeLabel(row.node)}</span>
+                                <span className="block font-semibold text-gray-900 truncate">
+                                  {getNodeLabel(row.node)}
+                                  {row.depth === 0 && (
+                                    <span className="ml-2 inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700">
+                                      Root
+                                    </span>
+                                  )}
+                                </span>
                               </button>
                               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
                                 {row.scope.map((scope) => (
@@ -710,6 +798,7 @@ export default function AdminCategoriesPage() {
                                 <span className="md:hidden">S: {row.metrics.services}</span>
                                 <span className="md:hidden">C: {row.metrics.children}</span>
                                 <span className="xl:hidden">Sort: {row.node.sort_order ?? 0}</span>
+                                {row.hasChildren && <span className="text-brand-600">{row.isExpanded ? "Expanded" : "Collapsed"}</span>}
                               </div>
                             </div>
                           </div>
