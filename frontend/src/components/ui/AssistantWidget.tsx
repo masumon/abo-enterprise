@@ -57,6 +57,7 @@ const DEFAULT_FEATURES: AssistantFeatures = {
 };
 
 const SESSION_KEY = "abo_assistant_session";
+const SESSION_TOKEN_KEY = "abo_assistant_session_token";
 const DEFAULT_CONFIG: AssistantConfig = {
   enabled: true,
   whatsapp_enabled: false,
@@ -132,6 +133,7 @@ export default function AssistantWidget() {
   const [loading, setLoading] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -171,13 +173,14 @@ export default function AssistantWidget() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setSessionId(localStorage.getItem(SESSION_KEY));
+      setSessionToken(localStorage.getItem(SESSION_TOKEN_KEY));
     }
   }, []);
 
   useEffect(() => {
-    if (!sessionId || !enabled) return;
+    if (!sessionId || !sessionToken || !enabled) return;
     setHistoryLoading(true);
-    assistantApi.history(sessionId, 30)
+    assistantApi.history(sessionId, sessionToken, 30)
       .then((r) => {
         const history = r.data.data ?? [];
         if (history.length > 0) {
@@ -186,7 +189,7 @@ export default function AssistantWidget() {
       })
       .catch(() => {})
       .finally(() => setHistoryLoading(false));
-  }, [sessionId, enabled]);
+  }, [sessionId, sessionToken, enabled]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -221,6 +224,7 @@ export default function AssistantWidget() {
         const res = await assistantApi.chat({
           message: trimmed,
           session_id: sessionId ?? undefined,
+          session_token: sessionToken ?? undefined,
           language: lang,
           page_path: typeof window !== "undefined" ? window.location.pathname : undefined,
         });
@@ -228,6 +232,10 @@ export default function AssistantWidget() {
         if (data?.session_id) {
           setSessionId(data.session_id);
           localStorage.setItem(SESSION_KEY, data.session_id);
+        }
+        if (data?.session_token) {
+          setSessionToken(data.session_token);
+          localStorage.setItem(SESSION_TOKEN_KEY, data.session_token);
         }
         if (data?.suggestions?.length) {
           setSuggestions(data.suggestions);
@@ -246,7 +254,7 @@ export default function AssistantWidget() {
         setLoading(false);
       }
     },
-    [loading, sessionId, lang, t]
+    [loading, sessionId, sessionToken, lang, t]
   );
 
   const sendMessage = useCallback(() => sendText(input), [input, sendText]);

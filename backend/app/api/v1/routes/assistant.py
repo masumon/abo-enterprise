@@ -40,6 +40,10 @@ from app.assistant.feature_flags import (
     parse_bool,
     AssistantFeatureFlags,
 )
+from app.assistant.session_security import (
+    build_assistant_session_token,
+    verify_assistant_session_token,
+)
 
 
 async def _get_settings_map(db: AsyncSession, keys: tuple[str, ...]) -> dict[str, str]:
@@ -77,10 +81,14 @@ async def chat(
     db: AsyncSession = Depends(get_db),
 ):
     """Public endpoint — process a customer message through the automation assistant."""
+    resume_session_id = payload.session_id
+    if resume_session_id and not verify_assistant_session_token(resume_session_id, payload.session_token):
+        resume_session_id = None
+
     result = await _orchestrator.process_message(
         db,
         message=payload.message,
-        session_id=payload.session_id,
+        session_id=resume_session_id,
         customer_name=payload.customer_name,
         customer_phone=payload.customer_phone,
         customer_email=payload.customer_email,
@@ -96,6 +104,7 @@ async def chat(
         intent=result["intent"],
         language=result["language"],
         session_id=result.get("session_id", payload.session_id or ""),
+        session_token=result.get("session_token"),
         data=result.get("data"),
         suggestions=result.get("suggestions"),
     )
@@ -120,13 +129,17 @@ async def get_public_assistant_config(db: AsyncSession = Depends(get_db)):
     )
 
 
-@router.get("/conversations/{session_id}/history", response_model=ApiResponse)
+@router.get("/conversations/{session_id}/history", response_model=ApiResponse, dependencies=[Depends(rate_limit("assistant_history", 20, 300))])
 async def get_conversation_history(
     session_id: str,
     limit: int = Query(20, ge=1, le=50),
+    session_token: str = Query(..., min_length=16),
     db: AsyncSession = Depends(get_db),
 ):
     """Public — retrieve recent messages for a session."""
+    if not verify_assistant_session_token(session_id, session_token):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid conversation token")
+
     result = await db.execute(
         select(AssistantConversation).where(
             AssistantConversation.session_id == session_id,
