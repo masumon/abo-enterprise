@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { Play, ImageIcon, X, ExternalLink } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
@@ -22,7 +22,7 @@ export default function GalleryPage() {
   const { settings } = usePublicSettings(["gallery_office_image_url"]);
   const officeImage = getSettingValue(settings, "gallery_office_image_url");
   const [filter, setFilter] = useState("all");
-  const [lightbox, setLightbox] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
 
   const images = useMemo(() => {
     const list = [
@@ -39,6 +39,20 @@ export default function GalleryPage() {
     () => projects.filter((p) => p.videoUrl?.trim()).map((p) => ({ ...p, embed: toVideoEmbedUrl(p.videoUrl!) })),
     [projects]
   );
+
+  useEffect(() => {
+    if (!lightbox) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightbox(null);
+    };
+    document.addEventListener("keydown", handleEsc);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, [lightbox]);
 
   return (
     <main>
@@ -72,8 +86,9 @@ export default function GalleryPage() {
               <button
                 key={`${img.src}-${i}`}
                 type="button"
-                onClick={() => setLightbox(img.src)}
+                onClick={() => setLightbox({ src: img.src, alt: img.alt })}
                 className="enterprise-card-hover overflow-hidden aspect-square relative group"
+                aria-label={lang === "bn" ? `${img.alt} বড় করে দেখুন` : `Open ${img.alt} in full view`}
               >
                 <Image src={img.src} alt={img.alt} fill className="object-cover group-hover:scale-105 transition-transform duration-500" sizes="(max-width:768px) 50vw, 25vw" />
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
@@ -102,7 +117,7 @@ export default function GalleryPage() {
                   <div key={p.slug} className="enterprise-card overflow-hidden">
                     {p.embed && (p.embed.includes("youtube.com") || p.embed.includes("vimeo.com")) ? (
                       <div className="relative aspect-video">
-                        <iframe src={p.embed} title={lang === "bn" ? p.title.bn : p.title.en} className="absolute inset-0 w-full h-full" allowFullScreen />
+                        <iframe src={p.embed} title={lang === "bn" ? p.title.bn : p.title.en} className="absolute inset-0 w-full h-full" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen />
                       </div>
                     ) : p.embed ? (
                       <video src={p.embed} controls className="w-full aspect-video object-cover bg-black" />
@@ -125,12 +140,12 @@ export default function GalleryPage() {
       </section>
 
       {lightbox && (
-        <div className="fixed inset-0 z-[70] bg-black/90 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
-          <button type="button" className="absolute top-4 right-4 text-white" aria-label="Close" onClick={() => setLightbox(null)}>
+        <div className="fixed inset-0 z-[70] bg-black/90 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={lang === "bn" ? "ছবি প্রিভিউ" : "Image preview"} onClick={() => setLightbox(null)}>
+          <button type="button" className="absolute top-4 right-4 text-white" aria-label={lang === "bn" ? "বন্ধ করুন" : "Close preview"} onClick={() => setLightbox(null)}>
             <X className="w-8 h-8" />
           </button>
           <div className="relative w-full max-w-4xl aspect-video" onClick={(e) => e.stopPropagation()}>
-            <Image src={lightbox} alt="" fill className="object-contain" sizes="100vw" />
+            <Image src={lightbox.src} alt={lightbox.alt} fill className="object-contain" sizes="100vw" />
           </div>
         </div>
       )}

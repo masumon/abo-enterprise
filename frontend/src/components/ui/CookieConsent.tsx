@@ -5,22 +5,66 @@ import Link from "next/link";
 import { Cookie, X } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 
-const STORAGE_KEY = "abo-cookie-consent";
+const STORAGE_KEY = "abo-cookie-consent-v2";
+
+interface ConsentState {
+  status: "accepted" | "rejected" | "custom" | "dismissed";
+  analytics: boolean;
+  marketing: boolean;
+  updated_at: string;
+}
+
+function saveConsent(status: ConsentState["status"], analytics: boolean, marketing: boolean) {
+  const payload: ConsentState = {
+    status,
+    analytics,
+    marketing,
+    updated_at: new Date().toISOString(),
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+}
 
 export default function CookieConsent() {
   const { lang } = useLanguageStore();
   const [visible, setVisible] = useState(false);
+  const [showCustomize, setShowCustomize] = useState(false);
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
+  const [marketingEnabled, setMarketingEnabled] = useState(false);
 
   useEffect(() => {
-    const accepted = localStorage.getItem(STORAGE_KEY);
-    if (!accepted) {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      const timer = setTimeout(() => setVisible(true), 1200);
+      return () => clearTimeout(timer);
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as ConsentState;
+      if (parsed.status === "dismissed") return;
+      setVisible(false);
+    } catch {
       const timer = setTimeout(() => setVisible(true), 1200);
       return () => clearTimeout(timer);
     }
   }, []);
 
-  const accept = () => {
-    localStorage.setItem(STORAGE_KEY, "accepted");
+  const acceptAll = () => {
+    saveConsent("accepted", true, true);
+    setVisible(false);
+  };
+
+  const rejectOptional = () => {
+    saveConsent("rejected", false, false);
+    setVisible(false);
+  };
+
+  const saveCustom = () => {
+    saveConsent("custom", analyticsEnabled, marketingEnabled);
+    setVisible(false);
+  };
+
+  const dismiss = () => {
+    saveConsent("dismissed", analyticsEnabled, marketingEnabled);
     setVisible(false);
   };
 
@@ -29,6 +73,7 @@ export default function CookieConsent() {
   return (
     <div
       role="dialog"
+      aria-modal="true"
       aria-label={lang === "bn" ? "কুকি সম্মতি" : "Cookie consent"}
       className="fixed bottom-mobile-float lg:bottom-6 left-4 right-4 lg:left-auto lg:right-24 lg:max-w-md z-40 animate-slide-up"
     >
@@ -42,13 +87,36 @@ export default function CookieConsent() {
           </p>
           <p className="text-xs text-muted leading-relaxed mb-3">
             {lang === "bn"
-              ? "আমরা আপনার অভিজ্ঞতা উন্নত করতে কুকি ব্যবহার করি। চালিয়ে যাওয়ার মানে আপনি আমাদের নীতিতে সম্মত।"
-              : "We use cookies to improve your experience. By continuing, you agree to our privacy policy."}
+              ? "আমরা প্রয়োজনীয় কুকি সবসময় ব্যবহার করি। বিশ্লেষণ ও মার্কেটিং কুকি আপনি নিয়ন্ত্রণ করতে পারবেন।"
+              : "We always use essential cookies. You can choose analytics and marketing cookies."}
           </p>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" onClick={accept} className="btn btn-brand btn-sm">
-              {lang === "bn" ? "সম্মত" : "Accept"}
+          <div className="flex flex-wrap gap-2 mb-2">
+            <button type="button" onClick={acceptAll} className="btn btn-brand btn-sm">
+              {lang === "bn" ? "সব অনুমতি দিন" : "Accept all"}
             </button>
+            <button type="button" onClick={rejectOptional} className="btn btn-outline btn-sm">
+              {lang === "bn" ? "ঐচ্ছিক কুকি বন্ধ" : "Reject optional"}
+            </button>
+            <button type="button" onClick={() => setShowCustomize((v) => !v)} className="btn btn-ghost btn-sm text-xs">
+              {lang === "bn" ? "কাস্টমাইজ" : "Customize"}
+            </button>
+          </div>
+          {showCustomize && (
+            <div className="rounded-xl border border-gray-200 dark:border-white/10 p-3 space-y-2 mb-2 text-xs">
+              <label className="flex items-center justify-between gap-3">
+                <span>{lang === "bn" ? "Analytics কুকি" : "Analytics cookies"}</span>
+                <input type="checkbox" checked={analyticsEnabled} onChange={(e) => setAnalyticsEnabled(e.target.checked)} />
+              </label>
+              <label className="flex items-center justify-between gap-3">
+                <span>{lang === "bn" ? "Marketing কুকি" : "Marketing cookies"}</span>
+                <input type="checkbox" checked={marketingEnabled} onChange={(e) => setMarketingEnabled(e.target.checked)} />
+              </label>
+              <button type="button" onClick={saveCustom} className="btn btn-brand btn-sm w-full">
+                {lang === "bn" ? "পছন্দ সংরক্ষণ" : "Save preferences"}
+              </button>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
             <Link href="/legal/privacy" className="btn btn-ghost btn-sm text-xs">
               {lang === "bn" ? "আরও জানুন" : "Learn more"}
             </Link>
@@ -56,9 +124,9 @@ export default function CookieConsent() {
         </div>
         <button
           type="button"
-          onClick={accept}
+          onClick={dismiss}
           className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex-shrink-0"
-          aria-label="Dismiss"
+          aria-label={lang === "bn" ? "পরবর্তীতে" : "Dismiss for now"}
         >
           <X className="w-4 h-4" />
         </button>

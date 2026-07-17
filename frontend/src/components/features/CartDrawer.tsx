@@ -32,7 +32,11 @@ export default function CartDrawer() {
   const cartTotal = cartSubtotal - discount + delivery + tax;
 
   useEffect(() => {
-    if (!isOpen || items.length === 0) return;
+    if (!isOpen) return;
+    if (items.length === 0) {
+      setStockWarnings([]);
+      return;
+    }
     setValidating(true);
     productsApi.validateStock(items.map((i) => ({ product_id: i.product_id, quantity: i.quantity })))
       .then((r) => {
@@ -46,7 +50,7 @@ export default function CartDrawer() {
       })
       .catch(() => {})
       .finally(() => setValidating(false));
-  }, [isOpen, items.length, setStockWarnings, updateQuantity]);
+  }, [isOpen, items, setStockWarnings, updateQuantity]);
 
   const applyCoupon = async () => {
     if (!couponsEnabled || !coupon.trim()) return;
@@ -73,13 +77,19 @@ export default function CartDrawer() {
 
       <aside
         ref={trapRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cart-drawer-title"
         aria-label={lang === "bn" ? "শপিং কার্ট" : "Shopping cart"}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") closeCart();
+        }}
         className="fixed right-0 top-0 bottom-0 z-[60] w-full max-w-md flex flex-col animate-slide-right pb-safe bg-white/97 dark:bg-[#0f1a2e]/97 backdrop-blur-xl shadow-[-8px_0_40px_rgba(30,91,168,0.12)] dark:shadow-[-8px_0_40px_rgba(0,0,0,0.35)]"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0px)" }}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100/80 gradient-brand">
           <div>
-            <h2 className="text-white font-bold text-lg leading-tight">
+            <h2 id="cart-drawer-title" className="text-white font-bold text-lg leading-tight">
               {lang === "bn" ? "আমার কার্ট" : "My Cart"}
             </h2>
             <p className="text-white/60 text-xs mt-0.5">
@@ -114,7 +124,7 @@ export default function CartDrawer() {
               <div key={item.product_id} className={cn("flex gap-4 p-3.5 rounded-2xl border transition-colors bg-white/80 dark:bg-white/5", stockWarnings.includes(item.product_id) ? "border-amber-200 dark:border-amber-800" : "border-gray-100 dark:border-white/10 hover:border-brand-100 dark:hover:border-brand-800")}>
                 <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-brand-50 to-brand-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
                   {item.image_url ? (
-                    <Image src={item.image_url} alt={item.name_en} width={128} height={128} quality={85} className="object-cover w-full h-full" />
+                    <Image src={item.image_url} alt={lang === "bn" ? item.name_bn : item.name_en} width={128} height={128} quality={85} className="object-cover w-full h-full" />
                   ) : (
                     <ShoppingBag className="w-7 h-7 text-brand-300" aria-hidden />
                   )}
