@@ -98,6 +98,18 @@ export default function AdminServicesPage() {
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const [taxonomy, setTaxonomy] = useState<Category[]>([]);
 
+  // Flattened tree ("— " per depth) so a service can sit at any depth.
+  const treeOptions: { id: string; label: string }[] = [];
+  {
+    const flatten = (nodes: { id: string; name_en: string; name_bn?: string | null; subcategories?: unknown[] }[], depth: number) => {
+      for (const n of nodes) {
+        treeOptions.push({ id: n.id, label: `${"— ".repeat(depth)}${n.name_bn || n.name_en}` });
+        flatten((n.subcategories ?? []) as typeof nodes, depth + 1);
+      }
+    };
+    flatten(taxonomy as unknown as { id: string; name_en: string; subcategories?: unknown[] }[], 0);
+  }
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -475,36 +487,22 @@ export default function AdminServicesPage() {
                 </div>
 
                 {taxonomy.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="form-label">Taxonomy Category <span className="text-gray-400 font-normal">(optional)</span></label>
-                      <select
-                        value={editing.category_id ?? ""}
-                        onChange={(e) =>
-                          setEditing((prev) => (prev ? { ...prev, category_id: e.target.value || null, subcategory_id: null } : prev))
-                        }
-                        className="input w-full text-sm"
-                      >
-                        <option value="">— None —</option>
-                        {taxonomy.map((c) => (
-                          <option key={c.id} value={c.id}>{c.name_en}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="form-label">Subcategory <span className="text-gray-400 font-normal">(optional)</span></label>
-                      <select
-                        value={editing.subcategory_id ?? ""}
-                        onChange={(e) => setEditing((prev) => (prev ? { ...prev, subcategory_id: e.target.value || null } : prev))}
-                        className="input w-full text-sm"
-                        disabled={!editing.category_id}
-                      >
-                        <option value="">— None —</option>
-                        {(taxonomy.find((c) => c.id === editing.category_id)?.subcategories ?? []).map((s) => (
-                          <option key={s.id} value={s.id}>{s.name_en}</option>
-                        ))}
-                      </select>
-                    </div>
+                  <div>
+                    <label className="form-label">
+                      ক্যাটালগ গাছের অবস্থান <span className="text-gray-400 font-normal">(যেকোনো গভীরতা)</span>
+                    </label>
+                    <select
+                      value={editing.category_id ?? ""}
+                      onChange={(e) =>
+                        setEditing((prev) => (prev ? { ...prev, category_id: e.target.value || null, subcategory_id: null } : prev))
+                      }
+                      className="input w-full text-sm"
+                    >
+                      <option value="">— None —</option>
+                      {treeOptions.map((o) => (
+                        <option key={o.id} value={o.id}>{o.label}</option>
+                      ))}
+                    </select>
                   </div>
                 )}
 

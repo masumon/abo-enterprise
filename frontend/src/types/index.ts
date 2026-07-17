@@ -375,6 +375,9 @@ export interface Subcategory {
   image_url?: string | null;
   sort_order: number;
   is_active: boolean;
+  /** Unlimited-depth tree: children of this node (recursive). */
+  subcategories?: Subcategory[];
+  parent_id?: string | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -392,6 +395,9 @@ export interface Category {
   sort_order: number;
   is_active: boolean;
   subcategories: Subcategory[];
+  parent_id?: string | null;
+  /** Breadcrumb chain (root-first) — present on the single-node endpoint. */
+  ancestors?: Subcategory[];
   created_at?: string;
   updated_at?: string;
 }

@@ -5,6 +5,7 @@ from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.http_cache import etag_json_response
+from app.core.taxonomy import descendant_ids_for_slug
 from app.core.json_util import to_json_safe
 from app.core.security import require_admin
 from app.models.models import (
@@ -13,8 +14,6 @@ from app.models.models import (
     ServiceBookingForm,
     ActivityLog,
     AdminUser,
-    Category,
-    Subcategory,
 )
 from app.schemas.schemas import (
     ServiceOut,
@@ -59,31 +58,15 @@ async def list_services(
         conditions.append(Service.category_id == category_id)
     if subcategory_id is not None:
         conditions.append(Service.subcategory_id == subcategory_id)
-    # Slug-based taxonomy filters — power the nested public routes
-    # /services/{categorySlug}[/{subCategorySlug}] without an extra roundtrip.
-    if category_slug:
+    # Slug-based taxonomy filters — power the nested public routes. A node
+    # matches the item's own node OR any ancestor: filtering by a parent shows
+    # everything beneath it (unlimited depth). The deepest slug wins.
+    node_slug = subcategory_slug or category_slug
+    if node_slug:
+        ids = await descendant_ids_for_slug(db, node_slug)
         conditions.append(
-            Service.category_id.in_(
-                select(Category.id).where(
-                    Category.slug == category_slug,
-                    Category.is_deleted == False,  # noqa: E712
-                    Category.is_active == True,  # noqa: E712
-                )
-            )
+            or_(Service.category_id.in_(ids), Service.subcategory_id.in_(ids))
         )
-    if subcategory_slug:
-        sub_query = (
-            select(Subcategory.id)
-            .join(Category, Subcategory.category_id == Category.id)
-            .where(
-                Subcategory.slug == subcategory_slug,
-                Subcategory.is_deleted == False,  # noqa: E712
-                Subcategory.is_active == True,  # noqa: E712
-            )
-        )
-        if category_slug:
-            sub_query = sub_query.where(Category.slug == category_slug)
-        conditions.append(Service.subcategory_id.in_(sub_query))
     if featured is not None:
         conditions.append(Service.is_featured == featured)
     if search:

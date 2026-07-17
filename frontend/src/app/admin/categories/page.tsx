@@ -1,13 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, FolderTree, Plus, Save, Trash2, ChevronRight, CornerDownRight } from "lucide-react";
+import {
+  Loader2, Plus, Trash2, ChevronRight, ChevronDown, Pencil,
+  ArrowUp, ArrowDown, ImageOff, X, Save, FolderTree,
+} from "lucide-react";
+import Image from "next/image";
 import { categoriesAdminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import type { Category, Subcategory } from "@/types";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import ImageUpload from "@/components/admin/ImageUpload";
+import { cn } from "@/lib/utils";
 
 function slugify(v: string): string {
   return v.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -15,30 +21,39 @@ function slugify(v: string): string {
 
 const APPLIES = ["product", "service"] as const;
 
-// Icon names the public services page can render (see ServicesPageClient
-// CATEGORY_ICONS); anything else falls back to a generic gear icon.
-const ICON_OPTIONS = [
-  "", "FileText", "Printer", "Globe", "Smartphone", "Headphones",
-  "Megaphone", "Briefcase", "Bot", "Cog", "Wrench", "Monitor", "Code2",
-] as const;
+type Node = Subcategory; // unified tree node (Category is structurally compatible)
+
+interface EditorState {
+  /** null = creating; otherwise the node being edited */
+  node: Node | null;
+  /** parent for a new node (null = new root/vertical) */
+  parentId: string | null;
+  parentName?: string;
+}
 
 /**
- * Unified taxonomy manager — Category → Subcategory. Shared by products and
- * services. Backed by the /categories admin API; the existing string category
- * columns remain untouched, so nothing here can break current listings.
+ * File-manager style taxonomy tree editor — unlimited depth. Every node can
+ * hold an image (shown as a thumbnail; ⚠ badge when missing), children are
+ * created in place, and ↑/↓ reorders siblings. New verticals (roots) are
+ * created with the same form, choosing product/service.
  */
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [roots, setRoots] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
-  const [creating, setCreating] = useState(false);
-  const [draft, setDraft] = useState({ name_en: "", name_bn: "", applies_to: ["product"] as string[] });
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [editor, setEditor] = useState<EditorState | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({
+    name_en: "", name_bn: "", slug: "", icon: "", image_url: "",
+    description_bn: "", applies_to: ["product"] as string[], is_active: true,
+  });
   const toast = useToastStore((s) => s.push);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const res = await categoriesAdminApi.list();
-      setCategories(res.data.data ?? []);
+      setRoots(res.data.data ?? []);
     } catch (err) {
       toast("error", apiErrorMessage(err, "Failed to load categories"));
     } finally {
@@ -46,376 +61,66 @@ export default function AdminCategoriesPage() {
     }
   }, [toast]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
-  const createCategory = async () => {
-    const name = draft.name_en.trim();
-    if (name.length < 2) {
-      toast("error", "Category name is required");
-      return;
-    }
-    if (draft.applies_to.length === 0) {
-      toast("error", "Select at least one type (product/service)");
-      return;
-    }
-    setCreating(true);
-    try {
-      await categoriesAdminApi.create({
-        slug: slugify(name),
-        name_en: name,
-        name_bn: draft.name_bn.trim() || undefined,
-        applies_to: draft.applies_to,
-      });
-      toast("success", "Category created");
-      setDraft({ name_en: "", name_bn: "", applies_to: ["product"] });
-      await load();
-    } catch (err) {
-      toast("error", apiErrorMessage(err, "Create failed"));
-    } finally {
-      setCreating(false);
-    }
+  const toggle = (id: string) =>
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  const openCreate = (parent: Node | null) => {
+    setForm({
+      name_en: "", name_bn: "", slug: "", icon: "", image_url: "",
+      description_bn: "", applies_to: parent ? [] : ["product"], is_active: true,
+    });
+    setEditor({ node: null, parentId: parent?.id ?? null, parentName: parent?.name_bn || parent?.name_en });
   };
 
-  return (
-    <div className="space-y-4 sm:space-y-6">
-      <AdminPageHeader
-        title="Categories"
-        titleBn="ক্যাটাগরি ম্যানেজার"
-        description={`${categories.length} categor${categories.length === 1 ? "y" : "ies"} — shared taxonomy for products & services`}
-      />
-
-      {/* Create */}
-      <div className="admin-card p-4 sm:p-5">
-        <p className="text-sm font-semibold text-heading mb-3">Add Category</p>
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-          <input
-            value={draft.name_en}
-            onChange={(e) => setDraft((d) => ({ ...d, name_en: e.target.value }))}
-            className="admin-input text-sm"
-            placeholder="Name (English)"
-          />
-          <input
-            value={draft.name_bn}
-            onChange={(e) => setDraft((d) => ({ ...d, name_bn: e.target.value }))}
-            className="admin-input text-sm"
-            placeholder="নাম (বাংলা)"
-          />
-          <div className="flex items-center gap-3 px-1">
-            {APPLIES.map((a) => (
-              <label key={a} className="inline-flex items-center gap-1.5 cursor-pointer text-xs text-muted capitalize">
-                <input
-                  type="checkbox"
-                  checked={draft.applies_to.includes(a)}
-                  onChange={(e) =>
-                    setDraft((d) => ({
-                      ...d,
-                      applies_to: e.target.checked
-                        ? [...d.applies_to, a]
-                        : d.applies_to.filter((x) => x !== a),
-                    }))
-                  }
-                  className="w-4 h-4 accent-brand-600"
-                />
-                {a}
-              </label>
-            ))}
-          </div>
-          <button onClick={createCategory} disabled={creating} className="btn btn-brand btn-sm gap-1.5">
-            {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-            Add
-          </button>
-        </div>
-        {draft.name_en.trim() && (
-          <p className="text-[11px] text-muted mt-2">Slug: <span className="font-mono">{slugify(draft.name_en) || "—"}</span></p>
-        )}
-      </div>
-
-      {/* List */}
-      {loading ? (
-        <div className="admin-card p-12 flex justify-center">
-          <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
-        </div>
-      ) : categories.length === 0 ? (
-        <div className="admin-card p-4">
-          <AdminEmptyState
-            icon={FolderTree}
-            title="No categories yet"
-            description="Add a category above. Existing product/service categories are backfilled automatically on deploy."
-          />
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {categories.map((cat) => (
-            <CategoryCard key={cat.id} category={cat} onChanged={load} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CategoryCard({ category, onChanged }: { category: Category; onChanged: () => void }) {
-  const toast = useToastStore((s) => s.push);
-  const [form, setForm] = useState({
-    name_en: category.name_en,
-    name_bn: category.name_bn ?? "",
-    slug: category.slug,
-    sort_order: category.sort_order,
-    is_active: category.is_active,
-    applies_to: category.applies_to ?? [],
-    icon: category.icon ?? "",
-    description_en: category.description_en ?? "",
-    description_bn: category.description_bn ?? "",
-  });
-  const [saving, setSaving] = useState(false);
-  const [newSub, setNewSub] = useState("");
-  const [newSubBn, setNewSubBn] = useState("");
-  const [open, setOpen] = useState(false);
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  const openEdit = (node: Node) => {
+    setForm({
+      name_en: node.name_en, name_bn: node.name_bn ?? "", slug: node.slug,
+      icon: node.icon ?? "", image_url: node.image_url ?? "",
+      description_bn: node.description_bn ?? "",
+      applies_to: ((node as unknown as Category).applies_to ?? []) as string[],
+      is_active: node.is_active !== false,
+    });
+    setEditor({ node, parentId: node.parent_id ?? null });
+  };
 
   const save = async () => {
-    setSaving(true);
-    try {
-      await categoriesAdminApi.update(category.id, {
-        name_en: form.name_en.trim(),
-        name_bn: form.name_bn.trim() || undefined,
-        slug: slugify(form.slug || form.name_en),
-        sort_order: Number(form.sort_order) || 0,
-        is_active: form.is_active,
-        applies_to: form.applies_to,
-        icon: form.icon || null,
-        description_en: form.description_en.trim() || null,
-        description_bn: form.description_bn.trim() || null,
-      });
-      toast("success", "Category saved");
-      onChanged();
-    } catch (err) {
-      toast("error", apiErrorMessage(err, "Save failed"));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const remove = async () => {
-    if (!confirm(`Delete category "${category.name_en}" and its subcategories?`)) return;
-    try {
-      await categoriesAdminApi.delete(category.id);
-      toast("success", "Category deleted");
-      onChanged();
-    } catch (err) {
-      toast("error", apiErrorMessage(err, "Delete failed"));
-    }
-  };
-
-  const addSub = async () => {
-    const name = newSub.trim();
-    if (name.length < 2) return;
-    try {
-      await categoriesAdminApi.createSub({
-        category_id: category.id,
-        slug: slugify(name),
-        name_en: name,
-        name_bn: newSubBn.trim() || undefined,
-      });
-      setNewSub("");
-      setNewSubBn("");
-      toast("success", "Subcategory added");
-      onChanged();
-    } catch (err) {
-      toast("error", apiErrorMessage(err, "Add failed"));
-    }
-  };
-
-  return (
-    <div className="admin-card p-4">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
-        <div className="lg:col-span-3">
-          <input
-            value={form.name_en}
-            onChange={(e) => setForm((f) => ({ ...f, name_en: e.target.value }))}
-            className="admin-input text-sm w-full font-medium"
-            placeholder="Name (EN)"
-          />
-        </div>
-        <div className="lg:col-span-2">
-          <input
-            value={form.name_bn}
-            onChange={(e) => setForm((f) => ({ ...f, name_bn: e.target.value }))}
-            className="admin-input text-sm w-full"
-            placeholder="নাম (BN)"
-          />
-        </div>
-        <div className="lg:col-span-2">
-          <input
-            value={form.slug}
-            onChange={(e) => setForm((f) => ({ ...f, slug: e.target.value }))}
-            className="admin-input text-sm w-full font-mono"
-            placeholder="slug"
-          />
-        </div>
-        <div className="lg:col-span-2 flex items-center gap-2">
-          {APPLIES.map((a) => (
-            <label key={a} className="inline-flex items-center gap-1 cursor-pointer text-[11px] text-muted capitalize">
-              <input
-                type="checkbox"
-                checked={form.applies_to.includes(a)}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    applies_to: e.target.checked
-                      ? [...f.applies_to, a]
-                      : f.applies_to.filter((x) => x !== a),
-                  }))
-                }
-                className="w-3.5 h-3.5 accent-brand-600"
-              />
-              {a}
-            </label>
-          ))}
-        </div>
-        <div className="lg:col-span-1">
-          <input
-            type="number"
-            value={form.sort_order}
-            onChange={(e) => setForm((f) => ({ ...f, sort_order: Number(e.target.value) }))}
-            className="admin-input text-sm w-full"
-            title="Sort order"
-          />
-        </div>
-        <div className="lg:col-span-2 flex items-center justify-end gap-2">
-          <label className="inline-flex items-center gap-1 cursor-pointer text-[11px] text-muted">
-            <input
-              type="checkbox"
-              checked={form.is_active}
-              onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
-              className="w-4 h-4 accent-brand-600"
-            />
-            Active
-          </label>
-          <button onClick={save} disabled={saving} className="btn btn-brand btn-sm gap-1" aria-label="Save category">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          </button>
-          <button onClick={remove} className="text-gray-400 hover:text-red-500 p-1.5" aria-label="Delete category">
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* Icon & descriptions — shown on the public category pages */}
-      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/10">
-        <button
-          onClick={() => setDetailsOpen((o) => !o)}
-          className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600"
-        >
-          <ChevronRight className={`w-3.5 h-3.5 transition-transform ${detailsOpen ? "rotate-90" : ""}`} />
-          Icon &amp; Description
-        </button>
-        {detailsOpen && (
-          <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="text-[11px] text-muted block mb-1">Icon (public card)</label>
-              <select
-                value={form.icon}
-                onChange={(e) => setForm((f) => ({ ...f, icon: e.target.value }))}
-                className="admin-input text-sm w-full"
-              >
-                {ICON_OPTIONS.map((i) => (
-                  <option key={i} value={i}>{i || "Default (gear)"}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-[11px] text-muted block mb-1">Description (EN)</label>
-              <textarea
-                rows={2}
-                value={form.description_en}
-                onChange={(e) => setForm((f) => ({ ...f, description_en: e.target.value }))}
-                className="admin-input text-sm w-full resize-none"
-                placeholder="Shown as the category page subtitle"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] text-muted block mb-1">বিবরণ (বাংলা)</label>
-              <textarea
-                rows={2}
-                value={form.description_bn}
-                onChange={(e) => setForm((f) => ({ ...f, description_bn: e.target.value }))}
-                className="admin-input text-sm w-full resize-none"
-                placeholder="ক্যাটাগরি পেজের সাবটাইটেল"
-                dir="auto"
-              />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Subcategories */}
-      <div className="mt-3 pt-3 border-t border-gray-100 dark:border-white/10">
-        <button
-          onClick={() => setOpen((o) => !o)}
-          className="inline-flex items-center gap-1 text-xs font-semibold text-brand-600"
-        >
-          <ChevronRight className={`w-3.5 h-3.5 transition-transform ${open ? "rotate-90" : ""}`} />
-          Subcategories ({category.subcategories?.length ?? 0})
-        </button>
-
-        {open && (
-          <div className="mt-2 ml-4 space-y-1.5">
-            {(category.subcategories ?? []).map((sub) => (
-              <SubcategoryRow key={sub.id} sub={sub} onChanged={onChanged} />
-            ))}
-            <div className="flex items-center gap-2 pt-1 flex-wrap">
-              <CornerDownRight className="w-3.5 h-3.5 text-gray-400" />
-              <input
-                value={newSub}
-                onChange={(e) => setNewSub(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addSub()}
-                className="admin-input text-sm flex-1 max-w-xs"
-                placeholder="New subcategory (EN)"
-              />
-              <input
-                value={newSubBn}
-                onChange={(e) => setNewSubBn(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && addSub()}
-                className="admin-input text-sm flex-1 max-w-xs"
-                placeholder="নাম (বাংলা, ঐচ্ছিক)"
-                dir="auto"
-              />
-              <button onClick={addSub} className="admin-btn-secondary gap-1 text-xs">
-                <Plus className="w-3.5 h-3.5" />
-                Add
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function SubcategoryRow({ sub, onChanged }: { sub: Subcategory; onChanged: () => void }) {
-  const toast = useToastStore((s) => s.push);
-  const [name, setName] = useState(sub.name_en);
-  const [nameBn, setNameBn] = useState(sub.name_bn ?? "");
-  // Slug is edited explicitly — renaming a subcategory must NOT silently
-  // change its public /services/{cat}/{sub} URL.
-  const [slug, setSlug] = useState(sub.slug);
-  const [active, setActive] = useState(sub.is_active);
-  const [busy, setBusy] = useState(false);
-
-  const save = async () => {
+    const name = form.name_en.trim();
+    if (name.length < 2) { toast("error", "Name (English) is required"); return; }
+    const slug = form.slug.trim() || slugify(name);
     setBusy(true);
     try {
-      await categoriesAdminApi.updateSub(sub.id, {
-        name_en: name.trim(),
-        name_bn: nameBn.trim() || null,
-        slug: slugify(slug || name),
-        is_active: active,
-      });
-      toast("success", "Subcategory saved");
-      onChanged();
+      const payload: Partial<Category> = {
+        name_en: name,
+        name_bn: form.name_bn.trim() || undefined,
+        slug,
+        icon: form.icon || undefined,
+        image_url: form.image_url || undefined,
+        description_bn: form.description_bn.trim() || undefined,
+        is_active: form.is_active,
+      };
+      if (editor?.node) {
+        if (form.applies_to.length > 0) payload.applies_to = form.applies_to;
+        await categoriesAdminApi.update(editor.node.id, payload);
+        toast("success", "সংরক্ষিত হয়েছে");
+      } else {
+        payload.parent_id = editor?.parentId ?? null;
+        if (!editor?.parentId) {
+          if (form.applies_to.length === 0) { toast("error", "product/service অন্তত একটি বাছুন"); setBusy(false); return; }
+          payload.applies_to = form.applies_to;
+        }
+        await categoriesAdminApi.create(payload);
+        toast("success", "তৈরি হয়েছে");
+        if (editor?.parentId) setExpanded((p) => new Set(p).add(editor.parentId!));
+      }
+      setEditor(null);
+      await load();
     } catch (err) {
       toast("error", apiErrorMessage(err, "Save failed"));
     } finally {
@@ -423,50 +128,221 @@ function SubcategoryRow({ sub, onChanged }: { sub: Subcategory; onChanged: () =>
     }
   };
 
-  const remove = async () => {
-    if (!confirm(`Delete subcategory "${sub.name_en}"?`)) return;
+  const remove = async (node: Node) => {
+    if (!confirm(`"${node.name_bn || node.name_en}" এবং এর নিচের সব শাখা মুছে যাবে। নিশ্চিত?`)) return;
     try {
-      await categoriesAdminApi.deleteSub(sub.id);
-      toast("success", "Subcategory deleted");
-      onChanged();
+      await categoriesAdminApi.delete(node.id);
+      toast("success", "মুছে ফেলা হয়েছে");
+      await load();
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Delete failed"));
+      toast("error", apiErrorMessage(err, "Delete failed — এই শাখায় পণ্য/সেবা থাকলে আগে সরান"));
     }
   };
 
+  const reorder = async (siblings: Node[], index: number, dir: -1 | 1) => {
+    const target = siblings[index + dir];
+    if (!target) return;
+    const a = siblings[index];
+    try {
+      await Promise.all([
+        categoriesAdminApi.update(a.id, { sort_order: index + dir }),
+        categoriesAdminApi.update(target.id, { sort_order: index }),
+      ]);
+      await load();
+    } catch (err) {
+      toast("error", apiErrorMessage(err, "Reorder failed"));
+    }
+  };
+
+  const renderNode = (node: Node, depth: number, siblings: Node[], index: number) => {
+    const children = (node.subcategories ?? []) as Node[];
+    const isOpen = expanded.has(node.id);
+    return (
+      <div key={node.id}>
+        <div
+          className={cn(
+            "flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 group",
+            node.is_active === false && "opacity-50"
+          )}
+          style={{ paddingLeft: `${depth * 20 + 8}px` }}
+        >
+          <button
+            type="button"
+            onClick={() => toggle(node.id)}
+            className={cn("w-5 h-5 flex items-center justify-center text-muted", children.length === 0 && "invisible")}
+            aria-label={isOpen ? "Collapse" : "Expand"}
+          >
+            {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          </button>
+
+          {/* Thumbnail / missing-image badge */}
+          {node.image_url ? (
+            <span className="relative w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+              <Image src={node.image_url} alt="" fill className="object-cover" sizes="32px" />
+            </span>
+          ) : (
+            <span
+              className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-500 flex items-center justify-center flex-shrink-0"
+              title="ছবি নেই — Edit-এ গিয়ে ছবি দিন"
+            >
+              <ImageOff className="w-4 h-4" />
+            </span>
+          )}
+
+          <button type="button" onClick={() => openEdit(node)} className="min-w-0 text-left flex-1">
+            <span className="text-sm font-medium text-heading truncate block">
+              {node.name_bn || node.name_en}
+              {node.is_active === false && <span className="ml-2 text-[10px] text-amber-600">(off)</span>}
+            </span>
+            <span className="text-[11px] text-muted truncate block">
+              /{node.slug}
+              {children.length > 0 && ` · ${children.length}`}
+            </span>
+          </button>
+
+          <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+            <button type="button" onClick={() => reorder(siblings, index, -1)} disabled={index === 0}
+              className="p-1.5 text-muted hover:text-heading disabled:opacity-30" aria-label="Move up">
+              <ArrowUp className="w-3.5 h-3.5" />
+            </button>
+            <button type="button" onClick={() => reorder(siblings, index, 1)} disabled={index === siblings.length - 1}
+              className="p-1.5 text-muted hover:text-heading disabled:opacity-30" aria-label="Move down">
+              <ArrowDown className="w-3.5 h-3.5" />
+            </button>
+            <button type="button" onClick={() => openCreate(node)}
+              className="p-1.5 text-brand-600 hover:text-brand-700" aria-label="Add child" title="নতুন শাখা">
+              <Plus className="w-4 h-4" />
+            </button>
+            <button type="button" onClick={() => openEdit(node)}
+              className="p-1.5 text-muted hover:text-heading" aria-label="Edit">
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+            <button type="button" onClick={() => remove(node)}
+              className="p-1.5 text-gray-400 hover:text-red-500" aria-label="Delete">
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+        {isOpen && children.map((c, i) => renderNode(c, depth + 1, children, i))}
+      </div>
+    );
+  };
+
   return (
-    <div className="flex items-center gap-2 flex-wrap">
-      <CornerDownRight className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="admin-input text-sm flex-1 max-w-[11rem]"
-        placeholder="Name (EN)"
+    <div className="space-y-4 sm:space-y-6">
+      <AdminPageHeader
+        title="Catalog Tree"
+        titleBn="ক্যাটালগ গাছ"
+        description="Unlimited nested taxonomy — verticals, categories & sub-branches shared by products and services"
       />
-      <input
-        value={nameBn}
-        onChange={(e) => setNameBn(e.target.value)}
-        className="admin-input text-sm flex-1 max-w-[11rem]"
-        placeholder="নাম (বাংলা)"
-        dir="auto"
-      />
-      <input
-        value={slug}
-        onChange={(e) => setSlug(e.target.value)}
-        className="admin-input text-sm flex-1 max-w-[10rem] font-mono"
-        placeholder="slug"
-        title="Public URL segment — changing this changes the page address"
-      />
-      <label className="inline-flex items-center gap-1 cursor-pointer text-[11px] text-muted">
-        <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="w-3.5 h-3.5 accent-brand-600" />
-        Active
-      </label>
-      <button onClick={save} disabled={busy} className="text-brand-600 hover:text-brand-700 p-1" aria-label="Save subcategory">
-        {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-      </button>
-      <button onClick={remove} className="text-gray-400 hover:text-red-500 p-1" aria-label="Delete subcategory">
-        <Trash2 className="w-3.5 h-3.5" />
-      </button>
+
+      <div className="admin-card p-3 sm:p-4">
+        <div className="flex items-center justify-between mb-3 px-2">
+          <p className="text-sm font-semibold text-heading">
+            {roots.length} vertical{roots.length === 1 ? "" : "s"}
+          </p>
+          <button type="button" onClick={() => openCreate(null)} className="admin-btn-primary !py-1.5 text-xs">
+            <Plus className="w-3.5 h-3.5" /> নতুন Vertical
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>
+        ) : roots.length === 0 ? (
+          <AdminEmptyState
+            icon={FolderTree}
+            title="এখনো কোনো শাখা নেই"
+            description={'"নতুন Vertical" চাপুন — যেমন Products, Services বা রিপেয়ার'}
+          />
+        ) : (
+          <div>{(roots as unknown as Node[]).map((r, i) => renderNode(r, 0, roots as unknown as Node[], i))}</div>
+        )}
+      </div>
+
+      {/* Editor sheet */}
+      {editor && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4" role="dialog" aria-modal="true">
+          <div className="bg-white dark:bg-[var(--surface-card)] w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl p-5 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="font-bold text-heading">
+                {editor.node
+                  ? `সম্পাদনা: ${editor.node.name_bn || editor.node.name_en}`
+                  : editor.parentId
+                    ? `নতুন শাখা — ${editor.parentName ?? ""}-এর ভেতরে`
+                    : "নতুন Vertical"}
+              </h2>
+              <button type="button" onClick={() => setEditor(null)} aria-label="Close" className="p-1.5 text-muted hover:text-heading">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="cat-name-en" className="form-label">Name (English) *</label>
+                  <input id="cat-name-en" value={form.name_en}
+                    onChange={(e) => setForm((f) => ({ ...f, name_en: e.target.value, slug: f.slug || slugify(e.target.value) }))}
+                    className="admin-input text-sm" placeholder="Fast Chargers" />
+                </div>
+                <div>
+                  <label htmlFor="cat-name-bn" className="form-label">নাম (বাংলা)</label>
+                  <input id="cat-name-bn" value={form.name_bn}
+                    onChange={(e) => setForm((f) => ({ ...f, name_bn: e.target.value }))}
+                    className="admin-input text-sm" placeholder="ফাস্ট চার্জার" />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="cat-slug" className="form-label">Slug (URL)</label>
+                <input id="cat-slug" value={form.slug}
+                  onChange={(e) => setForm((f) => ({ ...f, slug: slugify(e.target.value) }))}
+                  className="admin-input text-sm font-mono" placeholder="auto" />
+              </div>
+              <div>
+                <label htmlFor="cat-desc-bn" className="form-label">বর্ণনা (ঐচ্ছিক)</label>
+                <textarea id="cat-desc-bn" value={form.description_bn} rows={2}
+                  onChange={(e) => setForm((f) => ({ ...f, description_bn: e.target.value }))}
+                  className="admin-input text-sm resize-none" />
+              </div>
+              <div>
+                <span className="form-label block">ছবি (কার্ড/ব্যানারে দেখাবে)</span>
+                <ImageUpload value={form.image_url} onChange={(url) => setForm((f) => ({ ...f, image_url: url }))} />
+              </div>
+              {!editor.parentId && !editor.node?.parent_id && (
+                <fieldset>
+                  <legend className="form-label">কোন ধরনের Vertical?</legend>
+                  <div className="flex gap-4 mt-1">
+                    {APPLIES.map((a) => (
+                      <label key={a} className="inline-flex items-center gap-1.5 cursor-pointer text-sm capitalize">
+                        <input type="checkbox" checked={form.applies_to.includes(a)}
+                          onChange={(e) => setForm((f) => ({
+                            ...f,
+                            applies_to: e.target.checked ? [...f.applies_to, a] : f.applies_to.filter((x) => x !== a),
+                          }))}
+                          className="w-4 h-4 text-brand-600 rounded" />
+                        {a === "product" ? "Product (কেনাকাটা)" : "Service (বুকিং)"}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+              )}
+              <label className="inline-flex items-center gap-2 cursor-pointer text-sm">
+                <input type="checkbox" checked={form.is_active}
+                  onChange={(e) => setForm((f) => ({ ...f, is_active: e.target.checked }))}
+                  className="w-4 h-4 text-brand-600 rounded" />
+                সক্রিয় (সাইটে দেখাবে)
+              </label>
+            </div>
+
+            <div className="flex gap-3 mt-5">
+              <button type="button" onClick={save} disabled={busy} className="admin-btn-primary flex-1">
+                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {editor.node ? "সংরক্ষণ" : "তৈরি করুন"}
+              </button>
+              <button type="button" onClick={() => setEditor(null)} className="btn btn-outline btn-md">বাতিল</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

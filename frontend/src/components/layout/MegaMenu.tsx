@@ -6,6 +6,8 @@ import { ChevronDown, ShoppingBag, Building2, Heart, GitCompare, FileText, Wrenc
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { cn } from "@/lib/utils";
+import { useTaxonomy } from "@/hooks/useTaxonomy";
+import type { Category } from "@/types";
 
 interface MegaMenuProps {
   onNavigate?: () => void;
@@ -30,22 +32,41 @@ export default function MegaMenu({ onNavigate }: MegaMenuProps) {
     onNavigate?.();
   };
 
-  const productCategories = [
-    { href: "/products", label: lang === "bn" ? "সব পণ্য" : "All Products" },
-    { href: "/products?category=accessories", label: lang === "bn" ? "মোবাইল এক্সেসরিজ" : "Mobile Accessories" },
-    { href: "/products?category=gadgets", label: lang === "bn" ? "প্রিমিয়াম গ্যাজেট" : "Premium Gadgets" },
-    { href: "/products?category=electronics", label: lang === "bn" ? "ইলেকট্রনিক্স" : "Electronics" },
-    { href: "/products?category=computer", label: lang === "bn" ? "কম্পিউটার এক্সেসরিজ" : "Computer Accessories" },
-  ];
+  // Live taxonomy drives both dropdowns, so a vertical/category the admin
+  // adds shows up here automatically. Hardcoded lists remain only as the
+  // fallback while loading or when the taxonomy is empty/unreachable.
+  const productRoots = useTaxonomy("product");
+  const serviceRoots = useTaxonomy("service");
+  const nodeName = (c: Category) => (lang === "bn" && c.name_bn ? c.name_bn : c.name_en);
 
-  const serviceLinks = [
-    { href: "/services", label: lang === "bn" ? "সব সেবা" : "All Services", icon: Building2 },
-    { href: "/services#digital-services", label: lang === "bn" ? "ডিজিটাল সেবা" : "Digital Services", icon: FileText },
-    { href: "/services#software-lab", label: lang === "bn" ? "সফটওয়্যার ল্যাব" : "Software Lab", icon: Wrench },
-    { href: "/services#business-software", label: lang === "bn" ? "বিজনেস সফটওয়্যার" : "Business Software", icon: Briefcase },
-    { href: "/services#ai-solutions", label: lang === "bn" ? "AI সমাধান" : "AI Solutions", icon: Bot },
-    { href: "/services#it-support", label: lang === "bn" ? "আইটি সাপোর্ট" : "IT Support", icon: Headphones },
-  ];
+  const productCategories =
+    productRoots.length > 0
+      ? [
+          { href: "/products", label: lang === "bn" ? "সব পণ্য" : "All Products" },
+          ...productRoots.map((c) => ({ href: `/products?category=${c.slug}`, label: nodeName(c) })),
+        ]
+      : [
+          { href: "/products", label: lang === "bn" ? "সব পণ্য" : "All Products" },
+          { href: "/products?category=accessories", label: lang === "bn" ? "মোবাইল এক্সেসরিজ" : "Mobile Accessories" },
+          { href: "/products?category=gadgets", label: lang === "bn" ? "প্রিমিয়াম গ্যাজেট" : "Premium Gadgets" },
+          { href: "/products?category=electronics", label: lang === "bn" ? "ইলেকট্রনিক্স" : "Electronics" },
+          { href: "/products?category=computer", label: lang === "bn" ? "কম্পিউটার এক্সেসরিজ" : "Computer Accessories" },
+        ];
+
+  const serviceLinks =
+    serviceRoots.length > 0
+      ? [
+          { href: "/services", label: lang === "bn" ? "সব সেবা" : "All Services", icon: Building2 },
+          ...serviceRoots.map((c) => ({ href: `/services/${c.slug}`, label: nodeName(c), icon: Wrench })),
+        ]
+      : [
+          { href: "/services", label: lang === "bn" ? "সব সেবা" : "All Services", icon: Building2 },
+          { href: "/services#digital-services", label: lang === "bn" ? "ডিজিটাল সেবা" : "Digital Services", icon: FileText },
+          { href: "/services#software-lab", label: lang === "bn" ? "সফটওয়্যার ল্যাব" : "Software Lab", icon: Wrench },
+          { href: "/services#business-software", label: lang === "bn" ? "বিজনেস সফটওয়্যার" : "Business Software", icon: Briefcase },
+          { href: "/services#ai-solutions", label: lang === "bn" ? "AI সমাধান" : "AI Solutions", icon: Bot },
+          { href: "/services#it-support", label: lang === "bn" ? "আইটি সাপোর্ট" : "IT Support", icon: Headphones },
+        ];
 
   const menus = [
     {

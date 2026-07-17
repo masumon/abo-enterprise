@@ -129,8 +129,16 @@ export default function AdminProductsPage() {
   });
 
   const currentImage = watch("image_url");
-  const selectedTaxCat = watch("category_id");
-  const taxSubcategories = taxonomy.find((c) => c.id === selectedTaxCat)?.subcategories ?? [];
+  // Flattened tree for the single node picker — "— " per depth level, so the
+  // admin can place a product at ANY depth of the unlimited taxonomy.
+  const treeOptions: { id: string; label: string }[] = [];
+  const flatten = (nodes: { id: string; name_en: string; name_bn?: string | null; subcategories?: unknown[] }[], depth: number) => {
+    for (const n of nodes) {
+      treeOptions.push({ id: n.id, label: `${"— ".repeat(depth)}${n.name_bn || n.name_en}` });
+      flatten((n.subcategories ?? []) as typeof nodes, depth + 1);
+    }
+  };
+  flatten(taxonomy as unknown as { id: string; name_en: string; subcategories?: unknown[] }[], 0);
 
   const load = async (pageNum = page, search?: string) => {
     setLoading(true);
@@ -476,34 +484,21 @@ export default function AdminProductsPage() {
                   {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
                 </div>
                 {taxonomy.length > 0 && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Taxonomy Category <span className="text-gray-400 font-normal">(optional)</span>
-                      </label>
-                      <select
-                        {...register("category_id")}
-                        className="input"
-                        onChange={(e) => { setValue("category_id", e.target.value); setValue("subcategory_id", ""); }}
-                      >
-                        <option value="">— None —</option>
-                        {taxonomy.map((c) => (
-                          <option key={c.id} value={c.id}>{c.name_en}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Subcategory <span className="text-gray-400 font-normal">(optional)</span>
-                      </label>
-                      <select {...register("subcategory_id")} className="input" disabled={!selectedTaxCat}>
-                        <option value="">— None —</option>
-                        {taxSubcategories.map((s) => (
-                          <option key={s.id} value={s.id}>{s.name_en}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      ক্যাটালগ গাছের অবস্থান <span className="text-gray-400 font-normal">(যেকোনো গভীরতা)</span>
+                    </label>
+                    <select
+                      {...register("category_id")}
+                      className="input"
+                      onChange={(e) => { setValue("category_id", e.target.value); setValue("subcategory_id", ""); }}
+                    >
+                      <option value="">— None —</option>
+                      {treeOptions.map((o) => (
+                        <option key={o.id} value={o.id}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
                 )}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Name (English)</label>

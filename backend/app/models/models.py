@@ -740,6 +740,12 @@ class Category(Base):
     # Which item kinds this category applies to, e.g. ["product"], ["service"]
     # or both. JSON keeps it flexible without extra join tables.
     applies_to: Mapped[list] = mapped_column(JSON, default=list)
+    # Unlimited-depth tree: NULL = root (a "vertical"); otherwise the parent
+    # node. Legacy subcategories were unified into this table (same UUIDs) by
+    # alembic 0008.
+    parent_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("categories.id", ondelete="CASCADE"), index=True
+    )
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

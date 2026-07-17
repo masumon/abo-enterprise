@@ -46,13 +46,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const apiBase = getApiBaseUrl();
 
   try {
-    const [servicesRes, blogRes, productsRes] = await Promise.all([
+    const [servicesRes, blogRes, productsRes, categoriesRes] = await Promise.all([
       fetch(`${apiBase}/api/v1/services?per_page=50`, { next: { revalidate: 3600 } }),
       fetch(`${apiBase}/api/v1/blog?per_page=100`, { next: { revalidate: 3600 } }),
       fetch(`${apiBase}/api/v1/products?per_page=100`, { next: { revalidate: 3600 } }),
+      fetch(`${apiBase}/api/v1/categories?applies_to=service`, { next: { revalidate: 3600 } }),
     ]);
 
     const dynamicRoutes: MetadataRoute.Sitemap = [];
+
+    if (categoriesRes.ok) {
+      // Every service-taxonomy node gets its full-path URL (unlimited depth).
+      interface Node { slug: string; subcategories?: Node[] }
+      const { data } = await categoriesRes.json();
+      const walk = (node: Node, prefix: string) => {
+        const path = `${prefix}/${node.slug}`;
+        if (!STATIC_SERVICE_SLUGS.has(node.slug)) {
+          dynamicRoutes.push({
+            url: `${BASE}/services${path}`,
+            lastModified: now,
+            changeFrequency: "weekly",
+            priority: 0.7,
+          });
+        }
+        for (const child of node.subcategories ?? []) walk(child, path);
+      };
+      for (const root of (data ?? []) as Node[]) walk(root, "");
+    }
 
     if (servicesRes.ok) {
       const { data } = await servicesRes.json();

@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, Loader2, LayoutGrid, List } from "lucide-react";
-import type { Category, Product } from "@/types";
+import type { Category, Product, Subcategory } from "@/types";
 import ProductCard from "@/components/features/ProductCard";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import LoadingProgress from "@/components/ui/LoadingProgress";
@@ -83,9 +83,40 @@ export default function ProductsClient({
   const selectedTaxonomyCategory = taxonomyMode
     ? initialCategories.find((c) => c.slug === category)
     : undefined;
-  const subcategoryChips = (selectedTaxonomyCategory?.subcategories ?? []).filter(
-    (s) => s.is_active !== false
-  );
+
+  // Cascading chip rows — one row per depth level along the selected path
+  // (unlimited-depth taxonomy). `subcategory` holds the deepest selected slug.
+  const findPath = (node: Subcategory, slug: string): Subcategory[] | null => {
+    for (const child of node.subcategories ?? []) {
+      if (child.is_active === false) continue;
+      if (child.slug === slug) return [child];
+      const deeper = findPath(child, slug);
+      if (deeper) return [child, ...deeper];
+    }
+    return null;
+  };
+  const rootNode = selectedTaxonomyCategory as unknown as Subcategory | undefined;
+  const selectedPath = rootNode && subcategory ? findPath(rootNode, subcategory) ?? [] : [];
+  const chipRows: { key: string; items: Subcategory[]; active: string; allValue: string }[] = [];
+  {
+    let parent = rootNode;
+    let idx = 0;
+    while (parent) {
+      const items = (parent.subcategories ?? []).filter((s) => s.is_active !== false);
+      if (items.length === 0) break;
+      const active = selectedPath[idx]?.slug ?? "";
+      chipRows.push({
+        key: parent.slug,
+        items,
+        active,
+        // "All" at this row keeps the selection one level up.
+        allValue: idx === 0 ? "" : selectedPath[idx - 1].slug,
+      });
+      if (!active) break;
+      parent = selectedPath[idx];
+      idx++;
+    }
+  }
 
   useEffect(() => {
     if (initialProducts.length > 0) {
@@ -278,34 +309,42 @@ export default function ProductsClient({
         </div>
       </div>
 
-      {/* Subcategory chips — shown when a taxonomy category with subs is selected */}
-      {subcategoryChips.length > 0 && (
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 -mt-4 mb-8">
+      {/* Cascading taxonomy chips — one row per depth level along the
+          selected path, so any nesting depth stays browsable in place */}
+      {chipRows.map((row, i) => (
+        <div
+          key={row.key}
+          className={cn(
+            "flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1",
+            i === 0 ? "-mt-4" : "-mt-4 sm:-mt-2",
+            i === chipRows.length - 1 ? "mb-8" : "mb-6"
+          )}
+        >
           <button
             type="button"
-            onClick={() => handleSubcategoryChange("")}
+            onClick={() => handleSubcategoryChange(row.allValue)}
             className={cn(
               "px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0",
-              !subcategory ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-700 hover:bg-brand-100"
+              !row.active ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-700 hover:bg-brand-100"
             )}
           >
             {lang === "bn" ? "সব" : "All"}
           </button>
-          {subcategoryChips.map((s) => (
+          {row.items.map((s) => (
             <button
               key={s.id}
               type="button"
               onClick={() => handleSubcategoryChange(s.slug)}
               className={cn(
                 "px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0",
-                subcategory === s.slug ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-700 hover:bg-brand-100"
+                row.active === s.slug ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-700 hover:bg-brand-100"
               )}
             >
               {lang === "bn" && s.name_bn ? s.name_bn : s.name_en}
             </button>
           ))}
         </div>
-      )}
+      ))}
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3" aria-busy="true">
