@@ -81,6 +81,236 @@ def generate_invoice_number():
     return f"INV-{year}-{secrets.token_hex(3).upper()}"
 
 
+def _fpdf_font_paths() -> tuple[str, str] | None:
+    """Resolve the bundled FreeSans TTFs used for the PDF (Bengali-capable)."""
+    fonts_dir = Path(__file__).resolve().parents[2] / "assets" / "fonts"
+    regular = fonts_dir / "FreeSans.ttf"
+    bold = fonts_dir / "FreeSansBold.ttf"
+    if regular.is_file() and bold.is_file():
+        return str(regular), str(bold)
+    return None
+
+
+def _hx(color: str) -> tuple[int, int, int]:
+    color = color.lstrip("#")
+    return int(color[0:2], 16), int(color[2:4], 16), int(color[4:6], 16)
+
+
+def _taka(amount: float) -> str:
+    return f"৳{amount:,.2f}"
+
+
+def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path) -> bytes:
+    """Render the branded invoice with fpdf2 + HarfBuzz text shaping.
+
+    reportlab cannot shape complex scripts, so Bengali (matras/conjuncts) broke
+    on download. fpdf2's ``set_text_shaping`` runs uharfbuzz over the bundled
+    FreeSans font, so Bengali — company address, product names, notes — renders
+    correctly, alongside Latin and the ৳ sign.
+    """
+    from fpdf import FPDF
+
+    BRAND, BRAND_DARK = "#1e5ba8", "#153e75"
+    MUTED, INK, BORDER, ROW_ALT = "#64748b", "#1e293b", "#e2e8f0", "#f8faff"
+    WHITE = "#ffffff"
+
+    W, H, M = 595.28, 841.89, 40.0
+    CW = W - 2 * M
+
+    pdf = FPDF(unit="pt", format=(W, H))
+    pdf.set_auto_page_break(False)
+    pdf.set_margins(M, M, M)
+    pdf.add_page()
+
+    fonts = _fpdf_font_paths()
+    if fonts:
+        pdf.add_font("inv", "", fonts[0])
+        pdf.add_font("inv", "B", fonts[1])
+        # FreeSansBold ships without Bengali glyphs, so bold Bengali (customer
+        # names, headings) rendered blank. Fall back to the Bengali-capable
+        # regular FreeSans for any glyph the bold face is missing; exact_match
+        # off lets a bold run borrow the regular face.
+        pdf.add_font("invbn", "", fonts[0])
+        pdf.set_fallback_fonts(["invbn"], exact_match=False)
+        base = "inv"
+        pdf.set_text_shaping(True)
+    else:  # pragma: no cover — bundled fonts always present in the repo
+        base = "helvetica"
+
+    def fill(c): pdf.set_fill_color(*_hx(c))
+    def draw(c): pdf.set_draw_color(*_hx(c))
+    def ink(c): pdf.set_text_color(*_hx(c))
+    def font(style="", size=10): pdf.set_font(base, style, size)
+
+    def line(x, y, w, h, s, style="", size=10, color=INK, align="L"):
+        ink(color); font(style, size)
+        pdf.set_xy(x, y)
+        pdf.cell(w, h, s, align=align)
+
+    def fit(s, width, style="", size=10):
+        """Truncate a string with an ellipsis so it fits `width` points."""
+        font(style, size)
+        if pdf.get_string_width(s) <= width:
+            return s
+        while s and pdf.get_string_width(s + "…") > width:
+            s = s[:-1]
+        return (s + "…") if s else s
+
+    # ── Header band ──
+    band_h = 84.0
+    fill(BRAND)
+    pdf.rect(M, M, CW, band_h, style="F", round_corners=True, corner_radius=10)
+
+    tx = M + 18
+    if logo_path:
+        try:
+            pdf.image(str(logo_path), x=M + 16, y=M + (band_h - 46) / 2, w=46, h=46)
+            tx = M + 16 + 46 + 12
+        except Exception:  # noqa: BLE001
+            tx = M + 18
+    line(tx, M + 24, 260, 20, company.get("name", "ABO Enterprise"), "B", 16, WHITE)
+    line(tx, M + 45, 300, 12, "ABO ENTERPRISE : Simple Solution", "", 8, "#bfdbfe")
+
+    line(M, M + 16, CW - 18, 30, "INVOICE", "B", 26, WHITE, align="R")
+    line(M, M + 49, CW - 18, 12, invoice.invoice_number, "", 9, "#dbeafe", align="R")
+
+    status = (invoice.payment_status or "pending").upper()
+    status_bg = "#059669" if status in ("PAID", "COMPLETED") else "#b45309"
+    font("B", 7.5)
+    chip_w = pdf.get_string_width(status) + 18
+    chip_h = 16.0
+    chip_x = M + CW - 18 - chip_w
+    chip_y = M + 62
+    fill(status_bg)
+    pdf.rect(chip_x, chip_y, chip_w, chip_h, style="F", round_corners=True, corner_radius=6)
+    line(chip_x, chip_y + 4, chip_w, 9, status, "B", 7.5, WHITE, align="C")
+
+    y = M + band_h + 22
+
+    # ── BILL TO card (left) ──
+    bill_w = CW * 0.52
+    pad = 14.0
+    extras = [t for t in (invoice.customer_phone, invoice.customer_email) if t]
+    card_h = 12 + 10 + 6 + 16 + (14 * len(extras)) + 12
+    fill(ROW_ALT); draw(BORDER); pdf.set_line_width(0.75)
+    pdf.rect(M, y, bill_w, card_h, style="DF", round_corners=True, corner_radius=8)
+    line(M + pad, y + 12, bill_w - 2 * pad, 10, "BILL TO", "B", 7.5, MUTED)
+    cy = y + 12 + 10 + 6
+    line(M + pad, cy, bill_w - 2 * pad, 16, fit(invoice.customer_name or "—", bill_w - 2 * pad, "B", 11.5), "B", 11.5, INK)
+    cy += 16
+    for extra in extras:
+        line(M + pad, cy, bill_w - 2 * pad, 14, extra, "", 10, INK)
+        cy += 14
+
+    # ── Meta rows (right) ──
+    mx = M + CW * 0.56
+    mw = CW * 0.44
+    issued = invoice.issued_date
+    issued_str = issued.strftime("%d %b %Y") if hasattr(issued, "strftime") else str(issued or "—")
+    meta = [
+        ("INVOICE NO", invoice.invoice_number),
+        ("ISSUED", issued_str),
+        ("PAYMENT", (invoice.payment_method or "—").replace("_", " ").title()),
+    ]
+    if ref_label and ref_value:
+        meta.append((ref_label.replace("#", "").strip().upper(), str(ref_value)))
+    my = y
+    row_h = 30.0
+    for i, (k, v) in enumerate(meta):
+        line(mx, my + 8, mw * 0.42, 12, k, "B", 7.5, MUTED)
+        line(mx + mw * 0.42, my + 6, mw * 0.58, 14, fit(v, mw * 0.58, "", 10), "", 10, INK, align="R")
+        if i < len(meta) - 1:
+            draw(BORDER); pdf.set_line_width(0.5)
+            pdf.line(mx, my + row_h, mx + mw, my + row_h)
+        my += row_h
+
+    y = max(y + card_h, my) + 24
+
+    # ── Line items table ──
+    c_desc, c_qty, c_unit, c_amt = CW * 0.50, CW * 0.10, CW * 0.20, CW * 0.20
+    x_desc, x_qty, x_unit, x_amt = M, M + c_desc, M + c_desc + c_qty, M + c_desc + c_qty + c_unit
+    head_h = 26.0
+    fill(BRAND_DARK)
+    pdf.rect(M, y, CW, head_h, style="F")
+    line(x_desc + 12, y + 8, c_desc - 12, 10, "DESCRIPTION", "B", 8.5, WHITE)
+    line(x_qty, y + 8, c_qty - 12, 10, "QTY", "B", 8.5, WHITE, align="R")
+    line(x_unit, y + 8, c_unit - 12, 10, "UNIT PRICE", "B", 8.5, WHITE, align="R")
+    line(x_amt, y + 8, c_amt - 12, 10, "AMOUNT", "B", 8.5, WHITE, align="R")
+    y += head_h
+
+    ry_h = 30.0
+    for idx, item in enumerate(invoice.items or []):
+        price = float(item.get("price", 0) or 0)
+        qty = int(item.get("quantity", 1) or 1)
+        sub = float(item.get("subtotal", price * qty) or 0)
+        name = str(item.get("name", ""))
+        fill(WHITE if idx % 2 == 0 else ROW_ALT)
+        pdf.rect(M, y, CW, ry_h, style="F")
+        line(x_desc + 12, y + 9, c_desc - 16, 12, fit(name, c_desc - 24, "", 9.5), "", 9.5, INK)
+        line(x_qty, y + 9, c_qty - 12, 12, str(qty), "", 9.5, INK, align="R")
+        line(x_unit, y + 9, c_unit - 12, 12, _taka(price), "", 9.5, INK, align="R")
+        line(x_amt, y + 9, c_amt - 12, 12, _taka(sub), "", 9.5, INK, align="R")
+        draw(BORDER); pdf.set_line_width(0.5)
+        pdf.line(M, y + ry_h, M + CW, y + ry_h)
+        y += ry_h
+
+    y += 14
+
+    # ── Totals block (right ~42%) ──
+    subtotal = float(invoice.subtotal or 0)
+    tax = float(invoice.tax or 0)
+    total = float(invoice.total or 0)
+    discount = float(getattr(invoice, "discount_amount", 0) or 0)
+    delivery = float(getattr(invoice, "delivery_charge", 0) or 0)
+    # Legacy invoices (pre delivery_charge column) — recover the delivery gap so
+    # the line still shows the right figure.
+    if delivery == 0 and (total - subtotal - tax + discount) > 0.005:
+        delivery = round(total - subtotal - tax + discount, 2)
+
+    rows: list[tuple[str, str]] = [("Subtotal", _taka(subtotal))]
+    if discount > 0:
+        rows.append(("Discount", f"-{_taka(discount)}"))
+    # Delivery is ALWAYS shown — free orders read ৳0.00 rather than hiding it.
+    rows.append(("Delivery" if delivery > 0 else "Delivery (Free)", _taka(delivery)))
+    if tax > 0:
+        rows.append(("Tax", _taka(tax)))
+
+    tot_w = CW * 0.42
+    tot_x = M + CW - tot_w
+    ly = y
+    for label_txt, val in rows:
+        line(tot_x, ly + 6, tot_w * 0.5, 12, label_txt, "", 10, MUTED, align="R")
+        line(tot_x + tot_w * 0.5, ly + 6, tot_w * 0.5 - 12, 12, val, "", 10, INK, align="R")
+        draw(BORDER); pdf.set_line_width(0.5)
+        pdf.line(tot_x, ly + 26, tot_x + tot_w, ly + 26)
+        ly += 26
+    grand_h = 34.0
+    fill(BRAND_DARK)
+    pdf.rect(tot_x, ly, tot_w, grand_h, style="F", round_corners=True, corner_radius=8)
+    line(tot_x, ly + 11, tot_w * 0.5, 14, "TOTAL", "B", 11.5, WHITE, align="R")
+    line(tot_x + tot_w * 0.5, ly + 10, tot_w * 0.5 - 14, 16, _taka(total), "", 13, WHITE, align="R")
+    y = ly + grand_h
+
+    if invoice.notes and "legacy_booking_id:" not in (invoice.notes or ""):
+        y += 14
+        ink(MUTED); font("", 8)
+        pdf.set_xy(M, y)
+        pdf.multi_cell(CW, 11, f"Notes: {invoice.notes}", align="L")
+        y = pdf.get_y()
+
+    # ── Footer ──
+    fy = max(y + 40, H - 96)
+    draw(BORDER); pdf.set_line_width(0.6)
+    pdf.line(M, fy, M + CW, fy)
+    line(M, fy + 14, CW, 14, "Thank you for choosing ABO Enterprise!", "B", 11, BRAND_DARK, align="C")
+    ink(MUTED); font("", 8)
+    pdf.set_xy(M, fy + 32)
+    pdf.multi_cell(CW, 12, f"{company.get('address', '')}\n{company.get('phone', '')} · {company.get('email', '')}", align="C")
+
+    out = pdf.output()
+    return bytes(out)
+
+
 class InvoiceService:
     """Service for generating and managing invoices"""
 
@@ -174,6 +404,8 @@ class InvoiceService:
             items=items,
             subtotal=float(order.subtotal),
             tax=0,
+            discount_amount=float(order.discount_amount or 0),
+            delivery_charge=float(order.delivery_charge or 0),
             total=float(order.total),
             payment_method=payment_method or order.payment_method,
             payment_status="paid" if order.payment_status == "completed" else "pending",
@@ -314,26 +546,8 @@ class InvoiceService:
         return info
 
     async def generate_pdf(self, invoice: Invoice) -> bytes:
-        """Generate premium branded PDF invoice with logo."""
+        """Generate the premium branded PDF invoice (fpdf2 + Bengali shaping)."""
         company = await self._company_info()
-        try:
-            from reportlab.lib.pagesizes import A4
-            from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-            from reportlab.lib.units import inch
-            from reportlab.platypus import (
-                SimpleDocTemplate,
-                Table,
-                TableStyle,
-                Paragraph,
-                Spacer,
-                Image as RLImage,
-            )
-            from reportlab.lib.enums import TA_LEFT, TA_RIGHT, TA_CENTER
-            from reportlab.lib import colors
-        except ImportError:
-            raise ImportError("reportlab library required for PDF generation. Install: pip install reportlab")
-
-        _register_pdf_fonts()
 
         ref_label = None
         ref_value = None
@@ -350,306 +564,9 @@ class InvoiceService:
             ref_value = bk_result.scalar_one_or_none()
             ref_label = "Booking #"
 
-        pdf_buffer = BytesIO()
-        doc = SimpleDocTemplate(
-            pdf_buffer,
-            pagesize=A4,
-            leftMargin=0.55 * inch,
-            rightMargin=0.55 * inch,
-            topMargin=0.45 * inch,
-            bottomMargin=0.5 * inch,
+        return _build_invoice_pdf(
+            invoice, company, ref_label, ref_value, _find_logo_path()
         )
-        page_w = A4[0] - doc.leftMargin - doc.rightMargin
-
-        styles = getSampleStyleSheet()
-        brand = colors.HexColor(_BRAND)
-        brand_dark = colors.HexColor(_BRAND_DARK)
-        muted = colors.HexColor(_MUTED)
-        ink = colors.HexColor("#1e293b")
-        border = colors.HexColor(_BORDER)
-        row_alt = colors.HexColor(_ROW_ALT)
-
-        # ── Typography scale ──
-        co_name = ParagraphStyle(
-            "CoName", parent=styles["Normal"], fontSize=16, leading=19,
-            textColor=colors.white, fontName=_FONT_BOLD,
-        )
-        co_tag = ParagraphStyle(
-            "CoTag", parent=styles["Normal"], fontSize=8, leading=11,
-            textColor=colors.HexColor("#bfdbfe"),
-        )
-        inv_title = ParagraphStyle(
-            "InvTitle", parent=styles["Normal"], fontSize=26, leading=30,
-            textColor=colors.white, fontName=_FONT_BOLD, alignment=TA_RIGHT,
-        )
-        inv_meta_r = ParagraphStyle(
-            "InvMetaR", parent=styles["Normal"], fontSize=9, leading=13,
-            textColor=colors.HexColor("#dbeafe"), alignment=TA_RIGHT,
-        )
-        label = ParagraphStyle(
-            "Label", parent=styles["Normal"], fontSize=7.5, leading=10,
-            textColor=muted, fontName=_FONT_BOLD,
-        )
-        label_r = ParagraphStyle("LabelR", parent=label, alignment=TA_RIGHT)
-        value = ParagraphStyle(
-            "Value", parent=styles["Normal"], fontSize=10, leading=14,
-            textColor=ink, fontName=_FONT,
-        )
-        value_r = ParagraphStyle("ValueR", parent=value, alignment=TA_RIGHT)
-        bill_name = ParagraphStyle(
-            "BillName", parent=styles["Normal"], fontSize=11.5, leading=15,
-            textColor=ink, fontName=_FONT_BOLD,
-        )
-        footer = ParagraphStyle(
-            "Footer", parent=styles["Normal"], fontSize=8, leading=11.5,
-            textColor=muted, alignment=TA_CENTER, fontName=_FONT,
-        )
-        thank = ParagraphStyle(
-            "Thank", parent=styles["Normal"], fontSize=11, leading=14,
-            textColor=brand_dark, fontName=_FONT_BOLD, alignment=TA_CENTER,
-        )
-
-        elements: list = []
-
-        # ── Header band: logo + company | INVOICE + number + status ──
-        logo_path = _find_logo_path()
-        logo_cell: object = ""
-        if logo_path:
-            try:
-                logo_cell = RLImage(str(logo_path), width=46, height=46)
-            except Exception:
-                logo_cell = ""
-
-        company_block = Table(
-            [[Paragraph(_COMPANY_NAME, co_name)], [Paragraph(_COMPANY_TAGLINE, co_tag)]],
-            colWidths=[page_w * 0.5 - (58 if logo_cell else 0)],
-        )
-        company_block.setStyle(TableStyle([
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-            ("TOPPADDING", (0, 0), (-1, -1), 0),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
-        ]))
-
-        status = (invoice.payment_status or "pending").upper()
-        is_paid = status in ("PAID", "COMPLETED")
-        status_bg = "#059669" if is_paid else "#b45309"
-        chip_text = ParagraphStyle(
-            "ChipText", parent=styles["Normal"], fontSize=7.5, leading=9,
-            textColor=colors.white, fontName=_FONT_BOLD, alignment=TA_CENTER,
-        )
-        chip = Table([[Paragraph(status, chip_text)]], colWidths=[54])
-        chip.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, -1), colors.HexColor(status_bg)),
-            ("TOPPADDING", (0, 0), (-1, -1), 3.5),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5),
-            ("LEFTPADDING", (0, 0), (-1, -1), 4),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-            ("ROUNDEDCORNERS", [6, 6, 6, 6]),
-        ]))
-        chip_right = Table([["", chip]], colWidths=[page_w * 0.5 - 28 - 54, 54])
-        chip_right.setStyle(TableStyle([
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-            ("TOPPADDING", (0, 0), (-1, -1), 0),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-        ]))
-        right_block = Table([
-            [Paragraph("INVOICE", inv_title)],
-            [Paragraph(invoice.invoice_number, inv_meta_r)],
-            [chip_right],
-        ], colWidths=[page_w * 0.5 - 28])
-        right_block.setStyle(TableStyle([
-            ("ALIGN", (0, 0), (-1, -1), "RIGHT"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-            ("TOPPADDING", (0, 0), (-1, -1), 0),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 2),
-            ("BOTTOMPADDING", (0, 1), (-1, 1), 6),
-        ]))
-
-        if logo_cell:
-            left = Table([[logo_cell, company_block]], colWidths=[56, page_w * 0.5 - 56])
-            left.setStyle(TableStyle([
-                ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-                ("LEFTPADDING", (0, 0), (-1, -1), 0),
-                ("RIGHTPADDING", (0, 0), (0, 0), 10),
-                ("TOPPADDING", (0, 0), (-1, -1), 0),
-                ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-            ]))
-        else:
-            left = company_block
-
-        header = Table([[left, right_block]], colWidths=[page_w * 0.5, page_w * 0.5])
-        header.setStyle(TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("BACKGROUND", (0, 0), (-1, -1), brand),
-            ("LEFTPADDING", (0, 0), (0, 0), 18),
-            ("RIGHTPADDING", (1, 0), (1, 0), 18),
-            ("TOPPADDING", (0, 0), (-1, -1), 16),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 16),
-            ("ROUNDEDCORNERS", [10, 10, 10, 10]),
-        ]))
-        elements.append(header)
-        elements.append(Spacer(1, 0.26 * inch))
-
-        # ── BILL TO card (left) + meta rows (right) ──
-        issued = invoice.issued_date
-        issued_str = issued.strftime("%d %b %Y") if hasattr(issued, "strftime") else str(issued or "—")
-
-        bill_inner = [[Paragraph("BILL TO", label)], [Spacer(1, 3)], [Paragraph(invoice.customer_name or "—", bill_name)]]
-        if invoice.customer_phone:
-            bill_inner.append([Paragraph(invoice.customer_phone, value)])
-        if invoice.customer_email:
-            bill_inner.append([Paragraph(invoice.customer_email, value)])
-        bill_box = Table(bill_inner, colWidths=[page_w * 0.46 - 24])
-        bill_box.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, -1), row_alt),
-            ("BOX", (0, 0), (-1, -1), 0.75, border),
-            ("LEFTPADDING", (0, 0), (-1, -1), 14),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 14),
-            ("TOPPADDING", (0, 0), (0, 0), 12),
-            ("TOPPADDING", (0, 1), (-1, -1), 1),
-            ("BOTTOMPADDING", (0, 0), (-1, -2), 1),
-            ("BOTTOMPADDING", (0, -1), (-1, -1), 12),
-            ("ROUNDEDCORNERS", [8, 8, 8, 8]),
-        ]))
-
-        meta_pairs = [("INVOICE NO", invoice.invoice_number), ("ISSUED", issued_str),
-                      ("PAYMENT", (invoice.payment_method or "—").replace("_", " ").title())]
-        if ref_label and ref_value:
-            meta_pairs.append((ref_label.replace("#", "").strip().upper(), str(ref_value)))
-        meta_rows = [[Paragraph(k, label), Paragraph(v, value_r)] for k, v in meta_pairs]
-        meta_table = Table(meta_rows, colWidths=[page_w * 0.20, page_w * 0.26])
-        meta_table.setStyle(TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("LINEBELOW", (0, 0), (-1, -2), 0.5, border),
-            ("LEFTPADDING", (0, 0), (-1, -1), 2),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
-            ("TOPPADDING", (0, 0), (-1, -1), 7),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
-        ]))
-
-        top_row = Table(
-            [[bill_box, "", meta_table]],
-            colWidths=[page_w * 0.46, page_w * 0.08, page_w * 0.46],
-        )
-        top_row.setStyle(TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-            ("TOPPADDING", (0, 0), (-1, -1), 0),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-        ]))
-        elements.append(top_row)
-        elements.append(Spacer(1, 0.3 * inch))
-
-        # ── Line items ──
-        desc_style = ParagraphStyle("Desc", parent=value, fontSize=9.5, leading=13)
-        head_cell = ParagraphStyle("Head", parent=styles["Normal"], fontSize=8.5,
-                                   textColor=colors.white, fontName=_FONT_BOLD)
-        head_cell_r = ParagraphStyle("HeadR", parent=head_cell, alignment=TA_RIGHT)
-        num_cell = ParagraphStyle("Num", parent=value, fontSize=9.5, alignment=TA_RIGHT)
-
-        items_data = [[
-            Paragraph("DESCRIPTION", head_cell),
-            Paragraph("QTY", head_cell_r),
-            Paragraph("UNIT PRICE", head_cell_r),
-            Paragraph("AMOUNT", head_cell_r),
-        ]]
-        for item in invoice.items or []:
-            price = float(item.get("price", 0) or 0)
-            qty = int(item.get("quantity", 1) or 1)
-            sub = float(item.get("subtotal", price * qty) or 0)
-            name = str(item.get("name", ""))[:90]
-            items_data.append([
-                Paragraph(name, desc_style),
-                Paragraph(str(qty), num_cell),
-                Paragraph(f"৳{price:,.2f}", num_cell),
-                Paragraph(f"৳{sub:,.2f}", num_cell),
-            ])
-
-        items_table = Table(
-            items_data,
-            colWidths=[page_w * 0.50, page_w * 0.10, page_w * 0.20, page_w * 0.20],
-            repeatRows=1,
-        )
-        items_table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), brand_dark),
-            ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, row_alt]),
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, 0), 9),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 9),
-            ("TOPPADDING", (0, 1), (-1, -1), 10),
-            ("BOTTOMPADDING", (0, 1), (-1, -1), 10),
-            ("LEFTPADDING", (0, 0), (-1, -1), 12),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 12),
-            ("LINEBELOW", (0, 1), (-1, -1), 0.5, border),
-        ]))
-        elements.append(items_table)
-        elements.append(Spacer(1, 0.18 * inch))
-
-        # ── Totals block (right-aligned, 42% width) ──
-        subtotal = float(invoice.subtotal or 0)
-        tax = float(invoice.tax or 0)
-        total = float(invoice.total or 0)
-        tot_label = ParagraphStyle("TotLabel", parent=value, textColor=muted, alignment=TA_RIGHT)
-        tot_val = ParagraphStyle("TotVal", parent=value, alignment=TA_RIGHT)
-        grand_label = ParagraphStyle("GrandL", parent=styles["Normal"], fontSize=11.5,
-                                     textColor=colors.white, fontName=_FONT_BOLD, alignment=TA_RIGHT)
-        grand_val = ParagraphStyle("GrandV", parent=styles["Normal"], fontSize=13,
-                                   textColor=colors.white, fontName=_FONT, alignment=TA_RIGHT)
-
-        totals_rows = [
-            [Paragraph("Subtotal", tot_label), Paragraph(f"৳{subtotal:,.2f}", tot_val)],
-        ]
-        if tax > 0:
-            totals_rows.append([Paragraph("Tax", tot_label), Paragraph(f"৳{tax:,.2f}", tot_val)])
-        totals_rows.append([Paragraph("TOTAL", grand_label), Paragraph(f"৳{total:,.2f}", grand_val)])
-
-        totals = Table(totals_rows, colWidths=[page_w * 0.21, page_w * 0.21])
-        grand_row = len(totals_rows) - 1
-        totals.setStyle(TableStyle([
-            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-            ("TOPPADDING", (0, 0), (-1, grand_row - 1), 6),
-            ("BOTTOMPADDING", (0, 0), (-1, grand_row - 1), 6),
-            ("TOPPADDING", (0, grand_row), (-1, grand_row), 10),
-            ("BOTTOMPADDING", (0, grand_row), (-1, grand_row), 10),
-            ("LEFTPADDING", (0, 0), (-1, -1), 12),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 12),
-            ("LINEBELOW", (0, 0), (-1, grand_row - 2), 0.5, border) if grand_row > 1 else ("LEFTPADDING", (0, 0), (0, 0), 12),
-            ("BACKGROUND", (0, grand_row), (-1, grand_row), brand_dark),
-            ("ROUNDEDCORNERS", [0, 0, 8, 8]),
-        ]))
-        totals_wrap = Table([["", totals]], colWidths=[page_w * 0.58, page_w * 0.42])
-        totals_wrap.setStyle(TableStyle([
-            ("LEFTPADDING", (0, 0), (-1, -1), 0),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 0),
-            ("TOPPADDING", (0, 0), (-1, -1), 0),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 0),
-        ]))
-        elements.append(totals_wrap)
-
-        if invoice.notes and "legacy_booking_id:" not in (invoice.notes or ""):
-            elements.append(Spacer(1, 0.15 * inch))
-            elements.append(Paragraph(f"<i>Notes: {invoice.notes}</i>", footer))
-
-        # ── Footer ──
-        elements.append(Spacer(1, 0.42 * inch))
-        hr = Table([[""]], colWidths=[page_w])
-        hr.setStyle(TableStyle([("LINEABOVE", (0, 0), (-1, 0), 0.6, border)]))
-        elements.append(hr)
-        elements.append(Spacer(1, 0.14 * inch))
-        elements.append(Paragraph("Thank you for choosing ABO Enterprise!", thank))
-        elements.append(Spacer(1, 0.07 * inch))
-        elements.append(Paragraph(
-            f"{company['address']}<br/>{company['phone']} · {company['email']}",
-            footer,
-        ))
-
-        doc.build(elements)
-        pdf_buffer.seek(0)
-        return pdf_buffer.getvalue()
 
     def format_currency(self, amount: float) -> str:
         """Format amount as Bangladeshi currency"""

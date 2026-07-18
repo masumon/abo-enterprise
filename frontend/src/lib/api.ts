@@ -380,6 +380,7 @@ export interface PublicInvoiceData {
   order_number?: string | null;
   order_status?: string | null;
   delivery_charge?: number | null;
+  discount_amount?: number | null;
   courier_provider?: string | null;
   courier_tracking_id?: string | null;
   booking_number?: string | null;
