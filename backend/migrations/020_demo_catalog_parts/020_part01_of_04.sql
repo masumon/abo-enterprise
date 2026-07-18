@@ -1,5 +1,4 @@
--- ABO demo catalog seed — Part 1 of 4. ক্রমানুসারে ১→4 Run করুন (Supabase SQL Editor)।
--- idempotent; safe to re-run. প্রতিটি অংশ আলাদা ট্রানজ্যাকশন।
+-- ABO demo catalog seed — Part 1 of 4. ক্রমানুসারে ১→4 Run করুন (Supabase)। idempotent।
 BEGIN;
 INSERT INTO categories (slug,name_en,name_bn,applies_to,sort_order,is_active,parent_id,image_url) VALUES ('mobile-accessories','Mobile Accessories','মোবাইল অ্যাক্সেসরিজ','["product"]'::jsonb,0,TRUE,NULL,'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1280&h=720&q=80') ON CONFLICT (slug) DO UPDATE SET image_url=COALESCE(NULLIF(categories.image_url,''),EXCLUDED.image_url), name_bn=COALESCE(categories.name_bn,EXCLUDED.name_bn);
 INSERT INTO categories (slug,name_en,name_bn,applies_to,sort_order,is_active,parent_id,image_url) VALUES ('chargers','Chargers','চার্জার','["product"]'::jsonb,0,TRUE,(SELECT id FROM categories WHERE slug='mobile-accessories' AND is_deleted=false LIMIT 1),'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=1280&h=720&q=80') ON CONFLICT (slug) DO UPDATE SET image_url=COALESCE(NULLIF(categories.image_url,''),EXCLUDED.image_url), name_bn=COALESCE(categories.name_bn,EXCLUDED.name_bn);
