@@ -276,6 +276,43 @@ SERVICE_BASE_PRICE: dict[str, int] = {
     "others": 1000,
 }
 
+# Accent colour per service top category (used by the offline service cards).
+SERVICE_CAT_COLOR: dict[str, str] = {
+    "digital-e-services": "#1e5ba8",
+    "printing-documentation": "#f59e0b",
+    "web-software": "#16a34a",
+    "mobile-lab": "#0ea5e9",
+    "it-support": "#0891b2",
+    "marketing-design": "#ec4899",
+    "business-consultancy": "#7c3aed",
+    "ai-automation": "#ea580c",
+    "others": "#64748b",
+}
+
+# Compact, spanning subset for the OFFLINE fallback catalog (shown only when the
+# backend is unreachable). Two representative sub-categories per service vertical
+# so the offline view covers every service area without shipping the full tree.
+# (cat_slug, cat_en, cat_bn, sub_slug, sub_en, sub_bn, pricing_type)
+SERVICE_REPRESENTATIVE: list[tuple[str, str, str, str, str, str, str]] = [
+    ("digital-e-services", "Digital & E-Services", "ডিজিটাল ও ই-সেবা", "nid", "NID Services", "এনআইডি সেবা", "fixed"),
+    ("digital-e-services", "Digital & E-Services", "ডিজিটাল ও ই-সেবা", "passport", "Passport Services", "পাসপোর্ট সেবা", "fixed"),
+    ("printing-documentation", "Printing & Documentation", "প্রিন্টিং ও ডকুমেন্টেশন", "printing-photocopy", "Printing & Photocopy", "প্রিন্টিং ও ফটোকপি", "fixed"),
+    ("printing-documentation", "Printing & Documentation", "প্রিন্টিং ও ডকুমেন্টেশন", "cv-writing", "CV Writing", "সিভি তৈরি", "fixed"),
+    ("web-software", "Web & Software", "ওয়েব ও সফটওয়্যার", "website-design", "Website Design", "ওয়েবসাইট ডিজাইন", "package"),
+    ("web-software", "Web & Software", "ওয়েব ও সফটওয়্যার", "custom-software", "Custom Software", "কাস্টম সফটওয়্যার", "custom_quote"),
+    ("mobile-lab", "Mobile Lab", "মোবাইল ল্যাব", "app-development", "App Development", "অ্যাপ ডেভেলপমেন্ট", "custom_quote"),
+    ("mobile-lab", "Mobile Lab", "মোবাইল ল্যাব", "data-recovery", "Data Recovery", "ডেটা রিকভারি", "fixed"),
+    ("it-support", "IT Support", "আইটি সাপোর্ট", "networking", "Networking", "নেটওয়ার্কিং", "custom_quote"),
+    ("it-support", "IT Support", "আইটি সাপোর্ট", "cctv", "CCTV Setup", "সিসিটিভি সেটআপ", "custom_quote"),
+    ("marketing-design", "Marketing & Design", "মার্কেটিং ও ডিজাইন", "logo-branding", "Logo & Branding", "লোগো ও ব্র্যান্ডিং", "package"),
+    ("marketing-design", "Marketing & Design", "মার্কেটিং ও ডিজাইন", "social-media-campaign", "Social Media Campaign", "সোশ্যাল মিডিয়া ক্যাম্পেইন", "package"),
+    ("business-consultancy", "Business Consultancy", "বিজনেস কনসালটেন্সি", "pos-erp-solution", "POS/ERP Solution", "POS/ERP সল্যুশন", "custom_quote"),
+    ("business-consultancy", "Business Consultancy", "বিজনেস কনসালটেন্সি", "wholesale-sourcing", "Wholesale Sourcing", "হোলসেল সোর্সিং", "custom_quote"),
+    ("ai-automation", "AI & Automation", "এআই ও অটোমেশন", "chatbot", "AI Chatbot", "এআই চ্যাটবট", "custom_quote"),
+    ("ai-automation", "AI & Automation", "এআই ও অটোমেশন", "business-ai-tools", "Business AI Tools", "বিজনেস এআই টুলস", "custom_quote"),
+    ("others", "Others", "অন্যান্য", "future-services", "Future Services", "ভবিষ্যৎ সেবা", "custom_quote"),
+]
+
 
 def _crc(text: str) -> int:
     return zlib.crc32(text.encode("utf-8")) & 0xFFFFFFFF
@@ -577,6 +614,84 @@ async def _remove_old_demo(db: AsyncSession) -> None:
             row.is_active = False
 
 
+# ── Offline fallback catalog (settings JSON) ─────────────────────────────────
+def build_offline_products_json() -> str:
+    """One representative product per product branch (~30), spanning every
+    vertical. Shown only when the backend is unreachable; every field mirrors
+    the live product shape so the offline view looks identical."""
+    items: list[dict] = []
+    for top_slug, top_en, top_bn, top_photo, branches in PRODUCT_TAXONOMY:
+        for br_slug, br_en, br_bn, br_photo, leaf_list in branches:
+            leaf_slug, leaf_en, leaf_bn = leaf_list[0]
+            price = _price_for(top_slug, leaf_slug, 1.0)
+            photo = br_photo or top_photo
+            items.append({
+                "id": f"demo-{leaf_slug}",
+                "slug": f"{leaf_slug}-standard",
+                "name_en": leaf_en,
+                "name_bn": leaf_bn,
+                "price": price,
+                "original_price": round(price * 1.25 / 10) * 10 + 9,
+                "category": top_slug,
+                "badge": "HOT" if _crc(leaf_slug) % 4 == 0 else None,
+                "stock_quantity": 15 + (_crc(leaf_slug + "s") % 60),
+                "is_featured": _crc(leaf_slug) % 6 == 0,
+                "rating": round(4.3 + (_crc(leaf_slug) % 7) / 10, 1),
+                "review_count": 20 + (_crc(leaf_slug + "r") % 280),
+                "image_url": demo_img(photo, *PRODUCT_4_5),
+            })
+    return json.dumps(items, ensure_ascii=False)
+
+
+def build_offline_services_json() -> str:
+    """Two representative services per vertical (~17) for the offline catalog."""
+    items: list[dict] = []
+    for cat_slug, cat_en, cat_bn, sub_slug, sub_en, sub_bn, pricing_type in SERVICE_REPRESENTATIVE:
+        photo = SERVICE_CAT_PHOTO.get(cat_slug, "services")
+        base = SERVICE_BASE_PRICE.get(cat_slug, 1000)
+        price = round(base * 1.3 / 10) * 10
+        entry = {
+            "id": f"demo-{sub_slug}",
+            "slug": f"{sub_slug}-standard",
+            "name_en": sub_en,
+            "name_bn": sub_bn,
+            "short_description_en": f"Professional {sub_en.lower()} from ABO Enterprise, Sylhet.",
+            "short_description_bn": f"ABO Enterprise, সিলেট থেকে পেশাদার {sub_bn}।",
+            "category": cat_slug,
+            "pricing_type": pricing_type,
+            "is_featured": _crc(sub_slug) % 5 == 0,
+            "icon_color": SERVICE_CAT_COLOR.get(cat_slug, "#1e5ba8"),
+            "featured_image_url": demo_img(photo, *FEATURED_16_9),
+        }
+        if pricing_type == "custom_quote":
+            entry["min_price"] = price
+        else:
+            entry["base_price"] = price
+        items.append(entry)
+    return json.dumps(items, ensure_ascii=False)
+
+
+async def _overwrite_offline_catalog(db: AsyncSession) -> None:
+    """Replace the offline fallback catalog settings with the new spanning set.
+
+    Part of the one-time versioned reseed, so the old sparse offline catalog is
+    swapped for the new one on existing databases too. Runs inside the version
+    gate, so a later admin edit is never overwritten."""
+    for key, value, desc in [
+        ("demo_products_json", build_offline_products_json(),
+         "Offline demo product catalog with placeholder images"),
+        ("demo_services_json", build_offline_services_json(),
+         "Offline demo service catalog with placeholder images"),
+    ]:
+        row = (await db.execute(
+            select(Setting).where(Setting.key == key, Setting.is_deleted == False)  # noqa: E712
+        )).scalar_one_or_none()
+        if row is None:
+            db.add(Setting(key=key, value=value, data_type="json", description=desc, is_editable=True))
+        else:
+            row.value = value
+
+
 async def _seed_version(db: AsyncSession) -> Setting | None:
     return (await db.execute(
         select(Setting).where(Setting.key == SEED_VERSION_KEY, Setting.is_deleted == False)  # noqa: E712
@@ -603,6 +718,8 @@ async def seed_full_demo_catalog(db: AsyncSession) -> None:
 
     pairs, _ = await _service_leaves(db)
     services_created = await _generate_services(db, pairs)
+
+    await _overwrite_offline_catalog(db)
 
     if marker is None:
         db.add(Setting(
