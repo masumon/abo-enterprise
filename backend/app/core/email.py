@@ -98,15 +98,20 @@ async def send_email(
     SMTP failures (network blip, temp reject) shouldn't lose a customer
     notification; retry twice with 2s / 5s spacing before giving up. Runs
     inside a FastAPI BackgroundTask, so retries don't extend the API response.
+
+    Uses configured EMAIL_PROVIDER (resend, smtp, etc).
     """
-    loop = asyncio.get_event_loop()
-    cfg = await _resolve_cfg()
+    from app.core.email_factory import get_email_provider
+
     delays = [2.0, 5.0]
+    provider = None
+
     for attempt in range(retries + 1):
         try:
-            await loop.run_in_executor(
-                None, _send_sync, cfg, to, subject, html, attachments
-            )
+            if provider is None:
+                provider = await get_email_provider()
+
+            await provider.send(to, subject, html, attachments)
             if attempt:
                 logger.info("Email to %s delivered on retry %d", to, attempt)
             return
