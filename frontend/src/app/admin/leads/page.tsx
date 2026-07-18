@@ -5,6 +5,7 @@ import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, Users, ChevronDown, X, Search, Download, Trash2 } from "lucide-react";
 import { leadsApi, serviceLeadsAdminApi, downloadCsv, downloadPdf } from "@/lib/api";
 import type { Lead, LeadV2 } from "@/types";
+import { buildCustomerWhatsAppLink } from "@/lib/utils";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -440,7 +441,14 @@ export default function AdminLeadsPage() {
                 </div>
 
                 <div className="bg-gray-50 rounded-xl p-4">
-                  <h3 className="font-semibold text-gray-900 text-sm mb-3">Contact Info</h3>
+                  <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                    <h3 className="font-semibold text-gray-900 text-sm">Contact Info</h3>
+                    <div className="flex gap-2">
+                      {detail.phone && <a href={`tel:${detail.phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>}
+                      {detail.phone && <a href={buildCustomerWhatsAppLink(detail.phone, `Hello ${detail.name}, thank you for your inquiry at ABO Enterprise. How can we help you?`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>}
+                      {detail.email && <a href={`mailto:${detail.email}`} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</a>}
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div><p className="text-gray-500 text-xs">Name</p><p className="font-medium">{detail.name}</p></div>
                     <div><p className="text-gray-500 text-xs">Phone</p><p className="font-medium">{detail.phone}</p></div>
@@ -520,7 +528,14 @@ export default function AdminLeadsPage() {
               </div>
 
               <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-900 text-sm mb-3">Contact</h3>
+                <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                  <h3 className="font-semibold text-gray-900 text-sm">Contact</h3>
+                  <div className="flex gap-2">
+                    {detailV2.phone && <a href={`tel:${detailV2.phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>}
+                    {detailV2.phone && <a href={buildCustomerWhatsAppLink(detailV2.phone, `Hello ${detailV2.name}, thank you for your inquiry ${detailV2.lead_number} at ABO Enterprise. How can we help you?`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>}
+                    {detailV2.email && <a href={`mailto:${detailV2.email}`} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</a>}
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div><p className="text-gray-500 text-xs">Name</p><p className="font-medium">{detailV2.name}</p></div>
                   <div><p className="text-gray-500 text-xs">Phone</p><p className="font-medium">{detailV2.phone}</p></div>

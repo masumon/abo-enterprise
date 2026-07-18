@@ -5,6 +5,7 @@ import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, Briefcase, ChevronDown, X, Search, Download, Trash2 } from "lucide-react";
 import { bookingsApi, serviceBookingsAdminApi, downloadCsv, downloadPdf } from "@/lib/api";
 import type { Booking, BookingV2 } from "@/types";
+import { buildCustomerWhatsAppLink } from "@/lib/utils";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -475,7 +476,14 @@ export default function AdminBookingsPage() {
                 </div>
 
                 <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                  <h3 className="font-semibold text-gray-900 text-sm mb-3">Customer Info</h3>
+                  <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                    <h3 className="font-semibold text-gray-900 text-sm">Customer Info</h3>
+                    <div className="flex gap-2">
+                      {detail.customer_phone && <a href={`tel:${detail.customer_phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>}
+                      {detail.customer_phone && <a href={buildCustomerWhatsAppLink(detail.customer_phone, `Hello ${detail.customer_name}, regarding your booking ${detail.booking_number} at ABO Enterprise. How can we help you?`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>}
+                      {detail.customer_email && <a href={`mailto:${detail.customer_email}`} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</a>}
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div><p className="text-gray-500 text-xs">Name</p><p className="font-medium">{detail.customer_name}</p></div>
                     <div><p className="text-gray-500 text-xs">Phone</p><p className="font-medium">{detail.customer_phone}</p></div>
@@ -552,7 +560,14 @@ export default function AdminBookingsPage() {
               </div>
 
               <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-900 text-sm mb-3">Customer</h3>
+                <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+                  <h3 className="font-semibold text-gray-900 text-sm">Customer</h3>
+                  <div className="flex gap-2">
+                    {detailV2.customer_phone && <a href={`tel:${detailV2.customer_phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>}
+                    {detailV2.customer_phone && <a href={buildCustomerWhatsAppLink(detailV2.customer_phone, `Hello ${detailV2.customer_name}, regarding your booking ${detailV2.booking_number} at ABO Enterprise. How can we help you?`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>}
+                    {detailV2.customer_email && <a href={`mailto:${detailV2.customer_email}`} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</a>}
+                  </div>
+                </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div><p className="text-gray-500 text-xs">Name</p><p className="font-medium">{detailV2.customer_name}</p></div>
                   <div><p className="text-gray-500 text-xs">Phone</p><p className="font-medium">{detailV2.customer_phone}</p></div>
