@@ -29,6 +29,7 @@ async def get_email_provider() -> EmailProvider:
                     api_key=settings.RESEND_API_KEY,
                     from_email=settings.SMTP_FROM or settings.BUSINESS_EMAIL,
                     from_name=settings.EMAIL_SENDER_NAME,
+                    reply_to=settings.EMAIL_REPLY_TO,
                 )
                 if not provider.validate():
                     logger.warning("Resend validation failed, falling back to SMTP")

@@ -1,13 +1,18 @@
-"""Lightweight phone OTP for checkout — in-memory, free-tier friendly (no SMS API required)."""
+"""Customer OTP — code delivered by EMAIL (Resend), phone kept as the account
+identity so existing order history keeps working. In-memory, free-tier friendly.
+
+SMS delivery was removed: Render's free tier blocks SMS gateways / none was
+configured, so codes never arrived. The OTP is now emailed via the configured
+email provider; the phone still identifies the customer for order-history reads.
+"""
 import logging
 import secrets
 import time
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, EmailStr, field_validator
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from app.core.rate_limit import RateLimiter, rate_limit
 from app.core.security import create_customer_token
-from app.core.sms import send_sms
 from app.schemas.schemas import ApiResponse, bd_phone
 
 logger = logging.getLogger(__name__)
@@ -21,11 +26,25 @@ OTP_TTL_SECONDS = 300
 
 class SendOtpRequest(BaseModel):
     phone: str
+    email: EmailStr  # OTP is delivered here
 
     @field_validator("phone")
     @classmethod
     def validate_phone(cls, v: str) -> str:
         return bd_phone(v)
+
+
+def _otp_email_html(code: str) -> str:
+    return (
+        '<div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:auto;'
+        'padding:28px;border:1px solid #e2e8f0;border-radius:12px">'
+        '<h2 style="color:#1e5ba8;margin:0 0 6px">ABO Enterprise</h2>'
+        '<p style="color:#334155;font-size:15px;margin:0 0 4px">Your verification code is:</p>'
+        f'<p style="font-size:34px;font-weight:bold;letter-spacing:8px;color:#0f172a;margin:14px 0">{code}</p>'
+        '<p style="color:#64748b;font-size:13px;margin:0">This code is valid for 5 minutes. '
+        "If you didn't request it, you can safely ignore this email.</p>"
+        "</div>"
+    )
 
 
 class VerifyOtpRequest(BaseModel):
@@ -68,13 +87,24 @@ async def send_otp(payload: SendOtpRequest):
         )
     code = f"{secrets.randbelow(9000) + 1000}"
     _otp_store[payload.phone] = {"code": code, "expires_at": time.time() + OTP_TTL_SECONDS}
-    sms_sent = await send_sms(payload.phone, f"ABO Enterprise OTP: {code}. Valid 5 min.")
-    if not sms_sent:
-        logger.info("OTP for %s: %s (dev/log only — set SMS_API_URL for production)", payload.phone[-4:], code)
+
+    # Deliver the code by email via the configured provider. Sent synchronously
+    # so the response reflects real delivery status (unlike fire-and-forget).
+    email_sent = False
+    try:
+        from app.core.email_factory import get_email_provider
+        provider = await get_email_provider()
+        await provider.send(str(payload.email), "ABO Enterprise verification code", _otp_email_html(code))
+        email_sent = True
+    except Exception as exc:  # noqa: BLE001 — never leak internals to the client
+        logger.error("OTP email to %s failed: %s", payload.email, exc)
+
+    if not email_sent:
+        logger.info("OTP for %s: %s (email not delivered — check email provider config)", payload.phone[-4:], code)
     return ApiResponse(
         success=True,
         message="OTP sent",
-        data={"sent": True, "expires_in": OTP_TTL_SECONDS, "via_sms": sms_sent},
+        data={"sent": email_sent, "expires_in": OTP_TTL_SECONDS, "via_email": email_sent},
     )
 
 

@@ -678,8 +678,9 @@ export const paymentMethodsPublicApi = {
 };
 
 export const customerOtpApi = {
-  send: (phone: string) =>
-    api.post<ApiResponse<{ sent: boolean; expires_in: number }>>("/api/v1/customer/send-otp", { phone }),
+  // OTP is emailed; phone stays the account identity (order history key).
+  send: (phone: string, email: string) =>
+    api.post<ApiResponse<{ sent: boolean; expires_in: number; via_email?: boolean }>>("/api/v1/customer/send-otp", { phone, email }),
 
   verify: (phone: string, code: string) =>
     api.post<ApiResponse<{ verified: boolean; access_token?: string }>>("/api/v1/customer/verify-otp", { phone, code }),

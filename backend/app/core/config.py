@@ -48,11 +48,19 @@ class Settings(BaseSettings):
     )
     SMTP_PASSWORD: str = ""
     # From address falls back to the login user when not set separately.
+    # Also accepts EMAIL_FROM (Resend-style env) so the sender is a verified
+    # domain address, not the gmail BUSINESS_EMAIL (Resend rejects gmail.com).
     SMTP_FROM: str = Field(
-        default="", validation_alias=AliasChoices("SMTP_FROM", "SMTP_FROM_EMAIL")
+        default="",
+        validation_alias=AliasChoices("SMTP_FROM", "SMTP_FROM_EMAIL", "EMAIL_FROM"),
     )
     SMTP_TLS: bool = True
-    EMAIL_SENDER_NAME: str = "ABO Enterprise"
+    EMAIL_SENDER_NAME: str = Field(
+        default="ABO Enterprise",
+        validation_alias=AliasChoices("EMAIL_SENDER_NAME", "EMAIL_FROM_NAME", "FROM_NAME"),
+    )
+    # Optional Reply-To (Resend supports it); e.g. info@aboenterprise.com.
+    EMAIL_REPLY_TO: str = ""
     ADMIN_NOTIFY_EMAIL: str = ""
 
     # Email provider selection: smtp, resend, sendgrid, mailgun, ses
