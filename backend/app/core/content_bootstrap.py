@@ -63,6 +63,12 @@ DEFAULT_MAPS_EMBED = (
 
 DEFAULT_SETTINGS: list[dict] = [
     {
+        "key": "site_url",
+        "value": "https://www.aboenterprise.com",
+        "data_type": "string",
+        "description": "Public site base URL for email links (View in Admin, order tracking)",
+    },
+    {
         "key": "google_maps_embed",
         "value": DEFAULT_MAPS_EMBED,
         "data_type": "string",
