@@ -25,9 +25,7 @@ from app.core.placeholder_assets import (
     blog_featured,
     build_about_team_json,
     build_client_logos_json,
-    build_demo_products_json,
     build_demo_reviews_json,
-    build_demo_services_json,
     build_showcase_projects_json,
     build_software_service_cards_json,
     demo_img,
@@ -37,6 +35,11 @@ from app.core.placeholder_assets import (
     review_avatar,
     service_featured,
     service_icon,
+)
+from app.core.demo_catalog import (
+    build_offline_products_json,
+    build_offline_services_json,
+    seed_full_demo_catalog,
 )
 from app.models.models import (
     BlogPost,
@@ -287,8 +290,8 @@ async def _seed_placeholder_settings(db) -> None:
     seeds = [
         ("showcase_projects_json", build_showcase_projects_json(), "json", "Project gallery showcase (images admin-editable)"),
         ("software_service_cards_json", build_software_service_cards_json(), "json", "Software service showcase cards"),
-        ("demo_products_json", build_demo_products_json(), "json", "Offline demo product catalog with placeholder images"),
-        ("demo_services_json", build_demo_services_json(), "json", "Offline demo service catalog with placeholder images"),
+        ("demo_products_json", build_offline_products_json(), "json", "Offline demo product catalog with placeholder images"),
+        ("demo_services_json", build_offline_services_json(), "json", "Offline demo service catalog with placeholder images"),
         ("demo_reviews_json", build_demo_reviews_json(), "json", "Offline demo reviews with placeholder avatars"),
         ("about_team_json", build_about_team_json(), "json", "About page team members with photos"),
         ("client_logos_json", build_client_logos_json(), "json", "Homepage client logo strip"),
@@ -320,8 +323,8 @@ async def _ensure_demo_images(db) -> None:
     json_builders = [
         ("showcase_projects_json", build_showcase_projects_json),
         ("software_service_cards_json", build_software_service_cards_json),
-        ("demo_products_json", build_demo_products_json),
-        ("demo_services_json", build_demo_services_json),
+        ("demo_products_json", build_offline_products_json),
+        ("demo_services_json", build_offline_services_json),
         ("demo_reviews_json", build_demo_reviews_json),
         ("about_team_json", build_about_team_json),
         ("client_logos_json", build_client_logos_json),
@@ -614,6 +617,11 @@ async def bootstrap_content() -> None:
             await _ensure_demo_pricing_tiers(db)
             await _ensure_demo_reviews(db)
             await _ensure_extra_blog_posts(db)
+
+            # Full-catalog demo seed: fills every product leaf-category and
+            # service sub-category with a few admin-replaceable demo items +
+            # images. Version-gated (runs once), so admin deletions stick.
+            await seed_full_demo_catalog(db)
 
             pm_count = (await db.execute(select(func.count(PaymentMethod.id)))).scalar() or 0
             if pm_count == 0:
