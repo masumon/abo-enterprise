@@ -40,7 +40,7 @@ from app.core.placeholder_assets import (
     PRODUCT_4_5,
     demo_img,
 )
-from app.models.models import Category, Product, Service, Setting
+from app.models.models import Category, Product, Service, Setting, Subcategory
 
 logger = logging.getLogger(__name__)
 
@@ -573,7 +573,12 @@ async def _generate_products(db: AsyncSession, leaves: list[tuple]) -> int:
             payload = _product_payload(top, branch, leaf, variant, seq)
             if payload["slug"] in existing:
                 continue
-            db.add(Product(category_id=leaf_cat.id, subcategory_id=leaf_cat.id, **payload))
+            # NOTE: products.subcategory_id FKs the legacy `subcategories` table,
+            # but the nested product leaves live only in `categories`. Linking via
+            # category_id (leaf) alone is enough — descendant_ids_for_slug matches
+            # category_id across the subtree — and avoids a FK violation that
+            # would roll back the whole bootstrap.
+            db.add(Product(category_id=leaf_cat.id, subcategory_id=None, **payload))
             existing.add(payload["slug"])
             created += 1
     return created
@@ -581,6 +586,11 @@ async def _generate_products(db: AsyncSession, leaves: list[tuple]) -> int:
 
 async def _generate_services(db: AsyncSession, pairs: list[tuple]) -> int:
     existing = await _existing_slugs(db, Service)
+    # services.subcategory_id FKs the legacy `subcategories` table. Seeded
+    # service subs were copied into `categories` with the same UUID, so they are
+    # valid — but guard anyway so an admin-created category child can never cause
+    # a FK violation that rolls back the whole bootstrap.
+    valid_sub_ids = set((await db.execute(select(Subcategory.id))).scalars().all())
     created = 0
     for top, sub in pairs:
         for seq, variant in enumerate(SERVICE_VARIANTS):
@@ -590,7 +600,8 @@ async def _generate_services(db: AsyncSession, pairs: list[tuple]) -> int:
             )
             if payload["slug"] in existing:
                 continue
-            db.add(Service(category_id=top.id, subcategory_id=sub.id, **payload))
+            sub_id = sub.id if sub.id in valid_sub_ids else None
+            db.add(Service(category_id=top.id, subcategory_id=sub_id, **payload))
             existing.add(payload["slug"])
             created += 1
     return created
