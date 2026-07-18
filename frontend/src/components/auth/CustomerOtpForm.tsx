@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Phone, User, KeyRound, Loader2, ArrowLeft } from "lucide-react";
+import { Phone, User, KeyRound, Loader2, ArrowLeft, Mail } from "lucide-react";
 import { BD_PHONE_REGEX } from "@/lib/phone";
 import { customerOtpApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -22,6 +22,7 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,10 +39,14 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
       setError(bn ? "আপনার নাম দিন" : "Enter your name");
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError(bn ? "সঠিক ইমেইল দিন (OTP ইমেইলে যাবে)" : "Enter a valid email (OTP is sent by email)");
+      return;
+    }
     setLoading(true);
     try {
-      const r = await customerOtpApi.send(phone);
-      setDevHint(!(r.data.data as { via_sms?: boolean })?.via_sms);
+      const r = await customerOtpApi.send(phone, email.trim());
+      setDevHint(!(r.data.data as { via_email?: boolean })?.via_email);
       setStep("otp");
     } catch (err) {
       setError(apiErrorMessage(err, bn ? "OTP পাঠানো যায়নি — আবার চেষ্টা করুন" : "Could not send OTP — try again"));
@@ -78,10 +83,10 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
           <p role="alert" className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{error}</p>
         )}
         <p className="text-sm text-muted">
-          {bn ? `${phone} নম্বরে ৪ সংখ্যার কোড পাঠানো হয়েছে` : `A 4-digit code was sent to ${phone}`}
+          {bn ? `${email} ঠিকানায় ৪ সংখ্যার কোড পাঠানো হয়েছে (ইনবক্স/স্প্যাম দেখুন)` : `A 4-digit code was sent to ${email} (check inbox/spam)`}
           {devHint && (
             <span className="block text-xs mt-1 text-amber-600">
-              {bn ? "(SMS কনফিগার করা নেই — কোডটি সার্ভার লগে আছে)" : "(SMS not configured — code is in the server log)"}
+              {bn ? "(ইমেইল পাঠানো যায়নি — কোডটি সার্ভার লগে আছে)" : "(Email not delivered — code is in the server log)"}
             </span>
           )}
         </p>
@@ -144,14 +149,30 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
           />
         </div>
       </div>
+      <div>
+        <label className="form-label" htmlFor="cust-email">{bn ? "ইমেইল (OTP এখানে যাবে)" : "Email (OTP is sent here)"}</label>
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+          <input
+            id="cust-email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="input pl-10"
+            placeholder="you@example.com"
+            inputMode="email"
+            autoComplete="email"
+          />
+        </div>
+      </div>
       <button type="submit" disabled={loading} className="btn btn-brand btn-lg w-full flex items-center justify-center gap-2">
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
         {bn ? "OTP পাঠান" : "Send OTP"}
       </button>
       <p className="text-xs text-muted text-center">
         {bn
-          ? "আপনার ফোন নম্বর যাচাইয়ের পরই অর্ডার হিস্ট্রি দেখা যাবে"
-          : "Your order history unlocks after phone verification"}
+          ? "OTP আপনার ইমেইলে যাবে; যাচাইয়ের পরই অর্ডার হিস্ট্রি দেখা যাবে"
+          : "The OTP is emailed to you; order history unlocks after verification"}
       </p>
     </form>
   );

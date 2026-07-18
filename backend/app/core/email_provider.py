@@ -66,12 +66,22 @@ class SMTPProvider(EmailProvider):
 class ResendProvider(EmailProvider):
     """Resend API provider — modern, reliable."""
 
-    def __init__(self, api_key: str, from_email: str, from_name: str):
+    def __init__(self, api_key: str, from_email: str, from_name: str, reply_to: str = ""):
         if not RESEND_AVAILABLE:
             logger.error("Resend package not available. Install with: pip install resend")
             raise RuntimeError("Resend provider requires: pip install resend")
+        # Resend rejects free-mailbox senders (gmail/yahoo/…). Warn loudly so a
+        # 403 "not authorized to send from gmail.com" is obvious in the logs.
+        _domain = (from_email.rsplit("@", 1)[-1] or "").lower()
+        if _domain in {"gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "googlemail.com"}:
+            logger.warning(
+                "Resend sender %s uses a public mailbox domain — Resend will reject it. "
+                "Set EMAIL_FROM/SMTP_FROM to an address on a domain verified in Resend.",
+                from_email,
+            )
 
         self.api_key = api_key
+        self.reply_to = reply_to
         self.from_email = from_email
         self.from_name = from_name
 
@@ -97,14 +107,15 @@ class ResendProvider(EmailProvider):
         # The SDK reads the key from the module and sends via resend.Emails.send.
         # `to` must be a list of recipients.
         resend.api_key = self.api_key
-        response = resend.Emails.send(
-            {
-                "from": f"{self.from_name} <{self.from_email}>",
-                "to": [to] if isinstance(to, str) else to,
-                "subject": subject,
-                "html": html,
-            }
-        )
+        params = {
+            "from": f"{self.from_name} <{self.from_email}>",
+            "to": [to] if isinstance(to, str) else to,
+            "subject": subject,
+            "html": html,
+        }
+        if self.reply_to:
+            params["reply_to"] = self.reply_to
+        response = resend.Emails.send(params)
 
         # Resend returns a dict-like response with 'id' on success.
         email_id = response.get("id") if isinstance(response, dict) else getattr(response, "id", None)

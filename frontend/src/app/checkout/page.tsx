@@ -86,6 +86,7 @@ export default function CheckoutPage() {
   const selectedDistrict = watch("district");
   const selectedUpazila = watch("upazila");
   const selectedPhone = watch("customer_phone");
+  const selectedEmail = watch("customer_email");
   const selectedPayment = paymentOptions.find((p) => p.gateway === selectedGateway) ?? paymentOptions[0];
   const upazilaOptions = useMemo(() => getUpazilasForDistrict(selectedDistrict), [selectedDistrict]);
 
@@ -157,9 +158,13 @@ export default function CheckoutPage() {
 
   const sendOtp = async () => {
     if (!BD_PHONE_REGEX.test(selectedPhone)) return;
+    if (!selectedEmail) {
+      setSubmitError(lang === "bn" ? "OTP পেতে ইমেইল দিন" : "Enter an email to receive the OTP");
+      return;
+    }
     setOtpLoading(true);
     try {
-      await customerOtpApi.send(selectedPhone);
+      await customerOtpApi.send(selectedPhone, selectedEmail);
       setOtpSent(true);
       setOtpVerified(false);
     } catch {
