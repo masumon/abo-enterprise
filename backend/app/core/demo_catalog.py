@@ -420,31 +420,28 @@ def _service_payload(cat_slug, cat_en, cat_bn, sub_slug, sub_en, sub_bn, variant
         f"পর্যন্ত সবকিছু অন্তর্ভুক্ত। ABO Enterprise পুরো প্রক্রিয়া সামলায় — নির্ভরযোগ্য "
         f"ফলাফল, স্বচ্ছ মূল্য ও সিলেট সহ সারাদেশে নিবেদিত সাপোর্ট।"
     )
+    # Shapes must match the schema (ServiceBase): process_steps/faq are list[dict]
+    # with {step,title,description} / {question,answer}; benefits & requirements
+    # are list[str]. (Dicts in benefits/requirements make ServiceOut validation
+    # fail and 500 the whole services list.) English matches the seeded catalog.
     process_steps = [
-        {"title_en": "Requirement", "title_bn": "প্রয়োজন",
-         "desc_en": "Share your requirement and we assess the scope.",
-         "desc_bn": "আপনার প্রয়োজন জানান, আমরা স্কোপ যাচাই করি।"},
-        {"title_en": "Quotation", "title_bn": "কোটেশন",
-         "desc_en": "Transparent quote and timeline before we begin.",
-         "desc_bn": "শুরুর আগে স্বচ্ছ মূল্য ও সময়সীমা।"},
-        {"title_en": "Delivery", "title_bn": "ডেলিভারি",
-         "desc_en": "We deliver, review and provide after-sales support.",
-         "desc_bn": "ডেলিভারি, রিভিউ ও বিক্রয়-পরবর্তী সাপোর্ট।"},
+        {"step": 1, "title": "Requirement",
+         "description": "Share your requirement and we assess the scope."},
+        {"step": 2, "title": "Quotation",
+         "description": "Transparent quote and timeline before we begin."},
+        {"step": 3, "title": "Delivery",
+         "description": "We deliver, review and provide after-sales support."},
     ]
     benefits = [
-        {"en": "Experienced local team", "bn": "অভিজ্ঞ স্থানীয় টিম"},
-        {"en": "Transparent, fair pricing", "bn": "স্বচ্ছ ও ন্যায্য মূল্য"},
-        {"en": "Fast turnaround & support", "bn": "দ্রুত সেবা ও সাপোর্ট"},
+        "Experienced local team",
+        "Transparent, fair pricing",
+        "Fast turnaround & dedicated support",
     ]
     faq = [
-        {"q_en": f"How long does {sub_en.lower()} take?",
-         "q_bn": f"{sub_bn} করতে কত সময় লাগে?",
-         "a_en": "Timeline depends on scope; we confirm it with your quotation.",
-         "a_bn": "সময় স্কোপের উপর নির্ভরশীল; কোটেশনের সাথে নিশ্চিত করা হয়।"},
-        {"q_en": "Can I replace this demo service later?",
-         "q_bn": "পরে কি এই ডেমো সেবা পরিবর্তন করা যাবে?",
-         "a_en": "Yes — every service here is fully editable from the admin panel.",
-         "a_bn": "হ্যাঁ — প্রতিটি সেবা এডমিন প্যানেল থেকে সম্পূর্ণ এডিটযোগ্য।"},
+        {"question": "How long does this service take?",
+         "answer": "Timeline depends on scope; we confirm it with your quotation."},
+        {"question": "Can I replace this demo service later?",
+         "answer": "Yes — every service here is fully editable from the admin panel."},
     ]
     return {
         "slug": slug,
@@ -468,8 +465,8 @@ def _service_payload(cat_slug, cat_en, cat_bn, sub_slug, sub_en, sub_bn, variant
         "process_steps": process_steps,
         "benefits": benefits,
         "requirements": [
-            {"en": "Basic project details", "bn": "প্রাথমিক প্রকল্পের তথ্য"},
-            {"en": "Contact number for coordination", "bn": "সমন্বয়ের জন্য যোগাযোগ নম্বর"},
+            "Basic project details or a clear brief",
+            "Contact number for coordination",
         ],
         "required_documents": [],
         "faq": faq,
