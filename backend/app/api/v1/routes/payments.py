@@ -15,6 +15,7 @@ from app.core.database import get_db
 from app.core.nagad import get_nagad_gateway
 from app.core.rate_limit import rate_limit
 from app.core.sslcommerz import get_sslcommerz_gateway
+from app.core.site_url import resolve_site_url
 from app.core.invoice import InvoiceService
 from app.models.models import BkashTransaction, NagadTransaction, Order
 from app.schemas.schemas import (
@@ -256,7 +257,7 @@ async def initiate_sslcommerz_payment(
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
 
-        base = settings.FRONTEND_URL.rstrip("/")
+        base = await resolve_site_url(db)
         phone_q = quote(order.customer_phone, safe="")
         success_url = request.success_url or f"{base}/payment/callback?status=success&order={order.order_number}&phone={phone_q}"
         fail_url = request.fail_url or f"{base}/payment/callback?status=failed&order={order.order_number}&phone={phone_q}"
