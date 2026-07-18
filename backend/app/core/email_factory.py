@@ -22,18 +22,37 @@ async def get_email_provider() -> EmailProvider:
 
     if provider_name == "resend":
         if not settings.RESEND_API_KEY:
-            logger.error("Resend provider selected but RESEND_API_KEY not set")
-            raise RuntimeError(
-                "Resend provider requires RESEND_API_KEY environment variable"
-            )
-        provider = ResendProvider(
-            api_key=settings.RESEND_API_KEY,
-            from_email=settings.SMTP_FROM or settings.BUSINESS_EMAIL,
-            from_name=settings.EMAIL_SENDER_NAME,
-        )
+            logger.error("Resend selected but RESEND_API_KEY not configured, falling back to SMTP")
+        else:
+            try:
+                provider = ResendProvider(
+                    api_key=settings.RESEND_API_KEY,
+                    from_email=settings.SMTP_FROM or settings.BUSINESS_EMAIL,
+                    from_name=settings.EMAIL_SENDER_NAME,
+                )
+                if not provider.validate():
+                    logger.warning("Resend validation failed, falling back to SMTP")
+                else:
+                    logger.info("Using Resend email provider")
+                    return provider
+            except RuntimeError as e:
+                logger.warning("Resend initialization failed: %s, falling back to SMTP", e)
+
+        # Fallback to SMTP if Resend failed
+        logger.info("Falling back to SMTP provider")
+        from app.core.email_config import env_email_config, resolve_email_config
+        from app.core.database import AsyncSessionLocal
+
+        try:
+            async with AsyncSessionLocal() as db:
+                cfg = await resolve_email_config(db)
+        except Exception:
+            logger.warning("Could not load SMTP config from DB, using env only")
+            cfg = env_email_config()
+
+        provider = SMTPProvider(cfg)
         if not provider.validate():
-            raise RuntimeError("Resend provider validation failed")
-        logger.info("Using Resend email provider")
+            logger.warning("SMTP provider also not configured")
         return provider
 
     elif provider_name == "smtp" or not provider_name:

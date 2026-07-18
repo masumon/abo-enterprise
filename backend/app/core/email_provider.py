@@ -5,6 +5,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Try importing Resend at module load time
+try:
+    from resend import Resend as ResendClient
+    RESEND_AVAILABLE = True
+except ImportError:
+    RESEND_AVAILABLE = False
+    ResendClient = None
+
 
 class EmailProvider(ABC):
     """Base interface for email providers."""
@@ -56,6 +64,10 @@ class ResendProvider(EmailProvider):
     """Resend API provider — modern, reliable."""
 
     def __init__(self, api_key: str, from_email: str, from_name: str):
+        if not RESEND_AVAILABLE:
+            logger.error("Resend package not available. Install with: pip install resend")
+            raise RuntimeError("Resend provider requires: pip install resend")
+
         self.api_key = api_key
         self.from_email = from_email
         self.from_name = from_name
@@ -68,13 +80,10 @@ class ResendProvider(EmailProvider):
         attachments: Optional[list] = None,
     ) -> None:
         """Send via Resend API."""
-        try:
-            from resend import Resend
-        except ImportError:
-            logger.error("resend package not installed. pip install resend")
-            raise RuntimeError("Resend provider requires: pip install resend")
+        if not RESEND_AVAILABLE or ResendClient is None:
+            raise RuntimeError("Resend provider not available")
 
-        client = Resend(api_key=self.api_key)
+        client = ResendClient(api_key=self.api_key)
 
         # Resend doesn't support attachments in the same way as SMTP
         # For now, we log a warning if attachments are provided
