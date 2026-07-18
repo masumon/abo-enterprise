@@ -99,7 +99,7 @@ class Settings(BaseSettings):
     GA4_PRIVATE_KEY: str = ""
 
     # Frontend URL for payment callbacks
-    FRONTEND_URL: str = "https://abo-enterprise.vercel.app"
+    FRONTEND_URL: str = "https://www.aboenterprise.com"
 
     @property
     def allowed_origins_list(self) -> list[str]:

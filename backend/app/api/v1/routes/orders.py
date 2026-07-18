@@ -13,6 +13,7 @@ from app.core.security import require_admin, require_customer, require_role
 from app.core.config import settings
 from app.core.email import send_email, order_notification_html, customer_order_confirmation_html, customer_order_status_html
 from app.core.invoice import InvoiceService
+from app.core.site_url import resolve_site_url
 from app.models.models import Order, OrderItem, Product, ActivityLog
 from app.schemas.schemas import OrderCreate, OrderOut, OrderStatusUpdate, OrderCourierUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 
@@ -173,7 +174,8 @@ async def create_order(
             f"We will confirm shortly. Thank you!"
         )
         customer_wa_url = f"https://wa.me/{wa_phone}?text={quote(wa_msg)}"
-        admin_url = f"{settings.FRONTEND_URL.rstrip('/')}/admin/orders"
+        _base = await resolve_site_url(db)
+        admin_url = f"{_base}/admin/orders"
         html = order_notification_html(
             order.order_number,
             payload.customer_name,
@@ -391,7 +393,7 @@ async def update_order_status(
         and old_status != order.order_status
         and order.order_status in notify_statuses
     ):
-        track_url = f"{settings.FRONTEND_URL.rstrip('/')}/track?order={order.order_number}"
+        track_url = f"{await resolve_site_url(db)}/track?order={order.order_number}"
         html = customer_order_status_html(
             order.order_number,
             order.customer_name,
@@ -455,7 +457,7 @@ async def update_order_courier(
         and old_status != order.order_status
         and order.order_status == "shipped"
     ):
-        track_url = f"{settings.FRONTEND_URL.rstrip('/')}/track?order={order.order_number}"
+        track_url = f"{await resolve_site_url(db)}/track?order={order.order_number}"
         html = customer_order_status_html(
             order.order_number,
             order.customer_name,
