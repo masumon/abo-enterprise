@@ -13,7 +13,7 @@ export const BUSINESS_LOCATION = {
 
 /** Contact defaults — shown on invoices/receipts when CMS settings are empty */
 export const DEFAULT_BUSINESS_PHONE = "+880 1825 007977";
-export const DEFAULT_BUSINESS_EMAIL = "info.aboenterprise@gmail.com";
+export const DEFAULT_BUSINESS_EMAIL = "info@aboenterprise.com";
 
 /** Google Maps embed — ABO Enterprise, Beanibazar (admin can override) */
 export const DEFAULT_MAPS_EMBED =

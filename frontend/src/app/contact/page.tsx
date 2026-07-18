@@ -31,7 +31,7 @@ export default function ContactPage() {
   const phoneDisplay = formatBdPhoneDisplay(phone);
   const phoneHref = toBdTelHref(phone);
   const whatsappHref = toBdWhatsappHref(getSettingValue(settings, "whatsapp_number", phone));
-  const email = getSettingValue(settings, "contact_email", "info.aboenterprise@gmail.com");
+  const email = getSettingValue(settings, "contact_email", "info@aboenterprise.com");
   const address = getSettingValue(settings, "contact_address", lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN);
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
 

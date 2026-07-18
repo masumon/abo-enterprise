@@ -68,7 +68,7 @@ export function buildOrderConfirmActions(params: {
   }
 
   if ((channel === "email" || channel === "both") && params.customerEmail) {
-    const businessEmail = getSettingValue(params.settings, "contact_email") || "info.aboenterprise@gmail.com";
+    const businessEmail = getSettingValue(params.settings, "contact_email") || "info@aboenterprise.com";
     const subject = encodeURIComponent(
       `Order ${params.orderNumber ?? ""} — ABO Enterprise`.trim()
     );
