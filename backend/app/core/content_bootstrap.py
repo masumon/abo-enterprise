@@ -615,6 +615,12 @@ async def bootstrap_content() -> None:
             await _ensure_demo_reviews(db)
             await _ensure_extra_blog_posts(db)
 
+            # Full-catalog demo seed: fills every product leaf-category and
+            # service sub-category with a few admin-replaceable demo items +
+            # images. Version-gated (runs once), so admin deletions stick.
+            from app.core.demo_catalog import seed_full_demo_catalog
+            await seed_full_demo_catalog(db)
+
             pm_count = (await db.execute(select(func.count(PaymentMethod.id)))).scalar() or 0
             if pm_count == 0:
                 phone = "01825007977"
