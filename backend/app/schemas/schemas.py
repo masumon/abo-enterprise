@@ -764,6 +764,8 @@ class InvoiceOut(BaseModel):
     items: list[dict]
     subtotal: float
     tax: float
+    discount_amount: float = 0
+    delivery_charge: float = 0
     total: float
     payment_method: str | None
     payment_status: str

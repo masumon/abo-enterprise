@@ -395,6 +395,11 @@ class Invoice(Base):
     items: Mapped[list] = mapped_column(JSON, nullable=False)
     subtotal: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     tax: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
+    # Delivery charge and coupon discount captured at invoice time so the
+    # invoice always reconciles: subtotal - discount + delivery = total. Both
+    # default 0 (older rows are backfilled from subtotal/total on read).
+    discount_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
+    delivery_charge: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
     total: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     payment_method: Mapped[str | None] = mapped_column(String(50))
     payment_status: Mapped[str] = mapped_column(String(20), default="pending")

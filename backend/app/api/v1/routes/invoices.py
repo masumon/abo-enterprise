@@ -52,6 +52,7 @@ def _public_invoice_payload(
         "order_number": order.order_number if order else None,
         "order_status": order.order_status if order else None,
         "delivery_charge": float(order.delivery_charge or 0) if order else None,
+        "discount_amount": float(order.discount_amount or 0) if order else None,
         "courier_provider": order.courier_provider if order else None,
         "courier_tracking_id": order.courier_tracking_id if order else None,
         "booking_number": booking.booking_number if booking else (legacy_booking.booking_number if legacy_booking else None),

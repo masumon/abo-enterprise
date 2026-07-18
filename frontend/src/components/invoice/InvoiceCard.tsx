@@ -20,7 +20,12 @@ interface Props {
 /** Customer-facing invoice — premium, screenshot-ready, bilingual, dark-aware. */
 export default function InvoiceCard({ invoice, lang }: Props) {
   const bn = lang === "bn";
-  const deliveryCharge = invoice.delivery_charge ?? 0;
+  const discount = invoice.discount_amount ?? 0;
+  // Delivery is always shown (0 = free). Legacy invoices without a stored
+  // delivery_charge fall back to the reconciling gap: total - subtotal + discount - tax.
+  const deliveryCharge =
+    invoice.delivery_charge ??
+    Math.max(invoice.total - invoice.subtotal + discount - (invoice.tax ?? 0), 0);
   const isPaid = ["paid", "completed"].includes(invoice.payment_status);
   const issued = invoice.issued_date ?? invoice.created_at;
   const reference = invoice.order_number || invoice.booking_number;
@@ -183,12 +188,21 @@ export default function InvoiceCard({ invoice, lang }: Props) {
             <span>{bn ? "সাবটোটাল" : "Subtotal"}</span>
             <span className="tabular-nums">{formatPrice(invoice.subtotal)}</span>
           </div>
-          {deliveryCharge > 0 && (
+          {discount > 0 && (
             <div className="flex justify-between text-muted">
-              <span>{bn ? "ডেলিভারি চার্জ" : "Delivery"}</span>
-              <span className="tabular-nums">{formatPrice(deliveryCharge)}</span>
+              <span>{bn ? "ছাড়" : "Discount"}</span>
+              <span className="tabular-nums">-{formatPrice(discount)}</span>
             </div>
           )}
+          {/* Delivery is ALWAYS shown — free orders read ৳0 rather than hiding it. */}
+          <div className="flex justify-between text-muted">
+            <span>
+              {deliveryCharge > 0
+                ? bn ? "ডেলিভারি চার্জ" : "Delivery"
+                : bn ? "ডেলিভারি চার্জ (ফ্রি)" : "Delivery (Free)"}
+            </span>
+            <span className="tabular-nums">{formatPrice(deliveryCharge)}</span>
+          </div>
           {invoice.tax > 0 && (
             <div className="flex justify-between text-muted">
               <span>{bn ? "ট্যাক্স" : "Tax"}</span>
