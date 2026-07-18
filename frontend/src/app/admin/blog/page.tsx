@@ -31,15 +31,13 @@ const EMPTY_FORM: Partial<BlogPost> = {
 
 async function translateText(text: string, from = "bn", to = "en"): Promise<string> {
   if (!text.trim()) return "";
-  try {
-    const res = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${from}|${to}`
-    );
-    const data = await res.json();
-    return (data?.responseData?.translatedText as string) ?? text;
-  } catch {
-    return text;
-  }
+  // Server-side translation (reliable: no browser CORS / free-API length caps).
+  // Throws on failure so the caller never writes the source Bangla — or a
+  // failed-translation string — into the English field.
+  const res = await adminBlogApi.translate(text, from, to);
+  const translated = res.data?.data?.translated?.trim();
+  if (!translated) throw new Error("Empty translation");
+  return translated;
 }
 
 function slugify(text: string) {

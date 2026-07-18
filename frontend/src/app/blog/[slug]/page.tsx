@@ -111,12 +111,12 @@ export default async function BlogPostPage({
       <main className="min-h-screen">
         {/* Hero */}
         {post.featured_image_url ? (
-          <div className="relative w-full overflow-hidden bg-gray-900 h-[min(480px,50vh)]">
+          <div className="relative w-full overflow-hidden bg-gray-100 dark:bg-gray-900 h-[min(480px,50vh)]">
             <Image
               src={post.featured_image_url}
               alt={post.title_en}
               fill
-              className="object-cover object-top"
+              className="object-contain"
               sizes="100vw"
               priority
             />

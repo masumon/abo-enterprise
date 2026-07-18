@@ -433,6 +433,9 @@ export const adminBlogApi = {
 
   delete: (id: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/blog/admin/posts/${id}`),
+
+  translate: (text: string, source = "bn", target = "en") =>
+    api.post<ApiResponse<{ translated: string }>>("/api/v1/blog/admin/translate", { text, source, target }),
 };
 
 export const servicesAdminApi = {

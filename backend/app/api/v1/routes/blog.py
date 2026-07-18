@@ -1,6 +1,9 @@
+import logging
+import re
 import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from app.core.database import get_db
@@ -15,7 +18,80 @@ from app.schemas.schemas import (
     ApiResponse,
 )
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/blog", tags=["blog"])
+
+# Google's translate endpoint caps each request; stay safely under it.
+_TRANSLATE_MAX_CHARS = 4500
+
+
+class TranslateRequest(BaseModel):
+    text: str
+    source: str = "bn"
+    target: str = "en"
+
+
+def _translate(text: str, source: str, target: str) -> str:
+    """Server-side Bangla↔English translation.
+
+    Runs on the backend (no browser CORS / MyMemory length limits). Short text
+    goes in one request (best structure preservation); long text is translated
+    line-by-line so paragraph breaks survive. Google first, MyMemory as a
+    fallback. Raises on total failure so the caller never writes a failed
+    translation (or the source text) into the English field.
+    """
+    from deep_translator import GoogleTranslator, MyMemoryTranslator
+
+    def _one(chunk: str) -> str:
+        try:
+            return GoogleTranslator(source=source, target=target).translate(chunk)
+        except Exception as exc:  # noqa: BLE001 — fall back to MyMemory
+            logger.warning("Google translate failed (%s); trying MyMemory", exc)
+            return MyMemoryTranslator(source=source, target=target).translate(chunk)
+
+    text = text.strip()
+    if not text:
+        return ""
+    if len(text) <= _TRANSLATE_MAX_CHARS:
+        return _one(text)
+
+    # Long content: preserve line breaks, translate non-blank lines (chunking
+    # any single very long line on sentence boundaries).
+    out: list[str] = []
+    for line in text.split("\n"):
+        if not line.strip():
+            out.append("")
+            continue
+        if len(line) <= _TRANSLATE_MAX_CHARS:
+            out.append(_one(line))
+            continue
+        parts = re.split(r"(?<=[।.!?])\s+", line)
+        buf, chunks = "", []
+        for p in parts:
+            if len(buf) + len(p) + 1 > _TRANSLATE_MAX_CHARS:
+                chunks.append(buf)
+                buf = p
+            else:
+                buf = f"{buf} {p}".strip()
+        if buf:
+            chunks.append(buf)
+        out.append(" ".join(_one(c) for c in chunks))
+    return "\n".join(out)
+
+
+@router.post("/admin/translate", response_model=ApiResponse)
+async def translate_blog_text(
+    payload: TranslateRequest,
+    admin_id: str = Depends(require_admin),
+):
+    """Translate blog text (admin only). Returns {translated}; 502 on failure so
+    the admin UI can prompt for a manual English entry instead of saving Bangla."""
+    try:
+        translated = _translate(payload.text, payload.source, payload.target)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Blog translate failed: %s", exc)
+        raise HTTPException(status_code=502, detail="Translation service unavailable")
+    return ApiResponse(data={"translated": translated}, message="ok")
 
 
 # ==================== PUBLIC ENDPOINTS ====================
