@@ -55,6 +55,10 @@ class Settings(BaseSettings):
     EMAIL_SENDER_NAME: str = "ABO Enterprise"
     ADMIN_NOTIFY_EMAIL: str = ""
 
+    # Email provider selection: smtp, resend, sendgrid, mailgun, ses
+    EMAIL_PROVIDER: str = "smtp"
+    RESEND_API_KEY: str = ""
+
     ADMIN_NAME: str = "Admin"
 
     # bKash gateway (optional — only needed if bKash API integration is active)

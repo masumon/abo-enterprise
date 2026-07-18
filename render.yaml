@@ -43,6 +43,10 @@ services:
         value: "true"
       - key: EMAIL_SENDER_NAME
         value: ABO Enterprise
+      - key: EMAIL_PROVIDER
+        value: "smtp"
+      - key: RESEND_API_KEY
+        sync: false
       - key: ADMIN_NOTIFY_EMAIL
         sync: false
       - key: BUSINESS_EMAIL
