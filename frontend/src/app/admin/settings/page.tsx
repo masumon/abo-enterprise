@@ -91,6 +91,7 @@ const SECTIONS: Section[] = [
     fields: [
       { key: "site_name", label: "Company Name", placeholder: "ABO Enterprise" },
       { key: "site_tagline", label: "Tagline", placeholder: "সহজ সমাধান" },
+      { key: "site_url", label: "Site URL", type: "url", placeholder: "https://www.aboenterprise.com", hint: "Your live website address. Used for the 'View in Admin' & order-tracking links in emails. No trailing slash." },
     ],
   },
   {
