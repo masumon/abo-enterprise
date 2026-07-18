@@ -5,13 +5,16 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Try importing Resend at module load time
+# Try importing Resend at module load time. The SDK is used module-level
+# (`resend.api_key = ...; resend.Emails.send(...)`) — it exposes NO `Resend`
+# class, so the old `from resend import Resend` always raised ImportError and
+# forced an SMTP fallback (which Render's free tier blocks). Import the module.
 try:
-    from resend import Resend as ResendClient
+    import resend  # noqa: F401
     RESEND_AVAILABLE = True
 except ImportError:
+    resend = None  # type: ignore[assignment]
     RESEND_AVAILABLE = False
-    ResendClient = None
 
 
 class EmailProvider(ABC):
@@ -80,10 +83,8 @@ class ResendProvider(EmailProvider):
         attachments: Optional[list] = None,
     ) -> None:
         """Send via Resend API."""
-        if not RESEND_AVAILABLE or ResendClient is None:
+        if not RESEND_AVAILABLE or resend is None:
             raise RuntimeError("Resend provider not available")
-
-        client = ResendClient(api_key=self.api_key)
 
         # Resend doesn't support attachments in the same way as SMTP
         # For now, we log a warning if attachments are provided
@@ -93,21 +94,25 @@ class ResendProvider(EmailProvider):
                 len(attachments),
             )
 
-        response = client.emails.send(
+        # The SDK reads the key from the module and sends via resend.Emails.send.
+        # `to` must be a list of recipients.
+        resend.api_key = self.api_key
+        response = resend.Emails.send(
             {
                 "from": f"{self.from_name} <{self.from_email}>",
-                "to": to,
+                "to": [to] if isinstance(to, str) else to,
                 "subject": subject,
                 "html": html,
             }
         )
 
-        # Resend returns response with 'id' on success, error info on failure
-        if not response.get("id"):
-            error_msg = response.get("message", "Unknown error")
+        # Resend returns a dict-like response with 'id' on success.
+        email_id = response.get("id") if isinstance(response, dict) else getattr(response, "id", None)
+        if not email_id:
+            error_msg = response.get("message", "Unknown error") if isinstance(response, dict) else str(response)
             raise RuntimeError(f"Resend API error: {error_msg}")
 
-        logger.info("Email sent via Resend to %s (id=%s)", to, response.get("id"))
+        logger.info("Email sent via Resend to %s (id=%s)", to, email_id)
 
     def validate(self) -> bool:
         return bool(self.api_key and self.from_email)
