@@ -27,7 +27,7 @@ _COMPANY_ADDRESS = (
     "Beanibazar, Sylhet, Bangladesh"
 )
 _COMPANY_PHONE = "+880 1825 007977"
-_COMPANY_EMAIL = "info.aboenterprise@gmail.com"
+_COMPANY_EMAIL = "info@aboenterprise.com"
 
 
 def _find_logo_path() -> Path | None:

@@ -100,7 +100,7 @@ const SECTIONS: Section[] = [
     icon: <MapPin className="w-4 h-4" />,
     fields: [
       { key: "contact_phone", label: "Phone", type: "tel", placeholder: "01825007977" },
-      { key: "contact_email", label: "Email", type: "email", placeholder: "info.aboenterprise@gmail.com", hint: "Shown on the site (footer, contact, invoices). Editable here — no redeploy." },
+      { key: "contact_email", label: "Email", type: "email", placeholder: "info@aboenterprise.com", hint: "Shown on the site (footer, contact, invoices). Editable here — no redeploy." },
       { key: "contact_address", label: "Address", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh" },
       { key: "contact_hours_en", label: "Business Hours (EN)", placeholder: "Sat–Thu, 9:00 AM – 9:00 PM", hint: "Shown in the footer, homepage and contact page" },
       { key: "contact_hours_bn", label: "Business Hours (বাংলা)", placeholder: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা" },
@@ -116,11 +116,11 @@ const SECTIONS: Section[] = [
     fields: [
       { key: "smtp_host", label: "SMTP Host", placeholder: "smtp.gmail.com" },
       { key: "smtp_port", label: "SMTP Port", type: "number", placeholder: "587" },
-      { key: "smtp_user", label: "SMTP User", placeholder: "info.aboenterprise@gmail.com" },
+      { key: "smtp_user", label: "SMTP User", placeholder: "info@aboenterprise.com" },
       { key: "smtp_password", label: "SMTP Password / App Password", type: "password", placeholder: "•••• •••• •••• ••••", hint: "Gmail: 16-char App Password. Stored masked; not shown again." },
-      { key: "smtp_from", label: "From Address", type: "email", placeholder: "info.aboenterprise@gmail.com" },
+      { key: "smtp_from", label: "From Address", type: "email", placeholder: "info@aboenterprise.com" },
       { key: "smtp_from_name", label: "From Name", placeholder: "ABO Enterprise" },
-      { key: "admin_notify_email", label: "Notifications To", type: "email", placeholder: "info.aboenterprise@gmail.com", hint: "New orders/bookings/leads are emailed here." },
+      { key: "admin_notify_email", label: "Notifications To", type: "email", placeholder: "info@aboenterprise.com", hint: "New orders/bookings/leads are emailed here." },
     ],
   },
 

@@ -54,7 +54,7 @@ class SSLCommerzGateway:
             "cancel_url": cancel_url,
             "cus_name": customer_name[:50],
             "cus_phone": customer_phone,
-            "cus_email": customer_email or "customer@aboenterprise.com",
+            "cus_email": customer_email or "info@aboenterprise.com",
             "cus_add1": "Bangladesh",
             "cus_city": "Sylhet",
             "cus_country": "Bangladesh",

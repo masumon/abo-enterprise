@@ -88,7 +88,7 @@ DEFAULT_SETTINGS: list[dict] = [
     },
     {
         "key": "contact_email",
-        "value": "info.aboenterprise@gmail.com",
+        "value": "info@aboenterprise.com",
         "data_type": "string",
         "description": "Contact email",
     },

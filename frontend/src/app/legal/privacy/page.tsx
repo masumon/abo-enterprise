@@ -9,7 +9,7 @@ export default function PrivacyPage() {
   const { lang } = useLanguageStore();
   const isBn = lang === "bn";
   const { settings } = usePublicSettings(["contact_email", "contact_phone"]);
-  const contactEmail = getSettingValue(settings, "contact_email", "info.aboenterprise@gmail.com");
+  const contactEmail = getSettingValue(settings, "contact_email", "info@aboenterprise.com");
   const contactPhone = getSettingValue(settings, "contact_phone", "+880 1825 007977");
 
   const sections: LegalSection[] = [

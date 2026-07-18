@@ -17,7 +17,7 @@ export default function ContactSection() {
   const phone = getSettingValue(settings, "contact_phone", "01825007977");
   const phoneDisplay = formatBdPhoneDisplay(phone);
   const phoneHref = toBdTelHref(phone);
-  const email = getSettingValue(settings, "contact_email", "info.aboenterprise@gmail.com");
+  const email = getSettingValue(settings, "contact_email", "info@aboenterprise.com");
   const address = getSettingValue(settings, "contact_address", lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN);
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
   const hours = lang === "bn"
