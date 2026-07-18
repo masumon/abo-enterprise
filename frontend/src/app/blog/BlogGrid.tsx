@@ -49,12 +49,12 @@ export default function BlogGrid({ posts, page, totalPages }: Props) {
               href={`/blog/${post.slug}`}
               className="group flex flex-col enterprise-card overflow-hidden shadow-sm hover:shadow-md hover:border-brand-200 dark:hover:border-brand-500/30 transition-all"
             >
-              <div className="relative aspect-video overflow-hidden bg-gray-100">
+              <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
                 <Image
                   src={resolveBlogImage(post.featured_image_url)}
                   alt={title}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="object-contain group-hover:scale-105 transition-transform duration-300"
                   sizes="(max-width: 768px) 100vw, 33vw"
                 />
               </div>
