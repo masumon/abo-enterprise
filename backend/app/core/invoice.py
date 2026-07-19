@@ -300,6 +300,21 @@ def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path, 
 
     tot_w = CW * 0.42
     tot_x = M + CW - tot_w
+
+    # ── Verification QR — placed in the open space to the LEFT of the totals ──
+    qr_img = _qr_image(verify_url) if verify_url else None
+    if qr_img is not None:
+        qr_size = 82.0
+        qr_x = M + 4
+        qr_y = y + 2
+        try:
+            pdf.image(qr_img, x=qr_x, y=qr_y, w=qr_size, h=qr_size)
+            line(qr_x, qr_y + qr_size + 3, qr_size, 9, "Scan to verify", "B", 7, MUTED)
+            line(qr_x, qr_y + qr_size + 13, qr_size + 60, 9,
+                 "this invoice / track order", "", 6.5, MUTED)
+        except Exception:  # noqa: BLE001 — never let the QR break the PDF
+            pass
+
     ly = y
     for label_txt, val in rows:
         line(tot_x, ly + 6, tot_w * 0.5, 12, label_txt, "", 10, MUTED, align="R")
@@ -322,27 +337,13 @@ def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path, 
         y = pdf.get_y()
 
     # ── Footer ──
-    qr_img = _qr_image(verify_url) if verify_url else None
-    # Reserve a little more vertical room when a QR is present so it never
-    # collides with the page bottom margin.
-    fy = max(y + 40, H - (112 if qr_img else 96))
+    fy = max(y + 40, H - 96)
     draw(BORDER); pdf.set_line_width(0.6)
     pdf.line(M, fy, M + CW, fy)
     line(M, fy + 14, CW, 14, "Thank you for choosing ABO Enterprise!", "B", 11, BRAND_DARK, align="C")
     ink(MUTED); font("", 8)
     pdf.set_xy(M, fy + 32)
     pdf.multi_cell(CW, 12, f"{company.get('address', '')}\n{company.get('phone', '')} · {company.get('email', '')}", align="C")
-
-    if qr_img is not None:
-        qr_size = 52.0
-        qr_x = M + CW - qr_size
-        qr_y = fy + 12
-        try:
-            pdf.image(qr_img, x=qr_x, y=qr_y, w=qr_size, h=qr_size)
-            line(qr_x - 14, qr_y + qr_size + 2, qr_size + 28, 9,
-                 "Scan to verify", "", 6.5, MUTED, align="C")
-        except Exception:  # noqa: BLE001 — never let the QR break the PDF
-            pass
 
     out = pdf.output()
     return bytes(out)
