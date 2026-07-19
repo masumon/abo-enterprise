@@ -303,6 +303,7 @@ def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path, 
 
     # ── Verification QR — placed in the open space to the LEFT of the totals ──
     qr_img = _qr_image(verify_url) if verify_url else None
+    qr_bottom = 0.0  # tracks the QR+caption bottom so Notes/footer never overlap it
     if qr_img is not None:
         qr_size = 82.0
         qr_x = M + 4
@@ -312,8 +313,9 @@ def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path, 
             line(qr_x, qr_y + qr_size + 3, qr_size, 9, "Scan to verify", "B", 7, MUTED)
             line(qr_x, qr_y + qr_size + 13, qr_size + 60, 9,
                  "this invoice / track order", "", 6.5, MUTED)
+            qr_bottom = qr_y + qr_size + 24
         except Exception:  # noqa: BLE001 — never let the QR break the PDF
-            pass
+            qr_bottom = 0.0
 
     ly = y
     for label_txt, val in rows:
@@ -328,6 +330,9 @@ def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path, 
     line(tot_x, ly + 11, tot_w * 0.5, 14, "TOTAL", "B", 11.5, WHITE, align="R")
     line(tot_x + tot_w * 0.5, ly + 10, tot_w * 0.5 - 14, 16, _taka(total), "", 13, WHITE, align="R")
     y = ly + grand_h
+    # Keep everything below the QR block — when the totals are short the QR
+    # extends lower than the totals, so Notes/footer must clear it.
+    y = max(y, qr_bottom)
 
     if invoice.notes and "legacy_booking_id:" not in (invoice.notes or ""):
         y += 14

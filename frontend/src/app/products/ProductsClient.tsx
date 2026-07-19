@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Search, SlidersHorizontal, Loader2, LayoutGrid, List } from "lucide-react";
 import type { Category, Product, Subcategory } from "@/types";
 import ProductCard from "@/components/features/ProductCard";
+import Reveal from "@/components/ui/Reveal";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import LoadingProgress from "@/components/ui/LoadingProgress";
 import { useCartStore } from "@/store/cart";
@@ -277,8 +278,10 @@ export default function ProductsClient({
               type="button"
               onClick={() => handleCategoryChange(c.value)}
               className={cn(
-                "px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap flex-shrink-0",
-                category === c.value ? "bg-brand-600 text-white" : "bg-white text-gray-600 hover:bg-brand-50 border border-gray-100"
+                "px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap flex-shrink-0",
+                category === c.value
+                  ? "bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-md shadow-brand-900/20 ring-1 ring-brand-500/40"
+                  : "bg-gradient-to-b from-white to-brand-50/70 dark:from-white/[0.06] dark:to-brand-900/20 text-brand-700 dark:text-brand-200 ring-1 ring-brand-100 dark:ring-brand-800/70 shadow-sm shadow-brand-900/[0.04] hover:-translate-y-0.5 hover:ring-brand-300 dark:hover:ring-brand-600 hover:shadow-md"
               )}
             >
               {lang === "bn" ? c.label.bn : c.label.en}
@@ -324,8 +327,10 @@ export default function ProductsClient({
             type="button"
             onClick={() => handleSubcategoryChange(row.allValue)}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0",
-              !row.active ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-700 hover:bg-brand-100"
+              "px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap flex-shrink-0",
+              !row.active
+                ? "bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-sm shadow-brand-900/20 ring-1 ring-brand-500/40"
+                : "bg-gradient-to-b from-white to-brand-50/70 dark:from-white/[0.06] dark:to-brand-900/20 text-brand-700 dark:text-brand-200 ring-1 ring-brand-100 dark:ring-brand-800/70 hover:-translate-y-0.5 hover:ring-brand-300 dark:hover:ring-brand-600"
             )}
           >
             {lang === "bn" ? "সব" : "All"}
@@ -336,8 +341,10 @@ export default function ProductsClient({
               type="button"
               onClick={() => handleSubcategoryChange(s.slug)}
               className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap flex-shrink-0",
-                row.active === s.slug ? "bg-brand-600 text-white" : "bg-brand-50 text-brand-700 hover:bg-brand-100"
+                "px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap flex-shrink-0",
+                row.active === s.slug
+                  ? "bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-sm shadow-brand-900/20 ring-1 ring-brand-500/40"
+                  : "bg-gradient-to-b from-white to-brand-50/70 dark:from-white/[0.06] dark:to-brand-900/20 text-brand-700 dark:text-brand-200 ring-1 ring-brand-100 dark:ring-brand-800/70 hover:-translate-y-0.5 hover:ring-brand-300 dark:hover:ring-brand-600"
               )}
             >
               {lang === "bn" && s.name_bn ? s.name_bn : s.name_en}
@@ -368,8 +375,10 @@ export default function ProductsClient({
         <>
           <p className="text-sm text-gray-500 mb-5">{total} {lang === "bn" ? "টি পণ্য" : "products"}</p>
           <div className={cn("gap-4", viewMode === "grid" ? "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" : "flex flex-col")}>
-            {products.map((p) => (
-              <ProductCard key={p.id ?? p.slug} product={p} onAddToCart={openCart} layout={viewMode} />
+            {products.map((p, i) => (
+              <Reveal key={p.id ?? p.slug} as="div" delay={(i % 8) * 45} className="h-full">
+                <ProductCard product={p} onAddToCart={openCart} layout={viewMode} />
+              </Reveal>
             ))}
           </div>
           {loadingMore && infiniteScroll && (

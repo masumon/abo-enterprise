@@ -5,6 +5,7 @@ import { Target, Eye, Heart, CheckCircle, Users, Briefcase, ShoppingCart, Award,
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import BrandLogo from "@/components/ui/BrandLogo";
+import Reveal from "@/components/ui/Reveal";
 import Image from "next/image";
 import { getBrandFullTitle } from "@/lib/tokens";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
@@ -68,7 +69,7 @@ export default function AboutPage() {
         </div>
       </PageHero>
 
-      <section className="py-16 px-4 section-panel">
+      <Reveal as="section" className="py-16 px-4 section-panel">
         <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-12 items-start">
           <div>
             <div className="section-title"><h2>{t({ en: "Our Story", bn: "আমাদের গল্প" })}</h2></div>
@@ -104,9 +105,9 @@ export default function AboutPage() {
             </div>
           </div>
         </div>
-      </section>
+      </Reveal>
 
-      <section className="py-14 px-4 section-panel-alt">
+      <Reveal as="section" className="py-14 px-4 section-panel-alt">
         <div className="max-w-5xl mx-auto">
           <div className="section-title text-center"><h2>{t({ en: "Key Achievements", bn: "প্রধান অর্জন" })}</h2></div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
@@ -119,9 +120,9 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
-      </section>
+      </Reveal>
 
-      <section className="py-16 px-4 section-panel">
+      <Reveal as="section" className="py-16 px-4 section-panel">
         <div className="max-w-3xl mx-auto">
           <div className="section-title text-center"><h2>{t({ en: "Our Journey", bn: "আমাদের যাত্রা" })}</h2></div>
           <div className="mt-10 space-y-6">
@@ -140,9 +141,9 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
-      </section>
+      </Reveal>
 
-      <section className="py-16 px-4 section-panel-alt">
+      <Reveal as="section" className="py-16 px-4 section-panel-alt">
         <div className="max-w-4xl mx-auto">
           <div className="section-title text-center"><h2>{t({ en: "Our Values", bn: "আমাদের মূল্যবোধ" })}</h2></div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
@@ -155,9 +156,9 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
-      </section>
+      </Reveal>
 
-      <section className="py-16 px-4 section-panel">
+      <Reveal as="section" className="py-16 px-4 section-panel">
         <div className="max-w-4xl mx-auto">
           <div className="section-title text-center"><h2>{t({ en: "Our Team", bn: "আমাদের দল" })}</h2></div>
           <div className="grid md:grid-cols-3 gap-6 mt-10">
@@ -177,9 +178,9 @@ export default function AboutPage() {
             ))}
           </div>
         </div>
-      </section>
+      </Reveal>
 
-      <section className="py-20 px-4 relative overflow-hidden">
+      <Reveal as="section" className="py-20 px-4 relative overflow-hidden">
         <div className="absolute inset-0 gradient-brand opacity-95" />
         <div className="absolute inset-0" style={{ backgroundImage: "radial-gradient(circle at 30% 50%, rgba(255,255,255,0.1) 0%, transparent 50%)" }} />
         <div className="relative max-w-3xl mx-auto text-center text-white">
@@ -193,7 +194,7 @@ export default function AboutPage() {
             <Link href="/projects" className="btn btn-lg btn-outline border-white/50 text-white hover:bg-white/10">{t({ en: "Get a Quote", bn: "কোটেশন নিন" })}</Link>
           </div>
         </div>
-      </section>
+      </Reveal>
     </main>
   );
 }

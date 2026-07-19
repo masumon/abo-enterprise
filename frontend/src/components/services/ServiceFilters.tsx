@@ -27,10 +27,10 @@ export default function ServiceFilters({
           type="button"
           onClick={() => onCategoryChange(category.id)}
           className={cn(
-            "px-4 py-2 rounded-xl text-sm font-medium transition-all",
+            "px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200",
             selectedCategory === category.id
-              ? "bg-brand-600 text-white shadow-md"
-              : "enterprise-card text-muted hover:text-heading"
+              ? "bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-md shadow-brand-900/20 ring-1 ring-brand-500/40"
+              : "bg-gradient-to-b from-white to-brand-50/70 dark:from-white/[0.06] dark:to-brand-900/20 text-brand-700 dark:text-brand-200 ring-1 ring-brand-100 dark:ring-brand-800/70 shadow-sm shadow-brand-900/[0.04] hover:-translate-y-0.5 hover:ring-brand-300 dark:hover:ring-brand-600 hover:shadow-md"
           )}
           aria-pressed={selectedCategory === category.id}
         >

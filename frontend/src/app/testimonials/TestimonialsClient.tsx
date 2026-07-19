@@ -9,6 +9,7 @@ import type { Review } from "@/types";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import GlassCard from "@/components/ui/GlassCard";
+import Reveal from "@/components/ui/Reveal";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import { useToastStore } from "@/store/toast";
 import { cacheApiResponse, getCachedApiResponse } from "@/lib/apiCache";
@@ -115,8 +116,9 @@ export default function TestimonialsClient() {
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {reviews.map((r) => (
-                <GlassCard key={r.id} hover className="p-5">
+              {reviews.map((r, i) => (
+                <Reveal key={r.id} as="div" delay={(i % 6) * 60} className="h-full">
+                <GlassCard hover className="p-5 h-full">
                   <div className="flex items-center gap-1 mb-3">
                     {Array.from({ length: r.rating }).map((_, i) => <Star key={i} className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />)}
                     {r.is_verified && <BadgeCheck className="w-4 h-4 text-green-500 ml-auto" />}
@@ -134,6 +136,7 @@ export default function TestimonialsClient() {
                     </div>
                   </div>
                 </GlassCard>
+                </Reveal>
               ))}
             </div>
           )}

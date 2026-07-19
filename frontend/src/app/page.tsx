@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import Hero from "@/components/home/Hero";
 import TrustBadges from "@/components/home/TrustBadges";
 import QuickCategories from "@/components/home/QuickCategories";
+import Reveal from "@/components/ui/Reveal";
 import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, getBrandFullTitle } from "@/lib/tokens";
 import { jsonLdString } from "@/lib/metadata";
 
@@ -110,19 +111,19 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: jsonLdString(localBusinessJsonLd) }}
       />
       <Hero />
-      <QuickCategories />
-      <TrustBadges />
-      <EntryPoints />
-      <Stats />
-      <ServicesOverview />
-      <FeaturedProducts />
-      <Portfolio />
-      <ClientLogos />
-      <WhyChooseUs />
-      <CustomerReviews />
-      <FAQ />
-      <LeadCapture />
-      <ContactSection />
+      <Reveal><QuickCategories /></Reveal>
+      <Reveal><TrustBadges /></Reveal>
+      <Reveal><EntryPoints /></Reveal>
+      <Reveal><Stats /></Reveal>
+      <Reveal><ServicesOverview /></Reveal>
+      <Reveal><FeaturedProducts /></Reveal>
+      <Reveal><Portfolio /></Reveal>
+      <Reveal><ClientLogos /></Reveal>
+      <Reveal><WhyChooseUs /></Reveal>
+      <Reveal><CustomerReviews /></Reveal>
+      <Reveal><FAQ /></Reveal>
+      <Reveal><LeadCapture /></Reveal>
+      <Reveal><ContactSection /></Reveal>
     </>
   );
 }

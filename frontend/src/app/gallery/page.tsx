@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Play, ImageIcon, X, ExternalLink } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
+import Reveal from "@/components/ui/Reveal";
 import { cn } from "@/lib/utils";
 import { useShowcaseContent } from "@/hooks/useShowcaseContent";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
@@ -83,8 +84,8 @@ export default function GalleryPage() {
 
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {images.map((img, i) => (
+              <Reveal key={`${img.src}-${i}`} as="div" delay={(i % 8) * 45} className="h-full">
               <button
-                key={`${img.src}-${i}`}
                 type="button"
                 onClick={() => setLightbox({ src: img.src, alt: img.alt })}
                 className="enterprise-card-hover overflow-hidden aspect-square relative group"
@@ -95,6 +96,7 @@ export default function GalleryPage() {
                   <ImageIcon className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               </button>
+              </Reveal>
             ))}
           </div>
 

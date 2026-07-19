@@ -8,6 +8,7 @@ import { CheckCircle, ArrowRight } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import GlassCard from "@/components/ui/GlassCard";
+import Reveal from "@/components/ui/Reveal";
 import { useShowcaseContent } from "@/hooks/useShowcaseContent";
 import { ExternalLink, Play } from "lucide-react";
 
@@ -61,8 +62,9 @@ export default function ProjectsPage() {
           {t({ en: "Project Gallery", bn: "প্রজেক্ট গ্যালারি" })}
         </h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((p) => (
-            <GlassCard key={p.slug} hover className="overflow-hidden h-full">
+          {projects.map((p, i) => (
+            <Reveal key={p.slug} as="div" delay={(i % 6) * 60} className="h-full">
+            <GlassCard hover className="overflow-hidden h-full">
               <Link href={`/projects/${p.slug}`} className="block">
                 <div className="relative h-40">
                   {p.image ? (
@@ -97,6 +99,7 @@ export default function ProjectsPage() {
                 </div>
               )}
             </GlassCard>
+            </Reveal>
           ))}
         </div>
       </section>
