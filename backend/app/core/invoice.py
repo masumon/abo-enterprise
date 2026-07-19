@@ -100,7 +100,30 @@ def _taka(amount: float) -> str:
     return f"৳{amount:,.2f}"
 
 
-def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path) -> bytes:
+def _qr_image(data: str):
+    """Return a PIL image of a QR encoding `data`, or None if unavailable.
+
+    Never raises — the QR is a nice-to-have on the invoice, so any failure
+    (missing lib, bad data) simply omits it rather than breaking the PDF.
+    """
+    if not data:
+        return None
+    try:
+        import qrcode
+
+        qr = qrcode.QRCode(
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=10,
+            border=1,
+        )
+        qr.add_data(data)
+        qr.make(fit=True)
+        return qr.make_image(fill_color="black", back_color="white").get_image()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path, verify_url: str | None = None) -> bytes:
     """Render the branded invoice with fpdf2 + HarfBuzz text shaping.
 
     reportlab cannot shape complex scripts, so Bengali (matras/conjuncts) broke
@@ -299,13 +322,27 @@ def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path) 
         y = pdf.get_y()
 
     # ── Footer ──
-    fy = max(y + 40, H - 96)
+    qr_img = _qr_image(verify_url) if verify_url else None
+    # Reserve a little more vertical room when a QR is present so it never
+    # collides with the page bottom margin.
+    fy = max(y + 40, H - (112 if qr_img else 96))
     draw(BORDER); pdf.set_line_width(0.6)
     pdf.line(M, fy, M + CW, fy)
     line(M, fy + 14, CW, 14, "Thank you for choosing ABO Enterprise!", "B", 11, BRAND_DARK, align="C")
     ink(MUTED); font("", 8)
     pdf.set_xy(M, fy + 32)
     pdf.multi_cell(CW, 12, f"{company.get('address', '')}\n{company.get('phone', '')} · {company.get('email', '')}", align="C")
+
+    if qr_img is not None:
+        qr_size = 52.0
+        qr_x = M + CW - qr_size
+        qr_y = fy + 12
+        try:
+            pdf.image(qr_img, x=qr_x, y=qr_y, w=qr_size, h=qr_size)
+            line(qr_x - 14, qr_y + qr_size + 2, qr_size + 28, 9,
+                 "Scan to verify", "", 6.5, MUTED, align="C")
+        except Exception:  # noqa: BLE001 — never let the QR break the PDF
+            pass
 
     out = pdf.output()
     return bytes(out)
@@ -551,6 +588,7 @@ class InvoiceService:
 
         ref_label = None
         ref_value = None
+        verify_url = None
         if invoice.order_id:
             order_result = await self.db.execute(
                 select(Order.order_number).where(Order.id == invoice.order_id)
@@ -564,8 +602,21 @@ class InvoiceService:
             ref_value = bk_result.scalar_one_or_none()
             ref_label = "Booking #"
 
+        # QR verification link → public /track page (same convention as the
+        # confirmation emails). Never let a settings/URL read break the PDF.
+        if ref_value:
+            try:
+                from urllib.parse import quote
+                from app.core.site_url import resolve_site_url
+
+                base = await resolve_site_url(self.db)
+                key = "booking" if invoice.booking_id else "order"
+                verify_url = f"{base}/track?{key}={quote(str(ref_value))}"
+            except Exception:  # noqa: BLE001
+                verify_url = None
+
         return _build_invoice_pdf(
-            invoice, company, ref_label, ref_value, _find_logo_path()
+            invoice, company, ref_label, ref_value, _find_logo_path(), verify_url
         )
 
     def format_currency(self, amount: float) -> str:

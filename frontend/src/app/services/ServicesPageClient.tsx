@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Printer, Code2, Megaphone, Briefcase,
-  Bot, Cog, Smartphone, FileText, Wrench, Monitor, Globe, Headphones,
+  Bot, Cog, Smartphone, FileText, Wrench, Monitor, Globe, Headphones, ChevronRight,
   type LucideIcon,
 } from "lucide-react";
 import type { Category, Service } from "@/types";
@@ -12,6 +12,7 @@ import { useLanguageStore } from "@/store/language";
 import ServiceCard from "@/components/services/ServiceCard";
 import ServiceFilters from "@/components/services/ServiceFilters";
 import PageHero from "@/components/ui/PageHero";
+import Reveal from "@/components/ui/Reveal";
 import { ServiceCardSkeleton } from "@/components/common/Skeletons";
 import { cn } from "@/lib/utils";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
@@ -337,49 +338,72 @@ export default function ServicesPageClient({
               links into the nested routes) or the static fallback when the
               taxonomy is empty/unreachable. */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
-            {categoryCards.map(({ key, anchorId, extraAnchorIds, Icon, color, title, titleHref, chips }) => (
-              <div key={key} id={anchorId} className="enterprise-card p-5 scroll-mt-24 relative">
-                {/* Invisible legacy anchors so old /services#... links keep scrolling here */}
-                {extraAnchorIds.map((a) => (
-                  <span key={a} id={a} aria-hidden className="absolute top-0 scroll-mt-24" />
-                ))}
-                {titleHref ? (
-                  <Link href={titleHref} className="flex items-center gap-3 mb-3 group">
-                    <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0", color)}>
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <h3 className="font-bold text-heading group-hover:text-brand-600 transition-colors">{title}</h3>
-                  </Link>
-                ) : (
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0", color)}>
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <h3 className="font-bold text-heading">{title}</h3>
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-1.5">
-                  {chips.map((chip) =>
-                    chip.href ? (
-                      <Link
-                        key={chip.key}
-                        href={chip.href}
-                        className="inline-block px-2.5 py-1 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors"
-                      >
-                        {chip.label}
+            {categoryCards.map(({ key, anchorId, extraAnchorIds, Icon, color, title, titleHref, chips }, i) => {
+              const iconTile = (
+                <div
+                  className={cn(
+                    "w-11 h-11 rounded-xl flex items-center justify-center text-white flex-shrink-0 shadow-md ring-1 ring-white/25 group-hover/card:scale-110 group-hover/card:-rotate-3 transition-transform duration-300",
+                    color
+                  )}
+                >
+                  <Icon className="w-5 h-5" />
+                </div>
+              );
+              return (
+                <Reveal
+                  as="div"
+                  key={key}
+                  delay={Math.min(i, 6) * 70}
+                  className="h-full"
+                >
+                  <div
+                    id={anchorId}
+                    className="group/card enterprise-card p-5 scroll-mt-24 relative h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(30,91,168,0.35)]"
+                  >
+                    {/* Coloured top accent that grows on hover — premium touch */}
+                    <span aria-hidden className={cn("absolute inset-x-0 top-0 h-1 opacity-80 transition-opacity duration-300 group-hover/card:opacity-100", color)} />
+                    {/* Invisible legacy anchors so old /services#... links keep scrolling here */}
+                    {extraAnchorIds.map((a) => (
+                      <span key={a} id={a} aria-hidden className="absolute top-0 scroll-mt-24" />
+                    ))}
+                    {titleHref ? (
+                      <Link href={titleHref} className="flex items-center gap-3 mb-3 group/title">
+                        {iconTile}
+                        <h3 className="font-bold text-heading group-hover/title:text-brand-600 transition-colors">{title}</h3>
                       </Link>
                     ) : (
-                      <span
-                        key={chip.key}
-                        className="inline-block px-2.5 py-1 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 rounded-lg"
-                      >
-                        {chip.label}
-                      </span>
-                    )
-                  )}
-                </div>
-              </div>
-            ))}
+                      <div className="flex items-center gap-3 mb-3">
+                        {iconTile}
+                        <h3 className="font-bold text-heading">{title}</h3>
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-1.5">
+                      {chips.map((chip) =>
+                        chip.href ? (
+                          <Link
+                            key={chip.key}
+                            href={chip.href}
+                            className="group/chip inline-flex items-center gap-1 pl-2 pr-2 py-1 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 rounded-lg ring-1 ring-transparent hover:ring-brand-200 dark:hover:ring-brand-700 hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-all"
+                          >
+                            <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-brand-400 dark:bg-brand-500 group-hover/chip:bg-brand-600 transition-colors" />
+                            {chip.label}
+                            <ChevronRight aria-hidden className="w-3 h-3 -ml-0.5 opacity-0 -translate-x-1 group-hover/chip:opacity-100 group-hover/chip:translate-x-0 transition-all" />
+                          </Link>
+                        ) : (
+                          <span
+                            key={chip.key}
+                            className="inline-flex items-center gap-1 pl-2 pr-2.5 py-1 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 rounded-lg"
+                          >
+                            <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-brand-400 dark:bg-brand-500" />
+                            {chip.label}
+                          </span>
+                        )
+                      )}
+                    </div>
+                  </div>
+                </Reveal>
+              );
+            })}
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">

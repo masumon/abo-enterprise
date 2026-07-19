@@ -4,6 +4,7 @@ import { Truck, Phone, Mail, MapPin, CheckCircle2, Clock } from "lucide-react";
 import type { PublicInvoiceData } from "@/lib/api";
 import { cn, formatPrice } from "@/lib/utils";
 import BrandLogo from "@/components/ui/BrandLogo";
+import InvoiceQr from "@/components/invoice/InvoiceQr";
 import { getBrandTagline } from "@/lib/tokens";
 import {
   DEFAULT_ADDRESS_EN,
@@ -29,6 +30,13 @@ export default function InvoiceCard({ invoice, lang }: Props) {
   const isPaid = ["paid", "completed"].includes(invoice.payment_status);
   const issued = invoice.issued_date ?? invoice.created_at;
   const reference = invoice.order_number || invoice.booking_number;
+  // QR resolves to the live, public tracking record so a scan verifies the
+  // receipt — same /track?order= convention used in confirmation emails.
+  const qrPath = invoice.order_number
+    ? `/track?order=${encodeURIComponent(invoice.order_number)}`
+    : invoice.booking_number
+      ? `/track?booking=${encodeURIComponent(invoice.booking_number)}`
+      : null;
   const refLabel = invoice.order_number
     ? bn ? "অর্ডার নম্বর" : "Order No."
     : bn ? "বুকিং নম্বর" : "Booking No.";
@@ -222,6 +230,14 @@ export default function InvoiceCard({ invoice, lang }: Props) {
 
       {/* ── Footer ── */}
       <div className="px-5 sm:px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-100 dark:border-gray-800">
+        {qrPath && (
+          <div className="flex justify-center mb-3">
+            <InvoiceQr
+              path={qrPath}
+              label={bn ? "স্ক্যান করে ইনভয়েস যাচাই করুন" : "Scan to verify this invoice"}
+            />
+          </div>
+        )}
         <p className="text-center text-sm font-semibold text-brand-700 dark:text-brand-300 mb-2">
           {bn ? "ABO Enterprise বেছে নেওয়ার জন্য ধন্যবাদ!" : "Thank you for choosing ABO Enterprise!"}
         </p>

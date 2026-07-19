@@ -10,6 +10,7 @@ import { servicesApi } from "@/lib/api";
 import type { Service } from "@/types";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import { resolveServiceImage } from "@/lib/demoImages";
+import Reveal from "@/components/ui/Reveal";
 
 function serviceHref(slug: string): string {
   if (slug === "software") return "/services/software";
@@ -71,7 +72,7 @@ export default function ServicesOverview() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {services.map((service) => {
+            {services.map((service, i) => {
               const name = lang === "bn" && service.name_bn ? service.name_bn : service.name_en;
               const desc =
                 (lang === "bn" ? service.short_description_bn : null) ||
@@ -79,7 +80,8 @@ export default function ServicesOverview() {
                 service.description_en;
               const imageSrc = resolveServiceImage(service.featured_image_url, service.slug);
               return (
-                <Link key={service.id ?? service.slug} href={serviceHref(service.slug)} className="group">
+                <Reveal as="div" key={service.id ?? service.slug} delay={Math.min(i, 6) * 70} className="h-full">
+                <Link href={serviceHref(service.slug)} className="group block h-full">
                   <GlassCard hover className="overflow-hidden h-full">
                     <div className="relative h-36 bg-gray-100">
                       <Image
@@ -109,6 +111,7 @@ export default function ServicesOverview() {
                     </div>
                   </GlassCard>
                 </Link>
+                </Reveal>
               );
             })}
           </div>
