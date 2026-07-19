@@ -401,10 +401,10 @@ function SectionCard({
           </Link>
         </div>
       )}
-      <div className="divide-y divide-gray-50">
+      <div className="divide-y divide-gray-50 dark:divide-white/5">
         {section.fields.map((field) => (
-          <div key={field.key} className="px-6 py-4">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+          <div key={field.key} className="px-4 sm:px-6 py-4 hover:bg-gray-50/40 dark:hover:bg-white/[0.02] transition-colors">
+            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
               {field.label}
             </label>
             {field.upload ? (
