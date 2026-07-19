@@ -377,24 +377,24 @@ export default function ServicesPageClient({
                         <h3 className="font-bold text-heading">{title}</h3>
                       </div>
                     )}
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-2">
                       {chips.map((chip) =>
                         chip.href ? (
                           <Link
                             key={chip.key}
                             href={chip.href}
-                            className="group/chip inline-flex items-center gap-1 pl-2 pr-2 py-1 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 rounded-lg ring-1 ring-transparent hover:ring-brand-200 dark:hover:ring-brand-700 hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-all"
+                            className="group/chip inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 text-xs font-semibold rounded-full text-brand-700 dark:text-brand-200 bg-gradient-to-b from-white to-brand-50/80 dark:from-white/[0.07] dark:to-brand-900/30 ring-1 ring-brand-100 dark:ring-brand-800/70 shadow-sm shadow-brand-900/[0.05] hover:-translate-y-0.5 hover:ring-brand-300 dark:hover:ring-brand-600 hover:shadow-md hover:shadow-brand-900/10 hover:text-brand-800 dark:hover:text-white transition-all duration-200"
                           >
-                            <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-brand-400 dark:bg-brand-500 group-hover/chip:bg-brand-600 transition-colors" />
+                            <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 group-hover/chip:from-brand-500 group-hover/chip:to-brand-700 transition-colors" />
                             {chip.label}
-                            <ChevronRight aria-hidden className="w-3 h-3 -ml-0.5 opacity-0 -translate-x-1 group-hover/chip:opacity-100 group-hover/chip:translate-x-0 transition-all" />
+                            <ChevronRight aria-hidden className="w-3 h-3 -ml-1 opacity-0 -translate-x-1 group-hover/chip:opacity-100 group-hover/chip:translate-x-0 transition-all" />
                           </Link>
                         ) : (
                           <span
                             key={chip.key}
-                            className="inline-flex items-center gap-1 pl-2 pr-2.5 py-1 text-xs font-medium text-brand-700 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 rounded-lg"
+                            className="inline-flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 text-xs font-semibold rounded-full text-brand-700 dark:text-brand-200 bg-gradient-to-b from-white to-brand-50/80 dark:from-white/[0.07] dark:to-brand-900/30 ring-1 ring-brand-100 dark:ring-brand-800/70 shadow-sm shadow-brand-900/[0.05]"
                           >
-                            <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-brand-400 dark:bg-brand-500" />
+                            <span aria-hidden className="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-brand-400 to-brand-600" />
                             {chip.label}
                           </span>
                         )
