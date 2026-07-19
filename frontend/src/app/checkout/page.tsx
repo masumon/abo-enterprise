@@ -23,7 +23,7 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { mapPaymentMethods } from "@/lib/paymentDisplay";
 import { BD_DISTRICTS } from "@/lib/bdDistricts";
 import { getUpazilasForDistrict } from "@/lib/bdUpazilas";
-import { calcDeliveryCharge } from "@/lib/checkoutHelpers";
+import { calcDeliveryCharge, calcAdvanceCharge } from "@/lib/checkoutHelpers";
 import { validateCoupon, type AppliedCoupon } from "@/lib/coupons";
 import { isOffline } from "@/lib/networkStatus";
 import { saveOrderSnapshot } from "@/lib/orderSnapshot";
@@ -140,7 +140,9 @@ export default function CheckoutPage() {
   const subtotal = total();
   const discount = appliedCoupon?.discountAmount ?? 0;
   const afterDiscount = subtotal - discount;
-  const deliveryCharge = calcDeliveryCharge(selectedDistrict || "Sylhet", afterDiscount, settings);
+  const maxProductCharge = items.reduce((m, i) => Math.max(m, Number(i.delivery_charge) || 0), 0);
+  const deliveryCharge = calcDeliveryCharge(selectedDistrict || "Sylhet", afterDiscount, settings, maxProductCharge);
+  const advanceCharge = calcAdvanceCharge(items, settings);
   const cartTotal = afterDiscount + deliveryCharge;
 
   const applyCoupon = async () => {
@@ -528,6 +530,13 @@ export default function CheckoutPage() {
                     <span>{lang === "bn" ? "মোট" : "Total"}</span>
                     <span className="text-green-600">{formatPrice(cartTotal)}</span>
                   </div>
+                  {advanceCharge > 0 && (
+                    <div className="mt-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+                      {lang === "bn"
+                        ? `⚠️ এই অর্ডারে ৳${advanceCharge} অগ্রিম দিতে হবে; অগ্রিম পাওয়ার পর অর্ডার কনফার্ম হবে।`
+                        : `⚠️ This order requires a ৳${advanceCharge} advance; it will be confirmed once the advance is received.`}
+                    </div>
+                  )}
                 </div>
               </section>
             </div>

@@ -14,7 +14,7 @@ from app.core.config import settings
 from app.core.email import send_email, order_notification_html, customer_order_confirmation_html, customer_order_status_html
 from app.core.invoice import InvoiceService
 from app.core.site_url import resolve_site_url
-from app.models.models import Order, OrderItem, Product, ActivityLog
+from app.models.models import Order, OrderItem, Product, ActivityLog, Setting
 from app.schemas.schemas import OrderCreate, OrderOut, OrderStatusUpdate, OrderCourierUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 
 import logging
@@ -93,6 +93,17 @@ async def _server_side_discount(db: AsyncSession, coupon_code: str | None, subto
     return float(round(subtotal * rate))
 
 
+async def _advance_charge_amount(db: AsyncSession) -> float:
+    """The admin-configured advance/prepaid charge (setting), default ৳120."""
+    row = (await db.execute(
+        select(Setting.value).where(Setting.key == "advance_delivery_charge")
+    )).scalar_one_or_none()
+    try:
+        return max(0.0, float(row)) if row else 120.0
+    except (TypeError, ValueError):
+        return 120.0
+
+
 @router.post(
     "",
     response_model=ApiResponse,
@@ -117,6 +128,19 @@ async def create_order(
     trusted_delivery = max(0.0, float(payload.delivery_charge or 0))
     trusted_total = trusted_subtotal - trusted_discount + trusted_delivery
 
+    # Advance / prepaid: if any ordered product is admin-flagged
+    # requires_advance, an advance must be paid before the order is confirmed.
+    advance_amount = 0.0
+    product_ids = [i.product_id for i in payload.items if i.product_id]
+    if product_ids:
+        needs_advance = (await db.execute(
+            select(Product.id).where(
+                Product.id.in_(product_ids), Product.requires_advance == True  # noqa: E712
+            ).limit(1)
+        )).first() is not None
+        if needs_advance:
+            advance_amount = await _advance_charge_amount(db)
+
     order = Order(
         order_number=generate_order_number(),
         customer_name=payload.customer_name,
@@ -129,6 +153,8 @@ async def create_order(
         discount_amount=trusted_discount,
         coupon_code=payload.coupon_code,
         delivery_charge=trusted_delivery,
+        advance_amount=advance_amount,
+        advance_paid=False,
         total=trusted_total,
         notes=payload.notes,
     )
@@ -340,6 +366,33 @@ async def get_order(
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return ApiResponse(data=OrderOut.model_validate(order))
+
+
+@router.post("/{order_id}/advance-received", response_model=ApiResponse)
+async def mark_order_advance_received(
+    order_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    admin_id: str = Depends(require_role("orders.write")),
+):
+    """Admin marks the advance/prepaid amount as received and confirms the order."""
+    order = (await db.execute(
+        select(Order).options(selectinload(Order.items)).where(Order.id == order_id)
+    )).scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    order.advance_paid = True
+    if order.order_status == "pending":
+        order.order_status = "confirmed"
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin_id),
+        action="update",
+        entity_type="order",
+        entity_id=order.id,
+        new_values={"advance_paid": True, "order_status": order.order_status},
+    ))
+    await db.commit()
+    await db.refresh(order)
+    return ApiResponse(data=OrderOut.model_validate(order), message="Advance marked received; order confirmed")
 
 
 @router.post("/{order_id}/resend-email", response_model=ApiResponse)

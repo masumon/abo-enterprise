@@ -40,6 +40,8 @@ export interface Product {
   weight?: number;
   warranty_info?: string;
   delivery_info?: string;
+  delivery_charge?: number | null;
+  requires_advance?: boolean;
   is_flash_sale?: boolean;
   flash_sale_price?: number;
   flash_sale_ends_at?: string | null;
@@ -80,6 +82,10 @@ export interface CartItem {
   quantity: number;
   image_url?: string;
   stock_quantity?: number;
+  /** Optional per-product delivery override (৳); NULL/undefined = zone charge. */
+  delivery_charge?: number | null;
+  /** Admin flag — this product needs an advance/prepaid before confirmation. */
+  requires_advance?: boolean;
 }
 
 export interface OrderItem {
@@ -170,6 +176,9 @@ export interface Service {
   min_price?: number;
   max_price?: number;
   hourly_rate?: number;
+  delivery_charge?: number | null;
+  consultancy_fee?: number | null;
+  requires_advance?: boolean;
   pricing_tiers?: ServicePricingTier[];
   booking_forms?: ServiceBookingFormField[];
   is_active?: boolean;

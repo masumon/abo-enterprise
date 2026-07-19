@@ -171,6 +171,9 @@ export const ordersApi = {
   resendEmail: (id: string) =>
     api.post<ApiResponse<null>>(`/api/v1/orders/${id}/resend-email`),
 
+  markAdvanceReceived: (id: string) =>
+    api.post<ApiResponse<Order>>(`/api/v1/orders/${id}/advance-received`),
+
   bulkUpdateStatus: (order_ids: string[], status: string) =>
     api.post<ApiResponse<{ updated: number; ids: string[] }>>("/api/v1/admin/bulk/orders/status", { order_ids, status }),
 };

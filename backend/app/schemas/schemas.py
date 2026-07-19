@@ -71,6 +71,8 @@ class ProductBase(BaseModel):
     weight: float | None = None
     warranty_info: str | None = None
     delivery_info: str | None = None
+    delivery_charge: float | None = None
+    requires_advance: bool = False
     is_flash_sale: bool = False
     flash_sale_price: float | None = None
     flash_sale_ends_at: datetime | None = None
@@ -117,6 +119,8 @@ class ProductUpdate(BaseModel):
     weight: float | None = None
     warranty_info: str | None = None
     delivery_info: str | None = None
+    delivery_charge: float | None = None
+    requires_advance: bool | None = None
     is_flash_sale: bool | None = None
     flash_sale_price: float | None = None
     flash_sale_ends_at: datetime | None = None
@@ -272,6 +276,8 @@ class OrderOut(BaseModel):
     discount_amount: float = 0
     coupon_code: str | None = None
     delivery_charge: float
+    advance_amount: float = 0
+    advance_paid: bool = False
     total: float
     courier_provider: str | None = None
     courier_tracking_id: str | None = None
@@ -511,6 +517,9 @@ class ServiceBase(BaseModel):
     min_price: float | None = None
     max_price: float | None = None
     hourly_rate: float | None = None
+    delivery_charge: float | None = None
+    consultancy_fee: float | None = None
+    requires_advance: bool = False
     is_active: bool = True
     is_featured: bool = False
     sort_order: int = 0
@@ -560,6 +569,9 @@ class ServiceUpdate(BaseModel):
     min_price: float | None = None
     max_price: float | None = None
     hourly_rate: float | None = None
+    delivery_charge: float | None = None
+    consultancy_fee: float | None = None
+    requires_advance: bool | None = None
     is_active: bool | None = None
     is_featured: bool | None = None
     lead_priority: int | None = None
@@ -668,6 +680,8 @@ class BookingV2Out(BaseModel):
     pricing_type: str
     quoted_price: float | None
     final_price: float | None
+    advance_amount: float = 0
+    advance_paid: bool = False
     hours_worked: float | None
     details: str | None
     requirements: str | None

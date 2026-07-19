@@ -63,6 +63,8 @@ const schema = z.object({
   weight: z.coerce.number().optional(),
   warranty_info: z.string().optional(),
   delivery_info: z.string().optional(),
+  delivery_charge: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number().min(0).optional()),
+  requires_advance: z.boolean().optional(),
   is_flash_sale: z.boolean().optional(),
   flash_sale_price: z.coerce.number().optional(),
   flash_sale_ends_at: z.string().optional(),
@@ -178,6 +180,7 @@ export default function AdminProductsPage() {
       is_active: true, is_featured: false, stock_quantity: 0, image_url: "",
       seo_title: "", seo_description: "", seo_keywords: "", canonical_url: "", og_image: "",
       low_stock_threshold: 5, is_flash_sale: false, is_best_seller: false,
+      requires_advance: false,
     });
     setImageUrl("");
     setGalleryImages([]);
@@ -218,6 +221,8 @@ export default function AdminProductsPage() {
       weight: p.weight ?? undefined,
       warranty_info: p.warranty_info ?? "",
       delivery_info: p.delivery_info ?? "",
+      delivery_charge: p.delivery_charge ?? undefined,
+      requires_advance: p.requires_advance ?? false,
       is_flash_sale: p.is_flash_sale ?? false,
       flash_sale_price: p.flash_sale_price ?? undefined,
       flash_sale_ends_at: p.flash_sale_ends_at
@@ -257,6 +262,7 @@ export default function AdminProductsPage() {
       tags: p.tags?.join(", ") ?? "",
       weight: p.weight ?? undefined,
       warranty_info: p.warranty_info ?? "", delivery_info: p.delivery_info ?? "",
+      delivery_charge: p.delivery_charge ?? undefined, requires_advance: p.requires_advance ?? false,
       is_flash_sale: false, flash_sale_price: undefined, flash_sale_ends_at: "",
       low_stock_threshold: p.low_stock_threshold ?? 5, is_best_seller: false,
     });
@@ -624,6 +630,16 @@ export default function AdminProductsPage() {
                     <div>
                       <label className="block text-xs font-medium text-gray-600 mb-1">Delivery Info</label>
                       <textarea {...register("delivery_info")} rows={2} className="input resize-none text-sm" placeholder="Delivered within 2-3 business days..." />
+                    </div>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Delivery Charge (৳) — override</label>
+                        <input type="number" step="1" min="0" {...register("delivery_charge")} className="input text-sm" placeholder="Blank = use zone charge" />
+                      </div>
+                      <label className="flex items-center gap-2 text-sm mt-6 cursor-pointer">
+                        <input type="checkbox" {...register("requires_advance")} className="rounded" />
+                        Requires advance payment
+                      </label>
                     </div>
                     <div className="flex items-center gap-6">
                       <label className="flex items-center gap-2 cursor-pointer">

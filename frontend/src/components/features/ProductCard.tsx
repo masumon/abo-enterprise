@@ -57,6 +57,8 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
       price: product.price,
       image_url: product.image_url,
       stock_quantity: product.stock_quantity,
+      delivery_charge: product.delivery_charge ?? null,
+      requires_advance: product.requires_advance ?? false,
     });
     onAddToCart?.();
     toast("success", lang === "bn" ? "কার্টে যোগ হয়েছে" : "Added to cart");

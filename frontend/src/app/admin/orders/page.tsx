@@ -19,6 +19,7 @@ interface AdminOrder {
   id: string; order_number: string; customer_name: string; customer_phone: string;
   customer_email?: string; delivery_address: string; payment_method: string; payment_status?: string;
   order_status: string; subtotal: number; delivery_charge: number; total: number;
+  advance_amount?: number; advance_paid?: boolean;
   courier_provider?: string | null; courier_tracking_id?: string | null;
   notes?: string; items: AdminOrderItem[]; created_at: string;
 }
@@ -106,6 +107,23 @@ export default function AdminOrdersPage() {
     } catch (err) {
       toast("error", "Failed to update order status");
       console.error("Status update error:", err);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const markAdvanceReceived = async (id: string) => {
+    setUpdatingId(id);
+    try {
+      const r = await ordersApi.markAdvanceReceived(id);
+      const updated = r?.data?.data;
+      if (updated && detail?.id === id) {
+        setDetail((prev) => prev ? { ...prev, advance_paid: true, order_status: updated.order_status ?? prev.order_status } : prev);
+      }
+      await load();
+      toast("success", r?.data?.message || "Advance marked received");
+    } catch (err) {
+      toast("error", apiErrorMessage(err, "Failed to update"));
     } finally {
       setUpdatingId(null);
     }
@@ -528,6 +546,20 @@ export default function AdminOrdersPage() {
                     <span>Total</span><span className="text-accent-500">{formatPrice(detail.total)}</span>
                   </div>
                   <div className="flex justify-between text-gray-500 pt-1"><span>Payment</span><span className="capitalize">{detail.payment_method}</span></div>
+                  {(detail.advance_amount ?? 0) > 0 && (
+                    <div className={`mt-2 rounded-lg px-3 py-2 text-xs border flex items-center justify-between gap-2 ${detail.advance_paid ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
+                      <span>
+                        {detail.advance_paid
+                          ? `✓ Advance ${formatPrice(detail.advance_amount ?? 0)} received`
+                          : `Advance ${formatPrice(detail.advance_amount ?? 0)} pending`}
+                      </span>
+                      {!detail.advance_paid && (
+                        <button type="button" onClick={() => markAdvanceReceived(detail.id)} disabled={updatingId === detail.id} className="btn btn-brand btn-xs disabled:opacity-60 whitespace-nowrap">
+                          {updatingId === detail.id ? "…" : "Mark received"}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="bg-brand-50 border border-brand-100 rounded-xl p-4 space-y-3">

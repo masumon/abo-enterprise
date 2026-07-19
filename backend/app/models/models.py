@@ -21,6 +21,10 @@ class Product(Base):
     description_bn: Mapped[str | None] = mapped_column(Text)
     price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     original_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    # Optional per-product delivery override (NULL = use zone charge) and an
+    # admin on/off flag that forces an advance payment before confirmation.
+    delivery_charge: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    requires_advance: Mapped[bool] = mapped_column(Boolean, default=False)
     category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     badge: Mapped[str | None] = mapped_column(String(20))
     image_url: Mapped[str | None] = mapped_column(Text)
@@ -108,6 +112,10 @@ class Order(Base):
     discount_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
     coupon_code: Mapped[str | None] = mapped_column(String(50))
     delivery_charge: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
+    # Advance / prepaid delivery amount and whether it has been received; the
+    # order stays pending until the advance is paid (gateway or admin-marked).
+    advance_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
+    advance_paid: Mapped[bool] = mapped_column(Boolean, default=False)
     total: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     courier_provider: Mapped[str | None] = mapped_column(String(50))
     courier_tracking_id: Mapped[str | None] = mapped_column(String(100))
@@ -243,6 +251,12 @@ class Service(Base):
     min_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
     max_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
     hourly_rate: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    # Optional delivery charge for physical deliverables and an advance
+    # consultancy fee that (when requires_advance is on) must be paid before
+    # the booking is confirmed.
+    delivery_charge: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    consultancy_fee: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    requires_advance: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
@@ -330,6 +344,10 @@ class BookingV2(Base):
     pricing_type: Mapped[str] = mapped_column(String(20), nullable=False)
     quoted_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
     final_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    # Advance consultancy amount and whether it has been received (gateway or
+    # admin-marked); the booking stays pending until then.
+    advance_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
+    advance_paid: Mapped[bool] = mapped_column(Boolean, default=False)
     hours_worked: Mapped[float | None] = mapped_column(Numeric(5, 2))
     details: Mapped[str | None] = mapped_column(Text)
     requirements: Mapped[str | None] = mapped_column(Text)

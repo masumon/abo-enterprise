@@ -80,6 +80,8 @@ export default function ProductDetailClient({ product }: Props) {
       price: product.price,
       image_url: product.image_url,
       stock_quantity: product.stock_quantity,
+      delivery_charge: product.delivery_charge ?? null,
+      requires_advance: product.requires_advance ?? false,
     });
     setAdded(true);
     toast("success", lang === "bn" ? "কার্টে যোগ হয়েছে" : "Added to cart");
