@@ -508,6 +508,9 @@ export const categoriesAdminApi = {
 };
 
 export const adminApi = {
+  sendEmail: (data: { to: string; subject: string; message: string }) =>
+    api.post<ApiResponse<null>>("/api/v1/admin/email/send", data),
+
   stats: () =>
     api.get<ApiResponse<{
       total_orders: number;

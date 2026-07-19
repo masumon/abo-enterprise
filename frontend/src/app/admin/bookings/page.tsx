@@ -9,6 +9,7 @@ import { buildCustomerWhatsAppLink } from "@/lib/utils";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import ComposeEmailModal from "@/components/admin/ComposeEmailModal";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
@@ -51,6 +52,7 @@ export default function AdminBookingsPage() {
   const [totalV2, setTotalV2] = useState(0);
   const [updatingIdV2, setUpdatingIdV2] = useState<string | null>(null);
   const [detailV2, setDetailV2] = useState<BookingV2 | null>(null);
+  const [composeEmail, setComposeEmail] = useState<{ to: string; subject: string; context: string } | null>(null);
 
   const toast = useToastStore((s) => s.push);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
@@ -481,7 +483,7 @@ export default function AdminBookingsPage() {
                     <div className="flex gap-2">
                       {detail.customer_phone && <a href={`tel:${detail.customer_phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>}
                       {detail.customer_phone && <a href={buildCustomerWhatsAppLink(detail.customer_phone, `Hello ${detail.customer_name}, regarding your booking ${detail.booking_number} at ABO Enterprise. How can we help you?`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>}
-                      {detail.customer_email && <a href={`mailto:${detail.customer_email}`} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</a>}
+                      {detail.customer_email && <button type="button" onClick={() => setComposeEmail({ to: detail.customer_email!, subject: `Regarding your booking ${detail.booking_number}`, context: `Booking ${detail.booking_number}` })} title="Compose and send an email to the customer from no-reply@aboenterprise.com" className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</button>}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
@@ -565,7 +567,7 @@ export default function AdminBookingsPage() {
                   <div className="flex gap-2">
                     {detailV2.customer_phone && <a href={`tel:${detailV2.customer_phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>}
                     {detailV2.customer_phone && <a href={buildCustomerWhatsAppLink(detailV2.customer_phone, `Hello ${detailV2.customer_name}, regarding your booking ${detailV2.booking_number} at ABO Enterprise. How can we help you?`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>}
-                    {detailV2.customer_email && <a href={`mailto:${detailV2.customer_email}`} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</a>}
+                    {detailV2.customer_email && <button type="button" onClick={() => setComposeEmail({ to: detailV2.customer_email!, subject: `Regarding your booking ${detailV2.booking_number}`, context: `Booking ${detailV2.booking_number}` })} title="Compose and send an email to the customer from no-reply@aboenterprise.com" className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</button>}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
@@ -635,6 +637,14 @@ export default function AdminBookingsPage() {
         variant="danger"
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}
+      />
+
+      <ComposeEmailModal
+        open={!!composeEmail}
+        onClose={() => setComposeEmail(null)}
+        to={composeEmail?.to ?? ""}
+        defaultSubject={composeEmail?.subject ?? ""}
+        contextLabel={composeEmail?.context}
       />
     </div>
   );

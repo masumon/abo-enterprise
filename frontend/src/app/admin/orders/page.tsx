@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Loader2, ShoppingCart, ChevronDown, X, Package, Download, CheckSquare, Square, ChevronRight } from "lucide-react";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import ComposeEmailModal from "@/components/admin/ComposeEmailModal";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
@@ -45,7 +46,7 @@ export default function AdminOrdersPage() {
   const [exportPdfLoading, setExportPdfLoading] = useState(false);
   const [csvDays, setCsvDays] = useState(30);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
-  const [emailingId, setEmailingId] = useState<string | null>(null);
+  const [composeEmail, setComposeEmail] = useState<{ to: string; subject: string; context: string } | null>(null);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
   const [courierSaving, setCourierSaving] = useState(false);
   const [courierProvider, setCourierProvider] = useState("");
@@ -108,25 +109,6 @@ export default function AdminOrdersPage() {
     } finally {
       setUpdatingId(null);
     }
-  };
-
-  const resendEmail = (id: string, email: string) => {
-    setConfirmState({
-      title: "Re-send confirmation email?",
-      message: `A confirmation email will be sent to ${email} from ABO Enterprise (no-reply@aboenterprise.com). Continue?`,
-      action: async () => {
-        setConfirmState(null);
-        setEmailingId(id);
-        try {
-          const r = await ordersApi.resendEmail(id);
-          toast("success", r?.data?.message || "Confirmation email sent");
-        } catch (err) {
-          toast("error", apiErrorMessage(err, "Failed to send email"));
-        } finally {
-          setEmailingId(null);
-        }
-      },
-    });
   };
 
   const handleBulkUpdate = () => {
@@ -504,12 +486,11 @@ export default function AdminOrdersPage() {
                       {detail.customer_email && (
                         <button
                           type="button"
-                          onClick={() => resendEmail(detail.id, detail.customer_email!)}
-                          disabled={emailingId === detail.id}
-                          title="Re-send the order confirmation email from no-reply@aboenterprise.com"
-                          className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium disabled:opacity-60"
+                          onClick={() => setComposeEmail({ to: detail.customer_email!, subject: `Regarding your order ${detail.order_number}`, context: `Order ${detail.order_number}` })}
+                          title="Compose and send an email to the customer from no-reply@aboenterprise.com"
+                          className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium"
                         >
-                          {emailingId === detail.id ? "…" : "✉ Email"}
+                          ✉ Email
                         </button>
                       )}
                     </div>
@@ -590,6 +571,14 @@ export default function AdminOrdersPage() {
         variant="warning"
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}
+      />
+
+      <ComposeEmailModal
+        open={!!composeEmail}
+        onClose={() => setComposeEmail(null)}
+        to={composeEmail?.to ?? ""}
+        defaultSubject={composeEmail?.subject ?? ""}
+        contextLabel={composeEmail?.context}
       />
     </div>
   );
