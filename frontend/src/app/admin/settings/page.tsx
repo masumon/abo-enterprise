@@ -368,8 +368,8 @@ function SectionCard({
   const isSaved = savedId === section.id;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-      <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50/50 gap-3 flex-wrap">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+      <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-white/10 bg-gradient-to-r from-brand-50 to-transparent dark:from-brand-900/20 gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
           <span className="text-brand-600">{section.icon}</span>
           <h2 className="text-sm font-semibold text-gray-800">{section.title}</h2>
@@ -401,10 +401,10 @@ function SectionCard({
           </Link>
         </div>
       )}
-      <div className="divide-y divide-gray-50">
+      <div className="divide-y divide-gray-50 dark:divide-white/5">
         {section.fields.map((field) => (
-          <div key={field.key} className="px-6 py-4">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+          <div key={field.key} className="px-4 sm:px-6 py-4 hover:bg-gray-50/40 dark:hover:bg-white/[0.02] transition-colors">
+            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
               {field.label}
             </label>
             {field.upload ? (
@@ -437,7 +437,7 @@ function SectionCard({
                 onChange={(e) => onChange(field.key, e.target.value)}
                 placeholder={field.placeholder}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 resize-none"
+                className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 rounded-lg text-sm font-mono bg-gray-50 dark:bg-white/5 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 resize-y"
               />
             ) : (
               <input
