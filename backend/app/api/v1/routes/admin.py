@@ -1,5 +1,7 @@
+import html as _html
 from uuid import UUID
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, UploadFile, File, HTTPException, Query, status
+from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 import cloudinary
@@ -8,6 +10,7 @@ import cloudinary.uploader
 from app.core.database import get_db
 from app.core.security import require_admin, require_role, hash_password
 from app.core.config import settings
+from app.core.email import send_email
 from app.models.models import (
     Order, BookingV2, LeadV2, Product, AdminUser, ActivityLog,
     BkashTransaction, NagadTransaction, PaymentReconciliation,
@@ -450,3 +453,65 @@ async def list_audit_logs(
         ],
         meta=PaginatedMeta(page=page, per_page=per_page, total=total, total_pages=max(1, -(-total // per_page))),
     )
+
+
+# ── Manual admin → customer email ─────────────────────────────────────────
+class AdminEmailSend(BaseModel):
+    to: EmailStr
+    subject: str
+    message: str
+
+    @field_validator("subject", "message")
+    @classmethod
+    def _not_blank(cls, v: str) -> str:
+        v = (v or "").strip()
+        if not v:
+            raise ValueError("Subject and message are required")
+        return v
+
+
+def _admin_email_html(subject: str, message: str) -> str:
+    """Branded wrapper for a free-text admin message (plain text → safe HTML)."""
+    safe = _html.escape(message).replace("\n", "<br>")
+    safe_subject = _html.escape(subject)
+    return (
+        '<div style="font-family:Arial,Helvetica,sans-serif;max-width:600px;margin:0 auto;'
+        'border:1px solid #e2e8f0;border-radius:12px;overflow:hidden">'
+        '<div style="background:#1e5ba8;padding:20px 24px;color:#fff">'
+        '<div style="font-size:18px;font-weight:bold">ABO Enterprise</div>'
+        '<div style="font-size:12px;opacity:.85">ABO ENTERPRISE : Simple Solution</div>'
+        '</div>'
+        f'<div style="padding:24px;color:#1e293b;font-size:14px;line-height:1.6">'
+        f'<h2 style="font-size:16px;margin:0 0 12px;color:#153e75">{safe_subject}</h2>'
+        f'<div>{safe}</div>'
+        '</div>'
+        '<div style="padding:16px 24px;background:#f8faff;color:#64748b;font-size:12px;'
+        'border-top:1px solid #e2e8f0">ABO Enterprise · info@aboenterprise.com</div>'
+        '</div>'
+    )
+
+
+@router.post("/email/send", response_model=ApiResponse)
+async def admin_send_email(
+    payload: AdminEmailSend,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    admin_id: str = Depends(require_admin),
+):
+    """Send a manual, admin-composed email to a customer.
+
+    Delivered server-side through the configured business (no-reply) sender —
+    the same channel as the automatic notifications — so it reaches the
+    customer from ABO Enterprise's address rather than the admin's own inbox.
+    Used across Orders, Bookings and Leads in the admin panel.
+    """
+    html = _admin_email_html(payload.subject, payload.message)
+    background_tasks.add_task(send_email, str(payload.to), payload.subject, html)
+    db.add(ActivityLog(
+        admin_id=UUID(admin_id),
+        action="email",
+        entity_type="email",
+        new_values={"to": str(payload.to), "subject": payload.subject},
+    ))
+    await db.commit()
+    return ApiResponse(message=f"Email sent to {payload.to}")
