@@ -130,7 +130,7 @@ function BookingSuccessContent() {
                   {lang === "bn" ? "ইনভয়েস তৈরি হচ্ছে…" : "Preparing your invoice…"}
                 </div>
               ) : invoice ? (
-                <InvoiceCard invoice={invoice} lang={lang} />
+                <div id="invoice-print"><InvoiceCard invoice={invoice} lang={lang} /></div>
               ) : (
                 <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4 text-sm text-muted text-left">
                   {lang === "bn"
