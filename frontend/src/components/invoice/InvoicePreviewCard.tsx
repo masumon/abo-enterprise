@@ -1,6 +1,7 @@
 "use client";
 
 import BrandLogo from "@/components/ui/BrandLogo";
+import InvoiceQr from "@/components/invoice/InvoiceQr";
 import { getBrandName, getBrandTagline } from "@/lib/tokens";
 import { formatPrice } from "@/lib/utils";
 import { DEFAULT_ADDRESS_EN } from "@/lib/maps";
@@ -69,6 +70,13 @@ export default function InvoicePreviewCard({
         <div className="rounded-xl bg-brand-50 border border-brand-100 px-5 py-4 flex items-center justify-between mb-6">
           <span className="text-sm font-medium text-brand-800">{bn ? "মোট পরিশোধ" : "Total Due"}</span>
           <span className="text-2xl font-bold text-brand-700">{formatPrice(total)}</span>
+        </div>
+
+        <div className="flex justify-center mb-6">
+          <InvoiceQr
+            path={`/track?order=${encodeURIComponent(orderNumber)}`}
+            label={bn ? "স্ক্যান করে অর্ডার যাচাই করুন" : "Scan to verify this order"}
+          />
         </div>
 
         {onPrint && (

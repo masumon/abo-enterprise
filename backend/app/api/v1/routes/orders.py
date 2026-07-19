@@ -342,6 +342,55 @@ async def get_order(
     return ApiResponse(data=OrderOut.model_validate(order))
 
 
+@router.post("/{order_id}/resend-email", response_model=ApiResponse)
+async def resend_order_confirmation(
+    order_id: UUID,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    admin_id: str = Depends(require_role("orders.write")),
+):
+    """Re-send the order confirmation email to the customer, on demand.
+
+    Sent server-side through the configured business (no-reply) sender — not a
+    mailto from the admin's personal inbox — so the customer receives it from
+    ABO Enterprise's address, the same as the automatic confirmation.
+    """
+    result = await db.execute(
+        select(Order).options(selectinload(Order.items)).where(Order.id == order_id)
+    )
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if not order.customer_email:
+        raise HTTPException(status_code=400, detail="This order has no customer email on file")
+
+    items = [
+        {"name": i.product_name, "quantity": i.quantity, "price": float(i.product_price)}
+        for i in order.items
+    ]
+    html = customer_order_confirmation_html(
+        order.order_number,
+        order.customer_name,
+        items,
+        float(order.total),
+        settings.WHATSAPP_NUMBER,
+    )
+    background_tasks.add_task(
+        send_email, order.customer_email,
+        f"Order Confirmation #{order.order_number} — ABO Enterprise", html,
+    )
+
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin_id),
+        action="email",
+        entity_type="order",
+        entity_id=order.id,
+        new_values={"resend_confirmation_to": order.customer_email},
+    ))
+    await db.commit()
+    return ApiResponse(message=f"Confirmation email re-sent to {order.customer_email}")
+
+
 @router.patch("/{order_id}/status", response_model=ApiResponse)
 async def update_order_status(
     order_id: UUID,

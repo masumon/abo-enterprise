@@ -7,6 +7,7 @@ import {
 import { useLanguageStore } from "@/store/language";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
 import { SITE_QUICK_CATEGORIES_KEY, getQuickCategories, type CmsQuickCategory } from "@/lib/cmsContent";
+import Reveal from "@/components/ui/Reveal";
 
 /**
  * The seven core business verticals ABO Enterprise offers — placed directly
@@ -145,30 +146,36 @@ export default function QuickCategories() {
             const label = bn ? v.label_bn || v.label_en : v.label_en || v.label_bn;
             const desc = bn ? v.desc_bn || v.desc_en : v.desc_en || v.desc_bn;
             return (
-              <Link
+              <Reveal
+                as="div"
                 key={`${v.href}-${v.label_en || v.label_bn}`}
-                href={v.href}
-                className={`group flex flex-col items-start gap-2 p-3 sm:p-3.5 rounded-2xl ring-1 ${style.ring} ${style.tint}
-                  transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-8px_rgba(30,91,168,0.20)]
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500`}
-                aria-label={label}
+                delay={Math.min(i, 8) * 55}
+                className="h-full"
               >
-                <span
-                  className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ${style.iconWrap}
-                    group-hover:scale-105 transition-transform`}
-                  aria-hidden
+                <Link
+                  href={v.href}
+                  className={`group flex h-full flex-col items-start gap-2 p-3 sm:p-3.5 rounded-2xl ring-1 ${style.ring} ${style.tint}
+                    transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-8px_rgba(30,91,168,0.20)]
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500`}
+                  aria-label={label}
                 >
-                  <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={2.1} />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-[13px] sm:text-sm font-bold text-heading leading-tight">
-                    {label}
-                  </p>
-                  <p className="text-[10.5px] sm:text-[11px] text-muted mt-0.5 leading-snug line-clamp-2">
-                    {desc}
-                  </p>
-                </div>
-              </Link>
+                  <span
+                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ${style.iconWrap}
+                      group-hover:scale-105 transition-transform`}
+                    aria-hidden
+                  >
+                    <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={2.1} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[13px] sm:text-sm font-bold text-heading leading-tight">
+                      {label}
+                    </p>
+                    <p className="text-[10.5px] sm:text-[11px] text-muted mt-0.5 leading-snug line-clamp-2">
+                      {desc}
+                    </p>
+                  </div>
+                </Link>
+              </Reveal>
             );
           })}
         </div>

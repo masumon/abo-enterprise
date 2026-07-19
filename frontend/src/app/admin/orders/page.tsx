@@ -45,6 +45,7 @@ export default function AdminOrdersPage() {
   const [exportPdfLoading, setExportPdfLoading] = useState(false);
   const [csvDays, setCsvDays] = useState(30);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
+  const [emailingId, setEmailingId] = useState<string | null>(null);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
   const [courierSaving, setCourierSaving] = useState(false);
   const [courierProvider, setCourierProvider] = useState("");
@@ -107,6 +108,25 @@ export default function AdminOrdersPage() {
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  const resendEmail = (id: string, email: string) => {
+    setConfirmState({
+      title: "Re-send confirmation email?",
+      message: `A confirmation email will be sent to ${email} from ABO Enterprise (no-reply@aboenterprise.com). Continue?`,
+      action: async () => {
+        setConfirmState(null);
+        setEmailingId(id);
+        try {
+          const r = await ordersApi.resendEmail(id);
+          toast("success", r?.data?.message || "Confirmation email sent");
+        } catch (err) {
+          toast("error", apiErrorMessage(err, "Failed to send email"));
+        } finally {
+          setEmailingId(null);
+        }
+      },
+    });
   };
 
   const handleBulkUpdate = () => {
@@ -481,7 +501,17 @@ export default function AdminOrdersPage() {
                     <div className="flex gap-2">
                       <a href={`tel:${detail.customer_phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>
                       <a href={buildCustomerWhatsAppLink(detail.customer_phone, `Hello ${detail.customer_name}, your order ${detail.order_number} at ABO Enterprise (${formatPrice(detail.total)}) has been received. We will confirm shortly. Thank you!`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>
-                      {detail.customer_email && <a href={`mailto:${detail.customer_email}`} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</a>}
+                      {detail.customer_email && (
+                        <button
+                          type="button"
+                          onClick={() => resendEmail(detail.id, detail.customer_email!)}
+                          disabled={emailingId === detail.id}
+                          title="Re-send the order confirmation email from no-reply@aboenterprise.com"
+                          className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium disabled:opacity-60"
+                        >
+                          {emailingId === detail.id ? "…" : "✉ Email"}
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">

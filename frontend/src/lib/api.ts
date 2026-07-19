@@ -168,6 +168,9 @@ export const ordersApi = {
   updateCourier: (id: string, data: { courier_provider?: string; courier_tracking_id?: string }) =>
     api.patch<ApiResponse<Order>>(`/api/v1/orders/${id}/courier`, data),
 
+  resendEmail: (id: string) =>
+    api.post<ApiResponse<null>>(`/api/v1/orders/${id}/resend-email`),
+
   bulkUpdateStatus: (order_ids: string[], status: string) =>
     api.post<ApiResponse<{ updated: number; ids: string[] }>>("/api/v1/admin/bulk/orders/status", { order_ids, status }),
 };

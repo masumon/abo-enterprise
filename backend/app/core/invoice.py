@@ -100,7 +100,30 @@ def _taka(amount: float) -> str:
     return f"৳{amount:,.2f}"
 
 
-def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path) -> bytes:
+def _qr_image(data: str):
+    """Return a PIL image of a QR encoding `data`, or None if unavailable.
+
+    Never raises — the QR is a nice-to-have on the invoice, so any failure
+    (missing lib, bad data) simply omits it rather than breaking the PDF.
+    """
+    if not data:
+        return None
+    try:
+        import qrcode
+
+        qr = qrcode.QRCode(
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=10,
+            border=1,
+        )
+        qr.add_data(data)
+        qr.make(fit=True)
+        return qr.make_image(fill_color="black", back_color="white").get_image()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path, verify_url: str | None = None) -> bytes:
     """Render the branded invoice with fpdf2 + HarfBuzz text shaping.
 
     reportlab cannot shape complex scripts, so Bengali (matras/conjuncts) broke
@@ -277,6 +300,21 @@ def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path) 
 
     tot_w = CW * 0.42
     tot_x = M + CW - tot_w
+
+    # ── Verification QR — placed in the open space to the LEFT of the totals ──
+    qr_img = _qr_image(verify_url) if verify_url else None
+    if qr_img is not None:
+        qr_size = 82.0
+        qr_x = M + 4
+        qr_y = y + 2
+        try:
+            pdf.image(qr_img, x=qr_x, y=qr_y, w=qr_size, h=qr_size)
+            line(qr_x, qr_y + qr_size + 3, qr_size, 9, "Scan to verify", "B", 7, MUTED)
+            line(qr_x, qr_y + qr_size + 13, qr_size + 60, 9,
+                 "this invoice / track order", "", 6.5, MUTED)
+        except Exception:  # noqa: BLE001 — never let the QR break the PDF
+            pass
+
     ly = y
     for label_txt, val in rows:
         line(tot_x, ly + 6, tot_w * 0.5, 12, label_txt, "", 10, MUTED, align="R")
@@ -551,6 +589,7 @@ class InvoiceService:
 
         ref_label = None
         ref_value = None
+        verify_url = None
         if invoice.order_id:
             order_result = await self.db.execute(
                 select(Order.order_number).where(Order.id == invoice.order_id)
@@ -564,8 +603,21 @@ class InvoiceService:
             ref_value = bk_result.scalar_one_or_none()
             ref_label = "Booking #"
 
+        # QR verification link → public /track page (same convention as the
+        # confirmation emails). Never let a settings/URL read break the PDF.
+        if ref_value:
+            try:
+                from urllib.parse import quote
+                from app.core.site_url import resolve_site_url
+
+                base = await resolve_site_url(self.db)
+                key = "booking" if invoice.booking_id else "order"
+                verify_url = f"{base}/track?{key}={quote(str(ref_value))}"
+            except Exception:  # noqa: BLE001
+                verify_url = None
+
         return _build_invoice_pdf(
-            invoice, company, ref_label, ref_value, _find_logo_path()
+            invoice, company, ref_label, ref_value, _find_logo_path(), verify_url
         )
 
     def format_currency(self, amount: float) -> str:
