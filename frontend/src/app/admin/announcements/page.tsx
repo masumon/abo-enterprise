@@ -26,6 +26,14 @@ const VARIANT_BG: Record<string, string> = Object.fromEntries(
 );
 const QUICK_ICONS = ["🎉", "📦", "🏷️", "🔔", "⚡", "🚚", "💼", "🎁", "🔥", "✅"];
 
+// Same defaults the live AnnouncementBar shows until the admin saves — so an
+// as-yet-unedited bar still appears here, ready to edit.
+const FALLBACK: CmsAnnouncement[] = [
+  { en: "🎉 New AI Solutions available! Get 20% off on first consultation →", bn: "🎉 নতুন AI সমাধান এসেছে! প্রথম পরামর্শে ২০% ছাড় পান →", href: "/services" },
+  { en: "📦 Free delivery on orders over ৳2000 in Sylhet", bn: "📦 সিলেটে ৳২০০০+ অর্ডারে ফ্রি ডেলিভারি", href: "/products" },
+  { en: "💼 Custom POS & ERP Software for your business — Book a free demo", bn: "💼 আপনার ব্যবসার জন্য কাস্টম POS ও ERP — ফ্রি ডেমো বুক করুন", href: "/projects" },
+];
+
 function blank(): CmsAnnouncement {
   return { en: "", bn: "", href: "/", variant: "promo", icon: "", dismissible: true, active: true };
 }
@@ -41,7 +49,7 @@ export default function AdminAnnouncementsPage() {
   useEffect(() => {
     adminApi
       .getSettings()
-      .then((r) => setItems(getAnnouncements(r.data.data ?? {}, [])))
+      .then((r) => setItems(getAnnouncements(r.data.data ?? {}, FALLBACK)))
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, []);
