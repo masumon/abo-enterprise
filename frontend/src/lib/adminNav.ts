@@ -18,6 +18,7 @@ import {
   Shield,
   Send,
   Megaphone,
+  Truck,
   UserPlus,
   Percent,
   FolderTree,
@@ -121,6 +122,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "System",
     labelBn: "সিস্টেম",
     items: [
+      { href: "/admin/delivery", icon: Truck, label: "Delivery & Charges", labelBn: "ডেলিভারি ও চার্জ", minRole: "admin" },
       { href: "/admin/settings", icon: Settings, label: "Settings", labelBn: "সেটিংস", minRole: "admin" },
       { href: "/admin/users", icon: Users, label: "Users", labelBn: "ইউজার", minRole: "admin" },
       { href: "/admin/audit", icon: Shield, label: "Audit Logs", labelBn: "অডিট", minRole: "admin" },
