@@ -27,11 +27,22 @@ export interface CmsClientLogo {
   image?: string;
 }
 
-/** Rotating announcement bar message. */
+/** Announcement bar variant themes (admin-selectable per entry). */
+export type CmsAnnouncementVariant =
+  | "promo" | "offer" | "info" | "success" | "notice" | "urgent";
+
+/** Rotating announcement bar message. `variant`/`icon`/`dismissible` are
+ * optional — older entries without them fall back to the default promo look. */
 export interface CmsAnnouncement {
   en: string;
   bn: string;
   href: string;
+  variant?: CmsAnnouncementVariant;
+  /** Emoji or short label rendered before the text. */
+  icon?: string;
+  dismissible?: boolean;
+  /** Hidden from the bar when explicitly false. */
+  active?: boolean;
 }
 
 /** Trust badge / "why choose us" style item. Icon is a lucide name key
