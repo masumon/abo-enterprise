@@ -11,6 +11,7 @@ import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
 import GlassCard from "@/components/ui/GlassCard";
+import Reveal from "@/components/ui/Reveal";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
 import { formatBdPhoneDisplay, toBdTelHref, toBdWhatsappHref } from "@/lib/phone";
@@ -111,8 +112,9 @@ export default function ContactPage() {
         <div className="grid lg:grid-cols-5 gap-8">
           <div className="lg:col-span-2 space-y-4">
             <h2 className="text-xl font-bold text-heading mb-4">{t("contact_get_in_touch")}</h2>
-            {contactInfo.map(({ icon: Icon, label, value, href }) => (
-              <GlassCard key={label} className="p-4 flex gap-4">
+            {contactInfo.map(({ icon: Icon, label, value, href }, i) => (
+              <Reveal key={label} as="div" delay={i * 60}>
+              <GlassCard className="p-4 flex gap-4">
                 <div className="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center flex-shrink-0">
                   <Icon className="w-5 h-5 text-brand-600" />
                 </div>
@@ -122,6 +124,7 @@ export default function ContactPage() {
                     className="text-sm font-medium text-brand-600 hover:underline">{value}</a>
                 </div>
               </GlassCard>
+              </Reveal>
             ))}
             <GlassCard className="p-4 flex gap-3">
               <Clock className="w-5 h-5 text-brand-600 flex-shrink-0" />

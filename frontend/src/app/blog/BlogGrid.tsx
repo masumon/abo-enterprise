@@ -5,6 +5,7 @@ import Image from "next/image";
 import type { BlogPost } from "@/types";
 import { useLanguageStore } from "@/store/language";
 import { resolveBlogImage } from "@/lib/demoImages";
+import Reveal from "@/components/ui/Reveal";
 
 interface Props {
   posts: BlogPost[];
@@ -40,14 +41,14 @@ export default function BlogGrid({ posts, page, totalPages }: Props) {
   return (
     <>
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-        {posts.map((post) => {
+        {posts.map((post, i) => {
           const title = lang === "bn" && post.title_bn ? post.title_bn : post.title_en;
           const excerpt = lang === "bn" && post.excerpt_bn ? post.excerpt_bn : post.excerpt_en;
           return (
+            <Reveal key={post.id} as="div" delay={(i % 6) * 60} className="h-full">
             <Link
-              key={post.id}
               href={`/blog/${post.slug}`}
-              className="group flex flex-col enterprise-card overflow-hidden shadow-sm hover:shadow-md hover:border-brand-200 dark:hover:border-brand-500/30 transition-all"
+              className="group flex flex-col h-full enterprise-card overflow-hidden shadow-sm hover:shadow-md hover:border-brand-200 dark:hover:border-brand-500/30 transition-all"
             >
               <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
                 <Image
@@ -76,6 +77,7 @@ export default function BlogGrid({ posts, page, totalPages }: Props) {
                 </div>
               </div>
             </Link>
+            </Reveal>
           );
         })}
       </div>
