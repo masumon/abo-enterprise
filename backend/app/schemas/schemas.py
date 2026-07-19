@@ -6,9 +6,17 @@ import re
 
 
 def bd_phone(v: str) -> str:
-    if not re.match(r"^0[13-9]\d{9}$", v):
-        raise ValueError("Invalid Bangladesh phone number. Format: 01XXXXXXXXX")
-    return v
+    # Accepts BD numbers with or without country code, and international
+    # numbers (E.164) so customers ordering from outside Bangladesh can check
+    # out. The delivery address still stays inside Bangladesh; only the phone
+    # may be foreign. Mirrors frontend BD_PHONE_REGEX in src/lib/phone.ts.
+    c = re.sub(r"[\s()-]", "", (v or "").strip())
+    if re.match(r"^(?:0|\+?880)1[3-9]\d{8}$", c) or re.match(r"^\+[1-9]\d{6,14}$", c):
+        return c
+    raise ValueError(
+        "Invalid phone number. Use 01XXXXXXXXX or an international number "
+        "with country code (e.g. +8801XXXXXXXXX, +9715XXXXXXXX)"
+    )
 
 
 class ApiResponse(BaseModel):

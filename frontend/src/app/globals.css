@@ -398,6 +398,19 @@
   }
 
   @media print {
+    /* Print ONLY the invoice/receipt — hide all app chrome (nav, hero, footer,
+       bottom nav, assistant, announcement bar). Without this, printing an order
+       produced the whole home page across several pages. */
+    body * { visibility: hidden !important; }
+    #invoice-print, #invoice-print * { visibility: visible !important; }
+    #invoice-print {
+      position: absolute !important;
+      left: 0 !important;
+      top: 0 !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
     .invoice-preview {
       box-shadow: none !important;
       border: 1px solid #e2e8f0 !important;
@@ -406,6 +419,7 @@
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
+    @page { margin: 12mm; }
   }
 
   /* ── Premium Tables ── */

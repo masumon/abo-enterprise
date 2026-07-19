@@ -173,13 +173,21 @@ export default function Navbar() {
             )}
 
             <button type="button" onClick={toggleTheme}
-              className="w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation"
+              className={cn(
+                "w-11 h-11 items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation",
+                // Hide while searching on mobile so the expanded search field
+                // doesn't push these icons outside the capsule.
+                searchOpen ? "hidden sm:flex" : "flex"
+              )}
               aria-label="Toggle dark mode">
               {theme === "dark" ? <Sun className="w-[19px] h-[19px]" strokeWidth={2.5} /> : <Moon className="w-[19px] h-[19px]" strokeWidth={2.5} />}
             </button>
 
             <button type="button" onClick={toggle}
-              className="flex items-center gap-1 px-3 h-11 rounded-full text-[10px] sm:text-xs font-semibold border border-brand-200/80 text-brand-700 hover:bg-brand-50/80 hover:scale-105 active:scale-95 transition-all duration-200 dark:border-brand-700/70 dark:text-brand-300 touch-manipulation"
+              className={cn(
+                "items-center gap-1 px-3 h-11 rounded-full text-[10px] sm:text-xs font-semibold border border-brand-200/80 text-brand-700 hover:bg-brand-50/80 hover:scale-105 active:scale-95 transition-all duration-200 dark:border-brand-700/70 dark:text-brand-300 touch-manipulation",
+                searchOpen ? "hidden sm:flex" : "flex"
+              )}
               aria-label="Toggle language">
               <Globe className="w-3.5 h-3.5" strokeWidth={2.5} />
               {lang === "en" ? "বাং" : "EN"}
