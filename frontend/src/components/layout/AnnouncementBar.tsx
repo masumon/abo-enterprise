@@ -42,7 +42,7 @@ export default function AnnouncementBar() {
   const [idx, setIdx] = useState(0);
   const { lang } = useLanguageStore();
   const { settings } = usePublicSettings([SITE_ANNOUNCEMENTS_KEY]);
-  const announcements = getAnnouncements(settings, FALLBACK_ANNOUNCEMENTS);
+  const announcements = getAnnouncements(settings, FALLBACK_ANNOUNCEMENTS).filter((a) => a.active !== false);
   const pathname = usePathname();
   const suppressedPrefixes = ["/admin", "/cart", "/checkout", "/login", "/register", "/profile", "/track"];
   const isSuppressed = suppressedPrefixes.some((prefix) => pathname === prefix || pathname?.startsWith(`${prefix}/`));
@@ -74,9 +74,11 @@ export default function AnnouncementBar() {
   if (!visible || announcements.length === 0) return null;
 
   const current = announcements[idx % announcements.length];
+  const barClass = ANNOUNCEMENT_VARIANT_BG[current.variant ?? "promo"] ?? ANNOUNCEMENT_VARIANT_BG.promo;
+  const canDismiss = current.dismissible !== false;
 
   return (
-    <div className="bg-gradient-to-r from-brand-700 via-brand-600 to-accent-600 text-white text-xs sm:text-sm relative z-40 h-9">
+    <div className={`${barClass} text-xs sm:text-sm relative z-40 h-9`}>
       <div className="container mx-auto px-4 h-9 flex items-center justify-between gap-4">
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {announcements.map((_, i) => (
@@ -96,21 +98,39 @@ export default function AnnouncementBar() {
           href={current.href || "/"}
           className="flex-1 text-center font-medium hover:text-white/90 transition-colors flex items-center justify-center gap-2"
         >
-          <Zap className="w-3.5 h-3.5 flex-shrink-0 text-yellow-300" strokeWidth={2.2} />
+          {current.icon ? (
+            <span className="flex-shrink-0 text-sm leading-none" aria-hidden>{current.icon}</span>
+          ) : (
+            <Zap className="w-3.5 h-3.5 flex-shrink-0 text-yellow-300" strokeWidth={2.2} />
+          )}
           <span className="truncate">
             {lang === "bn" ? current.bn : current.en}
           </span>
         </Link>
 
-        <button
-          type="button"
-          onClick={dismiss}
-          className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-white/20 transition-colors"
-          aria-label={lang === "bn" ? "ঘোষণা বন্ধ করুন" : "Close announcement"}
-        >
-          <X className="w-3.5 h-3.5" strokeWidth={2.2} />
-        </button>
+        {canDismiss ? (
+          <button
+            type="button"
+            onClick={dismiss}
+            className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-white/20 transition-colors"
+            aria-label={lang === "bn" ? "ঘোষণা বন্ধ করুন" : "Close announcement"}
+          >
+            <X className="w-3.5 h-3.5" strokeWidth={2.2} />
+          </button>
+        ) : (
+          <span className="flex-shrink-0 w-6 h-6" aria-hidden />
+        )}
       </div>
     </div>
   );
 }
+
+/** Admin-selectable bar themes → gradient classes. */
+const ANNOUNCEMENT_VARIANT_BG: Record<string, string> = {
+  promo: "bg-gradient-to-r from-brand-700 via-brand-600 to-accent-600 text-white",
+  offer: "bg-gradient-to-r from-accent-600 via-pink-600 to-rose-600 text-white",
+  info: "bg-gradient-to-r from-sky-700 to-blue-600 text-white",
+  success: "bg-gradient-to-r from-emerald-700 to-green-600 text-white",
+  notice: "bg-gradient-to-r from-amber-500 to-orange-500 text-white",
+  urgent: "bg-gradient-to-r from-red-700 to-rose-600 text-white",
+};

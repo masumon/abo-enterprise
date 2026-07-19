@@ -17,6 +17,7 @@ import {
   Settings,
   Shield,
   Send,
+  Megaphone,
   UserPlus,
   Percent,
   FolderTree,
@@ -107,6 +108,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Content",
     labelBn: "কনটেন্ট",
     items: [
+      { href: "/admin/announcements", icon: Megaphone, label: "Announcements", labelBn: "ঘোষণা" },
       { href: "/admin/media", icon: Images, label: "Image Manager", labelBn: "ছবি ব্যবস্থাপনা" },
       { href: "/admin/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি" },
       { href: "/admin/blog", icon: BookOpen, label: "Blog", labelBn: "ব্লগ" },
