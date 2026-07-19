@@ -5,18 +5,34 @@ import { generateWhatsAppOrderMessage } from "@/lib/utils";
 export function calcDeliveryCharge(
   district: string,
   subtotalAfterDiscount: number,
-  settings: Record<string, string>
+  settings: Record<string, string>,
+  /** Highest per-product delivery override in the cart (0 = none). */
+  maxProductCharge = 0
 ): number {
   const freeMin = parseFloat(getSettingValue(settings, "free_delivery_min_amount") || "2000");
   if (subtotalAfterDiscount >= freeMin) return 0;
 
-  const sylhetCharge = parseFloat(getSettingValue(settings, "delivery_charge_sylhet") || "0");
-  const dhakaCharge = parseFloat(getSettingValue(settings, "delivery_charge_dhaka") || "60");
-  const outsideCharge = parseFloat(getSettingValue(settings, "delivery_charge_outside") || "120");
+  const sylhetCharge = parseFloat(getSettingValue(settings, "delivery_charge_sylhet") || "60");
+  const dhakaCharge = parseFloat(getSettingValue(settings, "delivery_charge_dhaka") || "120");
+  const outsideCharge = parseFloat(getSettingValue(settings, "delivery_charge_outside") || "130");
 
-  if (isSylhetArea(district)) return sylhetCharge;
-  if (district === "Dhaka" || district === "Gazipur" || district === "Narayanganj") return dhakaCharge;
-  return outsideCharge;
+  let zone: number;
+  if (isSylhetArea(district)) zone = sylhetCharge;
+  else if (district === "Dhaka" || district === "Gazipur" || district === "Narayanganj") zone = dhakaCharge;
+  else zone = outsideCharge;
+
+  // A product's own delivery charge takes precedence when higher (one shipment).
+  return Math.max(zone, maxProductCharge || 0);
+}
+
+/** The advance/prepaid amount when any cart item is flagged requires_advance. */
+export function calcAdvanceCharge(
+  items: { requires_advance?: boolean }[],
+  settings: Record<string, string>
+): number {
+  const needs = items.some((i) => i.requires_advance);
+  if (!needs) return 0;
+  return parseFloat(getSettingValue(settings, "advance_delivery_charge") || "120");
 }
 
 export type ConfirmChannel = "whatsapp" | "email" | "both" | "none";

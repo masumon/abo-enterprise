@@ -697,7 +697,19 @@ export default function AdminServicesPage() {
                     <label className="form-label">Max Price (BDT)</label>
                     <input type="number" value={editing.max_price ?? ""} onChange={fNum("max_price")} placeholder="0" className="input w-full" />
                   </div>
+                  <div>
+                    <label className="form-label">Delivery Charge (৳)</label>
+                    <input type="number" value={editing.delivery_charge ?? ""} onChange={fNum("delivery_charge")} placeholder="0" className="input w-full" />
+                  </div>
+                  <div>
+                    <label className="form-label">Consultancy Fee (৳) — advance</label>
+                    <input type="number" value={editing.consultancy_fee ?? ""} onChange={fNum("consultancy_fee")} placeholder="0" className="input w-full" />
+                  </div>
                 </div>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={!!editing.requires_advance} onChange={e => setEditing(prev => prev ? { ...prev, requires_advance: e.target.checked } : prev)} className="rounded" />
+                  Requires advance / consultancy fee (booking confirmed after payment)
+                </label>
               </section>
 
               {/* ── Call-To-Action ──────────────────────── */}
