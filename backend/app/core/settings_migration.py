@@ -8,7 +8,6 @@ Run this manually during deployment:
 4. Drop admin_settings table
 """
 
-from sqlalchemy import text
 
 async def migrate_settings(session):
     """
@@ -16,7 +15,7 @@ async def migrate_settings(session):
     - Prefixes all admin settings keys with 'admin_'
     - Preserves all metadata (category, display_type, etc) in JSON
     """
-    from app.models.models import Setting, AdminSetting
+    from app.models.models import Setting
 
     admin_settings = await session.execute(
         "SELECT * FROM admin_settings WHERE is_deleted = false"

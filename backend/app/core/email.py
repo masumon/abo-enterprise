@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.config import settings
-from app.models.models import EmailTemplate, ActivityLog
+from app.models.models import EmailTemplate
 
 logger = logging.getLogger(__name__)
 

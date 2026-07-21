@@ -1,14 +1,13 @@
 from uuid import UUID
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
 from app.core.security import decode_token, require_admin
 from app.models.models import AdminUser, Setting
 from app.schemas.schemas import SettingOut, SettingUpdate, SettingCreate, ApiResponse
-from typing import Any
 
 router = APIRouter(prefix="/settings", tags=["settings"])
 logger = logging.getLogger(__name__)

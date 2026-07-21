@@ -51,3 +51,4 @@ env/
 backend/alembic/versions/*.pyc
 
 backend/_smtp_audit.py
+.venv311/

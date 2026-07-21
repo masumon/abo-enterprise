@@ -1,5 +1,5 @@
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import selectinload
@@ -13,7 +13,6 @@ from app.models.models import (
     ServicePricingTier,
     ServiceBookingForm,
     ActivityLog,
-    AdminUser,
 )
 from app.schemas.schemas import (
     ServiceOut,

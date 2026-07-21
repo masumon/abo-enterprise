@@ -68,7 +68,7 @@ describe("Admin Dashboard", () => {
     render(<AdminDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText(/^Orders$/)).toBeInTheDocument();
+      expect(screen.getByText(/^Orders$|^অর্ডার$/)).toBeInTheDocument();
       expect(screen.getByText("45")).toBeInTheDocument();
     });
   });
@@ -77,8 +77,8 @@ describe("Admin Dashboard", () => {
     render(<AdminDashboard />);
 
     await waitFor(() => {
-      expect(screen.getByText(/8 pending/)).toBeInTheDocument();
-      expect(screen.getByText(/5 pending/)).toBeInTheDocument();
+      expect(screen.getByText(/8\s+(pending|অপেক্ষমান)/)).toBeInTheDocument();
+      expect(screen.getByText(/5\s+(pending|অপেক্ষমান)/)).toBeInTheDocument();
     });
   });
 

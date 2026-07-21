@@ -1,6 +1,5 @@
 import csv
 import io
-import uuid
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, UploadFile, File, Query, HTTPException
 from fastapi.responses import StreamingResponse

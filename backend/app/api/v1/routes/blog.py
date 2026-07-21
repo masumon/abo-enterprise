@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from app.core.database import get_db
 from app.core.security import require_admin
-from app.models.models import BlogPost, ActivityLog, AdminUser
+from app.models.models import BlogPost, ActivityLog
 from app.schemas.schemas import (
     BlogPostOut,
     BlogPostCreate,

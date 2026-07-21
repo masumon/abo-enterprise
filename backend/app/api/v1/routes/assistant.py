@@ -37,11 +37,9 @@ from app.core.rate_limit import rate_limit
 from app.assistant.feature_flags import (
     ASSISTANT_CONFIG_KEYS,
     ASSISTANT_BOOLEAN_FEATURES,
-    parse_bool,
     AssistantFeatureFlags,
 )
 from app.assistant.session_security import (
-    build_assistant_session_token,
     verify_assistant_session_token,
 )
 
