@@ -146,6 +146,17 @@ class ActionWorkflowEngine:
                 found = await self.knowledge.search_products(db, query, limit=1)
                 product = found[0] if found else None
             if not product:
+                # Generic request ("আরো পণ্য", "list", "দেখাও") or an unmatched
+                # name — show a few products to pick from instead of a dead loop.
+                options = await self.knowledge.search_products(db, "", limit=6)
+                if options:
+                    names = " · ".join((p.name_bn if lang == "bn" else p.name_en) for p in options)
+                    msg = (
+                        f"আমাদের কিছু পণ্য: {names}।\nযেটি চান তার নাম লিখুন, অথবা 'বাতিল'।"
+                        if lang == "bn"
+                        else f"Some of our products: {names}.\nType the name of the one you want, or 'cancel'."
+                    )
+                    return msg, {"workflow": "order", "products": [self.knowledge.product_to_dict(p) for p in options]}, links
                 return self.response.workflow_product_not_found(lang), {"workflow": "order"}, links
             if product.stock_quantity <= 0:
                 return self.response.workflow_out_of_stock(lang), {"workflow": "order"}, links
