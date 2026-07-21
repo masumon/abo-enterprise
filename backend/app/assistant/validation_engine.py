@@ -6,9 +6,6 @@ from dataclasses import dataclass
 from app.schemas.schemas import bd_phone
 
 
-_PHONE_RE = re.compile(r"^0[13-9]\d{9}$")
-
-
 @dataclass
 class ValidationResult:
     valid: bool

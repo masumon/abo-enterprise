@@ -41,9 +41,9 @@ def _calc_delivery_charge(district_hint: str, subtotal: float, settings_map: dic
     if subtotal >= free_min:
         return 0.0
     hint = district_hint.lower()
-    sylhet = float(settings_map.get("delivery_charge_sylhet") or 0)
-    dhaka = float(settings_map.get("delivery_charge_dhaka") or 60)
-    outside = float(settings_map.get("delivery_charge_outside") or 120)
+    sylhet = float(settings_map.get("delivery_charge_sylhet") or 60)
+    dhaka = float(settings_map.get("delivery_charge_dhaka") or 120)
+    outside = float(settings_map.get("delivery_charge_outside") or 130)
     if "sylhet" in hint:
         return sylhet
     if any(d in hint for d in ("dhaka", "gazipur", "narayanganj", "ঢাকা")):
@@ -152,7 +152,7 @@ class AutomationEngine:
             select(Setting).where(
                 Setting.key.in_([
                     "delivery_charge_dhaka", "delivery_charge_outside", "delivery_charge_sylhet",
-                    "free_delivery_min_amount", "free_delivery_min",
+                    "free_delivery_min_amount", "free_delivery_min", "advance_delivery_charge",
                 ]),
                 Setting.is_deleted == False,  # noqa: E712
             )
@@ -190,7 +190,23 @@ class AutomationEngine:
             order_items.append((product, qty, line_subtotal))
 
         delivery_charge = _calc_delivery_charge(delivery_address, subtotal, settings_map)
+        # A product's own delivery override wins when higher (single shipment) —
+        # matches the website checkout (max of per-product overrides vs zone).
+        overrides = [float(p.delivery_charge) for p, _, _ in order_items if getattr(p, "delivery_charge", None) is not None]
+        if overrides and subtotal < float(settings_map.get("free_delivery_min_amount") or settings_map.get("free_delivery_min") or 2000):
+            delivery_charge = max(delivery_charge, max(overrides))
+        # Advance / prepaid — if any product is admin-flagged, an advance must be
+        # collected before confirmation (order stays pending until advance_paid).
+        needs_advance = any(getattr(p, "requires_advance", False) for p, _, _ in order_items)
+        advance_amount = float(settings_map.get("advance_delivery_charge") or 120) if needs_advance else 0.0
+        # Apply the coupon discount server-side (same rules as the website) so a
+        # coupon the customer applied in chat actually reduces the total.
         discount_amount = 0.0
+        if coupon_code:
+            from app.assistant.knowledge_base import KnowledgeBase
+            c = await KnowledgeBase().get_coupon(db, coupon_code)
+            if c and subtotal >= float(c.get("min_subtotal", 0)):
+                discount_amount = round(subtotal * (float(c["discount_percent"]) / 100.0), 2)
         total = subtotal - discount_amount + delivery_charge
 
         order = Order(
@@ -205,6 +221,8 @@ class AutomationEngine:
             discount_amount=discount_amount,
             coupon_code=coupon_code,
             delivery_charge=delivery_charge,
+            advance_amount=advance_amount,
+            advance_paid=False,
             total=total,
             notes="Created via assistant",
         )

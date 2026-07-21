@@ -458,6 +458,17 @@ class AssistantOrchestrator:
         if intent in (Intent.PRODUCT_DETAILS, Intent.PRODUCT_PRICE, Intent.PRODUCT_STOCK, Intent.PRODUCT_AVAILABILITY):
             product = await self._resolve_product(db, ctx, entities, preprocessed)
             if not product:
+                # No specific product named — treat "what products do you have",
+                # "কি কি পণ্য আছে" etc. as a listing request instead of a dead
+                # "not found". Empty cleaned query lists the catalog.
+                q = ctx.slots.get("product_query", "") or _clean_search_query(preprocessed["normalized"])
+                found = await self.knowledge.search_products(db, q, limit=5)
+                if not found:
+                    found = await self.knowledge.search_products(db, "", limit=5)
+                if found:
+                    product_dicts = [self.knowledge.product_to_dict(p) for p in found]
+                    links = self.response.product_links(product_dicts)
+                    return self.response.product_list(lang, product_dicts), {"products": product_dicts}, links
                 need = "product name" if lang == "en" else "পণ্যের নাম"
                 return self.response.need_more_info(lang, [need]), {}, links
             ctx.last_product_slug = product.slug
@@ -581,6 +592,8 @@ class AssistantOrchestrator:
             for code in codes:
                 coupon = await self.knowledge.get_coupon(db, code)
                 if coupon:
+                    # Remember the validated coupon so a later chat order applies it.
+                    ctx.slots["coupon_code"] = coupon["code"]
                     checkout_links = [{"label": "Checkout", "label_bn": "চেকআউট", "url": f"/checkout?coupon={code}", "type": "checkout"}]
                     return self.response.coupon_info(lang, coupon), {"coupon": coupon}, checkout_links
                 invalid_code = code
@@ -717,7 +730,15 @@ class AssistantOrchestrator:
             if web:
                 return self.response.web_enriched(lang, web), {"web_search": True}, links
 
-        return self.response.unknown(lang), {}, links
+        # Terminal fallback — still be useful: offer quick links to the main
+        # areas of the site plus the contact channels, never a dead end.
+        help_links = [
+            {"label": "Products", "label_bn": "পণ্য", "url": "/products", "type": "nav"},
+            {"label": "Services", "label_bn": "সেবা", "url": "/services", "type": "nav"},
+            {"label": "Track order", "label_bn": "অর্ডার ট্র্যাক", "url": "/track", "type": "nav"},
+            {"label": "Contact", "label_bn": "যোগাযোগ", "url": "/contact", "type": "nav"},
+        ]
+        return self.response.unknown(lang), {}, help_links
 
     async def _resolve_product(self, db, ctx, entities, preprocessed):
         query = ctx.slots.get("product_query") or _clean_search_query(preprocessed["normalized"])

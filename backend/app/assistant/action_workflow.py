@@ -252,6 +252,7 @@ class ActionWorkflowEngine:
                 payment_method=data["payment_method"],
                 payment_number=data.get("payment_number"),
                 cart=data["cart"],
+                coupon_code=data.get("coupon_code") or ctx.slots.get("coupon_code"),
             )
             self._clear(ctx)
             if result.get("error"):

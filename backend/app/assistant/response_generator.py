@@ -23,12 +23,16 @@ class ResponseGenerator:
     def unknown(self, language: str) -> str:
         if language == "bn":
             return (
-                "দুঃখিত, আমি ঠিক বুঝতে পারিনি। "
-                "পণ্য, সেবা, অর্ডার ট্র্যাক, ডেলিভারি চার্জ, কুপন বা যোগাযোগ সম্পর্কে জিজ্ঞাসা করুন।"
+                "দুঃখিত, আমি ঠিক বুঝতে পারিনি বা এই মুহূর্তে এর সঠিক উত্তর দেওয়া কঠিন। "
+                "পণ্য, সেবা, অর্ডার ট্র্যাক, ডেলিভারি চার্জ বা কুপন সম্পর্কে জিজ্ঞাসা করতে পারেন। "
+                "আরও সাহায্যের জন্য আমাদের সাথে যোগাযোগ করুন — "
+                "ইমেইল: info@aboenterprise.com, WhatsApp: 01825007977।"
             )
         return (
-            "I'm sorry, I didn't quite understand. "
-            "Try asking about products, services, order tracking, delivery charges, coupons, or contact info."
+            "I'm sorry, I couldn't quite understand that, or it's hard to answer right now. "
+            "You can ask about products, services, order tracking, delivery charges, or coupons. "
+            "For more help, please contact us — "
+            "email: info@aboenterprise.com, WhatsApp: 01825007977."
         )
 
     def need_more_info(self, language: str, fields: list[str]) -> str:
