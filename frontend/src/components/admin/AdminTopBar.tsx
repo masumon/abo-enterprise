@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun } from "lucide-react";
+import { ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users } from "lucide-react";
 import { getAdminPageTitle } from "@/lib/adminNav";
 import { useAlertStore } from "@/store/alerts";
 import { useLanguageStore } from "@/store/language";
@@ -24,6 +24,16 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
   const { pendingOrders, pendingBookings, newLeads } = useAlertStore();
   const alertTotal = pendingOrders + pendingBookings + newLeads;
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+
+  const notifItems = [
+    { key: "orders", icon: ShoppingCart, label: lang === "bn" ? "অপেক্ষমান অর্ডার" : "Pending orders", count: pendingOrders, href: "/admin/orders" },
+    { key: "bookings", icon: Briefcase, label: lang === "bn" ? "অপেক্ষমান বুকিং" : "Pending bookings", count: pendingBookings, href: "/admin/bookings" },
+    { key: "leads", icon: Users, label: lang === "bn" ? "নতুন লিড" : "New leads", count: newLeads, href: "/admin/leads" },
+  ].filter((i) => i.count > 0 && !dismissed.has(i.key));
+  const visibleTotal = notifItems.reduce((s, i) => s + i.count, 0);
+  const dismiss = (key: string) => setDismissed((prev) => new Set(prev).add(key));
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -89,24 +99,67 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
           >
             <RotateCw className={`w-4 h-4 text-gray-600 ${isRefreshing ? "animate-spin" : ""}`} />
           </button>
-          {alertTotal > 0 && (
-            <div
-              className="sm:hidden w-8 h-8 rounded-full bg-amber-50 border border-amber-100 text-amber-800 text-[10px] font-bold flex items-center justify-center"
-              title={lang === "bn" ? "অপেক্ষমান আইটেম" : "Pending items"}
-              aria-label={lang === "bn" ? `${alertTotal} অপেক্ষমান` : `${alertTotal} pending`}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setNotifOpen((v) => !v)}
+              className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-600"
+              aria-label={lang === "bn" ? "নোটিফিকেশন" : "Notifications"}
+              aria-expanded={notifOpen}
             >
-              {alertTotal > 99 ? "99+" : alertTotal}
-            </div>
-          )}
-          {alertTotal > 0 && (
-            <div
-              className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 border border-amber-100 text-amber-800 text-xs font-medium"
-              title="Pending items"
-            >
-              <Bell className="w-3.5 h-3.5" />
-              {alertTotal} pending
-            </div>
-          )}
+              <Bell className="w-4 h-4" />
+              {visibleTotal > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[9px] font-bold flex items-center justify-center">
+                  {visibleTotal > 99 ? "99+" : visibleTotal}
+                </span>
+              )}
+            </button>
+
+            {notifOpen && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setNotifOpen(false)} aria-hidden />
+                <div className="absolute right-0 mt-2 w-72 z-40 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-xl overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-2.5 border-b border-gray-100 dark:border-white/10">
+                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
+                      {lang === "bn" ? "নোটিফিকেশন" : "Notifications"}
+                    </span>
+                    {notifItems.length > 0 && (
+                      <button type="button" onClick={() => setDismissed(new Set(["orders", "bookings", "leads"]))} className="text-xs text-brand-600 hover:underline">
+                        {lang === "bn" ? "সব ক্লিয়ার" : "Clear all"}
+                      </button>
+                    )}
+                  </div>
+                  {notifItems.length === 0 ? (
+                    <div className="px-4 py-6 text-center text-sm text-gray-400">
+                      {lang === "bn" ? "নতুন কিছু নেই ✅" : "You're all caught up ✅"}
+                    </div>
+                  ) : (
+                    <ul className="max-h-80 overflow-y-auto divide-y divide-gray-50 dark:divide-white/5">
+                      {notifItems.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <li key={item.key} className="flex items-center gap-2 px-3 py-2.5 hover:bg-gray-50/60 dark:hover:bg-white/[0.03]">
+                            <Link href={item.href} onClick={() => setNotifOpen(false)} className="flex items-center gap-2.5 flex-1 min-w-0">
+                              <span className="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center flex-shrink-0">
+                                <Icon className="w-4 h-4" />
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-sm text-gray-800 dark:text-gray-100 truncate">{item.label}</span>
+                                <span className="block text-xs text-gray-400">{item.count}</span>
+                              </span>
+                            </Link>
+                            <button type="button" onClick={() => dismiss(item.key)} className="w-7 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 flex items-center justify-center text-gray-400 flex-shrink-0" aria-label={lang === "bn" ? "ক্লিয়ার" : "Clear"}>
+                              <X className="w-4 h-4" />
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
           <div className="hidden md:flex items-center gap-2 pl-2 border-l border-gray-100">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-xs font-bold">
               {adminName[0]?.toUpperCase()}
