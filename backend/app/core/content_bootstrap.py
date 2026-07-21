@@ -2,7 +2,7 @@
 import logging
 from datetime import datetime, timezone
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, select
 
 from app.core.database import AsyncSessionLocal
 from app.core.demo_content import (

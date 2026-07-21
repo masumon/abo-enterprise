@@ -23,6 +23,18 @@ from app.assistant.action_workflow import ActionWorkflowEngine
 from app.assistant.feature_flags import load_feature_flags, is_intent_allowed, is_workflow_allowed, AssistantFeatureFlags
 from app.assistant import site_map
 from app.assistant.session_security import build_assistant_session_token
+from app.assistant.analytics_engine import AnalyticsEngine
+from app.assistant.confidence_engine import ConfidenceEngine
+from app.assistant.decision_engine import DecisionEngine
+from app.assistant.entity_normalizer import EntityNormalizer
+from app.assistant.feedback_engine import FeedbackEngine
+from app.assistant.memory_engine import MemoryEngine
+from app.assistant.plugin_manager import PluginManager
+from app.assistant.reasoning_engine import ReasoningEngine
+from app.assistant.recommendation_engine import RecommendationEngine
+from app.assistant.response_validator import ResponseValidator
+from app.assistant.spell_corrector import SpellCorrector
+from app.assistant.tool_registry import ToolRegistry
 
 _FOLLOW_UP_PRODUCT = frozenset({
     Intent.PRODUCT_PRICE, Intent.PRODUCT_STOCK, Intent.PRODUCT_AVAILABILITY, Intent.PRODUCT_DETAILS,
@@ -117,6 +129,7 @@ class AssistantOrchestrator:
     def __init__(self) -> None:
         self.intent_engine = IntentEngine()
         self.entity_extractor = EntityExtractor()
+        self.entity_normalizer = EntityNormalizer()
         self.knowledge = KnowledgeBase()
         self.business_rules = BusinessRuleEngine()
         self.validation = ValidationEngine()
@@ -126,6 +139,17 @@ class AssistantOrchestrator:
         self.conversation_mgr = ConversationManager()
         self.response = ResponseGenerator()
         self.automation = AutomationEngine()
+        self.memory_engine = MemoryEngine()
+        self.reasoning_engine = ReasoningEngine()
+        self.decision_engine = DecisionEngine()
+        self.confidence_engine = ConfidenceEngine()
+        self.recommendation_engine = RecommendationEngine()
+        self.analytics_engine = AnalyticsEngine()
+        self.feedback_engine = FeedbackEngine()
+        self.response_validator = ResponseValidator()
+        self.spell_corrector = SpellCorrector()
+        self.tool_registry = ToolRegistry()
+        self.plugin_manager = PluginManager(self.tool_registry)
         self.action_workflow = ActionWorkflowEngine(
             self.knowledge, self.automation, self.response, self.validation,
         )
@@ -141,6 +165,7 @@ class AssistantOrchestrator:
         language: str | None = None,
         page_path: str | None = None,
     ) -> dict[str, Any]:
+        started_at = time.perf_counter()
         msg_validation = self.validation.validate_message(message)
         if not msg_validation.valid:
             return self._error_response("en", msg_validation.errors[0])
@@ -160,6 +185,9 @@ class AssistantOrchestrator:
         )
 
         preprocessed = preprocess_text(message)
+        nlp_preprocessed = dict(preprocessed)
+        nlp_preprocessed["normalized"] = self.spell_corrector.correct(preprocessed["normalized"])
+        feedback = self.feedback_engine.detect(preprocessed["raw"])
         if language in ("bn", "en"):
             ctx.language = language
         elif preprocessed["language"] in ("bn", "mixed"):
@@ -199,16 +227,30 @@ class AssistantOrchestrator:
 
         product_names, service_names, categories, brands = await self._entity_vocab(db)
 
-        intent, confidence = self.intent_engine.recognize(preprocessed["normalized"])
+        intent, confidence = self.intent_engine.recognize(nlp_preprocessed["normalized"])
         entities = self.entity_extractor.extract(
-            preprocessed,
+            nlp_preprocessed,
             product_names=product_names,
             service_names=service_names,
             categories=categories,
             brands=brands,
         )
+        entities = self.entity_normalizer.normalize(entities)
+        confidence = self.confidence_engine.calibrate(
+            base_confidence=confidence,
+            entity_count=len(entities.entities),
+            has_session_context=bool(ctx.last_intent),
+        )
+        decision = self.decision_engine.decide(intent=intent, confidence=confidence)
+        if decision.action == "fallback_unknown":
+            intent = Intent.UNKNOWN
+        reasoning = self.reasoning_engine.analyze(
+            intent=intent,
+            confidence=confidence,
+            entity_count=len(entities.entities),
+        )
         ctx.update_from_entities(entities.entities, preprocessed)
-        intent = self._resolve_follow_up_intent(intent, ctx, preprocessed)
+        intent = self._resolve_follow_up_intent(intent, ctx, nlp_preprocessed)
 
         # Active multi-turn workflow takes priority
         if self.action_workflow.is_active(ctx):
@@ -218,13 +260,16 @@ class AssistantOrchestrator:
                 text = self.response.feature_disabled(lang, wf_type)
                 await self._finalize_turn(db, conv, ctx, message, text, "feature_disabled", {})
                 return self._build_result(lang, Intent.UNKNOWN, text, conv.session_id)
-            wf_result = await self.action_workflow.handle_turn(db, ctx, preprocessed, lang, entities)
+            wf_result = await self.action_workflow.handle_turn(db, ctx, nlp_preprocessed, lang, entities)
             if wf_result:
                 text, action_data, links = wf_result
                 workflow_response_data: dict[str, Any] = {"workflow": True}
                 workflow_response_data.update(action_data or {})
                 await self._finalize_turn(db, conv, ctx, message, text, ctx.slots.get("workflow", {}).get("type", "workflow"), workflow_response_data)
                 suggestions = self._suggestions(Intent.ORDER_CREATION if ctx.slots.get("workflow", {}).get("type") == "order" else Intent.GREETING, lang, ctx)
+                suggestions = self.recommendation_engine.recommend(suggestions, ctx)
+                if not self.response_validator.validate(text).valid:
+                    text = self.response.unknown(lang)
                 result = self.response.format_response(lang, Intent.ORDER_CREATION, text, data=workflow_response_data, suggestions=suggestions, links=links)
                 result["session_id"] = conv.session_id
                 result["session_token"] = build_assistant_session_token(conv.session_id)
@@ -246,7 +291,7 @@ class AssistantOrchestrator:
 
         phone_entity = entities.get(EntityType.PHONE)
         rule_result = await self.business_rules.evaluate(
-            db, intent, preprocessed["normalized"],
+            db, intent, nlp_preprocessed["normalized"],
             phone=ctx.customer_phone or (phone_entity.value if phone_entity else None),
             customer_name=ctx.customer_name,
         )
@@ -284,17 +329,35 @@ class AssistantOrchestrator:
         response_data: dict[str, Any] = {
             "confidence": round(confidence, 2),
             "entities": [{"type": e.type.value, "value": e.value} for e in entities.entities],
+            "reasoning": reasoning.summary,
+            "feedback": {"label": feedback.label, "score": feedback.score},
         }
-        text, action_data, links = await self._handle_intent(db, ctx, intent, entities, preprocessed, lang, flags)
+        text, action_data, links = await self._handle_intent(db, ctx, intent, entities, nlp_preprocessed, lang, flags)
         response_data.update(action_data or {})
+        if reasoning.risk_flags:
+            response_data["risk_flags"] = reasoning.risk_flags
+
+        if not self.response_validator.validate(text).valid:
+            text = self.response.unknown(lang)
 
         await self.logging.log_action(
             db, session_id=conv.session_id, intent=intent.value,
             action="chat", status="success", details={"confidence": confidence},
         )
+        latency_ms = int((time.perf_counter() - started_at) * 1000)
+        response_data["analytics"] = self.analytics_engine.as_dict(
+            self.analytics_engine.build_event(
+                session_id=conv.session_id,
+                intent=intent.value,
+                confidence=confidence,
+                latency_ms=latency_ms,
+                metadata={"decision": decision.reason},
+            )
+        )
         await self._finalize_turn(db, conv, ctx, message, text, intent.value, response_data)
 
         suggestions = self._suggestions(intent, lang, ctx)
+        suggestions = self.recommendation_engine.recommend(suggestions, ctx)
         result = self.response.format_response(lang, intent, text, data=response_data, suggestions=suggestions, links=links)
         result["session_id"] = conv.session_id
         result["session_token"] = build_assistant_session_token(conv.session_id)
@@ -496,7 +559,7 @@ class AssistantOrchestrator:
             if ctx.customer_phone:
                 leads = await self.automation.track_leads_by_phone(db, ctx.customer_phone)
                 if leads:
-                    lines = [self.response.lead_status(lang, l) for l in leads]
+                    lines = [self.response.lead_status(lang, lead_item) for lead_item in leads]
                     return "\n\n".join(lines), {"leads": leads}, links
             ctx.pending_action = "lead_tracking"
             lead_need = ["lead reference or phone"] if lang == "en" else ["লিড রেফারেন্স বা ফোন"]
@@ -703,6 +766,12 @@ class AssistantOrchestrator:
         return any(token in {"what", "who", "when", "where", "why", "how", "meaning", "define", "কি", "কে", "কেন", "কিভাবে"} for token in tokens)
 
     async def _finalize_turn(self, db, conv, ctx, user_msg, assistant_msg, intent, metadata):
+        self.memory_engine.remember_turn(
+            ctx,
+            user_message=user_msg,
+            assistant_message=assistant_msg,
+            intent=intent,
+        )
         await self.conversation_mgr.save_turn(db, conv, ctx, user_msg, assistant_msg, intent, metadata)
 
     def _suggestions(self, intent: Intent, lang: str, ctx: ConversationContext | None = None) -> list[str]:
@@ -800,25 +869,35 @@ class AssistantOrchestrator:
         # so a disabled feature is never promised.
         caps_bn, caps_en = [], []
         if flags.product_search:
-            caps_bn.append("পণ্য খোঁজা, দাম ও স্টক"); caps_en.append("find products, prices & stock")
+            caps_bn.append("পণ্য খোঁজা, দাম ও স্টক")
+            caps_en.append("find products, prices & stock")
         if flags.orders:
-            caps_bn.append("চ্যাটেই অর্ডার করা"); caps_en.append("place an order right here")
+            caps_bn.append("চ্যাটেই অর্ডার করা")
+            caps_en.append("place an order right here")
         if flags.bookings:
-            caps_bn.append("সেবা বুক করা"); caps_en.append("book a service")
+            caps_bn.append("সেবা বুক করা")
+            caps_en.append("book a service")
         if flags.order_tracking:
-            caps_bn.append("অর্ডার/বুকিং ট্র্যাক"); caps_en.append("track orders & bookings")
+            caps_bn.append("অর্ডার/বুকিং ট্র্যাক")
+            caps_en.append("track orders & bookings")
         if flags.coupons:
-            caps_bn.append("কুপন ও অফার"); caps_en.append("coupons & offers")
+            caps_bn.append("কুপন ও অফার")
+            caps_en.append("coupons & offers")
         if flags.delivery_info:
-            caps_bn.append("ডেলিভারি চার্জ ও সময়"); caps_en.append("delivery charges & times")
-        caps_bn.append("যেকোনো পেজ খুঁজে দেওয়া"); caps_en.append("guide you to any page")
+            caps_bn.append("ডেলিভারি চার্জ ও সময়")
+            caps_en.append("delivery charges & times")
+        caps_bn.append("যেকোনো পেজ খুঁজে দেওয়া")
+        caps_en.append("guide you to any page")
         if flags.web_search:
-            caps_bn.append("সাধারণ প্রশ্নের ওয়েব-উত্তর"); caps_en.append("answer general questions from the web")
+            caps_bn.append("সাধারণ প্রশ্নের ওয়েব-উত্তর")
+            caps_en.append("answer general questions from the web")
         if lang == "bn":
             return "আমি যা যা পারি:\n" + "\n".join(f"• {c}" for c in caps_bn) + "\n\nকোনটা দিয়ে শুরু করবেন?"
         return "Here's what I can do:\n" + "\n".join(f"• {c}" for c in caps_en) + "\n\nWhere shall we start?"
 
     def _build_result(self, lang: str, intent: Intent, text: str, session_id: str) -> dict:
+        if not self.response_validator.validate(text).valid:
+            text = self.response.unknown(lang)
         result = self.response.format_response(lang, intent, text)
         result["session_id"] = session_id
         result["session_token"] = build_assistant_session_token(session_id)

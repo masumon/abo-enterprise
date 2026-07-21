@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 import json
 
 from fastapi import APIRouter, Depends, Request
@@ -34,8 +34,6 @@ def _time_ago(dt: datetime) -> str:
 @router.get("/stats", response_model=ApiResponse)
 async def get_public_stats(db: AsyncSession = Depends(get_db)):
     """Public aggregate stats for homepage trust indicators."""
-    since = datetime.now(timezone.utc) - timedelta(days=365 * 5)
-
     total_orders = (await db.execute(
         select(func.count(Order.id)).where(Order.is_deleted == False)  # noqa: E712
     )).scalar() or 0
@@ -184,18 +182,22 @@ async def get_feature_flags(request: Request, db: AsyncSession = Depends(get_db)
     Returns 304 Not Modified when the caller's If-None-Match matches, so
     repeat visits don't re-download the same flag payload on every navigation.
     """
-    result = await db.execute(
-        select(Setting).where(
-            Setting.key.like("feature_%"),
-            Setting.is_deleted == False,  # noqa: E712
-        )
-    )
     flags = dict(DEFAULT_FLAGS)
-    for s in result.scalars().all():
-        if s.data_type == "boolean":
-            flags[s.key] = s.value.lower() in ("true", "1", "yes")
-        else:
-            flags[s.key] = s.value
+    try:
+        result = await db.execute(
+            select(Setting).where(
+                Setting.key.like("feature_%"),
+                Setting.is_deleted == False,  # noqa: E712
+            )
+        )
+        for s in result.scalars().all():
+            if s.data_type == "boolean":
+                flags[s.key] = s.value.lower() in ("true", "1", "yes")
+            else:
+                flags[s.key] = s.value
+    except Exception:
+        # Public widget boot must stay up even when DB is temporarily unavailable.
+        flags = dict(DEFAULT_FLAGS)
     return etag_json_response(
         request,
         {"success": True, "data": flags, "message": ""},

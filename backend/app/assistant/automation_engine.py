@@ -8,16 +8,15 @@ import logging
 from datetime import datetime, timezone
 from uuid import UUID
 
-from sqlalchemy import select, func
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.core.email import send_email
 from app.core.invoice import InvoiceService
-from app.models.models import Order, OrderItem, Product, LeadV2, BookingV2, Service, Invoice
+from app.models.models import Order, OrderItem, Product, LeadV2, BookingV2, Service
 from app.assistant.workflow_engine import WorkflowEngine, WorkflowType, WorkflowStatus, WorkflowResult
-from app.assistant.constants import Intent
 
 logger = logging.getLogger(__name__)
 

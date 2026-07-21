@@ -1,6 +1,5 @@
 from fastapi import HTTPException, status
 from functools import wraps
-from typing import List
 
 ROLE_PERMISSIONS = {
     "super_admin": ["*"],

@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
 from app.core.security import require_admin
-from app.core.config import settings
 from app.core.email import send_email, lead_notification_html
 from app.models.models import Lead
 from app.schemas.schemas import LeadCreate, LeadOut, LeadStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta

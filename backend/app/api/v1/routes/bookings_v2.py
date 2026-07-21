@@ -3,7 +3,7 @@ import uuid
 import secrets
 import logging
 from datetime import datetime, timezone
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
@@ -26,8 +26,6 @@ from app.models.models import (
     BookingV2,
     Service,
     ActivityLog,
-    AdminUser,
-    Invoice,
 )
 from app.core.rate_limit import rate_limit
 from app.schemas.schemas import (

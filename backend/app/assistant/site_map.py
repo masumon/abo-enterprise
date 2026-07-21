@@ -14,7 +14,7 @@ Used for:
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from app.assistant.nlp.fuzzy import fuzzy_score
 

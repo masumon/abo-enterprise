@@ -16,7 +16,7 @@ init_sentry()
 from app.core.ops_events import install_error_capture  # noqa: E402
 
 install_error_capture()
-from app.core.exceptions import ABOException, to_http_exception
+from app.core.exceptions import ABOException
 from app.core.security import require_admin
 from app.core.bootstrap import bootstrap_admin
 from app.core.content_bootstrap import bootstrap_content
