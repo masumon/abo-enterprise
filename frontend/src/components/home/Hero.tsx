@@ -79,7 +79,7 @@ export default function Hero() {
     <section
       className="gradient-hero lg:min-h-[92vh] lg:min-h-[92dvh] flex items-center relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]"
       style={heroImage ? {
-        backgroundImage: `linear-gradient(135deg, rgba(21,101,192,0.92) 0%, rgba(13,71,161,0.88) 50%, rgba(233,30,99,0.75) 100%), url(${heroImage})`,
+        backgroundImage: `linear-gradient(135deg, rgba(21,101,192,0.25) 0%, rgba(13,71,161,0.20) 50%, rgba(233,30,99,0.15) 100%), url(${heroImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       } : undefined}
