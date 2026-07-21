@@ -9,19 +9,21 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
 /** Friendly field-editors for the Trust Assets object-array settings.
  * Unknown keys are preserved by JsonListEditor, so existing data is safe. */
-const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Record<string, unknown> }> = {
+const ICON_HINT = "lucide name or emoji";
+const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Record<string, unknown>; mapKey?: string }> = {
+  // ── Trust Assets ──
   about_team_json: {
     fields: [
       { path: "name", label: "Name" },
       { path: "role.en", label: "Role (EN)" }, { path: "role.bn", label: "Role (BN)" },
       { path: "desc.en", label: "Bio (EN)", type: "textarea" }, { path: "desc.bn", label: "Bio (BN)", type: "textarea" },
-      { path: "image", label: "Photo URL" },
+      { path: "image", label: "Photo", type: "image" },
     ],
     newItem: () => ({ id: Date.now().toString(36), name: "", role: { en: "", bn: "" }, desc: { en: "", bn: "" }, image: "" }),
   },
   client_logos_json: {
     fields: [
-      { path: "name", label: "Name" }, { path: "abbr", label: "Abbreviation" }, { path: "image", label: "Logo URL" },
+      { path: "name", label: "Name" }, { path: "abbr", label: "Abbreviation" }, { path: "image", label: "Logo", type: "image" },
     ],
     newItem: () => ({ name: "", abbr: "", image: "" }),
   },
@@ -30,9 +32,86 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
       { path: "customer_name", label: "Name" }, { path: "company", label: "Company" },
       { path: "rating", label: "Rating (1-5)", type: "number" },
       { path: "review_en", label: "Review (EN)", type: "textarea" }, { path: "review_bn", label: "Review (BN)", type: "textarea" },
-      { path: "photo_url", label: "Photo URL" },
+      { path: "photo_url", label: "Photo", type: "image" },
     ],
     newItem: () => ({ customer_name: "", company: "", rating: 5, review_en: "", review_bn: "", photo_url: "" }),
+  },
+  // ── Homepage Sections ──
+  site_announcements_json: {
+    fields: [
+      { path: "en", label: "Text (EN)" }, { path: "bn", label: "Text (BN)" },
+      { path: "href", label: "Link" }, { path: "icon", label: "Icon", type: "icon", hint: "emoji" },
+    ],
+    newItem: () => ({ en: "", bn: "", href: "/", icon: "" }),
+  },
+  site_trust_badges_json: {
+    fields: [
+      { path: "icon", label: "Icon", type: "icon", hint: ICON_HINT },
+      { path: "en", label: "Label (EN)" }, { path: "bn", label: "Label (BN)" },
+    ],
+    newItem: () => ({ icon: "award", en: "", bn: "" }),
+  },
+  site_why_choose_json: {
+    fields: [
+      { path: "icon", label: "Icon", type: "icon", hint: ICON_HINT },
+      { path: "title_en", label: "Title (EN)" }, { path: "title_bn", label: "Title (BN)" },
+      { path: "desc_en", label: "Description (EN)", type: "textarea" }, { path: "desc_bn", label: "Description (BN)", type: "textarea" },
+    ],
+    newItem: () => ({ icon: "award", title_en: "", title_bn: "", desc_en: "", desc_bn: "" }),
+  },
+  site_faq_json: {
+    fields: [
+      { path: "q_en", label: "Question (EN)" }, { path: "q_bn", label: "Question (BN)" },
+      { path: "a_en", label: "Answer (EN)", type: "textarea" }, { path: "a_bn", label: "Answer (BN)", type: "textarea" },
+      { path: "category", label: "Category", hint: "general, products, services, software, payment, shipping" },
+    ],
+    newItem: () => ({ q_en: "", q_bn: "", a_en: "", a_bn: "", category: "general" }),
+  },
+  site_quick_categories_json: {
+    fields: [
+      { path: "icon", label: "Icon", type: "icon", hint: ICON_HINT },
+      { path: "label_en", label: "Label (EN)" }, { path: "label_bn", label: "Label (BN)" },
+      { path: "desc_en", label: "Description (EN)" }, { path: "desc_bn", label: "Description (BN)" },
+      { path: "href", label: "Link" },
+    ],
+    newItem: () => ({ icon: "smartphone", label_en: "", label_bn: "", desc_en: "", desc_bn: "", href: "/products" }),
+  },
+  site_entry_points_json: {
+    fields: [
+      { path: "icon", label: "Icon", type: "icon", hint: ICON_HINT },
+      { path: "title_en", label: "Title (EN)" }, { path: "title_bn", label: "Title (BN)" },
+      { path: "desc_en", label: "Description (EN)", type: "textarea" }, { path: "desc_bn", label: "Description (BN)", type: "textarea" },
+      { path: "cta_en", label: "Button (EN)" }, { path: "cta_bn", label: "Button (BN)" },
+      { path: "href", label: "Link" },
+    ],
+    newItem: () => ({ icon: "package", title_en: "", title_bn: "", desc_en: "", desc_bn: "", cta_en: "", cta_bn: "", href: "/" }),
+  },
+  // ── Coupons (object map: CODE → config) ──
+  coupons_json: {
+    mapKey: "code",
+    fields: [
+      { path: "code", label: "Code", hint: "e.g. ABO10" },
+      { path: "discount_percent", label: "Discount %", type: "number" },
+      { path: "min_subtotal", label: "Min subtotal (৳)", type: "number" },
+      { path: "active", label: "Active (true/false)" },
+    ],
+    newItem: () => ({ code: "", discount_percent: 10, min_subtotal: 0, active: true }),
+  },
+  // ── Demo catalog (optional; blank = built-in defaults) ──
+  demo_products_json: {
+    fields: [
+      { path: "slug", label: "Slug" }, { path: "name_en", label: "Name (EN)" }, { path: "name_bn", label: "Name (BN)" },
+      { path: "price", label: "Price (৳)", type: "number" }, { path: "category", label: "Category" },
+      { path: "image_url", label: "Image", type: "image" },
+    ],
+    newItem: () => ({ slug: "", name_en: "", name_bn: "", price: 0, category: "", image_url: "" }),
+  },
+  demo_services_json: {
+    fields: [
+      { path: "slug", label: "Slug" }, { path: "name_en", label: "Name (EN)" }, { path: "name_bn", label: "Name (BN)" },
+      { path: "category", label: "Category" }, { path: "featured_image_url", label: "Image", type: "image" },
+    ],
+    newItem: () => ({ slug: "", name_en: "", name_bn: "", category: "", featured_image_url: "" }),
   },
 };
 import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Users, Trophy, Zap, Code, Mail } from "lucide-react";
@@ -467,6 +546,7 @@ function SectionCard({
                 onChange={(json) => onChange(field.key, json)}
                 fields={TRUST_EDITORS[field.key].fields}
                 newItem={TRUST_EDITORS[field.key].newItem}
+                mapKey={TRUST_EDITORS[field.key].mapKey}
               />
             ) : field.type === "textarea" ? (
               <textarea

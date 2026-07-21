@@ -802,7 +802,7 @@ export default function AdminCategoriesPage() {
               </div>
             </div>
             <div className="max-h-[72vh] overflow-auto">
-              <table role="treegrid" aria-label="Admin Categories Tree Grid" className="table-premium min-w-[1120px]">
+              <table role="treegrid" aria-label="Admin Categories Tree Grid" className="table-premium min-w-[520px] md:min-w-[820px] lg:min-w-[960px] xl:min-w-[1120px]">
                 <thead>
                   <tr>
                     {[
@@ -814,7 +814,13 @@ export default function AdminCategoriesPage() {
                       ["Status", "status"],
                       ["Sort Order", "sort_order"],
                     ].map(([label, key]) => (
-                      <th key={key} className={cn("sticky top-0 z-10 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/85", key === "category" && "left-0 z-20")}>
+                      <th key={key} className={cn(
+                        "sticky top-0 z-10 bg-gray-50/95 backdrop-blur supports-[backdrop-filter]:bg-gray-50/85",
+                        key === "category" && "left-0 z-20",
+                        key === "parent" && "hidden lg:table-cell",
+                        (key === "products" || key === "services" || key === "children") && "hidden md:table-cell",
+                        key === "sort_order" && "hidden xl:table-cell",
+                      )}>
                         <button
                           type="button"
                           onClick={() => handleSort(key as SortKey)}
