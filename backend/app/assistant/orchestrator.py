@@ -730,7 +730,15 @@ class AssistantOrchestrator:
             if web:
                 return self.response.web_enriched(lang, web), {"web_search": True}, links
 
-        return self.response.unknown(lang), {}, links
+        # Terminal fallback — still be useful: offer quick links to the main
+        # areas of the site plus the contact channels, never a dead end.
+        help_links = [
+            {"label": "Products", "label_bn": "পণ্য", "url": "/products", "type": "nav"},
+            {"label": "Services", "label_bn": "সেবা", "url": "/services", "type": "nav"},
+            {"label": "Track order", "label_bn": "অর্ডার ট্র্যাক", "url": "/track", "type": "nav"},
+            {"label": "Contact", "label_bn": "যোগাযোগ", "url": "/contact", "type": "nav"},
+        ]
+        return self.response.unknown(lang), {}, help_links
 
     async def _resolve_product(self, db, ctx, entities, preprocessed):
         query = ctx.slots.get("product_query") or _clean_search_query(preprocessed["normalized"])
