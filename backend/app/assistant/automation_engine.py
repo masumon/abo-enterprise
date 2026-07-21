@@ -199,7 +199,14 @@ class AutomationEngine:
         # collected before confirmation (order stays pending until advance_paid).
         needs_advance = any(getattr(p, "requires_advance", False) for p, _, _ in order_items)
         advance_amount = float(settings_map.get("advance_delivery_charge") or 120) if needs_advance else 0.0
+        # Apply the coupon discount server-side (same rules as the website) so a
+        # coupon the customer applied in chat actually reduces the total.
         discount_amount = 0.0
+        if coupon_code:
+            from app.assistant.knowledge_base import KnowledgeBase
+            c = await KnowledgeBase().get_coupon(db, coupon_code)
+            if c and subtotal >= float(c.get("min_subtotal", 0)):
+                discount_amount = round(subtotal * (float(c["discount_percent"]) / 100.0), 2)
         total = subtotal - discount_amount + delivery_charge
 
         order = Order(

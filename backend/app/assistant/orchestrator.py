@@ -592,6 +592,8 @@ class AssistantOrchestrator:
             for code in codes:
                 coupon = await self.knowledge.get_coupon(db, code)
                 if coupon:
+                    # Remember the validated coupon so a later chat order applies it.
+                    ctx.slots["coupon_code"] = coupon["code"]
                     checkout_links = [{"label": "Checkout", "label_bn": "চেকআউট", "url": f"/checkout?coupon={code}", "type": "checkout"}]
                     return self.response.coupon_info(lang, coupon), {"coupon": coupon}, checkout_links
                 invalid_code = code
