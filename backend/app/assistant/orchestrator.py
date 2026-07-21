@@ -458,6 +458,17 @@ class AssistantOrchestrator:
         if intent in (Intent.PRODUCT_DETAILS, Intent.PRODUCT_PRICE, Intent.PRODUCT_STOCK, Intent.PRODUCT_AVAILABILITY):
             product = await self._resolve_product(db, ctx, entities, preprocessed)
             if not product:
+                # No specific product named — treat "what products do you have",
+                # "কি কি পণ্য আছে" etc. as a listing request instead of a dead
+                # "not found". Empty cleaned query lists the catalog.
+                q = ctx.slots.get("product_query", "") or _clean_search_query(preprocessed["normalized"])
+                found = await self.knowledge.search_products(db, q, limit=5)
+                if not found:
+                    found = await self.knowledge.search_products(db, "", limit=5)
+                if found:
+                    product_dicts = [self.knowledge.product_to_dict(p) for p in found]
+                    links = self.response.product_links(product_dicts)
+                    return self.response.product_list(lang, product_dicts), {"products": product_dicts}, links
                 need = "product name" if lang == "en" else "পণ্যের নাম"
                 return self.response.need_more_info(lang, [need]), {}, links
             ctx.last_product_slug = product.slug

@@ -12,6 +12,7 @@ import {
   Phone,
   Minus,
   ExternalLink,
+  RotateCcw,
 } from "lucide-react";
 import { assistantApi, type AssistantFeatures } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -259,6 +260,20 @@ export default function AssistantWidget() {
 
   const sendMessage = useCallback(() => sendText(input), [input, sendText]);
 
+  const clearChat = useCallback(() => {
+    setMessages([]);
+    setSuggestions([]);
+    setSessionId(null);
+    setSessionToken(null);
+    setInput("");
+    try {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(SESSION_TOKEN_KEY);
+    } catch {
+      /* ignore storage errors */
+    }
+  }, []);
+
   if (!enabled) return null;
 
   return (
@@ -317,14 +332,26 @@ export default function AssistantWidget() {
                   </p>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="p-2 rounded-xl glass-panel hover:bg-white/25 transition-colors flex-shrink-0"
-                aria-label="Close assistant"
-              >
-                <X className="w-5 h-5 text-white" />
-              </button>
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                <button
+                  type="button"
+                  onClick={clearChat}
+                  disabled={loading}
+                  className="p-2 rounded-xl glass-panel hover:bg-white/25 transition-colors disabled:opacity-50"
+                  aria-label={lang === "bn" ? "নতুন চ্যাট" : "New chat"}
+                  title={lang === "bn" ? "চ্যাট মুছুন" : "Clear chat"}
+                >
+                  <RotateCcw className="w-4 h-4 text-white" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="p-2 rounded-xl glass-panel hover:bg-white/25 transition-colors"
+                  aria-label="Close assistant"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
             </div>
           </div>
 
