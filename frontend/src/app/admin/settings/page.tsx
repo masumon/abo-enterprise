@@ -4,7 +4,37 @@ import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
+import JsonListEditor, { type JsonListField } from "@/components/admin/JsonListEditor";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+
+/** Friendly field-editors for the Trust Assets object-array settings.
+ * Unknown keys are preserved by JsonListEditor, so existing data is safe. */
+const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Record<string, unknown> }> = {
+  about_team_json: {
+    fields: [
+      { path: "name", label: "Name" },
+      { path: "role.en", label: "Role (EN)" }, { path: "role.bn", label: "Role (BN)" },
+      { path: "desc.en", label: "Bio (EN)", type: "textarea" }, { path: "desc.bn", label: "Bio (BN)", type: "textarea" },
+      { path: "image", label: "Photo URL" },
+    ],
+    newItem: () => ({ id: Date.now().toString(36), name: "", role: { en: "", bn: "" }, desc: { en: "", bn: "" }, image: "" }),
+  },
+  client_logos_json: {
+    fields: [
+      { path: "name", label: "Name" }, { path: "abbr", label: "Abbreviation" }, { path: "image", label: "Logo URL" },
+    ],
+    newItem: () => ({ name: "", abbr: "", image: "" }),
+  },
+  demo_reviews_json: {
+    fields: [
+      { path: "customer_name", label: "Name" }, { path: "company", label: "Company" },
+      { path: "rating", label: "Rating (1-5)", type: "number" },
+      { path: "review_en", label: "Review (EN)", type: "textarea" }, { path: "review_bn", label: "Review (BN)", type: "textarea" },
+      { path: "photo_url", label: "Photo URL" },
+    ],
+    newItem: () => ({ customer_name: "", company: "", rating: 5, review_en: "", review_bn: "", photo_url: "" }),
+  },
+};
 import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Users, Trophy, Zap, Code, Mail } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import { parseGoogleMapsEmbedInput } from "@/lib/maps";
@@ -431,6 +461,13 @@ function SectionCard({
                     : (field.key === "maintenance_mode" ? "Disabled — site is live" : "Disabled")}
                 </span>
               </label>
+            ) : TRUST_EDITORS[field.key] ? (
+              <JsonListEditor
+                value={values[field.key] ?? ""}
+                onChange={(json) => onChange(field.key, json)}
+                fields={TRUST_EDITORS[field.key].fields}
+                newItem={TRUST_EDITORS[field.key].newItem}
+              />
             ) : field.type === "textarea" ? (
               <textarea
                 value={values[field.key] ?? ""}
