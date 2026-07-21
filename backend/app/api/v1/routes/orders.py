@@ -104,6 +104,57 @@ async def _advance_charge_amount(db: AsyncSession) -> float:
         return 120.0
 
 
+async def _anti_abuse_guard(db: AsyncSession, payload: OrderCreate) -> None:
+    """Block obviously-abusive / fake COD orders. All limits are admin-editable
+    via settings; normal orders are never affected.
+
+    (5) minimum info, (3) phone blocklist + per-phone pending cap, (4) leaves
+    the order pending for admin confirmation (default status, unchanged).
+    """
+    import re
+
+    # (5) Minimum info — a real name (2+ distinct chars) and a full address.
+    name = (payload.customer_name or "").strip()
+    if len(name) < 2 or len(set(name.replace(" ", ""))) < 2:
+        raise HTTPException(status_code=400, detail="Please enter a valid full name.")
+    if len((payload.delivery_address or "").strip()) < 10:
+        raise HTTPException(status_code=400, detail="Please enter a complete delivery address.")
+
+    rows = (await db.execute(
+        select(Setting).where(Setting.key.in_(["order_blocked_phones", "cod_max_pending_per_phone"]))
+    )).scalars().all()
+    s = {r.key: (r.value or "") for r in rows}
+
+    digits = re.sub(r"\D", "", payload.customer_phone or "")
+    tail = digits[-10:] if len(digits) >= 10 else digits
+
+    # (3a) Blocklist — admin-maintained list of abusive numbers.
+    if tail:
+        for b in re.split(r"[\s,]+", s.get("order_blocked_phones", "")):
+            bd = re.sub(r"\D", "", b)
+            if bd and bd[-10:] == tail:
+                raise HTTPException(status_code=403, detail="This phone number is blocked from ordering. Please contact support.")
+
+    # (3b/4) Cap concurrent unconfirmed COD orders per phone (default 5; 0 = off).
+    try:
+        max_pending = int(s.get("cod_max_pending_per_phone") or 5)
+    except (TypeError, ValueError):
+        max_pending = 5
+    if max_pending > 0 and tail:
+        pending = (await db.execute(
+            select(func.count(Order.id)).where(
+                Order.customer_phone.ilike(f"%{tail}"),
+                Order.order_status == "pending",
+                Order.is_deleted == False,  # noqa: E712
+            )
+        )).scalar() or 0
+        if pending >= max_pending:
+            raise HTTPException(
+                status_code=429,
+                detail=f"You already have {pending} pending orders. Please wait for them to be confirmed before ordering again.",
+            )
+
+
 @router.post(
     "",
     response_model=ApiResponse,
@@ -115,6 +166,7 @@ async def create_order(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
+    await _anti_abuse_guard(db, payload)
     trusted_prices = await _validate_and_reserve_stock(db, payload.items)
 
     # ---- Server-authoritative money math (never trust client totals) ----

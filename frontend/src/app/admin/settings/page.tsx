@@ -354,6 +354,8 @@ const SECTIONS: Section[] = [
       { key: "delivery_charge_outside", label: "Outside (৳)", type: "number", placeholder: "120" },
       { key: "courier_pathao_url", label: "Pathao Tracking URL", placeholder: "https://merchant.pathao.com/tracking?consignment_id={tracking_id}" },
       { key: "courier_steadfast_url", label: "Steadfast Tracking URL", placeholder: "https://steadfast.com.bd/t/{tracking_id}" },
+      { key: "cod_max_pending_per_phone", label: "Max pending COD orders / phone", type: "number", placeholder: "5", hint: "Blocks a phone from stacking too many unconfirmed COD orders. 0 = unlimited." },
+      { key: "order_blocked_phones", label: "Blocked phone numbers", type: "textarea", placeholder: "01712345678, 01898765432", hint: "Comma/newline separated. These numbers cannot place orders." },
     ],
   },
   {
