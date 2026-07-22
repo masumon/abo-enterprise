@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Upload, Loader2, X, ImageIcon, Video, Check, Sparkles } from "lucide-react";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
+import { compressImage } from "@/lib/imageCompress";
 import { cn } from "@/lib/utils";
 
 type AcceptType = "image" | "video" | "both";
@@ -112,13 +113,17 @@ export default function ImageUpload({
     setPending({ file, previewUrl, width, height });
   };
 
-  /** Step 2 — explicit confirm; the server auto-optimizes (quality + format). */
+  /** Step 2 — explicit confirm. Images are downscaled/compressed in the browser
+   *  first (so slow mobile uploads don't time out), then the server optimizes. */
   const confirmUpload = async () => {
     if (!pending) return;
     setUploading(true);
     setError(null);
     try {
-      const r = await adminApi.uploadMedia(pending.file, folder);
+      const toUpload = pending.file.type.startsWith("image/")
+        ? await compressImage(pending.file)
+        : pending.file;
+      const r = await adminApi.uploadMedia(toUpload, folder);
       const url = r.data.data?.url ?? "";
       if (url) onChange(url);
       setPending(null);
