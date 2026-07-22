@@ -111,39 +111,35 @@ async def upload_media(
     ALLOWED_VIDEO_MIMES = {"video/mp4", "video/webm", "video/quicktime", "video/x-msvideo"}
 
     content_type = (file.content_type or "").lower().strip()
-    is_image = content_type in ALLOWED_IMAGE_MIMES
-    is_video = content_type in ALLOWED_VIDEO_MIMES
+    # Accept any image/* or video/* type (Cloudinary handles the exact format).
+    is_image = content_type.startswith("image/")
+    is_video = content_type.startswith("video/")
 
     if not is_image and not is_video:
         raise HTTPException(
             status_code=400,
-            detail=(
-                "Unsupported file type. Allowed: "
-                "images (jpg, png, webp, gif, svg) or videos (mp4, webm, mov, avi)."
-            ),
+            detail="Unsupported file type. Please upload an image or a video.",
         )
 
-    max_size = 50 * 1024 * 1024 if is_video else 5 * 1024 * 1024
+    max_size = 30 * 1024 * 1024  # 30MB for images and videos alike
     if file.size and file.size > max_size:
-        limit = "50MB" if is_video else "5MB"
-        raise HTTPException(status_code=400, detail=f"File must be under {limit}")
+        raise HTTPException(status_code=400, detail="File must be under 30MB")
 
     # file.size is optional — measure the actual read to enforce the limit
     content = await file.read()
     if len(content) > max_size:
-        limit = "50MB" if is_video else "5MB"
-        raise HTTPException(status_code=413, detail=f"File must be under {limit}")
+        raise HTTPException(status_code=413, detail="File must be under 30MB")
     if not content:
         raise HTTPException(status_code=400, detail="Empty file")
     safe_folder = folder.strip("/").replace("..", "") or "abo-enterprise/uploads"
 
     upload_opts: dict = {"folder": safe_folder}
     if is_image:
-        upload_opts["allowed_formats"] = ["jpg", "jpeg", "png", "webp", "gif", "svg"]
-        upload_opts["transformation"] = [{"quality": "auto", "fetch_format": "auto"}]
+        # Auto quality + format (WebP/AVIF where supported) and cap the largest
+        # dimension so huge phone photos are resized down automatically.
+        upload_opts["transformation"] = [{"width": 2000, "height": 2000, "crop": "limit", "quality": "auto", "fetch_format": "auto"}]
     else:
         upload_opts["resource_type"] = "video"
-        upload_opts["allowed_formats"] = ["mp4", "webm", "mov", "avi"]
 
     if not settings.CLOUDINARY_CLOUD_NAME or not settings.CLOUDINARY_API_KEY:
         raise HTTPException(

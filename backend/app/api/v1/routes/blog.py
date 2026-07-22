@@ -21,8 +21,8 @@ from app.schemas.schemas import (
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/blog", tags=["blog"])
 
-# Google's translate endpoint caps each request; stay safely under it.
-_TRANSLATE_MAX_CHARS = 4500
+# The free gtx endpoint is a GET (URL length limited), so keep chunks small.
+_TRANSLATE_MAX_CHARS = 1500
 
 
 class TranslateRequest(BaseModel):
@@ -40,14 +40,49 @@ def _translate(text: str, source: str, target: str) -> str:
     fallback. Raises on total failure so the caller never writes a failed
     translation (or the source text) into the English field.
     """
-    from deep_translator import GoogleTranslator, MyMemoryTranslator
+    import httpx
+    from deep_translator import MyMemoryTranslator
+
+    def _google_free(chunk: str) -> str:
+        # Google Translate's free, key-less gtx endpoint (the one googletrans
+        # uses). Works from server IPs far more reliably than the scraping path.
+        r = httpx.get(
+            "https://translate.googleapis.com/translate_a/single",
+            params={"client": "gtx", "sl": source or "auto", "tl": target, "dt": "t", "q": chunk},
+            timeout=12,
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        r.raise_for_status()
+        data = r.json()
+        return "".join(seg[0] for seg in data[0] if seg and seg[0])
+
+    def _mymemory(chunk: str) -> str:
+        # MyMemory rejects requests over ~500 chars, so split on sentence
+        # boundaries into <=480-char pieces (Google's fallback used to send the
+        # whole 4500-char chunk here and always failed on long text).
+        if len(chunk) <= 480:
+            return MyMemoryTranslator(source=source, target=target).translate(chunk)
+        pieces, buf = [], ""
+        for p in re.split(r"(?<=[।.!?])\s+", chunk):
+            if len(buf) + len(p) + 1 > 480:
+                if buf:
+                    pieces.append(buf)
+                buf = p[:480]
+            else:
+                buf = f"{buf} {p}".strip()
+        if buf:
+            pieces.append(buf)
+        return " ".join(MyMemoryTranslator(source=source, target=target).translate(x) for x in pieces if x.strip())
 
     def _one(chunk: str) -> str:
         try:
-            return GoogleTranslator(source=source, target=target).translate(chunk)
+            out = _google_free(chunk)
+            if out and out.strip():
+                return out
+            raise ValueError("empty result")
         except Exception as exc:  # noqa: BLE001 — fall back to MyMemory
-            logger.warning("Google translate failed (%s); trying MyMemory", exc)
-            return MyMemoryTranslator(source=source, target=target).translate(chunk)
+            logger.warning("Google free translate failed (%s); trying MyMemory", exc)
+            return _mymemory(chunk)
 
     text = text.strip()
     if not text:

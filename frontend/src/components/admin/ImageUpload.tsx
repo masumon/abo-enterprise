@@ -93,29 +93,21 @@ export default function ImageUpload({
     if (!file) return;
     setError(null);
 
-    const isVideoFile = file.type.startsWith("video/");
-    const maxSize = isVideoFile ? 50 * 1024 * 1024 : 5 * 1024 * 1024;
+    const maxSize = 30 * 1024 * 1024; // 30MB for images and videos
     if (file.size > maxSize) {
-      setError(isVideoFile ? "Video must be under 50MB" : "Image must be under 5MB");
+      setError("File must be under 30MB");
       if (fileRef.current) fileRef.current.value = "";
       return;
     }
 
     const previewUrl = URL.createObjectURL(file);
     const { width, height } = await readImageDimensions(file, previewUrl);
-    if (width !== null && height !== null) {
-      if (width < 100 || height < 100) {
-        setError("Image must be at least 100×100 pixels");
-        URL.revokeObjectURL(previewUrl);
-        if (fileRef.current) fileRef.current.value = "";
-        return;
-      }
-      if (width > 5000 || height > 5000) {
-        setError("Image must not exceed 5000×5000 pixels");
-        URL.revokeObjectURL(previewUrl);
-        if (fileRef.current) fileRef.current.value = "";
-        return;
-      }
+    // Large photos are fine — the server auto-resizes; only reject tiny images.
+    if (width !== null && height !== null && (width < 100 || height < 100)) {
+      setError("Image must be at least 100×100 pixels");
+      URL.revokeObjectURL(previewUrl);
+      if (fileRef.current) fileRef.current.value = "";
+      return;
     }
     setPending({ file, previewUrl, width, height });
   };
@@ -262,6 +254,10 @@ export default function ImageUpload({
               </button>
             )}
 
+            <p className="text-[11px] text-gray-500 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-brand-400" />
+              {accept === "video" ? "ভিডিও" : accept === "both" ? "ছবি বা ভিডিও" : "ছবি"} · সর্বোচ্চ ৩০MB · যেকোন ফরম্যাট · স্বয়ংক্রিয় রিসাইজ/অপ্টিমাইজ
+            </p>
             {guide && (
               <p className="text-xs text-gray-500">
                 📐 <span className="font-medium">Recommended:</span> {guide}
