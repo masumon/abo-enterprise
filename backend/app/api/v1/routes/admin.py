@@ -138,13 +138,18 @@ async def upload_media(
         raise HTTPException(status_code=400, detail="Empty file")
     safe_folder = folder.strip("/").replace("..", "") or "abo-enterprise/uploads"
 
-    upload_opts: dict = {"folder": safe_folder}
+    upload_opts: dict = {"folder": safe_folder, "timeout": 60}
     if is_image:
         # Auto quality + format (WebP/AVIF where supported) and cap the largest
         # dimension so huge phone photos are resized down automatically.
         upload_opts["transformation"] = [{"width": 2000, "height": 2000, "crop": "limit", "quality": "auto", "fetch_format": "auto"}]
+        # Images upload as a base64 data-URI — the most portable path across
+        # hosts (avoids multipart/raw-bytes quirks some PaaS networks hit).
+        import base64
+        payload: object = f"data:{content_type};base64," + base64.b64encode(content).decode("ascii")
     else:
         upload_opts["resource_type"] = "video"
+        payload = content
 
     # Check ALL three credentials — a missing/blank API secret still passes a
     # cloud_name+api_key check but then fails at upload with an opaque error.
@@ -162,19 +167,27 @@ async def upload_media(
                    "Set these env vars on the backend, or paste a direct image/video URL below.",
         )
 
-    try:
-        result = cloudinary.uploader.upload(content, **upload_opts)
-    except Exception as exc:
+    # One retry — Render's free tier can be slow/flaky right after a cold start,
+    # so a transient network blip shouldn't surface as a hard failure.
+    result = None
+    last_exc: Exception | None = None
+    for attempt in range(2):
+        try:
+            result = cloudinary.uploader.upload(payload, **upload_opts)
+            break
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            logger.warning("Cloudinary upload attempt %d failed: %s", attempt + 1, exc)
+    if result is None:
         # Surface the REAL Cloudinary reason (e.g. "Invalid Signature",
         # "Invalid api_key", quota exceeded) so it can actually be fixed. This is
         # an admin-only endpoint, so echoing the provider message is safe.
-        reason = str(exc).strip() or exc.__class__.__name__
-        logger.warning("Cloudinary upload failed: %s", reason)
+        reason = str(last_exc).strip() or (last_exc.__class__.__name__ if last_exc else "unknown error")
         raise HTTPException(
             status_code=502,
             detail=f"Upload failed: {reason[:200]}. Verify Cloudinary credentials/quota, "
                    "or paste a direct image/video URL below instead.",
-        ) from exc
+        ) from last_exc
 
     return ApiResponse(
         data={
