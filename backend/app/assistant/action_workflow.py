@@ -17,6 +17,14 @@ from app.assistant.validation_engine import ValidationEngine
 _CANCEL_WORDS = frozenset({
     "cancel", "stop", "quit", "exit", "বাতিল", "থামুন", "cancelled", "থাক", "বাদ", "batil",
 })
+# Phrases that clearly ask for a different topic — when the user types one of
+# these mid-workflow they meant to switch, not to answer the current step.
+_SWITCH_HINTS = (
+    "সব সেবা", "সকল সেবা", "সেবা দেখ", "সেবা বুক", "সার্ভিস", "সব পণ্য", "সকল পণ্য",
+    "পণ্য দেখ", "কি কি", "ট্র্যাক", "কুপন", "যোগাযোগ", "ডেলিভারি",
+    "all service", "services", "all product", "products", "track", "coupon",
+    "book service", "show all", "list ",
+)
 _YES_WORDS = frozenset({
     "yes", "y", "ok", "okay", "confirm", "sure", "yeah", "yep",
     "হ্যাঁ", "হ্যা", "ঠিক", "জি", "জ্বি", "জ্বী", "আচ্ছা", "হবে", "করুন",
@@ -60,6 +68,12 @@ class ActionWorkflowEngine:
     def _tokens(normalized: str) -> set[str]:
         return set(re.findall(r"[\wঀ-৿]+", normalized.lower()))
 
+    def _is_switch(self, normalized: str, raw: str) -> bool:
+        t = f"{normalized} {raw}".lower()
+        if raw.strip().endswith("?"):
+            return True
+        return any(h in t for h in _SWITCH_HINTS)
+
     def _is_cancel(self, normalized: str) -> bool:
         tokens = self._tokens(normalized)
         return bool(tokens & _CANCEL_WORDS) or normalized.strip().startswith("cancel")
@@ -95,6 +109,13 @@ class ActionWorkflowEngine:
         if self._is_cancel(normalized):
             self._clear(ctx)
             return self.response.workflow_cancelled(lang), {}, []
+
+        # Topic switch — the user asked for something else mid-flow. Drop the
+        # workflow and return None so the orchestrator handles the new intent
+        # normally (instead of forcing the message into the current step).
+        if self._is_switch(normalized, raw):
+            self._clear(ctx)
+            return None
 
         wf = self._wf(ctx)
         wtype = wf.get("type")
