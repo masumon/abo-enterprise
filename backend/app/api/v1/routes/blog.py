@@ -42,12 +42,33 @@ def _translate(text: str, source: str, target: str) -> str:
     """
     from deep_translator import GoogleTranslator, MyMemoryTranslator
 
+    def _mymemory(chunk: str) -> str:
+        # MyMemory rejects requests over ~500 chars, so split on sentence
+        # boundaries into <=480-char pieces (Google's fallback used to send the
+        # whole 4500-char chunk here and always failed on long text).
+        if len(chunk) <= 480:
+            return MyMemoryTranslator(source=source, target=target).translate(chunk)
+        pieces, buf = [], ""
+        for p in re.split(r"(?<=[।.!?])\s+", chunk):
+            if len(buf) + len(p) + 1 > 480:
+                if buf:
+                    pieces.append(buf)
+                buf = p[:480]
+            else:
+                buf = f"{buf} {p}".strip()
+        if buf:
+            pieces.append(buf)
+        return " ".join(MyMemoryTranslator(source=source, target=target).translate(x) for x in pieces if x.strip())
+
     def _one(chunk: str) -> str:
         try:
-            return GoogleTranslator(source=source, target=target).translate(chunk)
+            out = GoogleTranslator(source=source, target=target).translate(chunk)
+            if out and out.strip():
+                return out
+            raise ValueError("empty result")
         except Exception as exc:  # noqa: BLE001 — fall back to MyMemory
             logger.warning("Google translate failed (%s); trying MyMemory", exc)
-            return MyMemoryTranslator(source=source, target=target).translate(chunk)
+            return _mymemory(chunk)
 
     text = text.strip()
     if not text:
