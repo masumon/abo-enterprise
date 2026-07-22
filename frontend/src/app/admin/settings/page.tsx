@@ -258,15 +258,8 @@ const SECTIONS: Section[] = [
     id: "homepage_sections",
     title: "Homepage Sections (JSON)",
     icon: <ImageIcon className="w-4 h-4" />,
-    note: "খালি রাখলে ডিফল্ট কনটেন্ট দেখাবে। JSON সেট করলে সেই সেকশন Admin থেকে চলবে।",
+    note: "খালি রাখলে ডিফল্ট কনটেন্ট দেখাবে। JSON সেট করলে সেই সেকশন Admin থেকে চলবে। (ঘোষণা বার এখন Announcements মডিউলে।)",
     fields: [
-      {
-        key: "site_announcements_json",
-        label: "Announcement Bar Messages",
-        type: "textarea",
-        placeholder: '[{"en":"Free delivery over ৳2000","bn":"৳২০০০+ ফ্রি ডেলিভারি","href":"/products"}]',
-        hint: "Array with en, bn, href",
-      },
       {
         key: "site_trust_badges_json",
         label: "Trust Badges",
@@ -338,24 +331,10 @@ const SECTIONS: Section[] = [
     id: "ecommerce_config",
     title: "E-Commerce Settings",
     icon: <ShoppingBag className="w-4 h-4" />,
+    note: "ডেলিভারি চার্জ, ফ্রি লিমিট, কুরিয়ার ও COD সুরক্ষা → Delivery & Charges মডিউলে। কুপন → Coupons মডিউলে।",
     fields: [
       { key: "currency", label: "Currency", placeholder: "BDT" },
       { key: "min_order_amount", label: "Min Order (৳)", type: "number", placeholder: "200" },
-      { key: "free_delivery_min_amount", label: "Free Delivery Min (৳)", type: "number", placeholder: "2000" },
-    ],
-  },
-  {
-    id: "delivery_config",
-    title: "Delivery Settings",
-    icon: <ShoppingBag className="w-4 h-4" />,
-    fields: [
-      { key: "delivery_charge_sylhet", label: "Sylhet (৳)", type: "number", placeholder: "0" },
-      { key: "delivery_charge_dhaka", label: "Dhaka (৳)", type: "number", placeholder: "60" },
-      { key: "delivery_charge_outside", label: "Outside (৳)", type: "number", placeholder: "120" },
-      { key: "courier_pathao_url", label: "Pathao Tracking URL", placeholder: "https://merchant.pathao.com/tracking?consignment_id={tracking_id}" },
-      { key: "courier_steadfast_url", label: "Steadfast Tracking URL", placeholder: "https://steadfast.com.bd/t/{tracking_id}" },
-      { key: "cod_max_pending_per_phone", label: "Max pending COD orders / phone", type: "number", placeholder: "5", hint: "Blocks a phone from stacking too many unconfirmed COD orders. 0 = unlimited." },
-      { key: "order_blocked_phones", label: "Blocked phone numbers", type: "textarea", placeholder: "01712345678, 01898765432", hint: "Comma/newline separated. These numbers cannot place orders." },
     ],
   },
   {
@@ -366,13 +345,6 @@ const SECTIONS: Section[] = [
       { key: "checkout_confirm_channel", label: "Order Confirm Channel", placeholder: "none" },
       { key: "checkout_otp_required", label: "Require Phone OTP", placeholder: "false", hint: "true/false" },
       { key: "whatsapp_number", label: "WhatsApp Order Number", placeholder: "8801825007977" },
-      {
-        key: "coupons_json",
-        label: "Coupon Codes (JSON)",
-        type: "textarea",
-        placeholder: '{"ABO10":{"discount_percent":10,"min_subtotal":0,"active":true}}',
-        hint: "Admin-editable coupons",
-      },
     ],
   },
 
