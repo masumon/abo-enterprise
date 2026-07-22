@@ -1,0 +1,91 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { LayoutTemplate, Save, Loader2 } from "lucide-react";
+import { adminApi } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/apiError";
+import { useToastStore } from "@/store/toast";
+import { useLanguageStore } from "@/store/language";
+import JsonListEditor from "@/components/admin/JsonListEditor";
+import { HOMEPAGE_CONTENT_EDITORS } from "@/lib/homepageContent";
+
+const KEYS = HOMEPAGE_CONTENT_EDITORS.map((e) => e.key);
+
+export default function AdminHomepageContentPage() {
+  const { lang } = useLanguageStore();
+  const bn = lang === "bn";
+  const toast = useToastStore((s) => s.push);
+  const [values, setValues] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    adminApi.getSettings()
+      .then((r) => {
+        const s = r.data.data ?? {};
+        setValues(Object.fromEntries(KEYS.map((k) => [k, s[k] ?? ""])));
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await adminApi.upsertSettings(
+        KEYS.map((k) => ({ key: k, value: (values[k] ?? "").trim(), data_type: "json" }))
+      );
+      toast("success", bn ? "হোমপেজ কনটেন্ট সংরক্ষিত হয়েছে" : "Homepage content saved");
+    } catch (err) {
+      toast("error", apiErrorMessage(err, "Failed to save"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="p-4 sm:p-6 max-w-3xl mx-auto">
+      <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-2.5">
+          <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center">
+            <LayoutTemplate className="w-5 h-5 text-brand-600" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-heading">{bn ? "হোমপেজ কনটেন্ট" : "Homepage Content"}</h1>
+            <p className="text-xs text-muted">{bn ? "ট্রাস্ট ব্যাজ, কেন আমরা, প্রশ্নোত্তর, ক্যাটাগরি ও এন্ট্রি কার্ড" : "Trust badges, Why Choose Us, FAQ, categories & entry cards"}</p>
+          </div>
+        </div>
+        <button type="button" onClick={save} disabled={saving || loading} className="btn btn-brand btn-sm disabled:opacity-60">
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          {bn ? "সংরক্ষণ" : "Save all"}
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-brand-500" /></div>
+      ) : (
+        <div className="space-y-6">
+          {HOMEPAGE_CONTENT_EDITORS.map((ed) => (
+            <section key={ed.key} className="enterprise-card p-4">
+              <div className="mb-3">
+                <h2 className="text-sm font-bold text-heading">{bn ? ed.titleBn : ed.title}</h2>
+                <p className="text-xs text-muted mt-0.5">{ed.desc}</p>
+              </div>
+              <JsonListEditor
+                value={values[ed.key] ?? ""}
+                onChange={(json) => setValues((v) => ({ ...v, [ed.key]: json }))}
+                fields={ed.fields}
+                newItem={ed.newItem}
+              />
+            </section>
+          ))}
+          <p className="text-xs text-muted">
+            {bn
+              ? "খালি রাখলে ওয়েবসাইটে ডিফল্ট কনটেন্ট দেখাবে। পরিবর্তনের পর 'সংরক্ষণ' চাপুন।"
+              : "Leave a section empty to show the built-in default. Click Save after editing."}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
