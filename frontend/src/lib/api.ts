@@ -543,7 +543,9 @@ export const adminApi = {
     return api.post<ApiResponse<{ url: string; public_id: string; resource_type?: string }>>(
       "/api/v1/admin/upload",
       form,
-      { headers: { "Content-Type": "multipart/form-data" }, params: { folder } }
+      // Generous timeout — uploads (esp. video on slow mobile data) take far
+      // longer than a normal API call, so don't let the adaptive default abort them.
+      { headers: { "Content-Type": "multipart/form-data" }, params: { folder }, timeout: 180000 }
     );
   },
 
