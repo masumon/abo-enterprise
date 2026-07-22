@@ -85,6 +85,7 @@ function SlotEditor({
         hint={slot.hint}
         guide={slot.guide}
         previewSize="lg"
+        accept="both"
       />
     </div>
   );
