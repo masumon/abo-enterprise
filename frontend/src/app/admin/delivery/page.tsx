@@ -7,12 +7,17 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import { useLanguageStore } from "@/store/language";
 
-const FIELDS: { key: string; label: string; labelBn: string; hint: string }[] = [
-  { key: "delivery_charge_sylhet", label: "Sylhet (local) delivery (৳)", labelBn: "সিলেট (লোকাল) ডেলিভারি (৳)", hint: "Inside your district" },
-  { key: "delivery_charge_dhaka", label: "Dhaka & metro delivery (৳)", labelBn: "ঢাকা ও মেট্রো ডেলিভারি (৳)", hint: "Dhaka / Gazipur / Narayanganj" },
-  { key: "delivery_charge_outside", label: "Outside delivery (৳)", labelBn: "ঢাকার বাইরে ডেলিভারি (৳)", hint: "Rest of Bangladesh" },
-  { key: "free_delivery_min_amount", label: "Free delivery over (৳)", labelBn: "ফ্রি ডেলিভারি (৳-এর বেশি)", hint: "Order subtotal above this = free" },
-  { key: "advance_delivery_charge", label: "Advance / prepaid charge (৳)", labelBn: "অগ্রিম চার্জ (৳)", hint: "For products/services flagged 'requires advance'" },
+type FieldType = "number" | "text" | "textarea";
+const FIELDS: { key: string; label: string; labelBn: string; hint: string; type?: FieldType }[] = [
+  { key: "delivery_charge_sylhet", label: "Sylhet (local) delivery (৳)", labelBn: "সিলেট (লোকাল) ডেলিভারি (৳)", hint: "Inside your district", type: "number" },
+  { key: "delivery_charge_dhaka", label: "Dhaka & metro delivery (৳)", labelBn: "ঢাকা ও মেট্রো ডেলিভারি (৳)", hint: "Dhaka / Gazipur / Narayanganj", type: "number" },
+  { key: "delivery_charge_outside", label: "Outside delivery (৳)", labelBn: "ঢাকার বাইরে ডেলিভারি (৳)", hint: "Rest of Bangladesh", type: "number" },
+  { key: "free_delivery_min_amount", label: "Free delivery over (৳)", labelBn: "ফ্রি ডেলিভারি (৳-এর বেশি)", hint: "Order subtotal above this = free", type: "number" },
+  { key: "advance_delivery_charge", label: "Advance / prepaid charge (৳)", labelBn: "অগ্রিম চার্জ (৳)", hint: "For products/services flagged 'requires advance'", type: "number" },
+  { key: "courier_pathao_url", label: "Pathao tracking URL", labelBn: "Pathao ট্র্যাকিং URL", hint: "Use {tracking_id} placeholder", type: "text" },
+  { key: "courier_steadfast_url", label: "Steadfast tracking URL", labelBn: "Steadfast ট্র্যাকিং URL", hint: "Use {tracking_id} placeholder", type: "text" },
+  { key: "cod_max_pending_per_phone", label: "Max pending COD orders / phone", labelBn: "প্রতি ফোনে সর্বোচ্চ অপেক্ষমান COD", hint: "Blocks stacking unconfirmed COD orders. 0 = unlimited", type: "number" },
+  { key: "order_blocked_phones", label: "Blocked phone numbers", labelBn: "ব্লক করা ফোন নম্বর", hint: "Comma/newline separated — these numbers cannot order", type: "textarea" },
 ];
 
 export default function AdminDeliveryPage() {
@@ -37,7 +42,13 @@ export default function AdminDeliveryPage() {
     setSaving(true);
     try {
       await adminApi.upsertSettings(
-        FIELDS.map((f) => ({ key: f.key, value: String(values[f.key] ?? "").trim() || "0", data_type: "number" }))
+        FIELDS.map((f) => {
+          const raw = String(values[f.key] ?? "").trim();
+          if ((f.type ?? "number") === "number") {
+            return { key: f.key, value: raw || "0", data_type: "number" };
+          }
+          return { key: f.key, value: raw, data_type: "string" };
+        })
       );
       toast("success", bn ? "সংরক্ষিত হয়েছে" : "Delivery settings saved");
     } catch (err) {
@@ -56,7 +67,7 @@ export default function AdminDeliveryPage() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-heading">{bn ? "ডেলিভারি ও চার্জ" : "Delivery & Charges"}</h1>
-            <p className="text-xs text-muted">{bn ? "জোন ডেলিভারি, ফ্রি লিমিট ও অগ্রিম চার্জ" : "Zone delivery, free limit & advance charge"}</p>
+            <p className="text-xs text-muted">{bn ? "জোন ডেলিভারি, ফ্রি লিমিট, অগ্রিম চার্জ, কুরিয়ার ট্র্যাকিং ও COD সুরক্ষা" : "Zone delivery, free limit, advance charge, courier tracking & COD guard"}</p>
           </div>
         </div>
         <button type="button" onClick={save} disabled={saving || loading} className="btn btn-brand btn-sm disabled:opacity-60">
@@ -73,13 +84,31 @@ export default function AdminDeliveryPage() {
             <div key={f.key} className="enterprise-card p-4">
               <label className="block text-sm font-semibold text-heading mb-1">{bn ? f.labelBn : f.label}</label>
               <p className="text-xs text-muted mb-2">{f.hint}</p>
-              <input
-                type="number" min="0" step="1"
-                value={values[f.key] ?? ""}
-                onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
-                className="input w-full"
-                placeholder="0"
-              />
+              {(f.type ?? "number") === "textarea" ? (
+                <textarea
+                  rows={3}
+                  value={values[f.key] ?? ""}
+                  onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                  className="input w-full"
+                  placeholder="01712345678, 01898765432"
+                />
+              ) : f.type === "text" ? (
+                <input
+                  type="text"
+                  value={values[f.key] ?? ""}
+                  onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                  className="input w-full"
+                  placeholder="https://…/{tracking_id}"
+                />
+              ) : (
+                <input
+                  type="number" min="0" step="1"
+                  value={values[f.key] ?? ""}
+                  onChange={(e) => setValues((v) => ({ ...v, [f.key]: e.target.value }))}
+                  className="input w-full"
+                  placeholder="0"
+                />
+              )}
             </div>
           ))}
           <p className="text-xs text-muted">

@@ -251,59 +251,6 @@ const SECTIONS: Section[] = [
     note: "হোমপেজ ব্যানার ছবি এখন Image Manager → Brand & Site ট্যাবে।",
   },
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // HOMEPAGE SECTIONS (JSON)
-  // ═══════════════════════════════════════════════════════════════════════
-  {
-    id: "homepage_sections",
-    title: "Homepage Sections (JSON)",
-    icon: <ImageIcon className="w-4 h-4" />,
-    note: "খালি রাখলে ডিফল্ট কনটেন্ট দেখাবে। JSON সেট করলে সেই সেকশন Admin থেকে চলবে।",
-    fields: [
-      {
-        key: "site_announcements_json",
-        label: "Announcement Bar Messages",
-        type: "textarea",
-        placeholder: '[{"en":"Free delivery over ৳2000","bn":"৳২০০০+ ফ্রি ডেলিভারি","href":"/products"}]',
-        hint: "Array with en, bn, href",
-      },
-      {
-        key: "site_trust_badges_json",
-        label: "Trust Badges",
-        type: "textarea",
-        placeholder: '[{"icon":"award","en":"8+ Years Experience","bn":"৮+ বছরের অভিজ্ঞতা"}]',
-        hint: "Icons: award, users, globe, headphones, shield, credit-card, truck, store, clock",
-      },
-      {
-        key: "site_why_choose_json",
-        label: "Why Choose Us Cards",
-        type: "textarea",
-        placeholder: '[{"icon":"award","title_en":"...","title_bn":"...","desc_en":"...","desc_bn":"..."}]',
-        hint: "Icons: award, store, globe, wrench, bot, truck, shield, users, headphones",
-      },
-      {
-        key: "site_faq_json",
-        label: "FAQ Items (Home + FAQ page)",
-        type: "textarea",
-        placeholder: '[{"q_en":"...","q_bn":"...","a_en":"...","a_bn":"...","category":"general"}]',
-        hint: "Categories: general, products, services, software, payment, shipping",
-      },
-      {
-        key: "site_quick_categories_json",
-        label: "Quick Category Tiles",
-        type: "textarea",
-        placeholder: '[{"icon":"smartphone","label_en":"...","label_bn":"...","desc_en":"...","desc_bn":"...","href":"/products"}]',
-        hint: "Icons: smartphone, file-text, wrench, briefcase, bot, globe, headphones, shopping-bag, printer, calendar",
-      },
-      {
-        key: "site_entry_points_json",
-        label: "Entry Point Cards",
-        type: "textarea",
-        placeholder: '[{"icon":"shopping-bag","title_en":"...","title_bn":"...","desc_en":"...","desc_bn":"...","cta_en":"...","cta_bn":"...","href":"/products","tags_en":["..."],"tags_bn":["..."]}]',
-        hint: "Icons: shopping-bag, calendar, briefcase, bot, wrench, globe",
-      },
-    ],
-  },
 
   // ═══════════════════════════════════════════════════════════════════════
   // PAGE BANNERS (All 25 Pages)
@@ -338,24 +285,10 @@ const SECTIONS: Section[] = [
     id: "ecommerce_config",
     title: "E-Commerce Settings",
     icon: <ShoppingBag className="w-4 h-4" />,
+    note: "ডেলিভারি চার্জ, ফ্রি লিমিট, কুরিয়ার ও COD সুরক্ষা → Delivery & Charges মডিউলে। কুপন → Coupons মডিউলে।",
     fields: [
       { key: "currency", label: "Currency", placeholder: "BDT" },
       { key: "min_order_amount", label: "Min Order (৳)", type: "number", placeholder: "200" },
-      { key: "free_delivery_min_amount", label: "Free Delivery Min (৳)", type: "number", placeholder: "2000" },
-    ],
-  },
-  {
-    id: "delivery_config",
-    title: "Delivery Settings",
-    icon: <ShoppingBag className="w-4 h-4" />,
-    fields: [
-      { key: "delivery_charge_sylhet", label: "Sylhet (৳)", type: "number", placeholder: "0" },
-      { key: "delivery_charge_dhaka", label: "Dhaka (৳)", type: "number", placeholder: "60" },
-      { key: "delivery_charge_outside", label: "Outside (৳)", type: "number", placeholder: "120" },
-      { key: "courier_pathao_url", label: "Pathao Tracking URL", placeholder: "https://merchant.pathao.com/tracking?consignment_id={tracking_id}" },
-      { key: "courier_steadfast_url", label: "Steadfast Tracking URL", placeholder: "https://steadfast.com.bd/t/{tracking_id}" },
-      { key: "cod_max_pending_per_phone", label: "Max pending COD orders / phone", type: "number", placeholder: "5", hint: "Blocks a phone from stacking too many unconfirmed COD orders. 0 = unlimited." },
-      { key: "order_blocked_phones", label: "Blocked phone numbers", type: "textarea", placeholder: "01712345678, 01898765432", hint: "Comma/newline separated. These numbers cannot place orders." },
     ],
   },
   {
@@ -366,13 +299,6 @@ const SECTIONS: Section[] = [
       { key: "checkout_confirm_channel", label: "Order Confirm Channel", placeholder: "none" },
       { key: "checkout_otp_required", label: "Require Phone OTP", placeholder: "false", hint: "true/false" },
       { key: "whatsapp_number", label: "WhatsApp Order Number", placeholder: "8801825007977" },
-      {
-        key: "coupons_json",
-        label: "Coupon Codes (JSON)",
-        type: "textarea",
-        placeholder: '{"ABO10":{"discount_percent":10,"min_subtotal":0,"active":true}}',
-        hint: "Admin-editable coupons",
-      },
     ],
   },
 

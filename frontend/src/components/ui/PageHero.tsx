@@ -2,6 +2,7 @@
 
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { cn } from "@/lib/utils";
+import { isVideoUrl } from "@/lib/media";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
 import {
   bannerSettingKey,
@@ -49,20 +50,21 @@ export default function PageHero({
 
   const isBrand = variant === "brand";
   const hasImage = !!resolvedImage;
+  const isVideo = hasImage && isVideoUrl(resolvedImage);
   const isCenter = align === "center";
 
-  const sectionStyle = hasImage
-    ? isBrand
-      ? {
-          backgroundImage: `linear-gradient(135deg, rgba(10,22,40,0.9) 0%, rgba(21,101,192,0.82) 48%, rgba(13,71,161,0.88) 100%), url(${resolvedImage})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }
-      : {
-          backgroundImage: `linear-gradient(180deg, rgba(248,250,255,0.93) 0%, rgba(236,242,255,0.9) 100%), url(${resolvedImage})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center top",
-        }
+  // The gradient overlay (kept separate for the video case, where a CSS
+  // background can't play the clip).
+  const overlayGradient = isBrand
+    ? "linear-gradient(135deg, rgba(10,22,40,0.9) 0%, rgba(21,101,192,0.82) 48%, rgba(13,71,161,0.88) 100%)"
+    : "linear-gradient(180deg, rgba(248,250,255,0.93) 0%, rgba(236,242,255,0.9) 100%)";
+
+  const sectionStyle = hasImage && !isVideo
+    ? {
+        backgroundImage: `${overlayGradient}, url(${resolvedImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: isBrand ? "center" : "center top",
+      }
     : undefined;
 
   return (
@@ -82,6 +84,20 @@ export default function PageHero({
       )}
       style={sectionStyle}
     >
+      {isVideo && (
+        <>
+          <video
+            className="absolute inset-0 w-full h-full object-cover"
+            src={resolvedImage!}
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-hidden
+          />
+          <div className="absolute inset-0" style={{ background: overlayGradient }} aria-hidden />
+        </>
+      )}
       {isBrand && (
         <div className="absolute inset-0 pointer-events-none" aria-hidden>
           <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-3xl" />

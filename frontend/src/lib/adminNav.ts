@@ -22,6 +22,7 @@ import {
   UserPlus,
   Percent,
   FolderTree,
+  LayoutTemplate,
   ExternalLink,
   type LucideIcon,
 } from "lucide-react";
@@ -109,6 +110,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Content",
     labelBn: "কনটেন্ট",
     items: [
+      { href: "/admin/homepage", icon: LayoutTemplate, label: "Homepage Content", labelBn: "হোমপেজ কনটেন্ট" },
       { href: "/admin/announcements", icon: Megaphone, label: "Announcements", labelBn: "ঘোষণা" },
       { href: "/admin/media", icon: Images, label: "Image Manager", labelBn: "ছবি ব্যবস্থাপনা" },
       { href: "/admin/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি" },

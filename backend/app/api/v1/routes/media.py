@@ -13,9 +13,10 @@ import cloudinary.uploader
 router = APIRouter(prefix="/media", tags=["media"])
 
 cloudinary.config(
-    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
-    api_key=settings.CLOUDINARY_API_KEY,
-    api_secret=settings.CLOUDINARY_API_SECRET,
+    cloud_name=(settings.CLOUDINARY_CLOUD_NAME or "").strip(),
+    api_key=(settings.CLOUDINARY_API_KEY or "").strip(),
+    api_secret=(settings.CLOUDINARY_API_SECRET or "").strip(),
+    secure=True,
 )
 
 
@@ -94,9 +95,10 @@ async def upload_with_metadata(
         raise
     except Exception as exc:
         await db.rollback()
+        reason = str(exc).strip() or exc.__class__.__name__
         raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Media upload failed. Please verify Cloudinary credentials and quota.",
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Media upload failed: {reason[:200]}. Verify Cloudinary credentials and quota.",
         ) from exc
 
     return {
