@@ -1,4 +1,5 @@
 import html as _html
+import logging
 from uuid import UUID
 from fastapi import APIRouter, BackgroundTasks, Depends, UploadFile, File, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr, field_validator
@@ -20,12 +21,16 @@ from app.schemas.schemas import (
     AdminUserCreate, AdminUserUpdate,
 )
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+# .strip() defends against env vars pasted into Render with stray whitespace or a
+# trailing newline — a silent, very common cause of "Invalid Signature" failures.
 cloudinary.config(
-    cloud_name=settings.CLOUDINARY_CLOUD_NAME,
-    api_key=settings.CLOUDINARY_API_KEY,
-    api_secret=settings.CLOUDINARY_API_SECRET,
+    cloud_name=(settings.CLOUDINARY_CLOUD_NAME or "").strip(),
+    api_key=(settings.CLOUDINARY_API_KEY or "").strip(),
+    api_secret=(settings.CLOUDINARY_API_SECRET or "").strip(),
+    secure=True,
 )
 
 
@@ -141,18 +146,34 @@ async def upload_media(
     else:
         upload_opts["resource_type"] = "video"
 
-    if not settings.CLOUDINARY_CLOUD_NAME or not settings.CLOUDINARY_API_KEY:
+    # Check ALL three credentials — a missing/blank API secret still passes a
+    # cloud_name+api_key check but then fails at upload with an opaque error.
+    missing = [
+        name for name, val in (
+            ("cloud_name", settings.CLOUDINARY_CLOUD_NAME),
+            ("api_key", settings.CLOUDINARY_API_KEY),
+            ("api_secret", settings.CLOUDINARY_API_SECRET),
+        ) if not (val or "").strip()
+    ]
+    if missing:
         raise HTTPException(
             status_code=503,
-            detail="Cloudinary is not configured. Paste an image URL in settings instead.",
+            detail=f"Cloudinary is not configured (missing: {', '.join(missing)}). "
+                   "Set these env vars on the backend, or paste a direct image/video URL below.",
         )
 
     try:
         result = cloudinary.uploader.upload(content, **upload_opts)
     except Exception as exc:
+        # Surface the REAL Cloudinary reason (e.g. "Invalid Signature",
+        # "Invalid api_key", quota exceeded) so it can actually be fixed. This is
+        # an admin-only endpoint, so echoing the provider message is safe.
+        reason = str(exc).strip() or exc.__class__.__name__
+        logger.warning("Cloudinary upload failed: %s", reason)
         raise HTTPException(
-            status_code=503,
-            detail="Upload failed. Check Cloudinary credentials or paste a direct image URL.",
+            status_code=502,
+            detail=f"Upload failed: {reason[:200]}. Verify Cloudinary credentials/quota, "
+                   "or paste a direct image/video URL below instead.",
         ) from exc
 
     return ApiResponse(

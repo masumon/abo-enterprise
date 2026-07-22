@@ -11,6 +11,7 @@ import { ABO_ACRONYM, getBrandName, getBrandTagline } from "@/lib/tokens";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { MARKETING_STATS } from "@/lib/siteDefaults";
 import { resolveHomeBannerImage } from "@/lib/pageBanners";
+import { isVideoUrl } from "@/lib/media";
 import BrandLogo from "@/components/ui/BrandLogo";
 
 interface ActivityItem {
@@ -50,6 +51,7 @@ export default function Hero() {
   const [activity, setActivity] = useState<ActivityItem[]>(FALLBACK_ACTIVITY);
 
   const heroImage = resolveHomeBannerImage(settings);
+  const heroIsVideo = isVideoUrl(heroImage);
   const heroTitleOverride = lang === "bn"
     ? getSettingValue(settings, "hero_title_bn")
     : getSettingValue(settings, "hero_title_en");
@@ -78,12 +80,32 @@ export default function Hero() {
   return (
     <section
       className="gradient-hero lg:min-h-[92vh] lg:min-h-[92dvh] flex items-center relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]"
-      style={heroImage ? {
+      style={heroImage && !heroIsVideo ? {
         backgroundImage: `linear-gradient(135deg, rgba(21,101,192,0.92) 0%, rgba(13,71,161,0.88) 50%, rgba(233,30,99,0.75) 100%), url(${heroImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       } : undefined}
     >
+      {heroIsVideo && (
+        <>
+          {/* A CSS background can't play video, so the uploaded clip renders as a
+              real <video> layer with the brand gradient overlaid on top. */}
+          <video
+            className="absolute inset-0 w-full h-full object-cover"
+            src={heroImage}
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-hidden
+          />
+          <div
+            className="absolute inset-0"
+            style={{ background: "linear-gradient(135deg, rgba(21,101,192,0.92) 0%, rgba(13,71,161,0.88) 50%, rgba(233,30,99,0.75) 100%)" }}
+            aria-hidden
+          />
+        </>
+      )}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-20 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-accent-500/10 rounded-full blur-3xl" />
