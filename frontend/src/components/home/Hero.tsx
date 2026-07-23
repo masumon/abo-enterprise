@@ -80,18 +80,25 @@ export default function Hero() {
   return (
     <section
       className="gradient-hero lg:min-h-[92vh] lg:min-h-[92dvh] flex items-center relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]"
-      style={heroImage && !heroIsVideo ? {
-        backgroundImage: `linear-gradient(135deg, rgba(21,101,192,0.25) 0%, rgba(13,71,161,0.20) 50%, rgba(233,30,99,0.15) 100%), url(${heroImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      } : undefined}
     >
+      {/* Media background is DESKTOP-ONLY. On mobile the hero keeps the clean
+          brand gradient and the uploaded image/video shows in a card below the
+          text — so text stays crisp and the media is never cropped. */}
+      {heroImage && !heroIsVideo && (
+        <div
+          className="hidden lg:block absolute inset-0"
+          style={{
+            backgroundImage: `linear-gradient(135deg, rgba(21,101,192,0.25) 0%, rgba(13,71,161,0.20) 50%, rgba(233,30,99,0.15) 100%), url(${heroImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+          aria-hidden
+        />
+      )}
       {heroIsVideo && (
         <>
-          {/* A CSS background can't play video, so the uploaded clip renders as a
-              real <video> layer with the brand gradient overlaid on top. */}
           <video
-            className="absolute inset-0 w-full h-full object-cover"
+            className="hidden lg:block absolute inset-0 w-full h-full object-cover"
             src={heroImage}
             autoPlay
             muted
@@ -100,7 +107,7 @@ export default function Hero() {
             aria-hidden
           />
           <div
-            className="absolute inset-0"
+            className="hidden lg:block absolute inset-0"
             style={{ background: "linear-gradient(135deg, rgba(21,101,192,0.25) 0%, rgba(13,71,161,0.20) 50%, rgba(233,30,99,0.15) 100%)" }}
             aria-hidden
           />
@@ -162,6 +169,21 @@ export default function Hero() {
                 {heroCtaText || t("hero_cta_products")}
               </Link>
             </div>
+
+            {/* Mobile-only media card — shows the uploaded image/video in full
+                (no crop), so the busy banner never sits behind the text. */}
+            {heroImage && (
+              <div className="lg:hidden pt-1">
+                <div className="rounded-2xl overflow-hidden border border-white/25 shadow-2xl bg-black/20">
+                  {heroIsVideo ? (
+                    <video className="w-full h-auto block" src={heroImage} autoPlay muted loop playsInline aria-hidden />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element -- hero art at natural aspect; next/image adds no value in this card
+                    <img src={heroImage} alt="" className="w-full h-auto block" />
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="hidden lg:flex items-center justify-center animate-fade-in">
