@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import {
-  Smartphone, FileText, Wrench, Briefcase, Bot, Globe, Headphones, ShoppingBag, Printer, Calendar,
+  Smartphone, FileText, Wrench, Briefcase, Bot, Globe, Headphones, ShoppingBag, Printer, Calendar, ArrowRight,
   type LucideIcon,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
@@ -29,6 +29,17 @@ const ICONS: Record<string, LucideIcon> = {
   printer: Printer,
   calendar: Calendar,
 };
+
+/** Glossy gradient for the icon tile, cycling by position (on-palette). */
+const GRADS = [
+  "from-blue-500 to-blue-700",
+  "from-emerald-400 to-emerald-600",
+  "from-amber-400 to-orange-600",
+  "from-indigo-500 to-indigo-700",
+  "from-purple-500 to-purple-700",
+  "from-sky-400 to-sky-600",
+  "from-rose-400 to-rose-600",
+];
 
 /** Colour treatments cycle by position so admin-added tiles stay on palette. */
 const STYLES = [
@@ -154,17 +165,19 @@ export default function QuickCategories() {
               >
                 <Link
                   href={v.href}
-                  className={`group flex h-full flex-col items-start gap-2 p-3 sm:p-3.5 rounded-2xl ring-1 ${style.ring} ${style.tint}
-                    transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_-8px_rgba(30,91,168,0.20)]
+                  className={`group relative flex h-full flex-col items-start gap-2 p-3 sm:p-3.5 rounded-2xl ring-1 ${style.ring} ${style.tint}
+                    transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_12px_26px_-10px_rgba(30,91,168,0.30)]
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500`}
                   aria-label={label}
                 >
                   <span
-                    className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ${style.iconWrap}
+                    className={`relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center overflow-hidden
+                      text-white bg-gradient-to-br ${GRADS[i % GRADS.length]} shadow-md
+                      after:absolute after:inset-0 after:bg-gradient-to-br after:from-white/40 after:to-transparent
                       group-hover:scale-105 transition-transform`}
                     aria-hidden
                   >
-                    <Icon className="w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={2.1} />
+                    <Icon className="relative z-10 w-[18px] h-[18px] sm:w-5 sm:h-5" strokeWidth={2.1} />
                   </span>
                   <div className="min-w-0">
                     <p className="text-[13px] sm:text-sm font-bold text-heading leading-tight">
@@ -174,6 +187,12 @@ export default function QuickCategories() {
                       {desc}
                     </p>
                   </div>
+                  <span
+                    className="absolute right-2.5 bottom-2.5 w-5 h-5 rounded-full bg-brand-500/10 text-brand-600 flex items-center justify-center opacity-70 group-hover:opacity-100 group-hover:bg-brand-600 group-hover:text-white transition-all"
+                    aria-hidden
+                  >
+                    <ArrowRight className="w-3 h-3" strokeWidth={2.6} />
+                  </span>
                 </Link>
               </Reveal>
             );

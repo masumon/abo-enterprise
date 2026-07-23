@@ -110,8 +110,15 @@ function FooterColumn({ title, children }: { title: string; children: React.Reac
         aria-expanded={open}
         className="w-full flex items-center justify-between gap-2 sm:pointer-events-none"
       >
-        <h4 className="footer-column-title !mb-0 sm:!mb-4">{title}</h4>
-        <ChevronDown className={cn("w-4 h-4 text-white/50 shrink-0 sm:hidden transition-transform duration-200", open && "rotate-180")} aria-hidden />
+        <h4 className="footer-column-title !mb-0 sm:!mb-4 flex items-center gap-2">
+          {/* Pulsing accent dot on mobile draws the eye to the tappable section. */}
+          <span className="sm:hidden w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse motion-reduce:animate-none" aria-hidden />
+          {title}
+        </h4>
+        <div className="flex items-center gap-1.5 sm:hidden">
+          <span className="text-[10px] font-semibold text-amber-300/90 animate-pulse motion-reduce:animate-none" aria-hidden>{open ? "" : "ট্যাপ"}</span>
+          <ChevronDown className={cn("w-4 h-4 shrink-0 transition-transform duration-200", open ? "rotate-180 text-white/50" : "text-amber-300 animate-pulse motion-reduce:animate-none")} aria-hidden />
+        </div>
       </button>
       <div className={cn("grid transition-all duration-300 sm:!grid-rows-[1fr] sm:!opacity-100", open ? "grid-rows-[1fr] opacity-100 mt-3 sm:mt-0" : "grid-rows-[0fr] opacity-0 sm:opacity-100")}>
         <div className="overflow-hidden">{children}</div>

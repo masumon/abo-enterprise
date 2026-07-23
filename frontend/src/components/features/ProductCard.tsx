@@ -88,7 +88,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
           {product.category && (
             <Badge variant="outline" className="text-[10px] capitalize mb-1">{product.category}</Badge>
           )}
-          <h3 className="font-semibold text-gray-800 line-clamp-2">{lang === "bn" ? product.name_bn : product.name_en}</h3>
+          <h3 className="font-semibold text-heading line-clamp-2">{lang === "bn" ? product.name_bn : product.name_en}</h3>
           <div className="flex items-center gap-1 mt-1">
             <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" aria-hidden />
             <span className="text-xs text-gray-500">{rating.toFixed(1)}</span>
@@ -175,7 +175,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
             {isOutOfStock ? t("out_of_stock") : t("in_stock")}
           </span>
         </div>
-        <h3 className="font-semibold text-gray-800 text-sm leading-snug mb-2 line-clamp-2 min-h-[2.5rem]">
+        <h3 className="font-semibold text-heading text-sm leading-snug mb-2 line-clamp-2 min-h-[2.5rem]">
           {lang === "bn" ? product.name_bn : product.name_en}
         </h3>
         <div className="flex items-baseline gap-2 mb-2 mt-auto">
