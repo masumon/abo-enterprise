@@ -10,7 +10,6 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
-  Trash2,
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -26,40 +25,20 @@ import { useToastStore } from "@/store/toast";
 import {
   BRAND_IMAGE_SLOTS,
   PAGE_BANNER_SLOTS,
-  JSON_IMAGE_SETTINGS,
   CATALOG_IMAGE_SECTIONS,
   MEDIA_UPLOAD_FOLDER,
   type ImageSlotDef,
 } from "@/lib/imageRegistry";
-import {
-  SHOWCASE_PROJECTS_KEY,
-  SOFTWARE_SERVICE_CARDS_KEY,
-  type ShowcaseProject,
-  type SoftwareServiceCard,
-} from "@/lib/showcaseContent";
-import type { CmsClientLogo, CmsTeamMember } from "@/lib/cmsContent";
-import { DEMO_REVIEWS_KEY } from "@/lib/cmsContent";
-import type { Product, Service, BlogPost, Review } from "@/types";
+import type { Product, Service, BlogPost } from "@/types";
 
-type TabId = "brand" | "banners" | "cms" | "showcase" | "catalog";
+type TabId = "brand" | "banners" | "catalog";
 type SettingValues = Record<string, string>;
 
 const TABS: { id: TabId; label: string; labelBn: string }[] = [
   { id: "brand", label: "Brand & Site", labelBn: "ব্র্যান্ড" },
   { id: "banners", label: "Page Banners", labelBn: "পেজ ব্যানার" },
-  { id: "cms", label: "Team & Clients", labelBn: "টিম ও ক্লায়েন্ট" },
-  { id: "showcase", label: "Projects", labelBn: "প্রজেক্ট" },
   { id: "catalog", label: "Catalog", labelBn: "ক্যাটালগ" },
 ];
-
-function parseJson<T>(raw: string, fallback: T): T {
-  if (!raw?.trim()) return fallback;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return fallback;
-  }
-}
 
 function SlotEditor({
   slot,
@@ -100,16 +79,10 @@ export default function AdminMediaPage() {
   const [search, setSearch] = useState("");
   const [values, setValues] = useState<SettingValues>({});
 
-  const [team, setTeam] = useState<CmsTeamMember[]>([]);
-  const [clients, setClients] = useState<CmsClientLogo[]>([]);
-  const [projects, setProjects] = useState<ShowcaseProject[]>([]);
-  const [serviceCards, setServiceCards] = useState<SoftwareServiceCard[]>([]);
-
   const [products, setProducts] = useState<Product[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [reviews, setReviews] = useState<{ id: string; customer_name: string; photo_url: string | null }[]>([]);
-  const [demoReviews, setDemoReviews] = useState<Review[]>([]);
   const [catalogOpen, setCatalogOpen] = useState<Record<string, boolean>>({});
   const [catalogLoaded, setCatalogLoaded] = useState(false);
   const [catalogLoading, setCatalogLoading] = useState(false);
@@ -122,11 +95,6 @@ export default function AdminMediaPage() {
       const settingsRes = await adminApi.getSettings();
       const s = settingsRes.data.data ?? {};
       setValues(s);
-      setTeam(parseJson<CmsTeamMember[]>(s[JSON_IMAGE_SETTINGS.team.key] ?? "", []));
-      setClients(parseJson<CmsClientLogo[]>(s[JSON_IMAGE_SETTINGS.clients.key] ?? "", []));
-      setProjects(parseJson<ShowcaseProject[]>(s[SHOWCASE_PROJECTS_KEY] ?? "", []));
-      setServiceCards(parseJson<SoftwareServiceCard[]>(s[SOFTWARE_SERVICE_CARDS_KEY] ?? "", []));
-      setDemoReviews(parseJson<Review[]>(s[DEMO_REVIEWS_KEY] ?? "", []));
     } catch (e) {
       toast("error", apiErrorMessage(e, "Failed to load media"));
     } finally {
@@ -198,9 +166,6 @@ export default function AdminMediaPage() {
         data_type: "string",
       }))
     );
-
-  const saveJson = (sectionId: string, key: string, data: unknown) =>
-    saveSettings(sectionId, [{ key, value: JSON.stringify(data), data_type: "json" }]);
 
   const filteredBanners = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -310,15 +275,21 @@ export default function AdminMediaPage() {
       <AdminPageHeader
         title="Image Manager"
         titleBn="ছবি ব্যবস্থাপনা"
-        description="Upload, update, or remove all website images from one place — brand, banners, team, projects, products, services, blog & reviews."
+        description="Upload, update, or remove brand, banner & catalog images — products, services, blog & reviews."
       />
 
       <div className="rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3 text-xs text-gray-600 leading-relaxed">
-        <p className="font-semibold text-brand-800 mb-0.5">📸 এটাই সাইটের সব ছবির একমাত্র জায়গা</p>
+        <p className="font-semibold text-brand-800 mb-0.5">📸 ব্র্যান্ড, ব্যানার ও ক্যাটালগ ছবির জায়গা</p>
         <p>
           এখানে ছবি বদলালে <strong>মূল ওয়েবসাইটে সাথে সাথে পরিবর্তন হয়</strong> · সাপোর্টেড: JPG, PNG, WebP (সর্বোচ্চ 5MB) ·
           আপলোডের সময় <strong>অটো-অপ্টিমাইজ</strong> হয় (কোয়ালিটি ও ফরম্যাট) · আপলোডের আগে প্রিভিউ দেখে নিশ্চিত করুন ·
           প্রতিটি অপশনের নিচে সুপারিশকৃত সাইজ ও ফরম্যাট দেওয়া আছে।
+        </p>
+        <p className="mt-1.5 text-gray-500">
+          টিম, ক্লায়েন্ট ও রিভিউ ছবি (বর্ণনা সহ) এখন{" "}
+          <Link href="/admin/settings" className="text-brand-600 font-medium hover:underline">Settings → Trust Assets</Link>-এ,
+          আর প্রজেক্ট ও সফটওয়্যার কার্ড{" "}
+          <Link href="/admin/showcase" className="text-brand-600 font-medium hover:underline">Showcase</Link>-এ একসাথে সম্পাদনা হয়।
         </p>
       </div>
 
@@ -380,173 +351,6 @@ export default function AdminMediaPage() {
               onChange={(url) => setValues((v) => ({ ...v, [slot.key]: url }))}
             />
           ))}
-        </div>
-      )}
-
-      {tab === "cms" && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <SectionHeader
-              title="About Team Photos"
-              titleBn="টিম সদস্যের ছবি"
-              sectionId="team"
-              onSave={() => saveJson("team", JSON_IMAGE_SETTINGS.team.key, team)}
-            />
-            {team.length === 0 ? (
-              <p className="px-6 py-8 text-sm text-gray-400">No team members in CMS. Edit in Settings → About Team JSON.</p>
-            ) : (
-              team.map((member, i) => (
-                <div key={member.id} className="px-4 sm:px-6 py-4 border-b border-gray-50">
-                  <p className="text-sm font-medium text-gray-800 mb-2">{member.name}</p>
-                  <ImageUpload
-                    value={member.image ?? ""}
-                    onChange={(url) => setTeam((prev) => prev.map((m, idx) => (idx === i ? { ...m, image: url } : m)))}
-                    folder={MEDIA_UPLOAD_FOLDER}
-                    previewSize="lg"
-                  />
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <SectionHeader
-              title="Client Logos"
-              titleBn="ক্লায়েন্ট লোগো"
-              sectionId="clients"
-              onSave={() => saveJson("clients", JSON_IMAGE_SETTINGS.clients.key, clients)}
-            />
-            {clients.map((client, i) => (
-              <div key={`${client.name}-${i}`} className="px-4 sm:px-6 py-4 border-b border-gray-50">
-                <p className="text-sm font-medium text-gray-800 mb-2">{client.name} ({client.abbr})</p>
-                <ImageUpload
-                  value={client.image ?? ""}
-                  onChange={(url) => setClients((prev) => prev.map((c, idx) => (idx === i ? { ...c, image: url } : c)))}
-                  folder={MEDIA_UPLOAD_FOLDER}
-                  previewSize="md"
-                />
-              </div>
-            ))}
-          </div>
-
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <SectionHeader
-              title="Demo Review Avatars (Offline)"
-              titleBn="ডেমো রিভিউ ছবি"
-              sectionId="demoReviews"
-              onSave={() => saveJson("demoReviews", DEMO_REVIEWS_KEY, demoReviews)}
-            />
-            {demoReviews.length === 0 ? (
-              <p className="px-6 py-8 text-sm text-gray-400">No demo reviews in CMS.</p>
-            ) : (
-              demoReviews.map((r, i) => (
-                <div key={r.id ?? `demo-${i}`} className="px-4 sm:px-6 py-4 border-b border-gray-50">
-                  <p className="text-sm font-medium text-gray-800 mb-2">{r.customer_name}</p>
-                  <ImageUpload
-                    value={r.photo_url ?? ""}
-                    onChange={(url) =>
-                      setDemoReviews((prev) => prev.map((item, idx) => (idx === i ? { ...item, photo_url: url } : item)))
-                    }
-                    folder={MEDIA_UPLOAD_FOLDER}
-                    previewSize="sm"
-                  />
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {tab === "showcase" && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <SectionHeader
-              title="Project Gallery Images"
-              titleBn="প্রজেক্ট গ্যালারি"
-              sectionId="projects"
-              onSave={() => saveJson("projects", SHOWCASE_PROJECTS_KEY, projects)}
-              extra={
-                <Link href="/admin/showcase" className="text-xs text-brand-600 hover:underline flex items-center gap-1">
-                  Full editor <ExternalLink className="w-3 h-3" />
-                </Link>
-              }
-            />
-            {projects.map((project, pi) => (
-              <div key={project.id} className="px-4 sm:px-6 py-4 border-b border-gray-50">
-                <p className="text-sm font-semibold text-gray-800 mb-3">{project.title.en || project.slug}</p>
-                <p className="text-xs text-gray-400 mb-2">Cover image</p>
-                <ImageUpload
-                  value={project.image}
-                  onChange={(url) => setProjects((prev) => prev.map((p, i) => (i === pi ? { ...p, image: url } : p)))}
-                  folder="abo-enterprise/projects"
-                  previewSize="lg"
-                />
-                {(project.images ?? []).map((img, gi) => (
-                  <div key={gi} className="mt-3 pl-3 border-l-2 border-gray-100">
-                    <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs text-gray-400">Gallery #{gi + 1}</p>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setProjects((prev) =>
-                            prev.map((p, i) =>
-                              i === pi ? { ...p, images: p.images.filter((_, idx) => idx !== gi) } : p
-                            )
-                          )
-                        }
-                        className="text-xs text-red-500 flex items-center gap-0.5"
-                      >
-                        <Trash2 className="w-3 h-3" /> Remove
-                      </button>
-                    </div>
-                    <ImageUpload
-                      value={img}
-                      onChange={(url) =>
-                        setProjects((prev) =>
-                          prev.map((p, i) =>
-                            i === pi ? { ...p, images: p.images.map((u, idx) => (idx === gi ? url : u)) } : p
-                          )
-                        )
-                      }
-                      folder="abo-enterprise/projects"
-                      previewSize="md"
-                    />
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  onClick={() =>
-                    setProjects((prev) =>
-                      prev.map((p, i) => (i === pi ? { ...p, images: [...(p.images ?? []), ""] } : p))
-                    )
-                  }
-                  className="mt-2 text-xs text-brand-600 hover:underline"
-                >
-                  + Add gallery image
-                </button>
-              </div>
-            ))}
-          </div>
-
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-            <SectionHeader
-              title="Software Service Card Images"
-              titleBn="সফটওয়্যার সেবা কার্ড"
-              sectionId="serviceCards"
-              onSave={() => saveJson("serviceCards", SOFTWARE_SERVICE_CARDS_KEY, serviceCards)}
-            />
-            {serviceCards.map((card, i) => (
-              <div key={card.id} className="px-4 sm:px-6 py-4 border-b border-gray-50">
-                <p className="text-sm font-medium text-gray-800 mb-2">{card.title.en}</p>
-                <ImageUpload
-                  value={card.image ?? ""}
-                  onChange={(url) => setServiceCards((prev) => prev.map((c, idx) => (idx === i ? { ...c, image: url } : c)))}
-                  folder="abo-enterprise/services"
-                  previewSize="lg"
-                />
-              </div>
-            ))}
-          </div>
         </div>
       )}
 

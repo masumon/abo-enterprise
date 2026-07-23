@@ -89,17 +89,6 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
     ],
     newItem: () => ({ icon: "package", title_en: "", title_bn: "", desc_en: "", desc_bn: "", cta_en: "", cta_bn: "", href: "/" }),
   },
-  // ── Coupons (object map: CODE → config) ──
-  coupons_json: {
-    mapKey: "code",
-    fields: [
-      { path: "code", label: "Code", hint: "e.g. ABO10" },
-      { path: "discount_percent", label: "Discount %", type: "number" },
-      { path: "min_subtotal", label: "Min subtotal (৳)", type: "number" },
-      { path: "active", label: "Active (true/false)" },
-    ],
-    newItem: () => ({ code: "", discount_percent: 10, min_subtotal: 0, active: true }),
-  },
   // ── Demo catalog (optional; blank = built-in defaults) ──
   demo_products_json: {
     fields: [
@@ -132,7 +121,6 @@ const JSON_SETTING_KEYS = new Set([
   "demo_reviews_json",
   "demo_products_json",
   "demo_services_json",
-  "coupons_json",
 ]);
 
 const BOOL_SETTING_KEYS = new Set([
@@ -237,25 +225,6 @@ const SECTIONS: Section[] = [
   },
 
   // ═══════════════════════════════════════════════════════════════════════
-  // HERO ASSETS
-  // ═══════════════════════════════════════════════════════════════════════
-  {
-    id: "hero_homepage",
-    title: "Homepage Hero",
-    icon: <ImageIcon className="w-4 h-4" />,
-    fields: [
-      { key: "hero_title_en", label: "Title (EN)", placeholder: "ABO ENTERPRISE : Simple Solution" },
-      { key: "hero_title_bn", label: "Title (বাংলা)", placeholder: "এবিও এন্টারপ্রাইজ : সহজ সমাধান" },
-      { key: "hero_subtitle_en", label: "Subtitle (EN)", type: "textarea", placeholder: "Simple Solution — products, services, software & AI in one place." },
-      { key: "hero_subtitle_bn", label: "Subtitle (বাংলা)", type: "textarea", placeholder: "সহজ সমাধান — পণ্য, সেবা, সফটওয়্যার ও AI এক প্ল্যাটফর্মে।" },
-      { key: "hero_cta_text", label: "CTA Button Text", placeholder: "Shop Now" },
-      { key: "hero_cta_url", label: "CTA Button Link", type: "url", placeholder: "/products" },
-    ],
-    note: "হোমপেজ ব্যানার ছবি এখন Image Manager → Brand & Site ট্যাবে।",
-  },
-
-
-  // ═══════════════════════════════════════════════════════════════════════
   // PAGE BANNERS (All 25 Pages)
   // ═══════════════════════════════════════════════════════════════════════
   // ═══════════════════════════════════════════════════════════════════════
@@ -327,22 +296,6 @@ const SECTIONS: Section[] = [
     icon: <Zap className="w-4 h-4" />,
     fields: [
       { key: "facebook_pixel_id", label: "Facebook Pixel ID", placeholder: "1234567890", hint: "Conversion tracking" },
-    ],
-  },
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // FLASH SALE
-  // ═══════════════════════════════════════════════════════════════════════
-  {
-    id: "flash_sale",
-    title: "Flash Sale",
-    icon: <Zap className="w-4 h-4" />,
-    fields: [
-      { key: "feature_flash_sale", label: "Enable Flash Sale", type: "boolean", hint: "Shows the homepage countdown banner" },
-      { key: "flash_sale_title_en", label: "Title (EN)", placeholder: "Flash Sale" },
-      { key: "flash_sale_title_bn", label: "Title (বাংলা)", placeholder: "ফ্ল্যাশ সেল" },
-      { key: "flash_sale_start", label: "Start (optional)", type: "datetime-local", hint: "Leave blank to start immediately" },
-      { key: "flash_sale_end", label: "End", type: "datetime-local", hint: "Countdown target. Blank = end of this week (Sun 23:59)." },
     ],
   },
 
