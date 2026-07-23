@@ -131,7 +131,7 @@ export default function PageHero({
             className={cn(
               "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold mb-3 mt-2",
               isBrand
-                ? "bg-white/15 text-white/90 border border-white/20"
+                ? "bg-white/15 text-white/90 border border-white/25 backdrop-blur-sm shadow-sm"
                 : "bg-brand-50 text-brand-700 border border-brand-100"
             )}
           >

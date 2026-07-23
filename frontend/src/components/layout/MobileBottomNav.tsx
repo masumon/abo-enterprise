@@ -58,7 +58,7 @@ export default function MobileBottomNav() {
           "relative flex flex-col items-center justify-center gap-[3px] px-3",
           "rounded-[20px] transition-all duration-250",
           isActive
-            ? "text-brand-700 dark:text-brand-200 bg-brand-50/70 dark:bg-brand-900/35 scale-[1.04]"
+            ? "text-brand-700 dark:text-brand-200 bg-gradient-to-b from-brand-50 to-brand-100/60 dark:from-brand-900/45 dark:to-brand-800/25 ring-1 ring-brand-200/50 dark:ring-brand-700/40 scale-[1.04]"
             : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100/60 dark:hover:bg-white/[0.08] active:scale-95"
         )}
         aria-label={lang === "bn" ? item.label.bn : item.label.en}

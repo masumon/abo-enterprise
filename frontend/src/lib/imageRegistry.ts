@@ -20,6 +20,7 @@ export const BRAND_IMAGE_SLOTS: ImageSlotDef[] = [
   { key: "default_og_image_url", label: "Default Social Share Image", labelBn: "সোশ্যাল শেয়ার ছবি", usedOn: "Facebook/Twitter preview fallback", guide: "1200×630px (1.91:1) · JPG/PNG" },
   { key: "hero_image_url", label: "Homepage Banner (Desktop)", labelBn: "হোমপেজ ব্যানার (ডেস্কটপ)", usedOn: "Homepage hero — desktop", guide: "1920×1080px (16:9) · JPG/WebP/MP4" },
   { key: "hero_mobile_image_url", label: "Homepage Banner (Mobile)", labelBn: "হোমপেজ ব্যানার (মোবাইল)", usedOn: "Homepage hero — mobile background", guide: "1080×1350px (পোর্ট্রেট) · ছবি/animated/MP4 · খালি রাখলে gradient" },
+  { key: "hero_promo_media_url", label: "Hero Promo Media (auto-play)", labelBn: "হিরো প্রমো মিডিয়া (অটো-প্লে)", usedOn: "Homepage hero — promo card", guide: "যেকোন ছবি/animated/ভিডিও (MP4) · অটো-প্লে · খালি হলে ব্যানার ছবি দেখাবে" },
   { key: "site_login_bg_url", label: "Admin Login Background", labelBn: "অ্যাডমিন লগইন ব্যাকগ্রাউন্ড", usedOn: "/admin/login", guide: "1920×1080px (16:9) · ছবি, animated বা ভিডিও (MP4)" },
   { key: "site_customer_login_bg_url", label: "Customer Login Background", labelBn: "গ্রাহক লগইন ব্যাকগ্রাউন্ড", usedOn: "/login, /register", guide: "1920×1080px (16:9) · ছবি, animated বা ভিডিও (MP4)" },
   { key: "gallery_office_image_url", label: "Gallery Office Photo", labelBn: "গ্যালারি অফিস ছবি", usedOn: "/gallery office tab", guide: "1920×1080px (16:9) · JPG/WebP" },

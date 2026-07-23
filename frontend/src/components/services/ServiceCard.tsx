@@ -27,14 +27,16 @@ export default function ServiceCard({ service, lang = "en", categoryLabel }: Ser
   return (
     <Link href={`/services/${service.slug}`} className="block h-full group">
       <article className="h-full enterprise-card-hover overflow-hidden">
-        <div className="relative h-44 bg-gray-100 overflow-hidden">
+        <div className="relative h-44 bg-brand-50 dark:bg-white/5 overflow-hidden">
           <Image
             src={imageSrc}
               alt={name}
               fill
-              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              className="object-cover group-hover:scale-105 transition-transform duration-500"
             sizes="(max-width: 768px) 100vw, 33vw"
           />
+          {/* Subtle scrim adds depth and premium contrast at the image base. */}
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent pointer-events-none" />
         </div>
 
         <div className="p-5">
