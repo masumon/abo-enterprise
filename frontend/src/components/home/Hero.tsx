@@ -57,9 +57,11 @@ export default function Hero() {
   // hidden. Empty → clean gradient (unchanged).
   const heroMobileImg = getSettingValue(settings, "hero_mobile_image_url");
   const heroMobileIsVideo = isVideoUrl(heroMobileImg);
-  // Dedicated admin-managed promo media for the hero card (any format, autoplay);
-  // falls back to the banner image when unset.
-  const heroPromo = getSettingValue(settings, "hero_promo_media_url") || heroImage;
+  // Dedicated admin-managed promo media for the hero card (any format, autoplay).
+  // `heroPromoMedia` is the explicit admin value; `heroPromo` adds a banner-image
+  // fallback so the mobile card is never empty when only a banner is set.
+  const heroPromoMedia = getSettingValue(settings, "hero_promo_media_url");
+  const heroPromo = heroPromoMedia || heroImage;
   const heroPromoIsVideo = isVideoUrl(heroPromo);
   const heroTitleOverride = lang === "bn"
     ? getSettingValue(settings, "hero_title_bn")
@@ -192,9 +194,11 @@ export default function Hero() {
               </Link>
             </div>
 
-            {/* Mobile promo card — admin-managed image/video/any format, autoplay,
-                shown in full (no crop). Hidden when a mobile background is set. */}
-            {heroPromo && !heroMobileImg && (
+            {/* Mobile/tablet promo card — admin-managed image/video/any format,
+                autoplay, shown in full (no crop). An explicit promo media always
+                shows; the banner-image fallback is hidden when a mobile
+                background image is already set (to avoid a duplicate visual). */}
+            {heroPromo && (heroPromoMedia || !heroMobileImg) && (
               <div className="lg:hidden pt-1">
                 <div className="rounded-2xl overflow-hidden border border-white/25 shadow-2xl bg-black/20">
                   {heroPromoIsVideo ? (
@@ -209,7 +213,19 @@ export default function Hero() {
           </div>
 
           <div className="hidden lg:flex items-center justify-center animate-fade-in">
-            <div className="relative w-full max-w-md">
+            <div className="relative w-full max-w-md space-y-4">
+              {/* Desktop/tablet promo media — admin-managed image/video, autoplay.
+                  Sits above the live-stats card when set. */}
+              {heroPromoMedia && (
+                <div className="rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-black/20">
+                  {heroPromoIsVideo ? (
+                    <video className="w-full aspect-video object-cover block" src={heroPromoMedia} autoPlay muted loop playsInline aria-hidden />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element -- hero art in a fixed-ratio card; next/image adds no value here
+                    <img src={heroPromoMedia} alt="" className="w-full aspect-video object-cover block" />
+                  )}
+                </div>
+              )}
               <div className="glass-panel rounded-3xl p-6 shadow-2xl border border-white/20">
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
