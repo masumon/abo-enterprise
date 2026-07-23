@@ -15,7 +15,7 @@
     --glass-bg: rgba(255, 255, 255, 0.72);
     --glass-border: rgba(255, 255, 255, 0.35);
     --glass-shadow: 0 8px 32px rgba(30, 91, 168, 0.08), 0 2px 8px rgba(0,0,0,0.04);
-    --surface: #fafbff;
+    --surface: #eef2f8;
     --surface-secondary: #f0f4ff;
     --surface-card: #ffffff;
     --surface-elevated: #ffffff;
@@ -51,7 +51,9 @@
 
   body {
     font-family: 'Inter', 'Hind Siliguri', system-ui, sans-serif;
-    @apply bg-slate-50 text-gray-900;
+    /* Soft brand-tinted base instead of stark white — easier on the eyes and
+       lets white cards read as elevated. */
+    @apply bg-[#e9eef6] text-gray-900;
     line-height: 1.6;
     overflow-x: hidden;
     max-width: 100vw;
@@ -677,7 +679,7 @@
     background: linear-gradient(180deg, var(--navy) 0%, var(--surface) 100%);
   }
   .section-panel {
-    @apply bg-white dark:bg-[var(--surface-secondary)];
+    @apply bg-[var(--surface)] dark:bg-[var(--surface-secondary)];
     color: rgb(17 24 39);
   }
   html.dark .section-panel { color: rgb(243 244 246); }

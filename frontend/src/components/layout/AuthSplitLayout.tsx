@@ -5,7 +5,7 @@ import BrandLogo from "@/components/ui/BrandLogo";
 import { useLanguageStore } from "@/store/language";
 import { getBrandFullTitle, getBrandName, getBrandTagline } from "@/lib/tokens";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
-import { isVideoUrl } from "@/lib/media";
+import { isVideoUrl, toPlayableVideoUrl } from "@/lib/media";
 
 interface AuthSplitLayoutProps {
   children: React.ReactNode;
@@ -28,7 +28,7 @@ export default function AuthSplitLayout({ children, title, subtitle, badge }: Au
       {bgUrl && (
         <div className="absolute inset-0 z-0" aria-hidden>
           {bgIsVideo ? (
-            <video className="absolute inset-0 w-full h-full object-cover" src={bgUrl} autoPlay muted loop playsInline />
+            <video className="absolute inset-0 w-full h-full object-cover" src={toPlayableVideoUrl(bgUrl)} autoPlay muted loop playsInline />
           ) : (
             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgUrl})` }} />
           )}
@@ -85,7 +85,17 @@ export default function AuthSplitLayout({ children, title, subtitle, badge }: Au
             <h2 className={`text-2xl font-bold ${bgUrl ? "text-white" : "text-heading"}`}>{title}</h2>
             {subtitle && <p className={`text-sm mt-1 ${bgUrl ? "text-white/80" : "text-muted"}`}>{subtitle}</p>}
           </div>
-          <div className="enterprise-card p-6 sm:p-8">{children}</div>
+          {/* Frosted-glass card over the background image (like the admin login);
+              solid elevated card when no background is set. */}
+          <div
+            className={
+              bgUrl
+                ? "rounded-2xl p-6 sm:p-8 bg-white/85 dark:bg-[#0f1f38]/80 backdrop-blur-xl border border-white/50 dark:border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
+                : "enterprise-card p-6 sm:p-8"
+            }
+          >
+            {children}
+          </div>
         </div>
       </div>
     </div>
