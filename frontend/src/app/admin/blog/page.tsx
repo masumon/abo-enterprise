@@ -5,6 +5,7 @@ import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp, ExternalLink, Globe, Copy } from "lucide-react";
 import { adminBlogApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
+import LivePreview from "@/components/admin/LivePreview";
 import type { BlogPost } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
@@ -422,6 +423,34 @@ export default function AdminBlogPage() {
 
             {/* Form */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+              {/* Live website preview — the blog card as shown on /blog */}
+              <LivePreview>
+                <div className="p-1 pointer-events-none">
+                  <article className="enterprise-card overflow-hidden max-w-sm mx-auto">
+                    <div className="relative aspect-video bg-brand-50 dark:bg-white/5">
+                      {editing.featured_image_url && (
+                        // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+                        <img src={editing.featured_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                      )}
+                    </div>
+                    <div className="p-4">
+                      {editing.category && (
+                        <span className="inline-block px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 text-xs font-semibold rounded-full mb-2">
+                          {editing.category}
+                        </span>
+                      )}
+                      <h3 className="text-lg font-bold text-heading mb-2 line-clamp-2">
+                        {editing.title_bn || editing.title_en || "ব্লগ শিরোনাম"}
+                      </h3>
+                      <p className="text-sm text-muted line-clamp-2">
+                        {editing.excerpt_bn || editing.excerpt_en || "সংক্ষিপ্ত বর্ণনা এখানে দেখাবে…"}
+                      </p>
+                      <p className="text-xs text-muted mt-3">ABO Enterprise</p>
+                    </div>
+                  </article>
+                </div>
+              </LivePreview>
+
               {/* Status + Featured row */}
               <div className="flex items-center gap-4">
                 <div className="flex-1">
