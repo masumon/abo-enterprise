@@ -32,18 +32,25 @@ export default function TrustBadges() {
   const { settings } = usePublicSettings([SITE_TRUST_BADGES_KEY]);
   const badges = getTrustBadges(settings, FALLBACK);
 
+  // Duplicate the list so the right-to-left marquee loops seamlessly.
+  const loop = [...badges, ...badges];
+
   return (
-    <section className="py-8 border-y border-gray-100 dark:border-white/5 bg-white/60 dark:bg-white/[0.02]">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-wrap justify-center gap-4 md:gap-8">
-          {badges.map((badge) => {
+    <section className="py-8 border-y border-gray-100 dark:border-white/5 bg-white/60 dark:bg-white/[0.02]" aria-label="Trust highlights">
+      <div className="marquee-viewport" style={{ "--marquee-duration": "38s" } as React.CSSProperties}>
+        <div className="marquee-track gap-4 md:gap-8">
+          {loop.map((badge, i) => {
             const Icon = ICONS[badge.icon ?? ""] ?? Shield;
             return (
-              <div key={badge.en || badge.bn} className="flex items-center gap-2 text-sm text-muted">
-                <div className="w-8 h-8 rounded-lg bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center">
+              <div
+                key={`${badge.en || badge.bn}-${i}`}
+                aria-hidden={i >= badges.length}
+                className="flex items-center gap-2 text-sm text-muted flex-shrink-0 px-3 py-2 rounded-full bg-white/70 dark:bg-white/5 border border-gray-100 dark:border-white/10 shadow-sm"
+              >
+                <div className="w-8 h-8 rounded-lg bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center flex-shrink-0">
                   <Icon className="w-4 h-4 text-brand-600 dark:text-brand-300" />
                 </div>
-                <span className="font-medium">{lang === "bn" ? badge.bn || badge.en : badge.en || badge.bn}</span>
+                <span className="font-medium whitespace-nowrap">{lang === "bn" ? badge.bn || badge.en : badge.en || badge.bn}</span>
               </div>
             );
           })}

@@ -1065,3 +1065,23 @@
 .dark #page-content :is(.bg-amber-50) { background-color: rgba(245, 158, 11, 0.14); }
 .dark #page-content :is(.text-amber-700, .text-amber-800) { color: rgb(252 211 77); }
 .dark #page-content :is(.border-green-100, .border-red-200, .border-amber-100, .border-amber-200, .border-brand-100) { border-color: rgba(255, 255, 255, 0.12); }
+
+/* ---- Premium right-to-left marquee (trust badges, stats) ---- */
+@keyframes marquee-rtl { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee-viewport {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  flex-wrap: nowrap;
+  animation: marquee-rtl var(--marquee-duration, 34s) linear infinite;
+}
+.marquee-viewport:hover .marquee-track { animation-play-state: paused; }
+@media (prefers-reduced-motion: reduce) {
+  /* No motion — fall back to a normal horizontal scroll the user controls. */
+  .marquee-track { animation: none; }
+  .marquee-viewport { overflow-x: auto; }
+}
