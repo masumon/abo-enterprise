@@ -9,6 +9,8 @@ import {
 import { servicesAdminApi, categoriesApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
+import LivePreview from "@/components/admin/LivePreview";
+import ServiceCard from "@/components/services/ServiceCard";
 import type { Service, ServicePricingTier, ServiceBookingFormField, Category } from "@/types";
 import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
@@ -438,6 +440,13 @@ export default function AdminServicesPage() {
 
             {/* Scrollable form */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+
+              {/* Live website preview — the real ServiceCard with current values */}
+              <LivePreview>
+                <div className="p-1 pointer-events-none">
+                  <ServiceCard service={editing as Service} lang="bn" />
+                </div>
+              </LivePreview>
 
               {/* ── Basic ───────────────────────────────── */}
               <section className="space-y-4">

@@ -9,6 +9,8 @@ import Image from "next/image";
 import { productsApi, categoriesApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
+import LivePreview from "@/components/admin/LivePreview";
+import ProductCard from "@/components/features/ProductCard";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
@@ -131,6 +133,20 @@ export default function AdminProductsPage() {
   });
 
   const currentImage = watch("image_url");
+  const previewProduct = {
+    id: editing?.id ?? "preview",
+    slug: watch("slug") || "preview",
+    name_en: watch("name_en") || "Product name",
+    name_bn: watch("name_bn") || "",
+    price: Number(watch("price")) || 0,
+    original_price: watch("original_price") ? Number(watch("original_price")) : undefined,
+    image_url: currentImage || imageUrl || "",
+    category: watch("category") || "",
+    badge: watch("badge") || undefined,
+    stock_quantity: Number(watch("stock_quantity")) || 0,
+    rating: 0,
+    review_count: 0,
+  } as unknown as Product;
   // Flattened tree for the single node picker — "— " per depth level, so the
   // admin can place a product at ANY depth of the unlimited taxonomy.
   const treeOptions: { id: string; label: string }[] = [];
@@ -428,6 +444,13 @@ export default function AdminProductsPage() {
             </div>
 
             <form onSubmit={handleSubmit(onSubmit)} className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+              {/* Live website preview — the real ProductCard with current values */}
+              <LivePreview>
+                <div className="p-1 pointer-events-none">
+                  <ProductCard product={previewProduct} />
+                </div>
+              </LivePreview>
+
               <ImageUpload
                 label="Product Image"
                 value={currentImage || imageUrl}
