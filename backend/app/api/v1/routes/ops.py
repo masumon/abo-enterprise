@@ -67,7 +67,18 @@ async def system_health(
     # The configured sender address, shown so the admin can confirm WHICH
     # account is active (password is never exposed).
     mail_email = mail_cfg.get("user") or mail_cfg.get("from_addr") or ""
-    if is_smtp_configured(mail_cfg):
+    # Report against the ACTIVE email provider. If Resend (HTTPS API) is
+    # configured, email works even where the platform blocks SMTP ports (Render
+    # free tier) — so don't run a misleading SMTP TCP probe in that case.
+    _provider = (settings.EMAIL_PROVIDER or "smtp").lower().strip()
+    if _provider == "resend" and getattr(settings, "RESEND_API_KEY", ""):
+        checks["smtp"] = {
+            "ok": True,
+            "provider": "Resend API",
+            "email": mail_email or mail_cfg.get("from_addr") or "",
+            "note": "Email delivered via Resend API (SMTP ports not used)",
+        }
+    elif is_smtp_configured(mail_cfg):
         import asyncio
         import errno as _errno_mod
         import smtplib
