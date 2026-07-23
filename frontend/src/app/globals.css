@@ -800,6 +800,23 @@
     to   { opacity: 1; transform: translateX(0); }
   }
 
+  /* Soft amber ring pulsing around mobile footer accordion headers, hinting
+     they are tappable. Disabled at sm+ (columns are always open there) and
+     under reduced-motion. */
+  @keyframes footerRingBlink {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 213, 79, 0); border-color: transparent; }
+    50%      { box-shadow: 0 0 0 2px rgba(255, 213, 79, 0.5), 0 0 12px rgba(255, 213, 79, 0.4); border-color: rgba(255, 213, 79, 0.7); }
+  }
+  .footer-acc-ring {
+    animation: footerRingBlink 1.8s ease-in-out infinite;
+  }
+  @media (min-width: 640px) {
+    .footer-acc-ring { animation: none !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .footer-acc-ring { animation: none !important; }
+  }
+
   /* ── Welcome experience ── */
   .welcome-overlay {
     background: linear-gradient(145deg, #070d1a 0%, #0a1628 55%, #0d1a33 100%);

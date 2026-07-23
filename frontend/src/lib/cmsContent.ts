@@ -25,6 +25,11 @@ export interface CmsClientLogo {
   name: string;
   abbr: string;
   image?: string;
+  /** Detailed case-study text shown when the logo is tapped (optional). */
+  desc_en?: string;
+  desc_bn?: string;
+  /** Optional external/internal link for a "case study" CTA. */
+  href?: string;
 }
 
 /** Announcement bar variant themes (admin-selectable per entry). */
