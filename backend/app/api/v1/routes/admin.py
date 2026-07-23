@@ -140,9 +140,10 @@ async def upload_media(
 
     upload_opts: dict = {"folder": safe_folder, "timeout": 60}
     if is_image:
-        # Auto quality + format (WebP/AVIF where supported) and cap the largest
-        # dimension so huge phone photos are resized down automatically.
-        upload_opts["transformation"] = [{"width": 2000, "height": 2000, "crop": "limit", "quality": "auto", "fetch_format": "auto"}]
+        # Store the image EXACTLY as uploaded — no incoming resize/re-encode — so
+        # WebP stays WebP, animated WebP/GIF keep their animation, and quality is
+        # preserved (the admin controls quality by choosing the source file; huge
+        # JPG/PNG photos are already downscaled in the browser before upload).
         # Images upload as a base64 data-URI — the most portable path across
         # hosts (avoids multipart/raw-bytes quirks some PaaS networks hit).
         import base64

@@ -35,12 +35,15 @@ export async function compressImage(
   file: File,
   opts?: { maxDim?: number; quality?: number }
 ): Promise<File> {
-  const maxDim = opts?.maxDim ?? 1920;
-  const quality = opts?.quality ?? 0.82;
+  const maxDim = opts?.maxDim ?? 2560;
+  const quality = opts?.quality ?? 0.92;
 
-  // Only raster images benefit; leave animation/vector/non-image alone.
+  // Only large JPG/PNG photos are downscaled. WebP, GIF and SVG are uploaded
+  // EXACTLY as-is — WebP is already efficient, and GIF/animated-WebP/SVG would
+  // lose their animation or vector quality if redrawn to a canvas.
   if (
     !file.type.startsWith("image/") ||
+    file.type === "image/webp" ||
     file.type === "image/gif" ||
     file.type === "image/svg+xml"
   ) {

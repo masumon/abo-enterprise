@@ -172,7 +172,10 @@ export default function ImageUpload({
                 {fmtBytes(pending.file.size)}
               </p>
               <p className="text-[11px] text-brand-600 mt-1 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" /> আপলোডে অটো-অপ্টিমাইজ হবে (quality + format)
+                <Sparkles className="w-3 h-3" />
+                {/^image\/(webp|gif|svg\+xml)$/.test(pending.file.type) || pending.file.type.startsWith("video/")
+                  ? "মূল ফাইল হুবহু আপলোড হবে — কোয়ালিটি/অ্যানিমেশন অক্ষত"
+                  : "বড় ছবি হলে ব্রাউজারে হাই-কোয়ালিটি অপ্টিমাইজ হবে"}
               </p>
               <div className="flex items-center gap-2 mt-2.5">
                 <button
@@ -261,7 +264,7 @@ export default function ImageUpload({
 
             <p className="text-[11px] text-gray-500 flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-brand-400" />
-              {accept === "video" ? "ভিডিও" : accept === "both" ? "ছবি বা ভিডিও" : "ছবি"} · সর্বোচ্চ ৩০MB · যেকোন ফরম্যাট · স্বয়ংক্রিয় রিসাইজ/অপ্টিমাইজ
+              {accept === "video" ? "ভিডিও" : accept === "both" ? "ছবি বা ভিডিও" : "ছবি"} · সর্বোচ্চ ৩০MB · যেকোন ফরম্যাট · WebP/GIF/ভিডিও হুবহু, বড় JPG/PNG হাই-কোয়ালিটি অপ্টিমাইজ
             </p>
             {guide && (
               <p className="text-xs text-gray-500">
