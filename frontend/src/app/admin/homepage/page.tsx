@@ -23,7 +23,12 @@ import {
   HERO_SUB_SIZES,
   HERO_ALIGNS,
   HERO_VALIGNS,
+  heroTitleClass,
+  heroSubClass,
+  heroAlignClass,
 } from "@/lib/heroTextStyle";
+import LivePreview from "@/components/admin/LivePreview";
+import { cn } from "@/lib/utils";
 
 const JSON_KEYS = HOMEPAGE_CONTENT_EDITORS.map((e) => e.key);
 const SCALAR_KEYS = HOMEPAGE_SCALAR_FIELDS.map((f) => f.key);
@@ -161,6 +166,22 @@ export default function AdminHomepageContentPage() {
                 {bn ? "রঙ · সাইজ · পজিশন · স্টাইল — মোবাইল/ট্যাব/ডেস্কটপ ফ্রেন্ডলি। খালি = ডিফল্ট।" : "Color · size · position · style — responsive. Empty = default."}
               </p>
             </div>
+            <LivePreview showDevice={false} className="mb-4">
+              <div className="pointer-events-none rounded-xl overflow-hidden gradient-brand p-6">
+                <div className={cn("flex flex-col gap-2 text-white", heroAlignClass(hstyle))}>
+                  <h1 className={cn("leading-tight", heroTitleClass(hstyle))} style={hstyle.titleColor ? { color: hstyle.titleColor } : undefined}>
+                    এবিও এন্টারপ্রাইজ
+                  </h1>
+                  <p
+                    className={cn("max-w-lg leading-relaxed", heroSubClass(hstyle), !hstyle.subColor && "text-white/80")}
+                    style={hstyle.subColor ? { color: hstyle.subColor } : undefined}
+                  >
+                    প্রিমিয়াম টেক প্রোডাক্ট, ডিজিটাল সেবা ও AI সমাধান।
+                  </p>
+                </div>
+              </div>
+            </LivePreview>
+
             <div className="space-y-4">
               <div>
                 <span className="block text-xs font-medium text-muted mb-1.5">{bn ? "অবস্থান (বাম/মাঝ/ডান)" : "Alignment"}</span>

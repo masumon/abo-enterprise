@@ -17,6 +17,8 @@ import {
 import { adminApi } from "@/lib/api";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ImageUpload from "@/components/admin/ImageUpload";
+import LivePreview from "@/components/admin/LivePreview";
+import { isVideoUrl, toPlayableVideoUrl, videoPosterUrl } from "@/lib/media";
 import { useToastStore } from "@/store/toast";
 import {
   DEFAULT_SHOWCASE_PROJECTS,
@@ -207,6 +209,36 @@ export default function AdminShowcasePage() {
 
                 {open && (
                   <div className="p-4 space-y-4">
+                    {/* Live website preview — the project card as shown on /projects */}
+                    <LivePreview>
+                      <div className="p-1 pointer-events-none max-w-sm mx-auto">
+                        <article className="enterprise-card overflow-hidden">
+                          <div className="relative aspect-video bg-brand-50 dark:bg-white/5">
+                            {project.videoUrl && isVideoUrl(project.videoUrl) && !/youtu|vimeo/i.test(project.videoUrl) ? (
+                              <video src={toPlayableVideoUrl(project.videoUrl)} poster={videoPosterUrl(project.videoUrl) ?? project.image ?? undefined} className="absolute inset-0 w-full h-full object-cover" muted loop playsInline autoPlay />
+                            ) : project.image ? (
+                              // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+                              <img src={project.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                            ) : null}
+                            {project.videoUrl && (
+                              <span className="absolute top-2 right-2 text-[10px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full">▶ ভিডিও</span>
+                            )}
+                          </div>
+                          <div className="p-4">
+                            {project.category.bn && (
+                              <span className="inline-block px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 text-xs font-semibold rounded-full mb-2">
+                                {project.category.bn}
+                              </span>
+                            )}
+                            <h3 className="text-lg font-bold text-heading mb-1 line-clamp-2">
+                              {project.title.bn || project.title.en || "প্রজেক্ট শিরোনাম"}
+                            </h3>
+                            {project.client.bn && <p className="text-sm text-muted">{project.client.bn}</p>}
+                          </div>
+                        </article>
+                      </div>
+                    </LivePreview>
+
                     <div className="grid sm:grid-cols-2 gap-3">
                       <Field label="Title (English)">
                         <input
