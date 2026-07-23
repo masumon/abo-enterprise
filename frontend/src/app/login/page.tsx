@@ -23,8 +23,9 @@ export default function CustomerLoginPage() {
 
   return (
     <AuthSplitLayout
-      title={lang === "bn" ? "গ্রাহক লগইন" : "Customer Login"}
-      subtitle={lang === "bn" ? "OTP দিয়ে ফোন যাচাই করে অর্ডার দেখুন" : "Verify your phone with OTP to view orders"}
+      badge={lang === "bn" ? "👤 গ্রাহক ড্যাশবোর্ড" : "👤 Customer Dashboard"}
+      title={lang === "bn" ? "আপনার অ্যাকাউন্টে ঢুকুন" : "Sign in to your account"}
+      subtitle={lang === "bn" ? "অর্ডার, ট্র্যাকিং ও প্রোফাইল — সব এক জায়গায়। OTP দিয়ে ফোন যাচাই করুন।" : "Orders, tracking & profile — all in one place. Verify with OTP."}
     >
       <CustomerOtpForm redirectTo="/orders" />
       <p className="text-center text-xs text-muted mt-4 space-y-1">
