@@ -101,7 +101,7 @@ export default function Hero() {
   return (
     <section
       className={cn(
-        "gradient-hero lg:min-h-[92vh] lg:min-h-[92dvh] flex relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]",
+        "gradient-hero min-h-[85svh] lg:min-h-[92vh] lg:min-h-[92dvh] flex relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]",
         heroVAlignClass(hstyle)
       )}
     >
