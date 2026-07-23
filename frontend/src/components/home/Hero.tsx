@@ -46,7 +46,7 @@ function displayStat(actual: number, floor: number): number {
 export default function Hero() {
   const { lang } = useLanguageStore();
   const t = useT();
-  const { settings } = usePublicSettings(["hero_image_url", "hero_mobile_image_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "free_delivery_min_amount"]);
+  const { settings } = usePublicSettings(["hero_image_url", "hero_mobile_image_url", "hero_promo_media_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "free_delivery_min_amount"]);
   const [stats, setStats] = useState<StatsData>(FALLBACK_STATS);
   const [activity, setActivity] = useState<ActivityItem[]>(FALLBACK_ACTIVITY);
 
@@ -57,6 +57,10 @@ export default function Hero() {
   // hidden. Empty → clean gradient (unchanged).
   const heroMobileImg = getSettingValue(settings, "hero_mobile_image_url");
   const heroMobileIsVideo = isVideoUrl(heroMobileImg);
+  // Dedicated admin-managed promo media for the hero card (any format, autoplay);
+  // falls back to the banner image when unset.
+  const heroPromo = getSettingValue(settings, "hero_promo_media_url") || heroImage;
+  const heroPromoIsVideo = isVideoUrl(heroPromo);
   const heroTitleOverride = lang === "bn"
     ? getSettingValue(settings, "hero_title_bn")
     : getSettingValue(settings, "hero_title_en");
@@ -188,16 +192,16 @@ export default function Hero() {
               </Link>
             </div>
 
-            {/* Mobile-only media card — shows the uploaded image/video in full
-                (no crop). Hidden when a dedicated mobile background is set. */}
-            {heroImage && !heroMobileImg && (
+            {/* Mobile promo card — admin-managed image/video/any format, autoplay,
+                shown in full (no crop). Hidden when a mobile background is set. */}
+            {heroPromo && !heroMobileImg && (
               <div className="lg:hidden pt-1">
                 <div className="rounded-2xl overflow-hidden border border-white/25 shadow-2xl bg-black/20">
-                  {heroIsVideo ? (
-                    <video className="w-full h-auto block" src={heroImage} autoPlay muted loop playsInline aria-hidden />
+                  {heroPromoIsVideo ? (
+                    <video className="w-full h-auto block" src={heroPromo} autoPlay muted loop playsInline aria-hidden />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element -- hero art at natural aspect; next/image adds no value in this card
-                    <img src={heroImage} alt="" className="w-full h-auto block" />
+                    <img src={heroPromo} alt="" className="w-full h-auto block" />
                   )}
                 </div>
               </div>
