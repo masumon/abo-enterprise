@@ -26,9 +26,15 @@ export default function Portfolio() {
         <div className="grid md:grid-cols-3 gap-6">
           {projects.map((p) => (
             <Link key={p.slug} href={`/projects/${p.slug}`}>
-              <GlassCard hover className="overflow-hidden h-full">
-                <div className="relative h-44 aspect-video bg-gradient-to-br from-brand-50 to-brand-100">
-                  <Image src={resolveProjectImage(p.image)} alt={t(p.title)} fill className="object-cover" sizes="(max-width:768px) 100vw, 33vw" />
+              <GlassCard hover className="overflow-hidden h-full group">
+                <div className="relative h-44 flex items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-brand-800/20 p-4 overflow-hidden">
+                  <Image
+                    src={resolveProjectImage(p.image)}
+                    alt={t(p.title)}
+                    fill
+                    className="object-contain object-center p-3 transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width:768px) 100vw, 33vw"
+                  />
                 </div>
                 <div className="p-5">
                   <span className="text-xs text-brand-600 font-semibold">{t(p.category)}</span>

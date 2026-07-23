@@ -45,12 +45,15 @@ export default function Stats() {
     }).catch(() => {});
   }, []);
 
+  // Duplicate for a seamless right-to-left marquee loop.
+  const loop = [...stats, ...stats];
+
   return (
     <section className="py-14 gradient-surface" aria-label="Trust statistics">
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-          {stats.map(({ icon: Icon, end, suffix, key }) => (
-            <GlassCard key={key} hover className="p-6 text-center">
+      <div className="marquee-viewport" style={{ "--marquee-duration": "42s" } as React.CSSProperties}>
+        <div className="marquee-track gap-4 px-2">
+          {loop.map(({ icon: Icon, end, suffix, key }, i) => (
+            <GlassCard key={`${key}-${i}`} hover className="p-6 text-center w-40 sm:w-48 flex-shrink-0" aria-hidden={i >= stats.length}>
               <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-brand-50 dark:bg-brand-500/15 flex items-center justify-center">
                 <Icon className="w-6 h-6 text-brand-600 dark:text-brand-300" aria-hidden />
               </div>
