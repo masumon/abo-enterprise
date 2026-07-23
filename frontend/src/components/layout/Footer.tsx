@@ -80,21 +80,31 @@ function FooterLink({
   children: React.ReactNode;
   external?: boolean;
 }) {
+  // Premium row: leading amber dot, hover highlight + slide, trailing arrow.
   const className =
-    "footer-link group inline-flex items-center gap-1.5 text-sm text-white/75 transition-colors duration-200";
+    "footer-link group flex items-center gap-2.5 text-sm text-white/75 rounded-lg px-2 py-1.5 -mx-2 hover:bg-white/[0.07] hover:text-white transition-all duration-200";
+  const inner = (
+    <>
+      <span
+        aria-hidden
+        className="w-1.5 h-1.5 rounded-full bg-amber-300/55 group-hover:bg-amber-300 flex-none transition-colors group-hover:shadow-[0_0_7px_rgba(255,213,79,0.6)]"
+      />
+      <span className="flex-1 group-hover:translate-x-0.5 transition-transform duration-200">{children}</span>
+      <ArrowUpRight className="w-3.5 h-3.5 flex-none opacity-0 -translate-x-1 group-hover:opacity-60 group-hover:translate-x-0 transition-all duration-200" />
+    </>
+  );
 
   if (external) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
-        {children}
-        <ArrowUpRight className="w-3 h-3 opacity-0 -translate-y-0.5 translate-x-0.5 group-hover:opacity-70 group-hover:translate-y-0 group-hover:translate-x-0 transition-all" />
+        {inner}
       </a>
     );
   }
 
   return (
     <Link href={href} className={className}>
-      {children}
+      {inner}
     </Link>
   );
 }
@@ -277,7 +287,7 @@ export default function Footer() {
       </div>
 
       <div className="relative z-10 container mx-auto px-4 py-12 md:py-14">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-10 xl:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-5 sm:gap-8 xl:gap-8">
           <div className="sm:col-span-2 xl:col-span-4">
             <div className="flex items-center gap-3.5 mb-5">
               <BrandLogo size="lg" href={false} variant="light" />
@@ -326,7 +336,7 @@ export default function Footer() {
 
           <div className="xl:col-span-2">
             <FooterColumn title={lang === "bn" ? "ব্যবসা" : "Business"} ringDelay="0s">
-              <ul className="space-y-2.5">
+              <ul className="space-y-0.5">
                 {SERVICES.map((s) => (
                   <li key={s.href + s.label.en}>
                     <FooterLink href={s.href}>
@@ -340,7 +350,7 @@ export default function Footer() {
 
           <div className="xl:col-span-2">
             <FooterColumn title={t("footer_company")} ringDelay="0.3s">
-              <ul className="space-y-2.5">
+              <ul className="space-y-0.5">
                 {COMPANY.map((link) => (
                   <li key={link.href}>
                     <FooterLink href={link.href}>
@@ -354,7 +364,7 @@ export default function Footer() {
 
           <div className="sm:col-span-2 xl:col-span-4">
             <FooterColumn title={t("footer_legal")} ringDelay="0.6s">
-              <ul className="space-y-2.5 mb-6">
+              <ul className="space-y-0.5 mb-6">
                 {LEGAL.map((link) => (
                   <li key={link.href}>
                     <FooterLink href={link.href}>

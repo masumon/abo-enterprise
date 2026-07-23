@@ -100,11 +100,11 @@ export default function PageHero({
       )}
       {isBrand && (
         <div className="absolute inset-0 pointer-events-none" aria-hidden>
-          <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent-500/10 rounded-full blur-3xl" />
-          {hasImage && (
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.08),transparent_45%)]" />
-          )}
+          {/* Layered glows give the strip the same depth as the homepage hero. */}
+          <div className="absolute -top-10 right-0 w-80 h-80 bg-white/[0.07] rounded-full blur-3xl" />
+          <div className="absolute -bottom-16 left-0 w-72 h-72 bg-accent-500/15 rounded-full blur-3xl" />
+          <div className="absolute top-0 left-1/3 w-64 h-40 bg-brand-400/10 rounded-full blur-3xl" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(255,255,255,0.10),transparent_45%)]" />
         </div>
       )}
 
@@ -131,7 +131,7 @@ export default function PageHero({
             className={cn(
               "inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold mb-3 mt-2",
               isBrand
-                ? "bg-white/15 text-white/90 border border-white/25 backdrop-blur-sm shadow-sm"
+                ? "bg-gradient-to-r from-white/20 to-white/10 text-white border border-white/25 backdrop-blur-md shadow-sm"
                 : "bg-brand-50 text-brand-700 border border-brand-100"
             )}
           >
@@ -141,8 +141,8 @@ export default function PageHero({
 
         <h1
           className={cn(
-            "text-xl sm:text-2xl md:text-5xl font-bold mb-1.5 md:mb-3 text-balance leading-tight",
-            !isBrand && "text-heading",
+            "text-[1.4rem] sm:text-3xl md:text-5xl font-bold mb-1.5 md:mb-3 text-balance leading-tight tracking-tight",
+            isBrand ? "drop-shadow-sm" : "text-heading",
             isCenter && "mx-auto"
           )}
         >

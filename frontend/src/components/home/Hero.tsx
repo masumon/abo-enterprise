@@ -12,6 +12,15 @@ import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { MARKETING_STATS } from "@/lib/siteDefaults";
 import { resolveHomeBannerImage } from "@/lib/pageBanners";
 import { isVideoUrl } from "@/lib/media";
+import { cn } from "@/lib/utils";
+import {
+  HERO_TEXT_STYLE_KEY,
+  parseHeroTextStyle,
+  heroTitleClass,
+  heroSubClass,
+  heroAlignClass,
+  heroVAlignClass,
+} from "@/lib/heroTextStyle";
 import BrandLogo from "@/components/ui/BrandLogo";
 
 interface ActivityItem {
@@ -46,7 +55,7 @@ function displayStat(actual: number, floor: number): number {
 export default function Hero() {
   const { lang } = useLanguageStore();
   const t = useT();
-  const { settings } = usePublicSettings(["hero_image_url", "hero_mobile_image_url", "hero_promo_media_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "free_delivery_min_amount"]);
+  const { settings } = usePublicSettings(["hero_image_url", "hero_mobile_image_url", "hero_promo_media_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "free_delivery_min_amount", HERO_TEXT_STYLE_KEY]);
   const [stats, setStats] = useState<StatsData>(FALLBACK_STATS);
   const [activity, setActivity] = useState<ActivityItem[]>(FALLBACK_ACTIVITY);
 
@@ -71,6 +80,7 @@ export default function Hero() {
     : getSettingValue(settings, "hero_subtitle_en") || t("hero_sub");
   const heroCtaText = getSettingValue(settings, "hero_cta_text");
   const heroCtaUrl = getSettingValue(settings, "hero_cta_url", "/products");
+  const hstyle = parseHeroTextStyle(getSettingValue(settings, HERO_TEXT_STYLE_KEY));
 
   useEffect(() => {
     publicApi.stats().then((r) => {
@@ -90,21 +100,11 @@ export default function Hero() {
 
   return (
     <section
-      className="gradient-hero lg:min-h-[92vh] lg:min-h-[92dvh] flex items-center relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]"
-    >
-      {/* Admin-managed MOBILE hero background (portrait). Behind the text with a
-          dark overlay so it stays readable. Empty → clean gradient. lg:hidden. */}
-      {heroMobileImg && (
-        <div className="lg:hidden absolute inset-0" aria-hidden>
-          {heroMobileIsVideo ? (
-            <video className="absolute inset-0 w-full h-full object-cover" src={heroMobileImg} autoPlay muted loop playsInline />
-          ) : (
-            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroMobileImg})` }} />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-brand-950/70 via-brand-900/55 to-gray-950/85" />
-        </div>
+      className={cn(
+        "gradient-hero lg:min-h-[92vh] lg:min-h-[92dvh] flex relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]",
+        heroVAlignClass(hstyle)
       )}
-
+    >
       {/* Media background is DESKTOP-ONLY. On mobile the hero keeps the clean
           brand gradient and the uploaded image/video shows in a card below the
           text — so text stays crisp and the media is never cropped. */}
@@ -144,72 +144,102 @@ export default function Hero() {
 
       <div className="container mx-auto px-4 pt-4 pb-8 sm:py-12 lg:py-16 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="text-white space-y-6 animate-slide-up">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 glass-panel rounded-full text-sm font-medium">
-                <Zap className="w-3.5 h-3.5 text-yellow-300" aria-hidden />
-                {t("hero_badge")}
-              </div>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-500/25 text-green-100 border border-green-400/30">
-                🚚 {lang === "bn" ? `সিলেটে ফ্রি ডেলিভারি ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+` : `Free Sylhet delivery ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+`}
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/90">
-                👥 {lang === "bn" ? `${stats.clients}+ গ্রাহক` : `${stats.clients}+ clients`}
-              </span>
-            </div>
-
-            <h1 className="text-[1.75rem] sm:text-4xl lg:text-[2.625rem] font-bold leading-tight text-balance">
-              {heroTitleOverride ? (
-                <span>{heroTitleOverride}</span>
-              ) : (
-                <>
-                  <span className="block text-yellow-300 font-extrabold tracking-[0.06em] sm:tracking-[0.08em] drop-shadow-sm">
-                    {t("hero_brand")}
-                  </span>
-                  <span className="block mt-2 sm:mt-3 text-white font-bold leading-snug">
-                    <span className="text-white/80 font-semibold">: </span>
-                    {t("hero_tagline")}
-                  </span>
-                </>
-              )}
-            </h1>
-
-            <p className="text-white/80 text-lg max-w-lg leading-relaxed">
-              {heroSubtitle}
-            </p>
-
-            <p className="text-white/60 text-xs max-w-lg">
-              {lang === "bn" ? ABO_ACRONYM.bn : ABO_ACRONYM.en}
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-3 pt-2">
-              <Link href="/services" className="btn btn-lg btn-primary btn-ripple">
-                <Calendar className="w-5 h-5" aria-hidden />
-                {t("hero_cta_services")}
-                <ArrowRight className="w-4 h-4" aria-hidden />
-              </Link>
-              <Link href={heroCtaUrl.startsWith("/") ? heroCtaUrl : "/products"} className="btn btn-lg btn-outline border-white/40 text-white hover:bg-white/10 btn-ripple">
-                <ShoppingBag className="w-5 h-5" aria-hidden />
-                {heroCtaText || t("hero_cta_products")}
-              </Link>
-            </div>
-
-            {/* Mobile/tablet promo card — admin-managed image/video/any format,
-                autoplay, shown in full (no crop). An explicit promo media always
-                shows; the banner-image fallback is hidden when a mobile
-                background image is already set (to avoid a duplicate visual). */}
+          <div className="text-white flex flex-col gap-6 animate-slide-up">
+            {/* MOBILE/tablet promo — directly below the top bar, full-fit (no
+                crop). Edges are masked so the media blends into the brand
+                background. Explicit promo always shows; the banner fallback
+                yields to a mobile background image. Video autoplays. */}
             {heroPromo && (heroPromoMedia || !heroMobileImg) && (
-              <div className="lg:hidden pt-1">
-                <div className="rounded-2xl overflow-hidden border border-white/25 shadow-2xl bg-black/20">
+              <div className="lg:hidden w-full">
+                <div
+                  className="relative overflow-hidden rounded-2xl"
+                  style={{
+                    WebkitMaskImage: "linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent)",
+                    maskImage: "linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent)",
+                  }}
+                >
                   {heroPromoIsVideo ? (
                     <video className="w-full h-auto block" src={heroPromo} autoPlay muted loop playsInline aria-hidden />
                   ) : (
-                    // eslint-disable-next-line @next/next/no-img-element -- hero art at natural aspect; next/image adds no value in this card
+                    // eslint-disable-next-line @next/next/no-img-element -- hero art at natural aspect; next/image adds no value here
                     <img src={heroPromo} alt="" className="w-full h-auto block" />
                   )}
                 </div>
               </div>
             )}
+
+            {/* Text block. On mobile the admin "Homepage Banner (Mobile)" sits
+                behind it (cover + dark overlay for readability); desktop keeps
+                the clean gradient. */}
+            <div className="relative w-full">
+              {heroMobileImg && (
+                <div className="lg:hidden absolute -inset-4 rounded-2xl overflow-hidden" aria-hidden>
+                  {heroMobileIsVideo ? (
+                    <video className="absolute inset-0 w-full h-full object-cover" src={heroMobileImg} autoPlay muted loop playsInline />
+                  ) : (
+                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroMobileImg})` }} />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-b from-brand-950/72 via-brand-900/58 to-gray-950/85" />
+                </div>
+              )}
+
+              <div className={cn("relative z-10 flex flex-col gap-6", heroAlignClass(hstyle))}>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 glass-panel rounded-full text-sm font-medium">
+                    <Zap className="w-3.5 h-3.5 text-yellow-300" aria-hidden />
+                    {t("hero_badge")}
+                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-500/25 text-green-100 border border-green-400/30">
+                    🚚 {lang === "bn" ? `সিলেটে ফ্রি ডেলিভারি ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+` : `Free Sylhet delivery ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+`}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/90">
+                    👥 {lang === "bn" ? `${stats.clients}+ গ্রাহক` : `${stats.clients}+ clients`}
+                  </span>
+                </div>
+
+                <h1
+                  className={cn("leading-tight text-balance", heroTitleClass(hstyle))}
+                  style={hstyle.titleColor ? { color: hstyle.titleColor } : undefined}
+                >
+                  {heroTitleOverride ? (
+                    <span>{heroTitleOverride}</span>
+                  ) : (
+                    <>
+                      <span className="block text-yellow-300 font-extrabold tracking-[0.06em] sm:tracking-[0.08em] drop-shadow-sm">
+                        {t("hero_brand")}
+                      </span>
+                      <span className="block mt-2 sm:mt-3 text-white font-bold leading-snug">
+                        <span className="text-white/80 font-semibold">: </span>
+                        {t("hero_tagline")}
+                      </span>
+                    </>
+                  )}
+                </h1>
+
+                <p
+                  className={cn("max-w-lg leading-relaxed", heroSubClass(hstyle), !hstyle.subColor && "text-white/80")}
+                  style={hstyle.subColor ? { color: hstyle.subColor } : undefined}
+                >
+                  {heroSubtitle}
+                </p>
+
+                <p className="text-white/60 text-xs max-w-lg">
+                  {lang === "bn" ? ABO_ACRONYM.bn : ABO_ACRONYM.en}
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <Link href="/services" className="btn btn-lg btn-primary btn-ripple">
+                    <Calendar className="w-5 h-5" aria-hidden />
+                    {t("hero_cta_services")}
+                    <ArrowRight className="w-4 h-4" aria-hidden />
+                  </Link>
+                  <Link href={heroCtaUrl.startsWith("/") ? heroCtaUrl : "/products"} className="btn btn-lg btn-outline border-white/40 text-white hover:bg-white/10 btn-ripple">
+                    <ShoppingBag className="w-5 h-5" aria-hidden />
+                    {heroCtaText || t("hero_cta_products")}
+                  </Link>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="hidden lg:flex items-center justify-center animate-fade-in">

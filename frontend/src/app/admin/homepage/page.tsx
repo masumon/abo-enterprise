@@ -14,6 +14,16 @@ import {
   HOMEPAGE_SCALAR_FIELDS,
   type HomepageScalarField,
 } from "@/lib/homepageContent";
+import {
+  HERO_TEXT_STYLE_KEY,
+  parseHeroTextStyle,
+  type HeroTextStyle,
+  HERO_COLOR_OPTIONS,
+  HERO_TITLE_SIZES,
+  HERO_SUB_SIZES,
+  HERO_ALIGNS,
+  HERO_VALIGNS,
+} from "@/lib/heroTextStyle";
 
 const JSON_KEYS = HOMEPAGE_CONTENT_EDITORS.map((e) => e.key);
 const SCALAR_KEYS = HOMEPAGE_SCALAR_FIELDS.map((f) => f.key);
@@ -24,6 +34,7 @@ export default function AdminHomepageContentPage() {
   const bn = lang === "bn";
   const toast = useToastStore((s) => s.push);
   const [values, setValues] = useState<Record<string, string>>({});
+  const [hstyle, setHstyle] = useState<HeroTextStyle>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -32,12 +43,18 @@ export default function AdminHomepageContentPage() {
       .then((r) => {
         const s = r.data.data ?? {};
         setValues(Object.fromEntries(ALL_KEYS.map((k) => [k, s[k] ?? ""])));
+        setHstyle(parseHeroTextStyle(s[HERO_TEXT_STYLE_KEY]));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
   const setValue = (key: string, val: string) => setValues((v) => ({ ...v, [key]: val }));
+  const setS = (patch: Partial<HeroTextStyle>) => setHstyle((p) => ({ ...p, ...patch }));
+  const segCls = (on: boolean) =>
+    `text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${on ? "bg-brand-600 text-white border-transparent" : "bg-white dark:bg-white/5 border-gray-200 dark:border-white/10 text-muted"}`;
+  const swCls = (on: boolean) =>
+    `w-7 h-7 rounded-lg border-2 shadow ${on ? "border-brand-600 ring-2 ring-brand-300" : "border-white dark:border-white/20"}`;
 
   const save = async () => {
     setSaving(true);
@@ -49,6 +66,7 @@ export default function AdminHomepageContentPage() {
           value: (values[f.key] ?? "").trim(),
           data_type: f.dataType,
         })),
+        { key: HERO_TEXT_STYLE_KEY, value: JSON.stringify(hstyle), data_type: "json" },
       ]);
       toast("success", bn ? "হোমপেজ কনটেন্ট সংরক্ষিত হয়েছে" : "Homepage content saved");
     } catch (err) {
@@ -135,6 +153,78 @@ export default function AdminHomepageContentPage() {
               <div className="space-y-3">{g.fields.map(renderScalar)}</div>
             </section>
           ))}
+
+          <section className="enterprise-card p-4">
+            <div className="mb-3">
+              <h2 className="text-sm font-bold text-heading">{bn ? "হিরো টেক্সট স্টাইল" : "Hero Text Style"}</h2>
+              <p className="text-xs text-muted mt-0.5">
+                {bn ? "রঙ · সাইজ · পজিশন · স্টাইল — মোবাইল/ট্যাব/ডেস্কটপ ফ্রেন্ডলি। খালি = ডিফল্ট।" : "Color · size · position · style — responsive. Empty = default."}
+              </p>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <span className="block text-xs font-medium text-muted mb-1.5">{bn ? "অবস্থান (বাম/মাঝ/ডান)" : "Alignment"}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {HERO_ALIGNS.map((o) => (
+                    <button key={o.v} type="button" onClick={() => setS({ align: o.v })} className={segCls((hstyle.align ?? "left") === o.v)}>{o.label}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <span className="block text-xs font-medium text-muted mb-1.5">{bn ? "উপর/নিচ (মোবাইল)" : "Vertical (mobile)"}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {HERO_VALIGNS.map((o) => (
+                    <button key={o.v} type="button" onClick={() => setS({ valign: o.v })} className={segCls((hstyle.valign ?? "center") === o.v)}>{o.label}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <span className="block text-xs font-medium text-muted mb-1.5">{bn ? "টাইটেল রঙ" : "Title color"}</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {HERO_COLOR_OPTIONS.map((c) => (
+                      <button key={c} type="button" onClick={() => setS({ titleColor: c })} className={swCls(hstyle.titleColor === c)} style={{ background: c }} aria-label={c} />
+                    ))}
+                    <button type="button" onClick={() => setS({ titleColor: undefined })} className="text-[11px] text-muted underline">{bn ? "ডিফল্ট" : "Default"}</button>
+                  </div>
+                </div>
+                <div>
+                  <span className="block text-xs font-medium text-muted mb-1.5">{bn ? "টাইটেল সাইজ" : "Title size"}</span>
+                  <div className="flex gap-1.5">
+                    {HERO_TITLE_SIZES.map((o) => (
+                      <button key={o.v} type="button" onClick={() => setS({ titleSize: o.v })} className={segCls((hstyle.titleSize ?? "md") === o.v)}>{o.label}</button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <span className="block text-xs font-medium text-muted mb-1.5">{bn ? "সাবটাইটেল রঙ" : "Subtitle color"}</span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {HERO_COLOR_OPTIONS.map((c) => (
+                      <button key={c} type="button" onClick={() => setS({ subColor: c })} className={swCls(hstyle.subColor === c)} style={{ background: c }} aria-label={c} />
+                    ))}
+                    <button type="button" onClick={() => setS({ subColor: undefined })} className="text-[11px] text-muted underline">{bn ? "ডিফল্ট" : "Default"}</button>
+                  </div>
+                </div>
+                <div>
+                  <span className="block text-xs font-medium text-muted mb-1.5">{bn ? "সাবটাইটেল সাইজ" : "Subtitle size"}</span>
+                  <div className="flex gap-1.5">
+                    {HERO_SUB_SIZES.map((o) => (
+                      <button key={o.v} type="button" onClick={() => setS({ subSize: o.v })} className={segCls((hstyle.subSize ?? "md") === o.v)}>{o.label}</button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <span className="block text-xs font-medium text-muted mb-1.5">{bn ? "টাইটেল স্টাইল" : "Title style"}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  <button type="button" onClick={() => setS({ bold: !(hstyle.bold !== false) })} className={segCls(hstyle.bold !== false)}>Bold</button>
+                  <button type="button" onClick={() => setS({ italic: !hstyle.italic })} className={segCls(!!hstyle.italic)}>Italic</button>
+                  <button type="button" onClick={() => setS({ shadow: !hstyle.shadow })} className={segCls(!!hstyle.shadow)}>Shadow</button>
+                  <button type="button" onClick={() => setS({ uppercase: !hstyle.uppercase })} className={segCls(!!hstyle.uppercase)}>Uppercase</button>
+                </div>
+              </div>
+            </div>
+          </section>
 
           {HOMEPAGE_CONTENT_EDITORS.map((ed) => (
             <section key={ed.key} className="enterprise-card p-4">
