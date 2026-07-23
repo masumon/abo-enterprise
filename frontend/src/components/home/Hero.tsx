@@ -11,7 +11,7 @@ import { ABO_ACRONYM, getBrandName, getBrandTagline } from "@/lib/tokens";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { MARKETING_STATS } from "@/lib/siteDefaults";
 import { resolveHomeBannerImage } from "@/lib/pageBanners";
-import { isVideoUrl, toPlayableVideoUrl } from "@/lib/media";
+import { isVideoUrl, toPlayableVideoUrl, videoPosterUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import {
   HERO_TEXT_STYLE_KEY,
@@ -164,15 +164,9 @@ export default function Hero() {
                 yields to a mobile background image. Video autoplays. */}
             {heroPromo && (heroPromoMedia || !heroMobileImg) && (
               <div className="lg:hidden w-full">
-                <div
-                  className="relative overflow-hidden rounded-2xl"
-                  style={{
-                    WebkitMaskImage: "linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent)",
-                    maskImage: "linear-gradient(to bottom, transparent, #000 12%, #000 88%, transparent)",
-                  }}
-                >
+                <div className="relative overflow-hidden rounded-2xl border border-white/15 shadow-xl bg-black/20">
                   {heroPromoIsVideo ? (
-                    <video className="w-full h-auto block" src={toPlayableVideoUrl(heroPromo)} autoPlay muted loop playsInline aria-hidden />
+                    <video className="w-full h-auto block" src={toPlayableVideoUrl(heroPromo)} poster={videoPosterUrl(heroPromo)} preload="metadata" autoPlay muted loop playsInline aria-hidden />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element -- hero art at natural aspect; next/image adds no value here
                     <img src={heroPromo} alt="" className="w-full h-auto block" />
@@ -250,7 +244,7 @@ export default function Hero() {
               {heroPromoMedia && (
                 <div className="rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-black/20">
                   {heroPromoIsVideo ? (
-                    <video className="w-full aspect-video object-cover block" src={toPlayableVideoUrl(heroPromoMedia)} autoPlay muted loop playsInline aria-hidden />
+                    <video className="w-full aspect-video object-cover block" src={toPlayableVideoUrl(heroPromoMedia)} poster={videoPosterUrl(heroPromoMedia)} preload="metadata" autoPlay muted loop playsInline aria-hidden />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element -- hero art in a fixed-ratio card; next/image adds no value here
                     <img src={heroPromoMedia} alt="" className="w-full aspect-video object-cover block" />

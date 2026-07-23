@@ -26,3 +26,15 @@ export function toPlayableVideoUrl(url: string | null | undefined): string {
   }
   return out;
 }
+
+/**
+ * A poster image (first frame) for a Cloudinary video, so a still shows
+ * instantly while the clip loads — or if autoplay is blocked / the network is
+ * slow. Returns undefined for non-Cloudinary URLs.
+ */
+export function videoPosterUrl(url: string | null | undefined): string | undefined {
+  if (!url || !url.includes("/video/upload/")) return undefined;
+  return url
+    .replace("/video/upload/", "/video/upload/so_0/")
+    .replace(/\.(mp4|webm|mov|avi|m4v|mkv|hevc|3gp)(\?|#|$)/i, ".jpg$1");
+}

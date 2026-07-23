@@ -133,7 +133,7 @@ export default function QuickCategories() {
 
   return (
     <section
-      className="py-8 sm:py-10 border-b border-gray-100 dark:border-white/10 bg-white dark:bg-[var(--surface-secondary)]"
+      className="py-8 sm:py-10 border-b border-gray-100 dark:border-white/10 bg-[var(--surface)] dark:bg-[var(--surface-secondary)]"
       aria-labelledby="verticals-heading"
     >
       <div className="container mx-auto px-4">
