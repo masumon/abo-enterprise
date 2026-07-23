@@ -66,7 +66,6 @@ export default function AdminLeadsPage() {
       setTotal(r.data.meta?.total ?? 0);
     } catch (err) {
       toast("error", "Failed to load leads");
-      console.error("Leads load error:", err);
     } finally {
       setLoading(false);
     }
@@ -80,7 +79,6 @@ export default function AdminLeadsPage() {
       setTotalV2(r.data.meta?.total ?? 0);
     } catch (err) {
       toast("error", "Failed to load service leads");
-      console.error("Service leads load error:", err);
     } finally {
       setLoadingV2(false);
     }

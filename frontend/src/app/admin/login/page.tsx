@@ -10,6 +10,8 @@ import { authApi } from "@/lib/api";
 import { setAdminAuthMarker, setAdminToken } from "@/lib/adminAuth";
 import { cn } from "@/lib/utils";
 import BrandLogo from "@/components/ui/BrandLogo";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { isVideoUrl } from "@/lib/media";
 
 const schema = z.object({
   email: z.string().email("Valid email required"),
@@ -198,8 +200,25 @@ function LoginForm() {
 }
 
 export default function AdminLoginPage() {
+  const { settings } = usePublicSettings(["site_login_bg_url"]);
+  const bgUrl = getSettingValue(settings, "site_login_bg_url");
+  const bgIsVideo = isVideoUrl(bgUrl);
+
   return (
-    <div className="min-h-screen admin-login-shell flex">
+    <div className="min-h-screen admin-login-shell flex relative overflow-hidden">
+      {/* Admin-managed background (image / animated / video). Falls back to the
+          built-in gradient shell when unset. A dark overlay keeps text legible. */}
+      {bgUrl && (
+        <div className="absolute inset-0 z-0" aria-hidden>
+          {bgIsVideo ? (
+            <video className="absolute inset-0 w-full h-full object-cover" src={bgUrl} autoPlay muted loop playsInline />
+          ) : (
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgUrl})` }} />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-950/85 via-brand-950/75 to-gray-950/88" />
+        </div>
+      )}
+      <div className="relative z-10 flex flex-1">
       {/* Left brand panel — desktop */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-brand-700 via-brand-800 to-gray-950" />
@@ -239,6 +258,7 @@ export default function AdminLoginPage() {
         <Suspense fallback={<Loader2 className="w-8 h-8 text-brand-500 animate-spin" />}>
           <LoginForm />
         </Suspense>
+      </div>
       </div>
     </div>
   );

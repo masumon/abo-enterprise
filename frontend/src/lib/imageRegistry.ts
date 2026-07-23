@@ -18,7 +18,8 @@ export const BRAND_IMAGE_SLOTS: ImageSlotDef[] = [
   { key: "favicon_url", label: "Favicon", labelBn: "ফ্যাভিকন", usedOn: "Browser tab icon", guide: "64×64px (1:1) · PNG/ICO" },
   { key: "app_icon_url", label: "PWA App Icon", labelBn: "PWA অ্যাপ আইকন", usedOn: "Mobile home screen, manifest", guide: "512×512px (1:1) · PNG" },
   { key: "default_og_image_url", label: "Default Social Share Image", labelBn: "সোশ্যাল শেয়ার ছবি", usedOn: "Facebook/Twitter preview fallback", guide: "1200×630px (1.91:1) · JPG/PNG" },
-  { key: "hero_image_url", label: "Homepage Banner", labelBn: "হোমপেজ ব্যানার", usedOn: "Homepage hero", guide: "1920×1080px (16:9) · JPG/WebP" },
+  { key: "hero_image_url", label: "Homepage Banner", labelBn: "হোমপেজ ব্যানার", usedOn: "Homepage hero", guide: "1920×1080px (16:9) · JPG/WebP/MP4" },
+  { key: "site_login_bg_url", label: "Admin Login Background", labelBn: "অ্যাডমিন লগইন ব্যাকগ্রাউন্ড", usedOn: "/admin/login", guide: "1920×1080px (16:9) · ছবি, animated বা ভিডিও (MP4)" },
   { key: "gallery_office_image_url", label: "Gallery Office Photo", labelBn: "গ্যালারি অফিস ছবি", usedOn: "/gallery office tab", guide: "1920×1080px (16:9) · JPG/WebP" },
   { key: "about_story_image_url", label: "About Story Image", labelBn: "আমাদের গল্প ছবি", usedOn: "/about Our Story", guide: "1200×800px (3:2) · JPG/WebP" },
 ];
