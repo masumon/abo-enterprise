@@ -5,7 +5,8 @@ import BrandLogo from "@/components/ui/BrandLogo";
 import { useLanguageStore } from "@/store/language";
 import { getBrandFullTitle, getBrandName, getBrandTagline } from "@/lib/tokens";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
-import { isVideoUrl, toPlayableVideoUrl } from "@/lib/media";
+import { isVideoUrl } from "@/lib/media";
+import AutoVideo from "@/components/ui/AutoVideo";
 
 interface AuthSplitLayoutProps {
   children: React.ReactNode;
@@ -28,7 +29,7 @@ export default function AuthSplitLayout({ children, title, subtitle, badge }: Au
       {bgUrl && (
         <div className="absolute inset-0 z-0" aria-hidden>
           {bgIsVideo ? (
-            <video className="absolute inset-0 w-full h-full object-cover" src={toPlayableVideoUrl(bgUrl)} autoPlay muted loop playsInline />
+            <AutoVideo src={bgUrl} className="absolute inset-0 w-full h-full object-cover" />
           ) : (
             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgUrl})` }} />
           )}

@@ -6,7 +6,8 @@ import { Upload, Loader2, X, ImageIcon, Check, Sparkles } from "lucide-react";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { compressImage } from "@/lib/imageCompress";
-import { isVideoUrl, toPlayableVideoUrl, videoPosterUrl } from "@/lib/media";
+import { isVideoUrl } from "@/lib/media";
+import AutoVideo from "@/components/ui/AutoVideo";
 import { cn } from "@/lib/utils";
 
 type AcceptType = "image" | "video" | "both";
@@ -155,7 +156,7 @@ export default function ImageUpload({
           <div className="flex items-start gap-3 flex-wrap">
             <div className={cn("relative rounded-lg overflow-hidden border border-gray-200 bg-white flex-shrink-0", sizeClass)}>
               {pending.file.type.startsWith("video/") ? (
-                <video src={pending.previewUrl} className="absolute inset-0 w-full h-full object-cover" muted loop playsInline autoPlay />
+                <AutoVideo src={pending.previewUrl} className="absolute inset-0 w-full h-full object-cover" />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element -- local object URL preview
                 <img src={pending.previewUrl} alt="Upload preview" className="absolute inset-0 w-full h-full object-cover" />
@@ -211,15 +212,7 @@ export default function ImageUpload({
           >
             {value ? (
               isVideo ? (
-                <video
-                  src={toPlayableVideoUrl(value)}
-                  poster={videoPosterUrl(value)}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  muted
-                  loop
-                  playsInline
-                  autoPlay
-                />
+                <AutoVideo src={value} className="absolute inset-0 w-full h-full object-cover" />
               ) : (
                 <Image
                   src={value}

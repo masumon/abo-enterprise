@@ -2,7 +2,8 @@
 
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { cn } from "@/lib/utils";
-import { isVideoUrl, toPlayableVideoUrl } from "@/lib/media";
+import { isVideoUrl } from "@/lib/media";
+import AutoVideo from "@/components/ui/AutoVideo";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
 import {
   bannerSettingKey,
@@ -86,13 +87,9 @@ export default function PageHero({
     >
       {isVideo && (
         <>
-          <video
+          <AutoVideo
+            src={resolvedImage!}
             className="absolute inset-0 w-full h-full object-cover"
-            src={toPlayableVideoUrl(resolvedImage!)}
-            autoPlay
-            muted
-            loop
-            playsInline
             aria-hidden
           />
           <div className="absolute inset-0" style={{ background: overlayGradient }} aria-hidden />

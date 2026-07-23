@@ -11,7 +11,8 @@ import { ABO_ACRONYM, getBrandName, getBrandTagline } from "@/lib/tokens";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { MARKETING_STATS } from "@/lib/siteDefaults";
 import { resolveHomeBannerImage } from "@/lib/pageBanners";
-import { isVideoUrl, toPlayableVideoUrl, videoPosterUrl } from "@/lib/media";
+import { isVideoUrl } from "@/lib/media";
+import AutoVideo from "@/components/ui/AutoVideo";
 import { cn } from "@/lib/utils";
 import {
   HERO_TEXT_STYLE_KEY,
@@ -110,7 +111,7 @@ export default function Hero() {
       {heroMobileImg && (
         <div className="lg:hidden absolute inset-0" aria-hidden>
           {heroMobileIsVideo ? (
-            <video className="absolute inset-0 w-full h-full object-cover" src={toPlayableVideoUrl(heroMobileImg)} autoPlay muted loop playsInline />
+            <AutoVideo src={heroMobileImg} className="absolute inset-0 w-full h-full object-cover" />
           ) : (
             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroMobileImg})` }} />
           )}
@@ -134,13 +135,9 @@ export default function Hero() {
       )}
       {heroIsVideo && (
         <>
-          <video
+          <AutoVideo
+            src={heroImage}
             className="hidden lg:block absolute inset-0 w-full h-full object-cover"
-            src={toPlayableVideoUrl(heroImage)}
-            autoPlay
-            muted
-            loop
-            playsInline
             aria-hidden
           />
           <div
@@ -166,7 +163,7 @@ export default function Hero() {
               <div className="lg:hidden w-full">
                 <div className="relative overflow-hidden rounded-2xl border border-white/15 shadow-xl bg-black/20">
                   {heroPromoIsVideo ? (
-                    <video className="w-full h-auto block" src={toPlayableVideoUrl(heroPromo)} poster={videoPosterUrl(heroPromo)} preload="metadata" autoPlay muted loop playsInline aria-hidden />
+                    <AutoVideo src={heroPromo} className="w-full h-auto block" aria-hidden />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element -- hero art at natural aspect; next/image adds no value here
                     <img src={heroPromo} alt="" className="w-full h-auto block" />
@@ -244,7 +241,7 @@ export default function Hero() {
               {heroPromoMedia && (
                 <div className="rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-black/20">
                   {heroPromoIsVideo ? (
-                    <video className="w-full aspect-video object-cover block" src={toPlayableVideoUrl(heroPromoMedia)} poster={videoPosterUrl(heroPromoMedia)} preload="metadata" autoPlay muted loop playsInline aria-hidden />
+                    <AutoVideo src={heroPromoMedia} className="w-full aspect-video object-cover block" aria-hidden />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element -- hero art in a fixed-ratio card; next/image adds no value here
                     <img src={heroPromoMedia} alt="" className="w-full aspect-video object-cover block" />

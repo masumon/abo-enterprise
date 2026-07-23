@@ -5,6 +5,8 @@ import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, Star, CheckCircle, XCircle, Trash2, Shield, ShieldCheck, Pencil, X, MessageSquare, Plus, Search } from "lucide-react";
 import api, { reviewsApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
+import LivePreview from "@/components/admin/LivePreview";
+import GlassCard from "@/components/ui/GlassCard";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useFocusTrap } from "@/lib/useFocusTrap";
@@ -427,6 +429,36 @@ export default function AdminReviewsPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+              {/* Live website preview — the review card as shown on the site */}
+              <LivePreview showDevice={false}>
+                <div className="p-1 pointer-events-none max-w-xs mx-auto">
+                  <GlassCard className="p-5">
+                    <div className="flex items-center gap-1 mb-3">
+                      {Array.from({ length: draft.rating ?? 5 }).map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                      ))}
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-4">
+                      &ldquo;{draft.review_bn || draft.review_en || "রিভিউ লেখা এখানে দেখাবে…"}&rdquo;
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {draft.photo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+                          <img src={draft.photo_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-brand-700 font-bold text-sm">{(draft.customer_name || "?").charAt(0)}</span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm">{draft.customer_name || "গ্রাহকের নাম"}</p>
+                        {draft.company && <p className="text-xs text-gray-500">{draft.company}</p>}
+                      </div>
+                    </div>
+                  </GlassCard>
+                </div>
+              </LivePreview>
+
               {/* Customer Info */}
               <section className="space-y-4">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Customer Info</h3>
