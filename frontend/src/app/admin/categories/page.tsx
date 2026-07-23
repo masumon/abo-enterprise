@@ -4,12 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
   FolderTree,
-  ImageOff,
   Loader2,
   Pencil,
   Plus,
   RefreshCw,
   Save,
+  Search,
   Trash2,
   X,
 } from "lucide-react";
@@ -18,11 +18,7 @@ import { categoriesAdminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import type { Category, Subcategory } from "@/types";
-import AdminEmptyState from "@/components/admin/AdminEmptyState";
-import AdminPageHeader from "@/components/admin/AdminPageHeader";
-import AdminToolbar from "@/components/admin/AdminToolbar";
 import ImageUpload from "@/components/admin/ImageUpload";
-import StatusBadge from "@/components/admin/StatusBadge";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +27,17 @@ function slugify(v: string): string {
 }
 
 const APPLIES = ["product", "service"] as const;
-const PAGE_STEP = 10; // "See more" reveals this many more root categories at a time.
+const PAGE_STEP = 10;
+
+/** Accent palette — one per root vertical (cycles). Keeps each group visually distinct. */
+const ACCENTS = [
+  { rail: "#1565c0", from: "#1565c0", to: "#0d47a1" },
+  { rail: "#e91e63", from: "#e91e63", to: "#c2185b" },
+  { rail: "#0891b2", from: "#0891b2", to: "#0e7490" },
+  { rail: "#7c3aed", from: "#7c3aed", to: "#6d28d9" },
+  { rail: "#d97706", from: "#d97706", to: "#b45309" },
+  { rail: "#059669", from: "#059669", to: "#047857" },
+];
 
 type Node = Category | Subcategory;
 type StatusFilter = "all" | "active" | "inactive";
@@ -56,27 +62,28 @@ interface FormState {
 }
 
 const EMPTY_FORM: FormState = {
-  name_en: "",
-  name_bn: "",
-  slug: "",
-  icon: "",
-  image_url: "",
-  description_bn: "",
-  applies_to: ["product"],
-  is_active: true,
-  sort_order: 0,
-  parent_id: null,
+  name_en: "", name_bn: "", slug: "", icon: "", image_url: "", description_bn: "",
+  applies_to: ["product"], is_active: true, sort_order: 0, parent_id: null,
 };
+
+const INP_CLS = "w-full text-sm rounded-[11px] px-3 py-2.5 bg-[var(--surface,#fff)] dark:bg-white/5 border border-[var(--border,#e2e8f3)] dark:border-white/10 text-heading outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition";
+const LBL_CLS = "block text-[0.78rem] font-semibold text-gray-500 dark:text-gray-400 mb-1.5";
 
 function getChildren(node: Node): Node[] {
   return (node.subcategories ?? []) as unknown as Node[];
 }
-
 function getNodeLabel(node: Node): string {
   return node.name_bn || node.name_en;
 }
-
-/** Flat {id,label,depth} list of every node — used for the Parent dropdown. */
+function tileGlyph(node: Node): string {
+  const icon = (node.icon ?? "").trim();
+  if (icon && [...icon].length <= 2) return icon; // emoji
+  return (node.name_en || "?").charAt(0).toUpperCase();
+}
+function flattenAll(nodes: Node[], out: Node[] = []): Node[] {
+  for (const n of nodes) { out.push(n); flattenAll(getChildren(n), out); }
+  return out;
+}
 function flattenForSelect(nodes: Node[], depth = 0, out: { id: string; label: string; depth: number }[] = []) {
   for (const node of nodes) {
     out.push({ id: node.id, label: getNodeLabel(node), depth });
@@ -84,12 +91,19 @@ function flattenForSelect(nodes: Node[], depth = 0, out: { id: string; label: st
   }
   return out;
 }
-
-/** IDs of a node and all its descendants — excluded from the Parent dropdown to avoid cycles. */
 function selfAndDescendantIds(node: Node, out: Set<string> = new Set()): Set<string> {
   out.add(node.id);
   for (const child of getChildren(node)) selfAndDescendantIds(child, out);
   return out;
+}
+/** Immutably update one node anywhere in the tree (used for optimistic toggles). */
+function updateNodeInTree<T extends Node>(nodes: T[], id: string, fn: (n: T) => T): T[] {
+  return nodes.map((n) => {
+    if (n.id === id) return fn(n);
+    const kids = n.subcategories as unknown as T[] | undefined;
+    if (kids && kids.length) return { ...n, subcategories: updateNodeInTree(kids, id, fn) } as T;
+    return n;
+  });
 }
 
 export default function AdminCategoriesPage() {
@@ -100,6 +114,7 @@ export default function AdminCategoriesPage() {
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [visibleCount, setVisibleCount] = useState(PAGE_STEP);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const toast = useToastStore((s) => s.push);
   const editorRef = useFocusTrap(editor !== null, () => setEditor(null));
@@ -116,9 +131,7 @@ export default function AdminCategoriesPage() {
     }
   }, [toast]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const openCreate = (parent: Node | null) => {
     setForm({
@@ -148,10 +161,7 @@ export default function AdminCategoriesPage() {
 
   const save = async () => {
     const name = form.name_en.trim();
-    if (name.length < 2) {
-      toast("error", "Name (English) is required");
-      return;
-    }
+    if (name.length < 2) { toast("error", "Name (English) is required"); return; }
     const slug = form.slug.trim() || slugify(name);
     setBusy(true);
     try {
@@ -165,26 +175,19 @@ export default function AdminCategoriesPage() {
         is_active: form.is_active,
         sort_order: form.sort_order,
       };
-
       if (editor?.node) {
-        // Edit — keep the node where it is (no re-parenting, matches prior safe behavior).
         if (!editor.node.parent_id && form.applies_to.length > 0) payload.applies_to = form.applies_to;
         await categoriesAdminApi.update(editor.node.id, payload);
         toast("success", "সংরক্ষিত হয়েছে");
       } else {
         payload.parent_id = form.parent_id ?? null;
         if (!form.parent_id) {
-          if (form.applies_to.length === 0) {
-            toast("error", "product/service অন্তত একটি বাছুন");
-            setBusy(false);
-            return;
-          }
+          if (form.applies_to.length === 0) { toast("error", "product/service অন্তত একটি বাছুন"); setBusy(false); return; }
           payload.applies_to = form.applies_to;
         }
         await categoriesAdminApi.create(payload);
         toast("success", "তৈরি হয়েছে");
       }
-
       setEditor(null);
       await load();
     } catch (err) {
@@ -205,10 +208,21 @@ export default function AdminCategoriesPage() {
     }
   };
 
+  // Inline active toggle — optimistic, reverts on failure. Uses the same update API.
+  const toggleActive = async (node: Node) => {
+    const next = node.is_active === false;
+    setRoots((prev) => updateNodeInTree(prev, node.id, (n) => ({ ...n, is_active: next })));
+    try {
+      await categoriesAdminApi.update(node.id, { is_active: next });
+    } catch (err) {
+      setRoots((prev) => updateNodeInTree(prev, node.id, (n) => ({ ...n, is_active: !next })));
+      toast("error", apiErrorMessage(err, "Status change failed"));
+    }
+  };
+
   const normalizedQuery = searchValue.trim().toLowerCase();
   const searchActive = normalizedQuery.length > 0;
 
-  // Recursively keep a node if it (or any descendant) matches search + status.
   const filterTree = useCallback(
     (nodes: Node[]): Node[] => {
       const out: Node[] = [];
@@ -216,8 +230,7 @@ export default function AdminCategoriesPage() {
         const children = filterTree(getChildren(node));
         const haystack = `${node.name_en} ${node.name_bn ?? ""} ${node.slug}`.toLowerCase();
         const matchesQuery = !searchActive || haystack.includes(normalizedQuery);
-        const matchesStatus =
-          statusFilter === "all" || (statusFilter === "active" ? node.is_active : !node.is_active);
+        const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? node.is_active : !node.is_active);
         if ((matchesQuery && matchesStatus) || children.length > 0) {
           out.push({ ...node, subcategories: children as unknown as Subcategory[] });
         }
@@ -228,75 +241,55 @@ export default function AdminCategoriesPage() {
   );
 
   const filteredRoots = useMemo(() => filterTree(roots as unknown as Node[]), [filterTree, roots]);
-
-  // "See more" only applies when browsing (search shows all matches).
   const shownRoots = searchActive ? filteredRoots : filteredRoots.slice(0, visibleCount);
   const hasMore = !searchActive && filteredRoots.length > visibleCount;
 
   const parentOptions = useMemo(() => {
     const all = flattenForSelect(roots as unknown as Node[]);
-    // When editing, prevent picking self/descendants (avoids cycles). Not shown on edit anyway.
     const blocked = editor?.node ? selfAndDescendantIds(editor.node) : new Set<string>();
     return all.filter((o) => !blocked.has(o.id));
   }, [roots, editor]);
 
-  const totalNodes = useMemo(() => flattenForSelect(roots as unknown as Node[]).length, [roots]);
+  const stats = useMemo(() => {
+    const all = flattenAll(roots as unknown as Node[]);
+    const active = all.filter((n) => n.is_active !== false).length;
+    return { total: all.length, roots: roots.length, active, inactive: all.length - active };
+  }, [roots]);
 
-  const renderNode = (node: Node, depth: number): React.ReactNode => {
+  const drawerOpen = editor !== null;
+
+  // ---- Sub-category row ----
+  const SubRow = ({ node, accent }: { node: Node; accent: typeof ACCENTS[number] }) => (
+    <div className="flex items-center gap-2.5 sm:gap-3 rounded-xl border border-[var(--border,#e2e8f3)] bg-[var(--surface-2,#f4f7fc)] px-2.5 sm:px-3 py-2 transition-colors hover:bg-[var(--surface,#fff)] hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.03]">
+      {node.image_url ? (
+        <span className="relative w-9 h-9 rounded-[10px] overflow-hidden flex-shrink-0 ring-1 ring-black/5">
+          <Image src={node.image_url} alt="" fill className="object-cover" sizes="36px" />
+        </span>
+      ) : (
+        <span className="w-9 h-9 rounded-[10px] flex-shrink-0 grid place-items-center text-white text-sm font-semibold"
+          style={{ background: `linear-gradient(135deg, ${accent.from}, ${accent.to})` }}>
+          {tileGlyph(node)}
+        </span>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="font-medium text-[0.92rem] text-heading truncate">{getNodeLabel(node)}</p>
+        <p className="text-[0.72rem] text-gray-400 font-mono truncate">/{node.slug}</p>
+      </div>
+      <ToggleSwitch on={node.is_active !== false} onClick={() => void toggleActive(node)} />
+      <IconBtn title="Edit" onClick={() => openEdit(node)}><Pencil className="w-3.5 h-3.5" /></IconBtn>
+      <IconBtn title="Delete" danger onClick={() => void remove(node)}><Trash2 className="w-3.5 h-3.5" /></IconBtn>
+    </div>
+  );
+
+  // ---- Recursive branch under a root ----
+  const renderBranch = (node: Node, accent: typeof ACCENTS[number], depth: number): React.ReactNode => {
     const children = getChildren(node);
-    const scope = ((node as Partial<Category>).applies_to ?? []) as string[];
     return (
-      <div key={node.id}>
-        <div
-          className={cn(
-            "flex items-center gap-2 sm:gap-3 rounded-xl border bg-white px-2.5 sm:px-3 py-2 sm:py-2.5 transition-colors hover:border-brand-200",
-            depth === 0 ? "border-brand-100" : "border-gray-100"
-          )}
-        >
-          {node.image_url ? (
-            <span className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 ring-1 ring-gray-100">
-              <Image src={node.image_url} alt="" fill className="object-cover" sizes="44px" />
-            </span>
-          ) : (
-            <span className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-amber-50 text-amber-400 flex items-center justify-center flex-shrink-0 ring-1 ring-amber-100" title="ছবি নেই">
-              <ImageOff className="w-4 h-4" />
-            </span>
-          )}
-
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              <span className="font-semibold text-gray-900 truncate max-w-full">{getNodeLabel(node)}</span>
-              {depth === 0 ? (
-                <span className="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700">Root</span>
-              ) : (
-                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-600">Sub</span>
-              )}
-              <StatusBadge status={node.is_active ? "active" : "inactive"} />
-            </div>
-            <div className="mt-0.5 flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs text-gray-400">
-              <span className="font-mono truncate max-w-[160px] sm:max-w-none">/{node.slug}</span>
-              {scope.map((s) => (
-                <span key={`${node.id}-${s}`} className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 font-medium capitalize text-gray-600">{s}</span>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
-            <button type="button" onClick={() => openCreate(node)} title="সাব-ক্যাটাগরি যোগ" aria-label={`Add child to ${getNodeLabel(node)}`} className="p-1.5 rounded-lg text-brand-600 hover:bg-brand-50">
-              <Plus className="w-4 h-4" />
-            </button>
-            <button type="button" onClick={() => openEdit(node)} title="Edit" aria-label={`Edit ${getNodeLabel(node)}`} className="p-1.5 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50">
-              <Pencil className="w-4 h-4" />
-            </button>
-            <button type="button" onClick={() => void remove(node)} title="Delete" aria-label={`Delete ${getNodeLabel(node)}`} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50">
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {children.length > 0 && (
-          <div className="mt-1.5 space-y-1.5 ml-2 sm:ml-4 border-l-2 border-gray-100 pl-2 sm:pl-3">
-            {children.map((child) => renderNode(child, depth + 1))}
+      <div key={node.id} className="space-y-2">
+        <SubRow node={node} accent={accent} />
+        {children.length > 0 && depth < 4 && (
+          <div className="ml-3 sm:ml-5 border-l-2 border-dashed border-gray-200 dark:border-white/10 pl-2.5 sm:pl-3.5 space-y-2">
+            {children.map((c) => renderBranch(c, accent, depth + 1))}
           </div>
         )}
       </div>
@@ -304,249 +297,357 @@ export default function AdminCategoriesPage() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <AdminPageHeader
-        title="Categories"
-        titleBn="ক্যাটাগরি"
-        description={`${totalNodes} categories across ${roots.length} root groups`}
-        descriptionBn={`${roots.length}টি root গ্রুপে মোট ${totalNodes}টি ক্যাটাগরি`}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={() => void load()} className="btn btn-outline btn-sm">
-              <RefreshCw className="w-4 h-4" /> Refresh
+    <div className="space-y-5">
+      {/* ---------- Premium header ---------- */}
+      <header
+        className="relative overflow-hidden rounded-[20px] px-5 sm:px-7 py-6 sm:py-7 text-white shadow-[0_10px_40px_rgba(21,101,192,0.25)]"
+        style={{ background: "radial-gradient(120% 140% at 85% -20%, rgba(233,30,99,.38), transparent 55%), linear-gradient(135deg, #0d47a1, #1565c0)" }}
+      >
+        <div className="relative z-10 flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-[11px] tracking-[0.16em] uppercase font-bold text-white/70">ABO Enterprise · Admin</p>
+            <h1 className="mt-1.5 text-2xl sm:text-[2rem] font-extrabold tracking-tight text-balance">ক্যাটাগরি ব্যবস্থাপনা</h1>
+            <p className="mt-1 text-white/80 text-sm max-w-[46ch]">পণ্য ও সেবার সব ক্যাটাগরি এক জায়গায় — সুন্দর, দ্রুত ও সহজ।</p>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => void load()} title="Refresh"
+              className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white font-semibold text-sm px-3.5 py-2.5 rounded-xl transition-colors">
+              <RefreshCw className="w-4 h-4" />
             </button>
-            <button type="button" onClick={() => openCreate(null)} className="admin-btn-primary">
+            <button type="button" onClick={() => openCreate(null)}
+              className="inline-flex items-center gap-2 bg-white text-[#0d47a1] font-bold text-sm px-4 py-2.5 rounded-xl shadow-lg hover:-translate-y-0.5 transition-transform">
               <Plus className="w-4 h-4" /> নতুন ক্যাটাগরি
             </button>
           </div>
-        }
-      />
+        </div>
 
-      <AdminToolbar
-        searchValue={searchValue}
-        onSearchChange={(v) => {
-          setSearchValue(v);
-          setVisibleCount(PAGE_STEP);
-        }}
-        searchPlaceholder="নাম, বাংলা নাম বা slug দিয়ে খুঁজুন…"
-      >
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-          className="admin-input min-w-[140px]"
-        >
-          <option value="all">All Status</option>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
-      </AdminToolbar>
-
-      {loading ? (
-        <div className="admin-card p-12 flex justify-center">
-          <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
-        </div>
-      ) : roots.length === 0 ? (
-        <div className="admin-card">
-          <AdminEmptyState
-            icon={FolderTree}
-            title="এখনো কোনো ক্যাটাগরি নেই"
-            description={'"নতুন ক্যাটাগরি" চাপুন — যেমন Products, Services বা Repair'}
-            action={
-              <button type="button" onClick={() => openCreate(null)} className="admin-btn-primary">
-                <Plus className="w-4 h-4" /> প্রথম ক্যাটাগরি তৈরি করুন
-              </button>
-            }
-          />
-        </div>
-      ) : filteredRoots.length === 0 ? (
-        <div className="admin-card">
-          <AdminEmptyState
-            icon={FolderTree}
-            title="কোনো ফলাফল পাওয়া যায়নি"
-            description="Search বা status filter পরিবর্তন করে আবার চেষ্টা করুন।"
-          />
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {shownRoots.map((root) => (
-            <div key={root.id} className="admin-card p-3 sm:p-4">
-              {renderNode(root, 0)}
+        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-5">
+          {[
+            { n: stats.total, l: "মোট ক্যাটাগরি" },
+            { n: stats.roots, l: "Root গ্রুপ" },
+            { n: stats.active, l: "Active" },
+            { n: stats.inactive, l: "Inactive" },
+          ].map((s) => (
+            <div key={s.l} className="rounded-2xl bg-white/12 border border-white/18 px-3.5 py-3 backdrop-blur-sm">
+              <p className="text-2xl font-extrabold tabular-nums leading-none">{s.n}</p>
+              <p className="text-[0.72rem] uppercase tracking-wide text-white/75 mt-1.5 font-semibold">{s.l}</p>
             </div>
           ))}
+        </div>
+      </header>
+
+      {/* ---------- Toolbar ---------- */}
+      <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="relative flex-1 min-w-[220px]">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            value={searchValue}
+            onChange={(e) => { setSearchValue(e.target.value); setVisibleCount(PAGE_STEP); }}
+            placeholder="নাম, বাংলা নাম বা slug দিয়ে খুঁজুন…"
+            className="w-full text-sm rounded-xl border border-[var(--border,#e2e8f3)] bg-[var(--surface,#fff)] dark:bg-white/5 dark:border-white/10 pl-10 pr-3 py-2.5 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition"
+          />
+        </div>
+        <div className="inline-flex bg-[var(--surface,#fff)] dark:bg-white/5 border border-[var(--border,#e2e8f3)] dark:border-white/10 rounded-xl p-1">
+          {(["all", "active", "inactive"] as StatusFilter[]).map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => setStatusFilter(s)}
+              className={cn(
+                "text-[0.82rem] font-semibold px-3.5 py-2 rounded-lg capitalize transition",
+                statusFilter === s
+                  ? "bg-gradient-to-br from-brand-600 to-brand-800 text-white shadow-md shadow-brand-600/25"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
+              )}
+            >
+              {s === "all" ? "সব" : s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* ---------- List ---------- */}
+      {loading ? (
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="h-[86px] rounded-[20px] bg-gray-100 dark:bg-white/5 animate-pulse" />
+          ))}
+        </div>
+      ) : roots.length === 0 ? (
+        <EmptyState onCreate={() => openCreate(null)} title="এখনো কোনো ক্যাটাগরি নেই" desc={'"নতুন ক্যাটাগরি" চাপুন — যেমন Products, Services বা Repair'} />
+      ) : filteredRoots.length === 0 ? (
+        <EmptyState title="কোনো ফলাফল পাওয়া যায়নি" desc="Search বা status filter পরিবর্তন করে আবার চেষ্টা করুন।" />
+      ) : (
+        <div className="space-y-3.5">
+          {shownRoots.map((root, idx) => {
+            const accent = ACCENTS[idx % ACCENTS.length];
+            const kids = getChildren(root);
+            const isOpen = !collapsed.has(root.id);
+            const scope = ((root as Partial<Category>).applies_to ?? []) as string[];
+            return (
+              <div
+                key={root.id}
+                className="group relative overflow-hidden rounded-[20px] border border-[var(--border,#e2e8f3)] dark:border-white/10 bg-[var(--surface,#fff)] dark:bg-[#0f1d33] shadow-[0_1px_2px_rgba(16,40,80,.04),0_8px_24px_rgba(16,40,80,.06)] hover:shadow-[0_6px_16px_rgba(21,101,192,.10),0_18px_44px_rgba(16,40,80,.14)] hover:-translate-y-0.5 transition-all"
+              >
+                <span className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: accent.rail }} />
+                <div className="flex items-center gap-3 sm:gap-3.5 pl-5 sm:pl-6 pr-3.5 sm:pr-4 py-3.5 sm:py-4">
+                  {root.image_url ? (
+                    <span className="relative w-12 h-12 sm:w-[54px] sm:h-[54px] rounded-[15px] overflow-hidden flex-shrink-0 ring-1 ring-black/5">
+                      <Image src={root.image_url} alt="" fill className="object-cover" sizes="54px" />
+                    </span>
+                  ) : (
+                    <span className="w-12 h-12 sm:w-[54px] sm:h-[54px] rounded-[15px] flex-shrink-0 grid place-items-center text-white text-xl font-bold shadow-inner"
+                      style={{ background: `linear-gradient(135deg, ${accent.from}, ${accent.to})` }}>
+                      {tileGlyph(root)}
+                    </span>
+                  )}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-bold text-[1.02rem] sm:text-[1.06rem] text-heading tracking-tight truncate max-w-full">{root.name_en}</span>
+                      {root.name_bn && <span className="text-sm text-gray-500 dark:text-gray-400">{root.name_bn}</span>}
+                      <span className="text-[0.62rem] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-brand-500/12 text-brand-600">Root</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mt-1.5 text-xs">
+                      <span className="font-mono text-gray-400 truncate max-w-[150px] sm:max-w-none">/{root.slug}</span>
+                      {scope.map((s) => (
+                        <span key={s} className={cn("px-2 py-0.5 rounded-full font-semibold text-[0.72rem]", s === "service" ? "bg-accent-500/10 text-accent-600" : "bg-brand-500/10 text-brand-600")}>
+                          {s === "service" ? "Service" : "Product"}
+                        </span>
+                      ))}
+                      {kids.length > 0 && (
+                        <span className="px-2 py-0.5 rounded-full font-semibold text-[0.72rem] bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/10">{kids.length}টি সাব</span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                    <ToggleSwitch on={root.is_active !== false} onClick={() => void toggleActive(root)} />
+                    <IconBtn title="সাব যোগ" onClick={() => openCreate(root)} accentHover><Plus className="w-4 h-4" /></IconBtn>
+                    <IconBtn title="Edit" onClick={() => openEdit(root)}><Pencil className="w-4 h-4" /></IconBtn>
+                    <IconBtn title="Delete" danger onClick={() => void remove(root)}><Trash2 className="w-4 h-4" /></IconBtn>
+                    {kids.length > 0 && (
+                      <IconBtn
+                        title={isOpen ? "বন্ধ" : "খুলুন"}
+                        onClick={() => setCollapsed((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(root.id)) next.delete(root.id); else next.add(root.id);
+                          return next;
+                        })}
+                      >
+                        <ChevronDown className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")} />
+                      </IconBtn>
+                    )}
+                  </div>
+                </div>
+
+                {kids.length > 0 && (
+                  <div className={cn("grid transition-all duration-300 ease-out", isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0")}>
+                    <div className="overflow-hidden">
+                      <div className="pl-5 sm:pl-6 pr-3.5 sm:pr-4 pb-4">
+                        <div className="ml-[26px] sm:ml-8 border-l-2 border-dashed border-gray-200 dark:border-white/10 pl-3 sm:pl-4 space-y-2 pt-1">
+                          {kids.map((c) => renderBranch(c, accent, 1))}
+                          <button type="button" onClick={() => openCreate(root)}
+                            className="inline-flex items-center gap-1.5 text-brand-600 border border-dashed border-gray-300 dark:border-white/15 rounded-[10px] px-3 py-2 text-[0.82rem] font-semibold hover:bg-brand-500/[0.06] hover:border-brand-500 transition mt-0.5">
+                            <Plus className="w-3.5 h-3.5" /> সাব-ক্যাটাগরি যোগ
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           {hasMore && (
-            <div className="flex justify-center pt-1">
-              <button
-                type="button"
-                onClick={() => setVisibleCount((c) => c + PAGE_STEP)}
-                className="btn btn-outline btn-sm"
-              >
-                <ChevronDown className="w-4 h-4" />
-                আরও দেখুন ({filteredRoots.length - visibleCount})
-              </button>
-            </div>
+            <button type="button" onClick={() => setVisibleCount((c) => c + PAGE_STEP)}
+              className="block mx-auto mt-2 bg-[var(--surface,#fff)] dark:bg-white/5 border border-[var(--border,#e2e8f3)] dark:border-white/10 text-gray-500 dark:text-gray-400 font-semibold text-sm px-6 py-2.5 rounded-xl hover:border-brand-500 hover:text-brand-600 transition inline-flex items-center gap-1.5">
+              <ChevronDown className="w-4 h-4" /> আরও দেখুন ({filteredRoots.length - visibleCount})
+            </button>
           )}
         </div>
       )}
 
-      {editor && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:p-4" role="dialog" aria-modal="true">
-          <div ref={editorRef} className="bg-white dark:bg-[var(--surface-card)] w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl p-5 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <h2 className="font-bold text-heading">
-                  {editor.node
-                    ? `সম্পাদনা: ${getNodeLabel(editor.node)}`
-                    : editor.parentId
-                      ? `নতুন সাব-ক্যাটাগরি — ${editor.parentName ?? ""}-এর ভেতরে`
-                      : "নতুন ক্যাটাগরি"}
-                </h2>
-                {editor.node && <p className="text-xs text-gray-400 mt-1 font-mono">/{form.slug}</p>}
-              </div>
-              <button type="button" onClick={() => setEditor(null)} aria-label="Close" className="p-1.5 text-muted hover:text-heading">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {/* ---------- Drawer form ---------- */}
+      <div
+        onClick={() => setEditor(null)}
+        className={cn("fixed inset-0 z-40 bg-[#08111f]/50 backdrop-blur-[2px] transition-opacity", drawerOpen ? "opacity-100" : "opacity-0 pointer-events-none")}
+      />
+      <aside
+        ref={editorRef}
+        className={cn(
+          "fixed z-50 bg-[var(--surface,#fff)] dark:bg-[#0f1d33] flex flex-col transition-transform duration-300 ease-[cubic-bezier(.4,0,.2,1)]",
+          "left-0 right-0 bottom-0 rounded-t-3xl max-h-[94vh]",
+          "sm:left-auto sm:top-0 sm:right-0 sm:bottom-0 sm:w-[440px] sm:max-h-none sm:rounded-none sm:border-l sm:border-[var(--border,#e2e8f3)] sm:dark:border-white/10",
+          drawerOpen ? "translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-y-0 sm:translate-x-full"
+        )}
+        role="dialog"
+        aria-modal="true"
+        aria-hidden={!drawerOpen}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border,#e2e8f3)] dark:border-white/10">
+          <h3 className="font-bold text-[1.05rem] text-heading">
+            {editor?.node ? `সম্পাদনা: ${getNodeLabel(editor.node)}` : editor?.parentId ? `নতুন সাব — ${editor.parentName ?? ""}` : "নতুন ক্যাটাগরি"}
+          </h3>
+          <button type="button" onClick={() => setEditor(null)} aria-label="বন্ধ" className="w-9 h-9 grid place-items-center rounded-[10px] bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-gray-700">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="cat-name-en" className="form-label">Name (English) *</label>
-                  <input
-                    id="cat-name-en"
-                    value={form.name_en}
-                    onChange={(e) => setForm((prev) => ({ ...prev, name_en: e.target.value, slug: prev.slug || slugify(e.target.value) }))}
-                    className="admin-input text-sm"
-                    placeholder="Fast Chargers"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="cat-name-bn" className="form-label">নাম (বাংলা)</label>
-                  <input
-                    id="cat-name-bn"
-                    value={form.name_bn}
-                    onChange={(e) => setForm((prev) => ({ ...prev, name_bn: e.target.value }))}
-                    className="admin-input text-sm"
-                    placeholder="ফাস্ট চার্জার"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="cat-slug" className="form-label">Slug (URL)</label>
-                  <input
-                    id="cat-slug"
-                    value={form.slug}
-                    onChange={(e) => setForm((prev) => ({ ...prev, slug: slugify(e.target.value) }))}
-                    className="admin-input text-sm font-mono"
-                    placeholder="auto"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="cat-sort-order" className="form-label">Sort Order</label>
-                  <input
-                    id="cat-sort-order"
-                    type="number"
-                    value={form.sort_order}
-                    onChange={(e) => setForm((prev) => ({ ...prev, sort_order: Number(e.target.value) || 0 }))}
-                    className="admin-input text-sm"
-                  />
-                </div>
-              </div>
-
-              {/* Parent picker — only when creating (editing keeps the node in place, no re-parenting). */}
-              {!editor.node && (
-                <div>
-                  <label htmlFor="cat-parent" className="form-label">Parent ক্যাটাগরি</label>
-                  <select
-                    id="cat-parent"
-                    value={form.parent_id ?? ""}
-                    onChange={(e) => setForm((prev) => ({ ...prev, parent_id: e.target.value || null }))}
-                    className="admin-input text-sm"
-                  >
-                    <option value="">— None (root ক্যাটাগরি) —</option>
-                    {parentOptions.map((o) => (
-                      <option key={o.id} value={o.id}>
-                        {"— ".repeat(o.depth)}{o.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div>
-                <label htmlFor="cat-icon" className="form-label">Icon (ঐচ্ছিক)</label>
-                <input
-                  id="cat-icon"
-                  value={form.icon}
-                  onChange={(e) => setForm((prev) => ({ ...prev, icon: e.target.value }))}
-                  className="admin-input text-sm"
-                  placeholder="lucide নাম বা emoji"
-                />
-              </div>
-
-              <div>
-                <label htmlFor="cat-desc-bn" className="form-label">বর্ণনা (ঐচ্ছিক)</label>
-                <textarea
-                  id="cat-desc-bn"
-                  value={form.description_bn}
-                  rows={2}
-                  onChange={(e) => setForm((prev) => ({ ...prev, description_bn: e.target.value }))}
-                  className="admin-input text-sm resize-none"
-                />
-              </div>
-
-              <div>
-                <span className="form-label block">ছবি (কার্ড/ব্যানারে দেখাবে)</span>
-                <ImageUpload value={form.image_url} onChange={(url) => setForm((prev) => ({ ...prev, image_url: url }))} />
-              </div>
-
-              {/* Scope only applies to root categories (children inherit it). */}
-              {!form.parent_id && (
-                <fieldset>
-                  <legend className="form-label">কোন ধরনের ক্যাটাগরি?</legend>
-                  <div className="flex gap-4 mt-1">
-                    {APPLIES.map((scope) => (
-                      <label key={scope} className="inline-flex items-center gap-1.5 cursor-pointer text-sm capitalize">
-                        <input
-                          type="checkbox"
-                          checked={form.applies_to.includes(scope)}
-                          onChange={(e) => setForm((prev) => ({
-                            ...prev,
-                            applies_to: e.target.checked
-                              ? [...prev.applies_to, scope]
-                              : prev.applies_to.filter((value) => value !== scope),
-                          }))}
-                          className="w-4 h-4 text-brand-600 rounded"
-                        />
-                        {scope === "product" ? "Product (কেনাকাটা)" : "Service (বুকিং)"}
-                      </label>
-                    ))}
-                  </div>
-                </fieldset>
-              )}
-
-              <label className="inline-flex items-center gap-2 cursor-pointer text-sm">
-                <input
-                  type="checkbox"
-                  checked={form.is_active}
-                  onChange={(e) => setForm((prev) => ({ ...prev, is_active: e.target.checked }))}
-                  className="w-4 h-4 text-brand-600 rounded"
-                />
-                সক্রিয় (সাইটে দেখাবে)
-              </label>
-            </div>
-
-            <div className="flex gap-3 mt-5">
-              <button type="button" onClick={() => void save()} disabled={busy} className="admin-btn-primary flex-1">
-                {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {editor.node ? "সংরক্ষণ" : "তৈরি করুন"}
-              </button>
-              <button type="button" onClick={() => setEditor(null)} className="btn btn-outline btn-md">বাতিল</button>
+        <div className="px-5 py-4 overflow-y-auto flex flex-col gap-4">
+          {/* live preview */}
+          <div className="flex items-center gap-3 rounded-2xl border border-[var(--border,#e2e8f3)] dark:border-white/10 p-3 bg-gradient-to-br from-[var(--surface-2,#f4f7fc)] to-transparent dark:from-white/5">
+            {form.image_url ? (
+              <span className="relative w-[54px] h-[54px] rounded-[15px] overflow-hidden flex-shrink-0 ring-1 ring-black/5">
+                <Image src={form.image_url} alt="" fill className="object-cover" sizes="54px" />
+              </span>
+            ) : (
+              <span className="w-[54px] h-[54px] rounded-[15px] flex-shrink-0 grid place-items-center text-white text-xl font-bold" style={{ background: "linear-gradient(135deg,#1565c0,#0d47a1)" }}>
+                {form.icon && [...form.icon].length <= 2 ? form.icon : (form.name_en || "?").charAt(0).toUpperCase()}
+              </span>
+            )}
+            <div className="min-w-0">
+              <p className="font-bold text-[1.02rem] text-heading truncate">{form.name_en || "নতুন ক্যাটাগরি"}</p>
+              <p className="text-[0.76rem] text-gray-400 font-mono truncate">/{form.slug || slugify(form.name_en) || "slug"}</p>
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Name (English) *">
+              <input value={form.name_en} onChange={(e) => setForm((p) => ({ ...p, name_en: e.target.value, slug: p.slug || slugify(e.target.value) }))} className={INP_CLS} placeholder="Fast Chargers" />
+            </Field>
+            <Field label="নাম (বাংলা)">
+              <input value={form.name_bn} onChange={(e) => setForm((p) => ({ ...p, name_bn: e.target.value }))} className={INP_CLS} placeholder="ফাস্ট চার্জার" />
+            </Field>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Slug (URL)">
+              <input value={form.slug} onChange={(e) => setForm((p) => ({ ...p, slug: slugify(e.target.value) }))} className={cn(INP_CLS, "font-mono")} placeholder="auto" />
+            </Field>
+            <Field label="Sort Order">
+              <input type="number" value={form.sort_order} onChange={(e) => setForm((p) => ({ ...p, sort_order: Number(e.target.value) || 0 }))} className={INP_CLS} />
+            </Field>
+          </div>
+
+          {!editor?.node && (
+            <Field label="Parent ক্যাটাগরি">
+              <select value={form.parent_id ?? ""} onChange={(e) => setForm((p) => ({ ...p, parent_id: e.target.value || null }))} className={INP_CLS}>
+                <option value="">— None (root ক্যাটাগরি) —</option>
+                {parentOptions.map((o) => (
+                  <option key={o.id} value={o.id}>{"— ".repeat(o.depth)}{o.label}</option>
+                ))}
+              </select>
+            </Field>
+          )}
+
+          <Field label="Icon (ঐচ্ছিক)">
+            <input value={form.icon} onChange={(e) => setForm((p) => ({ ...p, icon: e.target.value }))} className={INP_CLS} placeholder="lucide নাম বা emoji (📦)" />
+          </Field>
+
+          <Field label="বর্ণনা (ঐচ্ছিক)">
+            <textarea rows={2} value={form.description_bn} onChange={(e) => setForm((p) => ({ ...p, description_bn: e.target.value }))} className={cn(INP_CLS, "resize-none")} />
+          </Field>
+
+          <div>
+            <span className={LBL_CLS}>ছবি (কার্ড/ব্যানারে দেখাবে)</span>
+            <ImageUpload value={form.image_url} onChange={(url) => setForm((p) => ({ ...p, image_url: url }))} />
+          </div>
+
+          {!form.parent_id && (
+            <div>
+              <span className={LBL_CLS}>কোন ধরনের ক্যাটাগরি?</span>
+              <div className="flex gap-2">
+                {APPLIES.map((s) => {
+                  const on = form.applies_to.includes(s);
+                  return (
+                    <button key={s} type="button"
+                      onClick={() => setForm((p) => ({ ...p, applies_to: on ? p.applies_to.filter((x) => x !== s) : [...p.applies_to, s] }))}
+                      className={cn("flex-1 rounded-xl border py-2.5 text-sm font-semibold transition", on ? "border-brand-500 bg-brand-500/[0.08] text-brand-600" : "border-[var(--border,#e2e8f3)] dark:border-white/10 text-gray-500")}>
+                      {s === "product" ? "Product (কেনাকাটা)" : "Service (বুকিং)"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <label className="inline-flex items-center gap-2.5 cursor-pointer text-sm">
+            <ToggleSwitch on={form.is_active} onClick={() => setForm((p) => ({ ...p, is_active: !p.is_active }))} />
+            <span className="font-medium text-heading">সক্রিয় (সাইটে দেখাবে)</span>
+          </label>
         </div>
+
+        <div className="px-5 py-3.5 border-t border-[var(--border,#e2e8f3)] dark:border-white/10 flex gap-2.5">
+          <button type="button" onClick={() => void save()} disabled={busy}
+            className="flex-1 inline-flex items-center justify-center gap-2 bg-gradient-to-br from-brand-600 to-brand-800 text-white font-bold text-[0.92rem] py-3 rounded-xl shadow-lg shadow-brand-600/25 disabled:opacity-60 transition">
+            {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {editor?.node ? "সংরক্ষণ" : "তৈরি করুন"}
+          </button>
+          <button type="button" onClick={() => setEditor(null)} className="bg-gray-100 dark:bg-white/10 text-gray-500 font-semibold text-sm px-5 py-3 rounded-xl">বাতিল</button>
+        </div>
+      </aside>
+
+    </div>
+  );
+}
+
+/* ---------------- small building blocks ---------------- */
+
+function ToggleSwitch({ on, onClick }: { on: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={on}
+      title={on ? "Active" : "Inactive"}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className={cn("relative w-11 h-[26px] rounded-full flex-shrink-0 transition-colors", on ? "bg-emerald-500" : "bg-gray-300 dark:bg-white/20")}
+    >
+      <span className={cn("absolute top-[3px] left-[3px] w-5 h-5 rounded-full bg-white shadow transition-transform", on && "translate-x-[18px]")} />
+    </button>
+  );
+}
+
+function IconBtn({ children, title, onClick, danger, accentHover }: { children: React.ReactNode; title: string; onClick: () => void; danger?: boolean; accentHover?: boolean }) {
+  return (
+    <button
+      type="button"
+      title={title}
+      aria-label={title}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className={cn(
+        "w-9 h-9 rounded-[11px] grid place-items-center border border-transparent bg-[var(--surface-2,#f4f7fc)] dark:bg-white/5 text-gray-500 dark:text-gray-400 transition",
+        danger ? "hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10" : accentHover ? "hover:text-brand-600 hover:bg-brand-500/10" : "hover:text-brand-600 hover:border-gray-200 dark:hover:border-white/10"
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className={LBL_CLS}>{label}</span>
+      {children}
+    </label>
+  );
+}
+
+function EmptyState({ title, desc, onCreate }: { title: string; desc: string; onCreate?: () => void }) {
+  return (
+    <div className="rounded-[20px] border border-[var(--border,#e2e8f3)] dark:border-white/10 bg-[var(--surface,#fff)] dark:bg-[#0f1d33] p-12 text-center">
+      <div className="w-14 h-14 mx-auto rounded-2xl bg-brand-500/10 text-brand-600 grid place-items-center mb-4">
+        <FolderTree className="w-7 h-7" />
+      </div>
+      <h3 className="font-bold text-heading">{title}</h3>
+      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 max-w-sm mx-auto">{desc}</p>
+      {onCreate && (
+        <button type="button" onClick={onCreate} className="mt-5 inline-flex items-center gap-2 bg-gradient-to-br from-brand-600 to-brand-800 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-brand-600/25">
+          <Plus className="w-4 h-4" /> প্রথম ক্যাটাগরি তৈরি করুন
+        </button>
       )}
     </div>
   );

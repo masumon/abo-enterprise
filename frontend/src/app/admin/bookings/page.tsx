@@ -68,7 +68,6 @@ export default function AdminBookingsPage() {
       setTotal(r.data.meta?.total ?? 0);
     } catch (err) {
       toast("error", "Failed to load bookings");
-      console.error("Bookings load error:", err);
     } finally {
       setLoading(false);
     }
@@ -82,7 +81,6 @@ export default function AdminBookingsPage() {
       setTotalV2(r.data.meta?.total ?? 0);
     } catch (err) {
       toast("error", "Failed to load service bookings");
-      console.error("Service bookings load error:", err);
     } finally {
       setLoadingV2(false);
     }

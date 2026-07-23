@@ -11,7 +11,7 @@ import { useLanguageStore } from "@/store/language";
 export default function AdminTitle({
   en,
   bn,
-  className = "text-2xl font-bold text-gray-900",
+  className = "text-2xl font-bold text-heading tracking-tight",
 }: {
   en: string;
   bn: string;

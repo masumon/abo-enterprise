@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { LayoutTemplate, Save, Loader2 } from "lucide-react";
+import { Save, Loader2 } from "lucide-react";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
@@ -45,21 +46,19 @@ export default function AdminHomepageContentPage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center">
-            <LayoutTemplate className="w-5 h-5 text-brand-600" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-heading">{bn ? "হোমপেজ কনটেন্ট" : "Homepage Content"}</h1>
-            <p className="text-xs text-muted">{bn ? "ট্রাস্ট ব্যাজ, কেন আমরা, প্রশ্নোত্তর, ক্যাটাগরি ও এন্ট্রি কার্ড" : "Trust badges, Why Choose Us, FAQ, categories & entry cards"}</p>
-          </div>
-        </div>
-        <button type="button" onClick={save} disabled={saving || loading} className="btn btn-brand btn-sm disabled:opacity-60">
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {bn ? "সংরক্ষণ" : "Save all"}
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Homepage Content"
+        titleBn="হোমপেজ কনটেন্ট"
+        description="Trust badges, Why Choose Us, FAQ, categories & entry cards"
+        descriptionBn="ট্রাস্ট ব্যাজ, কেন আমরা, প্রশ্নোত্তর, ক্যাটাগরি ও এন্ট্রি কার্ড"
+        className="mb-6"
+        actions={
+          <button type="button" onClick={save} disabled={saving || loading} className="btn btn-brand btn-sm disabled:opacity-60">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {bn ? "সংরক্ষণ" : "Save all"}
+          </button>
+        }
+      />
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-brand-500" /></div>

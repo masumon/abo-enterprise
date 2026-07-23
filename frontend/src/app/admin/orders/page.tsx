@@ -66,7 +66,6 @@ export default function AdminOrdersPage() {
       setLoadError(null);
     } catch (err) {
       setLoadError(apiErrorMessage(err, "Failed to load orders. Please retry."));
-      console.error("Orders load error:", err);
     } finally {
       setLoading(false);
     }
@@ -106,7 +105,6 @@ export default function AdminOrdersPage() {
       toast("success", `Order status updated to ${status}`);
     } catch (err) {
       toast("error", "Failed to update order status");
-      console.error("Status update error:", err);
     } finally {
       setUpdatingId(null);
     }
@@ -196,13 +194,11 @@ export default function AdminOrdersPage() {
       const r = await ordersApi.get(id);
       if (!r?.data?.data) {
         toast("error", "Order details not found in response");
-        console.error("Empty order response", r);
         return;
       }
       const data = r.data.data as unknown as AdminOrder;
       if (!data.id || !data.order_number) {
         toast("error", "Invalid order data structure");
-        console.error("Invalid order structure", data);
         return;
       }
       setDetail(data);
@@ -211,7 +207,6 @@ export default function AdminOrdersPage() {
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       toast("error", `Failed to load order: ${errorMsg}`);
-      console.error("Order detail error:", err);
     } finally {
       setDetailLoading(false);
     }
