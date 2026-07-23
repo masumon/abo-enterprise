@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ShoppingCart, Menu, X, Globe, Search, Briefcase, Moon, Sun, ChevronDown,
+  ShoppingCart, Menu, X, Globe, Search, Briefcase, Moon, Sun, ChevronDown, User,
 } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
@@ -192,6 +192,18 @@ export default function Navbar() {
               <Globe className="w-3.5 h-3.5" strokeWidth={2.5} />
               {lang === "en" ? "বাং" : "EN"}
             </button>
+
+            <Link
+              href="/login"
+              aria-label={lang === "bn" ? "গ্রাহক লগইন / ড্যাশবোর্ড" : "Customer login / dashboard"}
+              title={lang === "bn" ? "গ্রাহক লগইন" : "Customer login"}
+              className={cn(
+                "w-11 h-11 items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation",
+                searchOpen ? "hidden sm:flex" : "flex"
+              )}
+            >
+              <User className="w-[19px] h-[19px]" strokeWidth={2.5} />
+            </Link>
 
             <Link
               href="/cart"

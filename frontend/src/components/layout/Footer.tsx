@@ -17,6 +17,7 @@ import {
   Instagram,
   Linkedin,
   Youtube,
+  ChevronDown,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
@@ -99,10 +100,22 @@ function FooterLink({
 }
 
 function FooterColumn({ title, children }: { title: string; children: React.ReactNode }) {
+  // Collapsible on mobile (keeps the footer short & tidy); always open on sm+.
+  const [open, setOpen] = useState(false);
   return (
-    <div>
-      <h4 className="footer-column-title">{title}</h4>
-      {children}
+    <div className="border-b border-white/10 pb-3 sm:border-0 sm:pb-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="w-full flex items-center justify-between gap-2 sm:pointer-events-none"
+      >
+        <h4 className="footer-column-title !mb-0 sm:!mb-4">{title}</h4>
+        <ChevronDown className={cn("w-4 h-4 text-white/50 shrink-0 sm:hidden transition-transform duration-200", open && "rotate-180")} aria-hidden />
+      </button>
+      <div className={cn("grid transition-all duration-300 sm:!grid-rows-[1fr] sm:!opacity-100", open ? "grid-rows-[1fr] opacity-100 mt-3 sm:mt-0" : "grid-rows-[0fr] opacity-0 sm:opacity-100")}>
+        <div className="overflow-hidden">{children}</div>
+      </div>
     </div>
   );
 }
