@@ -46,12 +46,17 @@ function displayStat(actual: number, floor: number): number {
 export default function Hero() {
   const { lang } = useLanguageStore();
   const t = useT();
-  const { settings } = usePublicSettings(["hero_image_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "free_delivery_min_amount"]);
+  const { settings } = usePublicSettings(["hero_image_url", "hero_mobile_image_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "free_delivery_min_amount"]);
   const [stats, setStats] = useState<StatsData>(FALLBACK_STATS);
   const [activity, setActivity] = useState<ActivityItem[]>(FALLBACK_ACTIVITY);
 
   const heroImage = resolveHomeBannerImage(settings);
   const heroIsVideo = isVideoUrl(heroImage);
+  // Admin-managed mobile-only hero background (portrait-friendly). When set it
+  // sits behind the text on phones with a dark overlay; the media card is then
+  // hidden. Empty → clean gradient (unchanged).
+  const heroMobileImg = getSettingValue(settings, "hero_mobile_image_url");
+  const heroMobileIsVideo = isVideoUrl(heroMobileImg);
   const heroTitleOverride = lang === "bn"
     ? getSettingValue(settings, "hero_title_bn")
     : getSettingValue(settings, "hero_title_en");
@@ -81,6 +86,19 @@ export default function Hero() {
     <section
       className="gradient-hero lg:min-h-[92vh] lg:min-h-[92dvh] flex items-center relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]"
     >
+      {/* Admin-managed MOBILE hero background (portrait). Behind the text with a
+          dark overlay so it stays readable. Empty → clean gradient. lg:hidden. */}
+      {heroMobileImg && (
+        <div className="lg:hidden absolute inset-0" aria-hidden>
+          {heroMobileIsVideo ? (
+            <video className="absolute inset-0 w-full h-full object-cover" src={heroMobileImg} autoPlay muted loop playsInline />
+          ) : (
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroMobileImg})` }} />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-brand-950/70 via-brand-900/55 to-gray-950/85" />
+        </div>
+      )}
+
       {/* Media background is DESKTOP-ONLY. On mobile the hero keeps the clean
           brand gradient and the uploaded image/video shows in a card below the
           text — so text stays crisp and the media is never cropped. */}
@@ -171,8 +189,8 @@ export default function Hero() {
             </div>
 
             {/* Mobile-only media card — shows the uploaded image/video in full
-                (no crop), so the busy banner never sits behind the text. */}
-            {heroImage && (
+                (no crop). Hidden when a dedicated mobile background is set. */}
+            {heroImage && !heroMobileImg && (
               <div className="lg:hidden pt-1">
                 <div className="rounded-2xl overflow-hidden border border-white/25 shadow-2xl bg-black/20">
                   {heroIsVideo ? (

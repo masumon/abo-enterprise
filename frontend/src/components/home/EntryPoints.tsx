@@ -106,9 +106,14 @@ export default function EntryPoints() {
                 <div className={`h-1 w-full bg-gradient-to-r ${style.gradient}`} />
 
                 <div className="p-6 flex flex-col flex-1">
-                  {/* Icon */}
-                  <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${style.gradient} flex items-center justify-center mb-5 shadow-lg group-hover:scale-105 transition-transform`}>
-                    <Icon className="w-7 h-7 text-white" />
+                  {/* Icon + "which of the 3 paths" badge */}
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className={`relative w-14 h-14 rounded-2xl bg-gradient-to-br ${style.gradient} flex items-center justify-center shadow-lg overflow-hidden group-hover:scale-105 transition-transform after:absolute after:inset-0 after:bg-gradient-to-br after:from-white/35 after:to-transparent`}>
+                      <Icon className="relative z-10 w-7 h-7 text-white" />
+                    </div>
+                    <span className={`ml-auto text-[11px] font-bold px-2.5 py-1 rounded-full ${style.lightBg} ${style.lightText} border ${style.border}`}>
+                      {lang === "bn" ? `পথ ${i + 1}/${entries.length}` : `Path ${i + 1}/${entries.length}`}
+                    </span>
                   </div>
 
                   {/* Title */}
@@ -135,11 +140,11 @@ export default function EntryPoints() {
                     </div>
                   )}
 
-                  {/* CTA */}
-                  <div className={`flex items-center gap-2 font-semibold text-sm ${style.lightText} group-hover:gap-3 transition-all`}>
+                  {/* CTA — filled gradient button so it's obvious where to tap */}
+                  <span className={`mt-auto inline-flex items-center justify-center gap-2 text-white font-semibold text-sm py-2.5 rounded-xl bg-gradient-to-r ${style.gradient} shadow-md group-hover:gap-3 transition-all`}>
                     {lang === "bn" ? entry.cta_bn || entry.cta_en : entry.cta_en || entry.cta_bn}
                     <ArrowRight className="w-4 h-4" />
-                  </div>
+                  </span>
                 </div>
               </Link>
             );
