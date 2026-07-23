@@ -111,27 +111,21 @@ export default function AdminMediaPage() {
   const [reviews, setReviews] = useState<{ id: string; customer_name: string; photo_url: string | null }[]>([]);
   const [demoReviews, setDemoReviews] = useState<Review[]>([]);
   const [catalogOpen, setCatalogOpen] = useState<Record<string, boolean>>({});
+  const [catalogLoaded, setCatalogLoaded] = useState(false);
+  const [catalogLoading, setCatalogLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [settingsRes, productsRes, servicesRes, blogRes, reviewsRes] = await Promise.all([
-        adminApi.getSettings(),
-        productsApi.adminList({ page: 1, per_page: 100 }),
-        servicesAdminApi.list({ page: 1, per_page: 100 }),
-        adminBlogApi.list({ page: 1, per_page: 100 }),
-        api.get("/api/v1/reviews/admin", { params: { page: 1, per_page: 100 } }),
-      ]);
+      // Only settings load up front — the heavy catalog lists (products,
+      // services, blog, reviews) are fetched lazily when the Catalog tab opens.
+      const settingsRes = await adminApi.getSettings();
       const s = settingsRes.data.data ?? {};
       setValues(s);
       setTeam(parseJson<CmsTeamMember[]>(s[JSON_IMAGE_SETTINGS.team.key] ?? "", []));
       setClients(parseJson<CmsClientLogo[]>(s[JSON_IMAGE_SETTINGS.clients.key] ?? "", []));
       setProjects(parseJson<ShowcaseProject[]>(s[SHOWCASE_PROJECTS_KEY] ?? "", []));
       setServiceCards(parseJson<SoftwareServiceCard[]>(s[SOFTWARE_SERVICE_CARDS_KEY] ?? "", []));
-      setProducts(productsRes.data.data ?? []);
-      setServices(servicesRes.data.data ?? []);
-      setPosts(blogRes.data.data ?? []);
-      setReviews((reviewsRes.data.data ?? []) as typeof reviews);
       setDemoReviews(parseJson<Review[]>(s[DEMO_REVIEWS_KEY] ?? "", []));
     } catch (e) {
       toast("error", apiErrorMessage(e, "Failed to load media"));
@@ -140,9 +134,35 @@ export default function AdminMediaPage() {
     }
   }, [toast]);
 
+  const loadCatalog = useCallback(async () => {
+    setCatalogLoading(true);
+    try {
+      const [productsRes, servicesRes, blogRes, reviewsRes] = await Promise.all([
+        productsApi.adminList({ page: 1, per_page: 100 }),
+        servicesAdminApi.list({ page: 1, per_page: 100 }),
+        adminBlogApi.list({ page: 1, per_page: 100 }),
+        api.get("/api/v1/reviews/admin", { params: { page: 1, per_page: 100 } }),
+      ]);
+      setProducts(productsRes.data.data ?? []);
+      setServices(servicesRes.data.data ?? []);
+      setPosts(blogRes.data.data ?? []);
+      setReviews((reviewsRes.data.data ?? []) as typeof reviews);
+      setCatalogLoaded(true);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to load catalog images"));
+    } finally {
+      setCatalogLoading(false);
+    }
+  }, [toast]);
+
   useEffect(() => {
     load();
   }, [load]);
+
+  // Fetch catalog lists the first time the Catalog tab is opened.
+  useEffect(() => {
+    if (tab === "catalog" && !catalogLoaded && !catalogLoading) void loadCatalog();
+  }, [tab, catalogLoaded, catalogLoading, loadCatalog]);
 
   const saveSettings = async (sectionId: string, items: { key: string; value: string; data_type?: string }[]) => {
     setSaving(sectionId);
@@ -530,7 +550,13 @@ export default function AdminMediaPage() {
         </div>
       )}
 
-      {tab === "catalog" && (
+      {tab === "catalog" && catalogLoading && !catalogLoaded && (
+        <div className="flex justify-center py-16">
+          <Loader2 className="w-7 h-7 animate-spin text-brand-500" />
+        </div>
+      )}
+
+      {tab === "catalog" && catalogLoaded && (
         <div className="space-y-4">
           {CATALOG_IMAGE_SECTIONS.map((section) => {
             const open = catalogOpen[section.id] ?? true;
