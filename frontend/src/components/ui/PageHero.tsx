@@ -2,7 +2,7 @@
 
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { cn } from "@/lib/utils";
-import { isVideoUrl } from "@/lib/media";
+import { isVideoUrl, toPlayableVideoUrl } from "@/lib/media";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
 import {
   bannerSettingKey,
@@ -88,7 +88,7 @@ export default function PageHero({
         <>
           <video
             className="absolute inset-0 w-full h-full object-cover"
-            src={resolvedImage!}
+            src={toPlayableVideoUrl(resolvedImage!)}
             autoPlay
             muted
             loop
@@ -100,8 +100,9 @@ export default function PageHero({
       )}
       {isBrand && (
         <div className="absolute inset-0 pointer-events-none" aria-hidden>
-          {/* Layered glows give the strip the same depth as the homepage hero. */}
-          <div className="absolute -top-10 right-0 w-80 h-80 bg-white/[0.07] rounded-full blur-3xl" />
+          {/* Dot-grid + layered glows give the strip the homepage hero's depth. */}
+          <div className="absolute inset-0 opacity-[0.12] bg-[radial-gradient(circle,rgba(255,255,255,0.5)_1px,transparent_1.5px)] [background-size:20px_20px]" />
+          <div className="absolute -top-10 right-0 w-80 h-80 bg-white/[0.07] rounded-full blur-3xl animate-float" />
           <div className="absolute -bottom-16 left-0 w-72 h-72 bg-accent-500/15 rounded-full blur-3xl" />
           <div className="absolute top-0 left-1/3 w-64 h-40 bg-brand-400/10 rounded-full blur-3xl" />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(255,255,255,0.10),transparent_45%)]" />

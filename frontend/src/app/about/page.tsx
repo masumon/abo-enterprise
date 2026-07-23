@@ -62,10 +62,10 @@ export default function AboutPage() {
           { label: lang === "bn" ? "আমাদের সম্পর্কে" : "About" },
         ]}
       >
-        <div className="flex flex-col items-center text-center mt-2">
-          <BrandLogo size="xl" href={false} variant="light" className="mb-3" />
-          <p className="text-sm text-white font-semibold mt-2">{getBrandFullTitle(lang)}</p>
-          <p className="text-sm text-white/70 mt-2">Sumon Brothers Organization</p>
+        <div className="flex flex-col items-center text-center mt-1">
+          <BrandLogo size="lg" href={false} variant="light" className="mb-1.5" />
+          <p className="text-sm text-white font-semibold">{getBrandFullTitle(lang)}</p>
+          <p className="text-xs text-white/70 mt-0.5">Sumon Brothers Organization</p>
         </div>
       </PageHero>
 

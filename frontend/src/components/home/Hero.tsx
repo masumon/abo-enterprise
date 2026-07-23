@@ -11,7 +11,7 @@ import { ABO_ACRONYM, getBrandName, getBrandTagline } from "@/lib/tokens";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { MARKETING_STATS } from "@/lib/siteDefaults";
 import { resolveHomeBannerImage } from "@/lib/pageBanners";
-import { isVideoUrl } from "@/lib/media";
+import { isVideoUrl, toPlayableVideoUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import {
   HERO_TEXT_STYLE_KEY,
@@ -105,6 +105,19 @@ export default function Hero() {
         heroVAlignClass(hstyle)
       )}
     >
+      {/* Admin MOBILE hero background — covers the WHOLE hero (cover + dark
+          overlay for readability). Image or autoplay video. lg:hidden. */}
+      {heroMobileImg && (
+        <div className="lg:hidden absolute inset-0" aria-hidden>
+          {heroMobileIsVideo ? (
+            <video className="absolute inset-0 w-full h-full object-cover" src={toPlayableVideoUrl(heroMobileImg)} autoPlay muted loop playsInline />
+          ) : (
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroMobileImg})` }} />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-b from-brand-950/72 via-brand-900/60 to-gray-950/85" />
+        </div>
+      )}
+
       {/* Media background is DESKTOP-ONLY. On mobile the hero keeps the clean
           brand gradient and the uploaded image/video shows in a card below the
           text — so text stays crisp and the media is never cropped. */}
@@ -123,7 +136,7 @@ export default function Hero() {
         <>
           <video
             className="hidden lg:block absolute inset-0 w-full h-full object-cover"
-            src={heroImage}
+            src={toPlayableVideoUrl(heroImage)}
             autoPlay
             muted
             loop
@@ -159,7 +172,7 @@ export default function Hero() {
                   }}
                 >
                   {heroPromoIsVideo ? (
-                    <video className="w-full h-auto block" src={heroPromo} autoPlay muted loop playsInline aria-hidden />
+                    <video className="w-full h-auto block" src={toPlayableVideoUrl(heroPromo)} autoPlay muted loop playsInline aria-hidden />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element -- hero art at natural aspect; next/image adds no value here
                     <img src={heroPromo} alt="" className="w-full h-auto block" />
@@ -168,21 +181,9 @@ export default function Hero() {
               </div>
             )}
 
-            {/* Text block. On mobile the admin "Homepage Banner (Mobile)" sits
-                behind it (cover + dark overlay for readability); desktop keeps
-                the clean gradient. */}
+            {/* Text block — sits on top of the full-hero background (mobile) or
+                the clean gradient (desktop). */}
             <div className="relative w-full">
-              {heroMobileImg && (
-                <div className="lg:hidden absolute -inset-4 rounded-2xl overflow-hidden" aria-hidden>
-                  {heroMobileIsVideo ? (
-                    <video className="absolute inset-0 w-full h-full object-cover" src={heroMobileImg} autoPlay muted loop playsInline />
-                  ) : (
-                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroMobileImg})` }} />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-b from-brand-950/72 via-brand-900/58 to-gray-950/85" />
-                </div>
-              )}
-
               <div className={cn("relative z-10 flex flex-col gap-6", heroAlignClass(hstyle))}>
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 glass-panel rounded-full text-sm font-medium">
@@ -227,15 +228,15 @@ export default function Hero() {
                   {lang === "bn" ? ABO_ACRONYM.bn : ABO_ACRONYM.en}
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
-                  <Link href="/services" className="btn btn-lg btn-primary btn-ripple">
-                    <Calendar className="w-5 h-5" aria-hidden />
-                    {t("hero_cta_services")}
-                    <ArrowRight className="w-4 h-4" aria-hidden />
+                <div className="flex flex-row gap-2 sm:gap-3 pt-2 w-full">
+                  <Link href="/services" className="btn btn-lg btn-primary btn-ripple flex-1 justify-center min-w-0 px-3 sm:px-6 text-[13px] sm:text-base">
+                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 flex-none" aria-hidden />
+                    <span className="truncate">{t("hero_cta_services")}</span>
+                    <ArrowRight className="w-4 h-4 flex-none hidden sm:block" aria-hidden />
                   </Link>
-                  <Link href={heroCtaUrl.startsWith("/") ? heroCtaUrl : "/products"} className="btn btn-lg btn-outline border-white/40 text-white hover:bg-white/10 btn-ripple">
-                    <ShoppingBag className="w-5 h-5" aria-hidden />
-                    {heroCtaText || t("hero_cta_products")}
+                  <Link href={heroCtaUrl.startsWith("/") ? heroCtaUrl : "/products"} className="btn btn-lg btn-outline border-white/40 text-white hover:bg-white/10 btn-ripple flex-1 justify-center min-w-0 px-3 sm:px-6 text-[13px] sm:text-base">
+                    <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 flex-none" aria-hidden />
+                    <span className="truncate">{heroCtaText || t("hero_cta_products")}</span>
                   </Link>
                 </div>
               </div>
@@ -249,7 +250,7 @@ export default function Hero() {
               {heroPromoMedia && (
                 <div className="rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-black/20">
                   {heroPromoIsVideo ? (
-                    <video className="w-full aspect-video object-cover block" src={heroPromoMedia} autoPlay muted loop playsInline aria-hidden />
+                    <video className="w-full aspect-video object-cover block" src={toPlayableVideoUrl(heroPromoMedia)} autoPlay muted loop playsInline aria-hidden />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element -- hero art in a fixed-ratio card; next/image adds no value here
                     <img src={heroPromoMedia} alt="" className="w-full aspect-video object-cover block" />

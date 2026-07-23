@@ -122,7 +122,7 @@ function FooterColumn({
   // Collapsible on mobile (keeps the footer short & tidy); always open on sm+.
   const [open, setOpen] = useState(false);
   return (
-    <div className="border-b border-white/10 pb-3 sm:border-0 sm:pb-0">
+    <div className="border-b border-white/10 pb-1.5 sm:border-0 sm:pb-0">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
@@ -131,7 +131,7 @@ function FooterColumn({
         className={cn(
           "w-full flex items-center justify-between gap-2 sm:pointer-events-none",
           // Round blinking ring on mobile draws the eye to the tappable header row.
-          "footer-acc-ring border-2 border-transparent rounded-xl px-3 py-2 -mx-1",
+          "footer-acc-ring border-2 border-transparent rounded-xl px-3 py-1.5 -mx-1",
           "sm:border-0 sm:rounded-none sm:px-0 sm:py-0 sm:mx-0"
         )}
       >
@@ -287,7 +287,7 @@ export default function Footer() {
       </div>
 
       <div className="relative z-10 container mx-auto px-4 py-12 md:py-14">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-5 sm:gap-8 xl:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-2.5 sm:gap-8 xl:gap-8">
           <div className="sm:col-span-2 xl:col-span-4">
             <div className="flex items-center gap-3.5 mb-5">
               <BrandLogo size="lg" href={false} variant="light" />

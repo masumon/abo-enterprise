@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Play, ImageIcon, X, ExternalLink } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
@@ -105,14 +106,22 @@ export default function GalleryPage() {
               {lang === "bn" ? "ভিডিও গ্যালারি" : "Video Gallery"}
             </h3>
             {videos.length === 0 ? (
-              <div className="enterprise-card p-8 text-center max-w-2xl mx-auto">
-                <div className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mx-auto mb-4">
+              <Link
+                href="/admin/showcase"
+                className="enterprise-card p-8 text-center max-w-2xl mx-auto flex flex-col items-center hover:border-brand-300 dark:hover:border-brand-500/40 transition-colors"
+              >
+                <span className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mb-4">
                   <Play className="w-7 h-7 text-brand-600" />
-                </div>
-                <p className="text-sm text-muted">
-                  {lang === "bn" ? "এডমিন থেকে প্রজেক্টে ভিডিও লিংক যোগ করুন।" : "Add video links to projects from Admin → Project Gallery."}
-                </p>
-              </div>
+                </span>
+                <span className="text-sm text-muted">
+                  {lang === "bn"
+                    ? "প্রতিটি প্রজেক্টের “Demo Video URL”-এ YouTube/Vimeo লিংক দিন — Admin → Showcase।"
+                    : "Add a YouTube/Vimeo link in each project's “Demo Video URL” — Admin → Showcase."}
+                </span>
+                <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-600">
+                  Admin → Showcase <ExternalLink className="w-3 h-3" />
+                </span>
+              </Link>
             ) : (
               <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                 {videos.map((p) => (
