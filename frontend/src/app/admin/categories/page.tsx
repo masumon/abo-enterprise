@@ -249,24 +249,23 @@ export default function AdminCategoriesPage() {
       <div key={node.id}>
         <div
           className={cn(
-            "flex items-center gap-3 rounded-xl border bg-white px-3 py-2.5 transition-colors hover:border-brand-200",
+            "flex items-center gap-2 sm:gap-3 rounded-xl border bg-white px-2.5 sm:px-3 py-2 sm:py-2.5 transition-colors hover:border-brand-200",
             depth === 0 ? "border-brand-100" : "border-gray-100"
           )}
-          style={{ marginLeft: depth > 0 ? `${Math.min(depth, 4) * 18}px` : undefined }}
         >
           {node.image_url ? (
-            <span className="relative w-11 h-11 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 ring-1 ring-gray-100">
+            <span className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0 ring-1 ring-gray-100">
               <Image src={node.image_url} alt="" fill className="object-cover" sizes="44px" />
             </span>
           ) : (
-            <span className="w-11 h-11 rounded-lg bg-amber-50 text-amber-400 flex items-center justify-center flex-shrink-0 ring-1 ring-amber-100" title="ছবি নেই">
+            <span className="w-10 h-10 sm:w-11 sm:h-11 rounded-lg bg-amber-50 text-amber-400 flex items-center justify-center flex-shrink-0 ring-1 ring-amber-100" title="ছবি নেই">
               <ImageOff className="w-4 h-4" />
             </span>
           )}
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-gray-900 truncate">{getNodeLabel(node)}</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+              <span className="font-semibold text-gray-900 truncate max-w-full">{getNodeLabel(node)}</span>
               {depth === 0 ? (
                 <span className="inline-flex items-center rounded-full bg-brand-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-700">Root</span>
               ) : (
@@ -274,15 +273,15 @@ export default function AdminCategoriesPage() {
               )}
               <StatusBadge status={node.is_active ? "active" : "inactive"} />
             </div>
-            <div className="mt-0.5 flex items-center gap-2 flex-wrap text-xs text-gray-400">
-              <span className="font-mono">/{node.slug}</span>
+            <div className="mt-0.5 flex items-center gap-1.5 sm:gap-2 flex-wrap text-xs text-gray-400">
+              <span className="font-mono truncate max-w-[160px] sm:max-w-none">/{node.slug}</span>
               {scope.map((s) => (
                 <span key={`${node.id}-${s}`} className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 font-medium capitalize text-gray-600">{s}</span>
               ))}
             </div>
           </div>
 
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
             <button type="button" onClick={() => openCreate(node)} title="সাব-ক্যাটাগরি যোগ" aria-label={`Add child to ${getNodeLabel(node)}`} className="p-1.5 rounded-lg text-brand-600 hover:bg-brand-50">
               <Plus className="w-4 h-4" />
             </button>
@@ -296,7 +295,7 @@ export default function AdminCategoriesPage() {
         </div>
 
         {children.length > 0 && (
-          <div className="mt-1.5 space-y-1.5">
+          <div className="mt-1.5 space-y-1.5 ml-2 sm:ml-4 border-l-2 border-gray-100 pl-2 sm:pl-3">
             {children.map((child) => renderNode(child, depth + 1))}
           </div>
         )}
