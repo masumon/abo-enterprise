@@ -24,8 +24,11 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
   client_logos_json: {
     fields: [
       { path: "name", label: "Name" }, { path: "abbr", label: "Abbreviation" }, { path: "image", label: "Logo", type: "image" },
+      { path: "desc_en", label: "Description (EN)", type: "textarea", hint: "shown when the logo is tapped" },
+      { path: "desc_bn", label: "Description (BN)", type: "textarea" },
+      { path: "href", label: "Case-study link", hint: "optional — e.g. /projects or https://…" },
     ],
-    newItem: () => ({ name: "", abbr: "", image: "" }),
+    newItem: () => ({ name: "", abbr: "", image: "", desc_en: "", desc_bn: "", href: "" }),
   },
   demo_reviews_json: {
     fields: [
@@ -264,7 +267,7 @@ const SECTIONS: Section[] = [
     icon: <Trophy className="w-4 h-4" />,
     fields: [
       { key: "about_team_json", label: "Team Members", type: "textarea", hint: "Array with name, role, photo_url, bio" },
-      { key: "client_logos_json", label: "Client Logos", type: "textarea", hint: "Array with name, logo_url" },
+      { key: "client_logos_json", label: "Client Logos", type: "textarea", hint: "Name, logo, and optional description + case-study link (shown on tap)" },
       { key: "demo_reviews_json", label: "Testimonials", type: "textarea", hint: "Array with name, review, photo_url, rating" },
     ],
   },

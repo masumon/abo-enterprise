@@ -99,7 +99,16 @@ function FooterLink({
   );
 }
 
-function FooterColumn({ title, children }: { title: string; children: React.ReactNode }) {
+function FooterColumn({
+  title,
+  children,
+  ringDelay = "0s",
+}: {
+  title: string;
+  children: React.ReactNode;
+  /** Stagger for the mobile blinking-ring hint so the three columns pulse in sequence. */
+  ringDelay?: string;
+}) {
   // Collapsible on mobile (keeps the footer short & tidy); always open on sm+.
   const [open, setOpen] = useState(false);
   return (
@@ -108,7 +117,13 @@ function FooterColumn({ title, children }: { title: string; children: React.Reac
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="w-full flex items-center justify-between gap-2 sm:pointer-events-none"
+        style={{ animationDelay: ringDelay }}
+        className={cn(
+          "w-full flex items-center justify-between gap-2 sm:pointer-events-none",
+          // Round blinking ring on mobile draws the eye to the tappable header row.
+          "footer-acc-ring border-2 border-transparent rounded-xl px-3 py-2 -mx-1",
+          "sm:border-0 sm:rounded-none sm:px-0 sm:py-0 sm:mx-0"
+        )}
       >
         <h4 className="footer-column-title !mb-0 sm:!mb-4 flex items-center gap-2">
           {/* Pulsing accent dot on mobile draws the eye to the tappable section. */}
@@ -310,7 +325,7 @@ export default function Footer() {
           </div>
 
           <div className="xl:col-span-2">
-            <FooterColumn title={lang === "bn" ? "ব্যবসা" : "Business"}>
+            <FooterColumn title={lang === "bn" ? "ব্যবসা" : "Business"} ringDelay="0s">
               <ul className="space-y-2.5">
                 {SERVICES.map((s) => (
                   <li key={s.href + s.label.en}>
@@ -324,7 +339,7 @@ export default function Footer() {
           </div>
 
           <div className="xl:col-span-2">
-            <FooterColumn title={t("footer_company")}>
+            <FooterColumn title={t("footer_company")} ringDelay="0.3s">
               <ul className="space-y-2.5">
                 {COMPANY.map((link) => (
                   <li key={link.href}>
@@ -338,7 +353,7 @@ export default function Footer() {
           </div>
 
           <div className="sm:col-span-2 xl:col-span-4">
-            <FooterColumn title={t("footer_legal")}>
+            <FooterColumn title={t("footer_legal")} ringDelay="0.6s">
               <ul className="space-y-2.5 mb-6">
                 {LEGAL.map((link) => (
                   <li key={link.href}>
@@ -408,7 +423,9 @@ export default function Footer() {
       </div>
 
       <div className="relative z-10 footer-bottom-bar">
-        <div className="container mx-auto px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
+        {/* Extra bottom padding below lg keeps the copyright + developer credit
+            clear of the floating mobile bottom-nav (which is lg:hidden). */}
+        <div className="container mx-auto px-4 pt-5 pb-[calc(76px+env(safe-area-inset-bottom,0px))] lg:pb-5 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
           <div className="text-xs text-white/60 space-y-1">
             <p>
               &copy; {new Date().getFullYear()} ABO Enterprise.{" "}
