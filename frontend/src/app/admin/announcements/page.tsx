@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Megaphone, Plus, Trash2, ArrowUp, ArrowDown, Save, Loader2 } from "lucide-react";
+import { Plus, Trash2, ArrowUp, ArrowDown, Save, Loader2 } from "lucide-react";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
@@ -81,21 +82,19 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto">
-      <div className="flex items-center justify-between gap-4 mb-6">
-        <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center">
-            <Megaphone className="w-5 h-5 text-brand-600" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-heading">{bn ? "ঘোষণা বার" : "Announcements"}</h1>
-            <p className="text-xs text-muted">{bn ? "অফার, নোটিশ ও তথ্য — স্টাইলসহ" : "Offers, notices & info — with styles"}</p>
-          </div>
-        </div>
-        <button type="button" onClick={save} disabled={saving} className="btn btn-brand btn-sm disabled:opacity-60">
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {bn ? "সংরক্ষণ" : "Save"}
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Announcements"
+        titleBn="ঘোষণা বার"
+        description="Offers, notices & info — with styles"
+        descriptionBn="অফার, নোটিশ ও তথ্য — স্টাইলসহ"
+        className="mb-6"
+        actions={
+          <button type="button" onClick={save} disabled={saving} className="btn btn-brand btn-sm disabled:opacity-60">
+            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {bn ? "সংরক্ষণ" : "Save"}
+          </button>
+        }
+      />
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-brand-500" /></div>
