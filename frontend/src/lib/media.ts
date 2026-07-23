@@ -22,7 +22,7 @@ export function toPlayableVideoUrl(url: string | null | undefined): string {
     if (!firstSeg.includes(",") && !firstSeg.includes("=") && !firstSeg.startsWith("q_") && !firstSeg.startsWith("f_")) {
       out = out.replace("/video/upload/", "/video/upload/q_auto/");
     }
-    out = out.replace(/\.(mov|avi|m4v|mkv|hevc|3gp)(\?|#|$)/i, ".mp4$1");
+    out = out.replace(/\.(?:mov|avi|m4v|mkv|hevc|3gp)(\?|#|$)/i, ".mp4$1");
   }
   return out;
 }
@@ -36,5 +36,5 @@ export function videoPosterUrl(url: string | null | undefined): string | undefin
   if (!url || !url.includes("/video/upload/")) return undefined;
   return url
     .replace("/video/upload/", "/video/upload/so_0/")
-    .replace(/\.(mp4|webm|mov|avi|m4v|mkv|hevc|3gp)(\?|#|$)/i, ".jpg$1");
+    .replace(/\.(?:mp4|webm|mov|avi|m4v|mkv|hevc|3gp)(\?|#|$)/i, ".jpg$1");
 }

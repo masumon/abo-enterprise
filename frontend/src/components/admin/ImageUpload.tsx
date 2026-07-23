@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Upload, Loader2, X, ImageIcon, Video, Check, Sparkles } from "lucide-react";
+import { Upload, Loader2, X, ImageIcon, Check, Sparkles } from "lucide-react";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { compressImage } from "@/lib/imageCompress";
+import { isVideoUrl, toPlayableVideoUrl, videoPosterUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 
 type AcceptType = "image" | "video" | "both";
@@ -41,10 +42,6 @@ interface PendingFile {
   previewUrl: string;
   width: number | null;
   height: number | null;
-}
-
-function isVideoUrl(url: string) {
-  return /\.(mp4|webm|mov|avi)(\?|$)/i.test(url) || url.includes("/video/upload/");
 }
 
 function fmtBytes(bytes: number): string {
@@ -94,9 +91,11 @@ export default function ImageUpload({
     if (!file) return;
     setError(null);
 
-    const maxSize = 30 * 1024 * 1024; // 30MB for images and videos
+    // Match the backend limits: 50MB for video, 30MB for images.
+    const isVid = file.type.startsWith("video/");
+    const maxSize = (isVid ? 50 : 30) * 1024 * 1024;
     if (file.size > maxSize) {
-      setError("File must be under 30MB");
+      setError(`File must be under ${isVid ? 50 : 30}MB`);
       if (fileRef.current) fileRef.current.value = "";
       return;
     }
@@ -156,10 +155,7 @@ export default function ImageUpload({
           <div className="flex items-start gap-3 flex-wrap">
             <div className={cn("relative rounded-lg overflow-hidden border border-gray-200 bg-white flex-shrink-0", sizeClass)}>
               {pending.file.type.startsWith("video/") ? (
-                <span className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 text-white">
-                  <Video className="w-6 h-6 mb-0.5" />
-                  <span className="text-[9px] font-medium">Video</span>
-                </span>
+                <video src={pending.previewUrl} className="absolute inset-0 w-full h-full object-cover" muted loop playsInline autoPlay />
               ) : (
                 // eslint-disable-next-line @next/next/no-img-element -- local object URL preview
                 <img src={pending.previewUrl} alt="Upload preview" className="absolute inset-0 w-full h-full object-cover" />
@@ -215,10 +211,15 @@ export default function ImageUpload({
           >
             {value ? (
               isVideo ? (
-                <span className="absolute inset-0 flex flex-col items-center justify-center bg-gray-900 text-white">
-                  <Video className="w-6 h-6 mb-0.5" />
-                  <span className="text-[9px] font-medium">Video</span>
-                </span>
+                <video
+                  src={toPlayableVideoUrl(value)}
+                  poster={videoPosterUrl(value)}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  muted
+                  loop
+                  playsInline
+                  autoPlay
+                />
               ) : (
                 <Image
                   src={value}
