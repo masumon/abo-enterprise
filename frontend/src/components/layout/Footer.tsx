@@ -427,8 +427,9 @@ export default function Footer() {
               href="https://mumainsumon.netlify.app"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center px-2.5 py-0.5 rounded-md font-bold tracking-wide text-white bg-white/10 border border-white/20 hover:bg-white/20 hover:border-white/35 transition-all duration-200"
+              className="group inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold tracking-wide text-white bg-gradient-to-r from-brand-500/90 to-accent-500/90 border border-white/25 shadow-[0_2px_10px_rgba(233,30,99,0.35)] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(233,30,99,0.5)] transition-all duration-200"
             >
+              <span aria-hidden className="group-hover:scale-110 transition-transform">💻</span>
               SUMON
             </a>
           </p>

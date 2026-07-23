@@ -30,7 +30,7 @@ export default function CustomerReviews() {
       .catch((err) => console.warn("featured_reviews_cache_read_failed", err));
 
     reviewsApi
-      .list({ featured: true, per_page: 4 })
+      .list({ featured: true, per_page: 8 })
       .then((r) => {
         const data = r.data.data ?? [];
         setReviews(data);
@@ -74,9 +74,10 @@ export default function CustomerReviews() {
             ))}
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {reviews.map((r) => (
-              <GlassCard key={r.id} hover className="p-5">
+          <div className="marquee-viewport" style={{ "--marquee-duration": "44s" } as React.CSSProperties}>
+            <div className="marquee-track gap-5 px-2 py-1">
+            {[...reviews, ...reviews].map((r, i) => (
+              <GlassCard key={`${r.id}-${i}`} hover className="p-5 w-72 sm:w-80 flex-shrink-0" aria-hidden={i >= reviews.length}>
                 <div className="flex items-center gap-1 mb-3">
                   {Array.from({ length: r.rating }).map((_, i) => (
                     <Star key={i} className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
@@ -97,6 +98,7 @@ export default function CustomerReviews() {
                 </div>
               </GlassCard>
             ))}
+            </div>
           </div>
         )}
         <div className="text-center mt-8">
