@@ -36,14 +36,6 @@ export const PAGE_BANNER_SLOTS: ImageSlotDef[] = PAGE_BANNER_CONFIG.map(({ key, 
   guide: "1920×600px (wide) · JPG/WebP",
 }));
 
-export const JSON_IMAGE_SETTINGS = {
-  team: { key: "about_team_json", label: "About Team Photos", labelBn: "টিম সদস্যের ছবি", usedOn: "/about" },
-  clients: { key: "client_logos_json", label: "Client Logos", labelBn: "ক্লায়েন্ট লোগো", usedOn: "Homepage" },
-  showcaseProjects: { key: "showcase_projects_json", label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি", usedOn: "/projects, /gallery" },
-  showcaseServices: { key: "software_service_cards_json", label: "Software Service Cards", labelBn: "সফটওয়্যার সেবা কার্ড", usedOn: "/services/software" },
-  demoReviews: { key: "demo_reviews_json", label: "Demo Review Avatars", labelBn: "ডেমো রিভিউ ছবি", usedOn: "Offline fallback" },
-} as const;
-
 export const CATALOG_IMAGE_SECTIONS = [
   { id: "products", label: "Products", labelBn: "পণ্য", adminHref: "/admin/products", imageField: "image_url", galleryField: "images", ogField: "og_image" },
   { id: "services", label: "Services", labelBn: "সেবা", adminHref: "/admin/services", imageField: "featured_image_url", iconField: "icon_url", ogField: "og_image" },

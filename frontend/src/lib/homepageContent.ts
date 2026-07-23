@@ -15,7 +15,72 @@ export interface HomepageContentEditor {
   newItem: () => Record<string, unknown>;
 }
 
+/** A single scalar setting (string/boolean/datetime) shown on Homepage Content. */
+export interface HomepageScalarField {
+  key: string;
+  label: string;
+  labelBn: string;
+  type?: "text" | "textarea" | "url" | "boolean" | "datetime-local";
+  placeholder?: string;
+  hint?: string;
+  hintBn?: string;
+  /** Setting `data_type` used when saving. */
+  dataType: "string" | "boolean";
+}
+
+/** A titled group of scalar fields (Hero text, Flash Sale). */
+export interface HomepageScalarGroup {
+  id: string;
+  title: string;
+  titleBn: string;
+  desc: string;
+  descBn: string;
+  fields: HomepageScalarField[];
+}
+
 const ICON_HINT = "lucide name or emoji";
+
+/**
+ * Hero copy + Flash Sale scalars — these used to live in Settings, but they are
+ * homepage content, so they belong here alongside the section editors. The
+ * setting keys are unchanged (`hero_*`, `flash_sale_*`, `feature_flash_sale`),
+ * so the website reads them exactly as before.
+ */
+export const HOMEPAGE_SCALAR_GROUPS: HomepageScalarGroup[] = [
+  {
+    id: "hero",
+    title: "Homepage Hero Text",
+    titleBn: "হোমপেজ হিরো লেখা",
+    desc: "The headline, subtitle & main button of the homepage banner.",
+    descBn: "হোমপেজ ব্যানারের শিরোনাম, সাবটাইটেল ও মূল বাটন। (ব্যানার ছবি → Image Manager)",
+    fields: [
+      { key: "hero_title_en", label: "Title (EN)", labelBn: "শিরোনাম (EN)", placeholder: "ABO ENTERPRISE : Simple Solution", dataType: "string" },
+      { key: "hero_title_bn", label: "Title (BN)", labelBn: "শিরোনাম (বাংলা)", placeholder: "এবিও এন্টারপ্রাইজ : সহজ সমাধান", dataType: "string" },
+      { key: "hero_subtitle_en", label: "Subtitle (EN)", labelBn: "সাবটাইটেল (EN)", type: "textarea", placeholder: "Simple Solution — products, services, software & AI in one place.", dataType: "string" },
+      { key: "hero_subtitle_bn", label: "Subtitle (BN)", labelBn: "সাবটাইটেল (বাংলা)", type: "textarea", placeholder: "সহজ সমাধান — পণ্য, সেবা, সফটওয়্যার ও AI এক প্ল্যাটফর্মে।", dataType: "string" },
+      { key: "hero_cta_text", label: "Button Text", labelBn: "বাটন লেখা", placeholder: "Shop Now", dataType: "string" },
+      { key: "hero_cta_url", label: "Button Link", labelBn: "বাটন লিংক", type: "url", placeholder: "/products", dataType: "string" },
+    ],
+  },
+  {
+    id: "flash_sale",
+    title: "Flash Sale",
+    titleBn: "ফ্ল্যাশ সেল",
+    desc: "The homepage countdown banner.",
+    descBn: "হোমপেজের কাউন্টডাউন ব্যানার।",
+    fields: [
+      { key: "feature_flash_sale", label: "Enable Flash Sale", labelBn: "ফ্ল্যাশ সেল চালু", type: "boolean", hint: "Shows the homepage countdown banner", hintBn: "হোমপেজে কাউন্টডাউন ব্যানার দেখায়", dataType: "boolean" },
+      { key: "flash_sale_title_en", label: "Title (EN)", labelBn: "শিরোনাম (EN)", placeholder: "Flash Sale", dataType: "string" },
+      { key: "flash_sale_title_bn", label: "Title (BN)", labelBn: "শিরোনাম (বাংলা)", placeholder: "ফ্ল্যাশ সেল", dataType: "string" },
+      { key: "flash_sale_start", label: "Start (optional)", labelBn: "শুরু (ঐচ্ছিক)", type: "datetime-local", hint: "Leave blank to start immediately", hintBn: "খালি রাখলে এখনই শুরু", dataType: "string" },
+      { key: "flash_sale_end", label: "End", labelBn: "শেষ", type: "datetime-local", hint: "Countdown target. Blank = end of this week (Sun 23:59).", hintBn: "কাউন্টডাউন লক্ষ্য। খালি = এই সপ্তাহের শেষ (রবি ২৩:৫৯)।", dataType: "string" },
+    ],
+  },
+];
+
+/** Flat list of every scalar key + its data type, for load/save. */
+export const HOMEPAGE_SCALAR_FIELDS: HomepageScalarField[] =
+  HOMEPAGE_SCALAR_GROUPS.flatMap((g) => g.fields);
 
 export const HOMEPAGE_CONTENT_EDITORS: HomepageContentEditor[] = [
   {
