@@ -18,7 +18,8 @@ import { adminApi } from "@/lib/api";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ImageUpload from "@/components/admin/ImageUpload";
 import LivePreview from "@/components/admin/LivePreview";
-import { isVideoUrl, toPlayableVideoUrl, videoPosterUrl } from "@/lib/media";
+import AutoVideo from "@/components/ui/AutoVideo";
+import { isVideoUrl } from "@/lib/media";
 import { useToastStore } from "@/store/toast";
 import {
   DEFAULT_SHOWCASE_PROJECTS,
@@ -215,7 +216,7 @@ export default function AdminShowcasePage() {
                         <article className="enterprise-card overflow-hidden">
                           <div className="relative aspect-video bg-brand-50 dark:bg-white/5">
                             {project.videoUrl && isVideoUrl(project.videoUrl) && !/youtu|vimeo/i.test(project.videoUrl) ? (
-                              <video src={toPlayableVideoUrl(project.videoUrl)} poster={videoPosterUrl(project.videoUrl) ?? project.image ?? undefined} className="absolute inset-0 w-full h-full object-cover" muted loop playsInline autoPlay />
+                              <AutoVideo src={project.videoUrl} poster={project.image || undefined} className="absolute inset-0 w-full h-full object-cover" />
                             ) : project.image ? (
                               // eslint-disable-next-line @next/next/no-img-element -- live admin preview
                               <img src={project.image} alt="" className="absolute inset-0 w-full h-full object-cover" />

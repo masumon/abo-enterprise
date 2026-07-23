@@ -11,7 +11,8 @@ import { setAdminAuthMarker, setAdminToken } from "@/lib/adminAuth";
 import { cn } from "@/lib/utils";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
-import { isVideoUrl, toPlayableVideoUrl } from "@/lib/media";
+import { isVideoUrl } from "@/lib/media";
+import AutoVideo from "@/components/ui/AutoVideo";
 
 const schema = z.object({
   email: z.string().email("Valid email required"),
@@ -211,7 +212,7 @@ export default function AdminLoginPage() {
       {bgUrl && (
         <div className="absolute inset-0 z-0" aria-hidden>
           {bgIsVideo ? (
-            <video className="absolute inset-0 w-full h-full object-cover" src={toPlayableVideoUrl(bgUrl)} autoPlay muted loop playsInline />
+            <AutoVideo src={bgUrl} className="absolute inset-0 w-full h-full object-cover" />
           ) : (
             <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bgUrl})` }} />
           )}
