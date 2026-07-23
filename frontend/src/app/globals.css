@@ -262,7 +262,7 @@
     background: linear-gradient(135deg, rgba(21,101,192,0.97) 0%, rgba(30,91,168,0.95) 50%, rgba(13,71,161,0.97) 100%);
   }
   .gradient-surface {
-    background: linear-gradient(145deg, #f8faff 0%, #f0f4ff 50%, #faf8ff 100%);
+    background: linear-gradient(145deg, #eef2f8 0%, #e7edf6 50%, #edf1f8 100%);
   }
   .dark .gradient-surface {
     background: linear-gradient(145deg, var(--navy) 0%, var(--surface) 50%, var(--surface-secondary) 100%);
@@ -646,7 +646,7 @@
     @apply py-14 md:py-20;
   }
   .enterprise-section-alt {
-    @apply enterprise-section bg-gray-50/80 dark:bg-[var(--surface-secondary)];
+    @apply enterprise-section bg-[var(--surface)] dark:bg-[var(--surface-secondary)];
   }
   .sticky-cta-bar {
     @apply fixed left-0 right-0 z-[45] lg:hidden;
@@ -673,7 +673,7 @@
   }
   html.dark .page-surface { color: rgb(243 244 246); }
   .page-gradient {
-    @apply bg-gradient-to-b from-gray-50 to-white;
+    @apply bg-gradient-to-b from-[#eef2f8] to-[#e9eef6];
   }
   .dark .page-gradient {
     background: linear-gradient(180deg, var(--navy) 0%, var(--surface) 100%);
@@ -683,8 +683,29 @@
     color: rgb(17 24 39);
   }
   html.dark .section-panel { color: rgb(243 244 246); }
+
+  /* Transparent glass login card (customer login over a background image) —
+     restyle the inner form so labels/inputs read on the dark glass. */
+  .auth-glass label { color: rgba(255, 255, 255, 0.92); }
+  .auth-glass > p, .auth-glass .text-muted, .auth-glass .text-heading { color: rgba(255, 255, 255, 0.75); }
+  .auth-glass .input,
+  .auth-glass input:not([type="submit"]):not([type="checkbox"]),
+  .auth-glass textarea,
+  .auth-glass select {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+  }
+  .auth-glass .input::placeholder,
+  .auth-glass input::placeholder { color: rgba(255, 255, 255, 0.5); }
+  .auth-glass .input:focus,
+  .auth-glass input:not([type="submit"]):focus {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(96, 165, 250, 0.6);
+  }
+
   .section-panel-alt {
-    @apply bg-gray-50 dark:bg-[var(--surface)];
+    @apply bg-[#e9eef6] dark:bg-[var(--surface)];
     color: rgb(17 24 39);
   }
   html.dark .section-panel-alt { color: rgb(243 244 246); }

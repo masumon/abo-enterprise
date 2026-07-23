@@ -90,7 +90,7 @@ export default function AuthSplitLayout({ children, title, subtitle, badge }: Au
           <div
             className={
               bgUrl
-                ? "rounded-2xl p-6 sm:p-8 bg-white/85 dark:bg-[#0f1f38]/80 backdrop-blur-xl border border-white/50 dark:border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
+                ? "auth-glass rounded-2xl p-6 sm:p-8 bg-[#0e1c34]/35 backdrop-blur-2xl border border-white/20 shadow-[0_20px_50px_rgba(0,0,0,0.45)]"
                 : "enterprise-card p-6 sm:p-8"
             }
           >
