@@ -156,6 +156,28 @@ export default function AdminHomepageContentPage() {
                 <p className="text-xs text-muted mt-0.5">{bn ? g.descBn : g.desc}</p>
               </div>
               <div className="space-y-3">{g.fields.map(renderScalar)}</div>
+              {g.id === "flash_sale" && (
+                <div className="mt-4">
+                  <LivePreview showDevice={false}>
+                    <div className="pointer-events-none rounded-xl overflow-hidden bg-gradient-to-r from-accent-600 to-brand-700 text-white p-4 flex items-center gap-3">
+                      <span className="text-2xl">⚡</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold truncate">
+                          {(bn ? values.flash_sale_title_bn : values.flash_sale_title_en) || values.flash_sale_title_bn || values.flash_sale_title_en || "ফ্ল্যাশ সেল"}
+                        </p>
+                        <p className="text-xs text-white/80">
+                          {values.feature_flash_sale === "true" ? (bn ? "চালু" : "On") : (bn ? "বন্ধ" : "Off")} · {bn ? "কাউন্টডাউন হোমপেজে" : "countdown on homepage"}
+                        </p>
+                      </div>
+                      <div className="flex gap-1 flex-none">
+                        {["০২", "১১", "৪৫"].map((n, i) => (
+                          <span key={i} className="bg-white/20 rounded px-2 py-1 text-sm font-bold tabular-nums">{n}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </LivePreview>
+                </div>
+              )}
             </section>
           ))}
 

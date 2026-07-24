@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ImageUpload from "@/components/admin/ImageUpload";
+import LivePreview from "@/components/admin/LivePreview";
+import AutoVideo from "@/components/ui/AutoVideo";
+import { isVideoUrl } from "@/lib/media";
 import {
   adminApi,
   adminBlogApi,
@@ -40,6 +43,60 @@ const TABS: { id: TabId; label: string; labelBn: string }[] = [
   { id: "catalog", label: "Catalog", labelBn: "ক্যাটালগ" },
 ];
 
+function MediaEl({ url, className }: { url: string; className?: string }) {
+  if (isVideoUrl(url)) return <AutoVideo src={url} className={className} />;
+  // eslint-disable-next-line @next/next/no-img-element -- live admin context preview
+  return <img src={url} alt="" className={className} />;
+}
+
+/** "As it appears on the website" context for the well-known brand slots. */
+function SlotContextPreview({ slotKey, value }: { slotKey: string; value: string }) {
+  if (!value) return null;
+  let content: React.ReactNode = null;
+  if (slotKey === "logo_url") {
+    content = (
+      <div className="flex items-center gap-2 bg-white dark:bg-[#0b1f3a] rounded-full px-4 py-2 shadow border border-gray-100 dark:border-white/10 w-fit">
+        <MediaEl url={value} className="w-8 h-8 rounded-full object-contain" />
+        <span className="font-bold text-heading text-sm">ABO Enterprise</span>
+      </div>
+    );
+  } else if (slotKey === "favicon_url" || slotKey === "app_icon_url") {
+    content = (
+      <div className="flex items-center gap-2 bg-gray-100 dark:bg-white/10 rounded-t-lg px-3 py-1.5 w-fit">
+        <MediaEl url={value} className="w-4 h-4 object-contain rounded" />
+        <span className="text-xs text-heading">aboenterprise.com</span>
+      </div>
+    );
+  } else if (slotKey === "default_og_image_url") {
+    content = (
+      <div className="rounded-xl overflow-hidden border border-gray-200 dark:border-white/10 max-w-sm">
+        <div className="aspect-[1.91/1] bg-gray-100 dark:bg-white/5"><MediaEl url={value} className="w-full h-full object-cover" /></div>
+        <div className="p-3 bg-white dark:bg-white/5">
+          <p className="text-[10px] text-gray-400 uppercase tracking-wide">aboenterprise.com</p>
+          <p className="font-semibold text-sm text-heading">ABO Enterprise — Simple Solution</p>
+        </div>
+      </div>
+    );
+  } else if (slotKey.includes("hero") || slotKey.includes("login_bg") || slotKey.startsWith("banner_")) {
+    content = (
+      <div className="relative rounded-xl overflow-hidden aspect-video max-w-sm bg-gradient-to-br from-brand-700 to-brand-950">
+        <MediaEl url={value} className="absolute inset-0 w-full h-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+        <div className="absolute bottom-2 left-3 text-white font-bold text-sm drop-shadow">ABO Enterprise</div>
+      </div>
+    );
+  } else {
+    return null;
+  }
+  return (
+    <div className="mt-3">
+      <LivePreview showDevice={false}>
+        <div className="pointer-events-none">{content}</div>
+      </LivePreview>
+    </div>
+  );
+}
+
 function SlotEditor({
   slot,
   value,
@@ -66,6 +123,7 @@ function SlotEditor({
         previewSize="lg"
         accept="both"
       />
+      <SlotContextPreview slotKey={slot.key} value={value} />
     </div>
   );
 }

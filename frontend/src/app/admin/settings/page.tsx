@@ -10,7 +10,16 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 /** Friendly field-editors for the Trust Assets object-array settings.
  * Unknown keys are preserved by JsonListEditor, so existing data is safe. */
 const ICON_HINT = "lucide name or emoji";
-const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Record<string, unknown>; mapKey?: string }> = {
+const s = (item: Record<string, unknown>, key: string): string => {
+  const v = item[key];
+  return v == null ? "" : String(v);
+};
+const nested = (item: Record<string, unknown>, key: string, sub: string): string => {
+  const o = item[key];
+  return o && typeof o === "object" ? String((o as Record<string, unknown>)[sub] ?? "") : "";
+};
+
+const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Record<string, unknown>; mapKey?: string; previewRow?: (item: Record<string, unknown>) => React.ReactNode }> = {
   // ── Trust Assets ──
   about_team_json: {
     fields: [
@@ -20,6 +29,21 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
       { path: "image", label: "Photo", type: "image" },
     ],
     newItem: () => ({ id: Date.now().toString(36), name: "", role: { en: "", bn: "" }, desc: { en: "", bn: "" }, image: "" }),
+    previewRow: (item) => (
+      <div className="text-center max-w-[180px] mx-auto">
+        <div className="w-16 h-16 mx-auto mb-2 rounded-full bg-brand-100 overflow-hidden flex items-center justify-center text-brand-700 font-bold">
+          {s(item, "image") ? (
+            // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+            <img src={s(item, "image")} alt="" className="w-full h-full object-cover" />
+          ) : ((s(item, "name") || "?").charAt(0))}
+        </div>
+        <p className="font-bold text-sm text-heading">{s(item, "name") || "নাম"}</p>
+        <p className="text-xs text-brand-600">{nested(item, "role", "bn") || nested(item, "role", "en")}</p>
+        {(nested(item, "desc", "bn") || nested(item, "desc", "en")) && (
+          <p className="text-xs text-muted mt-1 line-clamp-2">{nested(item, "desc", "bn") || nested(item, "desc", "en")}</p>
+        )}
+      </div>
+    ),
   },
   client_logos_json: {
     fields: [
@@ -29,6 +53,17 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
       { path: "href", label: "Case-study link", hint: "optional — e.g. /projects or https://…" },
     ],
     newItem: () => ({ name: "", abbr: "", image: "", desc_en: "", desc_bn: "", href: "" }),
+    previewRow: (item) => (
+      <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 w-fit mx-auto">
+        {s(item, "image") ? (
+          // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+          <img src={s(item, "image")} alt="" className="w-8 h-8 rounded-lg object-cover" />
+        ) : (
+          <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white text-xs font-bold flex items-center justify-center">{s(item, "abbr")}</span>
+        )}
+        <span className="text-sm font-medium text-muted">{s(item, "name") || "ক্লায়েন্ট"}</span>
+      </div>
+    ),
   },
   demo_reviews_json: {
     fields: [
@@ -38,6 +73,28 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
       { path: "photo_url", label: "Photo", type: "image" },
     ],
     newItem: () => ({ customer_name: "", company: "", rating: 5, review_en: "", review_bn: "", photo_url: "" }),
+    previewRow: (item) => (
+      <div className="enterprise-card p-4 max-w-xs mx-auto">
+        <div className="flex items-center gap-0.5 mb-2 text-yellow-400">
+          {Array.from({ length: Math.min(5, Math.max(1, Number(item.rating) || 5)) }).map((_, i) => (
+            <span key={i}>★</span>
+          ))}
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-4">&ldquo;{s(item, "review_bn") || s(item, "review_en") || "রিভিউ লেখা"}&rdquo;</p>
+        <div className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-full bg-brand-100 overflow-hidden flex items-center justify-center text-brand-700 font-bold text-sm">
+            {s(item, "photo_url") ? (
+              // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+              <img src={s(item, "photo_url")} alt="" className="w-full h-full object-cover" />
+            ) : ((s(item, "customer_name") || "?").charAt(0))}
+          </div>
+          <div>
+            <p className="font-semibold text-sm">{s(item, "customer_name") || "নাম"}</p>
+            {s(item, "company") && <p className="text-xs text-gray-500">{s(item, "company")}</p>}
+          </div>
+        </div>
+      </div>
+    ),
   },
   // ── Homepage Sections ──
   site_announcements_json: {
@@ -431,6 +488,7 @@ function SectionCard({
                 fields={TRUST_EDITORS[field.key].fields}
                 newItem={TRUST_EDITORS[field.key].newItem}
                 mapKey={TRUST_EDITORS[field.key].mapKey}
+                previewRow={TRUST_EDITORS[field.key].previewRow}
               />
             ) : field.type === "textarea" ? (
               <textarea
