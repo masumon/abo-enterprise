@@ -8,45 +8,66 @@ import {
   Mail,
   MapPin,
   Phone,
-  Clock,
   Send,
   Loader2,
   PackageSearch,
-  ShoppingBag,
-  ArrowUpRight,
+  Store,
+  Wrench,
+  Laptop,
+  Bot,
+  CalendarCheck,
+  Smartphone,
   Instagram,
   Linkedin,
   Youtube,
-  ChevronDown,
+  Shield,
+  Users,
+  CreditCard,
+  Headphones,
+  Award,
+  Globe,
+  Truck,
+  Clock,
+  type LucideIcon,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
 import { publicApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import {
+  SITE_TRUST_BADGES_KEY,
+  SITE_REGISTRATIONS_KEY,
+  getTrustBadges,
+  getRegistrations,
+} from "@/lib/cmsContent";
 import { resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { getBrandName, getBrandTagline } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-const SERVICES = [
-  { href: "/products", label: { en: "Tech Store", bn: "টেক স্টোর" } },
-  { href: "/services#digital-services", label: { en: "Digital Services", bn: "ডিজিটাল সেবা" } },
-  { href: "/services#software-lab", label: { en: "Software Lab", bn: "সফটওয়্যার ল্যাব" } },
-  { href: "/services#business-software", label: { en: "Business Software", bn: "বিজনেস সফটওয়্যার" } },
-  { href: "/services#ai-solutions", label: { en: "AI Solutions", bn: "AI সমাধান" } },
-  { href: "/contact", label: { en: "Support", bn: "সাপোর্ট" } },
+/** Primary business destinations — icon tiles (fast to recognise). */
+const DESTINATIONS: { href: string; icon: LucideIcon; label: { en: string; bn: string } }[] = [
+  { href: "/products", icon: Store, label: { en: "Tech Store", bn: "টেক স্টোর" } },
+  { href: "/services", icon: Wrench, label: { en: "Services", bn: "সেবা" } },
+  { href: "/services/software", icon: Laptop, label: { en: "Software", bn: "সফটওয়্যার" } },
+  { href: "/services#ai-solutions", icon: Bot, label: { en: "AI Solutions", bn: "AI সমাধান" } },
+  { href: "/track", icon: PackageSearch, label: { en: "Track Order", bn: "অর্ডার ট্র্যাক" } },
+  { href: "/book", icon: CalendarCheck, label: { en: "Free Consult", bn: "ফ্রি পরামর্শ" } },
 ];
 
+/** Secondary company links — deliberately no icons (icons on every link add noise). */
 const COMPANY = [
   { href: "/about", label: { en: "About Us", bn: "আমাদের সম্পর্কে" } },
   { href: "/projects", label: { en: "Projects", bn: "প্রজেক্ট" } },
   { href: "/gallery", label: { en: "Gallery", bn: "গ্যালারি" } },
-  { href: "/testimonials", label: { en: "Testimonials", bn: "পর্যালোচনা" } },
+  { href: "/testimonials", label: { en: "Reviews", bn: "গ্রাহক পর্যালোচনা" } },
   { href: "/career", label: { en: "Careers", bn: "ক্যারিয়ার" } },
-  { href: "/faq", label: { en: "FAQ", bn: "প্রশ্নোত্তর" } },
   { href: "/blog", label: { en: "Blog", bn: "ব্লগ" } },
+  { href: "/faq", label: { en: "FAQ", bn: "প্রশ্নোত্তর" } },
+  { href: "/shipping", label: { en: "Shipping", bn: "শিপিং তথ্য" } },
   { href: "/contact", label: { en: "Contact", bn: "যোগাযোগ" } },
 ];
 
@@ -54,8 +75,23 @@ const LEGAL = [
   { href: "/legal/privacy", labelKey: "footer_privacy" as const },
   { href: "/legal/terms", labelKey: "footer_terms" as const },
   { href: "/legal/refund", labelKey: "footer_refund" as const },
-  { href: "/shipping", label: { en: "Shipping", bn: "শিপিং" } },
 ];
+
+const TRUST_ICONS: Record<string, LucideIcon> = {
+  shield: Shield, users: Users, card: CreditCard, support: Headphones,
+  award: Award, globe: Globe, truck: Truck, store: Store, clock: Clock,
+};
+
+/** Payment gateway wordmark styling — brand colour on a white chip. */
+const PAY_BRAND: Record<string, { label: string; className: string }> = {
+  bkash: { label: "bKash", className: "text-[#e2136e]" },
+  nagad: { label: "Nagad", className: "text-[#ec1c24]" },
+  rocket: { label: "Rocket", className: "text-[#8b1a9b]" },
+  sslcommerz: { label: "SSLCOMMERZ", className: "text-[#1e5ba8]" },
+  card: { label: "Visa · Mastercard", className: "text-[#1a1f71]" },
+  cod: { label: "ক্যাশ অন ডেলিভারি", className: "text-[#0f766e]" },
+  bank: { label: "Bank Transfer", className: "text-[#0f172a]" },
+};
 
 function normalizePhoneDigits(phone: string) {
   const digits = phone.replace(/\D/g, "");
@@ -71,85 +107,9 @@ function formatPhoneDisplay(phone: string) {
   return phone;
 }
 
-function FooterLink({
-  href,
-  children,
-  external,
-}: {
-  href: string;
-  children: React.ReactNode;
-  external?: boolean;
-}) {
-  // Premium row: leading amber dot, hover highlight + slide, trailing arrow.
-  const className =
-    "footer-link group flex items-center gap-2.5 text-sm text-white/75 rounded-lg px-2 py-1.5 -mx-2 hover:bg-white/[0.07] hover:text-white transition-all duration-200";
-  const inner = (
-    <>
-      <span
-        aria-hidden
-        className="w-1.5 h-1.5 rounded-full bg-amber-300/55 group-hover:bg-amber-300 flex-none transition-colors group-hover:shadow-[0_0_7px_rgba(255,213,79,0.6)]"
-      />
-      <span className="flex-1 group-hover:translate-x-0.5 transition-transform duration-200">{children}</span>
-      <ArrowUpRight className="w-3.5 h-3.5 flex-none opacity-0 -translate-x-1 group-hover:opacity-60 group-hover:translate-x-0 transition-all duration-200" />
-    </>
-  );
-
-  if (external) {
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
-        {inner}
-      </a>
-    );
-  }
-
-  return (
-    <Link href={href} className={className}>
-      {inner}
-    </Link>
-  );
-}
-
-function FooterColumn({
-  title,
-  children,
-  ringDelay = "0s",
-}: {
-  title: string;
-  children: React.ReactNode;
-  /** Stagger for the mobile blinking-ring hint so the three columns pulse in sequence. */
-  ringDelay?: string;
-}) {
-  // Collapsible on mobile (keeps the footer short & tidy); always open on sm+.
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="border-b border-white/10 pb-1.5 sm:border-0 sm:pb-0">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-expanded={open}
-        style={{ animationDelay: ringDelay }}
-        className={cn(
-          "w-full flex items-center justify-between gap-2 sm:pointer-events-none",
-          // Round blinking ring on mobile draws the eye to the tappable header row.
-          "footer-acc-ring border-2 border-transparent rounded-xl px-3 py-1.5 -mx-1",
-          "sm:border-0 sm:rounded-none sm:px-0 sm:py-0 sm:mx-0"
-        )}
-      >
-        <h4 className="footer-column-title !mb-0 sm:!mb-4 flex items-center gap-2">
-          {/* Pulsing accent dot on mobile draws the eye to the tappable section. */}
-          <span className="sm:hidden w-1.5 h-1.5 rounded-full bg-amber-300 animate-pulse motion-reduce:animate-none" aria-hidden />
-          {title}
-        </h4>
-        <div className="flex items-center gap-1.5 sm:hidden">
-          <span className="text-[10px] font-semibold text-amber-300/90 animate-pulse motion-reduce:animate-none" aria-hidden>{open ? "" : "ট্যাপ"}</span>
-          <ChevronDown className={cn("w-4 h-4 shrink-0 transition-transform duration-200", open ? "rotate-180 text-white/50" : "text-amber-300 animate-pulse motion-reduce:animate-none")} aria-hidden />
-        </div>
-      </button>
-      <div className={cn("grid transition-all duration-300 sm:!grid-rows-[1fr] sm:!opacity-100", open ? "grid-rows-[1fr] opacity-100 mt-3 sm:mt-0" : "grid-rows-[0fr] opacity-0 sm:opacity-100")}>
-        <div className="overflow-hidden">{children}</div>
-      </div>
-    </div>
-  );
+/** Small uppercase section label — the name alone carries the meaning. */
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <p className="footer-section-label">{children}</p>;
 }
 
 export default function Footer() {
@@ -159,6 +119,7 @@ export default function Footer() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const newsletterEnabled = useFeatureFlag("feature_newsletter");
+  const { methods } = usePaymentMethods();
 
   const { settings } = usePublicSettings([
     "trade_license",
@@ -173,6 +134,8 @@ export default function Footer() {
     "instagram_url",
     "linkedin_url",
     "youtube_url",
+    SITE_TRUST_BADGES_KEY,
+    SITE_REGISTRATIONS_KEY,
   ]);
 
   const tradeLicense = getSettingValue(settings, "trade_license");
@@ -191,61 +154,28 @@ export default function Footer() {
     ? getSettingValue(settings, "contact_hours_bn", "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা")
     : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 9:00 PM");
 
-  const quickActions = [
-    {
-      href: "/track",
-      icon: PackageSearch,
-      label: lang === "bn" ? "অর্ডার ট্র্যাক" : "Track Order",
-    },
-    {
-      href: "/products",
-      icon: ShoppingBag,
-      label: lang === "bn" ? "পণ্য দেখুন" : "Shop Products",
-    },
-    {
-      href: "/contact",
-      icon: MessageCircle,
-      label: lang === "bn" ? "যোগাযোগ" : "Contact Us",
-    },
-  ];
+  const trustBadges = getTrustBadges(settings, []);
+  // Registrations come from the CMS list; the legacy single trade_license key
+  // is used as a fallback so existing setups keep showing their licence.
+  const registrations = getRegistrations(
+    settings,
+    tradeLicense ? [{ label_en: "Trade License", label_bn: "ট্রেড লাইসেন্স", value: tradeLicense }] : []
+  );
+  const payments = methods
+    .filter((m) => m.is_active)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
   const socialLinks = [
     {
       href: getSettingValue(settings, "facebook_url", "https://www.facebook.com/abo.enterprise"),
       icon: Facebook,
       label: "Facebook",
-      className: "hover:bg-blue-600 hover:border-blue-500/50 hover:shadow-blue-500/20",
     },
-    {
-      href: whatsappDigits ? `https://wa.me/${whatsappDigits}` : "",
-      icon: MessageCircle,
-      label: "WhatsApp",
-      className: "hover:bg-green-600 hover:border-green-500/50 hover:shadow-green-500/20",
-    },
-    {
-      href: emailAddr ? `mailto:${emailAddr}` : "",
-      icon: Mail,
-      label: "Email",
-      className: "hover:bg-accent-500 hover:border-accent-400/50 hover:shadow-accent-500/20",
-    },
-    {
-      href: getSettingValue(settings, "instagram_url"),
-      icon: Instagram,
-      label: "Instagram",
-      className: "hover:bg-gradient-to-br hover:from-purple-600 hover:to-pink-500 hover:border-pink-400/50",
-    },
-    {
-      href: getSettingValue(settings, "linkedin_url"),
-      icon: Linkedin,
-      label: "LinkedIn",
-      className: "hover:bg-blue-700 hover:border-blue-600/50",
-    },
-    {
-      href: getSettingValue(settings, "youtube_url"),
-      icon: Youtube,
-      label: "YouTube",
-      className: "hover:bg-red-600 hover:border-red-500/50 hover:shadow-red-500/20",
-    },
+    { href: whatsappDigits ? `https://wa.me/${whatsappDigits}` : "", icon: MessageCircle, label: "WhatsApp" },
+    { href: emailAddr ? `mailto:${emailAddr}` : "", icon: Mail, label: "Email" },
+    { href: getSettingValue(settings, "instagram_url"), icon: Instagram, label: "Instagram" },
+    { href: getSettingValue(settings, "linkedin_url"), icon: Linkedin, label: "LinkedIn" },
+    { href: getSettingValue(settings, "youtube_url"), icon: Youtube, label: "YouTube" },
   ].filter((item) => item.href);
 
   const handleNewsletter = async (e: React.FormEvent) => {
@@ -268,187 +198,194 @@ export default function Footer() {
       <div className="site-footer-accent relative z-10" aria-hidden />
       <div className="footer-glow pointer-events-none" aria-hidden />
 
-      <div className="relative z-10 border-b border-white/[0.06]">
-        <div className="container mx-auto px-4 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-              {lang === "bn" ? "দ্রুত লিংক" : "Quick links"}
-            </p>
-            <div className="flex flex-wrap gap-2.5">
-              {quickActions.map(({ href, icon: Icon, label }) => (
-                <Link key={href} href={href} className="footer-quick-action">
-                  <Icon className="w-4 h-4 text-brand-300" />
-                  <span>{label}</span>
+      <div className="relative z-10 container mx-auto px-4 py-10 md:py-14">
+        <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
+          {/* ── Contact: the highest-intent block, so it leads ── */}
+          <section className="lg:col-span-5 xl:col-span-4">
+            <SectionLabel>{lang === "bn" ? "যোগাযোগ করুন" : "Get in touch"}</SectionLabel>
+            <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+              <a href={`tel:+${phoneDigits}`} className="footer-action">
+                <Phone className="w-[18px] h-[18px] text-sky-300" aria-hidden />
+                <span className="footer-action-sub">{hours}</span>
+                <span className="footer-action-value">{phoneDisplay}</span>
+              </a>
+              {whatsappDigits && (
+                <a
+                  href={`https://wa.me/${whatsappDigits}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="footer-action"
+                >
+                  <MessageCircle className="w-[18px] h-[18px] text-sky-300" aria-hidden />
+                  <span className="footer-action-sub">{lang === "bn" ? "দ্রুত উত্তর" : "Quick reply"}</span>
+                  <span className="footer-action-value">WhatsApp</span>
+                </a>
+              )}
+              <a
+                href={mapsLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="footer-action col-span-2 flex-row items-center gap-3"
+              >
+                <MapPin className="w-[18px] h-[18px] text-sky-300 flex-none" aria-hidden />
+                <span className="flex flex-col min-w-0">
+                  <span className="footer-action-sub">{address}</span>
+                  <span className="text-[13px] font-semibold text-white">
+                    {lang === "bn" ? "ম্যাপে দেখুন →" : "View on map →"}
+                  </span>
+                </span>
+              </a>
+            </div>
+          </section>
+
+          {/* ── Destinations: icon tiles for the six real business paths ── */}
+          <nav className="lg:col-span-4" aria-label={lang === "bn" ? "কেনাকাটা ও সেবা" : "Shop and services"}>
+            <SectionLabel>{lang === "bn" ? "কেনাকাটা ও সেবা" : "Shop & services"}</SectionLabel>
+            <div className="grid grid-cols-2 gap-2">
+              {DESTINATIONS.map(({ href, icon: Icon, label }) => (
+                <Link key={href} href={href} className="footer-tile">
+                  <Icon className="w-4 h-4 text-white/70 flex-none" aria-hidden />
+                  <span className="truncate">{lang === "bn" ? label.bn : label.en}</span>
                 </Link>
+              ))}
+            </div>
+          </nav>
+
+          {/* ── Company: secondary, inline-wrapped so nine links take two rows ── */}
+          <nav className="lg:col-span-3 xl:col-span-4" aria-label={lang === "bn" ? "কোম্পানি" : "Company"}>
+            <SectionLabel>{lang === "bn" ? "কোম্পানি" : "Company"}</SectionLabel>
+            <div className="flex flex-wrap gap-y-0.5">
+              {COMPANY.map((link, i) => (
+                <span key={link.href} className="inline-flex items-center">
+                  {i > 0 && <span className="footer-dot" aria-hidden />}
+                  <Link href={link.href} className="footer-inline-link">
+                    {lang === "bn" ? link.label.bn : link.label.en}
+                  </Link>
+                </span>
+              ))}
+            </div>
+          </nav>
+        </div>
+
+        {/* ── Trust badges (admin: Homepage Content) ── */}
+        {trustBadges.length > 0 && (
+          <div className="mt-8">
+            <SectionLabel>{lang === "bn" ? "কেন আমাদের বিশ্বাস করবেন" : "Why trust us"}</SectionLabel>
+            <div className="flex flex-wrap gap-2">
+              {trustBadges.map((badge, i) => {
+                const Icon = TRUST_ICONS[badge.icon ?? ""] ?? Shield;
+                return (
+                  <span key={i} className="footer-chip">
+                    <Icon className="w-3.5 h-3.5 text-amber-300 flex-none" aria-hidden />
+                    {lang === "bn" ? badge.bn || badge.en : badge.en || badge.bn}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Payment gateways (admin: Payments module) ── */}
+        {payments.length > 0 && (
+          <div className="mt-8">
+            <SectionLabel>{lang === "bn" ? "নিরাপদ লেনদেন" : "Secure payments"}</SectionLabel>
+            <div className="flex flex-wrap gap-2">
+              {payments.map((m) => {
+                const brand = PAY_BRAND[m.payment_gateway.toLowerCase()];
+                return (
+                  <span key={m.id} className={cn("footer-pay", brand?.className ?? "text-gray-900")}>
+                    {brand?.label ?? m.payment_gateway}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Registrations (admin: Settings) ── */}
+        {registrations.length > 0 && (
+          <div className="mt-8">
+            <SectionLabel>{lang === "bn" ? "স্বীকৃতি ও নিবন্ধন" : "Registrations"}</SectionLabel>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+              {registrations.map((r, i) => (
+                <div key={i} className="footer-reg">
+                  <span className="footer-reg-label">{lang === "bn" ? r.label_bn || r.label_en : r.label_en || r.label_bn}</span>
+                  <span className="footer-reg-value">{r.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── Brand card: identity, newsletter, app install, social ── */}
+        <div className="footer-brand-card mt-8">
+          <div className="flex items-center gap-3.5">
+            <BrandLogo size="lg" href={false} variant="light" />
+            <div className="min-w-0">
+              <h3 className="text-white font-bold text-lg tracking-tight truncate">{getBrandName(lang)}</h3>
+              <p className="text-brand-100 text-xs font-semibold mt-0.5 truncate">: {getBrandTagline(lang)}</p>
+            </div>
+          </div>
+
+          {newsletterEnabled && (
+            <form onSubmit={handleNewsletter} className="flex gap-2 sm:max-w-md">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={lang === "bn" ? "নিউজলেটার — আপনার ইমেইল" : "Newsletter — your email"}
+                className="footer-newsletter-input flex-1 min-w-0"
+                aria-label={t("footer_newsletter")}
+                required
+              />
+              <button type="submit" disabled={submitting} className="footer-newsletter-btn flex-shrink-0" aria-label={t("footer_subscribe")}>
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                <span className="hidden sm:inline">{t("footer_subscribe")}</span>
+              </button>
+            </form>
+          )}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/products" className="footer-app-btn">
+              <Smartphone className="w-4 h-4" aria-hidden />
+              {lang === "bn" ? "অ্যাপের মতো ব্যবহার করুন" : "Use as an app"}
+            </Link>
+            <div className="flex flex-wrap gap-2">
+              {socialLinks.map(({ href, icon: Icon, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target={href.startsWith("mailto:") ? undefined : "_blank"}
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="footer-social-btn"
+                >
+                  <Icon className="w-4 h-4" aria-hidden />
+                </a>
               ))}
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-12 md:py-14">
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-12 gap-2.5 sm:gap-8 xl:gap-8">
-          <div className="sm:col-span-2 xl:col-span-4">
-            <div className="flex items-center gap-3.5 mb-5">
-              <BrandLogo size="lg" href={false} variant="light" />
-              <div>
-                <h3 className="text-white font-bold text-xl tracking-tight">{getBrandName(lang)}</h3>
-                <p className="text-brand-100 text-xs font-semibold mt-0.5">: {getBrandTagline(lang)}</p>
-              </div>
-            </div>
-
-            <p className="text-sm text-white/75 leading-relaxed mb-6 max-w-md">
-              {lang === "bn"
-                ? "মোবাইল এক্সেসরিজ থেকে AI সমাধান — বাংলাদেশের সম্পূর্ণ টেকনোলজি ইকোসিস্টেম।"
-                : "From mobile accessories to AI solutions — Bangladesh's complete technology ecosystem."}
-            </p>
-
-            {newsletterEnabled && (
-              <div className="footer-newsletter max-w-md">
-                <p className="text-sm font-medium text-white mb-2">{t("footer_newsletter")}</p>
-                <form onSubmit={handleNewsletter} className="flex gap-2">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={lang === "bn" ? "আপনার ইমেইল" : "Your email address"}
-                    className="footer-newsletter-input flex-1 min-w-0"
-                    aria-label={t("footer_newsletter")}
-                    required
-                  />
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="footer-newsletter-btn flex-shrink-0"
-                  >
-                    {submitting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                    <span className="hidden sm:inline">{t("footer_subscribe")}</span>
-                  </button>
-                </form>
-                <p className="text-xs text-gray-500 mt-2.5">{t("footer_newsletter_sub")}</p>
-              </div>
-            )}
-          </div>
-
-          <div className="xl:col-span-2">
-            <FooterColumn title={lang === "bn" ? "ব্যবসা" : "Business"} ringDelay="0s">
-              <ul className="space-y-0.5">
-                {SERVICES.map((s) => (
-                  <li key={s.href + s.label.en}>
-                    <FooterLink href={s.href}>
-                      {lang === "bn" ? s.label.bn : s.label.en}
-                    </FooterLink>
-                  </li>
-                ))}
-              </ul>
-            </FooterColumn>
-          </div>
-
-          <div className="xl:col-span-2">
-            <FooterColumn title={t("footer_company")} ringDelay="0.3s">
-              <ul className="space-y-0.5">
-                {COMPANY.map((link) => (
-                  <li key={link.href}>
-                    <FooterLink href={link.href}>
-                      {lang === "bn" ? link.label.bn : link.label.en}
-                    </FooterLink>
-                  </li>
-                ))}
-              </ul>
-            </FooterColumn>
-          </div>
-
-          <div className="sm:col-span-2 xl:col-span-4">
-            <FooterColumn title={t("footer_legal")} ringDelay="0.6s">
-              <ul className="space-y-0.5 mb-6">
-                {LEGAL.map((link) => (
-                  <li key={link.href}>
-                    <FooterLink href={link.href}>
-                      {"labelKey" in link && link.labelKey
-                        ? t(link.labelKey)
-                        : lang === "bn"
-                          ? link.label!.bn
-                          : link.label!.en}
-                    </FooterLink>
-                  </li>
-                ))}
-              </ul>
-
-              <div className="footer-contact-card">
-                <ul className="space-y-3 text-sm">
-                  <li>
-                    <a
-                      href={mapsLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-start gap-3 text-white/75 hover:text-white transition-colors group"
-                    >
-                      <span className="footer-contact-icon">
-                        <MapPin className="w-4 h-4" />
-                      </span>
-                      <span className="pt-0.5 leading-relaxed">{address}</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a
-                      href={`tel:+${phoneDigits}`}
-                      className="flex items-center gap-3 text-white/75 hover:text-white transition-colors"
-                    >
-                      <span className="footer-contact-icon">
-                        <Phone className="w-4 h-4" />
-                      </span>
-                      {phoneDisplay}
-                    </a>
-                  </li>
-                  <li className="flex items-center gap-3 text-white/75">
-                    <span className="footer-contact-icon">
-                      <Clock className="w-4 h-4" />
-                    </span>
-                    {hours}
-                  </li>
-                </ul>
-
-                <div className="flex flex-wrap gap-2 mt-5 pt-5 border-t border-white/[0.06]">
-                  {socialLinks.map(({ href, icon: Icon, label, className }) => (
-                    <a
-                      key={label}
-                      href={href}
-                      target={href.startsWith("mailto:") ? undefined : "_blank"}
-                      rel="noopener noreferrer"
-                      aria-label={label}
-                      className={cn("footer-social-btn", className)}
-                    >
-                      <Icon className="w-4 h-4" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </FooterColumn>
-          </div>
-        </div>
+        {/* ── Legal: the lightest weight on the page ── */}
+        <nav className="mt-7 flex flex-wrap justify-center gap-y-0.5" aria-label={t("footer_legal")}>
+          {LEGAL.map((link, i) => (
+            <span key={link.href} className="inline-flex items-center">
+              {i > 0 && <span className="footer-dot" aria-hidden />}
+              <Link href={link.href} className="footer-legal-link">{t(link.labelKey)}</Link>
+            </span>
+          ))}
+        </nav>
       </div>
 
       <div className="relative z-10 footer-bottom-bar">
-        {/* Extra bottom padding below lg keeps the copyright + developer credit
-            clear of the floating mobile bottom-nav (which is lg:hidden). */}
-        <div className="container mx-auto px-4 pt-5 pb-[calc(76px+env(safe-area-inset-bottom,0px))] lg:pb-5 flex flex-col md:flex-row items-center justify-between gap-3 text-center md:text-left">
-          <div className="text-xs text-white/60 space-y-1">
-            <p>
-              &copy; {new Date().getFullYear()} ABO Enterprise.{" "}
-              {lang === "bn" ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
-            </p>
-            {tradeLicense && (
-              <p className="text-white/50">
-                {lang === "bn" ? "ট্রেড লাইসেন্স:" : "Trade License:"}{" "}
-                <span className="text-white/65">{tradeLicense}</span>
-              </p>
-            )}
-          </div>
-          <p className="text-xs text-white/55 flex items-center justify-center md:justify-end gap-1.5">
+        {/* Bottom padding clears the floating mobile bottom-nav (lg:hidden). */}
+        <div className="container mx-auto px-4 pt-4 pb-[calc(var(--mobile-chrome-bottom)+0.75rem)] lg:pb-4 flex flex-col items-center gap-2 text-center">
+          <p className="text-xs text-white/60">
+            &copy; {new Date().getFullYear()} ABO Enterprise.{" "}
+            {lang === "bn" ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
+          </p>
+          <p className="text-xs text-white/55 flex items-center gap-1.5">
             <span>{lang === "bn" ? "তৈরি করেছেন" : "Built by"}</span>
             <a
               href="https://mumainsumon.netlify.app"
