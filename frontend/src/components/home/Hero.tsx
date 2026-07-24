@@ -163,7 +163,7 @@ export default function Hero() {
               <div className="lg:hidden w-full">
                 <div className="relative overflow-hidden rounded-2xl border border-white/15 shadow-xl bg-black/20">
                   {heroPromoIsVideo ? (
-                    <AutoVideo src={heroPromo} className="w-full h-auto block" aria-hidden />
+                    <AutoVideo src={heroPromo} className="w-full h-auto block" tapToPlay aria-hidden />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element -- hero art at natural aspect; next/image adds no value here
                     <img src={heroPromo} alt="" className="w-full h-auto block" />
@@ -239,9 +239,9 @@ export default function Hero() {
               {/* Desktop/tablet promo media — admin-managed image/video, autoplay.
                   Sits above the live-stats card when set. */}
               {heroPromoMedia && (
-                <div className="rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-black/20">
+                <div className="relative rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-black/20">
                   {heroPromoIsVideo ? (
-                    <AutoVideo src={heroPromoMedia} className="w-full aspect-video object-cover block" aria-hidden />
+                    <AutoVideo src={heroPromoMedia} className="w-full aspect-video object-cover block" tapToPlay aria-hidden />
                   ) : (
                     // eslint-disable-next-line @next/next/no-img-element -- hero art in a fixed-ratio card; next/image adds no value here
                     <img src={heroPromoMedia} alt="" className="w-full aspect-video object-cover block" />
