@@ -152,9 +152,9 @@ export default function Hero() {
         <div className="absolute bottom-0 left-0 w-72 h-72 bg-accent-500/10 rounded-full blur-3xl" />
       </div>
 
-      <div className="container mx-auto px-4 pt-4 pb-8 sm:py-12 lg:py-16 relative z-10">
+      <div className="container mx-auto px-4 pt-4 pb-[calc(var(--bottom-nav-height)+1.25rem)] sm:py-12 lg:py-16 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="text-white flex flex-col gap-6 animate-slide-up">
+          <div className="text-white flex flex-col gap-4 sm:gap-6 animate-slide-up">
             {/* MOBILE/tablet promo — directly below the top bar, full-fit (no
                 crop). Edges are masked so the media blends into the brand
                 background. Explicit promo always shows; the banner fallback
@@ -175,7 +175,7 @@ export default function Hero() {
             {/* Text block — sits on top of the full-hero background (mobile) or
                 the clean gradient (desktop). */}
             <div className="relative w-full">
-              <div className={cn("relative z-10 flex flex-col gap-6", heroAlignClass(hstyle))}>
+              <div className={cn("hero-legible-scrim relative z-10 flex flex-col gap-4 sm:gap-6", heroAlignClass(hstyle))}>
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 glass-panel rounded-full text-sm font-medium">
                     <Zap className="w-3.5 h-3.5 text-yellow-300" aria-hidden />
@@ -190,7 +190,7 @@ export default function Hero() {
                 </div>
 
                 <h1
-                  className={cn("leading-tight text-balance", heroTitleClass(hstyle))}
+                  className={cn("leading-tight text-balance hero-legible-shadow", heroTitleClass(hstyle))}
                   style={hstyle.titleColor ? { color: hstyle.titleColor } : undefined}
                 >
                   {heroTitleOverride ? (
@@ -200,7 +200,7 @@ export default function Hero() {
                       <span className="block text-yellow-300 font-extrabold tracking-[0.06em] sm:tracking-[0.08em] drop-shadow-sm">
                         {t("hero_brand")}
                       </span>
-                      <span className="block mt-2 sm:mt-3 text-white font-bold leading-snug">
+                      <span className="block mt-1 sm:mt-3 text-white font-bold leading-snug">
                         <span className="text-white/80 font-semibold">: </span>
                         {t("hero_tagline")}
                       </span>
@@ -209,13 +209,13 @@ export default function Hero() {
                 </h1>
 
                 <p
-                  className={cn("max-w-lg leading-relaxed", heroSubClass(hstyle), !hstyle.subColor && "text-white/80")}
+                  className={cn("max-w-lg leading-relaxed hero-legible-shadow", heroSubClass(hstyle), !hstyle.subColor && "text-white/80")}
                   style={hstyle.subColor ? { color: hstyle.subColor } : undefined}
                 >
                   {heroSubtitle}
                 </p>
 
-                <p className="text-white/60 text-xs max-w-lg">
+                <p className="hidden sm:block text-white/60 text-xs max-w-lg">
                   {lang === "bn" ? ABO_ACRONYM.bn : ABO_ACRONYM.en}
                 </p>
 
