@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Plus, Trash2, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
+import LivePreview from "@/components/admin/LivePreview";
 
 export interface JsonListField {
   path: string; // dotted path, e.g. "role.en"
@@ -21,6 +22,8 @@ interface Props {
   /** When set, the value is an object map ({KEY: {...}}) edited as rows; this
    * field holds the map key on each row and is written back as the object key. */
   mapKey?: string;
+  /** Optional "as it appears on the website" preview rendered under each row. */
+  previewRow?: (item: Record<string, unknown>) => React.ReactNode;
 }
 
 function getPath(obj: Record<string, unknown>, path: string): unknown {
@@ -45,7 +48,7 @@ function setPath(obj: Record<string, unknown>, path: string, val: unknown): Reco
  * doesn't show. If the stored value isn't a valid array, it falls back to a
  * raw textarea so nothing is lost.
  */
-export default function JsonListEditor({ value, onChange, fields, newItem, mapKey }: Props) {
+export default function JsonListEditor({ value, onChange, fields, newItem, mapKey, previewRow }: Props) {
   const parsed = useMemo(() => {
     try {
       const v = JSON.parse(value || (mapKey ? "{}" : "[]"));
@@ -139,6 +142,13 @@ export default function JsonListEditor({ value, onChange, fields, newItem, mapKe
               );
             })}
           </div>
+          {previewRow && (
+            <div className="mt-2">
+              <LivePreview showDevice={false}>
+                <div className="pointer-events-none">{previewRow(item)}</div>
+              </LivePreview>
+            </div>
+          )}
         </div>
       ))}
       <button type="button" onClick={() => commit([...parsed, newItem()])} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:text-brand-700">

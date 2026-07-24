@@ -19,6 +19,7 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import type { Category, Subcategory } from "@/types";
 import ImageUpload from "@/components/admin/ImageUpload";
+import LivePreview from "@/components/admin/LivePreview";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { cn } from "@/lib/utils";
 
@@ -512,6 +513,26 @@ export default function AdminCategoriesPage() {
               <p className="text-[0.76rem] text-gray-400 font-mono truncate">/{form.slug || slugify(form.name_en) || "slug"}</p>
             </div>
           </div>
+
+          {/* Live website preview — the category tile as shown on the site */}
+          <LivePreview showDevice={false}>
+            <div className="p-1 pointer-events-none max-w-[210px] mx-auto">
+              <div className="enterprise-card p-4 text-center">
+                <div className="w-14 h-14 mx-auto mb-3 rounded-2xl grid place-items-center text-white text-2xl overflow-hidden" style={{ background: "linear-gradient(135deg,#1565c0,#0d47a1)" }}>
+                  {form.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+                    <img src={form.image_url} alt="" className="w-full h-full object-cover" />
+                  ) : form.icon && [...form.icon].length <= 2 ? (
+                    form.icon
+                  ) : (
+                    (form.name_bn || form.name_en || "?").charAt(0)
+                  )}
+                </div>
+                <p className="font-bold text-sm text-heading">{form.name_bn || form.name_en || "ক্যাটাগরি"}</p>
+                {form.description_bn && <p className="text-xs text-muted mt-1 line-clamp-2">{form.description_bn}</p>}
+              </div>
+            </div>
+          </LivePreview>
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Name (English) *">
