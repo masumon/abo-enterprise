@@ -102,7 +102,7 @@ export default function Hero() {
   return (
     <section
       className={cn(
-        "gradient-hero min-h-[85svh] lg:min-h-[92vh] lg:min-h-[92dvh] flex relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]",
+        "gradient-hero lg:min-h-[92vh] lg:min-h-[92dvh] flex relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]",
         heroVAlignClass(hstyle)
       )}
     >
@@ -181,10 +181,10 @@ export default function Hero() {
                     <Zap className="w-3.5 h-3.5 text-yellow-300" aria-hidden />
                     {t("hero_badge")}
                   </div>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-500/25 text-green-100 border border-green-400/30">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-600/80 backdrop-blur-sm text-white border border-green-300/40 shadow-sm">
                     🚚 {lang === "bn" ? `সিলেটে ফ্রি ডেলিভারি ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+` : `Free Sylhet delivery ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+`}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-white/10 text-white/90">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-black/35 backdrop-blur-sm text-white border border-white/20 shadow-sm">
                     👥 {lang === "bn" ? `${stats.clients}+ গ্রাহক` : `${stats.clients}+ clients`}
                   </span>
                 </div>
