@@ -146,6 +146,21 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
     ],
     newItem: () => ({ icon: "package", title_en: "", title_bn: "", desc_en: "", desc_bn: "", cta_en: "", cta_bn: "", href: "/" }),
   },
+  // ── Company registrations shown in the footer ──
+  site_registrations_json: {
+    fields: [
+      { path: "label_bn", label: "Label (BN)", placeholder: "ট্রেড লাইসেন্স" },
+      { path: "label_en", label: "Label (EN)", placeholder: "Trade License" },
+      { path: "value", label: "Number", placeholder: "TL-456789" },
+    ],
+    newItem: () => ({ label_bn: "", label_en: "", value: "" }),
+    previewRow: (item) => (
+      <div className="px-3 py-2 rounded-xl bg-[#123562] border border-white/15 w-fit">
+        <span className="block text-[10px] uppercase tracking-wide text-white/55">{s(item, "label_bn") || s(item, "label_en") || "লেবেল"}</span>
+        <span className="text-[12.5px] font-semibold text-white tabular-nums">{s(item, "value") || "—"}</span>
+      </div>
+    ),
+  },
   // ── Demo catalog (optional; blank = built-in defaults) ──
   demo_products_json: {
     fields: [
@@ -303,7 +318,8 @@ const SECTIONS: Section[] = [
     icon: <ImageIcon className="w-4 h-4" />,
     note: "অফিস ফটো ও About Story ছবি এখন Image Manager → Brand & Site ট্যাবে।",
     fields: [
-      { key: "trade_license", label: "Trade License / TIN", placeholder: "TL-XXXXX", hint: "Footer trust badge" },
+      { key: "trade_license", label: "Trade License (legacy)", placeholder: "TL-XXXXX", hint: "Shown in the footer only when the list below is empty" },
+      { key: "site_registrations_json", label: "Registrations (Trade License, TIN, BIN/VAT, BIDA…)", type: "textarea", hint: "Each entry shows as a card in the footer" },
     ],
   },
 

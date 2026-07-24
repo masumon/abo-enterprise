@@ -12,6 +12,7 @@ export const SITE_WHY_CHOOSE_KEY = "site_why_choose_json";
 export const SITE_FAQ_KEY = "site_faq_json";
 export const SITE_QUICK_CATEGORIES_KEY = "site_quick_categories_json";
 export const SITE_ENTRY_POINTS_KEY = "site_entry_points_json";
+export const SITE_REGISTRATIONS_KEY = "site_registrations_json";
 
 export interface CmsTeamMember {
   id: string;
@@ -123,6 +124,21 @@ export function getAboutStoryImage(settings: Record<string, string>): string {
 export function getAnnouncements(settings: Record<string, string>, fallback: CmsAnnouncement[]): CmsAnnouncement[] {
   return parseJsonArray<CmsAnnouncement>(getSettingValue(settings, SITE_ANNOUNCEMENTS_KEY), fallback)
     .filter((a) => a && (a.en || a.bn));
+}
+
+/** Company registration / licence numbers shown in the footer. */
+export interface CmsRegistration {
+  label_en: string;
+  label_bn: string;
+  value: string;
+}
+
+export function getRegistrations(
+  settings: Record<string, string>,
+  fallback: CmsRegistration[] = []
+): CmsRegistration[] {
+  return parseJsonArray<CmsRegistration>(getSettingValue(settings, SITE_REGISTRATIONS_KEY), fallback)
+    .filter((r) => r && r.value?.trim() && (r.label_en || r.label_bn));
 }
 
 export function getTrustBadges(settings: Record<string, string>, fallback: CmsIconLabel[]): CmsIconLabel[] {
