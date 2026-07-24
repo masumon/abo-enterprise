@@ -9,15 +9,18 @@ export function calcDeliveryCharge(
   /** Highest per-product delivery override in the cart (0 = none). */
   maxProductCharge = 0
 ): number {
+  // Free delivery is a Sylhet-only promise above the threshold — outside Sylhet
+  // always pays the zone charge, no matter the order size.
+  const isSylhet = isSylhetArea(district);
   const freeMin = parseFloat(getSettingValue(settings, "free_delivery_min_amount") || "2000");
-  if (subtotalAfterDiscount >= freeMin) return 0;
+  if (isSylhet && subtotalAfterDiscount >= freeMin) return 0;
 
   const sylhetCharge = parseFloat(getSettingValue(settings, "delivery_charge_sylhet") || "60");
   const dhakaCharge = parseFloat(getSettingValue(settings, "delivery_charge_dhaka") || "120");
   const outsideCharge = parseFloat(getSettingValue(settings, "delivery_charge_outside") || "130");
 
   let zone: number;
-  if (isSylhetArea(district)) zone = sylhetCharge;
+  if (isSylhet) zone = sylhetCharge;
   else if (district === "Dhaka" || district === "Gazipur" || district === "Narayanganj") zone = dhakaCharge;
   else zone = outsideCharge;
 
