@@ -36,6 +36,7 @@ import { useToastStore } from "@/store/toast";
 import { publicApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
+import { triggerInstall, isStandalone } from "@/lib/pwaInstall";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import {
   SITE_TRUST_BADGES_KEY,
@@ -193,6 +194,24 @@ export default function Footer() {
     }
   };
 
+  const handleInstall = async () => {
+    if (isStandalone()) {
+      toast("info", lang === "bn" ? "অ্যাপটি ইতিমধ্যে ইনস্টল করা আছে।" : "The app is already installed.");
+      return;
+    }
+    const result = await triggerInstall();
+    if (result === "accepted") {
+      toast("success", lang === "bn" ? "অ্যাপ ইনস্টল হচ্ছে…" : "Installing the app…");
+    } else if (result === "unavailable") {
+      toast(
+        "info",
+        lang === "bn"
+          ? "ইনস্টল করতে ব্রাউজার মেনু থেকে ‘হোম স্ক্রিনে যোগ করুন’ বেছে নিন।"
+          : "To install, use your browser menu → “Add to Home screen”.",
+      );
+    }
+  };
+
   return (
     <footer className="site-footer relative text-white/85 overflow-hidden">
       <div className="site-footer-accent relative z-10" aria-hidden />
@@ -346,10 +365,10 @@ export default function Footer() {
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <Link href="/products" className="footer-app-btn">
+            <button type="button" onClick={handleInstall} className="footer-app-btn">
               <Smartphone className="w-4 h-4" aria-hidden />
-              {lang === "bn" ? "অ্যাপের মতো ব্যবহার করুন" : "Use as an app"}
-            </Link>
+              {lang === "bn" ? "অ্যাপ ইনস্টল করুন" : "Install app"}
+            </button>
             <div className="flex flex-wrap gap-2">
               {socialLinks.map(({ href, icon: Icon, label }) => (
                 <a
