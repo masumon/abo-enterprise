@@ -766,6 +766,19 @@
   html.dark .text-muted { color: rgb(156 163 175); }
   .text-heading { @apply dark:text-white; color: rgb(17 24 39); }
 
+  /* Legal / policy pages: comfortable long-form reading on every device.
+     Generous Bengali-friendly line-height, safe wrapping for long Latin
+     tokens (emails, gateway names), and clear lists & links. */
+  .legal-prose { line-height: 1.9; overflow-wrap: anywhere; word-break: normal; }
+  .legal-prose p { margin: 0; }
+  .legal-prose ul, .legal-prose ol { padding-left: 1.25rem; }
+  .legal-prose li { margin: 0.35rem 0; padding-left: 0.15rem; }
+  .legal-prose li::marker { color: rgb(21 101 192); }
+  .legal-prose b, .legal-prose strong { color: rgb(17 24 39); font-weight: 600; }
+  html.dark .legal-prose b, html.dark .legal-prose strong { color: rgb(243 244 246); }
+  .legal-prose a { color: rgb(21 101 192); text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
+  html.dark .legal-prose a { color: rgb(120 170 235); }
+
   /* Dark mode: fix hardcoded gray text utilities on surfaces */
   .dark .card .text-gray-900, .dark .card .text-gray-800,
   .dark .enterprise-card .text-gray-900, .dark .enterprise-card .text-gray-800,

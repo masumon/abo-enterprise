@@ -95,11 +95,11 @@ export default function LegalPageLayout({ title, sections, showTitle = true, las
               })}
             </p>
           )}
-          <div className="prose prose-sm max-w-none space-y-8 text-muted">
+          <div className="legal-prose max-w-[68ch] space-y-8 sm:space-y-10 text-[15px] sm:text-base text-gray-700 dark:text-gray-300">
             {sections.map((s) => (
               <section key={s.id} id={s.id} className="scroll-mt-28">
-                <h2 className="text-lg font-bold text-heading mb-3">{s.title}</h2>
-                <div className="leading-relaxed space-y-3">{s.content}</div>
+                <h2 className="text-lg sm:text-xl font-bold text-heading mb-3">{s.title}</h2>
+                <div className="space-y-3">{s.content}</div>
               </section>
             ))}
           </div>
