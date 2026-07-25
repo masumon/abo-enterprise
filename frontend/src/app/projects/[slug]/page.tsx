@@ -91,7 +91,15 @@ export default function ProjectDetailPage() {
             </h2>
             <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-black shadow-lg">
               {videoEmbed.includes("youtube.com") || videoEmbed.includes("vimeo.com") ? (
-                <iframe src={videoEmbed} title={t(project.title)} className="absolute inset-0 w-full h-full" allowFullScreen />
+                <iframe
+                  src={videoEmbed}
+                  title={t(project.title)}
+                  className="absolute inset-0 w-full h-full border-0"
+                  loading="lazy"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                  allowFullScreen
+                />
               ) : (
                 <video src={videoEmbed} controls className="w-full h-full object-contain" />
               )}
