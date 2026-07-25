@@ -315,7 +315,7 @@ export const authApi = {
 };
 
 export const servicesApi = {
-  list: (params?: { category?: string; category_slug?: string; subcategory_slug?: string; featured?: boolean; search?: string; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
+  list: (params?: { category?: string; category_slug?: string; subcategory_slug?: string; featured?: boolean; search?: string; sort?: string; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
     api.get<PaginatedResponse<Service>>("/api/v1/services", { params, ...opts }),
 
   getBySlug: (slug: string) =>

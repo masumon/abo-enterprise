@@ -37,7 +37,9 @@ interface ProductLoadParams {
 
 interface ServiceLoadParams {
   category?: string;
+  category_slug?: string;
   search?: string;
+  sort?: string;
   page?: number;
   per_page?: number;
 }

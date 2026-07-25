@@ -83,6 +83,9 @@ async def list_services(
     subcategory_slug: str | None = None,
     featured: bool | None = None,
     search: str | None = None,
+    sort: str | None = Query(
+        None, description="default | name | price_low | price_high | newest"
+    ),
 ) -> Response:
     """List all active services (public endpoint)"""
     conditions = [
@@ -109,7 +112,17 @@ async def list_services(
         conditions.append(Service.is_featured == featured)
     if search:
         term = f"%{search}%"
-        conditions.append(or_(Service.name_en.ilike(term), Service.name_bn.ilike(term)))
+        # Widened beyond the two name columns so a customer searching for what a
+        # service *does* ("passport", "firmware") finds it, not only its exact title.
+        conditions.append(
+            or_(
+                Service.name_en.ilike(term),
+                Service.name_bn.ilike(term),
+                Service.short_description_en.ilike(term),
+                Service.short_description_bn.ilike(term),
+                Service.description_en.ilike(term),
+            )
+        )
 
     query = select(Service).where(and_(*conditions)).options(
         selectinload(Service.pricing_tiers), selectinload(Service.booking_forms)
@@ -124,7 +137,17 @@ async def list_services(
     # Pagination
     total_pages = (total + per_page - 1) // per_page
     query = query.offset((page - 1) * per_page).limit(per_page)
-    query = query.order_by(Service.sort_order)
+    # Price sorts coalesce base → min → hourly so a service priced any of the
+    # three ways still ranks, and nulls sink rather than leading the list.
+    _price = func.coalesce(Service.base_price, Service.min_price, Service.hourly_rate)
+    query = query.order_by(
+        {
+            "name": Service.name_en.asc(),
+            "price_low": _price.asc().nullslast(),
+            "price_high": _price.desc().nullslast(),
+            "newest": Service.created_at.desc(),
+        }.get(sort or "", Service.sort_order)
+    )
 
     result = await db.execute(query)
     services = result.scalars().all()

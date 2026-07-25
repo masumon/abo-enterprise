@@ -377,13 +377,17 @@ export default function ServiceDetailClient({ service }: Props) {
         {/* Tags */}
         {service.tags && service.tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
+            {/* Tags route into the existing search, which already covers
+                services — inert pills were a dead end for a related-service
+                signal the admin maintains. */}
             {service.tags.map((tag) => (
-              <span
+              <Link
                 key={tag}
-                className="px-3 py-1 bg-gray-100 dark:bg-white/10 text-muted rounded-full text-sm"
+                href={`/search?q=${encodeURIComponent(tag)}`}
+                className="px-3 py-1 bg-gray-100 dark:bg-white/10 text-muted hover:text-brand-700 dark:hover:text-brand-300 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-full text-sm transition-colors"
               >
                 {tag}
-              </span>
+              </Link>
             ))}
           </div>
         )}
