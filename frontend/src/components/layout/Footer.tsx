@@ -42,6 +42,8 @@ import {
   CardMark,
   CodMark,
   BankMark,
+  PlayStoreMark,
+  AppStoreMark,
 } from "@/components/icons/PaymentIcons";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
@@ -154,6 +156,8 @@ export default function Footer() {
     "instagram_url",
     "linkedin_url",
     "youtube_url",
+    "play_store_url",
+    "app_store_url",
     SITE_TRUST_BADGES_KEY,
     SITE_REGISTRATIONS_KEY,
   ]);
@@ -182,6 +186,9 @@ export default function Footer() {
     .map((m) => m.payment_gateway.toLowerCase())
     .filter((k) => k in PAY_BRAND);
   const payKeys = activeKeys.length > 0 ? activeKeys : DEFAULT_PAY;
+
+  const playStoreUrl = getSettingValue(settings, "play_store_url") || "/";
+  const appStoreUrl = getSettingValue(settings, "app_store_url") || "/";
 
   const trustBadges = getTrustBadges(settings, []);
   // Registrations come from the CMS list; the legacy single trade_license key
@@ -242,7 +249,7 @@ export default function Footer() {
       <div className="site-footer-accent relative z-10" aria-hidden />
       <div className="footer-glow pointer-events-none" aria-hidden />
 
-      <div className="relative z-10 container mx-auto px-4 py-10 md:py-14 space-y-10 md:space-y-12">
+      <div className="relative z-10 container mx-auto px-4 py-8 md:py-12 space-y-6 md:space-y-8">
         {/* ── Get in touch: the highest-intent block, so it leads ── */}
         <section>
           <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
@@ -256,7 +263,7 @@ export default function Footer() {
 
           {/* One card per row on a phone — each is a tap target with its own
               action, so stacking keeps them comfortably large. */}
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
             <a href={`tel:+${phoneDigits}`} className="footer-contact-card group">
               <Phone className="w-5 h-5 text-sky-300 flex-none mt-0.5" aria-hidden />
               <span className="min-w-0">
@@ -303,7 +310,7 @@ export default function Footer() {
         </section>
 
         {/* ── Navigation: three equal groups, stacked on a phone ── */}
-        <div className="grid gap-8 sm:gap-10 sm:grid-cols-2 lg:grid-cols-3 border-t border-white/10 pt-9">
+        <div className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3 border-t border-white/10 pt-6 md:pt-7">
           <nav aria-label={lang === "bn" ? "কেনাকাটা ও সেবা" : "Shop and services"}>
             <SectionLabel>{lang === "bn" ? "কেনাকাটা ও সেবা" : "Shop & Services"}</SectionLabel>
             {/* Two columns: six destinations fit in three tidy rows. */}
@@ -353,7 +360,7 @@ export default function Footer() {
 
         {/* ── Trust badges (admin: Homepage Content) ── */}
         {trustBadges.length > 0 && (
-          <div className="border-t border-white/10 pt-9">
+          <div className="border-t border-white/10 pt-6 md:pt-7">
             <SectionLabel>{lang === "bn" ? "কেন আমাদের বিশ্বাস করবেন" : "Why trust us"}</SectionLabel>
             <div className="flex flex-wrap gap-2">
               {trustBadges.map((badge, i) => {
@@ -370,7 +377,7 @@ export default function Footer() {
         )}
 
         {/* ── Secure payments ── */}
-        <div className="border-t border-white/10 pt-9 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="border-t border-white/10 pt-6 md:pt-7 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="min-w-0">
             <p className="text-base font-bold text-white">
               {lang === "bn" ? "নিরাপদ পেমেন্ট" : "Secure Payments"}
@@ -396,7 +403,7 @@ export default function Footer() {
 
         {/* ── Verified & registered business ── */}
         {registrations.length > 0 && (
-          <div className="border-t border-white/10 pt-9 flex flex-col lg:flex-row lg:items-center gap-5">
+          <div className="border-t border-white/10 pt-6 md:pt-7 flex flex-col lg:flex-row lg:items-center gap-5">
             <div className="flex items-center gap-3 lg:pr-6 lg:border-r lg:border-white/10 flex-shrink-0">
               <span className="w-11 h-11 rounded-xl grid place-items-center flex-shrink-0 bg-gradient-to-br from-brand-500/30 to-brand-700/20 ring-1 ring-inset ring-white/20">
                 <ShieldCheck className="w-6 h-6 text-brand-200" />
@@ -429,7 +436,7 @@ export default function Footer() {
         )}
 
         {/* ── Newsletter + app install ── */}
-        <div className="border-t border-white/10 pt-9 grid gap-5 lg:grid-cols-2 lg:items-center">
+        <div className="border-t border-white/10 pt-6 md:pt-7 grid gap-5 lg:grid-cols-2 lg:items-center">
           {newsletterEnabled && (
             <div className="flex items-start gap-3.5">
               <span className="w-11 h-11 rounded-full grid place-items-center flex-none bg-brand-500/20 ring-1 ring-inset ring-white/15">
@@ -480,12 +487,32 @@ export default function Footer() {
                 <Smartphone className="w-4 h-4" aria-hidden />
                 {lang === "bn" ? "ইনস্টল" : "Install App"}
               </button>
+              {/* Store badges sit beside it — the same install intent, for
+                  people who expect to find the app in their store. */}
+              <a
+                href={playStoreUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Google Play"
+                className="footer-store-btn"
+              >
+                <PlayStoreMark className="w-4 h-4" />
+              </a>
+              <a
+                href={appStoreUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="App Store"
+                className="footer-store-btn text-white"
+              >
+                <AppStoreMark className="w-4 h-4" />
+              </a>
             </div>
           </div>
         </div>
 
         {/* ── Brand identity ── */}
-        <div className="border-t border-white/10 pt-9 flex flex-col items-center gap-3 text-center">
+        <div className="border-t border-white/10 pt-6 md:pt-7 flex flex-col items-center gap-3 text-center">
           <BrandLogo size="lg" href={false} variant="light" />
           <div>
             <h3 className="text-white font-bold text-lg tracking-tight">{getBrandName(lang)}</h3>

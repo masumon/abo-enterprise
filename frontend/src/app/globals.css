@@ -355,6 +355,12 @@
            hover:bg-sky-300/20 hover:border-sky-300/45
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60;
   }
+  .footer-store-btn {
+    @apply w-10 h-10 rounded-xl grid place-items-center flex-shrink-0
+           bg-white/10 border border-white/20 transition-all duration-200
+           hover:bg-white/20 hover:-translate-y-0.5
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60;
+  }
   .footer-newsletter-input {
     @apply w-full px-4 py-2.5 rounded-xl text-sm text-gray-900 placeholder-gray-500
            border border-white/25 bg-white/95
