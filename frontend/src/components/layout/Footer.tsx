@@ -34,12 +34,12 @@ import {
   ScrollText,
   BadgeCheck,
 } from "lucide-react";
+import Image from "next/image";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
 import { publicApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { triggerInstall, isStandalone } from "@/lib/pwaInstall";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import {
@@ -101,17 +101,6 @@ const TRUST_ICONS: Record<string, LucideIcon> = {
   award: Award, globe: Globe, truck: Truck, store: Store, clock: Clock,
 };
 
-/** Payment gateway wordmark styling — brand colour on a white chip. */
-const PAY_BRAND: Record<string, { label: string; className: string }> = {
-  bkash: { label: "bKash", className: "text-[#e2136e]" },
-  nagad: { label: "Nagad", className: "text-[#ec1c24]" },
-  rocket: { label: "Rocket", className: "text-[#8b1a9b]" },
-  sslcommerz: { label: "SSLCOMMERZ", className: "text-[#1e5ba8]" },
-  card: { label: "Visa · Mastercard", className: "text-[#1a1f71]" },
-  cod: { label: "ক্যাশ অন ডেলিভারি", className: "text-[#0f766e]" },
-  bank: { label: "Bank Transfer", className: "text-[#0f172a]" },
-};
-
 function normalizePhoneDigits(phone: string) {
   const digits = phone.replace(/\D/g, "");
   if (digits.startsWith("880")) return digits;
@@ -138,7 +127,6 @@ export default function Footer() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const newsletterEnabled = useFeatureFlag("feature_newsletter");
-  const { methods } = usePaymentMethods();
 
   const { settings } = usePublicSettings([
     "trade_license",
@@ -180,9 +168,6 @@ export default function Footer() {
     settings,
     tradeLicense ? [{ label_en: "Trade License", label_bn: "ট্রেড লাইসেন্স", value: tradeLicense }] : []
   );
-  const payments = methods
-    .filter((m) => m.is_active)
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
   const socialLinks = [
     {
@@ -322,22 +307,24 @@ export default function Footer() {
           </div>
         )}
 
-        {/* ── Payment gateways (admin: Payments module) ── */}
-        {payments.length > 0 && (
-          <div className="mt-8">
-            <SectionLabel>{lang === "bn" ? "নিরাপদ লেনদেন" : "Secure payments"}</SectionLabel>
-            <div className="flex flex-wrap gap-2">
-              {payments.map((m) => {
-                const brand = PAY_BRAND[m.payment_gateway.toLowerCase()];
-                return (
-                  <span key={m.id} className={cn("footer-pay", brand?.className ?? "text-gray-900")}>
-                    {brand?.label ?? m.payment_gateway}
-                  </span>
-                );
-              })}
-            </div>
+        {/* ── Accepted payment methods ── */}
+        <div className="mt-8">
+          <SectionLabel>{lang === "bn" ? "নিরাপদ লেনদেন" : "Secure payments"}</SectionLabel>
+          {/* Accepted-methods strip on a light plate: most of these marks are
+              dark-on-white and would disappear straight on the footer.
+              Intrinsic size is passed so the space is reserved before it loads
+              — no layout shift on a slow connection. */}
+          <div className="rounded-2xl bg-white p-3 sm:p-4 shadow-lg shadow-black/20 ring-1 ring-black/5">
+            <Image
+              src="/payment-methods.webp"
+              alt={lang === "bn" ? "গ্রহণযোগ্য পেমেন্ট মাধ্যম" : "Accepted payment methods"}
+              width={1200}
+              height={441}
+              sizes="(max-width: 640px) 92vw, (max-width: 1024px) 70vw, 640px"
+              className="w-full h-auto"
+            />
           </div>
-        )}
+        </div>
 
         {/* ── Registrations (admin: Settings) ── */}
         {registrations.length > 0 && (
@@ -348,6 +335,16 @@ export default function Footer() {
                 const RegIcon = registrationIcon(r.label_en || r.label_bn || "");
                 return (
                   <div key={i} className="footer-reg">
+                    {/* The official Government of Bangladesh seal — these are
+                        state-issued numbers. Transparent PNG, so it sits on the
+                        dark footer without a plate behind it. */}
+                    <Image
+                      src="/bd-govt-logo.png"
+                      alt="গণপ্রজাতন্ত্রী বাংলাদেশ সরকার"
+                      width={28}
+                      height={28}
+                      className="w-7 h-7 flex-shrink-0 object-contain drop-shadow-sm"
+                    />
                     <span className="footer-reg-icon" aria-hidden>
                       <RegIcon className="w-4 h-4" />
                     </span>
