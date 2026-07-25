@@ -17,9 +17,10 @@ import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
-// Business-aligned service categories shown first; legacy values are retained
-// so existing services keep displaying (and remain editable) without any data
-// migration. Values are the stored slugs; labels are what admins see.
+// Fallback only — used when the taxonomy API is unreachable, so the editor
+// still works offline. The live taxonomy tree is the real source (alembic 0014
+// backfilled category_id from these legacy strings and now derives the string
+// from the linked node).
 const CATEGORIES: { value: string; label: string }[] = [
   { value: "digital_services", label: "Digital Services" },
   { value: "print_documentation", label: "Print & Documentation" },
@@ -236,7 +237,7 @@ export default function AdminServicesPage() {
     if (!editing) return;
     if (!editing.name_en?.trim()) { toast("error", "Name (EN) is required"); return; }
     if (!editing.slug?.trim()) { toast("error", "Slug is required"); return; }
-    if (!editing.category) { toast("error", "Category is required"); return; }
+    if (!editing.category_id && !editing.category) { toast("error", "Category is required"); return; }
     if (!editing.pricing_type) { toast("error", "Pricing type is required"); return; }
     if (editing.min_price != null && editing.max_price != null && editing.min_price > editing.max_price) {
       toast("error", "Minimum price cannot be greater than maximum price"); return;
@@ -627,23 +628,15 @@ export default function AdminServicesPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">Category <span className="text-red-400">*</span></label>
-                    <select value={editing.category ?? ""} onChange={f("category")} className="input w-full text-sm">
-                      {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="form-label">Sort Order</label>
-                    <input type="number" value={editing.sort_order ?? 0} onChange={fNum("sort_order")} className="input w-full" />
-                  </div>
-                </div>
-
-                {taxonomy.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* One classification. The taxonomy is authoritative; the
+                      legacy `category` string is derived from the chosen node
+                      server-side, so both always agree. The free-text select
+                      below only appears when the taxonomy is unreachable. */}
+                  {taxonomy.length > 0 ? (
                     <div>
                       <label className="form-label">
-                        ক্যাটালগ গাছের অবস্থান <span className="text-gray-400 font-normal">(যেকোনো গভীরতা)</span>
+                        Category <span className="text-red-400">*</span>{" "}
+                        <span className="text-gray-400 font-normal text-xs">(any depth)</span>
                       </label>
                       <select
                         value={editing.category_id ?? ""}
@@ -654,12 +647,28 @@ export default function AdminServicesPage() {
                         }
                         className="input w-full text-sm"
                       >
-                        <option value="">— None —</option>
+                        <option value="">— Select —</option>
                         {treeOptions.map((o) => (
                           <option key={o.id} value={o.id}>{o.label}</option>
                         ))}
                       </select>
                     </div>
+                  ) : (
+                    <div>
+                      <label className="form-label">Category <span className="text-red-400">*</span></label>
+                      <select value={editing.category ?? ""} onChange={f("category")} className="input w-full text-sm">
+                        {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+                      </select>
+                    </div>
+                  )}
+                  <div>
+                    <label className="form-label">Sort Order</label>
+                    <input type="number" value={editing.sort_order ?? 0} onChange={fNum("sort_order")} className="input w-full" />
+                  </div>
+                </div>
+
+                {taxonomy.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Second taxonomy link. Without this the column could only
                         ever be set by direct API call, while service filters
                         and the category-delete guard both read it. */}

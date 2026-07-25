@@ -32,6 +32,7 @@ router = APIRouter(prefix="/reviews", tags=["reviews"])
 async def list_reviews(
     featured: bool | None = Query(None),
     product_id: UUID | None = Query(None),
+    service_id: UUID | None = Query(None),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
@@ -41,6 +42,8 @@ async def list_reviews(
         conditions.append(Review.is_featured == featured)
     if product_id:
         conditions.append(Review.product_id == product_id)
+    if service_id:
+        conditions.append(Review.service_id == service_id)
 
     total = (await db.execute(select(func.count(Review.id)).where(and_(*conditions)))).scalar_one()
     result = await db.execute(

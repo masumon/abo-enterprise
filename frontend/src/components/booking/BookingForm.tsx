@@ -28,6 +28,7 @@ const bookingSchema = z.object({
   district: z.string().optional(),
   upazila: z.string().optional(),
   details: z.string().min(10, "Please provide more details"),
+  coupon_code: z.string().optional(),
   service_tier: z.string().optional(),
   quoted_price: z.number().optional(),
 });
@@ -322,6 +323,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         pricing_type: service.pricing_type,
         quoted_price: quotedPrice,
         details: data.details,
+        coupon_code: data.coupon_code?.trim().toUpperCase() || undefined,
         form_data: formData,
         attachments: attachments.map((a) => a.url),
       });
@@ -815,6 +817,24 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
           )}
         </div>
       )}
+
+      {/* Coupon — the server re-derives the discount from the admin rules
+          (same helper the order flow uses), so nothing here is trusted. */}
+      <div>
+        <label htmlFor="booking-coupon" className="form-label">
+          {L("Coupon Code (Optional)", "কুপন কোড (ঐচ্ছিক)")}
+        </label>
+        <input
+          id="booking-coupon"
+          type="text"
+          {...register("coupon_code")}
+          className="input uppercase"
+          placeholder={L("e.g. ABO10", "যেমন ABO10")}
+        />
+        <p className="text-xs text-muted mt-1">
+          {L("Applied to your invoice after we verify it.", "যাচাইয়ের পর আপনার ইনভয়েসে প্রয়োগ হবে।")}
+        </p>
+      </div>
 
       {uploadError && <div className="alert-error" role="alert">{uploadError}</div>}
 

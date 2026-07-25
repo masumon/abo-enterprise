@@ -266,7 +266,9 @@ export const bookingPaymentsApi = {
 
 export const serviceBookingsApi = {
   create: (data: {
-    service_id: string;
+    /** Omit for a booking with no catalog service behind it; send service_name instead. */
+    service_id?: string;
+    service_name?: string;
     service_tier?: string;
     customer_name: string;
     customer_phone: string;
@@ -275,11 +277,12 @@ export const serviceBookingsApi = {
     district?: string;
     upazila?: string;
     booking_date?: string;
-    pricing_type: string;
+    pricing_type?: string;
     quoted_price?: number;
     details?: string;
     requirements?: string;
     /** Answers to the service's dynamic booking form (validated server-side). */
+    coupon_code?: string;
     form_data?: Record<string, unknown>;
     attachments?: string[];
   }) =>
@@ -359,7 +362,7 @@ export const servicesApi = {
 };
 
 export const reviewsApi = {
-  list: (params?: { featured?: boolean; product_id?: string; page?: number; per_page?: number }) =>
+  list: (params?: { featured?: boolean; product_id?: string; service_id?: string; page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<Review>>("/api/v1/reviews", { params }),
 
   create: (data: Partial<Review>) =>

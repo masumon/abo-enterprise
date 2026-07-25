@@ -77,6 +77,10 @@ class Review(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     product_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="SET NULL"))
+    # A review targets a product or a service (alembic 0016).
+    service_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("services.id", ondelete="SET NULL"), index=True
+    )
     customer_name: Mapped[str] = mapped_column(String(255), nullable=False)
     company: Mapped[str | None] = mapped_column(String(255))
     rating: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -116,6 +120,9 @@ class Order(Base):
     # order stays pending until the advance is paid (gateway or admin-marked).
     advance_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
     advance_paid: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Coupon captured at booking time (alembic 0016); mirrors the order shape.
+    coupon_code: Mapped[str | None] = mapped_column(String(50))
+    discount_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
     total: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     courier_provider: Mapped[str | None] = mapped_column(String(50))
     courier_tracking_id: Mapped[str | None] = mapped_column(String(100))
@@ -341,7 +348,9 @@ class BookingV2(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     booking_number: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
-    service_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("services.id"))
+    # Nullable since alembic 0015: a booking may not map to a catalog service
+    # (migrated legacy printing/legal intake, and walk-in bookings).
+    service_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("services.id"))
     service_name: Mapped[str] = mapped_column(String(255), nullable=False)
     service_tier: Mapped[str | None] = mapped_column(String(100))
     customer_name: Mapped[str] = mapped_column(String(255), nullable=False)

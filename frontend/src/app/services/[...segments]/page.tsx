@@ -246,6 +246,19 @@ function buildJsonLd(service: Service) {
     ...(service.tags && service.tags.length > 0
       ? { keywords: service.tags.join(", ") }
       : {}),
+    // Only emitted with real reviews behind it — an aggregateRating without
+    // reviewCount is invalid markup and can cost the rich result entirely.
+    ...(typeof service.rating === "number" && (service.review_count ?? 0) > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: service.rating,
+            reviewCount: service.review_count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
   };
 }
 

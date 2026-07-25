@@ -68,6 +68,26 @@ def _assert_price_coherence(
             detail="A 'package' service needs a base price, a min/max range, or at least one pricing tier",
         )
 
+async def _sync_category_cache(db: AsyncSession, values: dict) -> None:
+    """Keep `category` as a cache of the linked taxonomy node's slug.
+
+    The two classifications used to drift because nothing wrote both. Now the
+    tree is authoritative: whenever category_id is set, the legacy string is
+    derived from it, so every query and URL that reads the string keeps working
+    and always agrees with the FK.
+    """
+    node_id = values.get("category_id")
+    if not node_id:
+        return
+    from app.models.models import Category
+
+    slug = (await db.execute(
+        select(Category.slug).where(Category.id == node_id, Category.is_deleted == False)  # noqa: E712
+    )).scalar_one_or_none()
+    if slug:
+        values["category"] = slug
+
+
 # ==================== PUBLIC ENDPOINTS ====================
 
 @router.get("", response_model=PaginatedResponse)
@@ -182,10 +202,21 @@ async def get_service(
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
 
-    return ApiResponse(
-        data=ServiceOut.model_validate(service).model_dump(),
-        message="Service fetched successfully",
-    )
+    data = ServiceOut.model_validate(service).model_dump()
+    # Aggregate rating from approved reviews — drives the on-page rating and
+    # the aggregateRating in the service's structured data.
+    from app.models.models import Review
+
+    agg = (await db.execute(
+        select(func.avg(Review.rating), func.count(Review.id)).where(
+            Review.service_id == service.id,
+            Review.is_active == True,  # noqa: E712
+        )
+    )).one()
+    data["rating"] = round(float(agg[0]), 2) if agg[0] is not None else None
+    data["review_count"] = int(agg[1] or 0)
+
+    return ApiResponse(data=data, message="Service fetched successfully")
 
 
 @router.get("/{service_id}/booking-form", response_model=ApiResponse)
@@ -296,7 +327,9 @@ async def create_service(
         payload.max_price, payload.hourly_rate,
     )
 
-    service = Service(**payload.model_dump())
+    values = payload.model_dump()
+    await _sync_category_cache(db, values)
+    service = Service(**values)
     db.add(service)
     await db.commit()
 
@@ -445,6 +478,8 @@ async def update_service(
               for k in ("base_price", "min_price", "max_price", "hourly_rate")),
             has_tiers=(tiers.scalar() or 0) > 0,
         )
+
+    await _sync_category_cache(db, update_data)
 
     for field, value in update_data.items():
         setattr(service, field, value)

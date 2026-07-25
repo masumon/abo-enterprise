@@ -29,7 +29,8 @@ interface AdminBooking extends Booking {
 }
 
 export default function AdminBookingsPage() {
-  const [tab, setTab] = useState<"v1" | "v2">("v2");
+  // Legacy v1 rows now live in bookings_v2 (alembic 0015); the switcher is gone.
+  const [tab] = useState<"v1" | "v2">("v2");
 
   // V1 state
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
@@ -96,7 +97,6 @@ export default function AdminBookingsPage() {
     }
   }, [statusFilterV2, paymentFilterV2, districtFilterV2, pageV2, toast]);
 
-  useEffect(() => { if (tab === "v1") load(); }, [load, tab]);
   useEffect(() => { if (tab === "v2") loadV2(); }, [loadV2, tab]);
 
   const handleSearchChange = (v: string) => {
@@ -298,22 +298,11 @@ export default function AdminBookingsPage() {
         </AdminToolbar>
       )}
 
-      {/* Tab switcher */}
-      <div className="flex gap-1 border-b border-gray-200">
-        <button
-          onClick={() => setTab("v1")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "v1" ? "border-brand-500 text-brand-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
-        >
-          Simple Bookings
-        </button>
-        <button
-          onClick={() => setTab("v2")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "v2" ? "border-brand-500 text-brand-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
-        >
-          Service Bookings
-        </button>
-      </div>
-
+      {/* One booking list. The old "Simple Bookings" tab is gone: alembic 0015
+          copied every legacy row into bookings_v2 under its original booking
+          number, so showing both would list each booking twice. The v1 code
+          below stays reachable only via setTab, which nothing now calls, and
+          is kept for a release in case a legacy row needs inspecting. */}
       {/* V1 Table */}
       {tab === "v1" && (
         <div className="admin-card overflow-hidden">
