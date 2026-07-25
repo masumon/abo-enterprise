@@ -175,19 +175,29 @@ export function getSoftwareServiceCards(settings: Record<string, string>): Softw
 }
 
 /** YouTube / Vimeo / direct video URL → embed src */
+/** True when the URL is a media file the browser plays directly (not an embed). */
+export function isDirectVideoFile(url: string): boolean {
+  return /\.(mp4|webm|mov|m4v)(\?|$)/i.test(url.trim());
+}
+
 export function toVideoEmbedUrl(url: string): string | null {
   const trimmed = url.trim();
   if (!trimmed) return null;
+  // Every YouTube surface an admin might paste: watch, youtu.be, embed,
+  // shorts, live and the old /v/ form, on youtube.com or youtube-nocookie.com.
   const ytMatch =
-    trimmed.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/) ??
-    trimmed.match(/youtube\.com\/shorts\/([\w-]{11})/);
+    trimmed.match(
+      /(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:.*&)?v=|embed\/|shorts\/|live\/|v\/)|youtu\.be\/)([\w-]{11})/
+    );
   if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
   if (/vimeo\.com\/(\d+)/.test(trimmed)) {
     const id = trimmed.match(/vimeo\.com\/(\d+)/)?.[1];
     return id ? `https://player.vimeo.com/video/${id}` : null;
   }
-  if (/\.(mp4|webm|mov)(\?|$)/i.test(trimmed)) return trimmed;
-  return trimmed.includes("embed") ? trimmed : null;
+  if (/\.(mp4|webm|mov|m4v)(\?|$)/i.test(trimmed)) return trimmed;
+  // Anything else that already looks like a player URL is passed through;
+  // a plain page link is rejected rather than rendered as a broken player.
+  return /^https?:\/\//i.test(trimmed) && /embed|player/i.test(trimmed) ? trimmed : null;
 }
 
 export function slugify(value: string): string {
