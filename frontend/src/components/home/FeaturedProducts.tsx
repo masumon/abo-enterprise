@@ -8,7 +8,7 @@ import { useCartStore } from "@/store/cart";
 import ProductCard from "@/components/features/ProductCard";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import type { Product } from "@/types";
-import CountdownTimer, { resolveFlashSaleEnd, isFlashSaleActive } from "@/components/ui/CountdownTimer";
+import CountdownTimer, { resolveFlashSaleEnd, isFlashSaleActive, type CountdownSize } from "@/components/ui/CountdownTimer";
 import PromoSlider from "@/components/ui/PromoSlider";
 import { productsApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
@@ -54,6 +54,8 @@ export default function FeaturedProducts() {
       ? getSettingValue(settings, "flash_sale_title_bn") || "ফ্ল্যাশ সেল"
       : getSettingValue(settings, "flash_sale_title_en") || "Flash Sale";
   const showFlashSale = flashSaleEnabled && isFlashSaleActive(flashStart, flashEnd);
+  const flashSize = (getSettingValue(settings, "flash_sale_size") || "md") as CountdownSize;
+  const flashIcon = getSettingValue(settings, "flash_sale_icon") || "⚡";
 
   useEffect(() => {
     if (!showFlashSale) {
@@ -120,7 +122,7 @@ export default function FeaturedProducts() {
         <div className="section-title text-center mb-10">
           {showFlashSale && (
             <div className="flex flex-col items-center gap-2 mb-2">
-              <CountdownTimer endDate={flashEnd} label={flashTitle} />
+              <CountdownTimer endDate={flashEnd} label={flashTitle} size={flashSize} icon={flashIcon} />
               {/* Admin-managed flash-sale banners; renders nothing when unset. */}
               <PromoSlider placement="flash_sale" className="mt-4 w-full max-w-3xl" aspect="aspect-[21/9] sm:aspect-[3/1]" />
             </div>

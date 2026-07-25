@@ -16,6 +16,20 @@ const PLACEMENTS: { value: PromoSlide["placement"]; label: string }[] = [
   { value: "flash_sale", label: "Flash sale" },
 ];
 
+/** Rendered size per surface, so uploads match the box they land in. */
+const SPECS: Record<PromoSlide["placement"], { size: string; ratio: string; note: string }> = {
+  hero: {
+    size: "1280 × 720 px",
+    ratio: "16:9",
+    note: "Shown at the top of the homepage — below the top bar on mobile, beside the headline on desktop.",
+  },
+  flash_sale: {
+    size: "1500 × 500 px",
+    ratio: "3:1",
+    note: "Shown under the flash-sale countdown. Only visible while a flash sale is running.",
+  },
+};
+
 const EMPTY: Partial<PromoSlide> = {
   placement: "hero", image_url: "", video_url: "", link_url: "",
   title_en: "", title_bn: "", alt_text: "", sort_order: 0, is_active: true,
@@ -203,16 +217,36 @@ export default function AdminPromoSlidesPage() {
                 </select>
               </div>
 
-              <ImageUpload
-                label="Image"
-                value={editing.image_url ?? ""}
-                onChange={(url) => set("image_url", url)}
-                folder="abo-enterprise/promo"
-              />
+              {(() => {
+                const spec = SPECS[editing.placement ?? "hero"];
+                return (
+                  <>
+                    <div className="rounded-xl bg-brand-50 border border-brand-100 px-3 py-2.5 text-[12px] text-brand-800 space-y-1">
+                      <p><span className="font-semibold">Recommended size:</span> {spec.size} ({spec.ratio})</p>
+                      <p><span className="font-semibold">Format:</span> JPG, PNG or WEBP · max 5MB</p>
+                      <p className="text-brand-700/80">{spec.note}</p>
+                      <p className="text-brand-700/80">
+                        Images are cropped to fill the box, so keep text and logos away from the edges.
+                      </p>
+                    </div>
+
+                    <ImageUpload
+                      label="Image"
+                      value={editing.image_url ?? ""}
+                      onChange={(url) => set("image_url", url)}
+                      folder="abo-enterprise/promo"
+                      hint={`${spec.size} (${spec.ratio}) · JPG/PNG/WEBP · max 5MB`}
+                    />
+                  </>
+                );
+              })()}
 
               <div>
                 <label className="form-label">Video URL <span className="text-gray-400 font-normal text-xs">(optional — used instead of the image)</span></label>
                 <input value={editing.video_url ?? ""} onChange={(e) => set("video_url", e.target.value)} className="input w-full text-sm" placeholder="https://…" />
+                <p className="text-[11px] text-gray-400 mt-1">
+                  MP4 (H.264), same ratio as the image, under 10MB. Autoplays muted — keep it short and silent-friendly.
+                </p>
               </div>
 
               <div>
