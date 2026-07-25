@@ -242,6 +242,15 @@ export const serviceBookingsAdminApi = {
     api.delete<ApiResponse<null>>(`/api/v1/service-bookings/admin/bookings/${id}`),
 };
 
+export const bookingPaymentsApi = {
+  /** Hosted checkout for a booking; amount is derived server-side. */
+  initiate: (booking_id: string, phone: string) =>
+    api.post<ApiResponse<{ payment_url?: string }>>(
+      "/api/v1/payments/sslcommerz/initiate-booking",
+      { booking_id, phone }
+    ),
+};
+
 export const serviceBookingsApi = {
   create: (data: {
     service_id: string;

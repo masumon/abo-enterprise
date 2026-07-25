@@ -1001,6 +1001,19 @@ from decimal import Decimal
 from uuid import UUID
 from datetime import datetime
 
+class BookingPaymentInitiateRequest(BaseModel):
+    """Start a hosted checkout for a service booking.
+
+    Phone-gated like every other public booking read: the caller must know the
+    number used on the booking, not just its id.
+    """
+    booking_id: UUID
+    phone: str
+    success_url: str | None = None
+    fail_url: str | None = None
+    cancel_url: str | None = None
+
+
 class PaymentInitiateRequest(BaseModel):
     order_id: UUID
     payment_gateway: str = Field(..., pattern="^(bkash|nagad|sslcommerz)$")
