@@ -76,7 +76,7 @@ const PAY_BRAND: Record<string, { label: string; Mark: (p: { className?: string 
 };
 
 /** Shown when the Payments module has nothing enabled yet. */
-const DEFAULT_PAY = ["visa", "mastercard", "bkash", "nagad", "rocket"];
+const DEFAULT_PAY = ["visa", "mastercard", "bkash", "nagad", "rocket", "cod", "bank"];
 
 /** Primary business destinations — icon tiles (fast to recognise). */
 const DESTINATIONS: { href: string; icon: LucideIcon; label: { en: string; bn: string } }[] = [
@@ -319,7 +319,9 @@ export default function Footer() {
 
           <nav aria-label={lang === "bn" ? "কোম্পানি" : "Company"}>
             <SectionLabel>{lang === "bn" ? "কোম্পানি" : "Company"}</SectionLabel>
-            <div className="flex flex-col">
+            {/* Two columns like Shop & Services: nine links become five short
+                rows instead of a nine-row column of mostly empty space. */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
               {COMPANY.map((link) => (
                 <Link key={link.href} href={link.href} className="footer-nav-link">
                   {lang === "bn" ? link.label.bn : link.label.en}
@@ -328,19 +330,8 @@ export default function Footer() {
             </div>
           </nav>
 
-          <div className="sm:col-span-2 lg:col-span-1">
-            <nav aria-label={t("footer_legal")}>
-              <SectionLabel>{lang === "bn" ? "দ্রুত লিংক" : "Quick Links"}</SectionLabel>
-              <div className="flex flex-col">
-                {LEGAL.map((link) => (
-                  <Link key={link.href} href={link.href} className="footer-nav-link">
-                    {t(link.labelKey)}
-                  </Link>
-                ))}
-              </div>
-            </nav>
-
-            <div className="mt-6">
+          <div>
+            <div>
               <SectionLabel>{lang === "bn" ? "আমাদের অনুসরণ করুন" : "Follow Us"}</SectionLabel>
               <div className="flex flex-wrap gap-2.5">
                 {socialLinks.map(({ href, icon: Icon, label }) => (
@@ -390,7 +381,7 @@ export default function Footer() {
           </div>
           {/* Scrolls rather than wraps on a phone, so the cards hold one
               consistent height at every width. */}
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar lg:overflow-visible -mx-1 px-1 lg:mx-0 lg:px-0">
+          <div className="footer-pay-scroll flex items-center gap-2 overflow-x-auto no-scrollbar lg:overflow-visible lg:flex-wrap -mx-1 px-1 lg:mx-0 lg:px-0">
             {payKeys.map((key) => {
               const brand = PAY_BRAND[key];
               if (!brand) return null;
@@ -494,12 +485,22 @@ export default function Footer() {
         </div>
 
         {/* ── Brand identity ── */}
-        <div className="border-t border-white/10 pt-9 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+        <div className="border-t border-white/10 pt-9 flex flex-col items-center gap-3 text-center">
           <BrandLogo size="lg" href={false} variant="light" />
-          <div className="min-w-0">
+          <div>
             <h3 className="text-white font-bold text-lg tracking-tight">{getBrandName(lang)}</h3>
             <p className="text-white/60 text-xs mt-0.5">{getBrandTagline(lang)}</p>
           </div>
+          {/* Legal sits with the brand line, not in the navigation grid — it is
+              the lightest-weight content on the page. */}
+          <nav className="flex flex-wrap justify-center gap-x-1 gap-y-0.5 mt-1" aria-label={t("footer_legal")}>
+            {LEGAL.map((link, i) => (
+              <span key={link.href} className="inline-flex items-center">
+                {i > 0 && <span className="footer-dot" aria-hidden />}
+                <Link href={link.href} className="footer-legal-link">{t(link.labelKey)}</Link>
+              </span>
+            ))}
+          </nav>
         </div>
       </div>
 
