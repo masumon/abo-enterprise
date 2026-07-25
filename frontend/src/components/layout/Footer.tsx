@@ -336,22 +336,29 @@ export default function Footer() {
         {payments.length > 0 && (
           <div className="mt-8">
             <SectionLabel>{lang === "bn" ? "নিরাপদ লেনদেন" : "Secure payments"}</SectionLabel>
-            {/* One scrollable row — icons stay readable on a phone without
-                wrapping into a tall block. */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
-              {payments.map((m) => {
-                const brand = PAY_BRAND[m.payment_gateway.toLowerCase()];
-                const label = brand?.label ?? m.payment_gateway;
-                return brand ? (
-                  <span key={m.id} className="footer-pay-icon" title={label}>
-                    <brand.Icon className="w-full h-full" />
-                    <span className="sr-only">{label}</span>
-                  </span>
-                ) : (
-                  <span key={m.id} className="footer-pay">{label}</span>
-                );
-              })}
+            {/* Accepted-methods strip on a light plate: most of these marks
+                are dark-on-white and would disappear straight on the footer.
+                Intrinsic size is passed so the space is reserved before it
+                loads — no layout shift on a slow connection. */}
+            <div className="rounded-2xl bg-white p-3 sm:p-4 shadow-lg shadow-black/20 ring-1 ring-black/5">
+              <Image
+                src="/payment-methods.webp"
+                alt={lang === "bn" ? "গ্রহণযোগ্য পেমেন্ট মাধ্যম" : "Accepted payment methods"}
+                width={1200}
+                height={441}
+                sizes="(max-width: 640px) 92vw, (max-width: 1024px) 70vw, 640px"
+                className="w-full h-auto"
+              />
             </div>
+
+            {/* The gateways actually enabled in the Payments module — the strip
+                above is artwork, this is the live list, and it keeps the
+                section truthful for screen readers. */}
+            <ul className="sr-only">
+              {payments.map((m) => (
+                <li key={m.id}>{PAY_BRAND[m.payment_gateway.toLowerCase()]?.label ?? m.payment_gateway}</li>
+              ))}
+            </ul>
           </div>
         )}
 
