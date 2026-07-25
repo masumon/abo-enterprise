@@ -116,3 +116,27 @@ export function BankMark({ className }: IconProps) {
     </svg>
   );
 }
+
+/** Google Play badge mark — the coloured triangle only, at badge scale. */
+export function PlayStoreMark({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} role="img" aria-label="Google Play">
+      <path d="M3.6 2.4a1 1 0 0 0-.5.9v17.4a1 1 0 0 0 .5.9l9.2-9.6L3.6 2.4Z" fill="#00D2FF" />
+      <path d="M17.6 8.1 13.9 6 4.2 1.9a1 1 0 0 0-.6-.1l9.2 10.2 4.8-3.9Z" fill="#00F076" />
+      <path d="m3.6 22.1 9.2-10.1 4.8 3.9-3.7 2.1-9.7 4.2a1 1 0 0 1-.6-.1Z" fill="#FF3A44" />
+      <path d="m17.6 8.1-4.8 3.9 4.8 3.9 3.3-1.9c1.1-.7 1.1-2.3 0-3l-3.3-2.9Z" fill="#FFC900" />
+    </svg>
+  );
+}
+
+/** Apple App Store — the Apple mark, which is what the badge leads with. */
+export function AppStoreMark({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} role="img" aria-label="App Store">
+      <path
+        d="M16.4 12.7c0-2.3 1.9-3.4 2-3.5-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9-.7 0-1.8-.9-3-.8-1.5 0-2.9.9-3.7 2.3-1.6 2.7-.4 6.8 1.1 9 .8 1.1 1.7 2.3 2.9 2.2 1.2 0 1.6-.7 3-.7s1.8.7 3 .7 2-1.1 2.8-2.2c.9-1.2 1.2-2.4 1.2-2.5-.1 0-2.4-.9-2.4-3.6ZM14.2 5.9c.6-.8 1.1-1.9 1-3-.9 0-2.1.6-2.8 1.4-.6.7-1.1 1.8-1 2.9 1 .1 2.1-.5 2.8-1.3Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
