@@ -10,7 +10,7 @@ import Reveal from "@/components/ui/Reveal";
 import { cn } from "@/lib/utils";
 import { useShowcaseContent } from "@/hooks/useShowcaseContent";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
-import { toVideoEmbedUrl } from "@/lib/showcaseContent";
+import { isDirectVideoFile, toVideoEmbedUrl } from "@/lib/showcaseContent";
 
 const FILTERS = [
   { id: "all", label: { en: "All", bn: "সব" } },
@@ -126,9 +126,17 @@ export default function GalleryPage() {
               <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                 {videos.map((p) => (
                   <div key={p.slug} className="enterprise-card overflow-hidden">
-                    {p.embed && (p.embed.includes("youtube.com") || p.embed.includes("vimeo.com")) ? (
+                    {p.embed && !isDirectVideoFile(p.embed) ? (
                       <div className="relative aspect-video">
-                        <iframe src={p.embed} title={lang === "bn" ? p.title.bn : p.title.en} className="absolute inset-0 w-full h-full" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen />
+                        <iframe
+                          src={p.embed}
+                          title={lang === "bn" ? p.title.bn : p.title.en}
+                          className="absolute inset-0 w-full h-full border-0"
+                          loading="lazy"
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        />
                       </div>
                     ) : p.embed ? (
                       <video src={p.embed} controls className="w-full aspect-video object-cover bg-black" />
