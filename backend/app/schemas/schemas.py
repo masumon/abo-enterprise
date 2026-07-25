@@ -168,6 +168,7 @@ class ProductOut(ProductBase):
 
 class ReviewCreate(BaseModel):
     product_id: uuid.UUID | None = None
+    service_id: uuid.UUID | None = None
     customer_name: str
     company: str | None = None
     rating: int
@@ -187,6 +188,7 @@ class ReviewCreate(BaseModel):
 class ReviewOut(BaseModel):
     id: uuid.UUID
     product_id: uuid.UUID | None
+    service_id: uuid.UUID | None = None
     customer_name: str
     company: str | None
     rating: int
@@ -691,7 +693,10 @@ class ServiceOut(ServiceBase):
 # ==================== BOOKING V2 SCHEMAS ====================
 
 class BookingV2Create(BaseModel):
-    service_id: uuid.UUID
+    # Optional since the legacy printing/legal intake was merged in (0015).
+    # When absent, service_name identifies what was requested.
+    service_id: uuid.UUID | None = None
+    service_name: str | None = None
     service_tier: str | None = None
     customer_name: str
     customer_phone: str
@@ -701,10 +706,12 @@ class BookingV2Create(BaseModel):
     upazila: str | None = None
     booking_date: datetime | None = None
     estimated_completion_date: datetime | None = None
-    pricing_type: str
+    # Optional for a service-less booking; otherwise taken from the service row.
+    pricing_type: str | None = None
     quoted_price: float | None = None
     details: str | None = None
     requirements: str | None = None
+    coupon_code: str | None = None
     # Answers to the service's dynamic booking form; validated server-side
     # against service_booking_forms config (core/booking_form.py).
     form_data: dict = {}
@@ -775,7 +782,7 @@ class BookingV2AdminUpdate(BaseModel):
 class BookingV2Out(BaseModel):
     id: uuid.UUID
     booking_number: str
-    service_id: uuid.UUID
+    service_id: uuid.UUID | None = None
     service_name: str
     service_tier: str | None
     customer_name: str
@@ -791,6 +798,8 @@ class BookingV2Out(BaseModel):
     final_price: float | None
     advance_amount: float = 0
     advance_paid: bool = False
+    coupon_code: str | None = None
+    discount_amount: float = 0
     hours_worked: float | None
     details: str | None
     requirements: str | None

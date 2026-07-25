@@ -531,7 +531,9 @@ class InvoiceService:
             "subtotal": float(booking.final_price or booking.quoted_price or 0),
         }]
 
-        total = float(booking.final_price or booking.quoted_price or 0)
+        subtotal = float(booking.final_price or booking.quoted_price or 0)
+        discount = float(getattr(booking, "discount_amount", 0) or 0)
+        total = max(0.0, subtotal - discount)
 
         # Create invoice
         invoice_number = generate_invoice_number()
@@ -542,7 +544,9 @@ class InvoiceService:
             customer_email=booking.customer_email,
             customer_phone=booking.customer_phone,
             items=items,
-            subtotal=total,
+            subtotal=subtotal,
+            discount_amount=discount,
+            coupon_code=getattr(booking, "coupon_code", None),
             tax=0,
             total=total,
             payment_method=payment_method or booking.payment_method,

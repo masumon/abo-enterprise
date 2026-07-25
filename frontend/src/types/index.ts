@@ -59,6 +59,7 @@ export interface Product {
 export interface Review {
   id: string;
   product_id?: string | null;
+  service_id?: string | null;
   customer_name: string;
   company?: string | null;
   rating: number;
@@ -187,6 +188,9 @@ export interface Service {
   delivery_charge?: number | null;
   consultancy_fee?: number | null;
   requires_advance?: boolean;
+  /** Aggregate of approved service reviews (service detail endpoint only). */
+  rating?: number | null;
+  review_count?: number;
   /** Optional appointment scheduling (see backend core/scheduling.py). */
   scheduling_enabled?: boolean;
   slot_duration_minutes?: number | null;
@@ -353,6 +357,8 @@ export interface BookingV2 {
   payment_number?: string | null;
   advance_amount?: number | null;
   advance_paid?: boolean | null;
+  coupon_code?: string | null;
+  discount_amount?: number | null;
   notes?: string | null;
   created_at: string;
   updated_at: string;

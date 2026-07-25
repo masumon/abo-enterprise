@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Printer, CheckCircle, Send } from "lucide-react";
-import { bookingsApi, isQueuedResponse } from "@/lib/api";
+import { serviceBookingsApi, isQueuedResponse } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
@@ -49,9 +49,10 @@ export default function PrintingPage() {
     setSubmitError(null);
     setQueued(false);
     try {
-      const response = await bookingsApi.create({
-        service_type: "printing",
-        service_subtype: data.service_subtype,
+      const response = await serviceBookingsApi.create({
+        // No catalog service behind this page — bookings_v2 accepts a
+        // service_name instead (alembic 0015 merged the legacy table in).
+        service_name: `Printing — ${PRINT_SERVICES.find((s) => s.value === data.service_subtype)?.label.en ?? data.service_subtype}`,
         customer_name: data.customer_name,
         customer_phone: data.customer_phone,
         details: data.details,
@@ -61,12 +62,12 @@ export default function PrintingPage() {
 
       // Same as an order: send the customer to the invoice/receipt page with
       // their booking (reference) number, downloadable invoice and status.
-      const created = response.data?.data as { booking_id?: string; booking_number?: string } | null;
-      if (!wasQueued && created?.booking_id) {
+      const created = response.data?.data as { id?: string; booking_number?: string } | null;
+      if (!wasQueued && created?.id) {
         const svc = PRINT_SERVICES.find((s) => s.value === data.service_subtype);
         saveOrderSnapshot({
           kind: "booking",
-          reference: created.booking_id,
+          reference: created.id,
           phone: data.customer_phone,
           customer_name: data.customer_name,
           payment_method: "pending",
@@ -78,7 +79,7 @@ export default function PrintingPage() {
           service_name: "Printing Service",
           created_at: new Date().toISOString(),
         });
-        router.push(`/booking-success?booking=${created.booking_id}&phone=${encodeURIComponent(data.customer_phone)}`);
+        router.push(`/booking-success?booking=${created.id}&phone=${encodeURIComponent(data.customer_phone)}`);
         return;
       }
       setIsSuccess(true);

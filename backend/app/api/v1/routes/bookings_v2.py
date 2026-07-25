@@ -132,6 +132,79 @@ def _notify_status_change(
         )
 
 
+async def _create_unlinked_booking(payload, background_tasks: BackgroundTasks, db):
+    """Booking for a request with no catalog service behind it.
+
+    Same table, number format, invoice and notifications as any other booking —
+    only the service-derived steps (form validation, tier pricing, capability
+    and scheduling gates) have nothing to apply to.
+    """
+    fields = payload.model_dump(exclude={"service_name"})
+    fields["pricing_type"] = payload.pricing_type or "custom_quote"
+    fields["form_data"] = {}
+    booking = BookingV2(
+        booking_number=generate_booking_number(),
+        service_name=payload.service_name.strip(),
+        **fields,
+    )
+    db.add(booking)
+    await db.commit()
+    await db.refresh(booking)
+
+    from app.core.email_config import resolve_notify_email
+
+    notify_to = await resolve_notify_email(db)
+    if notify_to:
+        background_tasks.add_task(
+            send_email,
+            notify_to,
+            f"New Booking {booking.booking_number} — ABO Enterprise",
+            booking_notification_html(
+                booking.booking_number,
+                booking.customer_name,
+                booking.customer_phone,
+                booking.service_name,
+                html_escape_mod.escape(payload.details or "").replace("\n", "<br/>"),
+            ),
+        )
+
+    from app.core.site_url import resolve_site_url
+
+    track_url = f"{await resolve_site_url(db)}/track?booking={booking.booking_number}"
+    background_tasks.add_task(
+        send_sms,
+        booking.customer_phone,
+        f"ABO Enterprise: booking {booking.booking_number} received for "
+        f"{booking.service_name}. Track it: {track_url}",
+    )
+    if booking.customer_email:
+        background_tasks.add_task(
+            send_email,
+            booking.customer_email,
+            f"Booking Confirmation #{booking.booking_number} — ABO Enterprise",
+            customer_booking_confirmation_html(
+                booking.booking_number,
+                booking.customer_name,
+                booking.service_name,
+                "Quote upon confirmation",
+                settings.WHATSAPP_NUMBER,
+                track_url,
+            ),
+        )
+
+    invoice_id = None
+    try:
+        invoice = await InvoiceService(db).create_booking_invoice(booking_id=booking.id)
+        invoice_id = str(invoice.id)
+    except Exception:
+        await db.rollback()
+        logger.exception("Auto invoice for booking %s failed", booking.booking_number)
+
+    data = BookingV2Out.model_validate(booking).model_dump()
+    data["invoice_id"] = invoice_id
+    return ApiResponse(data=data, message="Booking created successfully")
+
+
 # ==================== PUBLIC ENDPOINTS ====================
 
 @router.post("", response_model=ApiResponse, dependencies=[Depends(rate_limit("bookings_v2_create", 10, 600))])
@@ -141,6 +214,16 @@ async def create_booking(
     db: AsyncSession = Depends(get_db),
 ):
     """Create new booking (public)"""
+    # A booking without a service_id is valid since the legacy printing/legal
+    # intake was merged into this table (alembic 0015): it carries its own
+    # service_name and skips every service-derived rule below.
+    if payload.service_id is None:
+        if not (payload.service_name or "").strip():
+            raise HTTPException(
+                status_code=422, detail="Either service_id or service_name is required"
+            )
+        return await _create_unlinked_booking(payload, background_tasks, db)
+
     # Verify the service exists AND is publicly transactable. The public read
     # endpoints already filter on is_deleted/is_active (routes/services.py), so
     # accepting a booking for a withdrawn service here would let a replayed
@@ -280,8 +363,21 @@ async def create_booking(
     if service.requires_advance:
         advance_amount = max(0.0, float(service.consultancy_fee or 0))
 
+    # Coupon: re-derived from the admin rules by the same helper the order
+    # flow uses, so a tampered code or amount can never grant a discount the
+    # coupon doesn't actually give. Never applied to an advance-gated fee.
+    from app.api.v1.routes.orders import _server_side_discount
+
+    trusted_discount = 0.0
+    if payload.coupon_code and trusted_price:
+        trusted_discount = min(
+            float(trusted_price),
+            await _server_side_discount(db, payload.coupon_code, float(trusted_price)),
+        )
+
     booking_fields = payload.model_dump()
     booking_fields["quoted_price"] = trusted_price
+    booking_fields["discount_amount"] = trusted_discount
     booking_fields["advance_amount"] = advance_amount
     booking_fields["advance_paid"] = False
     booking_fields["form_data"] = cleaned_form_data

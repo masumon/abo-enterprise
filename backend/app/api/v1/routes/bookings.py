@@ -17,69 +17,15 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
+# The legacy `bookings` table is now READ-ONLY. Its intake was merged into
+# bookings_v2 by alembic 0015 and every form posts there; what remains here is
+# archive access (admin list/detail/status) plus /track, which must keep
+# resolving the ABO-B-… numbers already printed on customer receipts.
+
 
 def generate_booking_number() -> str:
     now = datetime.now()
     return f"ABO-B-{now.year}{now.month:02d}-{now.microsecond % 10000:04d}"
-
-
-@router.post("", response_model=ApiResponse, status_code=201, dependencies=[Depends(rate_limit("bookings_create", 10, 600))])
-async def create_booking(
-    payload: BookingCreate,
-    background_tasks: BackgroundTasks,
-    db: AsyncSession = Depends(get_db),
-):
-    booking = Booking(
-        booking_number=generate_booking_number(),
-        **payload.model_dump(),
-    )
-    db.add(booking)
-    await db.commit()
-    await db.refresh(booking)
-
-    # Send admin notification (recipient is admin-editable: Settings → Email)
-    from app.core.email_config import resolve_notify_email
-    _notify_to = await resolve_notify_email(db)
-    if _notify_to:
-        html = booking_notification_html(
-            booking.booking_number, payload.customer_name, payload.customer_phone,
-            payload.service_type, payload.details or "",
-        )
-        background_tasks.add_task(
-            send_email, _notify_to,
-            f"New Booking {booking.booking_number} — ABO Enterprise", html,
-        )
-
-    # Send customer confirmation email
-    if payload.customer_email:
-        html = customer_booking_confirmation_html(
-            booking.booking_number,
-            payload.customer_name,
-            payload.service_type,
-            booking.estimated_price or "Quote upon confirmation",
-            settings.WHATSAPP_NUMBER,
-        )
-        background_tasks.add_task(
-            send_email, payload.customer_email,
-            f"Booking Confirmation #{booking.booking_number} — ABO Enterprise", html,
-        )
-
-    invoice_id = None
-    try:
-        invoice = await InvoiceService(db).create_legacy_booking_invoice(booking)
-        invoice_id = str(invoice.id)
-    except Exception:
-        await db.rollback()
-        logger.exception("Auto invoice for booking %s failed", booking.booking_number)
-
-    return ApiResponse(
-        data={
-            "booking_id": str(booking.id),
-            "booking_number": booking.booking_number,
-            "invoice_id": invoice_id,
-        },
-        message="Booking created successfully! Check your email for confirmation."
-    )
 
 
 @router.get("", response_model=PaginatedResponse)

@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Scale, CheckCircle, Send, AlertTriangle } from "lucide-react";
-import { bookingsApi, isQueuedResponse } from "@/lib/api";
+import { serviceBookingsApi, isQueuedResponse } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
@@ -72,27 +72,27 @@ export default function LegalPage() {
         : data.details;
 
       const selected = LEGAL_SERVICES.find((s) => s.value === data.service_subtype);
-      const response = await bookingsApi.create({
-        service_type: "legal",
-        service_subtype: data.service_subtype,
+      const response = await serviceBookingsApi.create({
+        // No catalog service behind this page — bookings_v2 accepts a
+        // service_name instead (alembic 0015 merged the legacy table in).
+        service_name: `Legal — ${selected?.label.en ?? data.service_subtype}`,
         customer_name: data.customer_name,
         customer_phone: data.customer_phone,
-        details,
-        estimated_price: selected?.price.en,
+        details: selected?.price.en ? `${details}\n\nIndicative price: ${selected.price.en}` : details,
       });
       const wasQueued = isQueuedResponse(response);
       setQueued(wasQueued);
 
       // Same as an order: show the invoice/receipt page with the booking
       // (reference) number, downloadable invoice and status.
-      const created = response.data?.data as { booking_id?: string; booking_number?: string } | null;
-      if (!wasQueued && created?.booking_id) {
+      const created = response.data?.data as { id?: string; booking_number?: string } | null;
+      if (!wasQueued && created?.id) {
         // Mirror the backend's price parse (first number of the range) so the
         // instant snapshot matches the invoice the API returns.
         const amount = Number((selected?.price.en ?? "").replace(/,/g, "").match(/[\d.]+/)?.[0] ?? 0) || 0;
         saveOrderSnapshot({
           kind: "booking",
-          reference: created.booking_id,
+          reference: created.id,
           phone: data.customer_phone,
           customer_name: data.customer_name,
           payment_method: "pending",
@@ -104,7 +104,7 @@ export default function LegalPage() {
           service_name: "Legal Service",
           created_at: new Date().toISOString(),
         });
-        router.push(`/booking-success?booking=${created.booking_id}&phone=${encodeURIComponent(data.customer_phone)}`);
+        router.push(`/booking-success?booking=${created.id}&phone=${encodeURIComponent(data.customer_phone)}`);
         return;
       }
       setIsSuccess(true);

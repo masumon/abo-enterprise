@@ -12,6 +12,7 @@ import {
   FileText,
   MessageCircle,
   Package,
+  Star,
   Tag,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
@@ -137,6 +138,15 @@ export default function ServiceDetailClient({ service }: Props) {
             </span>
           )}
           <PricingBadge service={service} lang={lang} />
+          {typeof service.rating === "number" && (service.review_count ?? 0) > 0 && (
+            <span className="inline-flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5 text-sm font-semibold">
+              <Star className="w-4 h-4 fill-yellow-300 text-yellow-300" aria-hidden />
+              {service.rating.toFixed(1)}
+              <span className="font-normal opacity-80">
+                ({service.review_count} {t("reviews", "রিভিউ")})
+              </span>
+            </span>
+          )}
           <a
             href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`}
             target="_blank"
