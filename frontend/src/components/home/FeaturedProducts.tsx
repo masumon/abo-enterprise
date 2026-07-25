@@ -10,6 +10,7 @@ import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import type { Product } from "@/types";
 import CountdownTimer, { resolveFlashSaleEnd, isFlashSaleActive } from "@/components/ui/CountdownTimer";
 import PromoSlider from "@/components/ui/PromoSlider";
+import { productsApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
@@ -35,6 +36,10 @@ export default function FeaturedProducts() {
   const { lang } = useLanguageStore();
   const { openCart } = useCartStore();
   const [products, setProducts] = useState<Product[]>([]);
+  // Flash-sale stock, fetched separately. The section above has always shown
+  // *featured* products, which have nothing to do with the sale — so the
+  // countdown ran with no discounted product behind it.
+  const [flashProducts, setFlashProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [catalogSource, setCatalogSource] = useState<CatalogSource>("api");
@@ -49,6 +54,26 @@ export default function FeaturedProducts() {
       ? getSettingValue(settings, "flash_sale_title_bn") || "ফ্ল্যাশ সেল"
       : getSettingValue(settings, "flash_sale_title_en") || "Flash Sale";
   const showFlashSale = flashSaleEnabled && isFlashSaleActive(flashStart, flashEnd);
+
+  useEffect(() => {
+    if (!showFlashSale) {
+      setFlashProducts([]);
+      return;
+    }
+    let cancelled = false;
+    productsApi
+      .list({ flash_sale: true, per_page: 8 })
+      .then((r) => {
+        if (!cancelled) setFlashProducts(r.data.data ?? []);
+      })
+      .catch(() => {
+        // A failed fetch just hides the strip; the rest of the page is fine.
+        if (!cancelled) setFlashProducts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [showFlashSale]);
 
   useEffect(() => {
     const params = { featured: true, per_page: 8 };
@@ -97,7 +122,7 @@ export default function FeaturedProducts() {
             <div className="flex flex-col items-center gap-2 mb-2">
               <CountdownTimer endDate={flashEnd} label={flashTitle} />
               {/* Admin-managed flash-sale banners; renders nothing when unset. */}
-              <PromoSlider placement="flash_sale" className="mt-4" aspect="aspect-[21/9] sm:aspect-[3/1]" />
+              <PromoSlider placement="flash_sale" className="mt-4 w-full max-w-3xl" aspect="aspect-[21/9] sm:aspect-[3/1]" />
             </div>
           )}
           <h2>{lang === "bn" ? "জনপ্রিয় পণ্য" : "Featured Products"}</h2>
@@ -108,6 +133,18 @@ export default function FeaturedProducts() {
               : "Best quality mobile accessories and gadgets — delivered right to your door"}
           </p>
         </div>
+
+        {/* Flash-sale stock — its own strip above the featured grid, so the
+            countdown finally has the discounted products it was counting for. */}
+        {showFlashSale && flashProducts.length > 0 && (
+          <div className="mb-12">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {flashProducts.map((p) => (
+                <ProductCard key={p.id ?? p.slug} product={p} />
+              ))}
+            </div>
+          </div>
+        )}
 
         <DemoModeBanner show={catalogSource === "cache" && !loading} source={catalogSource} />
 

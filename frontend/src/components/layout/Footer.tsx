@@ -29,6 +29,10 @@ import {
   Truck,
   Clock,
   type LucideIcon,
+  Receipt,
+  Landmark,
+  ScrollText,
+  BadgeCheck,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
@@ -48,6 +52,19 @@ import { resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@
 import BrandLogo from "@/components/ui/BrandLogo";
 import { getBrandName, getBrandTagline } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
+
+/**
+ * Icon for a registration credential, matched on its label so an admin can add
+ * a new one from Settings and still get a sensible icon without a code change.
+ */
+function registrationIcon(label: string): LucideIcon {
+  const l = label.toLowerCase();
+  if (l.includes("tin")) return Receipt;
+  if (l.includes("bin") || l.includes("vat") || l.includes("mushak")) return Landmark;
+  if (l.includes("trade") || l.includes("licen")) return ScrollText;
+  if (l.includes("bank")) return Landmark;
+  return BadgeCheck;
+}
 
 /** Primary business destinations — icon tiles (fast to recognise). */
 const DESTINATIONS: { href: string; icon: LucideIcon; label: { en: string; bn: string } }[] = [
@@ -327,12 +344,20 @@ export default function Footer() {
           <div className="mt-8">
             <SectionLabel>{lang === "bn" ? "স্বীকৃতি ও নিবন্ধন" : "Registrations"}</SectionLabel>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              {registrations.map((r, i) => (
-                <div key={i} className="footer-reg">
-                  <span className="footer-reg-label">{lang === "bn" ? r.label_bn || r.label_en : r.label_en || r.label_bn}</span>
-                  <span className="footer-reg-value">{r.value}</span>
-                </div>
-              ))}
+              {registrations.map((r, i) => {
+                const RegIcon = registrationIcon(r.label_en || r.label_bn || "");
+                return (
+                  <div key={i} className="footer-reg">
+                    <span className="footer-reg-icon" aria-hidden>
+                      <RegIcon className="w-4 h-4" />
+                    </span>
+                    <span className="footer-reg-body">
+                      <span className="footer-reg-label">{lang === "bn" ? r.label_bn || r.label_en : r.label_en || r.label_bn}</span>
+                      <span className="footer-reg-value">{r.value}</span>
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
