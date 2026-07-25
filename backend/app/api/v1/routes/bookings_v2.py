@@ -15,7 +15,9 @@ from app.core.email import (
     send_email,
     booking_notification_html,
     customer_booking_confirmation_html,
+    customer_booking_status_html,
 )
+from app.core.sms import send_sms
 from app.core.capabilities import get_capabilities
 from app.core.invoice import InvoiceService
 from app.core.booking_form import (
@@ -89,6 +91,44 @@ def _out_with_labels(booking: BookingV2) -> dict:
 
 # Eager-loads the service + its form fields for label resolution above.
 _WITH_FORM_LABELS = selectinload(BookingV2.service).selectinload(Service.booking_forms)
+
+# Statuses worth telling the customer about. "pending" is the creation state,
+# already covered by the confirmation message, so it is deliberately absent.
+_NOTIFY_STATUSES = {"confirmed", "in_progress", "on_hold", "completed", "cancelled"}
+
+
+def _notify_status_change(
+    background_tasks: BackgroundTasks, booking: BookingV2, old_status: str
+) -> None:
+    """Tell the customer their booking moved on — SMS always, email if given.
+
+    Both sends are best-effort background tasks and no-op when the channel
+    isn't configured, so notification never blocks or fails a status update.
+    """
+    if booking.status == old_status or booking.status not in _NOTIFY_STATUSES:
+        return
+
+    label = booking.status.replace("_", " ")
+    background_tasks.add_task(
+        send_sms,
+        booking.customer_phone,
+        f"ABO Enterprise: booking {booking.booking_number} is now {label}. "
+        f"Questions? Call {settings.WHATSAPP_NUMBER}.",
+    )
+
+    if booking.customer_email:
+        background_tasks.add_task(
+            send_email,
+            booking.customer_email,
+            f"Booking {booking.booking_number} — {label.title()}",
+            customer_booking_status_html(
+                booking.booking_number,
+                booking.customer_name,
+                booking.service_name,
+                booking.status,
+                settings.WHATSAPP_NUMBER,
+            ),
+        )
 
 
 # ==================== PUBLIC ENDPOINTS ====================
@@ -232,6 +272,17 @@ async def create_booking(
             f"New Booking {booking.booking_number} — ABO Enterprise",
             html,
         )
+
+    # SMS is the only channel that always reaches the customer: phone is
+    # mandatory on a booking while email is optional, so an email-less customer
+    # would otherwise leave with nothing but the success screen. No-ops when
+    # the SMS gateway isn't configured.
+    background_tasks.add_task(
+        send_sms,
+        booking.customer_phone,
+        f"ABO Enterprise: booking {booking.booking_number} received for "
+        f"{service.name_en}. We'll contact you shortly.",
+    )
 
     if payload.customer_email:
         estimated = (
@@ -388,6 +439,7 @@ async def get_booking_admin(
 async def update_booking_status(
     booking_id: uuid.UUID,
     payload: BookingV2StatusUpdate,
+    background_tasks: BackgroundTasks,
     admin_id: str = Depends(require_role("bookings.write")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -423,7 +475,7 @@ async def update_booking_status(
     db.add(log)
     await db.commit()
 
-    # TODO: Send status update email to customer
+    _notify_status_change(background_tasks, booking, old_status)
 
     return ApiResponse(
         data=BookingV2Out.model_validate(booking).model_dump(),
@@ -435,6 +487,7 @@ async def update_booking_status(
 async def update_booking(
     booking_id: uuid.UUID,
     payload: BookingV2AdminUpdate,
+    background_tasks: BackgroundTasks,
     admin_id: str = Depends(require_role("bookings.write")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -454,6 +507,7 @@ async def update_booking(
     # included). service_id is immutable — a booking belongs to its service.
     update_data = payload.model_dump(exclude_unset=True)
     update_data.pop("service_id", None)
+    old_status = booking.status
 
     if update_data.get("status") == "completed" and booking.status != "completed":
         booking.completed_at = datetime.now(timezone.utc)
@@ -474,6 +528,8 @@ async def update_booking(
     )
     db.add(log)
     await db.commit()
+
+    _notify_status_change(background_tasks, booking, old_status)
 
     return ApiResponse(
         data=BookingV2Out.model_validate(booking).model_dump(),
