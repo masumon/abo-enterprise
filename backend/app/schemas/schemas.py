@@ -1408,6 +1408,46 @@ class SubcategoryOut(SubcategoryBase):
     model_config = {"from_attributes": True}
 
 
+class PromoSlideBase(BaseModel):
+    placement: Literal["hero", "flash_sale"] = "hero"
+    image_url: str | None = None
+    video_url: str | None = None
+    link_url: str | None = None
+    title_en: str | None = None
+    title_bn: str | None = None
+    alt_text: str | None = None
+    sort_order: int = 0
+    is_active: bool = True
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
+
+
+class PromoSlideCreate(PromoSlideBase):
+    pass
+
+
+class PromoSlideUpdate(BaseModel):
+    placement: Literal["hero", "flash_sale"] | None = None
+    image_url: str | None = None
+    video_url: str | None = None
+    link_url: str | None = None
+    title_en: str | None = None
+    title_bn: str | None = None
+    alt_text: str | None = None
+    sort_order: int | None = None
+    is_active: bool | None = None
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
+
+
+class PromoSlideOut(PromoSlideBase):
+    id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class CategorySeoMixin(BaseModel):
     """Optional per-category SEO overrides (alembic 0011)."""
     seo_title: str | None = None

@@ -112,6 +112,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { href: "/admin/homepage", icon: LayoutTemplate, label: "Homepage Content", labelBn: "হোমপেজ কনটেন্ট" },
       { href: "/admin/announcements", icon: Megaphone, label: "Announcements", labelBn: "ঘোষণা" },
+      { href: "/admin/promo-slides", icon: Images, label: "Promo Slides", labelBn: "প্রোমো স্লাইড" },
       { href: "/admin/media", icon: Images, label: "Image Manager", labelBn: "ছবি ব্যবস্থাপনা" },
       { href: "/admin/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি" },
       { href: "/admin/blog", icon: BookOpen, label: "Blog", labelBn: "ব্লগ" },

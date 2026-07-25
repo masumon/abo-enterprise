@@ -1,6 +1,6 @@
 import axios from "axios";
 import type { AxiosResponse } from "axios";
-import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier, ServiceSlot, BookingV2, LeadV2, Review, BlogPost, ServiceBookingFormField, Category, Subcategory } from "@/types";
+import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier, ServiceSlot, BookingV2, LeadV2, Review, BlogPost, ServiceBookingFormField, Category, Subcategory, PromoSlide } from "@/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { clearAdminToken, getAdminToken, isAdminProtectedPath } from "@/lib/adminAuth";
 import { getAdaptiveTimeout, getAdaptiveRetry } from "@/lib/networkAwareApi";
@@ -739,6 +739,22 @@ export const customerOtpApi = {
 
   verify: (phone: string, code: string) =>
     api.post<ApiResponse<{ verified: boolean; access_token?: string }>>("/api/v1/customer/verify-otp", { phone, code }),
+};
+
+export const promoSlidesApi = {
+  /** Live slides for one surface (public). */
+  list: (placement: "hero" | "flash_sale") =>
+    api.get<ApiResponse<PromoSlide[]>>("/api/v1/promo-slides", { params: { placement } }),
+
+  adminList: () => api.get<ApiResponse<PromoSlide[]>>("/api/v1/promo-slides/admin/all"),
+
+  create: (data: Partial<PromoSlide>) =>
+    api.post<ApiResponse<PromoSlide>>("/api/v1/promo-slides/admin", data),
+
+  update: (id: string, data: Partial<PromoSlide>) =>
+    api.put<ApiResponse<PromoSlide>>(`/api/v1/promo-slides/admin/${id}`, data),
+
+  delete: (id: string) => api.delete<ApiResponse<null>>(`/api/v1/promo-slides/admin/${id}`),
 };
 
 export const couponsApi = {

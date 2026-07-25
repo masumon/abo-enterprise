@@ -13,6 +13,7 @@ import { MARKETING_STATS } from "@/lib/siteDefaults";
 import { resolveHomeBannerImage } from "@/lib/pageBanners";
 import { isVideoUrl } from "@/lib/media";
 import AutoVideo from "@/components/ui/AutoVideo";
+import PromoSlider from "@/components/ui/PromoSlider";
 import { cn } from "@/lib/utils";
 import {
   HERO_TEXT_STYLE_KEY,
@@ -159,18 +160,23 @@ export default function Hero() {
                 crop). Edges are masked so the media blends into the brand
                 background. Explicit promo always shows; the banner fallback
                 yields to a mobile background image. Video autoplays. */}
-            {heroPromo && (heroPromoMedia || !heroMobileImg) && (
-              <div className="lg:hidden w-full">
-                <div className="relative overflow-hidden rounded-2xl border border-white/15 shadow-xl bg-black/20">
-                  {heroPromoIsVideo ? (
-                    <AutoVideo src={heroPromo} className="w-full h-auto block" tapToPlay aria-hidden />
-                  ) : (
-                    // eslint-disable-next-line @next/next/no-img-element -- hero art at natural aspect; next/image adds no value here
-                    <img src={heroPromo} alt="" className="w-full h-auto block" />
-                  )}
-                </div>
-              </div>
-            )}
+            <div className="lg:hidden w-full">
+              <PromoSlider
+                placement="hero"
+                fallback={
+                  heroPromo && (heroPromoMedia || !heroMobileImg) ? (
+                    <div className="relative overflow-hidden rounded-2xl border border-white/15 shadow-xl bg-black/20">
+                      {heroPromoIsVideo ? (
+                        <AutoVideo src={heroPromo} className="w-full h-auto block" tapToPlay aria-hidden />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element -- hero art at natural aspect; next/image adds no value here
+                        <img src={heroPromo} alt="" className="w-full h-auto block" />
+                      )}
+                    </div>
+                  ) : null
+                }
+              />
+            </div>
 
             {/* Text block — sits on top of the full-hero background (mobile) or
                 the clean gradient (desktop). */}
@@ -238,16 +244,21 @@ export default function Hero() {
             <div className="relative w-full max-w-md space-y-4">
               {/* Desktop/tablet promo media — admin-managed image/video, autoplay.
                   Sits above the live-stats card when set. */}
-              {heroPromoMedia && (
-                <div className="relative rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-black/20">
-                  {heroPromoIsVideo ? (
-                    <AutoVideo src={heroPromoMedia} className="w-full aspect-video object-cover block" tapToPlay aria-hidden />
-                  ) : (
-                    // eslint-disable-next-line @next/next/no-img-element -- hero art in a fixed-ratio card; next/image adds no value here
-                    <img src={heroPromoMedia} alt="" className="w-full aspect-video object-cover block" />
-                  )}
-                </div>
-              )}
+              <PromoSlider
+                placement="hero"
+                fallback={
+                  heroPromoMedia ? (
+                    <div className="relative rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-black/20">
+                      {heroPromoIsVideo ? (
+                        <AutoVideo src={heroPromoMedia} className="w-full aspect-video object-cover block" tapToPlay aria-hidden />
+                      ) : (
+                        // eslint-disable-next-line @next/next/no-img-element -- hero art in a fixed-ratio card; next/image adds no value here
+                        <img src={heroPromoMedia} alt="" className="w-full aspect-video object-cover block" />
+                      )}
+                    </div>
+                  ) : null
+                }
+              />
               <div className="glass-panel rounded-3xl p-6 shadow-2xl border border-white/20">
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
