@@ -234,7 +234,9 @@ interface SettingField {
   key: string;
   label: string;
   placeholder?: string;
-  type?: "text" | "url" | "email" | "tel" | "number" | "textarea" | "boolean" | "datetime-local" | "password";
+  type?: "text" | "url" | "email" | "tel" | "number" | "textarea" | "boolean" | "datetime-local" | "password" | "select";
+  /** Choices for type: "select". */
+  options?: { value: string; label: string }[];
   hint?: string;
   upload?: boolean;
   accept?: "image" | "video" | "both";
@@ -334,6 +336,34 @@ const SECTIONS: Section[] = [
     fields: [
       { key: "currency", label: "Currency", placeholder: "BDT" },
       { key: "min_order_amount", label: "Min Order (৳)", type: "number", placeholder: "200" },
+    ],
+  },
+  {
+    id: "flash_sale_config",
+    title: "Flash Sale",
+    icon: <ShoppingBag className="w-4 h-4" />,
+    note: "কাউন্টডাউনের লেখা, আইকন ও আকার। ব্যানার ছবি → Content → Promo Slides। কোন পণ্যে ছাড় → Products-এ প্রতিটি পণ্যের ফ্ল্যাশ সেল ফিল্ড।",
+    fields: [
+      { key: "flash_sale_title_en", label: "Label (English)", placeholder: "Today's Best Offer" },
+      { key: "flash_sale_title_bn", label: "Label (বাংলা)", placeholder: "আজকের দুর্দান্ত অফার" },
+      {
+        key: "flash_sale_icon",
+        label: "Icon",
+        placeholder: "⚡",
+        hint: "একটি ইমোজি — লেখার দুই পাশে বসবে। খালি রাখলে ⚡ ব্যবহার হবে। যেমন: ⚡ 🔥 🎁 💥 ⏰",
+      },
+      {
+        key: "flash_sale_size",
+        label: "Text & Timer Size",
+        type: "select",
+        options: [
+          { value: "sm", label: "Small" },
+          { value: "md", label: "Medium (default)" },
+          { value: "lg", label: "Large" },
+          { value: "xl", label: "Extra Large" },
+        ],
+        hint: "মোবাইলে ছোট দেখালে Large বা Extra Large বেছে নিন। লেখা ও ঘড়ি দুটোই একসাথে বড় হবে।",
+      },
     ],
   },
   {
@@ -506,6 +536,16 @@ function SectionCard({
                 mapKey={TRUST_EDITORS[field.key].mapKey}
                 previewRow={TRUST_EDITORS[field.key].previewRow}
               />
+            ) : field.type === "select" ? (
+              <select
+                value={values[field.key] ?? ""}
+                onChange={(e) => onChange(field.key, e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 rounded-lg text-sm bg-gray-50 dark:bg-white/5 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+              >
+                {(field.options ?? []).map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
             ) : field.type === "textarea" ? (
               <textarea
                 value={values[field.key] ?? ""}
