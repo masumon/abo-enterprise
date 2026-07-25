@@ -120,9 +120,6 @@ class Order(Base):
     # order stays pending until the advance is paid (gateway or admin-marked).
     advance_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
     advance_paid: Mapped[bool] = mapped_column(Boolean, default=False)
-    # Coupon captured at booking time (alembic 0016); mirrors the order shape.
-    coupon_code: Mapped[str | None] = mapped_column(String(50))
-    discount_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
     total: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     courier_provider: Mapped[str | None] = mapped_column(String(50))
     courier_tracking_id: Mapped[str | None] = mapped_column(String(100))
@@ -370,6 +367,9 @@ class BookingV2(Base):
     # admin-marked); the booking stays pending until then.
     advance_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
     advance_paid: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Coupon captured at booking time (alembic 0016); mirrors the order shape.
+    coupon_code: Mapped[str | None] = mapped_column(String(50))
+    discount_amount: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
     hours_worked: Mapped[float | None] = mapped_column(Numeric(5, 2))
     details: Mapped[str | None] = mapped_column(Text)
     requirements: Mapped[str | None] = mapped_column(Text)

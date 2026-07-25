@@ -29,12 +29,20 @@ import {
   Truck,
   Clock,
   type LucideIcon,
-  Receipt,
-  Landmark,
-  ScrollText,
-  BadgeCheck,
+  ShieldCheck,
+  CheckCircle2,
 } from "lucide-react";
 import Image from "next/image";
+import {
+  VisaMark,
+  MastercardMark,
+  BkashMark,
+  NagadMark,
+  RocketMark,
+  CardMark,
+  CodMark,
+  BankMark,
+} from "@/components/icons/PaymentIcons";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
@@ -42,6 +50,7 @@ import { publicApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { triggerInstall, isStandalone } from "@/lib/pwaInstall";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import {
   SITE_TRUST_BADGES_KEY,
   SITE_REGISTRATIONS_KEY,
@@ -53,18 +62,21 @@ import BrandLogo from "@/components/ui/BrandLogo";
 import { getBrandName, getBrandTagline } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-/**
- * Icon for a registration credential, matched on its label so an admin can add
- * a new one from Settings and still get a sensible icon without a code change.
- */
-function registrationIcon(label: string): LucideIcon {
-  const l = label.toLowerCase();
-  if (l.includes("tin")) return Receipt;
-  if (l.includes("bin") || l.includes("vat") || l.includes("mushak")) return Landmark;
-  if (l.includes("trade") || l.includes("licen")) return ScrollText;
-  if (l.includes("bank")) return Landmark;
-  return BadgeCheck;
-}
+/** One white card per gateway; keys match the Payments module's ids. */
+const PAY_BRAND: Record<string, { label: string; Mark: (p: { className?: string }) => JSX.Element }> = {
+  card: { label: "Visa", Mark: VisaMark },
+  visa: { label: "Visa", Mark: VisaMark },
+  mastercard: { label: "Mastercard", Mark: MastercardMark },
+  bkash: { label: "bKash", Mark: BkashMark },
+  nagad: { label: "Nagad", Mark: NagadMark },
+  rocket: { label: "Rocket", Mark: RocketMark },
+  sslcommerz: { label: "Cards", Mark: CardMark },
+  cod: { label: "Cash on Delivery", Mark: CodMark },
+  bank: { label: "Bank Transfer", Mark: BankMark },
+};
+
+/** Shown when the Payments module has nothing enabled yet. */
+const DEFAULT_PAY = ["visa", "mastercard", "bkash", "nagad", "rocket"];
 
 /** Primary business destinations — icon tiles (fast to recognise). */
 const DESTINATIONS: { href: string; icon: LucideIcon; label: { en: string; bn: string } }[] = [
@@ -128,6 +140,7 @@ export default function Footer() {
   const [submitting, setSubmitting] = useState(false);
   const newsletterEnabled = useFeatureFlag("feature_newsletter");
 
+  const { methods } = usePaymentMethods();
   const { settings } = usePublicSettings([
     "trade_license",
     "whatsapp_number",
@@ -160,6 +173,15 @@ export default function Footer() {
   const hours = lang === "bn"
     ? getSettingValue(settings, "contact_hours_bn", "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা")
     : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 9:00 PM");
+
+  // Gateways enabled in the Payments module drive the cards; the default set
+  // keeps the row populated on a fresh install.
+  const activeKeys = methods
+    .filter((m) => m.is_active)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((m) => m.payment_gateway.toLowerCase())
+    .filter((k) => k in PAY_BRAND);
+  const payKeys = activeKeys.length > 0 ? activeKeys : DEFAULT_PAY;
 
   const trustBadges = getTrustBadges(settings, []);
   // Registrations come from the CMS list; the legacy single trade_license key
@@ -220,78 +242,127 @@ export default function Footer() {
       <div className="site-footer-accent relative z-10" aria-hidden />
       <div className="footer-glow pointer-events-none" aria-hidden />
 
-      <div className="relative z-10 container mx-auto px-4 py-10 md:py-14">
-        <div className="grid gap-8 lg:grid-cols-12 lg:gap-10">
-          {/* ── Contact: the highest-intent block, so it leads ── */}
-          <section className="lg:col-span-5 xl:col-span-4">
-            <SectionLabel>{lang === "bn" ? "যোগাযোগ করুন" : "Get in touch"}</SectionLabel>
-            <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
-              <a href={`tel:+${phoneDigits}`} className="footer-action">
-                <Phone className="w-[18px] h-[18px] text-sky-300" aria-hidden />
-                <span className="footer-action-sub">{hours}</span>
-                <span className="footer-action-value">{phoneDisplay}</span>
-              </a>
-              {whatsappDigits && (
-                <a
-                  href={`https://wa.me/${whatsappDigits}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="footer-action"
-                >
-                  <MessageCircle className="w-[18px] h-[18px] text-sky-300" aria-hidden />
-                  <span className="footer-action-sub">{lang === "bn" ? "দ্রুত উত্তর" : "Quick reply"}</span>
-                  <span className="footer-action-value">WhatsApp</span>
-                </a>
-              )}
+      <div className="relative z-10 container mx-auto px-4 py-10 md:py-14 space-y-10 md:space-y-12">
+        {/* ── Get in touch: the highest-intent block, so it leads ── */}
+        <section>
+          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
+            {lang === "bn" ? "যোগাযোগ করুন" : "Get in Touch"}
+          </h2>
+          <p className="text-sm text-white/60 mt-1">
+            {lang === "bn"
+              ? "সপ্তাহে ৬ দিন আমরা আপনার পাশে আছি।"
+              : "We're here to help you 6 days a week."}
+          </p>
+
+          {/* One card per row on a phone — each is a tap target with its own
+              action, so stacking keeps them comfortably large. */}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <a href={`tel:+${phoneDigits}`} className="footer-contact-card group">
+              <Phone className="w-5 h-5 text-sky-300 flex-none mt-0.5" aria-hidden />
+              <span className="min-w-0">
+                <span className="footer-contact-title">{lang === "bn" ? "কল করুন" : "Call Us"}</span>
+                <span className="footer-contact-sub">{hours}</span>
+                <span className="footer-contact-action text-sky-300">{phoneDisplay}</span>
+              </span>
+            </a>
+
+            {whatsappDigits && (
               <a
-                href={mapsLink}
+                href={`https://wa.me/${whatsappDigits}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="footer-action col-span-2 flex-row items-center gap-3"
+                className="footer-contact-card group"
               >
-                <MapPin className="w-[18px] h-[18px] text-sky-300 flex-none" aria-hidden />
-                <span className="flex flex-col min-w-0">
-                  <span className="footer-action-sub">{address}</span>
-                  <span className="text-[13px] font-semibold text-white">
-                    {lang === "bn" ? "ম্যাপে দেখুন →" : "View on map →"}
+                <MessageCircle className="w-5 h-5 text-green-400 flex-none mt-0.5" aria-hidden />
+                <span className="min-w-0">
+                  <span className="footer-contact-title">WhatsApp</span>
+                  <span className="footer-contact-sub">{lang === "bn" ? "দ্রুত উত্তর" : "Quick reply"}</span>
+                  <span className="footer-contact-action text-green-400">
+                    {lang === "bn" ? "চ্যাট করুন" : "Chat Now"} <span aria-hidden>→</span>
                   </span>
                 </span>
               </a>
-            </div>
-          </section>
+            )}
 
-          {/* ── Destinations: icon tiles for the six real business paths ── */}
-          <nav className="lg:col-span-4" aria-label={lang === "bn" ? "কেনাকাটা ও সেবা" : "Shop and services"}>
-            <SectionLabel>{lang === "bn" ? "কেনাকাটা ও সেবা" : "Shop & services"}</SectionLabel>
-            <div className="grid grid-cols-2 gap-2">
+            <a
+              href={mapsLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-contact-card group sm:col-span-2 lg:col-span-1"
+            >
+              <MapPin className="w-5 h-5 text-purple-300 flex-none mt-0.5" aria-hidden />
+              <span className="min-w-0">
+                <span className="footer-contact-title">{lang === "bn" ? "দোকানে আসুন" : "Visit Store"}</span>
+                <span className="footer-contact-sub">{address}</span>
+                <span className="footer-contact-action text-purple-300">
+                  {lang === "bn" ? "ম্যাপে দেখুন" : "View on map"} <span aria-hidden>→</span>
+                </span>
+              </span>
+            </a>
+          </div>
+        </section>
+
+        {/* ── Navigation: three equal groups, stacked on a phone ── */}
+        <div className="grid gap-8 sm:gap-10 sm:grid-cols-2 lg:grid-cols-3 border-t border-white/10 pt-9">
+          <nav aria-label={lang === "bn" ? "কেনাকাটা ও সেবা" : "Shop and services"}>
+            <SectionLabel>{lang === "bn" ? "কেনাকাটা ও সেবা" : "Shop & Services"}</SectionLabel>
+            {/* Two columns: six destinations fit in three tidy rows. */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
               {DESTINATIONS.map(({ href, icon: Icon, label }) => (
-                <Link key={href} href={href} className="footer-tile">
-                  <Icon className="w-4 h-4 text-white/70 flex-none" aria-hidden />
+                <Link key={href} href={href} className="footer-nav-link group">
+                  <Icon className="w-4 h-4 text-white/50 flex-none group-hover:text-brand-200 transition-colors" aria-hidden />
                   <span className="truncate">{lang === "bn" ? label.bn : label.en}</span>
                 </Link>
               ))}
             </div>
           </nav>
 
-          {/* ── Company: secondary, inline-wrapped so nine links take two rows ── */}
-          <nav className="lg:col-span-3 xl:col-span-4" aria-label={lang === "bn" ? "কোম্পানি" : "Company"}>
+          <nav aria-label={lang === "bn" ? "কোম্পানি" : "Company"}>
             <SectionLabel>{lang === "bn" ? "কোম্পানি" : "Company"}</SectionLabel>
-            <div className="flex flex-wrap gap-y-0.5">
-              {COMPANY.map((link, i) => (
-                <span key={link.href} className="inline-flex items-center">
-                  {i > 0 && <span className="footer-dot" aria-hidden />}
-                  <Link href={link.href} className="footer-inline-link">
-                    {lang === "bn" ? link.label.bn : link.label.en}
-                  </Link>
-                </span>
+            <div className="flex flex-col">
+              {COMPANY.map((link) => (
+                <Link key={link.href} href={link.href} className="footer-nav-link">
+                  {lang === "bn" ? link.label.bn : link.label.en}
+                </Link>
               ))}
             </div>
           </nav>
+
+          <div className="sm:col-span-2 lg:col-span-1">
+            <nav aria-label={t("footer_legal")}>
+              <SectionLabel>{lang === "bn" ? "দ্রুত লিংক" : "Quick Links"}</SectionLabel>
+              <div className="flex flex-col">
+                {LEGAL.map((link) => (
+                  <Link key={link.href} href={link.href} className="footer-nav-link">
+                    {t(link.labelKey)}
+                  </Link>
+                ))}
+              </div>
+            </nav>
+
+            <div className="mt-6">
+              <SectionLabel>{lang === "bn" ? "আমাদের অনুসরণ করুন" : "Follow Us"}</SectionLabel>
+              <div className="flex flex-wrap gap-2.5">
+                {socialLinks.map(({ href, icon: Icon, label }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target={href.startsWith("mailto:") ? undefined : "_blank"}
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="footer-social-btn"
+                  >
+                    <Icon className="w-[18px] h-[18px]" aria-hidden />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* ── Trust badges (admin: Homepage Content) ── */}
         {trustBadges.length > 0 && (
-          <div className="mt-8">
+          <div className="border-t border-white/10 pt-9">
             <SectionLabel>{lang === "bn" ? "কেন আমাদের বিশ্বাস করবেন" : "Why trust us"}</SectionLabel>
             <div className="flex flex-wrap gap-2">
               {trustBadges.map((badge, i) => {
@@ -307,117 +378,129 @@ export default function Footer() {
           </div>
         )}
 
-        {/* ── Accepted payment methods ── */}
-        <div className="mt-8">
-          <SectionLabel>{lang === "bn" ? "নিরাপদ লেনদেন" : "Secure payments"}</SectionLabel>
-          {/* Accepted-methods strip on a light plate: most of these marks are
-              dark-on-white and would disappear straight on the footer.
-              Intrinsic size is passed so the space is reserved before it loads
-              — no layout shift on a slow connection. */}
-          <div className="rounded-2xl bg-white p-3 sm:p-4 shadow-lg shadow-black/20 ring-1 ring-black/5">
-            <Image
-              src="/payment-methods.webp"
-              alt={lang === "bn" ? "গ্রহণযোগ্য পেমেন্ট মাধ্যম" : "Accepted payment methods"}
-              width={1200}
-              height={441}
-              sizes="(max-width: 640px) 92vw, (max-width: 1024px) 70vw, 640px"
-              className="w-full h-auto"
-            />
+        {/* ── Secure payments ── */}
+        <div className="border-t border-white/10 pt-9 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-base font-bold text-white">
+              {lang === "bn" ? "নিরাপদ পেমেন্ট" : "Secure Payments"}
+            </p>
+            <p className="text-xs text-white/60 mt-0.5">
+              {lang === "bn" ? "১০০% নিরাপদ ও বিশ্বস্ত লেনদেন" : "100% Secure & Trusted Payments"}
+            </p>
+          </div>
+          {/* Scrolls rather than wraps on a phone, so the cards hold one
+              consistent height at every width. */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar lg:overflow-visible -mx-1 px-1 lg:mx-0 lg:px-0">
+            {payKeys.map((key) => {
+              const brand = PAY_BRAND[key];
+              if (!brand) return null;
+              return (
+                <span key={key} className="footer-pay-card" title={brand.label}>
+                  <brand.Mark className="h-5 w-auto max-w-full" />
+                </span>
+              );
+            })}
           </div>
         </div>
 
-        {/* ── Registrations (admin: Settings) ── */}
+        {/* ── Verified & registered business ── */}
         {registrations.length > 0 && (
-          <div className="mt-8">
-            <SectionLabel>{lang === "bn" ? "স্বীকৃতি ও নিবন্ধন" : "Registrations"}</SectionLabel>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              {registrations.map((r, i) => {
-                const RegIcon = registrationIcon(r.label_en || r.label_bn || "");
-                return (
-                  <div key={i} className="footer-reg">
-                    {/* The official Government of Bangladesh seal — these are
-                        state-issued numbers. Transparent PNG, so it sits on the
-                        dark footer without a plate behind it. */}
-                    <Image
-                      src="/bd-govt-logo.png"
-                      alt="গণপ্রজাতন্ত্রী বাংলাদেশ সরকার"
-                      width={28}
-                      height={28}
-                      className="w-7 h-7 flex-shrink-0 object-contain drop-shadow-sm"
-                    />
-                    <span className="footer-reg-icon" aria-hidden>
-                      <RegIcon className="w-4 h-4" />
-                    </span>
-                    <span className="footer-reg-body">
-                      <span className="footer-reg-label">{lang === "bn" ? r.label_bn || r.label_en : r.label_en || r.label_bn}</span>
-                      <span className="footer-reg-value">{r.value}</span>
-                    </span>
-                  </div>
-                );
-              })}
+          <div className="border-t border-white/10 pt-9 flex flex-col lg:flex-row lg:items-center gap-5">
+            <div className="flex items-center gap-3 lg:pr-6 lg:border-r lg:border-white/10 flex-shrink-0">
+              <span className="w-11 h-11 rounded-xl grid place-items-center flex-shrink-0 bg-gradient-to-br from-brand-500/30 to-brand-700/20 ring-1 ring-inset ring-white/20">
+                <ShieldCheck className="w-6 h-6 text-brand-200" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-white leading-tight">
+                  {lang === "bn" ? "যাচাইকৃত ও নিবন্ধিত প্রতিষ্ঠান" : "Verified & Registered Business"}
+                </p>
+                <p className="text-xs text-white/55 mt-0.5">
+                  {lang === "bn" ? "হাজারো গ্রাহকের আস্থা" : "Trusted by thousands of customers"}
+                </p>
+              </div>
+            </div>
+
+            {/* Numbers stay whole — a truncated licence number is useless. */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3 flex-1 min-w-0">
+              {registrations.map((r, i) => (
+                <div key={i} className="min-w-0">
+                  <p className="flex items-center gap-1.5 text-[13px] text-white/80">
+                    <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" aria-hidden />
+                    <span>{lang === "bn" ? r.label_bn || r.label_en : r.label_en || r.label_bn}</span>
+                  </p>
+                  <p className="text-sm font-semibold text-white tabular-nums mt-0.5 pl-[22px] break-all">
+                    {r.value}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        {/* ── Brand card: identity, newsletter, app install, social ── */}
-        <div className="footer-brand-card mt-8">
-          <div className="flex items-center gap-3.5">
-            <BrandLogo size="lg" href={false} variant="light" />
-            <div className="min-w-0">
-              <h3 className="text-white font-bold text-lg tracking-tight truncate">{getBrandName(lang)}</h3>
-              <p className="text-brand-100 text-xs font-semibold mt-0.5 truncate">: {getBrandTagline(lang)}</p>
-            </div>
-          </div>
-
+        {/* ── Newsletter + app install ── */}
+        <div className="border-t border-white/10 pt-9 grid gap-5 lg:grid-cols-2 lg:items-center">
           {newsletterEnabled && (
-            <form onSubmit={handleNewsletter} className="flex gap-2 sm:max-w-md">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={lang === "bn" ? "নিউজলেটার — আপনার ইমেইল" : "Newsletter — your email"}
-                className="footer-newsletter-input flex-1 min-w-0"
-                aria-label={t("footer_newsletter")}
-                required
-              />
-              <button type="submit" disabled={submitting} className="footer-newsletter-btn flex-shrink-0" aria-label={t("footer_subscribe")}>
-                {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                <span className="hidden sm:inline">{t("footer_subscribe")}</span>
-              </button>
-            </form>
+            <div className="flex items-start gap-3.5">
+              <span className="w-11 h-11 rounded-full grid place-items-center flex-none bg-brand-500/20 ring-1 ring-inset ring-white/15">
+                <Mail className="w-5 h-5 text-brand-100" aria-hidden />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="text-base font-bold text-white">
+                  {lang === "bn" ? "আপডেট পান" : "Stay Updated"}
+                </p>
+                <p className="text-xs text-white/60 mt-0.5">
+                  {lang === "bn"
+                    ? "নতুন অফার ও খবর পেতে সাবস্ক্রাইব করুন।"
+                    : "Subscribe to our newsletter for latest offers and updates."}
+                </p>
+              </div>
+            </div>
           )}
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="button" onClick={handleInstall} className="footer-app-btn">
-              <Smartphone className="w-4 h-4" aria-hidden />
-              {lang === "bn" ? "অ্যাপ ইনস্টল করুন" : "Install app"}
-            </button>
-            <div className="flex flex-wrap gap-2">
-              {socialLinks.map(({ href, icon: Icon, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target={href.startsWith("mailto:") ? undefined : "_blank"}
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="footer-social-btn"
+          <div className="space-y-4">
+            {newsletterEnabled && (
+              <form onSubmit={handleNewsletter} className="flex gap-2">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={lang === "bn" ? "আপনার ইমেইল ঠিকানা" : "Your email address"}
+                  className="footer-newsletter-input flex-1 min-w-0"
+                  aria-label={t("footer_newsletter")}
+                  required
+                />
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="footer-newsletter-btn flex-shrink-0"
+                  aria-label={t("footer_subscribe")}
                 >
-                  <Icon className="w-4 h-4" aria-hidden />
-                </a>
-              ))}
+                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 sm:hidden" />}
+                  <span className="hidden sm:inline">{t("footer_subscribe")}</span>
+                </button>
+              </form>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="text-xs text-white/60">
+                {lang === "bn" ? "অ্যাপ ইনস্টল করুন" : "Install our app"}
+              </span>
+              <button type="button" onClick={handleInstall} className="footer-app-btn">
+                <Smartphone className="w-4 h-4" aria-hidden />
+                {lang === "bn" ? "ইনস্টল" : "Install App"}
+              </button>
             </div>
           </div>
         </div>
 
-        {/* ── Legal: the lightest weight on the page ── */}
-        <nav className="mt-7 flex flex-wrap justify-center gap-y-0.5" aria-label={t("footer_legal")}>
-          {LEGAL.map((link, i) => (
-            <span key={link.href} className="inline-flex items-center">
-              {i > 0 && <span className="footer-dot" aria-hidden />}
-              <Link href={link.href} className="footer-legal-link">{t(link.labelKey)}</Link>
-            </span>
-          ))}
-        </nav>
+        {/* ── Brand identity ── */}
+        <div className="border-t border-white/10 pt-9 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+          <BrandLogo size="lg" href={false} variant="light" />
+          <div className="min-w-0">
+            <h3 className="text-white font-bold text-lg tracking-tight">{getBrandName(lang)}</h3>
+            <p className="text-white/60 text-xs mt-0.5">{getBrandTagline(lang)}</p>
+          </div>
+        </div>
       </div>
 
       <div className="relative z-10 footer-bottom-bar">
