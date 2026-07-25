@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, ArrowRight, Download, Loader2, X, FileText, Wrench } from "lucide-react";
+import { CheckCircle2, ArrowRight, Download, Loader2, X, FileText, Wrench, Search } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { downloadPublicBookingInvoice, publicInvoicesApi, type PublicInvoiceData } from "@/lib/api";
 import { readOrderSnapshot, snapshotToInvoice } from "@/lib/orderSnapshot";
@@ -163,9 +163,22 @@ function BookingSuccessContent() {
           )}
 
           <div className="space-y-3">
+            {/* Tracking already exists at /track for both booking systems —
+                this is the only place the customer learns about it. */}
+            {invoice?.booking_number && (
+              <Link
+                href={`/track?booking=${encodeURIComponent(invoice.booking_number)}`}
+                className="btn btn-brand btn-md w-full flex items-center justify-center gap-2"
+              >
+                <Search className="w-4 h-4" />
+                {lang === "bn" ? "বুকিং ট্র্যাক করুন" : "Track This Booking"}
+              </Link>
+            )}
             <Link
               href="/services"
-              className="btn btn-brand btn-md w-full flex items-center justify-center gap-2"
+              className={`btn btn-md w-full flex items-center justify-center gap-2 ${
+                invoice?.booking_number ? "btn-outline" : "btn-brand"
+              }`}
             >
               <Wrench className="w-4 h-4" />
               {lang === "bn" ? "আরও সেবা দেখুন" : "Browse More Services"}

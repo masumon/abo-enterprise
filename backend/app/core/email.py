@@ -425,10 +425,17 @@ def customer_booking_confirmation_html(
     customer_name: str,
     service_type: str,
     estimated_price: str,
-    whatsapp_number: str
+    whatsapp_number: str,
+    track_url: str | None = None,
 ) -> str:
 
     whatsapp_link = f"https://wa.me/{whatsapp_number.replace('+', '')}?text=My booking number is {booking_number}"
+    track_html = (
+        f'<a href="{track_url}" style="display:inline-block;margin-top:20px;margin-left:8px;'
+        f'background:#1e5ba8;color:white;padding:12px 24px;text-decoration:none;'
+        f'border-radius:4px;font-weight:600">Track Booking</a>'
+        if track_url else ""
+    )
 
     return f"""
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9fafb">
@@ -451,6 +458,7 @@ def customer_booking_confirmation_html(
         <a href="{whatsapp_link}" style="display:inline-block;margin-top:20px;background:#25d366;color:white;padding:12px 24px;text-decoration:none;border-radius:4px;font-weight:600">
           Chat on WhatsApp
         </a>
+        {track_html}
 
         <p style="color:#999;font-size:12px;margin-top:24px;border-top:1px solid #eee;padding-top:16px">
           We will confirm your booking details via WhatsApp or call. Thank you for choosing ABO Enterprise!

@@ -277,11 +277,15 @@ async def create_booking(
     # mandatory on a booking while email is optional, so an email-less customer
     # would otherwise leave with nothing but the success screen. No-ops when
     # the SMS gateway isn't configured.
+    from app.core.site_url import resolve_site_url
+    _site = await resolve_site_url(db)
+    track_url = f"{_site}/track?booking={booking.booking_number}"
+
     background_tasks.add_task(
         send_sms,
         booking.customer_phone,
         f"ABO Enterprise: booking {booking.booking_number} received for "
-        f"{service.name_en}. We'll contact you shortly.",
+        f"{service.name_en}. Track it: {track_url}",
     )
 
     if payload.customer_email:
@@ -294,6 +298,7 @@ async def create_booking(
             service.name_en,
             estimated,
             settings.WHATSAPP_NUMBER,
+            track_url,
         )
         background_tasks.add_task(
             send_email,
