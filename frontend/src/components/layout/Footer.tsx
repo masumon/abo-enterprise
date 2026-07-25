@@ -29,12 +29,20 @@ import {
   Truck,
   Clock,
   type LucideIcon,
-  Receipt,
-  Landmark,
-  ScrollText,
-  BadgeCheck,
+  ShieldCheck,
+  CheckCircle2,
 } from "lucide-react";
 import Image from "next/image";
+import {
+  VisaMark,
+  MastercardMark,
+  BkashMark,
+  NagadMark,
+  RocketMark,
+  CardMark,
+  CodMark,
+  BankMark,
+} from "@/components/icons/PaymentIcons";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
@@ -42,6 +50,7 @@ import { publicApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { triggerInstall, isStandalone } from "@/lib/pwaInstall";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import {
   SITE_TRUST_BADGES_KEY,
   SITE_REGISTRATIONS_KEY,
@@ -53,18 +62,21 @@ import BrandLogo from "@/components/ui/BrandLogo";
 import { getBrandName, getBrandTagline } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 
-/**
- * Icon for a registration credential, matched on its label so an admin can add
- * a new one from Settings and still get a sensible icon without a code change.
- */
-function registrationIcon(label: string): LucideIcon {
-  const l = label.toLowerCase();
-  if (l.includes("tin")) return Receipt;
-  if (l.includes("bin") || l.includes("vat") || l.includes("mushak")) return Landmark;
-  if (l.includes("trade") || l.includes("licen")) return ScrollText;
-  if (l.includes("bank")) return Landmark;
-  return BadgeCheck;
-}
+/** One white card per gateway; keys match the Payments module's ids. */
+const PAY_BRAND: Record<string, { label: string; Mark: (p: { className?: string }) => JSX.Element }> = {
+  card: { label: "Visa", Mark: VisaMark },
+  visa: { label: "Visa", Mark: VisaMark },
+  mastercard: { label: "Mastercard", Mark: MastercardMark },
+  bkash: { label: "bKash", Mark: BkashMark },
+  nagad: { label: "Nagad", Mark: NagadMark },
+  rocket: { label: "Rocket", Mark: RocketMark },
+  sslcommerz: { label: "Cards", Mark: CardMark },
+  cod: { label: "Cash on Delivery", Mark: CodMark },
+  bank: { label: "Bank Transfer", Mark: BankMark },
+};
+
+/** Shown when the Payments module has nothing enabled yet. */
+const DEFAULT_PAY = ["visa", "mastercard", "bkash", "nagad", "rocket"];
 
 /** Primary business destinations — icon tiles (fast to recognise). */
 const DESTINATIONS: { href: string; icon: LucideIcon; label: { en: string; bn: string } }[] = [
@@ -128,6 +140,7 @@ export default function Footer() {
   const [submitting, setSubmitting] = useState(false);
   const newsletterEnabled = useFeatureFlag("feature_newsletter");
 
+  const { methods } = usePaymentMethods();
   const { settings } = usePublicSettings([
     "trade_license",
     "whatsapp_number",
@@ -160,6 +173,15 @@ export default function Footer() {
   const hours = lang === "bn"
     ? getSettingValue(settings, "contact_hours_bn", "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা")
     : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 9:00 PM");
+
+  // Gateways enabled in the Payments module drive the cards; the default set
+  // keeps the row populated on a fresh install.
+  const activeKeys = methods
+    .filter((m) => m.is_active)
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map((m) => m.payment_gateway.toLowerCase())
+    .filter((k) => k in PAY_BRAND);
+  const payKeys = activeKeys.length > 0 ? activeKeys : DEFAULT_PAY;
 
   const trustBadges = getTrustBadges(settings, []);
   // Registrations come from the CMS list; the legacy single trade_license key
@@ -307,54 +329,63 @@ export default function Footer() {
           </div>
         )}
 
-        {/* ── Accepted payment methods ── */}
-        <div className="mt-8">
-          <SectionLabel>{lang === "bn" ? "নিরাপদ লেনদেন" : "Secure payments"}</SectionLabel>
-          {/* Accepted-methods strip on a light plate: most of these marks are
-              dark-on-white and would disappear straight on the footer.
-              Intrinsic size is passed so the space is reserved before it loads
-              — no layout shift on a slow connection. */}
-          <div className="rounded-2xl bg-white p-3 sm:p-4 shadow-lg shadow-black/20 ring-1 ring-black/5">
-            <Image
-              src="/payment-methods.webp"
-              alt={lang === "bn" ? "গ্রহণযোগ্য পেমেন্ট মাধ্যম" : "Accepted payment methods"}
-              width={1200}
-              height={441}
-              sizes="(max-width: 640px) 92vw, (max-width: 1024px) 70vw, 640px"
-              className="w-full h-auto"
-            />
+        {/* ── Secure payments ── */}
+        <div className="mt-8 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="min-w-0">
+            <p className="text-base sm:text-lg font-bold text-white">
+              {lang === "bn" ? "নিরাপদ পেমেন্ট" : "Secure Payments"}
+            </p>
+            <p className="text-xs sm:text-[13px] text-white/60 mt-0.5">
+              {lang === "bn" ? "১০০% নিরাপদ ও বিশ্বস্ত লেনদেন" : "100% Secure & Trusted Payments"}
+            </p>
+          </div>
+          {/* Scrolls rather than wraps on a phone, so the cards keep one
+              consistent height at every width. */}
+          <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar lg:overflow-visible -mx-1 px-1 lg:mx-0 lg:px-0">
+            {payKeys.map((key) => {
+              const brand = PAY_BRAND[key];
+              if (!brand) return null;
+              return (
+                <span key={key} className="footer-pay-card" title={brand.label}>
+                  <brand.Mark className="h-5 sm:h-6 w-auto max-w-full" />
+                </span>
+              );
+            })}
           </div>
         </div>
 
-        {/* ── Registrations (admin: Settings) ── */}
+        {/* ── Verified & registered business ── */}
         {registrations.length > 0 && (
-          <div className="mt-8">
-            <SectionLabel>{lang === "bn" ? "স্বীকৃতি ও নিবন্ধন" : "Registrations"}</SectionLabel>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-              {registrations.map((r, i) => {
-                const RegIcon = registrationIcon(r.label_en || r.label_bn || "");
-                return (
-                  <div key={i} className="footer-reg">
-                    {/* The official Government of Bangladesh seal — these are
-                        state-issued numbers. Transparent PNG, so it sits on the
-                        dark footer without a plate behind it. */}
-                    <Image
-                      src="/bd-govt-logo.png"
-                      alt="গণপ্রজাতন্ত্রী বাংলাদেশ সরকার"
-                      width={28}
-                      height={28}
-                      className="w-7 h-7 flex-shrink-0 object-contain drop-shadow-sm"
-                    />
-                    <span className="footer-reg-icon" aria-hidden>
-                      <RegIcon className="w-4 h-4" />
+          <div className="mt-6 pt-6 border-t border-white/10 flex flex-col lg:flex-row lg:items-center gap-5">
+            <div className="flex items-center gap-3 lg:pr-6 lg:border-r lg:border-white/10 flex-shrink-0">
+              <span className="w-11 h-11 rounded-xl grid place-items-center flex-shrink-0 bg-gradient-to-br from-brand-500/30 to-brand-700/20 ring-1 ring-inset ring-white/20">
+                <ShieldCheck className="w-6 h-6 text-brand-200" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm sm:text-base font-bold text-white leading-tight">
+                  {lang === "bn" ? "যাচাইকৃত ও নিবন্ধিত প্রতিষ্ঠান" : "Verified & Registered Business"}
+                </p>
+                <p className="text-xs text-white/55 mt-0.5">
+                  {lang === "bn" ? "হাজারো গ্রাহকের আস্থা" : "Trusted by thousands of customers"}
+                </p>
+              </div>
+            </div>
+
+            {/* Credentials: one per row on a phone, side by side from sm up. */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3 flex-1 min-w-0">
+              {registrations.map((r, i) => (
+                <div key={i} className="min-w-0">
+                  <p className="flex items-center gap-1.5 text-[13px] text-white/85">
+                    <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" aria-hidden />
+                    <span className="truncate">
+                      {lang === "bn" ? r.label_bn || r.label_en : r.label_en || r.label_bn}
                     </span>
-                    <span className="footer-reg-body">
-                      <span className="footer-reg-label">{lang === "bn" ? r.label_bn || r.label_en : r.label_en || r.label_bn}</span>
-                      <span className="footer-reg-value">{r.value}</span>
-                    </span>
-                  </div>
-                );
-              })}
+                  </p>
+                  <p className="text-sm font-semibold text-white tabular-nums mt-0.5 pl-[22px] truncate">
+                    {r.value}
+                  </p>
+                </div>
+              ))}
             </div>
           </div>
         )}
