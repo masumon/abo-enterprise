@@ -134,7 +134,7 @@ export default function GalleryPage() {
                           className="absolute inset-0 w-full h-full border-0"
                           loading="lazy"
                           referrerPolicy="strict-origin-when-cross-origin"
-                          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allow="autoplay; accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
                           allowFullScreen
                         />
                       </div>
