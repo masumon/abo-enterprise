@@ -997,7 +997,7 @@ export default function AdminServicesPage() {
                             className="input w-full text-sm"
                           >
                             {/* Only types supported end-to-end (public renderer + server validator) */}
-                            {["text", "textarea", "number", "email", "phone", "url", "date", "select", "multiselect", "radio", "checkbox"].map(t => <option key={t} value={t}>{t}</option>)}
+                            {["text", "textarea", "number", "email", "phone", "url", "date", "datetime", "select", "multiselect", "radio", "checkbox", "file"].map(t => <option key={t} value={t}>{t}</option>)}
                           </select>
                         </div>
                       </div>

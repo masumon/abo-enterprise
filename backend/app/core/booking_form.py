@@ -148,9 +148,15 @@ def _validate_scalar(field: Any, value: Any, errors: dict[str, str]) -> Any:
         except ValueError:
             errors[name] = "Invalid Bangladesh phone number"
             return None
-    elif ftype == "url":
+    elif ftype in ("url", "file"):
+        # A file answer is the URL returned by the booking upload endpoint —
+        # the customer never types it, so anything else is a tampered value.
         if not re.match(r"^https?://\S+$", text):
-            errors[name] = "Invalid URL (must start with http:// or https://)"
+            errors[name] = (
+                "File upload failed — please attach the file again"
+                if ftype == "file"
+                else "Invalid URL (must start with http:// or https://)"
+            )
             return None
     elif ftype in ("date", "datetime"):
         try:

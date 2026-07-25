@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { isQueuedResponse, serviceBookingsApi } from "@/lib/api";
+import { bookingUploadsApi, isQueuedResponse, serviceBookingsApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { saveOrderSnapshot } from "@/lib/orderSnapshot";
 import type { Service, ServiceBookingFormField } from "@/types";
@@ -124,6 +124,30 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
     return init;
   });
   const [dynamicErrors, setDynamicErrors] = useState<Record<string, string>>({});
+  // Documents the customer attaches. `attachments` covers the service's
+  // required_documents list; `uploading` keys are per dynamic file field.
+  const [attachments, setAttachments] = useState<{ url: string; name: string }[]>([]);
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function uploadDocument(key: string, file: File): Promise<string | null> {
+    setUploading((p) => ({ ...p, [key]: true }));
+    setUploadError(null);
+    try {
+      const r = await bookingUploadsApi.upload(file);
+      return r.data?.data?.url ?? null;
+    } catch (e) {
+      setUploadError(
+        apiErrorMessage(
+          e,
+          lang === "bn" ? "ফাইল আপলোড করা যায়নি।" : "Couldn't upload that file."
+        )
+      );
+      return null;
+    } finally {
+      setUploading((p) => ({ ...p, [key]: false }));
+    }
+  }
 
   const setDynamicValue = (name: string, value: DynamicValue) => {
     setDynamicValues((prev) => ({ ...prev, [name]: value }));
@@ -254,6 +278,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         quoted_price: quotedPrice,
         details,
         form_data: formData,
+        attachments: attachments.map((a) => a.url),
       });
 
       if (isQueuedResponse(r)) {
@@ -572,6 +597,32 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
                   <option key={o} value={o}>{o}</option>
                 ))}
               </select>
+            ) : ftype === "file" ? (
+              <div>
+                <input
+                  id={inputId}
+                  type="file"
+                  accept="application/pdf,image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const url = await uploadDocument(field.field_name, file);
+                    if (url) setDynamicValue(field.field_name, url);
+                    e.target.value = "";
+                  }}
+                  className={cn("input", err && "input-error")}
+                  aria-invalid={err ? true : undefined}
+                  aria-describedby={err ? errId : undefined}
+                />
+                {uploading[field.field_name] && (
+                  <p className="text-xs text-muted mt-1">{L("Uploading…", "আপলোড হচ্ছে…")}</p>
+                )}
+                {typeof value === "string" && value && !uploading[field.field_name] && (
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    ✓ {L("File attached", "ফাইল সংযুক্ত হয়েছে")}
+                  </p>
+                )}
+              </div>
             ) : ftype === "checkbox" || ftype === "boolean" ? (
               <label className="flex items-center gap-2 text-sm text-heading cursor-pointer">
                 <input
@@ -617,6 +668,64 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
           </div>
         );
       })}
+
+      {/* The service's required_documents list, now with somewhere to put them.
+          Optional at submit — collecting late beats losing the booking. */}
+      {(service.required_documents?.length ?? 0) > 0 && (
+        <div className="rounded-xl border border-brand-100 dark:border-brand-800/40 p-4">
+          <p className="form-label mb-1">{L("Documents", "প্রয়োজনীয় কাগজপত্র")}</p>
+          <p className="text-xs text-muted mb-3">
+            {L(
+              "Attach these now if you have them — PDF or photo, up to 10MB each. You can also send them later.",
+              "থাকলে এখনই সংযুক্ত করুন — PDF বা ছবি, প্রতিটি সর্বোচ্চ ১০MB। পরেও পাঠাতে পারবেন।"
+            )}
+          </p>
+          <ul className="space-y-1 mb-3">
+            {service.required_documents!.map((d) => (
+              <li key={d} className="text-sm text-muted flex items-start gap-2">
+                <span aria-hidden className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0" />
+                {d}
+              </li>
+            ))}
+          </ul>
+          <input
+            id="booking-documents"
+            type="file"
+            accept="application/pdf,image/*"
+            multiple
+            onChange={async (e) => {
+              const files = Array.from(e.target.files ?? []);
+              e.target.value = "";
+              for (const file of files) {
+                const url = await uploadDocument("documents", file);
+                if (url) setAttachments((prev) => [...prev, { url, name: file.name }]);
+              }
+            }}
+            className="input"
+          />
+          {uploading.documents && (
+            <p className="text-xs text-muted mt-1">{L("Uploading…", "আপলোড হচ্ছে…")}</p>
+          )}
+          {attachments.length > 0 && (
+            <ul className="mt-3 space-y-1">
+              {attachments.map((a) => (
+                <li key={a.url} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-heading truncate">✓ {a.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setAttachments((prev) => prev.filter((x) => x.url !== a.url))}
+                    className="text-xs text-red-500 hover:underline flex-shrink-0"
+                  >
+                    {L("Remove", "সরান")}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {uploadError && <div className="alert-error" role="alert">{uploadError}</div>}
 
       <div>
         <label htmlFor="booking-details" className="form-label">{L("Details / Requirements *", "বিস্তারিত / প্রয়োজন *")}</label>

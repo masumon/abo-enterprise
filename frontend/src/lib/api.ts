@@ -242,6 +242,19 @@ export const serviceBookingsAdminApi = {
     api.delete<ApiResponse<null>>(`/api/v1/service-bookings/admin/bookings/${id}`),
 };
 
+export const bookingUploadsApi = {
+  /** Public document upload for a booking; returns a URL to submit on the form. */
+  upload: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return api.post<ApiResponse<{ url: string; filename: string }>>(
+      "/api/v1/media/booking-upload",
+      fd,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+  },
+};
+
 export const bookingPaymentsApi = {
   /** Hosted checkout for a booking; amount is derived server-side. */
   initiate: (booking_id: string, phone: string) =>
@@ -266,6 +279,7 @@ export const serviceBookingsApi = {
     requirements?: string;
     /** Answers to the service's dynamic booking form (validated server-side). */
     form_data?: Record<string, unknown>;
+    attachments?: string[];
   }) =>
     isOffline()
       ? queueOfflineCreate<BookingV2 & { invoice_id?: string | null }>("service_booking", data as unknown as Record<string, unknown>)

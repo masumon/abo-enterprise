@@ -488,6 +488,7 @@ class ServiceBookingFormBase(BaseModel):
 ServiceFieldType = Literal[
     "text", "textarea", "number", "integer", "email", "phone", "tel", "url",
     "date", "datetime", "select", "multiselect", "radio", "checkbox_group",
+    "file",
     "checkbox", "boolean",
 ]
 
@@ -778,6 +779,9 @@ class BookingV2Out(BaseModel):
     # instead of the raw machine key. Additive and optional; populated by the
     # admin endpoints only.
     form_labels: dict[str, str] = {}
+    # Customer-supplied document URLs. Accepted at creation since day one but
+    # never returned, so nothing could ever display them.
+    attachments: list[str] = []
     status: str
     payment_status: str
     payment_method: str | None

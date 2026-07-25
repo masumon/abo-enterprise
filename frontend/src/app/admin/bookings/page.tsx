@@ -660,6 +660,25 @@ export default function AdminBookingsPage() {
                     </div>
                   </div>
                 )}
+                {(detailV2.attachments?.length ?? 0) > 0 && (
+                  <div className="pt-3 border-t border-gray-200 mt-3">
+                    <p className="text-gray-500 text-xs mb-2">Attachments</p>
+                    <ul className="space-y-1">
+                      {detailV2.attachments!.map((url, i) => (
+                        <li key={url}>
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-brand-600 hover:underline break-all"
+                          >
+                            Document {i + 1}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 {detailV2.notes && (
                   <div className="pt-3 border-t border-gray-200 mt-3">
                     <p className="text-gray-500 text-xs mb-1">Notes</p>

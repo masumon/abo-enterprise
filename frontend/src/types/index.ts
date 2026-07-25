@@ -326,6 +326,8 @@ export interface BookingV2 {
   form_data?: Record<string, unknown> | null;
   /** field_name → admin-defined label; sent by the admin endpoints only. */
   form_labels?: Record<string, string> | null;
+  /** Customer-supplied document URLs. */
+  attachments?: string[] | null;
   status: string;
   payment_status: string;
   payment_method?: string | null;

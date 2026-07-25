@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
 from app.core.security import require_admin
+from app.core.rate_limit import rate_limit
 from app.core.config import settings
 from app.models.models import MediaAsset
 import uuid
@@ -18,6 +19,76 @@ cloudinary.config(
     api_secret=(settings.CLOUDINARY_API_SECRET or "").strip(),
     secure=True,
 )
+
+
+# Formats a customer can realistically supply for a service booking. PDF is
+# the dominant one — an NID, trade licence or passport scan is almost never a
+# JPEG — and it was rejected outright by the admin uploader.
+_BOOKING_DOC_TYPES = {
+    "application/pdf": "raw",
+    "image/jpeg": "image",
+    "image/jpg": "image",
+    "image/png": "image",
+    "image/webp": "image",
+    "image/heic": "image",
+}
+_BOOKING_DOC_MAX_BYTES = 10 * 1024 * 1024
+
+
+@router.post(
+    "/booking-upload",
+    dependencies=[Depends(rate_limit("booking_doc_upload", 20, 600))],
+)
+async def upload_booking_document(file: UploadFile = File(...)):
+    """Public document upload for a service booking.
+
+    The only customer-facing upload path in the system: the admin uploader
+    requires a session and accepts images/video only, so a customer could never
+    supply the documents a service asks for. Returns a URL the booking form
+    then submits on the booking; nothing is written to the admin media library.
+    """
+    if not settings.CLOUDINARY_CLOUD_NAME or not settings.CLOUDINARY_API_KEY or not settings.CLOUDINARY_API_SECRET:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="File upload is not available right now. Please continue without attaching.",
+        )
+
+    contents = await file.read()
+    if not contents:
+        raise HTTPException(status_code=400, detail="Empty file")
+    if len(contents) > _BOOKING_DOC_MAX_BYTES:
+        raise HTTPException(status_code=413, detail="File must be under 10MB")
+
+    mime_type = (file.content_type or "").lower().strip()
+    resource_type = _BOOKING_DOC_TYPES.get(mime_type)
+    if not resource_type:
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported file type. Upload a PDF or an image (JPG, PNG, WEBP, HEIC).",
+        )
+
+    try:
+        result = cloudinary.uploader.upload(
+            contents,
+            folder="abo-enterprise/booking-documents",
+            resource_type=resource_type,
+        )
+    except Exception as exc:
+        reason = str(exc).strip() or exc.__class__.__name__
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Upload failed: {reason[:200]}",
+        ) from exc
+
+    return {
+        "success": True,
+        "data": {
+            "url": result["secure_url"],
+            "filename": file.filename,
+            "mime_type": mime_type,
+            "size": len(contents),
+        },
+    }
 
 
 @router.post("/upload-with-metadata")
