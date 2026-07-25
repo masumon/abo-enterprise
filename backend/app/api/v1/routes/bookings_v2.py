@@ -378,6 +378,7 @@ async def list_bookings_admin(
     status: str | None = None,
     service_id: uuid.UUID | None = None,
     payment_status: str | None = None,
+    district: str | None = None,
 ):
     """List all bookings (admin only)"""
     query = select(BookingV2).where(BookingV2.is_deleted == False).options(_WITH_FORM_LABELS)
@@ -391,6 +392,9 @@ async def list_bookings_admin(
     if payment_status:
         query = query.where(BookingV2.payment_status == payment_status)
 
+    if district:
+        query = query.where(BookingV2.district == district)
+
     count_conditions = [BookingV2.is_deleted == False]
     if status:
         count_conditions.append(BookingV2.status == status)
@@ -398,6 +402,8 @@ async def list_bookings_admin(
         count_conditions.append(BookingV2.service_id == service_id)
     if payment_status:
         count_conditions.append(BookingV2.payment_status == payment_status)
+    if district:
+        count_conditions.append(BookingV2.district == district)
 
     count_result = await db.execute(
         select(func.count(BookingV2.id)).where(and_(*count_conditions))

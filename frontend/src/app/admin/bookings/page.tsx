@@ -6,6 +6,7 @@ import { Loader2, Briefcase, ChevronDown, X, Search, Download, Trash2 } from "lu
 import { bookingsApi, serviceBookingsAdminApi, downloadCsv, downloadPdf } from "@/lib/api";
 import type { Booking, BookingV2 } from "@/types";
 import { buildCustomerWhatsAppLink } from "@/lib/utils";
+import { BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
 import { apiErrorMessage } from "@/lib/apiError";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
@@ -51,6 +52,7 @@ export default function AdminBookingsPage() {
   const [loadingV2, setLoadingV2] = useState(false);
   const [statusFilterV2, setStatusFilterV2] = useState("");
   const [paymentFilterV2, setPaymentFilterV2] = useState("");
+  const [districtFilterV2, setDistrictFilterV2] = useState("");
   const [pageV2, setPageV2] = useState(1);
   const [totalV2, setTotalV2] = useState(0);
   const [updatingIdV2, setUpdatingIdV2] = useState<string | null>(null);
@@ -84,7 +86,7 @@ export default function AdminBookingsPage() {
   const loadV2 = useCallback(async () => {
     setLoadingV2(true);
     try {
-      const r = await serviceBookingsAdminApi.list({ status: statusFilterV2 || undefined, payment_status: paymentFilterV2 || undefined, page: pageV2 });
+      const r = await serviceBookingsAdminApi.list({ status: statusFilterV2 || undefined, payment_status: paymentFilterV2 || undefined, district: districtFilterV2 || undefined, page: pageV2 });
       setBookingsV2(r.data.data ?? []);
       setTotalV2(r.data.meta?.total ?? 0);
     } catch (err) {
@@ -92,7 +94,7 @@ export default function AdminBookingsPage() {
     } finally {
       setLoadingV2(false);
     }
-  }, [statusFilterV2, paymentFilterV2, pageV2, toast]);
+  }, [statusFilterV2, paymentFilterV2, districtFilterV2, pageV2, toast]);
 
   useEffect(() => { if (tab === "v1") load(); }, [load, tab]);
   useEffect(() => { if (tab === "v2") loadV2(); }, [loadV2, tab]);
@@ -288,6 +290,10 @@ export default function AdminBookingsPage() {
           <select value={paymentFilterV2} onChange={(e) => { setPaymentFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
             <option value="">All Payment</option>
             {PAYMENT_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+          </select>
+          <select value={districtFilterV2} onChange={(e) => { setDistrictFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
+            <option value="">All Districts</option>
+            {BD_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
         </AdminToolbar>
       )}
@@ -618,6 +624,12 @@ export default function AdminBookingsPage() {
                   <div><p className="text-gray-500 text-xs">Phone</p><p className="font-medium">{detailV2.customer_phone}</p></div>
                   {detailV2.customer_email && <div><p className="text-gray-500 text-xs">Email</p><p className="font-medium">{detailV2.customer_email}</p></div>}
                   {detailV2.customer_company && <div><p className="text-gray-500 text-xs">Company</p><p className="font-medium">{detailV2.customer_company}</p></div>}
+                  {(detailV2.district || detailV2.upazila) && (
+                    <div className="col-span-2">
+                      <p className="text-gray-500 text-xs">Location</p>
+                      <p className="font-medium">{[detailV2.upazila, detailV2.district].filter(Boolean).join(", ")}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 

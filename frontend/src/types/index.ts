@@ -314,6 +314,8 @@ export interface BookingV2 {
   customer_phone: string;
   customer_email?: string | null;
   customer_company?: string | null;
+  district?: string | null;
+  upazila?: string | null;
   booking_date?: string | null;
   estimated_completion_date?: string | null;
   pricing_type: string;

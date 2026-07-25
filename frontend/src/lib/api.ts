@@ -224,7 +224,7 @@ export const leadsApi = {
 };
 
 export const serviceBookingsAdminApi = {
-  list: (params?: { status?: string; payment_status?: string; page?: number; per_page?: number }) =>
+  list: (params?: { status?: string; payment_status?: string; district?: string; page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<BookingV2>>("/api/v1/service-bookings/admin/bookings", { params }),
 
   updateStatus: (id: string, status: string) =>
@@ -272,6 +272,8 @@ export const serviceBookingsApi = {
     customer_phone: string;
     customer_email?: string;
     customer_company?: string;
+    district?: string;
+    upazila?: string;
     booking_date?: string;
     pricing_type: string;
     quoted_price?: number;

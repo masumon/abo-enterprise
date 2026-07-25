@@ -683,6 +683,8 @@ class BookingV2Create(BaseModel):
     customer_phone: str
     customer_email: str | None = None
     customer_company: str | None = None
+    district: str | None = None
+    upazila: str | None = None
     booking_date: datetime | None = None
     estimated_completion_date: datetime | None = None
     pricing_type: str
@@ -725,6 +727,8 @@ class BookingV2AdminUpdate(BaseModel):
     customer_phone: str | None = None
     customer_email: str | None = None
     customer_company: str | None = None
+    district: str | None = None
+    upazila: str | None = None
     service_tier: str | None = None
     booking_date: datetime | None = None
     estimated_completion_date: datetime | None = None
@@ -764,6 +768,8 @@ class BookingV2Out(BaseModel):
     customer_phone: str
     customer_email: str | None
     customer_company: str | None
+    district: str | None = None
+    upazila: str | None = None
     booking_date: datetime | None
     estimated_completion_date: datetime | None
     pricing_type: str

@@ -12,8 +12,7 @@ import type { Service, ServiceBookingFormField } from "@/types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
-import { BD_DISTRICTS } from "@/lib/bdDistricts";
-import { getUpazilasForDistrict } from "@/lib/bdUpazilas";
+import { useDistrictUpazila, BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
 import { useLanguageStore } from "@/store/language";
 
 const bookingSchema = z.object({
@@ -243,9 +242,9 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
   });
 
   const selectedDistrict = watch("district");
-  const upazilaOptions = useMemo(
-    () => (selectedDistrict ? getUpazilasForDistrict(selectedDistrict) : []),
-    [selectedDistrict]
+  const selectedUpazila = watch("upazila");
+  const { upazilaOptions } = useDistrictUpazila(selectedDistrict, selectedUpazila, (v) =>
+    setValue("upazila", v)
   );
 
   async function onSubmit(data: BookingFormData) {
@@ -263,8 +262,8 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
 
       const selectedTier = service.pricing_tiers?.find((t) => t.tier_name === data.service_tier);
       const quotedPrice = selectedTier?.price ?? service.base_price ?? data.quoted_price;
-      const location = [data.upazila, data.district].filter(Boolean).join(", ");
-      const details = location ? `Location: ${location}\n\n${data.details}` : data.details;
+      // District/upazila are sent as their own fields now — prefixing them into
+      // `details` made location unqueryable for a district-organised business.
 
       const r = await serviceBookingsApi.create({
         service_id: service.id,
@@ -273,10 +272,12 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         customer_phone: data.customer_phone,
         customer_email: data.customer_email?.trim() || undefined,
         customer_company: data.customer_company,
+        district: data.district || undefined,
+        upazila: data.upazila || undefined,
         booking_date: data.booking_date ? new Date(data.booking_date).toISOString() : undefined,
         pricing_type: service.pricing_type,
         quoted_price: quotedPrice,
-        details,
+        details: data.details,
         form_data: formData,
         attachments: attachments.map((a) => a.url),
       });
@@ -466,10 +467,6 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
           <select
             id="booking-district"
             {...register("district")}
-            onChange={(e) => {
-              register("district").onChange(e);
-              setValue("upazila", "");
-            }}
             className="input"
           >
             <option value="">{L("Select", "নির্বাচন করুন")}</option>

@@ -339,6 +339,10 @@ class BookingV2(Base):
     customer_phone: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     customer_email: Mapped[str | None] = mapped_column(String(255))
     customer_company: Mapped[str | None] = mapped_column(String(255))
+    # Normalized service location (alembic 0012). Previously concatenated into
+    # `details`, which made it unqueryable.
+    district: Mapped[str | None] = mapped_column(String(100), index=True)
+    upazila: Mapped[str | None] = mapped_column(String(100))
     booking_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     estimated_completion_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     pricing_type: Mapped[str] = mapped_column(String(20), nullable=False)
