@@ -358,6 +358,19 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         )}
       </div>
 
+      {/* An advance-gated service stays pending until the fee is settled —
+          say so before the customer submits, not after. */}
+      {service.requires_advance && (
+        <div className="alert-warning" role="note">
+          <p className="text-sm">
+            {L(
+              `This service requires an advance consultancy fee${service.consultancy_fee ? ` of ৳${service.consultancy_fee}` : ""}. We'll contact you to collect it, and your booking is confirmed once it's received.`,
+              `এই সেবার জন্য অগ্রিম কনসালটেন্সি ফি${service.consultancy_fee ? ` ৳${service.consultancy_fee}` : ""} প্রয়োজন। আমরা যোগাযোগ করে এটি সংগ্রহ করব, এবং ফি পাওয়ার পর আপনার বুকিং নিশ্চিত হবে।`
+            )}
+          </p>
+        </div>
+      )}
+
       <div>
         <label htmlFor="booking-name" className="form-label">{L("Full Name *", "পূর্ণ নাম *")}</label>
         <input

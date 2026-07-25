@@ -230,8 +230,18 @@ async def create_booking(
     # Generate booking number
     booking_number = generate_booking_number()
 
+    # Advance / consultancy: when the service is admin-flagged
+    # requires_advance, the fee must be settled before the booking is
+    # confirmed. Mirrors the order-side rule in routes/orders.py, sourced from
+    # the service row rather than the request.
+    advance_amount = 0.0
+    if service.requires_advance:
+        advance_amount = max(0.0, float(service.consultancy_fee or 0))
+
     booking_fields = payload.model_dump()
     booking_fields["quoted_price"] = trusted_price
+    booking_fields["advance_amount"] = advance_amount
+    booking_fields["advance_paid"] = False
     booking_fields["form_data"] = cleaned_form_data
     # pricing_type describes the service, not the request — take it from the
     # trusted row so a tampered body can't mislabel how the booking is priced.
@@ -539,6 +549,46 @@ async def update_booking(
     return ApiResponse(
         data=BookingV2Out.model_validate(booking).model_dump(),
         message="Booking updated successfully",
+    )
+
+
+@router.post("/admin/bookings/{booking_id}/advance-received", response_model=ApiResponse)
+async def mark_booking_advance_received(
+    booking_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    admin_id: str = Depends(require_role("bookings.write")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin marks the advance/consultancy fee received and confirms the booking."""
+    result = await db.execute(
+        select(BookingV2).where(
+            and_(BookingV2.id == booking_id, BookingV2.is_deleted == False)  # noqa: E712
+        )
+    )
+    booking = result.scalar_one_or_none()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    old_status = booking.status
+    booking.advance_paid = True
+    if booking.status == "pending":
+        booking.status = "confirmed"
+
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin_id),
+        action="update",
+        entity_type="booking",
+        entity_id=booking.id,
+        new_values={"advance_paid": True, "status": booking.status},
+    ))
+    await db.commit()
+    await db.refresh(booking)
+
+    _notify_status_change(background_tasks, booking, old_status)
+
+    return ApiResponse(
+        data=BookingV2Out.model_validate(booking).model_dump(),
+        message="Advance marked received; booking confirmed",
     )
 
 

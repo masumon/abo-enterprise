@@ -203,6 +203,24 @@ export default function AdminBookingsPage() {
     }
   };
 
+  const markAdvanceReceived = async () => {
+    if (!detailV2) return;
+    setSavingV2(true);
+    try {
+      const r = await serviceBookingsAdminApi.markAdvanceReceived(detailV2.id);
+      const saved = r.data.data;
+      if (saved) {
+        setDetailV2((prev) => (prev ? { ...prev, ...saved } : prev));
+        setBookingsV2((prev) => prev.map((b) => (b.id === saved.id ? { ...b, ...saved } : b)));
+      }
+      toast("success", "Advance marked received; booking confirmed");
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to mark advance received"));
+    } finally {
+      setSavingV2(false);
+    }
+  };
+
   const openDetail = async (id: string) => {
     setDetailLoading(true);
     try {
@@ -649,6 +667,35 @@ export default function AdminBookingsPage() {
                   </div>
                 )}
               </div>
+
+              {/* Advance / consultancy fee — the booking stays pending until
+                  this is settled, mirroring the order-side rule. */}
+              {(detailV2.advance_amount ?? 0) > 0 && (
+                <div className={`rounded-xl p-4 ${detailV2.advance_paid ? "bg-green-50" : "bg-amber-50"}`}>
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 text-sm">Advance / Consultancy Fee</h3>
+                      <p className="text-sm text-gray-700 mt-0.5">
+                        ৳{Number(detailV2.advance_amount).toLocaleString()}{" "}
+                        <span className={detailV2.advance_paid ? "text-green-700" : "text-amber-700"}>
+                          — {detailV2.advance_paid ? "received" : "awaiting payment"}
+                        </span>
+                      </p>
+                    </div>
+                    {!detailV2.advance_paid && (
+                      <button
+                        type="button"
+                        onClick={markAdvanceReceived}
+                        disabled={savingV2}
+                        className="btn btn-primary btn-sm text-xs gap-1"
+                      >
+                        {savingV2 && <Loader2 className="w-3 h-3 animate-spin" />}
+                        Mark Received
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Fulfilment & payment — the only writer of final_price /
                   payment_status, which analytics reports revenue from. */}

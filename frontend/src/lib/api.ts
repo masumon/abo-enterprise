@@ -234,6 +234,10 @@ export const serviceBookingsAdminApi = {
   update: (id: string, data: Partial<BookingV2>) =>
     api.put<ApiResponse<BookingV2>>(`/api/v1/service-bookings/admin/bookings/${id}`, data),
 
+  /** Marks the advance/consultancy fee received and confirms the booking. */
+  markAdvanceReceived: (id: string) =>
+    api.post<ApiResponse<BookingV2>>(`/api/v1/service-bookings/admin/bookings/${id}/advance-received`),
+
   delete: (id: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/service-bookings/admin/bookings/${id}`),
 };
