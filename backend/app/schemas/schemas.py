@@ -532,6 +532,13 @@ class ServiceBase(BaseModel):
     delivery_charge: float | None = None
     consultancy_fee: float | None = None
     requires_advance: bool = False
+    scheduling_enabled: bool = False
+    slot_duration_minutes: int | None = None
+    slot_capacity: int | None = None
+    min_notice_hours: int | None = None
+    booking_horizon_days: int | None = None
+    working_hours: dict = {}
+    holidays: list[str] = []
     is_active: bool = True
     is_featured: bool = False
     sort_order: int = 0
@@ -609,6 +616,13 @@ class ServiceUpdate(BaseModel):
     delivery_charge: float | None = None
     consultancy_fee: float | None = None
     requires_advance: bool | None = None
+    scheduling_enabled: bool | None = None
+    slot_duration_minutes: int | None = None
+    slot_capacity: int | None = None
+    min_notice_hours: int | None = None
+    booking_horizon_days: int | None = None
+    working_hours: dict | None = None
+    holidays: list[str] | None = None
     is_active: bool | None = None
     is_featured: bool | None = None
     lead_priority: int | None = None

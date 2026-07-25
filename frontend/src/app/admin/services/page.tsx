@@ -38,6 +38,12 @@ const CATEGORIES: { value: string; label: string }[] = [
 const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
   CATEGORIES.map((c) => [c.value, c.label])
 );
+const WEEKDAYS: { key: string; label: string }[] = [
+  { key: "mon", label: "Mon" }, { key: "tue", label: "Tue" }, { key: "wed", label: "Wed" },
+  { key: "thu", label: "Thu" }, { key: "fri", label: "Fri" }, { key: "sat", label: "Sat" },
+  { key: "sun", label: "Sun" },
+];
+
 const PRICING_TYPES = ["fixed", "hourly", "package", "custom", "custom_quote"] as const;
 
 // Call-To-Action options; "" = Auto (inferred from pricing type + capabilities).
@@ -869,6 +875,97 @@ export default function AdminServicesPage() {
                   <input type="checkbox" checked={!!editing.requires_advance} onChange={e => setEditing(prev => prev ? { ...prev, requires_advance: e.target.checked } : prev)} className="rounded" />
                   Requires advance / consultancy fee (booking confirmed after payment)
                 </label>
+              </section>
+
+              {/* ── Scheduling (optional) ───────────────── */}
+              <section className="space-y-4">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Appointment Scheduling</h3>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!editing.scheduling_enabled}
+                    onChange={e => setEditing(prev => prev ? { ...prev, scheduling_enabled: e.target.checked } : prev)}
+                    className="rounded"
+                  />
+                  Take appointments for this service
+                </label>
+                <p className="text-xs text-gray-400 -mt-2">
+                  Off (default) keeps the current behaviour: customers pick a preferred date with no
+                  time slots and no availability checks.
+                </p>
+
+                {editing.scheduling_enabled && (
+                  <div className="space-y-4 border border-gray-100 rounded-xl p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div>
+                        <label className="form-label text-[11px]">Slot Length (min)</label>
+                        <input type="number" min={5} value={editing.slot_duration_minutes ?? 60}
+                          onChange={fNum("slot_duration_minutes")} className="input w-full text-sm" />
+                      </div>
+                      <div>
+                        <label className="form-label text-[11px]">Capacity / Slot</label>
+                        <input type="number" min={1} value={editing.slot_capacity ?? 1}
+                          onChange={fNum("slot_capacity")} className="input w-full text-sm" />
+                      </div>
+                      <div>
+                        <label className="form-label text-[11px]">Min Notice (hrs)</label>
+                        <input type="number" min={0} value={editing.min_notice_hours ?? 0}
+                          onChange={fNum("min_notice_hours")} className="input w-full text-sm" />
+                      </div>
+                      <div>
+                        <label className="form-label text-[11px]">Book Ahead (days)</label>
+                        <input type="number" min={1} value={editing.booking_horizon_days ?? 60}
+                          onChange={fNum("booking_horizon_days")} className="input w-full text-sm" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="form-label text-[11px]">Working Hours</label>
+                      <p className="text-[11px] text-gray-400 mb-2">
+                        Leave a day blank to close it. Multiple ranges: 09:00-13:00, 14:00-18:00
+                      </p>
+                      <div className="space-y-2">
+                        {WEEKDAYS.map(({ key, label }) => {
+                          const ranges = (editing.working_hours?.[key] ?? []) as [string, string][];
+                          return (
+                            <div key={key} className="flex items-center gap-3">
+                              <span className="w-10 text-xs font-medium text-gray-500">{label}</span>
+                              <input
+                                value={ranges.map(([a, b]) => `${a}-${b}`).join(", ")}
+                                onChange={e => {
+                                  const parsed = e.target.value
+                                    .split(",")
+                                    .map(part => part.trim().split("-").map(x => x.trim()))
+                                    .filter(pair => pair.length === 2 && pair[0] && pair[1]) as [string, string][];
+                                  setEditing(prev => prev ? {
+                                    ...prev,
+                                    working_hours: { ...(prev.working_hours ?? {}), [key]: parsed },
+                                  } : prev);
+                                }}
+                                placeholder="09:00-17:00"
+                                className="input flex-1 text-sm font-mono"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="form-label text-[11px]">Holidays (one date per line, YYYY-MM-DD)</label>
+                      <textarea
+                        rows={3}
+                        value={(editing.holidays ?? []).join("\n")}
+                        onChange={e => setEditing(prev => prev ? {
+                          ...prev,
+                          holidays: e.target.value.split("\n").map(x => x.trim()).filter(Boolean),
+                        } : prev)}
+                        placeholder={"2026-12-16\n2026-03-26"}
+                        className="input w-full text-sm resize-y font-mono"
+                      />
+                    </div>
+                  </div>
+                )}
               </section>
 
               {/* ── Call-To-Action ──────────────────────── */}

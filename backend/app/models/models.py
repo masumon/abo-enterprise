@@ -257,6 +257,15 @@ class Service(Base):
     delivery_charge: Mapped[float | None] = mapped_column(Numeric(10, 2))
     consultancy_fee: Mapped[float | None] = mapped_column(Numeric(10, 2))
     requires_advance: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Optional appointment scheduling (alembic 0013). Off = booking_date stays
+    # a free "preferred date"; see core/scheduling.py for the rules.
+    scheduling_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    slot_duration_minutes: Mapped[int | None] = mapped_column(Integer)
+    slot_capacity: Mapped[int | None] = mapped_column(Integer)
+    min_notice_hours: Mapped[int | None] = mapped_column(Integer)
+    booking_horizon_days: Mapped[int | None] = mapped_column(Integer)
+    working_hours: Mapped[dict] = mapped_column(JSON, default=dict)
+    holidays: Mapped[list] = mapped_column(JSON, default=list)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)

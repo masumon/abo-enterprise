@@ -137,6 +137,14 @@ export interface ServicePricingTier {
 }
 
 /** Effective Call-To-Action, computed by the API (single source: core/capabilities.py). */
+export interface ServiceSlot {
+  start: string;
+  label: string;
+  capacity: number;
+  remaining: number;
+  available: boolean;
+}
+
 export interface ServiceCta {
   type: "book" | "order" | "quote" | "contact";
   label_en: string;
@@ -179,6 +187,15 @@ export interface Service {
   delivery_charge?: number | null;
   consultancy_fee?: number | null;
   requires_advance?: boolean;
+  /** Optional appointment scheduling (see backend core/scheduling.py). */
+  scheduling_enabled?: boolean;
+  slot_duration_minutes?: number | null;
+  slot_capacity?: number | null;
+  min_notice_hours?: number | null;
+  booking_horizon_days?: number | null;
+  /** Per-weekday open ranges: { mon: [["09:00","17:00"]], … } */
+  working_hours?: Record<string, [string, string][]> | null;
+  holidays?: string[] | null;
   pricing_tiers?: ServicePricingTier[];
   booking_forms?: ServiceBookingFormField[];
   is_active?: boolean;

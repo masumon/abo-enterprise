@@ -1,14 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { bookingUploadsApi, isQueuedResponse, serviceBookingsApi } from "@/lib/api";
+import { bookingUploadsApi, isQueuedResponse, serviceBookingsApi, servicesApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { saveOrderSnapshot } from "@/lib/orderSnapshot";
-import type { Service, ServiceBookingFormField } from "@/types";
+import type { Service, ServiceBookingFormField, ServiceSlot } from "@/types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
@@ -128,6 +128,39 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
   const [attachments, setAttachments] = useState<{ url: string; name: string }[]>([]);
   const [uploading, setUploading] = useState<Record<string, boolean>>({});
   const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // ---- Optional appointment scheduling ----
+  // Off for most services, in which case none of this renders and
+  // booking_date stays the original free "preferred date" input.
+  const scheduling = service.scheduling_enabled === true;
+  const [slotDate, setSlotDate] = useState("");
+  const [slots, setSlots] = useState<ServiceSlot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState("");
+
+  useEffect(() => {
+    if (!scheduling || !slotDate) {
+      setSlots([]);
+      return;
+    }
+    let cancelled = false;
+    setSlotsLoading(true);
+    setSelectedSlot("");
+    servicesApi
+      .availability(service.id, slotDate)
+      .then((r) => {
+        if (!cancelled) setSlots(r.data?.data?.slots ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setSlots([]);
+      })
+      .finally(() => {
+        if (!cancelled) setSlotsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [scheduling, slotDate, service.id]);
 
   async function uploadDocument(key: string, file: File): Promise<string | null> {
     setUploading((p) => ({ ...p, [key]: true }));
@@ -253,6 +286,13 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       setSubmitError(null);
       setQueued(false);
 
+      if (scheduling && !selectedSlot) {
+        setSubmitError(L("Please choose an appointment time.", "একটি সময় নির্বাচন করুন।"));
+        setSubmitting(false);
+        focusField("booking-slot-date");
+        return;
+      }
+
       const formData = validateDynamicFields();
       if (formData === null) {
         setSubmitError(fixFieldsMsg);
@@ -274,7 +314,11 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         customer_company: data.customer_company,
         district: data.district || undefined,
         upazila: data.upazila || undefined,
-        booking_date: data.booking_date ? new Date(data.booking_date).toISOString() : undefined,
+        booking_date: scheduling
+          ? selectedSlot
+          : data.booking_date
+            ? new Date(data.booking_date).toISOString()
+            : undefined,
         pricing_type: service.pricing_type,
         quoted_price: quotedPrice,
         details: data.details,
@@ -456,10 +500,60 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         />
       </div>
 
-      <div>
-        <label htmlFor="booking-date" className="form-label">{L("Preferred Booking Date (Optional)", "পছন্দের তারিখ (ঐচ্ছিক)")}</label>
-        <input id="booking-date" type="date" {...register("booking_date")} className="input" />
-      </div>
+      {scheduling ? (
+        <div>
+          <label htmlFor="booking-slot-date" className="form-label">
+            {L("Appointment Date *", "অ্যাপয়েন্টমেন্টের তারিখ *")}
+          </label>
+          <input
+            id="booking-slot-date"
+            type="date"
+            value={slotDate}
+            min={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => setSlotDate(e.target.value)}
+            className="input"
+          />
+          {slotDate && (
+            <div className="mt-3">
+              <p className="form-label">{L("Available Times *", "সময় নির্বাচন করুন *")}</p>
+              {slotsLoading ? (
+                <p className="text-sm text-muted">{L("Checking availability…", "সময় দেখা হচ্ছে…")}</p>
+              ) : slots.length === 0 ? (
+                <p className="text-sm text-muted">
+                  {L("We're closed that day — please pick another date.", "সেদিন আমরা বন্ধ — অন্য তারিখ বেছে নিন।")}
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {slots.map((slot) => (
+                    <button
+                      key={slot.start}
+                      type="button"
+                      disabled={!slot.available}
+                      onClick={() => setSelectedSlot(slot.start)}
+                      aria-pressed={selectedSlot === slot.start}
+                      className={cn(
+                        "px-3 py-2 rounded-lg text-sm font-medium border transition-colors",
+                        selectedSlot === slot.start
+                          ? "bg-brand-600 text-white border-brand-600"
+                          : slot.available
+                            ? "bg-white dark:bg-white/5 text-heading border-gray-200 dark:border-white/10 hover:border-brand-400"
+                            : "bg-gray-100 dark:bg-white/5 text-gray-400 border-transparent cursor-not-allowed line-through"
+                      )}
+                    >
+                      {slot.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div>
+          <label htmlFor="booking-date" className="form-label">{L("Preferred Booking Date (Optional)", "পছন্দের তারিখ (ঐচ্ছিক)")}</label>
+          <input id="booking-date" type="date" {...register("booking_date")} className="input" />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div>

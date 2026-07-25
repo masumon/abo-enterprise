@@ -19,6 +19,7 @@ from app.core.email import (
 )
 from app.core.sms import send_sms
 from app.core.capabilities import get_capabilities
+from app.core import scheduling
 from app.core.invoice import InvoiceService
 from app.core.booking_form import (
     BookingFormValidationError,
@@ -170,10 +171,51 @@ async def create_booking(
             detail="This service is not available for online booking.",
         )
 
+    # ---- Scheduling (opt-in per service) ----
+    # When the service takes appointments, booking_date is a real slot and is
+    # validated against the same generator that produced the customer's
+    # options, so a stale page or a crafted request can't take a slot that was
+    # never offered. Services without scheduling fall through to the original
+    # "preferred date" behaviour below, unchanged.
+    if scheduling.is_enabled(service):
+        if payload.booking_date is None:
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "message": "Invalid booking form data",
+                    "errors": {"booking_date": "Please choose an appointment time"},
+                },
+            )
+        slot = payload.booking_date
+        if slot.tzinfo is None:
+            slot = slot.replace(tzinfo=timezone.utc)
+        rows = await db.execute(
+            select(BookingV2.booking_date, func.count(BookingV2.id))
+            .where(
+                BookingV2.service_id == service.id,
+                BookingV2.is_deleted == False,  # noqa: E712
+                BookingV2.status != "cancelled",
+                BookingV2.booking_date == slot,
+            )
+            .group_by(BookingV2.booking_date)
+        )
+        try:
+            payload.booking_date = scheduling.assert_slot_bookable(
+                service, slot, scheduling.taken_counts(rows.all())
+            )
+        except scheduling.SchedulingError as exc:
+            raise HTTPException(
+                status_code=409,
+                detail={
+                    "message": "Invalid booking form data",
+                    "errors": {"booking_date": str(exc)},
+                },
+            )
+
     # A preferred date in the past is never a real intent. Compared with a
     # one-day grace so a date picked "today" in Bangladesh (UTC+6, submitted as
     # UTC midnight) is never rejected.
-    if payload.booking_date is not None:
+    elif payload.booking_date is not None:
         booked_at = payload.booking_date
         if booked_at.tzinfo is None:
             booked_at = booked_at.replace(tzinfo=timezone.utc)

@@ -1,6 +1,6 @@
 import axios from "axios";
 import type { AxiosResponse } from "axios";
-import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier, BookingV2, LeadV2, Review, BlogPost, ServiceBookingFormField, Category, Subcategory } from "@/types";
+import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier, ServiceSlot, BookingV2, LeadV2, Review, BlogPost, ServiceBookingFormField, Category, Subcategory } from "@/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { clearAdminToken, getAdminToken, isAdminProtectedPath } from "@/lib/adminAuth";
 import { getAdaptiveTimeout, getAdaptiveRetry } from "@/lib/networkAwareApi";
@@ -349,6 +349,13 @@ export const servicesApi = {
 
   getBySlug: (slug: string) =>
     api.get<ApiResponse<Service>>(`/api/v1/services/${slug}`),
+
+  /** Bookable slots for one local (Asia/Dhaka) date; empty when scheduling is off. */
+  availability: (serviceId: string, date: string) =>
+    api.get<ApiResponse<{ scheduling_enabled: boolean; date: string; slots: ServiceSlot[] }>>(
+      `/api/v1/services/${serviceId}/availability`,
+      { params: { date } }
+    ),
 };
 
 export const reviewsApi = {

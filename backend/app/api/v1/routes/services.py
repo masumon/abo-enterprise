@@ -213,6 +213,68 @@ async def get_booking_form(
     )
 
 
+@router.get("/{service_id}/availability", response_model=ApiResponse)
+async def get_service_availability(
+    service_id: uuid.UUID,
+    date: str = Query(..., description="Local (Asia/Dhaka) date, YYYY-MM-DD"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Bookable slots for a service on one day (public).
+
+    Returns an empty list with ``scheduling_enabled: false`` for a service that
+    doesn't use scheduling, so a client can call this unconditionally.
+    """
+    from datetime import date as date_cls
+    from app.core import scheduling
+    from app.models.models import BookingV2
+
+    try:
+        day = date_cls.fromisoformat(date)
+    except ValueError:
+        raise HTTPException(status_code=422, detail="Invalid date — use YYYY-MM-DD")
+
+    result = await db.execute(
+        select(Service).where(
+            and_(Service.id == service_id, Service.is_deleted == False, Service.is_active == True)  # noqa: E712
+        )
+    )
+    service = result.scalar_one_or_none()
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+
+    if not scheduling.is_enabled(service):
+        return ApiResponse(
+            data={"scheduling_enabled": False, "date": date, "slots": []},
+            message="Scheduling is not enabled for this service",
+        )
+
+    slots = scheduling.generate_slots(service, day)
+    taken: dict = {}
+    if slots:
+        # One grouped count over the day's slots — cancelled bookings release
+        # their slot, so they must not consume capacity.
+        rows = await db.execute(
+            select(BookingV2.booking_date, func.count(BookingV2.id))
+            .where(
+                BookingV2.service_id == service_id,
+                BookingV2.is_deleted == False,  # noqa: E712
+                BookingV2.status != "cancelled",
+                BookingV2.booking_date.in_(slots),
+            )
+            .group_by(BookingV2.booking_date)
+        )
+        taken = scheduling.taken_counts(rows.all())
+
+    return ApiResponse(
+        data={
+            "scheduling_enabled": True,
+            "date": date,
+            "slots": scheduling.slot_availability(service, day, taken),
+        },
+        message="Availability fetched successfully",
+    )
+
+
 # ==================== ADMIN ENDPOINTS ====================
 
 @router.post("/admin/services", response_model=ApiResponse)
