@@ -9,7 +9,7 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.json_util import to_json_safe
-from app.core.security import require_admin
+from app.core.security import require_role
 from app.core.config import settings
 from app.core.email import (
     send_email,
@@ -284,7 +284,7 @@ async def get_booking(
 
 @router.get("/admin/bookings", response_model=PaginatedResponse)
 async def list_bookings_admin(
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("bookings.read")),
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -343,7 +343,7 @@ async def list_bookings_admin(
 @router.get("/admin/bookings/{booking_id}", response_model=ApiResponse)
 async def get_booking_admin(
     booking_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("bookings.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Get booking details (admin)"""
@@ -367,7 +367,7 @@ async def get_booking_admin(
 async def update_booking_status(
     booking_id: uuid.UUID,
     payload: BookingV2StatusUpdate,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("bookings.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Update booking status (admin only)"""
@@ -414,7 +414,7 @@ async def update_booking_status(
 async def update_booking(
     booking_id: uuid.UUID,
     payload: BookingV2Create,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("bookings.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Update booking details (admin only)"""
@@ -460,7 +460,7 @@ async def update_booking(
 @router.delete("/admin/bookings/{booking_id}", response_model=ApiResponse)
 async def delete_booking(
     booking_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("bookings.delete")),
     db: AsyncSession = Depends(get_db),
 ):
     """Soft delete booking (admin only)"""
@@ -494,7 +494,7 @@ async def delete_booking(
 
 @router.get("/admin/bookings/stats/summary", response_model=ApiResponse)
 async def get_booking_stats(
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("bookings.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Get booking statistics summary"""

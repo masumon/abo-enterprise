@@ -7,7 +7,7 @@ from app.core.database import get_db
 from app.core.http_cache import etag_json_response
 from app.core.taxonomy import descendant_ids_for_slug
 from app.core.json_util import to_json_safe
-from app.core.security import require_admin
+from app.core.security import require_role
 from app.models.models import (
     Service,
     ServicePricingTier,
@@ -28,6 +28,45 @@ from app.schemas.schemas import (
 )
 
 router = APIRouter(prefix="/services", tags=["services"])
+
+# Pricing fields whose presence in a payload triggers the coherence check.
+_PRICING_KEYS = {"pricing_type", "base_price", "min_price", "max_price", "hourly_rate"}
+
+
+def _assert_price_coherence(
+    pricing_type: str | None,
+    base_price: float | None,
+    min_price: float | None,
+    max_price: float | None,
+    hourly_rate: float | None,
+    has_tiers: bool = False,
+) -> None:
+    """Reject a price setup that can only ever produce a ৳0 booking.
+
+    A service priced `fixed` with no base price (or `hourly` with no rate)
+    silently books at zero, because the booking falls back to base_price and
+    then to None. Pricing tiers satisfy any of these on their own.
+    """
+    if min_price is not None and max_price is not None and min_price > max_price:
+        raise HTTPException(
+            status_code=422, detail="Minimum price cannot be greater than maximum price"
+        )
+    if has_tiers:
+        return
+    missing = {
+        "fixed": ("base_price", base_price is None),
+        "hourly": ("hourly_rate", hourly_rate is None),
+    }.get(pricing_type or "")
+    if missing and missing[1]:
+        raise HTTPException(
+            status_code=422,
+            detail=f"A '{pricing_type}' service needs {missing[0]} (or at least one pricing tier)",
+        )
+    if pricing_type == "package" and base_price is None and (min_price is None or max_price is None):
+        raise HTTPException(
+            status_code=422,
+            detail="A 'package' service needs a base price, a min/max range, or at least one pricing tier",
+        )
 
 # ==================== PUBLIC ENDPOINTS ====================
 
@@ -156,7 +195,7 @@ async def get_booking_form(
 @router.post("/admin/services", response_model=ApiResponse)
 async def create_service(
     payload: ServiceCreate,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("services.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new service (admin only)"""
@@ -166,6 +205,11 @@ async def create_service(
     )
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Slug already exists")
+
+    _assert_price_coherence(
+        payload.pricing_type, payload.base_price, payload.min_price,
+        payload.max_price, payload.hourly_rate,
+    )
 
     service = Service(**payload.model_dump())
     db.add(service)
@@ -196,7 +240,7 @@ async def create_service(
 
 @router.get("/admin/services", response_model=PaginatedResponse)
 async def list_services_admin(
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("services.read")),
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=100),
@@ -235,7 +279,7 @@ async def list_services_admin(
 @router.get("/admin/services/{service_id}", response_model=ApiResponse)
 async def get_service_admin(
     service_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("services.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Get service details (admin)"""
@@ -259,7 +303,7 @@ async def get_service_admin(
 async def update_service(
     service_id: uuid.UUID,
     payload: ServiceUpdate,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("services.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Update service (admin only)"""
@@ -282,6 +326,41 @@ async def update_service(
 
     # Update fields
     update_data = payload.dict(exclude_unset=True)
+
+    # Slug is editable, but must stay unique across live services.
+    new_slug = update_data.get("slug")
+    if new_slug is not None and new_slug != service.slug:
+        clash = await db.execute(
+            select(Service).where(
+                Service.slug == new_slug,
+                Service.id != service_id,
+                Service.is_deleted == False,  # noqa: E712
+            )
+        )
+        if clash.scalar_one_or_none():
+            raise HTTPException(status_code=400, detail="Slug already exists")
+
+    # Only validate pricing when the request actually touches it, so editing an
+    # unrelated field (SEO, copy) on a legacy service is never blocked.
+    if _PRICING_KEYS & update_data.keys():
+        tiers = await db.execute(
+            select(func.count(ServicePricingTier.id)).where(
+                ServicePricingTier.service_id == service_id,
+                ServicePricingTier.is_deleted == False,  # noqa: E712
+                ServicePricingTier.is_active == True,  # noqa: E712
+            )
+        )
+        merged = {
+            k: update_data.get(k, getattr(service, k))
+            for k in ("pricing_type", "base_price", "min_price", "max_price", "hourly_rate")
+        }
+        _assert_price_coherence(
+            merged["pricing_type"],
+            *(None if merged[k] is None else float(merged[k])
+              for k in ("base_price", "min_price", "max_price", "hourly_rate")),
+            has_tiers=(tiers.scalar() or 0) > 0,
+        )
+
     for field, value in update_data.items():
         setattr(service, field, value)
 
@@ -314,7 +393,7 @@ async def update_service(
 @router.delete("/admin/services/{service_id}", response_model=ApiResponse)
 async def delete_service(
     service_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("services.delete")),
     db: AsyncSession = Depends(get_db),
 ):
     """Soft delete service (admin only)"""
@@ -352,7 +431,7 @@ async def delete_service(
 async def create_pricing_tier(
     service_id: uuid.UUID,
     payload: ServicePricingTierCreate,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("services.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Create pricing tier for service (admin only)"""
@@ -379,7 +458,7 @@ async def update_pricing_tier(
     service_id: uuid.UUID,
     tier_id: uuid.UUID,
     payload: ServicePricingTierCreate,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("services.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Update pricing tier (admin only)"""
@@ -414,7 +493,7 @@ async def update_pricing_tier(
 async def delete_pricing_tier(
     service_id: uuid.UUID,
     tier_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("services.delete")),
     db: AsyncSession = Depends(get_db),
 ):
     """Delete pricing tier (admin only)"""
@@ -445,7 +524,7 @@ async def delete_pricing_tier(
 async def create_booking_form_field(
     service_id: uuid.UUID,
     payload: ServiceBookingFormCreate,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("services.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Create booking form field (admin only)"""
@@ -474,7 +553,7 @@ async def update_booking_form_field(
     service_id: uuid.UUID,
     field_id: uuid.UUID,
     payload: ServiceBookingFormCreate,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("services.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Update booking form field (admin only)"""
@@ -511,7 +590,7 @@ async def update_booking_form_field(
 async def delete_booking_form_field(
     service_id: uuid.UUID,
     field_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("services.delete")),
     db: AsyncSession = Depends(get_db),
 ):
     """Delete booking form field (admin only)"""

@@ -6,7 +6,8 @@ ROLE_PERMISSIONS = {
     "admin": [
         "orders.read", "orders.write", "orders.delete",
         "products.read", "products.write", "products.delete",
-        "bookings.read", "bookings.write",
+        "services.read", "services.write", "services.delete",
+        "bookings.read", "bookings.write", "bookings.delete",
         "leads.read", "leads.write",
         "analytics.read",
         "bulk.read", "bulk.write",
@@ -15,10 +16,12 @@ ROLE_PERMISSIONS = {
     ],
     "editor": [
         "orders.read", "products.read", "products.write",
-        "bookings.read", "leads.read", "analytics.read",
+        "services.read", "services.write",
+        "bookings.read", "bookings.write",
+        "leads.read", "analytics.read",
     ],
     "viewer": [
-        "orders.read", "products.read",
+        "orders.read", "products.read", "services.read",
         "bookings.read", "leads.read", "analytics.read",
     ],
 }

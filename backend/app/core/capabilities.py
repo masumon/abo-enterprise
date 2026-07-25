@@ -120,7 +120,9 @@ def resolve_service_cta(
     ctype = cta_type if cta_type in CTA_DEFAULT_LABELS else None
     if ctype is None:
         caps = capabilities_for("service", is_orderable, is_bookable)
-        if pricing_type == "custom_quote":
+        # "custom" is a legacy alias for "custom_quote" — both mean the price is
+        # quoted per job, so both must resolve to the quote CTA.
+        if pricing_type in ("custom_quote", "custom"):
             ctype = "quote"
         elif Capability.ORDERABLE in caps and Capability.BOOKABLE not in caps:
             ctype = "order"

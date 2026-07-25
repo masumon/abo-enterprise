@@ -481,8 +481,19 @@ class ServiceBookingFormBase(BaseModel):
     is_active: bool = True
 
 
+# Field types supported end to end (public renderer + server validator).
+# Applied to the *input* schema only — ServiceBookingFormOut keeps a plain str
+# so a legacy row with an unlisted type can never fail serialization and 500
+# the service detail page.
+ServiceFieldType = Literal[
+    "text", "textarea", "number", "integer", "email", "phone", "tel", "url",
+    "date", "datetime", "select", "multiselect", "radio", "checkbox_group",
+    "checkbox", "boolean",
+]
+
+
 class ServiceBookingFormCreate(ServiceBookingFormBase):
-    pass
+    field_type: ServiceFieldType
 
 
 class ServiceBookingFormOut(ServiceBookingFormBase):
@@ -538,7 +549,26 @@ class ServiceBase(BaseModel):
     faq: list[dict] = []
 
 
+# Accepted pricing types. "custom" is retained as a back-compat alias for
+# "custom_quote" (see core/capabilities.resolve_service_cta). Applied to input
+# schemas only, for the same reason as ServiceFieldType above.
+ServicePricingType = Literal["fixed", "hourly", "package", "custom", "custom_quote"]
+
+# Money columns that must never be negative.
+_PRICE_FIELDS = (
+    "base_price", "min_price", "max_price", "hourly_rate",
+    "delivery_charge", "consultancy_fee",
+)
+
+
+def _reject_negative(v: float | None, info) -> float | None:
+    if v is not None and v < 0:
+        raise ValueError(f"{info.field_name} cannot be negative")
+    return v
+
+
 class ServiceCreate(ServiceBase):
+    pricing_type: ServicePricingType
     # Capability overrides can be set at creation too (additive; default NULL).
     is_orderable: bool | None = None
     is_bookable: bool | None = None
@@ -546,8 +576,14 @@ class ServiceCreate(ServiceBase):
     category_id: uuid.UUID | None = None
     subcategory_id: uuid.UUID | None = None
 
+    _no_negative_prices = field_validator(*_PRICE_FIELDS)(_reject_negative)
+
 
 class ServiceUpdate(BaseModel):
+    # Editable after creation — the admin editor has always rendered a slug
+    # input, but the field was absent here so every edit was silently dropped.
+    # Uniqueness is enforced by the route against other live services.
+    slug: str | None = None
     name_en: str | None = None
     name_bn: str | None = None
     description_en: str | None = None
@@ -561,7 +597,7 @@ class ServiceUpdate(BaseModel):
     subcategory_id: uuid.UUID | None = None
     is_orderable: bool | None = None
     is_bookable: bool | None = None
-    pricing_type: str | None = None
+    pricing_type: ServicePricingType | None = None
     cta_type: str | None = None
     cta_label_en: str | None = None
     cta_label_bn: str | None = None
@@ -590,6 +626,8 @@ class ServiceUpdate(BaseModel):
     requirements: list[str] | None = None
     required_documents: list[str] | None = None
     faq: list[dict] | None = None
+
+    _no_negative_prices = field_validator(*_PRICE_FIELDS)(_reject_negative)
 
 
 class ServiceOut(ServiceBase):
