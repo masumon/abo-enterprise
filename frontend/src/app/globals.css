@@ -382,11 +382,6 @@
     -ms-overflow-style: none;
   }
   .no-scrollbar::-webkit-scrollbar { display: none; }
-  .footer-pay-icon {
-    @apply w-8 h-8 flex-shrink-0 rounded-lg overflow-hidden
-           ring-1 ring-white/20 shadow-sm shadow-black/25
-           transition-transform duration-200 hover:scale-105;
-  }
   .footer-reg {
     @apply flex items-center gap-2 px-2.5 py-2 rounded-xl
            bg-gradient-to-br from-white/[0.09] to-white/[0.03]

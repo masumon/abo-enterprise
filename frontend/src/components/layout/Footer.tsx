@@ -35,21 +35,11 @@ import {
   BadgeCheck,
 } from "lucide-react";
 import Image from "next/image";
-import {
-  BkashIcon,
-  NagadIcon,
-  RocketIcon,
-  SslIcon,
-  CardIcon,
-  CodIcon,
-  BankIcon,
-} from "@/components/icons/PaymentIcons";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
 import { publicApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { triggerInstall, isStandalone } from "@/lib/pwaInstall";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import {
@@ -111,17 +101,6 @@ const TRUST_ICONS: Record<string, LucideIcon> = {
   award: Award, globe: Globe, truck: Truck, store: Store, clock: Clock,
 };
 
-/** Payment gateway marks — an SVG per gateway; the label stays for a11y. */
-const PAY_BRAND: Record<string, { label: string; Icon: (p: { className?: string }) => JSX.Element }> = {
-  bkash: { label: "bKash", Icon: BkashIcon },
-  nagad: { label: "Nagad", Icon: NagadIcon },
-  rocket: { label: "Rocket", Icon: RocketIcon },
-  sslcommerz: { label: "SSLCommerz", Icon: SslIcon },
-  card: { label: "Visa · Mastercard", Icon: CardIcon },
-  cod: { label: "Cash on Delivery", Icon: CodIcon },
-  bank: { label: "Bank Transfer", Icon: BankIcon },
-};
-
 function normalizePhoneDigits(phone: string) {
   const digits = phone.replace(/\D/g, "");
   if (digits.startsWith("880")) return digits;
@@ -148,7 +127,6 @@ export default function Footer() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const newsletterEnabled = useFeatureFlag("feature_newsletter");
-  const { methods } = usePaymentMethods();
 
   const { settings } = usePublicSettings([
     "trade_license",
@@ -190,9 +168,6 @@ export default function Footer() {
     settings,
     tradeLicense ? [{ label_en: "Trade License", label_bn: "ট্রেড লাইসেন্স", value: tradeLicense }] : []
   );
-  const payments = methods
-    .filter((m) => m.is_active)
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 
   const socialLinks = [
     {
@@ -332,35 +307,24 @@ export default function Footer() {
           </div>
         )}
 
-        {/* ── Payment gateways (admin: Payments module) ── */}
-        {payments.length > 0 && (
-          <div className="mt-8">
-            <SectionLabel>{lang === "bn" ? "নিরাপদ লেনদেন" : "Secure payments"}</SectionLabel>
-            {/* Accepted-methods strip on a light plate: most of these marks
-                are dark-on-white and would disappear straight on the footer.
-                Intrinsic size is passed so the space is reserved before it
-                loads — no layout shift on a slow connection. */}
-            <div className="rounded-2xl bg-white p-3 sm:p-4 shadow-lg shadow-black/20 ring-1 ring-black/5">
-              <Image
-                src="/payment-methods.webp"
-                alt={lang === "bn" ? "গ্রহণযোগ্য পেমেন্ট মাধ্যম" : "Accepted payment methods"}
-                width={1200}
-                height={441}
-                sizes="(max-width: 640px) 92vw, (max-width: 1024px) 70vw, 640px"
-                className="w-full h-auto"
-              />
-            </div>
-
-            {/* The gateways actually enabled in the Payments module — the strip
-                above is artwork, this is the live list, and it keeps the
-                section truthful for screen readers. */}
-            <ul className="sr-only">
-              {payments.map((m) => (
-                <li key={m.id}>{PAY_BRAND[m.payment_gateway.toLowerCase()]?.label ?? m.payment_gateway}</li>
-              ))}
-            </ul>
+        {/* ── Accepted payment methods ── */}
+        <div className="mt-8">
+          <SectionLabel>{lang === "bn" ? "নিরাপদ লেনদেন" : "Secure payments"}</SectionLabel>
+          {/* Accepted-methods strip on a light plate: most of these marks are
+              dark-on-white and would disappear straight on the footer.
+              Intrinsic size is passed so the space is reserved before it loads
+              — no layout shift on a slow connection. */}
+          <div className="rounded-2xl bg-white p-3 sm:p-4 shadow-lg shadow-black/20 ring-1 ring-black/5">
+            <Image
+              src="/payment-methods.webp"
+              alt={lang === "bn" ? "গ্রহণযোগ্য পেমেন্ট মাধ্যম" : "Accepted payment methods"}
+              width={1200}
+              height={441}
+              sizes="(max-width: 640px) 92vw, (max-width: 1024px) 70vw, 640px"
+              className="w-full h-auto"
+            />
           </div>
-        )}
+        </div>
 
         {/* ── Registrations (admin: Settings) ── */}
         {registrations.length > 0 && (
