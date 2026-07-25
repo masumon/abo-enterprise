@@ -101,12 +101,10 @@ export function BankIcon({ className }: IconProps) {
 }
 
 /**
- * Government of Bangladesh credential mark.
+ * Stylised Bangladesh mark, kept as a vector fallback.
  *
- * A stylised emblem in the national colours — the flag's red disc on bottle
- * green, ringed by rice sheaves — used to signal an official registration.
- * Deliberately NOT a reproduction of the state emblem, which is a protected
- * symbol; swap in the official artwork if you have the right to use it.
+ * The footer uses the official seal at /bd-govt-logo.png instead; this stays
+ * available for any surface that needs a scalable, single-colour-safe stand-in.
  */
 export function BdGovIcon({ className }: IconProps) {
   return (

@@ -34,6 +34,7 @@ import {
   ScrollText,
   BadgeCheck,
 } from "lucide-react";
+import Image from "next/image";
 import {
   BkashIcon,
   NagadIcon,
@@ -42,7 +43,6 @@ import {
   CardIcon,
   CodIcon,
   BankIcon,
-  BdGovIcon,
 } from "@/components/icons/PaymentIcons";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
@@ -364,8 +364,16 @@ export default function Footer() {
                 const RegIcon = registrationIcon(r.label_en || r.label_bn || "");
                 return (
                   <div key={i} className="footer-reg">
-                    {/* Government mark first — these are state-issued numbers. */}
-                    <BdGovIcon className="w-6 h-6 flex-shrink-0 rounded-full ring-1 ring-white/25" />
+                    {/* The official Government of Bangladesh seal — these are
+                        state-issued numbers. Transparent PNG, so it sits on the
+                        dark footer without a plate behind it. */}
+                    <Image
+                      src="/bd-govt-logo.png"
+                      alt="গণপ্রজাতন্ত্রী বাংলাদেশ সরকার"
+                      width={28}
+                      height={28}
+                      className="w-7 h-7 flex-shrink-0 object-contain drop-shadow-sm"
+                    />
                     <span className="footer-reg-icon" aria-hidden>
                       <RegIcon className="w-4 h-4" />
                     </span>
