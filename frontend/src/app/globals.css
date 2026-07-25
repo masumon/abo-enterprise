@@ -375,14 +375,26 @@
   }
   /* Registration credentials — a subtle gradient plate with a tinted icon
      chip. Reads as a verified credential rather than a flat label/value pair. */
+  /* Horizontal scroll without a visible bar — the payment row scrolls on a
+     narrow phone instead of wrapping into a tall block. */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .footer-pay-icon {
+    @apply w-8 h-8 flex-shrink-0 rounded-lg overflow-hidden
+           ring-1 ring-white/20 shadow-sm shadow-black/25
+           transition-transform duration-200 hover:scale-105;
+  }
   .footer-reg {
-    @apply flex items-center gap-2.5 px-3 py-2.5 rounded-xl
+    @apply flex items-center gap-2 px-2.5 py-2 rounded-xl
            bg-gradient-to-br from-white/[0.09] to-white/[0.03]
            border border-white/[0.14] shadow-sm shadow-black/20
            transition-colors duration-200 hover:border-white/25 hover:from-white/[0.13];
   }
   .footer-reg-icon {
-    @apply w-8 h-8 rounded-lg grid place-items-center flex-shrink-0
+    @apply w-7 h-7 rounded-lg grid place-items-center flex-shrink-0
            bg-gradient-to-br from-brand-400/30 to-brand-600/20
            ring-1 ring-inset ring-white/20 text-brand-100;
   }

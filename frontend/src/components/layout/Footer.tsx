@@ -34,6 +34,16 @@ import {
   ScrollText,
   BadgeCheck,
 } from "lucide-react";
+import {
+  BkashIcon,
+  NagadIcon,
+  RocketIcon,
+  SslIcon,
+  CardIcon,
+  CodIcon,
+  BankIcon,
+  BdGovIcon,
+} from "@/components/icons/PaymentIcons";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
@@ -101,15 +111,15 @@ const TRUST_ICONS: Record<string, LucideIcon> = {
   award: Award, globe: Globe, truck: Truck, store: Store, clock: Clock,
 };
 
-/** Payment gateway wordmark styling — brand colour on a white chip. */
-const PAY_BRAND: Record<string, { label: string; className: string }> = {
-  bkash: { label: "bKash", className: "text-[#e2136e]" },
-  nagad: { label: "Nagad", className: "text-[#ec1c24]" },
-  rocket: { label: "Rocket", className: "text-[#8b1a9b]" },
-  sslcommerz: { label: "SSLCOMMERZ", className: "text-[#1e5ba8]" },
-  card: { label: "Visa · Mastercard", className: "text-[#1a1f71]" },
-  cod: { label: "ক্যাশ অন ডেলিভারি", className: "text-[#0f766e]" },
-  bank: { label: "Bank Transfer", className: "text-[#0f172a]" },
+/** Payment gateway marks — an SVG per gateway; the label stays for a11y. */
+const PAY_BRAND: Record<string, { label: string; Icon: (p: { className?: string }) => JSX.Element }> = {
+  bkash: { label: "bKash", Icon: BkashIcon },
+  nagad: { label: "Nagad", Icon: NagadIcon },
+  rocket: { label: "Rocket", Icon: RocketIcon },
+  sslcommerz: { label: "SSLCommerz", Icon: SslIcon },
+  card: { label: "Visa · Mastercard", Icon: CardIcon },
+  cod: { label: "Cash on Delivery", Icon: CodIcon },
+  bank: { label: "Bank Transfer", Icon: BankIcon },
 };
 
 function normalizePhoneDigits(phone: string) {
@@ -326,13 +336,19 @@ export default function Footer() {
         {payments.length > 0 && (
           <div className="mt-8">
             <SectionLabel>{lang === "bn" ? "নিরাপদ লেনদেন" : "Secure payments"}</SectionLabel>
-            <div className="flex flex-wrap gap-2">
+            {/* One scrollable row — icons stay readable on a phone without
+                wrapping into a tall block. */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
               {payments.map((m) => {
                 const brand = PAY_BRAND[m.payment_gateway.toLowerCase()];
-                return (
-                  <span key={m.id} className={cn("footer-pay", brand?.className ?? "text-gray-900")}>
-                    {brand?.label ?? m.payment_gateway}
+                const label = brand?.label ?? m.payment_gateway;
+                return brand ? (
+                  <span key={m.id} className="footer-pay-icon" title={label}>
+                    <brand.Icon className="w-full h-full" />
+                    <span className="sr-only">{label}</span>
                   </span>
+                ) : (
+                  <span key={m.id} className="footer-pay">{label}</span>
                 );
               })}
             </div>
@@ -348,6 +364,8 @@ export default function Footer() {
                 const RegIcon = registrationIcon(r.label_en || r.label_bn || "");
                 return (
                   <div key={i} className="footer-reg">
+                    {/* Government mark first — these are state-issued numbers. */}
+                    <BdGovIcon className="w-6 h-6 flex-shrink-0 rounded-full ring-1 ring-white/25" />
                     <span className="footer-reg-icon" aria-hidden>
                       <RegIcon className="w-4 h-4" />
                     </span>
