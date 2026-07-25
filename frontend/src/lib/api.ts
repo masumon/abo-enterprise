@@ -230,6 +230,10 @@ export const serviceBookingsAdminApi = {
   updateStatus: (id: string, status: string) =>
     api.patch<ApiResponse<BookingV2>>(`/api/v1/service-bookings/admin/bookings/${id}/status`, { status }),
 
+  /** Partial edit — only the keys sent are applied server-side. */
+  update: (id: string, data: Partial<BookingV2>) =>
+    api.put<ApiResponse<BookingV2>>(`/api/v1/service-bookings/admin/bookings/${id}`, data),
+
   delete: (id: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/service-bookings/admin/bookings/${id}`),
 };

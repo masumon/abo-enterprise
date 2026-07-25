@@ -33,6 +33,7 @@ from app.schemas.schemas import (
     BookingV2Out,
     BookingV2Create,
     BookingV2StatusUpdate,
+    BookingV2AdminUpdate,
     PaginatedResponse,
     PaginatedMeta,
     ApiResponse,
@@ -68,6 +69,26 @@ def _phone_matches(stored: str, supplied: str) -> bool:
         return stored == bd_phone(supplied)
     except ValueError:
         return False
+
+
+def _out_with_labels(booking: BookingV2) -> dict:
+    """Serialize a booking, attaching its service's form-field labels.
+
+    Requires ``BookingV2.service.booking_forms`` to be eager-loaded; falls back
+    to bare keys when it isn't, so this can never add a lazy-load query.
+    """
+    data = BookingV2Out.model_validate(booking).model_dump()
+    service = booking.__dict__.get("service")
+    if service is not None:
+        data["form_labels"] = {
+            f.field_name: f.field_label_en
+            for f in (service.__dict__.get("booking_forms") or [])
+        }
+    return data
+
+
+# Eager-loads the service + its form fields for label resolution above.
+_WITH_FORM_LABELS = selectinload(BookingV2.service).selectinload(Service.booking_forms)
 
 
 # ==================== PUBLIC ENDPOINTS ====================
@@ -293,7 +314,7 @@ async def list_bookings_admin(
     payment_status: str | None = None,
 ):
     """List all bookings (admin only)"""
-    query = select(BookingV2).where(BookingV2.is_deleted == False)
+    query = select(BookingV2).where(BookingV2.is_deleted == False).options(_WITH_FORM_LABELS)
 
     if status:
         query = query.where(BookingV2.status == status)
@@ -329,7 +350,7 @@ async def list_bookings_admin(
     bookings = result.scalars().all()
 
     return PaginatedResponse(
-        data=[BookingV2Out.model_validate(b).model_dump() for b in bookings],
+        data=[_out_with_labels(b) for b in bookings],
         message="Bookings fetched successfully",
         meta=PaginatedMeta(
             page=page,
@@ -348,9 +369,9 @@ async def get_booking_admin(
 ):
     """Get booking details (admin)"""
     result = await db.execute(
-        select(BookingV2).where(
-            and_(BookingV2.id == booking_id, BookingV2.is_deleted == False)
-        )
+        select(BookingV2)
+        .where(and_(BookingV2.id == booking_id, BookingV2.is_deleted == False))
+        .options(_WITH_FORM_LABELS)
     )
     booking = result.scalar_one_or_none()
 
@@ -358,7 +379,7 @@ async def get_booking_admin(
         raise HTTPException(status_code=404, detail="Booking not found")
 
     return ApiResponse(
-        data=BookingV2Out.model_validate(booking).model_dump(),
+        data=_out_with_labels(booking),
         message="Booking fetched successfully",
     )
 
@@ -413,7 +434,7 @@ async def update_booking_status(
 @router.put("/admin/bookings/{booking_id}", response_model=ApiResponse)
 async def update_booking(
     booking_id: uuid.UUID,
-    payload: BookingV2Create,
+    payload: BookingV2AdminUpdate,
     admin_id: str = Depends(require_role("bookings.write")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -428,12 +449,15 @@ async def update_booking(
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
 
-    # Update fields. form_data holds the customer's dynamic-form answers —
-    # only overwrite it when the admin explicitly sent it, otherwise a routine
-    # edit (e.g. fixing a phone typo) would wipe the answers to the default {}.
-    update_data = payload.dict(exclude={"service_id"})
-    if "form_data" not in payload.model_fields_set:
-        update_data.pop("form_data", None)
+    # Partial by construction: only the keys the admin actually sent are
+    # applied, so correcting one field can never blank the rest (form_data
+    # included). service_id is immutable — a booking belongs to its service.
+    update_data = payload.model_dump(exclude_unset=True)
+    update_data.pop("service_id", None)
+
+    if update_data.get("status") == "completed" and booking.status != "completed":
+        booking.completed_at = datetime.now(timezone.utc)
+
     for field, value in update_data.items():
         setattr(booking, field, value)
 

@@ -324,9 +324,14 @@ export interface BookingV2 {
   requirements?: string | null;
   /** Customer answers to the service's dynamic booking form. */
   form_data?: Record<string, unknown> | null;
+  /** field_name → admin-defined label; sent by the admin endpoints only. */
+  form_labels?: Record<string, string> | null;
   status: string;
   payment_status: string;
   payment_method?: string | null;
+  payment_number?: string | null;
+  advance_amount?: number | null;
+  advance_paid?: boolean | null;
   notes?: string | null;
   created_at: string;
   updated_at: string;

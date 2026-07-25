@@ -711,6 +711,48 @@ class BookingV2StatusUpdate(BaseModel):
     status: BookingV2Status
 
 
+class BookingV2AdminUpdate(BaseModel):
+    """Partial admin edit of a booking.
+
+    Every field is optional and the route applies only what was sent, so a
+    routine correction can never blank the fields it didn't mention. This is
+    what makes final_price / payment_status reachable at all — nothing else in
+    the system writes them, which is why booking revenue reported as zero.
+    """
+
+    customer_name: str | None = None
+    customer_phone: str | None = None
+    customer_email: str | None = None
+    customer_company: str | None = None
+    service_tier: str | None = None
+    booking_date: datetime | None = None
+    estimated_completion_date: datetime | None = None
+    quoted_price: float | None = None
+    final_price: float | None = None
+    hours_worked: float | None = None
+    advance_paid: bool | None = None
+    details: str | None = None
+    requirements: str | None = None
+    notes: str | None = None
+    status: BookingV2Status | None = None
+    payment_status: Literal["pending", "unpaid", "partial", "paid", "completed", "refunded"] | None = None
+    payment_method: str | None = None
+    payment_number: str | None = None
+    form_data: dict | None = None
+
+    @field_validator("customer_phone")
+    @classmethod
+    def validate_phone(cls, v: str | None) -> str | None:
+        return bd_phone(v) if v else v
+
+    @field_validator("quoted_price", "final_price", "hours_worked")
+    @classmethod
+    def no_negative(cls, v: float | None) -> float | None:
+        if v is not None and v < 0:
+            raise ValueError("Value cannot be negative")
+        return v
+
+
 class BookingV2Out(BaseModel):
     id: uuid.UUID
     booking_number: str
@@ -732,6 +774,10 @@ class BookingV2Out(BaseModel):
     details: str | None
     requirements: str | None
     form_data: dict = {}
+    # field_name → admin-defined EN label, so consoles can show "Business Name"
+    # instead of the raw machine key. Additive and optional; populated by the
+    # admin endpoints only.
+    form_labels: dict[str, str] = {}
     status: str
     payment_status: str
     payment_method: str | None

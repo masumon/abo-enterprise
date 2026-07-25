@@ -36,9 +36,13 @@ async def get_analytics_overview(
             or_(Order.payment_status == "completed", Order.order_status == "delivered"),
             Order.is_deleted == False,  # noqa: E712
         ))
-        booking_rev = await db.scalar(select(func.sum(BookingV2.final_price)).where(
+        # Settled amount falls back to the quote, and "paid" counts alongside
+        # "completed" — both are written by the admin booking console.
+        booking_rev = await db.scalar(select(
+            func.sum(func.coalesce(BookingV2.final_price, BookingV2.quoted_price))
+        ).where(
             *in_window(BookingV2.created_at),
-            BookingV2.payment_status == "completed",
+            BookingV2.payment_status.in_(("paid", "completed")),
             BookingV2.is_deleted == False,  # noqa: E712
         ))
         orders = await db.scalar(select(func.count(Order.id)).where(*in_window(Order.created_at), Order.is_deleted == False))  # noqa: E712
@@ -75,7 +79,7 @@ async def get_analytics_overview(
             Service.name_en,
             Service.name_bn,
             func.count(BookingV2.id).label("count"),
-            func.sum(BookingV2.final_price).label("revenue"),
+            func.sum(func.coalesce(BookingV2.final_price, BookingV2.quoted_price)).label("revenue"),
         ).join(Service, Service.id == BookingV2.service_id, isouter=True)
         .where(
             BookingV2.created_at >= since,
