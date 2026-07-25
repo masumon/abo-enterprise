@@ -48,7 +48,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const [servicesRes, blogRes, productsRes, categoriesRes] = await Promise.all([
-      fetch(`${apiBase}/api/v1/services?per_page=50`, { next: { revalidate: 3600 } }),
+      // per_page is capped at 100 server-side (routes/services.py). 50 silently
+      // truncated the catalog — the demo seeder alone emits three variants per
+      // taxonomy leaf, so services were dropping out of the sitemap unnoticed.
+      fetch(`${apiBase}/api/v1/services?per_page=100`, { next: { revalidate: 3600 } }),
       fetch(`${apiBase}/api/v1/blog?per_page=100`, { next: { revalidate: 3600 } }),
       fetch(`${apiBase}/api/v1/products?per_page=100`, { next: { revalidate: 3600 } }),
       fetch(`${apiBase}/api/v1/categories?applies_to=service`, { next: { revalidate: 3600 } }),
@@ -76,8 +79,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     if (servicesRes.ok) {
-      const { data } = await servicesRes.json();
-      for (const s of (data ?? []) as { slug: string; updated_at: string }[]) {
+      type SvcRow = { slug: string; updated_at: string };
+      const first = await servicesRes.json();
+      const rows: SvcRow[] = [...((first.data ?? []) as SvcRow[])];
+
+      // Follow the remaining pages so the sitemap covers the whole catalog
+      // rather than whatever fits in one page. Bounded so a runaway total can
+      // never stall the sitemap build.
+      const totalPages = Math.min(Number(first.meta?.total_pages ?? 1) || 1, 20);
+      if (totalPages > 1) {
+        const pages = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, i) =>
+            fetch(`${apiBase}/api/v1/services?per_page=100&page=${i + 2}`, {
+              next: { revalidate: 3600 },
+            })
+              .then((r) => (r.ok ? r.json() : null))
+              .catch(() => null)
+          )
+        );
+        for (const p of pages) rows.push(...((p?.data ?? []) as SvcRow[]));
+      }
+
+      for (const s of rows) {
         if (STATIC_SERVICE_SLUGS.has(s.slug)) continue;
         dynamicRoutes.push({
           url: `${BASE}/services/${s.slug}`,
