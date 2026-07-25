@@ -21,8 +21,7 @@ import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { mapPaymentMethods } from "@/lib/paymentDisplay";
-import { BD_DISTRICTS } from "@/lib/bdDistricts";
-import { getUpazilasForDistrict } from "@/lib/bdUpazilas";
+import { useDistrictUpazila, BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
 import { calcDeliveryCharge, calcAdvanceCharge } from "@/lib/checkoutHelpers";
 import { validateCoupon, type AppliedCoupon } from "@/lib/coupons";
 import { isOffline } from "@/lib/networkStatus";
@@ -88,7 +87,9 @@ export default function CheckoutPage() {
   const selectedPhone = watch("customer_phone");
   const selectedEmail = watch("customer_email");
   const selectedPayment = paymentOptions.find((p) => p.gateway === selectedGateway) ?? paymentOptions[0];
-  const upazilaOptions = useMemo(() => getUpazilasForDistrict(selectedDistrict), [selectedDistrict]);
+  const { upazilaOptions } = useDistrictUpazila(selectedDistrict, selectedUpazila, (v) =>
+    setValue("upazila", v)
+  );
 
   useEffect(() => {
     if (paymentOptions.length && !paymentOptions.some((p) => p.gateway === selectedGateway)) {
@@ -100,13 +101,6 @@ export default function CheckoutPage() {
   useEffect(() => {
     trackEvent("begin_checkout", { currency: "BDT" });
   }, []);
-
-  // District drives the upazila/thana list — clear the pick if it no longer belongs to the new district.
-  useEffect(() => {
-    if (selectedUpazila && !upazilaOptions.includes(selectedUpazila)) {
-      setValue("upazila", "");
-    }
-  }, [upazilaOptions, selectedUpazila, setValue]);
 
   useEffect(() => {
     useCartStore.persist.rehydrate();

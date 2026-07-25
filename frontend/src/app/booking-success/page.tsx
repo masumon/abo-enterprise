@@ -3,10 +3,11 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { CheckCircle2, ArrowRight, Download, Loader2, X, FileText, Wrench } from "lucide-react";
+import { CheckCircle2, ArrowRight, Download, Loader2, X, FileText, Wrench, Search, CreditCard } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
-import { downloadPublicBookingInvoice, publicInvoicesApi, type PublicInvoiceData } from "@/lib/api";
+import { bookingPaymentsApi, downloadPublicBookingInvoice, publicInvoicesApi, type PublicInvoiceData } from "@/lib/api";
 import { readOrderSnapshot, snapshotToInvoice } from "@/lib/orderSnapshot";
+import { apiErrorMessage } from "@/lib/apiError";
 import PageHero from "@/components/ui/PageHero";
 import InvoiceCard from "@/components/invoice/InvoiceCard";
 
@@ -19,6 +20,9 @@ function BookingSuccessContent() {
   const [showInvoice, setShowInvoice] = useState(true);
   const [invoice, setInvoice] = useState<PublicInvoiceData | null>(null);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [payLoading, setPayLoading] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+  const payResult = params.get("payment");
 
   useEffect(() => {
     setBookingId(params.get("booking"));
@@ -65,6 +69,25 @@ function BookingSuccessContent() {
   };
 
   const canDownload = Boolean(bookingId && phone);
+
+  const handlePayNow = async () => {
+    if (!bookingId || !phone) return;
+    setPayLoading(true);
+    setPayError(null);
+    try {
+      const r = await bookingPaymentsApi.initiate(bookingId, phone);
+      const url = r.data?.data?.payment_url;
+      if (url) {
+        window.location.href = url;
+        return;
+      }
+      setPayError(lang === "bn" ? "পেমেন্ট শুরু করা যায়নি।" : "Couldn't start the payment.");
+    } catch (e) {
+      setPayError(apiErrorMessage(e, lang === "bn" ? "পেমেন্ট শুরু করা যায়নি।" : "Couldn't start the payment."));
+    } finally {
+      setPayLoading(false);
+    }
+  };
 
   return (
     <main className="min-h-screen page-surface pb-mobile-nav lg:pb-0">
@@ -162,10 +185,52 @@ function BookingSuccessContent() {
             </div>
           )}
 
+          {payResult && (
+            <div
+              className={payResult === "success" ? "alert-success mb-4" : "alert-warning mb-4"}
+              role="status"
+            >
+              {payResult === "success"
+                ? lang === "bn"
+                  ? "পেমেন্ট গ্রহণ করা হয়েছে। আমরা যাচাই করে বুকিং নিশ্চিত করব।"
+                  : "Payment received. We'll verify it and confirm your booking."
+                : lang === "bn"
+                  ? "পেমেন্ট সম্পন্ন হয়নি। আপনি আবার চেষ্টা করতে পারেন।"
+                  : "The payment didn't go through. You can try again."}
+            </div>
+          )}
+
           <div className="space-y-3">
+            {canDownload && payResult !== "success" && (
+              <>
+                <button
+                  type="button"
+                  onClick={handlePayNow}
+                  disabled={payLoading}
+                  className="btn btn-brand btn-md w-full flex items-center justify-center gap-2"
+                >
+                  {payLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
+                  {lang === "bn" ? "এখনই পেমেন্ট করুন" : "Pay Now"}
+                </button>
+                {payError && <p className="text-sm text-red-500 dark:text-red-400">{payError}</p>}
+              </>
+            )}
+            {/* Tracking already exists at /track for both booking systems —
+                this is the only place the customer learns about it. */}
+            {invoice?.booking_number && (
+              <Link
+                href={`/track?booking=${encodeURIComponent(invoice.booking_number)}`}
+                className="btn btn-outline btn-md w-full flex items-center justify-center gap-2"
+              >
+                <Search className="w-4 h-4" />
+                {lang === "bn" ? "বুকিং ট্র্যাক করুন" : "Track This Booking"}
+              </Link>
+            )}
             <Link
               href="/services"
-              className="btn btn-brand btn-md w-full flex items-center justify-center gap-2"
+              className={`btn btn-md w-full flex items-center justify-center gap-2 ${
+                invoice?.booking_number ? "btn-outline" : "btn-brand"
+              }`}
             >
               <Wrench className="w-4 h-4" />
               {lang === "bn" ? "আরও সেবা দেখুন" : "Browse More Services"}

@@ -38,6 +38,12 @@ const CATEGORIES: { value: string; label: string }[] = [
 const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
   CATEGORIES.map((c) => [c.value, c.label])
 );
+const WEEKDAYS: { key: string; label: string }[] = [
+  { key: "mon", label: "Mon" }, { key: "tue", label: "Tue" }, { key: "wed", label: "Wed" },
+  { key: "thu", label: "Thu" }, { key: "fri", label: "Fri" }, { key: "sat", label: "Sat" },
+  { key: "sun", label: "Sun" },
+];
+
 const PRICING_TYPES = ["fixed", "hourly", "package", "custom", "custom_quote"] as const;
 
 // Call-To-Action options; "" = Auto (inferred from pricing type + capabilities).
@@ -61,14 +67,43 @@ const EMPTY_SERVICE: Partial<Service> = {
 };
 
 const EMPTY_TIER: Partial<ServicePricingTier> = {
-  tier_name: "", price: 0, description_en: "", features: [], is_active: true, sort_order: 0,
+  tier_name: "", price: 0, description_en: "", description_bn: "", includes: "",
+  features: [], is_active: true, sort_order: 0,
 };
 
 const EMPTY_FIELD: Partial<ServiceBookingFormField> = {
   field_name: "", field_type: "text", field_label_en: "", field_label_bn: "",
   is_required: false, placeholder: "", options: [], sort_order: 0, is_active: true,
-  default_value: "",
+  default_value: "", validation_rules: {}, conditional_logic: null,
 };
+
+/** show_if operators the booking engine understands (core/booking_form.py). */
+const CONDITION_OPS: { value: string; label: string }[] = [
+  { value: "equals", label: "is exactly" },
+  { value: "not_equals", label: "is not" },
+  { value: "in", label: "is one of" },
+];
+
+type ShowIf = { field?: string; equals?: unknown; not_equals?: unknown; in?: unknown[] };
+
+/** Read a field's conditional_logic into the editor's flat shape. */
+function readCondition(field: Partial<ServiceBookingFormField>): { field: string; op: string; value: string } {
+  const showIf = (field.conditional_logic as { show_if?: ShowIf } | null)?.show_if;
+  if (!showIf?.field) return { field: "", op: "equals", value: "" };
+  const op = CONDITION_OPS.find((o) => o.value in showIf)?.value ?? "equals";
+  const raw = (showIf as Record<string, unknown>)[op];
+  return { field: showIf.field, op, value: Array.isArray(raw) ? raw.join(", ") : String(raw ?? "") };
+}
+
+/** Build conditional_logic from the editor's flat shape (null = always shown). */
+function writeCondition(c: { field: string; op: string; value: string }): Record<string, unknown> | null {
+  if (!c.field) return null;
+  const value =
+    c.op === "in"
+      ? c.value.split(",").map((v) => v.trim()).filter(Boolean)
+      : c.value.trim();
+  return { show_if: { field: c.field, [c.op]: value } };
+}
 
 function slugify(t: string) {
   return t.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
@@ -95,6 +130,11 @@ export default function AdminServicesPage() {
   // Form field sub-state
   const [newField, setNewField] = useState<Partial<ServiceBookingFormField>>(EMPTY_FIELD);
   const [fieldFormOpen, setFieldFormOpen] = useState(false);
+  // Non-null while editing an existing row (vs. adding a new one). The API has
+  // always had PUT endpoints for both; only the UI was missing.
+  const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+  const [editingTierId, setEditingTierId] = useState<string | null>(null);
+  const [condition, setCondition] = useState({ field: "", op: "equals", value: "" });
   const [savingField, setSavingField] = useState(false);
   const [deletingFieldId, setDeletingFieldId] = useState<string | null>(null);
   const toast = useToastStore((s) => s.push);
@@ -115,6 +155,30 @@ export default function AdminServicesPage() {
       }
     };
     flatten(taxonomy as unknown as { id: string; name_en: string; subcategories?: unknown[] }[], 0);
+  }
+
+  // Descendants of the selected node, for the subcategory selector.
+  const subcategoryOptions: { id: string; label: string }[] = [];
+  {
+    type Node = { id: string; name_en: string; name_bn?: string | null; subcategories?: Node[] };
+    const findNode = (nodes: Node[], id: string): Node | null => {
+      for (const n of nodes) {
+        if (n.id === id) return n;
+        const hit = findNode(n.subcategories ?? [], id);
+        if (hit) return hit;
+      }
+      return null;
+    };
+    const collect = (nodes: Node[], depth: number) => {
+      for (const n of nodes) {
+        subcategoryOptions.push({ id: n.id, label: `${"— ".repeat(depth)}${n.name_bn || n.name_en}` });
+        collect(n.subcategories ?? [], depth + 1);
+      }
+    };
+    const parent = editing?.category_id
+      ? findNode(taxonomy as unknown as Node[], editing.category_id)
+      : null;
+    collect(parent?.subcategories ?? [], 0);
   }
 
   const load = useCallback(async () => {
@@ -227,21 +291,40 @@ export default function AdminServicesPage() {
     }
   };
 
-  const handleAddTier = async () => {
+  const openTierEditor = (tier?: ServicePricingTier) => {
+    setEditingTierId(tier?.id ?? null);
+    setNewTier(tier ? { ...tier } : EMPTY_TIER);
+    setTierFormOpen(true);
+  };
+
+  const closeTierEditor = () => {
+    setTierFormOpen(false);
+    setEditingTierId(null);
+    setNewTier(EMPTY_TIER);
+  };
+
+  const handleSaveTier = async () => {
     if (!editing?.id) return;
     if (!newTier.tier_name?.trim()) { toast("error", "Tier name is required"); return; }
     if (!newTier.price && newTier.price !== 0) { toast("error", "Price is required"); return; }
+    if (newTier.price < 0) { toast("error", "Price cannot be negative"); return; }
 
     setSavingTier(true);
     try {
-      const r = await servicesAdminApi.createTier(editing.id, newTier);
-      const created = r.data.data as ServicePricingTier;
-      setEditing(prev => prev ? { ...prev, pricing_tiers: [...(prev.pricing_tiers ?? []), created] } : prev);
-      setNewTier(EMPTY_TIER);
-      setTierFormOpen(false);
-      toast("success", "Tier added");
-    } catch {
-      toast("error", "Failed to add tier");
+      const r = editingTierId
+        ? await servicesAdminApi.updateTier(editing.id, editingTierId, newTier)
+        : await servicesAdminApi.createTier(editing.id, newTier);
+      const saved = r.data.data as ServicePricingTier;
+      setEditing(prev => prev ? {
+        ...prev,
+        pricing_tiers: editingTierId
+          ? (prev.pricing_tiers ?? []).map(t => (t.id === editingTierId ? saved : t))
+          : [...(prev.pricing_tiers ?? []), saved],
+      } : prev);
+      closeTierEditor();
+      toast("success", editingTierId ? "Tier updated" : "Tier added");
+    } catch (e) {
+      toast("error", apiErrorMessage(e, editingTierId ? "Failed to update tier" : "Failed to add tier"));
     } finally {
       setSavingTier(false);
     }
@@ -268,21 +351,57 @@ export default function AdminServicesPage() {
     });
   };
 
-  const handleAddField = async () => {
+  const openFieldEditor = (field?: ServiceBookingFormField) => {
+    setEditingFieldId(field?.id ?? null);
+    setNewField(field ? { ...field } : EMPTY_FIELD);
+    setCondition(readCondition(field ?? EMPTY_FIELD));
+    setFieldFormOpen(true);
+  };
+
+  const closeFieldEditor = () => {
+    setFieldFormOpen(false);
+    setEditingFieldId(null);
+    setNewField(EMPTY_FIELD);
+    setCondition({ field: "", op: "equals", value: "" });
+  };
+
+  const handleSaveField = async () => {
     if (!editing?.id) return;
     if (!newField.field_name?.trim()) { toast("error", "Field name is required"); return; }
     if (!newField.field_label_en?.trim()) { toast("error", "Label (EN) is required"); return; }
+    if (condition.field && !condition.value.trim()) {
+      toast("error", "Enter the value the condition compares against"); return;
+    }
+
+    // Strip empty rule keys so a cleared input doesn't persist as undefined.
+    const rules = Object.fromEntries(
+      Object.entries(newField.validation_rules ?? {}).filter(([, v]) => v !== undefined && v !== "")
+    );
+    const payload = {
+      ...newField,
+      // Label (BN) is NOT NULL on the model — fall back to the EN label so a
+      // field saved without a translation doesn't 500.
+      field_label_bn: newField.field_label_bn?.trim() || newField.field_label_en,
+      validation_rules: Object.keys(rules).length > 0 ? rules : null,
+      conditional_logic: writeCondition(condition),
+    };
 
     setSavingField(true);
     try {
-      const r = await servicesAdminApi.createFormField(editing.id, newField);
-      const created = r.data.data as ServiceBookingFormField;
-      setEditing(prev => prev ? { ...prev, booking_forms: [...(prev.booking_forms ?? []), created] } : prev);
-      setNewField(EMPTY_FIELD);
-      setFieldFormOpen(false);
-      toast("success", "Field added");
-    } catch {
-      toast("error", "Failed to add field");
+      const r = editingFieldId
+        ? await servicesAdminApi.updateFormField(editing.id, editingFieldId, payload)
+        : await servicesAdminApi.createFormField(editing.id, payload);
+      const saved = r.data.data as ServiceBookingFormField;
+      setEditing(prev => prev ? {
+        ...prev,
+        booking_forms: editingFieldId
+          ? (prev.booking_forms ?? []).map(f => (f.id === editingFieldId ? saved : f))
+          : [...(prev.booking_forms ?? []), saved],
+      } : prev);
+      closeFieldEditor();
+      toast("success", editingFieldId ? "Field updated" : "Field added");
+    } catch (e) {
+      toast("error", apiErrorMessage(e, editingFieldId ? "Failed to update field" : "Failed to add field"));
     } finally {
       setSavingField(false);
     }
@@ -480,6 +599,18 @@ export default function AdminServicesPage() {
                     </div>
                     <span className="text-sm text-gray-700">Also orderable</span>
                   </label>
+                  {/* Turning this off makes the CTA "Contact Us" and the booking
+                      endpoint reject submissions — unless the service is also
+                      orderable, which keeps the Order Now flow working. */}
+                  <label className="flex items-center gap-2 cursor-pointer select-none" title="Uncheck to stop taking online bookings for this service">
+                    <div className="relative">
+                      <input type="checkbox" className="sr-only" checked={editing.is_bookable !== false}
+                        onChange={e => setEditing(prev => prev ? { ...prev, is_bookable: e.target.checked ? null : false } : prev)} />
+                      <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_bookable !== false ? "bg-brand-500" : "bg-gray-300"}`} />
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_bookable !== false ? "translate-x-5" : "translate-x-1"}`} />
+                    </div>
+                    <span className="text-sm text-gray-700">Bookable</span>
+                  </label>
                 </div>
 
                 <div>
@@ -509,22 +640,47 @@ export default function AdminServicesPage() {
                 </div>
 
                 {taxonomy.length > 0 && (
-                  <div>
-                    <label className="form-label">
-                      ক্যাটালগ গাছের অবস্থান <span className="text-gray-400 font-normal">(যেকোনো গভীরতা)</span>
-                    </label>
-                    <select
-                      value={editing.category_id ?? ""}
-                      onChange={(e) =>
-                        setEditing((prev) => (prev ? { ...prev, category_id: e.target.value || null, subcategory_id: null } : prev))
-                      }
-                      className="input w-full text-sm"
-                    >
-                      <option value="">— None —</option>
-                      {treeOptions.map((o) => (
-                        <option key={o.id} value={o.id}>{o.label}</option>
-                      ))}
-                    </select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="form-label">
+                        ক্যাটালগ গাছের অবস্থান <span className="text-gray-400 font-normal">(যেকোনো গভীরতা)</span>
+                      </label>
+                      <select
+                        value={editing.category_id ?? ""}
+                        onChange={(e) =>
+                          setEditing((prev) =>
+                            prev ? { ...prev, category_id: e.target.value || null, subcategory_id: null } : prev
+                          )
+                        }
+                        className="input w-full text-sm"
+                      >
+                        <option value="">— None —</option>
+                        {treeOptions.map((o) => (
+                          <option key={o.id} value={o.id}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    {/* Second taxonomy link. Without this the column could only
+                        ever be set by direct API call, while service filters
+                        and the category-delete guard both read it. */}
+                    <div>
+                      <label className="form-label">
+                        সাব-ক্যাটাগরি <span className="text-gray-400 font-normal">(ঐচ্ছিক)</span>
+                      </label>
+                      <select
+                        value={editing.subcategory_id ?? ""}
+                        onChange={(e) =>
+                          setEditing((prev) => (prev ? { ...prev, subcategory_id: e.target.value || null } : prev))
+                        }
+                        disabled={!editing.category_id}
+                        className="input w-full text-sm"
+                      >
+                        <option value="">— None —</option>
+                        {subcategoryOptions.map((o) => (
+                          <option key={o.id} value={o.id}>{o.label}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 )}
 
@@ -721,6 +877,97 @@ export default function AdminServicesPage() {
                 </label>
               </section>
 
+              {/* ── Scheduling (optional) ───────────────── */}
+              <section className="space-y-4">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Appointment Scheduling</h3>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!editing.scheduling_enabled}
+                    onChange={e => setEditing(prev => prev ? { ...prev, scheduling_enabled: e.target.checked } : prev)}
+                    className="rounded"
+                  />
+                  Take appointments for this service
+                </label>
+                <p className="text-xs text-gray-400 -mt-2">
+                  Off (default) keeps the current behaviour: customers pick a preferred date with no
+                  time slots and no availability checks.
+                </p>
+
+                {editing.scheduling_enabled && (
+                  <div className="space-y-4 border border-gray-100 rounded-xl p-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div>
+                        <label className="form-label text-[11px]">Slot Length (min)</label>
+                        <input type="number" min={5} value={editing.slot_duration_minutes ?? 60}
+                          onChange={fNum("slot_duration_minutes")} className="input w-full text-sm" />
+                      </div>
+                      <div>
+                        <label className="form-label text-[11px]">Capacity / Slot</label>
+                        <input type="number" min={1} value={editing.slot_capacity ?? 1}
+                          onChange={fNum("slot_capacity")} className="input w-full text-sm" />
+                      </div>
+                      <div>
+                        <label className="form-label text-[11px]">Min Notice (hrs)</label>
+                        <input type="number" min={0} value={editing.min_notice_hours ?? 0}
+                          onChange={fNum("min_notice_hours")} className="input w-full text-sm" />
+                      </div>
+                      <div>
+                        <label className="form-label text-[11px]">Book Ahead (days)</label>
+                        <input type="number" min={1} value={editing.booking_horizon_days ?? 60}
+                          onChange={fNum("booking_horizon_days")} className="input w-full text-sm" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="form-label text-[11px]">Working Hours</label>
+                      <p className="text-[11px] text-gray-400 mb-2">
+                        Leave a day blank to close it. Multiple ranges: 09:00-13:00, 14:00-18:00
+                      </p>
+                      <div className="space-y-2">
+                        {WEEKDAYS.map(({ key, label }) => {
+                          const ranges = (editing.working_hours?.[key] ?? []) as [string, string][];
+                          return (
+                            <div key={key} className="flex items-center gap-3">
+                              <span className="w-10 text-xs font-medium text-gray-500">{label}</span>
+                              <input
+                                value={ranges.map(([a, b]) => `${a}-${b}`).join(", ")}
+                                onChange={e => {
+                                  const parsed = e.target.value
+                                    .split(",")
+                                    .map(part => part.trim().split("-").map(x => x.trim()))
+                                    .filter(pair => pair.length === 2 && pair[0] && pair[1]) as [string, string][];
+                                  setEditing(prev => prev ? {
+                                    ...prev,
+                                    working_hours: { ...(prev.working_hours ?? {}), [key]: parsed },
+                                  } : prev);
+                                }}
+                                placeholder="09:00-17:00"
+                                className="input flex-1 text-sm font-mono"
+                              />
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="form-label text-[11px]">Holidays (one date per line, YYYY-MM-DD)</label>
+                      <textarea
+                        rows={3}
+                        value={(editing.holidays ?? []).join("\n")}
+                        onChange={e => setEditing(prev => prev ? {
+                          ...prev,
+                          holidays: e.target.value.split("\n").map(x => x.trim()).filter(Boolean),
+                        } : prev)}
+                        placeholder={"2026-12-16\n2026-03-26"}
+                        className="input w-full text-sm resize-y font-mono"
+                      />
+                    </div>
+                  </div>
+                )}
+              </section>
+
               {/* ── Call-To-Action ──────────────────────── */}
               <section className="space-y-4">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Call-To-Action Button</h3>
@@ -769,7 +1016,7 @@ export default function AdminServicesPage() {
                       Booking Form Fields ({editing.booking_forms?.length ?? 0})
                     </h3>
                     <button
-                      onClick={() => setFieldFormOpen(v => !v)}
+                      onClick={() => (fieldFormOpen ? closeFieldEditor() : openFieldEditor())}
                       className="btn btn-outline btn-sm gap-1 text-xs"
                     >
                       {fieldFormOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -777,27 +1024,54 @@ export default function AdminServicesPage() {
                     </button>
                   </div>
 
-                  {/* Existing fields */}
-                  {(editing.booking_forms ?? []).map(field => (
+                  {/* Existing fields — shown in the order the customer sees. */}
+                  {[...(editing.booking_forms ?? [])]
+                    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                    .map(field => {
+                    const cond = readCondition(field);
+                    return (
                     <div key={field.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{field.field_label_en}</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {field.field_label_en}
+                          {field.is_active === false && (
+                            <span className="ml-2 text-[10px] uppercase tracking-wide text-gray-400 border border-gray-300 rounded px-1">
+                              hidden
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-gray-500">
                           <span className="font-mono">{field.field_name}</span>
                           {" · "}
                           <span className="capitalize">{field.field_type}</span>
+                          {" · #"}{field.sort_order ?? 0}
                           {field.is_required && <span className="text-red-400 ml-1">*required</span>}
                         </p>
+                        {cond.field && (
+                          <p className="text-[11px] text-brand-600 mt-0.5">
+                            Shown only if <span className="font-mono">{cond.field}</span>{" "}
+                            {CONDITION_OPS.find(o => o.value === cond.op)?.label} “{cond.value}”
+                          </p>
+                        )}
                       </div>
+                      <button
+                        onClick={() => openFieldEditor(field)}
+                        aria-label={`Edit ${field.field_label_en}`}
+                        className="p-1 text-gray-400 hover:text-brand-600 flex-shrink-0 rounded transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
                       <button
                         onClick={() => handleDeleteField(field.id)}
                         disabled={deletingFieldId === field.id}
+                        aria-label={`Delete ${field.field_label_en}`}
                         className="p-1 text-gray-400 hover:text-red-500 flex-shrink-0 rounded transition-colors"
                       >
                         {deletingFieldId === field.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </button>
                     </div>
-                  ))}
+                    );
+                  })}
 
                   {/* New field form */}
                   {fieldFormOpen && (
@@ -820,7 +1094,7 @@ export default function AdminServicesPage() {
                             className="input w-full text-sm"
                           >
                             {/* Only types supported end-to-end (public renderer + server validator) */}
-                            {["text", "textarea", "number", "email", "phone", "url", "date", "select", "multiselect", "radio", "checkbox"].map(t => <option key={t} value={t}>{t}</option>)}
+                            {["text", "textarea", "number", "email", "phone", "url", "date", "datetime", "select", "multiselect", "radio", "checkbox", "file"].map(t => <option key={t} value={t}>{t}</option>)}
                           </select>
                         </div>
                       </div>
@@ -918,7 +1192,69 @@ export default function AdminServicesPage() {
                           />
                         </div>
                       )}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Numeric bounds — enforced server-side for number/integer fields */}
+                      {["number", "integer"].includes(newField.field_type ?? "") && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="form-label text-[11px]">Min Value</label>
+                            <input
+                              type="number"
+                              value={(newField.validation_rules?.min as number | undefined) ?? ""}
+                              onChange={e => setNewField(p => ({ ...p, validation_rules: { ...(p.validation_rules ?? {}), min: e.target.value ? Number(e.target.value) : undefined } }))}
+                              className="input w-full text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="form-label text-[11px]">Max Value</label>
+                            <input
+                              type="number"
+                              value={(newField.validation_rules?.max as number | undefined) ?? ""}
+                              onChange={e => setNewField(p => ({ ...p, validation_rules: { ...(p.validation_rules ?? {}), max: e.target.value ? Number(e.target.value) : undefined } }))}
+                              className="input w-full text-sm"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Conditional visibility — the booking form and the server
+                          both honour this rule (core/booking_form.py show_if). */}
+                      <div className="border-t border-brand-100 pt-3">
+                        <label className="form-label text-[11px]">Conditional Visibility</label>
+                        <p className="text-[11px] text-gray-400 mb-2">
+                          Leave the field blank to always show this question.
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                          <select
+                            value={condition.field}
+                            onChange={e => setCondition(c => ({ ...c, field: e.target.value }))}
+                            className="input w-full text-sm"
+                          >
+                            <option value="">— Always show —</option>
+                            {(editing.booking_forms ?? [])
+                              .filter(f => f.id !== editingFieldId)
+                              .map(f => (
+                                <option key={f.id} value={f.field_name}>{f.field_label_en}</option>
+                              ))}
+                          </select>
+                          <select
+                            value={condition.op}
+                            onChange={e => setCondition(c => ({ ...c, op: e.target.value }))}
+                            disabled={!condition.field}
+                            className="input w-full text-sm"
+                          >
+                            {CONDITION_OPS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                          </select>
+                          <input
+                            value={condition.value}
+                            onChange={e => setCondition(c => ({ ...c, value: e.target.value }))}
+                            disabled={!condition.field}
+                            placeholder={condition.op === "in" ? "value1, value2" : "value"}
+                            className="input w-full text-sm"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                           <label className="form-label text-[11px]">Sort Order</label>
                           <input
@@ -939,12 +1275,23 @@ export default function AdminServicesPage() {
                             <span className="text-sm text-gray-700">Required</span>
                           </label>
                         </div>
+                        <div className="flex items-end pb-1">
+                          <label className="flex items-center gap-2 cursor-pointer" title="Uncheck to hide this question from the booking form without deleting it">
+                            <input
+                              type="checkbox"
+                              checked={newField.is_active !== false}
+                              onChange={e => setNewField(p => ({ ...p, is_active: e.target.checked }))}
+                              className="w-4 h-4 rounded"
+                            />
+                            <span className="text-sm text-gray-700">Active</span>
+                          </label>
+                        </div>
                       </div>
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => { setFieldFormOpen(false); setNewField(EMPTY_FIELD); }} className="btn btn-outline btn-sm text-xs">Cancel</button>
-                        <button onClick={handleAddField} disabled={savingField} className="btn btn-primary btn-sm text-xs gap-1">
+                        <button onClick={closeFieldEditor} className="btn btn-outline btn-sm text-xs">Cancel</button>
+                        <button onClick={handleSaveField} disabled={savingField} className="btn btn-primary btn-sm text-xs gap-1">
                           {savingField ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-                          Add Field
+                          {editingFieldId ? "Save Field" : "Add Field"}
                         </button>
                       </div>
                     </div>
@@ -998,7 +1345,7 @@ export default function AdminServicesPage() {
                       Pricing Tiers ({editing.pricing_tiers?.length ?? 0})
                     </h3>
                     <button
-                      onClick={() => setTierFormOpen(v => !v)}
+                      onClick={() => (tierFormOpen ? closeTierEditor() : openTierEditor())}
                       className="btn btn-outline btn-sm gap-1 text-xs"
                     >
                       {tierFormOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
@@ -1006,19 +1353,37 @@ export default function AdminServicesPage() {
                     </button>
                   </div>
 
-                  {/* Existing tiers */}
-                  {(editing.pricing_tiers ?? []).map(tier => (
+                  {/* Existing tiers — shown in the order the customer sees. */}
+                  {[...(editing.pricing_tiers ?? [])]
+                    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                    .map(tier => (
                     <div key={tier.id} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl">
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{tier.tier_name}</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {tier.tier_name}
+                          {tier.is_active === false && (
+                            <span className="ml-2 text-[10px] uppercase tracking-wide text-gray-400 border border-gray-300 rounded px-1">
+                              hidden
+                            </span>
+                          )}
+                        </p>
                         <p className="text-xs text-gray-500">{formatPrice(tier.price)}
                           {tier.duration_days ? ` · ${tier.duration_days} days` : ""}
+                          {` · #${tier.sort_order ?? 0}`}
                         </p>
                         {tier.description_en && <p className="text-xs text-gray-400 mt-0.5 truncate">{tier.description_en}</p>}
                       </div>
                       <button
+                        onClick={() => openTierEditor(tier)}
+                        aria-label={`Edit ${tier.tier_name}`}
+                        className="p-1 text-gray-400 hover:text-brand-600 flex-shrink-0 rounded transition-colors"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleDeleteTier(tier.id)}
                         disabled={deletingTierId === tier.id}
+                        aria-label={`Delete ${tier.tier_name}`}
                         className="p-1 text-gray-400 hover:text-red-500 flex-shrink-0 rounded transition-colors"
                       >
                         {deletingTierId === tier.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -1072,13 +1437,32 @@ export default function AdminServicesPage() {
                         </div>
                       </div>
                       <div>
-                        <label className="form-label text-[11px]">Description</label>
+                        <label className="form-label text-[11px]">Description (EN)</label>
                         <textarea
                           value={newTier.description_en ?? ""}
                           onChange={e => setNewTier(p => ({ ...p, description_en: e.target.value }))}
                           placeholder="What's included…"
                           rows={2}
                           className="input w-full text-sm resize-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label text-[11px]">Description (বাংলা)</label>
+                        <textarea
+                          value={newTier.description_bn ?? ""}
+                          onChange={e => setNewTier(p => ({ ...p, description_bn: e.target.value }))}
+                          placeholder="প্যাকেজে যা আছে…"
+                          rows={2}
+                          className="input w-full text-sm resize-none"
+                          dir="auto"
+                        />
+                      </div>
+                      <div>
+                        <label className="form-label text-[11px]">Includes <span className="text-gray-400 font-normal">(internal note)</span></label>
+                        <input
+                          value={newTier.includes ?? ""}
+                          onChange={e => setNewTier(p => ({ ...p, includes: e.target.value }))}
+                          className="input w-full text-sm"
                         />
                       </div>
                       <div>
@@ -1091,11 +1475,20 @@ export default function AdminServicesPage() {
                           className="input w-full text-sm resize-none font-mono"
                         />
                       </div>
+                      <label className="flex items-center gap-2 cursor-pointer" title="Uncheck to hide this package from the service page without deleting it">
+                        <input
+                          type="checkbox"
+                          checked={newTier.is_active !== false}
+                          onChange={e => setNewTier(p => ({ ...p, is_active: e.target.checked }))}
+                          className="w-4 h-4 rounded"
+                        />
+                        <span className="text-sm text-gray-700">Active</span>
+                      </label>
                       <div className="flex justify-end gap-2">
-                        <button onClick={() => { setTierFormOpen(false); setNewTier(EMPTY_TIER); }} className="btn btn-outline btn-sm text-xs">Cancel</button>
-                        <button onClick={handleAddTier} disabled={savingTier} className="btn btn-primary btn-sm text-xs gap-1">
+                        <button onClick={closeTierEditor} className="btn btn-outline btn-sm text-xs">Cancel</button>
+                        <button onClick={handleSaveTier} disabled={savingTier} className="btn btn-primary btn-sm text-xs gap-1">
                           {savingTier ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-                          Add Tier
+                          {editingTierId ? "Save Tier" : "Add Tier"}
                         </button>
                       </div>
                     </div>

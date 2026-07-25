@@ -370,22 +370,80 @@ def customer_order_status_html(
     """
 
 
+BOOKING_STATUS_META: dict[str, tuple[str, str, str]] = {
+    "confirmed":   ("✅ Booking Confirmed", "#059669", "Your booking is confirmed. We'll be in touch with the next steps."),
+    "in_progress": ("🔧 Work In Progress", "#0284c7", "We've started work on your booking."),
+    "on_hold":     ("⏸️ Booking On Hold", "#d97706", "Your booking is temporarily on hold. We'll contact you shortly."),
+    "completed":   ("🎉 Booking Completed", "#059669", "Your booking is complete. Thank you for choosing ABO Enterprise!"),
+    "cancelled":   ("⚠️ Booking Cancelled", "#dc2626", "Your booking has been cancelled. Contact us if this was unexpected."),
+}
+
+
+def customer_booking_status_html(
+    booking_number: str,
+    customer_name: str,
+    service_name: str,
+    new_status: str,
+    whatsapp_number: str,
+) -> str:
+    """Status-change notification for a service booking."""
+    title, colour, blurb = BOOKING_STATUS_META.get(
+        new_status,
+        (f"Booking Update — {new_status.replace('_', ' ').title()}", "#1e5ba8",
+         "Your booking status has changed."),
+    )
+    whatsapp_link = (
+        f"https://wa.me/{whatsapp_number.replace('+', '')}"
+        f"?text=My booking number is {booking_number}"
+    )
+    return f"""
+    <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9fafb">
+      <div style="background:white;border-radius:8px;padding:24px">
+        <h2 style="color:{colour};margin:0 0 16px">{title}</h2>
+        <p style="color:#555;margin:0 0 16px">Dear {customer_name},</p>
+        <p style="color:#666">{blurb}</p>
+
+        <div style="background:#f0f8ff;padding:16px;border-left:4px solid {colour};margin:16px 0">
+          <p style="margin:0;color:#1e5ba8;font-weight:600">Booking Number: {booking_number}</p>
+          <p style="margin:6px 0 0;color:#555">{service_name}</p>
+        </div>
+
+        <a href="{whatsapp_link}" style="display:inline-block;margin-top:12px;background:#25d366;color:white;padding:12px 24px;text-decoration:none;border-radius:4px;font-weight:600">
+          Chat on WhatsApp
+        </a>
+
+        <p style="color:#999;font-size:12px;margin-top:24px;border-top:1px solid #eee;padding-top:16px">
+          Thank you for choosing ABO Enterprise.
+        </p>
+      </div>
+    </div>
+    """
+
+
 def customer_booking_confirmation_html(
     booking_number: str,
     customer_name: str,
     service_type: str,
     estimated_price: str,
-    whatsapp_number: str
+    whatsapp_number: str,
+    track_url: str | None = None,
 ) -> str:
 
     whatsapp_link = f"https://wa.me/{whatsapp_number.replace('+', '')}?text=My booking number is {booking_number}"
+    track_html = (
+        f'<a href="{track_url}" style="display:inline-block;margin-top:20px;margin-left:8px;'
+        f'background:#1e5ba8;color:white;padding:12px 24px;text-decoration:none;'
+        f'border-radius:4px;font-weight:600">Track Booking</a>'
+        if track_url else ""
+    )
 
     return f"""
     <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;background:#f9fafb">
       <div style="background:white;border-radius:8px;padding:24px">
-        <h2 style="color:#1e5ba8;margin:0 0 16px">✅ Booking Confirmation</h2>
+        <h2 style="color:#1e5ba8;margin:0 0 16px">✅ Booking Received</h2>
         <p style="color:#555;margin:0 0 16px">Dear {customer_name},</p>
-        <p style="color:#666">Your booking has been confirmed! We will contact you shortly to finalize the details.</p>
+        <p style="color:#666">We have received your booking request. Our team will review it and
+        contact you shortly to confirm the details.</p>
 
         <div style="background:#f0f8ff;padding:16px;border-left:4px solid #1e5ba8;margin:16px 0">
           <p style="margin:0;color:#1e5ba8;font-weight:600">Booking Number: {booking_number}</p>
@@ -400,6 +458,7 @@ def customer_booking_confirmation_html(
         <a href="{whatsapp_link}" style="display:inline-block;margin-top:20px;background:#25d366;color:white;padding:12px 24px;text-decoration:none;border-radius:4px;font-weight:600">
           Chat on WhatsApp
         </a>
+        {track_html}
 
         <p style="color:#999;font-size:12px;margin-top:24px;border-top:1px solid #eee;padding-top:16px">
           We will confirm your booking details via WhatsApp or call. Thank you for choosing ABO Enterprise!

@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from pydantic import BaseModel, EmailStr, computed_field, field_validator
 import re
 
@@ -481,8 +481,20 @@ class ServiceBookingFormBase(BaseModel):
     is_active: bool = True
 
 
+# Field types supported end to end (public renderer + server validator).
+# Applied to the *input* schema only — ServiceBookingFormOut keeps a plain str
+# so a legacy row with an unlisted type can never fail serialization and 500
+# the service detail page.
+ServiceFieldType = Literal[
+    "text", "textarea", "number", "integer", "email", "phone", "tel", "url",
+    "date", "datetime", "select", "multiselect", "radio", "checkbox_group",
+    "file",
+    "checkbox", "boolean",
+]
+
+
 class ServiceBookingFormCreate(ServiceBookingFormBase):
-    pass
+    field_type: ServiceFieldType
 
 
 class ServiceBookingFormOut(ServiceBookingFormBase):
@@ -520,6 +532,13 @@ class ServiceBase(BaseModel):
     delivery_charge: float | None = None
     consultancy_fee: float | None = None
     requires_advance: bool = False
+    scheduling_enabled: bool = False
+    slot_duration_minutes: int | None = None
+    slot_capacity: int | None = None
+    min_notice_hours: int | None = None
+    booking_horizon_days: int | None = None
+    working_hours: dict = {}
+    holidays: list[str] = []
     is_active: bool = True
     is_featured: bool = False
     sort_order: int = 0
@@ -538,7 +557,26 @@ class ServiceBase(BaseModel):
     faq: list[dict] = []
 
 
+# Accepted pricing types. "custom" is retained as a back-compat alias for
+# "custom_quote" (see core/capabilities.resolve_service_cta). Applied to input
+# schemas only, for the same reason as ServiceFieldType above.
+ServicePricingType = Literal["fixed", "hourly", "package", "custom", "custom_quote"]
+
+# Money columns that must never be negative.
+_PRICE_FIELDS = (
+    "base_price", "min_price", "max_price", "hourly_rate",
+    "delivery_charge", "consultancy_fee",
+)
+
+
+def _reject_negative(v: float | None, info) -> float | None:
+    if v is not None and v < 0:
+        raise ValueError(f"{info.field_name} cannot be negative")
+    return v
+
+
 class ServiceCreate(ServiceBase):
+    pricing_type: ServicePricingType
     # Capability overrides can be set at creation too (additive; default NULL).
     is_orderable: bool | None = None
     is_bookable: bool | None = None
@@ -546,8 +584,14 @@ class ServiceCreate(ServiceBase):
     category_id: uuid.UUID | None = None
     subcategory_id: uuid.UUID | None = None
 
+    _no_negative_prices = field_validator(*_PRICE_FIELDS)(_reject_negative)
+
 
 class ServiceUpdate(BaseModel):
+    # Editable after creation — the admin editor has always rendered a slug
+    # input, but the field was absent here so every edit was silently dropped.
+    # Uniqueness is enforced by the route against other live services.
+    slug: str | None = None
     name_en: str | None = None
     name_bn: str | None = None
     description_en: str | None = None
@@ -561,7 +605,7 @@ class ServiceUpdate(BaseModel):
     subcategory_id: uuid.UUID | None = None
     is_orderable: bool | None = None
     is_bookable: bool | None = None
-    pricing_type: str | None = None
+    pricing_type: ServicePricingType | None = None
     cta_type: str | None = None
     cta_label_en: str | None = None
     cta_label_bn: str | None = None
@@ -572,6 +616,13 @@ class ServiceUpdate(BaseModel):
     delivery_charge: float | None = None
     consultancy_fee: float | None = None
     requires_advance: bool | None = None
+    scheduling_enabled: bool | None = None
+    slot_duration_minutes: int | None = None
+    slot_capacity: int | None = None
+    min_notice_hours: int | None = None
+    booking_horizon_days: int | None = None
+    working_hours: dict | None = None
+    holidays: list[str] | None = None
     is_active: bool | None = None
     is_featured: bool | None = None
     lead_priority: int | None = None
@@ -590,6 +641,8 @@ class ServiceUpdate(BaseModel):
     requirements: list[str] | None = None
     required_documents: list[str] | None = None
     faq: list[dict] | None = None
+
+    _no_negative_prices = field_validator(*_PRICE_FIELDS)(_reject_negative)
 
 
 class ServiceOut(ServiceBase):
@@ -644,6 +697,8 @@ class BookingV2Create(BaseModel):
     customer_phone: str
     customer_email: str | None = None
     customer_company: str | None = None
+    district: str | None = None
+    upazila: str | None = None
     booking_date: datetime | None = None
     estimated_completion_date: datetime | None = None
     pricing_type: str
@@ -661,8 +716,60 @@ class BookingV2Create(BaseModel):
         return bd_phone(v)
 
 
+# Every status any surface writes today: the admin dropdown
+# (pending/in_progress/completed/cancelled/on_hold) plus "confirmed", which the
+# stats endpoint counts. Kept as a superset so no existing caller breaks.
+BookingV2Status = Literal[
+    "pending", "confirmed", "in_progress", "completed", "cancelled", "on_hold"
+]
+
+
 class BookingV2StatusUpdate(BaseModel):
-    status: str
+    status: BookingV2Status
+
+
+class BookingV2AdminUpdate(BaseModel):
+    """Partial admin edit of a booking.
+
+    Every field is optional and the route applies only what was sent, so a
+    routine correction can never blank the fields it didn't mention. This is
+    what makes final_price / payment_status reachable at all — nothing else in
+    the system writes them, which is why booking revenue reported as zero.
+    """
+
+    customer_name: str | None = None
+    customer_phone: str | None = None
+    customer_email: str | None = None
+    customer_company: str | None = None
+    district: str | None = None
+    upazila: str | None = None
+    service_tier: str | None = None
+    booking_date: datetime | None = None
+    estimated_completion_date: datetime | None = None
+    quoted_price: float | None = None
+    final_price: float | None = None
+    hours_worked: float | None = None
+    advance_paid: bool | None = None
+    details: str | None = None
+    requirements: str | None = None
+    notes: str | None = None
+    status: BookingV2Status | None = None
+    payment_status: Literal["pending", "unpaid", "partial", "paid", "completed", "refunded"] | None = None
+    payment_method: str | None = None
+    payment_number: str | None = None
+    form_data: dict | None = None
+
+    @field_validator("customer_phone")
+    @classmethod
+    def validate_phone(cls, v: str | None) -> str | None:
+        return bd_phone(v) if v else v
+
+    @field_validator("quoted_price", "final_price", "hours_worked")
+    @classmethod
+    def no_negative(cls, v: float | None) -> float | None:
+        if v is not None and v < 0:
+            raise ValueError("Value cannot be negative")
+        return v
 
 
 class BookingV2Out(BaseModel):
@@ -675,6 +782,8 @@ class BookingV2Out(BaseModel):
     customer_phone: str
     customer_email: str | None
     customer_company: str | None
+    district: str | None = None
+    upazila: str | None = None
     booking_date: datetime | None
     estimated_completion_date: datetime | None
     pricing_type: str
@@ -686,6 +795,13 @@ class BookingV2Out(BaseModel):
     details: str | None
     requirements: str | None
     form_data: dict = {}
+    # field_name → admin-defined EN label, so consoles can show "Business Name"
+    # instead of the raw machine key. Additive and optional; populated by the
+    # admin endpoints only.
+    form_labels: dict[str, str] = {}
+    # Customer-supplied document URLs. Accepted at creation since day one but
+    # never returned, so nothing could ever display them.
+    attachments: list[str] = []
     status: str
     payment_status: str
     payment_method: str | None
@@ -908,6 +1024,19 @@ from typing import Optional
 from decimal import Decimal
 from uuid import UUID
 from datetime import datetime
+
+class BookingPaymentInitiateRequest(BaseModel):
+    """Start a hosted checkout for a service booking.
+
+    Phone-gated like every other public booking read: the caller must know the
+    number used on the booking, not just its id.
+    """
+    booking_id: UUID
+    phone: str
+    success_url: str | None = None
+    fail_url: str | None = None
+    cancel_url: str | None = None
+
 
 class PaymentInitiateRequest(BaseModel):
     order_id: UUID
@@ -1270,7 +1399,16 @@ class SubcategoryOut(SubcategoryBase):
     model_config = {"from_attributes": True}
 
 
-class CategoryBase(BaseModel):
+class CategorySeoMixin(BaseModel):
+    """Optional per-category SEO overrides (alembic 0011)."""
+    seo_title: str | None = None
+    seo_description: str | None = None
+    seo_keywords: str | None = None
+    canonical_url: str | None = None
+    og_image: str | None = None
+
+
+class CategoryBase(CategorySeoMixin):
     slug: str
     name_en: str
     name_bn: str | None = None
@@ -1287,7 +1425,7 @@ class CategoryCreate(CategoryBase):
     parent_id: uuid.UUID | None = None
 
 
-class CategoryUpdate(BaseModel):
+class CategoryUpdate(CategorySeoMixin):
     slug: str | None = None
     name_en: str | None = None
     name_bn: str | None = None

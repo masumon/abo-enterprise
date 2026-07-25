@@ -6,6 +6,8 @@ import { Loader2, Briefcase, ChevronDown, X, Search, Download, Trash2 } from "lu
 import { bookingsApi, serviceBookingsAdminApi, downloadCsv, downloadPdf } from "@/lib/api";
 import type { Booking, BookingV2 } from "@/types";
 import { buildCustomerWhatsAppLink } from "@/lib/utils";
+import { BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
+import { apiErrorMessage } from "@/lib/apiError";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -15,8 +17,10 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 
 const STATUSES_V1 = ["pending", "contacted", "in_progress", "completed", "cancelled"];
-const STATUSES_V2 = ["pending", "in_progress", "completed", "cancelled", "on_hold"];
-const PAYMENT_STATUSES = ["unpaid", "partial", "paid", "refunded"];
+const STATUSES_V2 = ["pending", "confirmed", "in_progress", "completed", "cancelled", "on_hold"];
+// "pending" is the value every new booking starts at — omitting it made the
+// payment filter match nothing at all.
+const PAYMENT_STATUSES = ["pending", "unpaid", "partial", "paid", "refunded"];
 const SERVICE_TYPES = ["printing", "legal", "web_development", "ai_solutions", "automation", "software"];
 
 interface AdminBooking extends Booking {
@@ -48,11 +52,17 @@ export default function AdminBookingsPage() {
   const [loadingV2, setLoadingV2] = useState(false);
   const [statusFilterV2, setStatusFilterV2] = useState("");
   const [paymentFilterV2, setPaymentFilterV2] = useState("");
+  const [districtFilterV2, setDistrictFilterV2] = useState("");
   const [pageV2, setPageV2] = useState(1);
   const [totalV2, setTotalV2] = useState(0);
   const [updatingIdV2, setUpdatingIdV2] = useState<string | null>(null);
   const [detailV2, setDetailV2] = useState<BookingV2 | null>(null);
   const [composeEmail, setComposeEmail] = useState<{ to: string; subject: string; context: string } | null>(null);
+  // Fulfilment/payment edit for the open V2 booking. Nothing else in the
+  // system writes final_price or payment_status, so this is what makes booking
+  // revenue reportable at all.
+  const [editV2, setEditV2] = useState<Partial<BookingV2> | null>(null);
+  const [savingV2, setSavingV2] = useState(false);
 
   const toast = useToastStore((s) => s.push);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
@@ -76,7 +86,7 @@ export default function AdminBookingsPage() {
   const loadV2 = useCallback(async () => {
     setLoadingV2(true);
     try {
-      const r = await serviceBookingsAdminApi.list({ status: statusFilterV2 || undefined, payment_status: paymentFilterV2 || undefined, page: pageV2 });
+      const r = await serviceBookingsAdminApi.list({ status: statusFilterV2 || undefined, payment_status: paymentFilterV2 || undefined, district: districtFilterV2 || undefined, page: pageV2 });
       setBookingsV2(r.data.data ?? []);
       setTotalV2(r.data.meta?.total ?? 0);
     } catch (err) {
@@ -84,7 +94,7 @@ export default function AdminBookingsPage() {
     } finally {
       setLoadingV2(false);
     }
-  }, [statusFilterV2, paymentFilterV2, pageV2, toast]);
+  }, [statusFilterV2, paymentFilterV2, districtFilterV2, pageV2, toast]);
 
   useEffect(() => { if (tab === "v1") load(); }, [load, tab]);
   useEffect(() => { if (tab === "v2") loadV2(); }, [loadV2, tab]);
@@ -176,6 +186,43 @@ export default function AdminBookingsPage() {
     });
   };
 
+  const saveEditV2 = async () => {
+    if (!detailV2 || !editV2) return;
+    setSavingV2(true);
+    try {
+      const r = await serviceBookingsAdminApi.update(detailV2.id, editV2);
+      const saved = r.data.data;
+      if (saved) {
+        setDetailV2((prev) => (prev ? { ...prev, ...saved } : prev));
+        setBookingsV2((prev) => prev.map((b) => (b.id === saved.id ? { ...b, ...saved } : b)));
+      }
+      setEditV2(null);
+      toast("success", "Booking updated");
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to update booking"));
+    } finally {
+      setSavingV2(false);
+    }
+  };
+
+  const markAdvanceReceived = async () => {
+    if (!detailV2) return;
+    setSavingV2(true);
+    try {
+      const r = await serviceBookingsAdminApi.markAdvanceReceived(detailV2.id);
+      const saved = r.data.data;
+      if (saved) {
+        setDetailV2((prev) => (prev ? { ...prev, ...saved } : prev));
+        setBookingsV2((prev) => prev.map((b) => (b.id === saved.id ? { ...b, ...saved } : b)));
+      }
+      toast("success", "Advance marked received; booking confirmed");
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to mark advance received"));
+    } finally {
+      setSavingV2(false);
+    }
+  };
+
   const openDetail = async (id: string) => {
     setDetailLoading(true);
     try {
@@ -243,6 +290,10 @@ export default function AdminBookingsPage() {
           <select value={paymentFilterV2} onChange={(e) => { setPaymentFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
             <option value="">All Payment</option>
             {PAYMENT_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+          </select>
+          <select value={districtFilterV2} onChange={(e) => { setDistrictFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
+            <option value="">All Districts</option>
+            {BD_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
           </select>
         </AdminToolbar>
       )}
@@ -573,6 +624,12 @@ export default function AdminBookingsPage() {
                   <div><p className="text-gray-500 text-xs">Phone</p><p className="font-medium">{detailV2.customer_phone}</p></div>
                   {detailV2.customer_email && <div><p className="text-gray-500 text-xs">Email</p><p className="font-medium">{detailV2.customer_email}</p></div>}
                   {detailV2.customer_company && <div><p className="text-gray-500 text-xs">Company</p><p className="font-medium">{detailV2.customer_company}</p></div>}
+                  {(detailV2.district || detailV2.upazila) && (
+                    <div className="col-span-2">
+                      <p className="text-gray-500 text-xs">Location</p>
+                      <p className="font-medium">{[detailV2.upazila, detailV2.district].filter(Boolean).join(", ")}</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -606,7 +663,7 @@ export default function AdminBookingsPage() {
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       {Object.entries(detailV2.form_data).map(([key, value]) => (
                         <div key={key}>
-                          <p className="text-gray-500 text-xs">{key.replace(/_/g, " ")}</p>
+                          <p className="text-gray-500 text-xs">{detailV2.form_labels?.[key] ?? key.replace(/_/g, " ")}</p>
                           <p className="font-medium break-words">
                             {Array.isArray(value) ? value.join(", ") : String(value)}
                           </p>
@@ -615,10 +672,203 @@ export default function AdminBookingsPage() {
                     </div>
                   </div>
                 )}
+                {(detailV2.attachments?.length ?? 0) > 0 && (
+                  <div className="pt-3 border-t border-gray-200 mt-3">
+                    <p className="text-gray-500 text-xs mb-2">Attachments</p>
+                    <ul className="space-y-1">
+                      {detailV2.attachments!.map((url, i) => (
+                        <li key={url}>
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-brand-600 hover:underline break-all"
+                          >
+                            Document {i + 1}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 {detailV2.notes && (
                   <div className="pt-3 border-t border-gray-200 mt-3">
                     <p className="text-gray-500 text-xs mb-1">Notes</p>
                     <p className="text-sm text-gray-800 whitespace-pre-wrap">{detailV2.notes}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Advance / consultancy fee — the booking stays pending until
+                  this is settled, mirroring the order-side rule. */}
+              {(detailV2.advance_amount ?? 0) > 0 && (
+                <div className={`rounded-xl p-4 ${detailV2.advance_paid ? "bg-green-50" : "bg-amber-50"}`}>
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                      <h3 className="font-semibold text-gray-900 text-sm">Advance / Consultancy Fee</h3>
+                      <p className="text-sm text-gray-700 mt-0.5">
+                        ৳{Number(detailV2.advance_amount).toLocaleString()}{" "}
+                        <span className={detailV2.advance_paid ? "text-green-700" : "text-amber-700"}>
+                          — {detailV2.advance_paid ? "received" : "awaiting payment"}
+                        </span>
+                      </p>
+                    </div>
+                    {!detailV2.advance_paid && (
+                      <button
+                        type="button"
+                        onClick={markAdvanceReceived}
+                        disabled={savingV2}
+                        className="btn btn-primary btn-sm text-xs gap-1"
+                      >
+                        {savingV2 && <Loader2 className="w-3 h-3 animate-spin" />}
+                        Mark Received
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Fulfilment & payment — the only writer of final_price /
+                  payment_status, which analytics reports revenue from. */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-gray-900 text-sm">Fulfilment &amp; Payment</h3>
+                  {!editV2 ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditV2({
+                          final_price: detailV2.final_price ?? undefined,
+                          payment_status: detailV2.payment_status,
+                          payment_method: detailV2.payment_method ?? "",
+                          hours_worked: detailV2.hours_worked ?? undefined,
+                          estimated_completion_date: detailV2.estimated_completion_date
+                            ? detailV2.estimated_completion_date.slice(0, 10)
+                            : "",
+                          notes: detailV2.notes ?? "",
+                        })
+                      }
+                      className="btn btn-outline btn-sm text-xs"
+                    >
+                      Edit
+                    </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setEditV2(null)} className="btn btn-outline btn-sm text-xs">
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={saveEditV2}
+                        disabled={savingV2}
+                        className="btn btn-primary btn-sm text-xs gap-1"
+                      >
+                        {savingV2 && <Loader2 className="w-3 h-3 animate-spin" />}
+                        Save
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {editV2 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="form-label text-[11px]">Final Price (৳)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        value={editV2.final_price ?? ""}
+                        onChange={(e) =>
+                          setEditV2((p) => ({ ...p, final_price: e.target.value ? Number(e.target.value) : undefined }))
+                        }
+                        placeholder={detailV2.quoted_price != null ? String(detailV2.quoted_price) : "0"}
+                        className="input w-full text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label text-[11px]">Payment Status</label>
+                      <select
+                        value={editV2.payment_status ?? "pending"}
+                        onChange={(e) => setEditV2((p) => ({ ...p, payment_status: e.target.value }))}
+                        className="input w-full text-sm"
+                      >
+                        {PAYMENT_STATUSES.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label text-[11px]">Payment Method</label>
+                      <input
+                        value={editV2.payment_method ?? ""}
+                        onChange={(e) => setEditV2((p) => ({ ...p, payment_method: e.target.value }))}
+                        placeholder="bKash / Nagad / Cash"
+                        className="input w-full text-sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="form-label text-[11px]">Hours Worked</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.5"
+                        value={editV2.hours_worked ?? ""}
+                        onChange={(e) =>
+                          setEditV2((p) => ({ ...p, hours_worked: e.target.value ? Number(e.target.value) : undefined }))
+                        }
+                        className="input w-full text-sm"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="form-label text-[11px]">Estimated Completion</label>
+                      <input
+                        type="date"
+                        value={(editV2.estimated_completion_date ?? "").slice(0, 10)}
+                        onChange={(e) =>
+                          setEditV2((p) => ({
+                            ...p,
+                            estimated_completion_date: e.target.value
+                              ? new Date(e.target.value).toISOString()
+                              : undefined,
+                          }))
+                        }
+                        className="input w-full text-sm"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="form-label text-[11px]">Internal Notes</label>
+                      <textarea
+                        rows={3}
+                        value={editV2.notes ?? ""}
+                        onChange={(e) => setEditV2((p) => ({ ...p, notes: e.target.value }))}
+                        className="input w-full text-sm resize-none"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-gray-500 text-xs">Final Price</p>
+                      <p className="font-medium">
+                        {detailV2.final_price != null ? `৳${detailV2.final_price.toLocaleString()}` : "— not set"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Payment Method</p>
+                      <p className="font-medium">{detailV2.payment_method || "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Est. Completion</p>
+                      <p className="font-medium">
+                        {detailV2.estimated_completion_date
+                          ? new Date(detailV2.estimated_completion_date).toLocaleDateString("en-BD")
+                          : "—"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-500 text-xs">Hours Worked</p>
+                      <p className="font-medium">{detailV2.hours_worked ?? "—"}</p>
+                    </div>
                   </div>
                 )}
               </div>

@@ -1,19 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { isQueuedResponse, serviceBookingsApi } from "@/lib/api";
+import { bookingUploadsApi, isQueuedResponse, serviceBookingsApi, servicesApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { saveOrderSnapshot } from "@/lib/orderSnapshot";
-import type { Service, ServiceBookingFormField } from "@/types";
+import type { Service, ServiceBookingFormField, ServiceSlot } from "@/types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
-import { BD_DISTRICTS } from "@/lib/bdDistricts";
-import { getUpazilasForDistrict } from "@/lib/bdUpazilas";
+import { useDistrictUpazila, BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
 import { useLanguageStore } from "@/store/language";
 
 const bookingSchema = z.object({
@@ -76,6 +75,18 @@ function isFieldVisible(
   return true;
 }
 
+/** Scroll to and focus a control by id — an error the customer can't see is
+ *  the same as no error at all on a form this long. */
+function focusField(id: string) {
+  if (typeof document === "undefined") return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  // Both guarded: scrollIntoView is absent in jsdom and in some older mobile
+  // webviews, and losing focus assistance must never break a submission.
+  el.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  (el as HTMLElement).focus?.({ preventScroll: true });
+}
+
 function isEmptyValue(v: DynamicValue | undefined): boolean {
   if (v === undefined || v === null) return true;
   if (typeof v === "string") return v.trim() === "";
@@ -99,13 +110,76 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
     for (const f of dynamicFields) {
       // String defaults only apply to text-like fields: seeding "true" into a
       // checkbox would submit a value the customer never visibly selected.
-      if (f.default_value && !NON_TEXT_TYPES.has((f.field_type || "text").toLowerCase())) {
-        init[f.field_name] = f.default_value;
+      const ftype = (f.field_type || "text").toLowerCase();
+      if (!f.default_value || NON_TEXT_TYPES.has(ftype)) continue;
+      // For option-backed controls the default must be one of the options —
+      // otherwise the <select> renders blank while the unmatched value stays
+      // in state and is submitted, only to be rejected as "Invalid option".
+      if ((ftype === "select" || ftype === "radio") && !(f.options ?? []).includes(f.default_value)) {
+        continue;
       }
+      init[f.field_name] = f.default_value;
     }
     return init;
   });
   const [dynamicErrors, setDynamicErrors] = useState<Record<string, string>>({});
+  // Documents the customer attaches. `attachments` covers the service's
+  // required_documents list; `uploading` keys are per dynamic file field.
+  const [attachments, setAttachments] = useState<{ url: string; name: string }[]>([]);
+  const [uploading, setUploading] = useState<Record<string, boolean>>({});
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  // ---- Optional appointment scheduling ----
+  // Off for most services, in which case none of this renders and
+  // booking_date stays the original free "preferred date" input.
+  const scheduling = service.scheduling_enabled === true;
+  const [slotDate, setSlotDate] = useState("");
+  const [slots, setSlots] = useState<ServiceSlot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState("");
+
+  useEffect(() => {
+    if (!scheduling || !slotDate) {
+      setSlots([]);
+      return;
+    }
+    let cancelled = false;
+    setSlotsLoading(true);
+    setSelectedSlot("");
+    servicesApi
+      .availability(service.id, slotDate)
+      .then((r) => {
+        if (!cancelled) setSlots(r.data?.data?.slots ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setSlots([]);
+      })
+      .finally(() => {
+        if (!cancelled) setSlotsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [scheduling, slotDate, service.id]);
+
+  async function uploadDocument(key: string, file: File): Promise<string | null> {
+    setUploading((p) => ({ ...p, [key]: true }));
+    setUploadError(null);
+    try {
+      const r = await bookingUploadsApi.upload(file);
+      return r.data?.data?.url ?? null;
+    } catch (e) {
+      setUploadError(
+        apiErrorMessage(
+          e,
+          lang === "bn" ? "ফাইল আপলোড করা যায়নি।" : "Couldn't upload that file."
+        )
+      );
+      return null;
+    } finally {
+      setUploading((p) => ({ ...p, [key]: false }));
+    }
+  }
 
   const setDynamicValue = (name: string, value: DynamicValue) => {
     setDynamicValues((prev) => ({ ...prev, [name]: value }));
@@ -145,6 +219,15 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       }
       const rules = (field.validation_rules ?? {}) as { pattern?: string; pattern_message?: string; min_length?: number; max_length?: number };
       if (typeof value === "string") {
+        // Server caps every text-like answer at 2000 chars unless the admin set
+        // a lower max_length; mirror it so a long answer fails here, next to
+        // the field, instead of after a round trip.
+        const maxLen = rules.max_length ?? 2000;
+        if (value.trim().length > maxLen) {
+          errors[field.field_name] =
+            lang === "bn" ? `সর্বোচ্চ ${maxLen} অক্ষর` : `Must be at most ${maxLen} characters`;
+          continue;
+        }
         if (rules.min_length != null && value.trim().length < rules.min_length) {
           errors[field.field_name] =
             lang === "bn" ? `কমপক্ষে ${rules.min_length} অক্ষর দিন` : `Must be at least ${rules.min_length} characters`;
@@ -168,6 +251,9 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
     }
     if (Object.keys(errors).length > 0) {
       setDynamicErrors(errors);
+      const firstName = Object.keys(errors)[0];
+      const firstField = dynamicFields.find((f) => f.field_name === firstName);
+      if (firstField) focusField(`dyn-${firstField.id}`);
       return null;
     }
     return cleaned;
@@ -189,9 +275,9 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
   });
 
   const selectedDistrict = watch("district");
-  const upazilaOptions = useMemo(
-    () => (selectedDistrict ? getUpazilasForDistrict(selectedDistrict) : []),
-    [selectedDistrict]
+  const selectedUpazila = watch("upazila");
+  const { upazilaOptions } = useDistrictUpazila(selectedDistrict, selectedUpazila, (v) =>
+    setValue("upazila", v)
   );
 
   async function onSubmit(data: BookingFormData) {
@@ -199,6 +285,13 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       setSubmitting(true);
       setSubmitError(null);
       setQueued(false);
+
+      if (scheduling && !selectedSlot) {
+        setSubmitError(L("Please choose an appointment time.", "একটি সময় নির্বাচন করুন।"));
+        setSubmitting(false);
+        focusField("booking-slot-date");
+        return;
+      }
 
       const formData = validateDynamicFields();
       if (formData === null) {
@@ -209,8 +302,8 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
 
       const selectedTier = service.pricing_tiers?.find((t) => t.tier_name === data.service_tier);
       const quotedPrice = selectedTier?.price ?? service.base_price ?? data.quoted_price;
-      const location = [data.upazila, data.district].filter(Boolean).join(", ");
-      const details = location ? `Location: ${location}\n\n${data.details}` : data.details;
+      // District/upazila are sent as their own fields now — prefixing them into
+      // `details` made location unqueryable for a district-organised business.
 
       const r = await serviceBookingsApi.create({
         service_id: service.id,
@@ -219,11 +312,18 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         customer_phone: data.customer_phone,
         customer_email: data.customer_email?.trim() || undefined,
         customer_company: data.customer_company,
-        booking_date: data.booking_date ? new Date(data.booking_date).toISOString() : undefined,
+        district: data.district || undefined,
+        upazila: data.upazila || undefined,
+        booking_date: scheduling
+          ? selectedSlot
+          : data.booking_date
+            ? new Date(data.booking_date).toISOString()
+            : undefined,
         pricing_type: service.pricing_type,
         quoted_price: quotedPrice,
-        details,
+        details: data.details,
         form_data: formData,
+        attachments: attachments.map((a) => a.url),
       });
 
       if (isQueuedResponse(r)) {
@@ -285,23 +385,36 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
 
   function onInvalidSubmit(fieldErrors: Record<string, unknown>) {
     const first = Object.keys(fieldErrors)[0];
-    const labels: Record<string, string> = {
-      customer_name: "Full Name",
-      customer_phone: "Phone Number",
-      customer_email: "Email Address",
-      details: "Details / Requirements",
-    };
-    const fieldLabel = first ? labels[first] : null;
+    const entry = first ? fieldLabels[first] : undefined;
     setSubmitError(
-      fieldLabel
-        ? `Please fix the "${fieldLabel}" field and try again.`
-        : "Please fill in all required fields and try again."
+      entry
+        ? L(
+            `Please fix the "${entry.label}" field and try again.`,
+            `"${entry.label}" ঘরটি ঠিক করে আবার চেষ্টা করুন।`
+          )
+        : L(
+            "Please fill in all required fields and try again.",
+            "সব আবশ্যক ঘর পূরণ করে আবার চেষ্টা করুন।"
+          )
     );
+    if (entry) focusField(entry.id);
   }
 
   const hasTiers = Boolean(service.pricing_tiers && service.pricing_tiers.length > 0);
   const bn = lang === "bn";
   const L = (en: string, bnText: string) => (bn ? bnText : en);
+
+  /** Every control the form renders, so an error banner can always name the
+   *  field it is talking about — including the admin-defined ones. */
+  const fieldLabels: Record<string, { label: string; id: string }> = {
+    customer_name: { label: L("Full Name", "পূর্ণ নাম"), id: "booking-name" },
+    customer_phone: { label: L("Phone Number", "মোবাইল নম্বর"), id: "booking-phone" },
+    customer_email: { label: L("Email Address", "ইমেইল"), id: "booking-email" },
+    customer_company: { label: L("Company", "কোম্পানি"), id: "booking-company" },
+    booking_date: { label: L("Preferred Booking Date", "পছন্দের তারিখ"), id: "booking-date" },
+    details: { label: L("Details / Requirements", "বিস্তারিত / প্রয়োজন"), id: "booking-details" },
+  };
+
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="space-y-6">
@@ -314,6 +427,19 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
           <p className="text-lg font-bold text-brand-600 dark:text-brand-300 mt-2">৳{service.base_price}</p>
         )}
       </div>
+
+      {/* An advance-gated service stays pending until the fee is settled —
+          say so before the customer submits, not after. */}
+      {service.requires_advance && (
+        <div className="alert-warning" role="note">
+          <p className="text-sm">
+            {L(
+              `This service requires an advance consultancy fee${service.consultancy_fee ? ` of ৳${service.consultancy_fee}` : ""}. We'll contact you to collect it, and your booking is confirmed once it's received.`,
+              `এই সেবার জন্য অগ্রিম কনসালটেন্সি ফি${service.consultancy_fee ? ` ৳${service.consultancy_fee}` : ""} প্রয়োজন। আমরা যোগাযোগ করে এটি সংগ্রহ করব, এবং ফি পাওয়ার পর আপনার বুকিং নিশ্চিত হবে।`
+            )}
+          </p>
+        </div>
+      )}
 
       <div>
         <label htmlFor="booking-name" className="form-label">{L("Full Name *", "পূর্ণ নাম *")}</label>
@@ -374,10 +500,60 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         />
       </div>
 
-      <div>
-        <label htmlFor="booking-date" className="form-label">{L("Preferred Booking Date (Optional)", "পছন্দের তারিখ (ঐচ্ছিক)")}</label>
-        <input id="booking-date" type="date" {...register("booking_date")} className="input" />
-      </div>
+      {scheduling ? (
+        <div>
+          <label htmlFor="booking-slot-date" className="form-label">
+            {L("Appointment Date *", "অ্যাপয়েন্টমেন্টের তারিখ *")}
+          </label>
+          <input
+            id="booking-slot-date"
+            type="date"
+            value={slotDate}
+            min={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => setSlotDate(e.target.value)}
+            className="input"
+          />
+          {slotDate && (
+            <div className="mt-3">
+              <p className="form-label">{L("Available Times *", "সময় নির্বাচন করুন *")}</p>
+              {slotsLoading ? (
+                <p className="text-sm text-muted">{L("Checking availability…", "সময় দেখা হচ্ছে…")}</p>
+              ) : slots.length === 0 ? (
+                <p className="text-sm text-muted">
+                  {L("We're closed that day — please pick another date.", "সেদিন আমরা বন্ধ — অন্য তারিখ বেছে নিন।")}
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {slots.map((slot) => (
+                    <button
+                      key={slot.start}
+                      type="button"
+                      disabled={!slot.available}
+                      onClick={() => setSelectedSlot(slot.start)}
+                      aria-pressed={selectedSlot === slot.start}
+                      className={cn(
+                        "px-3 py-2 rounded-lg text-sm font-medium border transition-colors",
+                        selectedSlot === slot.start
+                          ? "bg-brand-600 text-white border-brand-600"
+                          : slot.available
+                            ? "bg-white dark:bg-white/5 text-heading border-gray-200 dark:border-white/10 hover:border-brand-400"
+                            : "bg-gray-100 dark:bg-white/5 text-gray-400 border-transparent cursor-not-allowed line-through"
+                      )}
+                    >
+                      {slot.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div>
+          <label htmlFor="booking-date" className="form-label">{L("Preferred Booking Date (Optional)", "পছন্দের তারিখ (ঐচ্ছিক)")}</label>
+          <input id="booking-date" type="date" {...register("booking_date")} className="input" />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <div>
@@ -385,10 +561,6 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
           <select
             id="booking-district"
             {...register("district")}
-            onChange={(e) => {
-              register("district").onChange(e);
-              setValue("upazila", "");
-            }}
             className="input"
           >
             <option value="">{L("Select", "নির্বাচন করুন")}</option>
@@ -516,6 +688,32 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
                   <option key={o} value={o}>{o}</option>
                 ))}
               </select>
+            ) : ftype === "file" ? (
+              <div>
+                <input
+                  id={inputId}
+                  type="file"
+                  accept="application/pdf,image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const url = await uploadDocument(field.field_name, file);
+                    if (url) setDynamicValue(field.field_name, url);
+                    e.target.value = "";
+                  }}
+                  className={cn("input", err && "input-error")}
+                  aria-invalid={err ? true : undefined}
+                  aria-describedby={err ? errId : undefined}
+                />
+                {uploading[field.field_name] && (
+                  <p className="text-xs text-muted mt-1">{L("Uploading…", "আপলোড হচ্ছে…")}</p>
+                )}
+                {typeof value === "string" && value && !uploading[field.field_name] && (
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                    ✓ {L("File attached", "ফাইল সংযুক্ত হয়েছে")}
+                  </p>
+                )}
+              </div>
             ) : ftype === "checkbox" || ftype === "boolean" ? (
               <label className="flex items-center gap-2 text-sm text-heading cursor-pointer">
                 <input
@@ -545,7 +743,9 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
                           ? "url"
                           : ftype === "date"
                             ? "date"
-                            : "text"
+                            : ftype === "datetime"
+                              ? "datetime-local"
+                              : "text"
                 }
                 value={typeof value === "string" ? value : ""}
                 onChange={(e) => setDynamicValue(field.field_name, e.target.value)}
@@ -559,6 +759,64 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
           </div>
         );
       })}
+
+      {/* The service's required_documents list, now with somewhere to put them.
+          Optional at submit — collecting late beats losing the booking. */}
+      {(service.required_documents?.length ?? 0) > 0 && (
+        <div className="rounded-xl border border-brand-100 dark:border-brand-800/40 p-4">
+          <p className="form-label mb-1">{L("Documents", "প্রয়োজনীয় কাগজপত্র")}</p>
+          <p className="text-xs text-muted mb-3">
+            {L(
+              "Attach these now if you have them — PDF or photo, up to 10MB each. You can also send them later.",
+              "থাকলে এখনই সংযুক্ত করুন — PDF বা ছবি, প্রতিটি সর্বোচ্চ ১০MB। পরেও পাঠাতে পারবেন।"
+            )}
+          </p>
+          <ul className="space-y-1 mb-3">
+            {service.required_documents!.map((d) => (
+              <li key={d} className="text-sm text-muted flex items-start gap-2">
+                <span aria-hidden className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0" />
+                {d}
+              </li>
+            ))}
+          </ul>
+          <input
+            id="booking-documents"
+            type="file"
+            accept="application/pdf,image/*"
+            multiple
+            onChange={async (e) => {
+              const files = Array.from(e.target.files ?? []);
+              e.target.value = "";
+              for (const file of files) {
+                const url = await uploadDocument("documents", file);
+                if (url) setAttachments((prev) => [...prev, { url, name: file.name }]);
+              }
+            }}
+            className="input"
+          />
+          {uploading.documents && (
+            <p className="text-xs text-muted mt-1">{L("Uploading…", "আপলোড হচ্ছে…")}</p>
+          )}
+          {attachments.length > 0 && (
+            <ul className="mt-3 space-y-1">
+              {attachments.map((a) => (
+                <li key={a.url} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-heading truncate">✓ {a.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => setAttachments((prev) => prev.filter((x) => x.url !== a.url))}
+                    className="text-xs text-red-500 hover:underline flex-shrink-0"
+                  >
+                    {L("Remove", "সরান")}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
+      {uploadError && <div className="alert-error" role="alert">{uploadError}</div>}
 
       <div>
         <label htmlFor="booking-details" className="form-label">{L("Details / Requirements *", "বিস্তারিত / প্রয়োজন *")}</label>

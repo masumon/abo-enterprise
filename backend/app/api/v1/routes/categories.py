@@ -50,6 +50,11 @@ def _node_dict(cat: Category) -> dict:
         "applies_to": cat.applies_to or [],
         "sort_order": cat.sort_order,
         "is_active": cat.is_active,
+        "seo_title": cat.seo_title,
+        "seo_description": cat.seo_description,
+        "seo_keywords": cat.seo_keywords,
+        "canonical_url": cat.canonical_url,
+        "og_image": cat.og_image,
         "created_at": cat.created_at.isoformat() if cat.created_at else None,
         "updated_at": cat.updated_at.isoformat() if cat.updated_at else None,
     }

@@ -139,6 +139,40 @@ function serviceMetadata(service: Service): Metadata {
   };
 }
 
+/** Metadata for a taxonomy node — admin SEO overrides first, derived fallback
+ *  second, exactly mirroring how a service resolves its own metadata. */
+function taxonomyMetadata(
+  node: Category | Subcategory,
+  url: string,
+  parentName?: string
+): Metadata {
+  const title =
+    node.seo_title ??
+    (parentName
+      ? `${node.name_en} — ${parentName} | ABO Enterprise`
+      : `${node.name_en} Services | ABO Enterprise`);
+  const description =
+    node.seo_description ??
+    node.description_en ??
+    `${node.name_en} services by ABO Enterprise, Bangladesh.`;
+  const canonical = node.canonical_url ?? url;
+  const ogImg = node.og_image ?? node.image_url ?? DEFAULT_OG_IMAGE;
+  return {
+    title,
+    description,
+    keywords: node.seo_keywords ?? undefined,
+    alternates: { canonical },
+    openGraph: {
+      title,
+      description,
+      url: canonical,
+      type: "website",
+      images: ogImg ? [{ url: ogImg, alt: node.name_en }] : [],
+    },
+    twitter: { card: "summary_large_image", title, description, images: ogImg ? [ogImg] : [] },
+  };
+}
+
 export async function generateMetadata({ params }: { params: PageParams }): Promise<Metadata> {
   const segments = params.segments ?? [];
 
@@ -150,15 +184,10 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
     ]);
     if (service) return serviceMetadata(service);
     if (category) {
-      const title = `${category.name_en} Services | ABO Enterprise`;
-      const description =
-        category.description_en ??
-        `${category.name_en} services by ABO Enterprise, Bangladesh.`;
       // Canonical is always the full tree path, even when a deep node is
       // reached by its short slug.
       const path = [...(category.ancestors ?? []).map((a) => a.slug), category.slug].join("/");
-      const url = `${SITE_URL}/services/${path}`;
-      return { title, description, alternates: { canonical: url }, openGraph: { title, description, url, type: "website" } };
+      return taxonomyMetadata(category, `${SITE_URL}/services/${path}`);
     }
     const legacy = LEGACY_STATIC_PAGES[segments[0]];
     if (legacy) return pageMeta(legacy.title, legacy.description, `/services/${segments[0]}`);
@@ -170,13 +199,8 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
     if (trail) {
       const node = trail[trail.length - 1];
       const parent = trail.length > 1 ? trail[trail.length - 2] : null;
-      const title = parent
-        ? `${node.name_en} — ${parent.name_en} | ABO Enterprise`
-        : `${node.name_en} Services | ABO Enterprise`;
-      const description =
-        node.description_en ?? `${node.name_en} services by ABO Enterprise, Bangladesh.`;
       const url = `${SITE_URL}/services/${trail.map((n) => n.slug).join("/")}`;
-      return { title, description, alternates: { canonical: url }, openGraph: { title, description, url, type: "website" } };
+      return taxonomyMetadata(node, url, parent?.name_en);
     }
   }
 
@@ -225,6 +249,50 @@ function buildJsonLd(service: Service) {
   };
 }
 
+/** BreadcrumbList for any /services path. `trail` is root-first, node last. */
+function buildBreadcrumbJsonLd(trail: { name: string; path: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Services", item: `${SITE_URL}/services` },
+      ...trail.map((n, i) => ({
+        "@type": "ListItem",
+        position: i + 3,
+        name: n.name,
+        item: `${SITE_URL}${n.path}`,
+      })),
+    ],
+  };
+}
+
+/** Breadcrumb for a taxonomy trail, using each node's full tree path. */
+function buildTrailBreadcrumb(trail: Subcategory[]) {
+  return buildBreadcrumbJsonLd(
+    trail.map((n, i) => ({
+      name: n.name_en,
+      path: `/services/${trail.slice(0, i + 1).map((x) => x.slug).join("/")}`,
+    }))
+  );
+}
+
+/** FAQPage for a service that has FAQ entries — otherwise null (never emit an
+ *  empty FAQPage, which Google treats as invalid markup). */
+function buildFaqJsonLd(service: Service) {
+  const faq = (service.faq ?? []).filter((f) => f?.question && f?.answer);
+  if (faq.length === 0) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map((f) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: { "@type": "Answer", text: f.answer },
+    })),
+  };
+}
+
 export default async function ServicesCatchAllPage({ params }: { params: PageParams }) {
   const segments = params.segments ?? [];
 
@@ -236,13 +304,23 @@ export default async function ServicesCatchAllPage({ params }: { params: PagePar
     ]);
 
     if (service) {
-      const jsonLd = buildJsonLd(service);
+      const faqJsonLd = buildFaqJsonLd(service);
+      const graph = [
+        buildJsonLd(service),
+        buildBreadcrumbJsonLd([
+          { name: service.name_en, path: `/services/${service.slug}` },
+        ]),
+        ...(faqJsonLd ? [faqJsonLd] : []),
+      ];
       return (
         <>
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-          />
+          {graph.map((node, i) => (
+            <script
+              key={i}
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: jsonLdString(node) }}
+            />
+          ))}
           <ServiceDetailClient service={service} />
         </>
       );
@@ -253,7 +331,15 @@ export default async function ServicesCatchAllPage({ params }: { params: PagePar
     if (category) {
       const trail = resolveTrail(category, [])!;
       const { services, total } = await fetchTaxonomyServices(category.slug);
-      return <CategoryBrowseClient trail={trail} initialServices={services} initialTotal={total} />;
+      return (
+        <>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: jsonLdString(buildTrailBreadcrumb(trail)) }}
+          />
+          <CategoryBrowseClient trail={trail} initialServices={services} initialTotal={total} />
+        </>
+      );
     }
 
     // Final fallback: the original printing/legal/software booking pages keep
@@ -273,7 +359,15 @@ export default async function ServicesCatchAllPage({ params }: { params: PagePar
   if (trail) {
     const node = trail[trail.length - 1];
     const { services, total } = await fetchTaxonomyServices(node.slug);
-    return <CategoryBrowseClient trail={trail} initialServices={services} initialTotal={total} />;
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdString(buildTrailBreadcrumb(trail)) }}
+        />
+        <CategoryBrowseClient trail={trail} initialServices={services} initialTotal={total} />
+      </>
+    );
   }
   notFound();
 }

@@ -168,10 +168,18 @@ Emails: an admin notification including a rendered summary of the dynamic form a
 
 ### 2.8 Tracking
 
-**There is no customer-facing booking tracking of any kind.**
+> **CORRECTION (post-audit).** The original text of this section claimed there
+> was no customer-facing booking tracking at all. That was wrong. A public
+> tracking page exists at `/track` (`app/track/page.tsx`), backed by
+> `GET /api/v1/bookings/track` (`routes/bookings.py:125`), and it resolves
+> **both** booking systems — `BK-…` (v2) and `ABO-B-…` (legacy v1) — rendering
+> a status stepper. `/profile` also links to it (`app/profile/page.tsx:15`).
+> The findings below are restated to the gap that is actually real:
+> **tracking exists but is undiscoverable from the booking flow.**
 
-- No route exists under `/orders`, `/profile` or elsewhere that lists or shows a service booking. `/profile` links "bookings" to `/book` — the booking *form* (`app/profile/page.tsx:17`).
-- `GET /service-bookings/{booking_id}` exists and is public (`bookings_v2.py:183`), but no page calls it. The only public read a customer can perform is the phone-gated invoice (`routes/invoices.py:148`).
+- The booking-success page never mentioned tracking and offered no link to it, so a customer finishing a booking had no way to learn the page exists.
+- Neither the confirmation email nor any other message carried a tracking link.
+- `GET /service-bookings/{booking_id}` exists and is public (`bookings_v2.py:183`), but no page calls it. The only public reads a customer can perform are the phone-gated invoice (`routes/invoices.py:148`) and the tracking endpoint above.
 - Status changes fire no notification. The admin status endpoint carries the literal comment `# TODO: Send status update email to customer` (`bookings_v2.py:327`).
 
 35. **The one public booking-read endpoint is unauthenticated and unrate-limited.** `GET /service-bookings/{booking_id}` returns the full `BookingV2Out` — name, phone, email, company, prices, notes and every dynamic form answer — to anyone holding the id, with no phone check and no rate limit (`bookings_v2.py:183-202`). The booking id is handed to the browser and put in the `/booking-success` URL. The parallel invoice endpoint *does* verify the phone (`invoices.py:87`), so the inconsistency is clearly unintentional.
@@ -547,7 +555,7 @@ The customer's only durable artifact is a booking number on a page they are one 
 1. Customer document/file upload — no field type, no input, no endpoint, no storage path (Section 2.5).
 2. Payment for service bookings — no gateway integration, `payment_status` never written (Section 2.6).
 3. Advance / consultancy-fee collection — columns, migration and admin toggle exist; logic absent (finding 27).
-4. Customer booking tracking — no page, no lookup, no status notifications (Section 2.8).
+4. ~~Customer booking tracking~~ — **corrected**: `/track` already resolves both booking systems. The real gaps were discoverability (no link from the booking flow or the confirmation email) and the absent status notifications (Section 2.8).
 5. Admin booking editing — endpoint exists, client method does not; `final_price`, `notes`, `payment_status` unreachable (finding 58).
 6. Scheduling — no working hours, slots, capacity, blackout dates or conflict detection (Section 4.5).
 
@@ -614,7 +622,7 @@ Ordered by ratio of business impact to implementation cost. Every item maps to a
 ### P2 — Build the missing halves of the journey
 
 17. **Customer document upload.** Add a `file` field type; a customer-scoped, booking-scoped upload endpoint accepting PDF and images with a size cap; store URLs on `BookingV2.attachments`; add `attachments` to `BookingV2Out`; render them in the admin modal; and drive the required list from `Service.required_documents` so the field stops being write-only. This unblocks the entire "Digital Services / Legal" category, which is document-centric by nature. *(Findings 71, Section 2.5.)*
-18. **Customer booking tracking.** A `/bookings/track` lookup by booking number + phone, and a bookings list in `/profile` reusing the phone-gated pattern that already exists for invoices. Replace the `/profile` → `/book` mislink. *(Section 2.8.)*
+18. **Make the existing tracking discoverable** — link `/track?booking={number}` from the booking-success page and from the confirmation email/SMS. *(Section 2.8, as corrected.)*
 19. **SMS on booking creation and on every status change**, using the existing `core/sms.py`. Email is optional; phone is mandatory. This is the highest-impact notification change available. *(Findings 32, 78.)*
 20. **Wire booking emails to `EmailTemplate`** via the existing `send_template_email`, seed the two current bodies as editable templates, and add a delivery log so a failed send is visible. *(Findings 33, 83.)*
 21. **Implement the advance/consultancy flow for bookings**, mirroring `routes/orders.py:184-209`: read `requires_advance` and `consultancy_fee`, set `advance_amount`, keep the booking pending until `advance_paid`, and expose a "mark advance received" action. The order-side reference implementation already exists. *(Finding 27.)*

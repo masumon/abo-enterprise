@@ -257,6 +257,15 @@ class Service(Base):
     delivery_charge: Mapped[float | None] = mapped_column(Numeric(10, 2))
     consultancy_fee: Mapped[float | None] = mapped_column(Numeric(10, 2))
     requires_advance: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Optional appointment scheduling (alembic 0013). Off = booking_date stays
+    # a free "preferred date"; see core/scheduling.py for the rules.
+    scheduling_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    slot_duration_minutes: Mapped[int | None] = mapped_column(Integer)
+    slot_capacity: Mapped[int | None] = mapped_column(Integer)
+    min_notice_hours: Mapped[int | None] = mapped_column(Integer)
+    booking_horizon_days: Mapped[int | None] = mapped_column(Integer)
+    working_hours: Mapped[dict] = mapped_column(JSON, default=dict)
+    holidays: Mapped[list] = mapped_column(JSON, default=list)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
@@ -339,6 +348,10 @@ class BookingV2(Base):
     customer_phone: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     customer_email: Mapped[str | None] = mapped_column(String(255))
     customer_company: Mapped[str | None] = mapped_column(String(255))
+    # Normalized service location (alembic 0012). Previously concatenated into
+    # `details`, which made it unqueryable.
+    district: Mapped[str | None] = mapped_column(String(100), index=True)
+    upazila: Mapped[str | None] = mapped_column(String(100))
     booking_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     estimated_completion_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     pricing_type: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -771,6 +784,13 @@ class Category(Base):
     )
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    # Per-category SEO overrides (alembic 0011). NULL = derive from name /
+    # description, which is what every category page did before.
+    seo_title: Mapped[str | None] = mapped_column(String(255))
+    seo_description: Mapped[str | None] = mapped_column(Text)
+    seo_keywords: Mapped[str | None] = mapped_column(String(500))
+    canonical_url: Mapped[str | None] = mapped_column(String(500))
+    og_image: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)

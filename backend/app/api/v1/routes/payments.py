@@ -17,8 +17,9 @@ from app.core.rate_limit import rate_limit
 from app.core.sslcommerz import get_sslcommerz_gateway
 from app.core.site_url import resolve_site_url
 from app.core.invoice import InvoiceService
-from app.models.models import BkashTransaction, NagadTransaction, Order
+from app.models.models import BkashTransaction, BookingV2, NagadTransaction, Order
 from app.schemas.schemas import (
+    BookingPaymentInitiateRequest,
     PaymentInitiateRequest,
     PaymentResponseModel,
     PaymentVerifyRequest,
@@ -288,6 +289,75 @@ async def initiate_sslcommerz_payment(
     except Exception as e:
         logger.error("sslcommerz initiate error: %s", e, exc_info=e)
         raise HTTPException(status_code=400, detail="Payment initiation failed")
+
+
+@router.post("/sslcommerz/initiate-booking", response_model=PaymentResponseModel)
+async def initiate_sslcommerz_booking_payment(
+    request: BookingPaymentInitiateRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Hosted checkout for a service booking — the customer-facing pay path.
+
+    Amount is server-derived: the outstanding advance/consultancy fee when one
+    is due, otherwise the settled or quoted price. Never taken from the client.
+
+    Like the order flow, the redirect back is presentational only — a booking
+    is marked paid by an admin (or by a verified gateway callback), never by a
+    query parameter, which anyone could forge.
+    """
+    from app.api.v1.routes.bookings_v2 import _phone_matches
+
+    booking = (await db.execute(
+        select(BookingV2).where(
+            BookingV2.id == request.booking_id,
+            BookingV2.is_deleted == False,  # noqa: E712
+        )
+    )).scalar_one_or_none()
+    if not booking or not _phone_matches(booking.customer_phone, request.phone):
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if booking.payment_status in ("paid", "completed"):
+        raise HTTPException(status_code=409, detail="This booking is already paid")
+
+    advance_due = float(booking.advance_amount or 0) if not booking.advance_paid else 0.0
+    amount = advance_due or float(booking.final_price or booking.quoted_price or 0)
+    if amount <= 0:
+        raise HTTPException(
+            status_code=409,
+            detail="This booking has no amount to pay yet. We'll confirm the price with you first.",
+        )
+
+    base = await resolve_site_url(db)
+    phone_q = quote(booking.customer_phone, safe="")
+    ref = f"{base}/booking-success?booking={booking.id}&phone={phone_q}"
+    success_url = request.success_url or f"{ref}&payment=success"
+    fail_url = request.fail_url or f"{ref}&payment=failed"
+    cancel_url = request.cancel_url or f"{ref}&payment=cancelled"
+
+    try:
+        session = await get_sslcommerz_gateway().create_session(
+            amount=Decimal(str(amount)),
+            order_number=booking.booking_number,
+            customer_name=booking.customer_name,
+            customer_phone=booking.customer_phone,
+            customer_email=booking.customer_email,
+            success_url=success_url,
+            fail_url=fail_url,
+            cancel_url=cancel_url,
+        )
+    except Exception as e:
+        logger.error("sslcommerz booking initiate error: %s", e, exc_info=e)
+        raise HTTPException(status_code=400, detail="Payment initiation failed")
+
+    if not session:
+        raise HTTPException(status_code=400, detail="SSLCommerz not configured or session failed")
+
+    return {
+        "success": True,
+        "payment_url": session.get("payment_url"),
+        "payment_gateway": "sslcommerz",
+        "transaction_id": session.get("session_key"),
+    }
 
 
 @router.post("/webhook/bkash")

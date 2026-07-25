@@ -137,6 +137,14 @@ export interface ServicePricingTier {
 }
 
 /** Effective Call-To-Action, computed by the API (single source: core/capabilities.py). */
+export interface ServiceSlot {
+  start: string;
+  label: string;
+  capacity: number;
+  remaining: number;
+  available: boolean;
+}
+
 export interface ServiceCta {
   type: "book" | "order" | "quote" | "contact";
   label_en: string;
@@ -179,6 +187,15 @@ export interface Service {
   delivery_charge?: number | null;
   consultancy_fee?: number | null;
   requires_advance?: boolean;
+  /** Optional appointment scheduling (see backend core/scheduling.py). */
+  scheduling_enabled?: boolean;
+  slot_duration_minutes?: number | null;
+  slot_capacity?: number | null;
+  min_notice_hours?: number | null;
+  booking_horizon_days?: number | null;
+  /** Per-weekday open ranges: { mon: [["09:00","17:00"]], … } */
+  working_hours?: Record<string, [string, string][]> | null;
+  holidays?: string[] | null;
   pricing_tiers?: ServicePricingTier[];
   booking_forms?: ServiceBookingFormField[];
   is_active?: boolean;
@@ -314,6 +331,8 @@ export interface BookingV2 {
   customer_phone: string;
   customer_email?: string | null;
   customer_company?: string | null;
+  district?: string | null;
+  upazila?: string | null;
   booking_date?: string | null;
   estimated_completion_date?: string | null;
   pricing_type: string;
@@ -324,9 +343,16 @@ export interface BookingV2 {
   requirements?: string | null;
   /** Customer answers to the service's dynamic booking form. */
   form_data?: Record<string, unknown> | null;
+  /** field_name → admin-defined label; sent by the admin endpoints only. */
+  form_labels?: Record<string, string> | null;
+  /** Customer-supplied document URLs. */
+  attachments?: string[] | null;
   status: string;
   payment_status: string;
   payment_method?: string | null;
+  payment_number?: string | null;
+  advance_amount?: number | null;
+  advance_paid?: boolean | null;
   notes?: string | null;
   created_at: string;
   updated_at: string;
@@ -372,7 +398,7 @@ export interface DashboardStats {
 }
 
 // ---- Commerce taxonomy (Category -> Subcategory) ----
-export interface Subcategory {
+export interface Subcategory extends CategorySeo {
   id: string;
   category_id: string;
   slug: string;
@@ -391,7 +417,15 @@ export interface Subcategory {
   updated_at?: string;
 }
 
-export interface Category {
+export interface CategorySeo {
+  seo_title?: string | null;
+  seo_description?: string | null;
+  seo_keywords?: string | null;
+  canonical_url?: string | null;
+  og_image?: string | null;
+}
+
+export interface Category extends CategorySeo {
   id: string;
   slug: string;
   name_en: string;

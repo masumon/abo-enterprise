@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Printer, Code2, Megaphone, Briefcase,
   Bot, Cog, Smartphone, FileText, Wrench, Monitor, Globe, Headphones, ChevronRight,
+  Search as SearchIcon,
   type LucideIcon,
 } from "lucide-react";
 import type { Category, Service } from "@/types";
@@ -192,10 +193,15 @@ export default function ServicesPageClient({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [category, setCategory] = useState<string | null>(null);
+  // The list endpoint has always accepted search and sort; nothing drove them.
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(initialTotal);
   const [catalogSource, setCatalogSource] = useState<CatalogSource>("api");
   const skipInitial = useRef(!initialIsDemo && initialServices.length > 0);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!initialIsDemo && initialServices.length > 0) {
@@ -263,12 +269,14 @@ export default function ServicesPageClient({
     initialCategories.map((c) => [c.id, lang === "bn" && c.name_bn ? c.name_bn : c.name_en])
   );
 
-  const load = useCallback(async (pageNum: number, cat: string | null) => {
+  const load = useCallback(async (pageNum: number, cat: string | null, q = "", sortBy = "") => {
     setLoading(true);
     setError(false);
 
     const params = {
       ...(usingTaxonomy ? { category_slug: cat || undefined } : { category: cat || undefined }),
+      search: q || undefined,
+      sort: sortBy || undefined,
       page: pageNum,
       per_page: 12,
     };
@@ -310,8 +318,8 @@ export default function ServicesPageClient({
       skipInitial.current = false;
       if (!initialIsDemo && initialServices.length > 0) return;
     }
-    load(1, category);
-  }, [category, load, initialIsDemo, initialServices.length]);
+    load(1, category, search, sort);
+  }, [category, search, sort, load, initialIsDemo, initialServices.length]);
 
   const totalPages = Math.max(1, Math.ceil(total / 12));
 
@@ -406,9 +414,44 @@ export default function ServicesPageClient({
             })}
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <h2 className="text-xl font-bold text-heading">{t({ en: "All Services", bn: "সব সেবা" })}</h2>
             <ServiceFilters categories={categories} selectedCategory={category} onCategoryChange={setCategory} />
+          </div>
+
+          {/* Search + sort. Debounced so typing doesn't fire a request per key. */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <form
+              className="relative flex-1"
+              onSubmit={(e) => { e.preventDefault(); setSearch(searchInput.trim()); setPage(1); }}
+            >
+              <SearchIcon aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+              <input
+                type="search"
+                value={searchInput}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setSearchInput(v);
+                  if (searchTimer.current) clearTimeout(searchTimer.current);
+                  searchTimer.current = setTimeout(() => { setSearch(v.trim()); setPage(1); }, 400);
+                }}
+                placeholder={t({ en: "Search services…", bn: "সেবা খুঁজুন…" })}
+                aria-label={t({ en: "Search services", bn: "সেবা খুঁজুন" })}
+                className="input w-full pl-9"
+              />
+            </form>
+            <select
+              value={sort}
+              onChange={(e) => { setSort(e.target.value); setPage(1); }}
+              aria-label={t({ en: "Sort services", bn: "সাজান" })}
+              className="input sm:w-56"
+            >
+              <option value="">{t({ en: "Recommended", bn: "প্রস্তাবিত" })}</option>
+              <option value="name">{t({ en: "Name (A–Z)", bn: "নাম (A–Z)" })}</option>
+              <option value="price_low">{t({ en: "Price: Low to High", bn: "মূল্য: কম থেকে বেশি" })}</option>
+              <option value="price_high">{t({ en: "Price: High to Low", bn: "মূল্য: বেশি থেকে কম" })}</option>
+              <option value="newest">{t({ en: "Newest First", bn: "নতুন আগে" })}</option>
+            </select>
           </div>
 
           <DemoModeBanner show={catalogSource === "cache" && !loading} source={catalogSource} />
@@ -420,7 +463,7 @@ export default function ServicesPageClient({
           ) : error ? (
             <div className="text-center py-16 enterprise-card p-8" role="alert">
               <p className="text-muted mb-4">{lang === "bn" ? "সেবা লোড করা যায়নি" : "Could not load services"}</p>
-              <button type="button" onClick={() => load(1, category)} className="btn btn-brand btn-md">
+              <button type="button" onClick={() => load(1, category, search, sort)} className="btn btn-brand btn-md">
                 {lang === "bn" ? "আবার চেষ্টা" : "Retry"}
               </button>
             </div>
@@ -443,13 +486,13 @@ export default function ServicesPageClient({
               </div>
               {totalPages > 1 && (
                 <div className="flex justify-center gap-3 mt-10">
-                  <button type="button" disabled={page === 1} onClick={() => load(page - 1, category)} className="btn btn-outline btn-md">
+                  <button type="button" disabled={page === 1} onClick={() => load(page - 1, category, search, sort)} className="btn btn-outline btn-md">
                     {lang === "bn" ? "আগে" : "Previous"}
                   </button>
                   <span className="px-4 py-2 text-sm text-muted self-center">
                     {lang === "bn" ? `পৃষ্ঠা ${page} / ${totalPages}` : `Page ${page} of ${totalPages}`}
                   </span>
-                  <button type="button" disabled={page >= totalPages} onClick={() => load(page + 1, category)} className="btn btn-outline btn-md">
+                  <button type="button" disabled={page >= totalPages} onClick={() => load(page + 1, category, search, sort)} className="btn btn-outline btn-md">
                     {lang === "bn" ? "পরে" : "Next"}
                   </button>
                 </div>

@@ -1,6 +1,6 @@
 import axios from "axios";
 import type { AxiosResponse } from "axios";
-import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier, BookingV2, LeadV2, Review, BlogPost, ServiceBookingFormField, Category, Subcategory } from "@/types";
+import type { ApiResponse, PaginatedResponse, Product, Order, Booking, Lead, Service, ServicePricingTier, ServiceSlot, BookingV2, LeadV2, Review, BlogPost, ServiceBookingFormField, Category, Subcategory } from "@/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { clearAdminToken, getAdminToken, isAdminProtectedPath } from "@/lib/adminAuth";
 import { getAdaptiveTimeout, getAdaptiveRetry } from "@/lib/networkAwareApi";
@@ -224,14 +224,44 @@ export const leadsApi = {
 };
 
 export const serviceBookingsAdminApi = {
-  list: (params?: { status?: string; payment_status?: string; page?: number; per_page?: number }) =>
+  list: (params?: { status?: string; payment_status?: string; district?: string; page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<BookingV2>>("/api/v1/service-bookings/admin/bookings", { params }),
 
   updateStatus: (id: string, status: string) =>
     api.patch<ApiResponse<BookingV2>>(`/api/v1/service-bookings/admin/bookings/${id}/status`, { status }),
 
+  /** Partial edit — only the keys sent are applied server-side. */
+  update: (id: string, data: Partial<BookingV2>) =>
+    api.put<ApiResponse<BookingV2>>(`/api/v1/service-bookings/admin/bookings/${id}`, data),
+
+  /** Marks the advance/consultancy fee received and confirms the booking. */
+  markAdvanceReceived: (id: string) =>
+    api.post<ApiResponse<BookingV2>>(`/api/v1/service-bookings/admin/bookings/${id}/advance-received`),
+
   delete: (id: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/service-bookings/admin/bookings/${id}`),
+};
+
+export const bookingUploadsApi = {
+  /** Public document upload for a booking; returns a URL to submit on the form. */
+  upload: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return api.post<ApiResponse<{ url: string; filename: string }>>(
+      "/api/v1/media/booking-upload",
+      fd,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+  },
+};
+
+export const bookingPaymentsApi = {
+  /** Hosted checkout for a booking; amount is derived server-side. */
+  initiate: (booking_id: string, phone: string) =>
+    api.post<ApiResponse<{ payment_url?: string }>>(
+      "/api/v1/payments/sslcommerz/initiate-booking",
+      { booking_id, phone }
+    ),
 };
 
 export const serviceBookingsApi = {
@@ -242,6 +272,8 @@ export const serviceBookingsApi = {
     customer_phone: string;
     customer_email?: string;
     customer_company?: string;
+    district?: string;
+    upazila?: string;
     booking_date?: string;
     pricing_type: string;
     quoted_price?: number;
@@ -249,13 +281,15 @@ export const serviceBookingsApi = {
     requirements?: string;
     /** Answers to the service's dynamic booking form (validated server-side). */
     form_data?: Record<string, unknown>;
+    attachments?: string[];
   }) =>
     isOffline()
       ? queueOfflineCreate<BookingV2 & { invoice_id?: string | null }>("service_booking", data as unknown as Record<string, unknown>)
       : api.post<ApiResponse<BookingV2 & { invoice_id?: string | null }>>("/api/v1/service-bookings", data),
 
-  get: (id: string) =>
-    api.get<ApiResponse<BookingV2>>(`/api/v1/service-bookings/${id}`),
+  /** Public booking lookup — gated on the customer phone used at booking time. */
+  get: (id: string, phone: string) =>
+    api.get<ApiResponse<BookingV2>>(`/api/v1/service-bookings/${id}`, { params: { phone } }),
 };
 
 export const serviceLeadsApi = {
@@ -310,11 +344,18 @@ export const authApi = {
 };
 
 export const servicesApi = {
-  list: (params?: { category?: string; category_slug?: string; subcategory_slug?: string; featured?: boolean; search?: string; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
+  list: (params?: { category?: string; category_slug?: string; subcategory_slug?: string; featured?: boolean; search?: string; sort?: string; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
     api.get<PaginatedResponse<Service>>("/api/v1/services", { params, ...opts }),
 
   getBySlug: (slug: string) =>
     api.get<ApiResponse<Service>>(`/api/v1/services/${slug}`),
+
+  /** Bookable slots for one local (Asia/Dhaka) date; empty when scheduling is off. */
+  availability: (serviceId: string, date: string) =>
+    api.get<ApiResponse<{ scheduling_enabled: boolean; date: string; slots: ServiceSlot[] }>>(
+      `/api/v1/services/${serviceId}/availability`,
+      { params: { date } }
+    ),
 };
 
 export const reviewsApi = {

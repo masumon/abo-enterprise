@@ -6,7 +6,10 @@ import Image from "next/image";
 import {
   ArrowRight,
   CheckCircle,
+  ChevronDown,
+  ClipboardList,
   Clock,
+  FileText,
   MessageCircle,
   Package,
   Tag,
@@ -44,13 +47,17 @@ function PricingBadge({ service, lang }: { service: Service; lang: string }) {
       </div>
     );
   }
-  if (service.pricing_type === "package" && service.min_price && service.max_price) {
+  // A package shows its range when it has one, otherwise its base price. Only
+  // a package with neither falls through to the custom-quote badge.
+  if (service.pricing_type === "package" && (service.min_price || service.base_price)) {
+    const range =
+      service.min_price && service.max_price
+        ? `${formatPrice(service.min_price)} – ${formatPrice(service.max_price)}`
+        : formatPrice((service.base_price ?? service.min_price)!);
     return (
       <div className="inline-flex items-center gap-2 bg-accent-50 border border-accent-200 rounded-full px-4 py-2">
         <Package className="w-4 h-4 text-accent-600" />
-        <span className="font-bold text-accent-700 text-lg">
-          {formatPrice(service.min_price)} – {formatPrice(service.max_price)}
-        </span>
+        <span className="font-bold text-accent-700 text-lg">{range}</span>
       </div>
     );
   }
@@ -95,6 +102,14 @@ export default function ServiceDetailClient({ service }: Props) {
     cta?.type === "contact"
       ? "/contact"
       : `/book?service=${service.slug}${cta?.type === "order" ? "&mode=order" : cta?.type === "quote" ? "&mode=quote" : ""}`;
+
+  // Structured content the admin already maintains. Defensive filters keep a
+  // half-filled row (e.g. a step with no title) from rendering an empty block.
+  const process = (service.process_steps ?? []).filter((s) => s?.title);
+  const benefits = (service.benefits ?? []).filter(Boolean);
+  const requirements = (service.requirements ?? []).filter(Boolean);
+  const documents = (service.required_documents ?? []).filter(Boolean);
+  const faq = (service.faq ?? []).filter((f) => f?.question && f?.answer);
 
   const hasTiers =
     service.pricing_tiers && service.pricing_tiers.length > 0;
@@ -252,16 +267,127 @@ export default function ServiceDetailClient({ service }: Props) {
           </section>
         )}
 
+        {/* How it works */}
+        {process.length > 0 && (
+          <section>
+            <h2 className="text-2xl font-bold text-heading mb-6">
+              {t("How It Works", "কীভাবে কাজ করে")}
+            </h2>
+            <ol className="space-y-4">
+              {process.map((s, i) => (
+                <li key={i} className="flex gap-4">
+                  <span className="flex-shrink-0 w-9 h-9 rounded-full bg-brand-600 text-white font-bold flex items-center justify-center">
+                    {s.step ?? i + 1}
+                  </span>
+                  <div className="pt-1">
+                    <p className="font-semibold text-heading">{s.title}</p>
+                    {s.description && <p className="text-sm text-muted mt-0.5">{s.description}</p>}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
+
+        {/* Benefits */}
+        {benefits.length > 0 && (
+          <section>
+            <h2 className="text-2xl font-bold text-heading mb-6">
+              {t("Why Choose This Service", "কেন এই সেবা")}
+            </h2>
+            <ul className="grid sm:grid-cols-2 gap-3">
+              {benefits.map((b, i) => (
+                <li key={i} className="flex items-start gap-2 text-muted">
+                  <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                  <span>{b}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
+        {/* What you need to provide — surfaced before booking, not after */}
+        {(requirements.length > 0 || documents.length > 0) && (
+          <section className="grid sm:grid-cols-2 gap-6">
+            {requirements.length > 0 && (
+              <div className="enterprise-card p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <ClipboardList className="w-5 h-5 text-brand-600" />
+                  <h2 className="text-lg font-bold text-heading">
+                    {t("What We Need From You", "আপনার কাছ থেকে যা প্রয়োজন")}
+                  </h2>
+                </div>
+                <ul className="space-y-2">
+                  {requirements.map((r, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-muted">
+                      <span aria-hidden className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0" />
+                      {r}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {documents.length > 0 && (
+              <div className="enterprise-card p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <FileText className="w-5 h-5 text-brand-600" />
+                  <h2 className="text-lg font-bold text-heading">
+                    {t("Documents to Prepare", "যে কাগজপত্র লাগবে")}
+                  </h2>
+                </div>
+                <ul className="space-y-2">
+                  {documents.map((d, i) => (
+                    <li key={i} className="flex items-start gap-2 text-sm text-muted">
+                      <CheckCircle className="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5" />
+                      {d}
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-xs text-muted mt-3">
+                  {t(
+                    "Keep these ready — we'll collect them when we contact you.",
+                    "এগুলো প্রস্তুত রাখুন — যোগাযোগের সময় আমরা সংগ্রহ করব।"
+                  )}
+                </p>
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* FAQ */}
+        {faq.length > 0 && (
+          <section>
+            <h2 className="text-2xl font-bold text-heading mb-6">
+              {t("Frequently Asked Questions", "সাধারণ জিজ্ঞাসা")}
+            </h2>
+            <div className="space-y-3">
+              {faq.map((item, i) => (
+                <details key={i} className="enterprise-card p-5 group">
+                  <summary className="font-semibold text-heading cursor-pointer list-none flex items-center justify-between gap-3">
+                    {item.question}
+                    <ChevronDown className="w-4 h-4 text-muted flex-shrink-0 transition-transform group-open:rotate-180" />
+                  </summary>
+                  <p className="text-sm text-muted mt-3 leading-relaxed">{item.answer}</p>
+                </details>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Tags */}
         {service.tags && service.tags.length > 0 && (
           <div className="flex flex-wrap gap-2">
+            {/* Tags route into the existing search, which already covers
+                services — inert pills were a dead end for a related-service
+                signal the admin maintains. */}
             {service.tags.map((tag) => (
-              <span
+              <Link
                 key={tag}
-                className="px-3 py-1 bg-gray-100 dark:bg-white/10 text-muted rounded-full text-sm"
+                href={`/search?q=${encodeURIComponent(tag)}`}
+                className="px-3 py-1 bg-gray-100 dark:bg-white/10 text-muted hover:text-brand-700 dark:hover:text-brand-300 hover:bg-brand-50 dark:hover:bg-brand-900/30 rounded-full text-sm transition-colors"
               >
                 {tag}
-              </span>
+              </Link>
             ))}
           </div>
         )}
