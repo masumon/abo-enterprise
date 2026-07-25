@@ -249,7 +249,7 @@ export default function Footer() {
       <div className="site-footer-accent relative z-10" aria-hidden />
       <div className="footer-glow pointer-events-none" aria-hidden />
 
-      <div className="relative z-10 container mx-auto px-4 py-8 md:py-12 space-y-6 md:space-y-8">
+      <div className="relative z-10 container mx-auto px-4 py-8 md:py-12 space-y-4 md:space-y-6">
         {/* ── Get in touch: the highest-intent block, so it leads ── */}
         <section>
           <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
@@ -310,7 +310,7 @@ export default function Footer() {
         </section>
 
         {/* ── Navigation: three equal groups, stacked on a phone ── */}
-        <div className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3 border-t border-white/10 pt-6 md:pt-7">
+        <div className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3 border-t border-white/10 pt-4 md:pt-5">
           <nav aria-label={lang === "bn" ? "কেনাকাটা ও সেবা" : "Shop and services"}>
             <SectionLabel>{lang === "bn" ? "কেনাকাটা ও সেবা" : "Shop & Services"}</SectionLabel>
             {/* Two columns: six destinations fit in three tidy rows. */}
@@ -360,7 +360,7 @@ export default function Footer() {
 
         {/* ── Trust badges (admin: Homepage Content) ── */}
         {trustBadges.length > 0 && (
-          <div className="border-t border-white/10 pt-6 md:pt-7">
+          <div className="border-t border-white/10 pt-4 md:pt-5">
             <SectionLabel>{lang === "bn" ? "কেন আমাদের বিশ্বাস করবেন" : "Why trust us"}</SectionLabel>
             <div className="flex flex-wrap gap-2">
               {trustBadges.map((badge, i) => {
@@ -377,7 +377,7 @@ export default function Footer() {
         )}
 
         {/* ── Secure payments ── */}
-        <div className="border-t border-white/10 pt-6 md:pt-7 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div className="border-t border-white/10 pt-4 md:pt-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="min-w-0">
             <p className="text-base font-bold text-white">
               {lang === "bn" ? "নিরাপদ পেমেন্ট" : "Secure Payments"}
@@ -403,7 +403,7 @@ export default function Footer() {
 
         {/* ── Verified & registered business ── */}
         {registrations.length > 0 && (
-          <div className="border-t border-white/10 pt-6 md:pt-7 flex flex-col lg:flex-row lg:items-center gap-5">
+          <div className="border-t border-white/10 pt-4 md:pt-5 flex flex-col lg:flex-row lg:items-center gap-5">
             <div className="flex items-center gap-3 lg:pr-6 lg:border-r lg:border-white/10 flex-shrink-0">
               <span className="w-11 h-11 rounded-xl grid place-items-center flex-shrink-0 bg-gradient-to-br from-brand-500/30 to-brand-700/20 ring-1 ring-inset ring-white/20">
                 <ShieldCheck className="w-6 h-6 text-brand-200" />
@@ -436,7 +436,7 @@ export default function Footer() {
         )}
 
         {/* ── Newsletter + app install ── */}
-        <div className="border-t border-white/10 pt-6 md:pt-7 grid gap-5 lg:grid-cols-2 lg:items-center">
+        <div className="border-t border-white/10 pt-4 md:pt-5 grid gap-5 lg:grid-cols-2 lg:items-center">
           {newsletterEnabled && (
             <div className="flex items-start gap-3.5">
               <span className="w-11 h-11 rounded-full grid place-items-center flex-none bg-brand-500/20 ring-1 ring-inset ring-white/15">
@@ -512,7 +512,7 @@ export default function Footer() {
         </div>
 
         {/* ── Brand identity ── */}
-        <div className="border-t border-white/10 pt-6 md:pt-7 flex flex-col items-center gap-3 text-center">
+        <div className="border-t border-white/10 pt-4 md:pt-5 flex flex-col items-center gap-3 text-center">
           <BrandLogo size="lg" href={false} variant="light" />
           <div>
             <h3 className="text-white font-bold text-lg tracking-tight">{getBrandName(lang)}</h3>
