@@ -333,30 +333,6 @@
   .footer-section-label {
     @apply text-[11px] font-bold uppercase tracking-[0.18em] text-white/60 mb-3;
   }
-  /* High-intent contact action (call / WhatsApp / map). */
-  .footer-action {
-    @apply flex flex-col gap-1 p-3 rounded-[18px] text-white no-underline
-           border border-white/[0.18] backdrop-blur-md transition-all duration-200
-           hover:border-sky-300/50 hover:bg-sky-300/[0.16] hover:-translate-y-px
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.05));
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  }
-  .footer-action-sub { @apply text-[11px] text-white/60 leading-snug; }
-  .footer-action-value { @apply text-[13px] font-bold text-sky-300 tracking-tight; }
-  /* Destination tile — thumb-friendly, icon aids recognition. */
-  .footer-tile {
-    @apply flex items-center gap-2 px-3 py-2.5 rounded-[14px] text-[13px] font-semibold text-white no-underline
-           bg-white/[0.07] border border-white/[0.13] transition-all duration-200
-           hover:bg-white/[0.13] hover:translate-x-0.5
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60;
-  }
-  /* Secondary inline link — no icon on purpose (icons on every link add noise). */
-  .footer-inline-link {
-    @apply text-[13px] text-white/75 no-underline px-2 py-1 rounded-lg transition-colors duration-150
-           hover:bg-white/10 hover:text-white
-           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40;
-  }
   .footer-legal-link {
     @apply text-[11px] text-white/50 no-underline px-2 py-1 rounded-md transition-colors duration-150
            hover:text-white/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40;
@@ -372,12 +348,6 @@
   .footer-pay {
     @apply inline-flex items-center h-[34px] px-3 rounded-[10px] bg-white
            text-[12px] font-extrabold shadow-sm;
-  }
-  .footer-brand-card {
-    @apply rounded-[19px] p-4 sm:p-5 border border-white/[0.16] backdrop-blur-md
-           flex flex-col gap-3.5;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.05));
-    box-shadow: 0 4px 14px rgba(4, 16, 36, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.16);
   }
   .footer-app-btn {
     @apply inline-flex items-center gap-2 px-3.5 py-2.5 rounded-[14px] text-[13px] font-bold text-white no-underline
@@ -399,13 +369,23 @@
            disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200
            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50;
   }
+  /* Contact card — one tap target per action, comfortably large on a phone. */
   .footer-contact-card {
-    @apply rounded-2xl p-5 border border-white/20 bg-white/10 backdrop-blur-sm;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    @apply flex items-start gap-3 p-4 rounded-2xl text-white no-underline
+           border border-white/[0.14] bg-white/[0.06] backdrop-blur-sm
+           transition-all duration-200
+           hover:bg-white/[0.11] hover:border-white/25 hover:-translate-y-px
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/60;
+    box-shadow: 0 2px 10px rgba(4, 16, 36, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.12);
   }
-  .footer-contact-icon {
-    @apply w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0
-           bg-white/15 text-white border border-white/20;
+  .footer-contact-title { @apply block text-[15px] font-bold text-white leading-tight; }
+  .footer-contact-sub   { @apply block text-xs text-white/60 mt-0.5 leading-snug; }
+  .footer-contact-action{ @apply block text-[13px] font-bold mt-1.5; }
+  /* Plain navigation link — generous row height for thumbs, no card around it. */
+  .footer-nav-link {
+    @apply flex items-center gap-2 py-1.5 text-[13.5px] text-white/70 no-underline
+           rounded-lg transition-colors duration-150
+           hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40;
   }
   .footer-social-btn {
     @apply w-10 h-10 rounded-full flex items-center justify-center
