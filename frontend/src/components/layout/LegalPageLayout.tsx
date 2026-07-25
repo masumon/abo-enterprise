@@ -65,7 +65,7 @@ export default function LegalPageLayout({ title, sections, showTitle = true, las
           </nav>
         </aside>
 
-        <article className="enterprise-card p-6 md:p-10">
+        <article className="enterprise-card p-6 md:p-10 min-w-0">
           <nav aria-label={isBn ? "মোবাইল বিষয়সূচি" : "Mobile table of contents"} className="lg:hidden mb-5">
             <div className="flex gap-2 overflow-x-auto pb-1">
               {sections.map((s) => (
