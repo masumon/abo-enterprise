@@ -66,6 +66,7 @@ const translations = {
     footer_privacy: "Privacy Policy",
     footer_terms: "Terms of Service",
     footer_refund: "Refund Policy",
+    footer_cookies: "Cookies Policy",
     // Products
     products_title: "Our Products",
     products_sub: "Quality accessories & electronics at the best prices",
@@ -160,6 +161,7 @@ const translations = {
     footer_privacy: "গোপনীয়তা নীতি",
     footer_terms: "সেবার শর্তাবলী",
     footer_refund: "রিফান্ড নীতি",
+    footer_cookies: "কুকি নীতি",
     products_title: "আমাদের পণ্য",
     products_sub: "সেরা দামে মানসম্মত এক্সেসরিজ ও ইলেকট্রনিক্স",
     sort_default: "সাজান: ডিফল্ট",

@@ -23,6 +23,7 @@ const STATIC_PATHS: { path: string; priority: number; changeFrequency: MetadataR
   { path: "/legal/privacy", priority: 0.4, changeFrequency: "yearly" },
   { path: "/legal/terms", priority: 0.4, changeFrequency: "yearly" },
   { path: "/legal/refund", priority: 0.4, changeFrequency: "yearly" },
+  { path: "/legal/cookies", priority: 0.4, changeFrequency: "yearly" },
   { path: "/track", priority: 0.5, changeFrequency: "monthly" },
   { path: "/book", priority: 0.7, changeFrequency: "weekly" },
   // Account, cart/checkout, compare and internal search pages are deliberately

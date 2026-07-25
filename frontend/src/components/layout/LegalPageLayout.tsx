@@ -14,9 +14,12 @@ interface LegalPageLayoutProps {
   title: string;
   sections: LegalSection[];
   showTitle?: boolean;
+  /** ISO date (YYYY-MM-DD) of the last policy revision. Rendered as a
+   * localized "last updated" line above the content when provided. */
+  lastUpdated?: string;
 }
 
-export default function LegalPageLayout({ title, sections, showTitle = true }: LegalPageLayoutProps) {
+export default function LegalPageLayout({ title, sections, showTitle = true, lastUpdated }: LegalPageLayoutProps) {
   const { lang } = useLanguageStore();
   const isBn = lang === "bn";
   const [activeId, setActiveId] = useState(sections[0]?.id ?? "");
@@ -81,7 +84,17 @@ export default function LegalPageLayout({ title, sections, showTitle = true }: L
               ))}
             </div>
           </nav>
-          {showTitle && <h1 className="text-3xl font-bold text-heading mb-8">{title}</h1>}
+          {showTitle && <h1 className="text-3xl font-bold text-heading mb-3">{title}</h1>}
+          {lastUpdated && (
+            <p className="text-xs text-muted mb-8">
+              {isBn ? "সর্বশেষ হালনাগাদ: " : "Last updated: "}
+              {new Date(lastUpdated).toLocaleDateString(isBn ? "bn-BD" : "en-GB", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </p>
+          )}
           <div className="prose prose-sm max-w-none space-y-8 text-muted">
             {sections.map((s) => (
               <section key={s.id} id={s.id} className="scroll-mt-28">
