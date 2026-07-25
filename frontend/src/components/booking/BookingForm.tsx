@@ -76,6 +76,18 @@ function isFieldVisible(
   return true;
 }
 
+/** Scroll to and focus a control by id — an error the customer can't see is
+ *  the same as no error at all on a form this long. */
+function focusField(id: string) {
+  if (typeof document === "undefined") return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  // Both guarded: scrollIntoView is absent in jsdom and in some older mobile
+  // webviews, and losing focus assistance must never break a submission.
+  el.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  (el as HTMLElement).focus?.({ preventScroll: true });
+}
+
 function isEmptyValue(v: DynamicValue | undefined): boolean {
   if (v === undefined || v === null) return true;
   if (typeof v === "string") return v.trim() === "";
@@ -99,9 +111,15 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
     for (const f of dynamicFields) {
       // String defaults only apply to text-like fields: seeding "true" into a
       // checkbox would submit a value the customer never visibly selected.
-      if (f.default_value && !NON_TEXT_TYPES.has((f.field_type || "text").toLowerCase())) {
-        init[f.field_name] = f.default_value;
+      const ftype = (f.field_type || "text").toLowerCase();
+      if (!f.default_value || NON_TEXT_TYPES.has(ftype)) continue;
+      // For option-backed controls the default must be one of the options —
+      // otherwise the <select> renders blank while the unmatched value stays
+      // in state and is submitted, only to be rejected as "Invalid option".
+      if ((ftype === "select" || ftype === "radio") && !(f.options ?? []).includes(f.default_value)) {
+        continue;
       }
+      init[f.field_name] = f.default_value;
     }
     return init;
   });
@@ -145,6 +163,15 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       }
       const rules = (field.validation_rules ?? {}) as { pattern?: string; pattern_message?: string; min_length?: number; max_length?: number };
       if (typeof value === "string") {
+        // Server caps every text-like answer at 2000 chars unless the admin set
+        // a lower max_length; mirror it so a long answer fails here, next to
+        // the field, instead of after a round trip.
+        const maxLen = rules.max_length ?? 2000;
+        if (value.trim().length > maxLen) {
+          errors[field.field_name] =
+            lang === "bn" ? `সর্বোচ্চ ${maxLen} অক্ষর` : `Must be at most ${maxLen} characters`;
+          continue;
+        }
         if (rules.min_length != null && value.trim().length < rules.min_length) {
           errors[field.field_name] =
             lang === "bn" ? `কমপক্ষে ${rules.min_length} অক্ষর দিন` : `Must be at least ${rules.min_length} characters`;
@@ -168,6 +195,9 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
     }
     if (Object.keys(errors).length > 0) {
       setDynamicErrors(errors);
+      const firstName = Object.keys(errors)[0];
+      const firstField = dynamicFields.find((f) => f.field_name === firstName);
+      if (firstField) focusField(`dyn-${firstField.id}`);
       return null;
     }
     return cleaned;
@@ -285,23 +315,36 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
 
   function onInvalidSubmit(fieldErrors: Record<string, unknown>) {
     const first = Object.keys(fieldErrors)[0];
-    const labels: Record<string, string> = {
-      customer_name: "Full Name",
-      customer_phone: "Phone Number",
-      customer_email: "Email Address",
-      details: "Details / Requirements",
-    };
-    const fieldLabel = first ? labels[first] : null;
+    const entry = first ? fieldLabels[first] : undefined;
     setSubmitError(
-      fieldLabel
-        ? `Please fix the "${fieldLabel}" field and try again.`
-        : "Please fill in all required fields and try again."
+      entry
+        ? L(
+            `Please fix the "${entry.label}" field and try again.`,
+            `"${entry.label}" ঘরটি ঠিক করে আবার চেষ্টা করুন।`
+          )
+        : L(
+            "Please fill in all required fields and try again.",
+            "সব আবশ্যক ঘর পূরণ করে আবার চেষ্টা করুন।"
+          )
     );
+    if (entry) focusField(entry.id);
   }
 
   const hasTiers = Boolean(service.pricing_tiers && service.pricing_tiers.length > 0);
   const bn = lang === "bn";
   const L = (en: string, bnText: string) => (bn ? bnText : en);
+
+  /** Every control the form renders, so an error banner can always name the
+   *  field it is talking about — including the admin-defined ones. */
+  const fieldLabels: Record<string, { label: string; id: string }> = {
+    customer_name: { label: L("Full Name", "পূর্ণ নাম"), id: "booking-name" },
+    customer_phone: { label: L("Phone Number", "মোবাইল নম্বর"), id: "booking-phone" },
+    customer_email: { label: L("Email Address", "ইমেইল"), id: "booking-email" },
+    customer_company: { label: L("Company", "কোম্পানি"), id: "booking-company" },
+    booking_date: { label: L("Preferred Booking Date", "পছন্দের তারিখ"), id: "booking-date" },
+    details: { label: L("Details / Requirements", "বিস্তারিত / প্রয়োজন"), id: "booking-details" },
+  };
+
 
   return (
     <form onSubmit={handleSubmit(onSubmit, onInvalidSubmit)} className="space-y-6">
@@ -545,7 +588,9 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
                           ? "url"
                           : ftype === "date"
                             ? "date"
-                            : "text"
+                            : ftype === "datetime"
+                              ? "datetime-local"
+                              : "text"
                 }
                 value={typeof value === "string" ? value : ""}
                 onChange={(e) => setDynamicValue(field.field_name, e.target.value)}
