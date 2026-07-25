@@ -771,6 +771,13 @@ class Category(Base):
     )
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    # Per-category SEO overrides (alembic 0011). NULL = derive from name /
+    # description, which is what every category page did before.
+    seo_title: Mapped[str | None] = mapped_column(String(255))
+    seo_description: Mapped[str | None] = mapped_column(Text)
+    seo_keywords: Mapped[str | None] = mapped_column(String(500))
+    canonical_url: Mapped[str | None] = mapped_column(String(500))
+    og_image: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)

@@ -60,11 +60,15 @@ interface FormState {
   is_active: boolean;
   sort_order: number;
   parent_id: string | null;
+  seo_title: string;
+  seo_description: string;
+  seo_keywords: string;
 }
 
 const EMPTY_FORM: FormState = {
   name_en: "", name_bn: "", slug: "", icon: "", image_url: "", description_bn: "",
   applies_to: ["product"], is_active: true, sort_order: 0, parent_id: null,
+  seo_title: "", seo_description: "", seo_keywords: "",
 };
 
 const INP_CLS = "w-full text-sm rounded-[11px] px-3 py-2.5 bg-[var(--surface,#fff)] dark:bg-white/5 border border-[var(--border,#e2e8f3)] dark:border-white/10 text-heading outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition";
@@ -151,6 +155,9 @@ export default function AdminCategoriesPage() {
       slug: node.slug,
       icon: node.icon ?? "",
       image_url: node.image_url ?? "",
+      seo_title: node.seo_title ?? "",
+      seo_description: node.seo_description ?? "",
+      seo_keywords: node.seo_keywords ?? "",
       description_bn: node.description_bn ?? "",
       applies_to: ((node as Partial<Category>).applies_to ?? []) as string[],
       is_active: node.is_active !== false,
@@ -175,6 +182,11 @@ export default function AdminCategoriesPage() {
         description_bn: form.description_bn.trim() || undefined,
         is_active: form.is_active,
         sort_order: form.sort_order,
+        // Empty string clears the override so the page falls back to the
+        // derived title/description, rather than persisting a blank tag.
+        seo_title: form.seo_title.trim() || undefined,
+        seo_description: form.seo_description.trim() || undefined,
+        seo_keywords: form.seo_keywords.trim() || undefined,
       };
       if (editor?.node) {
         if (!editor.node.parent_id && form.applies_to.length > 0) payload.applies_to = form.applies_to;
@@ -570,6 +582,42 @@ export default function AdminCategoriesPage() {
           <Field label="বর্ণনা (ঐচ্ছিক)">
             <textarea rows={2} value={form.description_bn} onChange={(e) => setForm((p) => ({ ...p, description_bn: e.target.value }))} className={cn(INP_CLS, "resize-none")} />
           </Field>
+
+          {/* SEO overrides — category landing pages are often the highest-intent
+              entry point, and until now their metadata could only be derived
+              from the name. Blank = keep the derived value. */}
+          <details className="rounded-[11px] border border-[var(--border,#e2e8f3)] dark:border-white/10 px-3 py-2.5">
+            <summary className="text-[0.78rem] font-semibold text-gray-500 dark:text-gray-400 cursor-pointer">
+              SEO (ঐচ্ছিক)
+            </summary>
+            <div className="mt-3 space-y-3">
+              <Field label="SEO Title">
+                <input
+                  value={form.seo_title}
+                  onChange={(e) => setForm((p) => ({ ...p, seo_title: e.target.value }))}
+                  className={INP_CLS}
+                  placeholder="খালি রাখলে ক্যাটাগরির নাম ব্যবহার হবে"
+                />
+              </Field>
+              <Field label="SEO Description (সর্বোচ্চ ১৬০ অক্ষর)">
+                <textarea
+                  rows={2}
+                  maxLength={160}
+                  value={form.seo_description}
+                  onChange={(e) => setForm((p) => ({ ...p, seo_description: e.target.value }))}
+                  className={cn(INP_CLS, "resize-none")}
+                />
+              </Field>
+              <Field label="Keywords (কমা দিয়ে আলাদা)">
+                <input
+                  value={form.seo_keywords}
+                  onChange={(e) => setForm((p) => ({ ...p, seo_keywords: e.target.value }))}
+                  className={INP_CLS}
+                  placeholder="passport, nid, sylhet"
+                />
+              </Field>
+            </div>
+          </details>
 
           <div>
             <span className={LBL_CLS}>ছবি (কার্ড/ব্যানারে দেখাবে)</span>

@@ -377,7 +377,7 @@ export interface DashboardStats {
 }
 
 // ---- Commerce taxonomy (Category -> Subcategory) ----
-export interface Subcategory {
+export interface Subcategory extends CategorySeo {
   id: string;
   category_id: string;
   slug: string;
@@ -396,7 +396,15 @@ export interface Subcategory {
   updated_at?: string;
 }
 
-export interface Category {
+export interface CategorySeo {
+  seo_title?: string | null;
+  seo_description?: string | null;
+  seo_keywords?: string | null;
+  canonical_url?: string | null;
+  og_image?: string | null;
+}
+
+export interface Category extends CategorySeo {
   id: string;
   slug: string;
   name_en: string;

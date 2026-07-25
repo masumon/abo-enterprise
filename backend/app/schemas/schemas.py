@@ -1362,7 +1362,16 @@ class SubcategoryOut(SubcategoryBase):
     model_config = {"from_attributes": True}
 
 
-class CategoryBase(BaseModel):
+class CategorySeoMixin(BaseModel):
+    """Optional per-category SEO overrides (alembic 0011)."""
+    seo_title: str | None = None
+    seo_description: str | None = None
+    seo_keywords: str | None = None
+    canonical_url: str | None = None
+    og_image: str | None = None
+
+
+class CategoryBase(CategorySeoMixin):
     slug: str
     name_en: str
     name_bn: str | None = None
@@ -1379,7 +1388,7 @@ class CategoryCreate(CategoryBase):
     parent_id: uuid.UUID | None = None
 
 
-class CategoryUpdate(BaseModel):
+class CategoryUpdate(CategorySeoMixin):
     slug: str | None = None
     name_en: str | None = None
     name_bn: str | None = None
