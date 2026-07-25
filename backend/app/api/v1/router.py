@@ -23,6 +23,7 @@ from app.api.v1.routes import (
     email_templates,
     customer_otp,
     coupons,
+    promo_slides,
     career,
     media,
     categories,
@@ -53,6 +54,7 @@ api_router.include_router(assistant.router)
 api_router.include_router(email_templates.router)
 api_router.include_router(customer_otp.router)
 api_router.include_router(coupons.router)
+api_router.include_router(promo_slides.router)
 api_router.include_router(career.router)
 api_router.include_router(media.router)
 api_router.include_router(categories.router)

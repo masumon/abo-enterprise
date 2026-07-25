@@ -771,6 +771,34 @@ class CareerApplication(Base):
 # query, filter and URL keeps working unchanged; these tables give a single
 # managed taxonomy shared by products and services.
 # ---------------------------------------------------------------------------
+class PromoSlide(Base):
+    """Admin-managed promo slide — image or video, with an optional link.
+
+    One table serves every carousel on the site; `placement` decides where a
+    slide appears (hero card, flash-sale strip, …), so a new surface needs no
+    new table.
+    """
+
+    __tablename__ = "promo_slides"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    placement: Mapped[str] = mapped_column(String(40), default="hero", index=True)
+    image_url: Mapped[str | None] = mapped_column(Text)
+    video_url: Mapped[str | None] = mapped_column(Text)
+    link_url: Mapped[str | None] = mapped_column(Text)
+    title_en: Mapped[str | None] = mapped_column(String(255))
+    title_bn: Mapped[str | None] = mapped_column(String(255))
+    alt_text: Mapped[str | None] = mapped_column(String(255))
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    # Optional scheduling window; NULL on either side = unbounded.
+    starts_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class Category(Base):
     __tablename__ = "categories"
 

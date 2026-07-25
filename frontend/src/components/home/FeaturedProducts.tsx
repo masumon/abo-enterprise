@@ -9,6 +9,7 @@ import ProductCard from "@/components/features/ProductCard";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import type { Product } from "@/types";
 import CountdownTimer, { resolveFlashSaleEnd, isFlashSaleActive } from "@/components/ui/CountdownTimer";
+import PromoSlider from "@/components/ui/PromoSlider";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
@@ -95,6 +96,8 @@ export default function FeaturedProducts() {
           {showFlashSale && (
             <div className="flex flex-col items-center gap-2 mb-2">
               <CountdownTimer endDate={flashEnd} label={flashTitle} />
+              {/* Admin-managed flash-sale banners; renders nothing when unset. */}
+              <PromoSlider placement="flash_sale" className="mt-4" aspect="aspect-[21/9] sm:aspect-[3/1]" />
             </div>
           )}
           <h2>{lang === "bn" ? "জনপ্রিয় পণ্য" : "Featured Products"}</h2>

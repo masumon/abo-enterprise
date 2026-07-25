@@ -56,6 +56,21 @@ export interface Product {
   updated_at?: string;
 }
 
+export interface PromoSlide {
+  id: string;
+  placement: "hero" | "flash_sale";
+  image_url?: string | null;
+  video_url?: string | null;
+  link_url?: string | null;
+  title_en?: string | null;
+  title_bn?: string | null;
+  alt_text?: string | null;
+  sort_order: number;
+  is_active: boolean;
+  starts_at?: string | null;
+  ends_at?: string | null;
+}
+
 export interface Review {
   id: string;
   product_id?: string | null;
