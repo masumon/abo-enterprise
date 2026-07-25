@@ -225,6 +225,50 @@ function buildJsonLd(service: Service) {
   };
 }
 
+/** BreadcrumbList for any /services path. `trail` is root-first, node last. */
+function buildBreadcrumbJsonLd(trail: { name: string; path: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: SITE_URL },
+      { "@type": "ListItem", position: 2, name: "Services", item: `${SITE_URL}/services` },
+      ...trail.map((n, i) => ({
+        "@type": "ListItem",
+        position: i + 3,
+        name: n.name,
+        item: `${SITE_URL}${n.path}`,
+      })),
+    ],
+  };
+}
+
+/** Breadcrumb for a taxonomy trail, using each node's full tree path. */
+function buildTrailBreadcrumb(trail: Subcategory[]) {
+  return buildBreadcrumbJsonLd(
+    trail.map((n, i) => ({
+      name: n.name_en,
+      path: `/services/${trail.slice(0, i + 1).map((x) => x.slug).join("/")}`,
+    }))
+  );
+}
+
+/** FAQPage for a service that has FAQ entries — otherwise null (never emit an
+ *  empty FAQPage, which Google treats as invalid markup). */
+function buildFaqJsonLd(service: Service) {
+  const faq = (service.faq ?? []).filter((f) => f?.question && f?.answer);
+  if (faq.length === 0) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map((f) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: { "@type": "Answer", text: f.answer },
+    })),
+  };
+}
+
 export default async function ServicesCatchAllPage({ params }: { params: PageParams }) {
   const segments = params.segments ?? [];
 
@@ -236,13 +280,23 @@ export default async function ServicesCatchAllPage({ params }: { params: PagePar
     ]);
 
     if (service) {
-      const jsonLd = buildJsonLd(service);
+      const faqJsonLd = buildFaqJsonLd(service);
+      const graph = [
+        buildJsonLd(service),
+        buildBreadcrumbJsonLd([
+          { name: service.name_en, path: `/services/${service.slug}` },
+        ]),
+        ...(faqJsonLd ? [faqJsonLd] : []),
+      ];
       return (
         <>
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
-          />
+          {graph.map((node, i) => (
+            <script
+              key={i}
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: jsonLdString(node) }}
+            />
+          ))}
           <ServiceDetailClient service={service} />
         </>
       );
@@ -253,7 +307,15 @@ export default async function ServicesCatchAllPage({ params }: { params: PagePar
     if (category) {
       const trail = resolveTrail(category, [])!;
       const { services, total } = await fetchTaxonomyServices(category.slug);
-      return <CategoryBrowseClient trail={trail} initialServices={services} initialTotal={total} />;
+      return (
+        <>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: jsonLdString(buildTrailBreadcrumb(trail)) }}
+          />
+          <CategoryBrowseClient trail={trail} initialServices={services} initialTotal={total} />
+        </>
+      );
     }
 
     // Final fallback: the original printing/legal/software booking pages keep
@@ -273,7 +335,15 @@ export default async function ServicesCatchAllPage({ params }: { params: PagePar
   if (trail) {
     const node = trail[trail.length - 1];
     const { services, total } = await fetchTaxonomyServices(node.slug);
-    return <CategoryBrowseClient trail={trail} initialServices={services} initialTotal={total} />;
+    return (
+      <>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdString(buildTrailBreadcrumb(trail)) }}
+        />
+        <CategoryBrowseClient trail={trail} initialServices={services} initialTotal={total} />
+      </>
+    );
   }
   notFound();
 }

@@ -65,6 +65,23 @@ export default function ServiceCard({ service, lang = "en", categoryLabel }: Ser
                 {lang === "bn" ? "/ঘণ্টা" : "/hr"}
               </div>
             )}
+            {service.pricing_type === "package" &&
+              (service.min_price != null && service.max_price != null ? (
+                <div className="text-lg font-bold text-brand-600">
+                  {formatPrice(service.min_price)} – {formatPrice(service.max_price)}
+                </div>
+              ) : (service.base_price ?? service.min_price) != null ? (
+                <div className="text-sm text-muted">
+                  {lang === "bn" ? "শুরু " : "From "}
+                  <span className="text-lg font-bold text-brand-600">
+                    {formatPrice((service.base_price ?? service.min_price)!)}
+                  </span>
+                </div>
+              ) : (
+                <div className="text-sm font-semibold text-muted">
+                  {lang === "bn" ? "কাস্টম কোট" : "Custom Quote"}
+                </div>
+              ))}
             {(service.pricing_type === "custom_quote" || service.pricing_type === "custom") && (
               <div className="text-sm font-semibold text-muted">
                 {lang === "bn" ? "কাস্টম কোট" : "Custom Quote"}
