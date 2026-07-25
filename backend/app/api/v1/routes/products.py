@@ -21,6 +21,7 @@ async def list_products(
     category_slug: str | None = Query(None),
     subcategory_slug: str | None = Query(None),
     featured: bool | None = Query(None),
+    flash_sale: bool | None = Query(None, description="Only products live in the flash sale"),
     search: str | None = Query(None),
     sort_by: str | None = Query(None),  # price_asc | price_desc | newest
     page: int = Query(1, ge=1),
@@ -47,6 +48,20 @@ async def list_products(
         )
     if featured is not None:
         conditions.append(Product.is_featured == featured)
+    if flash_sale:
+        # Live flash-sale stock only: flagged, actually discounted, and either
+        # open-ended or not yet expired. Without the expiry check a finished
+        # sale would keep advertising its old price.
+        from datetime import datetime, timezone
+
+        conditions.extend([
+            Product.is_flash_sale == True,  # noqa: E712
+            Product.flash_sale_price.isnot(None),
+            or_(
+                Product.flash_sale_ends_at.is_(None),
+                Product.flash_sale_ends_at > datetime.now(timezone.utc),
+            ),
+        ])
     if search:
         term = f"%{search}%"
         conditions.append(or_(Product.name_en.ilike(term), Product.name_bn.ilike(term)))

@@ -39,7 +39,17 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
 
   const productId = product.id ?? product.slug;
   const wished = has(productId);
-  const discount = product.original_price ? discountPercent(product.original_price, product.price) : null;
+  // A live flash sale overrides the regular price everywhere on the card: the
+  // discount is measured against the normal price, not the original_price, so
+  // the badge reflects what the customer actually saves right now.
+  const flashLive =
+    product.is_flash_sale === true &&
+    product.flash_sale_price != null &&
+    product.flash_sale_price < product.price &&
+    (!product.flash_sale_ends_at || new Date(product.flash_sale_ends_at) > new Date());
+  const effectivePrice = flashLive ? product.flash_sale_price! : product.price;
+  const strikePrice = flashLive ? product.price : product.original_price;
+  const discount = strikePrice ? discountPercent(strikePrice, effectivePrice) : null;
   const isOutOfStock = product.stock_quantity === 0;
   const rating = product.rating ?? 4.5;
   const reviewCount = product.review_count ?? 0;
@@ -95,9 +105,11 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
             {reviewCount > 0 && <span className="text-xs text-gray-400">({reviewCount})</span>}
           </div>
           <div className="flex items-baseline gap-2 mt-2">
-            <span className="text-lg font-bold text-accent-600">{formatPrice(product.price)}</span>
-            {product.original_price && (
-              <span className="text-xs text-gray-400 line-through">{formatPrice(product.original_price)}</span>
+            <span className={cn("text-lg font-bold", flashLive ? "text-red-600" : "text-accent-600")}>
+              {formatPrice(effectivePrice)}
+            </span>
+            {strikePrice && (
+              <span className="text-xs text-gray-400 line-through">{formatPrice(strikePrice)}</span>
             )}
           </div>
         </div>
@@ -128,7 +140,11 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
             <Badge variant="outline" className="text-[10px] capitalize">{product.category}</Badge>
           )}
         </div>
-        {discount && <Badge className="bg-red-500 text-white ml-auto font-bold border-0">-{discount}%</Badge>}
+        {discount && (
+          <Badge className={cn("ml-auto font-bold border-0 text-white", flashLive ? "bg-red-600" : "bg-red-500")}>
+            {flashLive ? "⚡ " : ""}-{discount}%
+          </Badge>
+        )}
       </div>
 
       <div className={cn(
