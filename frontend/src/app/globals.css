@@ -378,6 +378,12 @@
   /* Payment brand plate. Always white, never themed: these are brand marks in
      fixed colours, so on the dark footer (and in night mode) they need a light
      plate or they vanish — which is exactly what happened without it. */
+  /* Promo carousel: pin the slide box so a slide can never grow past its
+     media, even in the moment before Swiper's own stylesheet applies. */
+  .promo-swiper { @apply w-full max-w-full; }
+  .promo-swiper .swiper-slide { @apply h-auto; }
+  .promo-swiper .swiper-pagination-bullet { @apply bg-white/60; }
+  .promo-swiper .swiper-pagination-bullet-active { @apply bg-white; }
   .footer-pay-card {
     @apply h-10 min-w-[62px] px-2.5 grid place-items-center flex-shrink-0
            rounded-xl bg-white shadow-md shadow-black/25 ring-1 ring-black/10

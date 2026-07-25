@@ -63,20 +63,29 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
         autoplay={slides.length > 1 ? { delay: 4500, disableOnInteraction: false, pauseOnMouseEnter: true } : false}
         pagination={slides.length > 1 ? { clickable: true } : false}
         a11y={{ enabled: true }}
-        className="promo-swiper rounded-2xl lg:rounded-3xl overflow-hidden"
+        className="promo-swiper w-full rounded-2xl lg:rounded-3xl overflow-hidden"
       >
         {slides.map((slide) => {
           const title = (lang === "bn" ? slide.title_bn : slide.title_en) || slide.title_en || "";
-          const media = slide.video_url ? (
-            <AutoVideo src={slide.video_url} className={`w-full ${aspect} object-cover block`} tapToPlay aria-hidden />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element -- admin-supplied promo art at arbitrary CDN sizes
-            <img
-              src={slide.image_url ?? ""}
-              alt={slide.alt_text || title || ""}
-              className={`w-full ${aspect} object-cover block`}
-              loading="lazy"
-            />
+          const media = (
+            <div className={`relative w-full ${aspect} overflow-hidden`}>
+              {slide.video_url ? (
+                <AutoVideo
+                  src={slide.video_url}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  tapToPlay
+                  aria-hidden
+                />
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element -- admin-supplied promo art at arbitrary CDN sizes
+                <img
+                  src={slide.image_url ?? ""}
+                  alt={slide.alt_text || title || ""}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  loading="lazy"
+                />
+              )}
+            </div>
           );
 
           const body = (
