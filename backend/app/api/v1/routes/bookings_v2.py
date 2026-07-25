@@ -2,7 +2,7 @@ import html as html_escape_mod
 import uuid
 import secrets
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
@@ -16,6 +16,7 @@ from app.core.email import (
     booking_notification_html,
     customer_booking_confirmation_html,
 )
+from app.core.capabilities import get_capabilities
 from app.core.invoice import InvoiceService
 from app.core.booking_form import (
     BookingFormValidationError,
@@ -49,6 +50,26 @@ def generate_booking_number():
     return f"BK-{year}-{secrets.token_hex(3).upper()}"
 
 
+def _phone_matches(stored: str, supplied: str) -> bool:
+    """Compare a supplied phone against the stored one.
+
+    Stored numbers are normalised by ``bd_phone`` at creation while callers
+    often send exactly what the customer typed, so both forms are accepted.
+    Falls back to a raw comparison when the supplied value doesn't normalise.
+    """
+    supplied = (supplied or "").strip()
+    if not supplied:
+        return False
+    if stored == supplied:
+        return True
+    from app.schemas.schemas import bd_phone
+
+    try:
+        return stored == bd_phone(supplied)
+    except ValueError:
+        return False
+
+
 # ==================== PUBLIC ENDPOINTS ====================
 
 @router.post("", response_model=ApiResponse, dependencies=[Depends(rate_limit("bookings_v2_create", 10, 600))])
@@ -58,16 +79,51 @@ async def create_booking(
     db: AsyncSession = Depends(get_db),
 ):
     """Create new booking (public)"""
-    # Verify service exists (booking form fields ride along in one query)
+    # Verify the service exists AND is publicly transactable. The public read
+    # endpoints already filter on is_deleted/is_active (routes/services.py), so
+    # accepting a booking for a withdrawn service here would let a replayed
+    # service_id book something no customer can see. Booking form fields ride
+    # along in the same query.
     service_result = await db.execute(
         select(Service)
-        .where(Service.id == payload.service_id)
+        .where(
+            Service.id == payload.service_id,
+            Service.is_deleted == False,  # noqa: E712
+            Service.is_active == True,  # noqa: E712
+        )
         .options(selectinload(Service.booking_forms))
     )
     service = service_result.scalar_one_or_none()
 
     if not service:
         raise HTTPException(status_code=404, detail="Service not found")
+
+    # This endpoint is the intake for both the "book" and the "order" CTA
+    # (an orderable-but-not-bookable service posts here in mode=order), so the
+    # gate is "has any commerce capability" rather than bookable-only. A
+    # service with neither resolves to the "contact" CTA and must not accept
+    # form submissions at all.
+    if not get_capabilities(service):
+        raise HTTPException(
+            status_code=409,
+            detail="This service is not available for online booking.",
+        )
+
+    # A preferred date in the past is never a real intent. Compared with a
+    # one-day grace so a date picked "today" in Bangladesh (UTC+6, submitted as
+    # UTC midnight) is never rejected.
+    if payload.booking_date is not None:
+        booked_at = payload.booking_date
+        if booked_at.tzinfo is None:
+            booked_at = booked_at.replace(tzinfo=timezone.utc)
+        if booked_at < datetime.now(timezone.utc) - timedelta(days=1):
+            raise HTTPException(
+                status_code=422,
+                detail={
+                    "message": "Invalid booking form data",
+                    "errors": {"booking_date": "Preferred date cannot be in the past"},
+                },
+            )
 
     # ---- Dynamic booking form validation (admin-defined fields) ----
     # Validates the submitted form_data against the service's active
@@ -90,11 +146,19 @@ async def create_booking(
     from app.models.models import ServicePricingTier
     trusted_price = None
     if payload.service_tier:
+        # Soft-deleted/disabled tiers must not price a booking, and tier names
+        # are not unique per service — order + limit keeps the pick
+        # deterministic instead of raising MultipleResultsFound on a duplicate.
         tier_result = await db.execute(
-            select(ServicePricingTier).where(
+            select(ServicePricingTier)
+            .where(
                 ServicePricingTier.service_id == service.id,
                 ServicePricingTier.tier_name == payload.service_tier,
+                ServicePricingTier.is_deleted == False,  # noqa: E712
+                ServicePricingTier.is_active == True,  # noqa: E712
             )
+            .order_by(ServicePricingTier.created_at)
+            .limit(1)
         )
         tier = tier_result.scalar_one_or_none()
         if tier is not None:
@@ -108,6 +172,9 @@ async def create_booking(
     booking_fields = payload.model_dump()
     booking_fields["quoted_price"] = trusted_price
     booking_fields["form_data"] = cleaned_form_data
+    # pricing_type describes the service, not the request — take it from the
+    # trusted row so a tampered body can't mislabel how the booking is priced.
+    booking_fields["pricing_type"] = service.pricing_type
 
     booking = BookingV2(
         booking_number=booking_number,
@@ -180,12 +247,23 @@ async def create_booking(
     )
 
 
-@router.get("/{booking_id}", response_model=ApiResponse)
+@router.get(
+    "/{booking_id}",
+    response_model=ApiResponse,
+    dependencies=[Depends(rate_limit("bookings_v2_read", 30, 300))],
+)
 async def get_booking(
     booking_id: uuid.UUID,
+    phone: str = Query(..., description="Customer phone used on the booking"),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get booking details (public - customer can see their booking by ID)"""
+    """Get booking details (public) — requires the matching customer phone.
+
+    The response carries the customer's name, contacts and every dynamic form
+    answer, so the booking id alone is not sufficient authorisation. Same gate
+    as the public invoice endpoints (routes/invoices.py); a mismatch returns
+    404 rather than 403 so the endpoint never confirms that an id exists.
+    """
     result = await db.execute(
         select(BookingV2).where(
             and_(BookingV2.id == booking_id, BookingV2.is_deleted == False)
@@ -193,7 +271,7 @@ async def get_booking(
     )
     booking = result.scalar_one_or_none()
 
-    if not booking:
+    if not booking or not _phone_matches(booking.customer_phone, phone):
         raise HTTPException(status_code=404, detail="Booking not found")
 
     return ApiResponse(

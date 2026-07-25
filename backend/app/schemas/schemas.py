@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Any
+from typing import Any, Literal
 from pydantic import BaseModel, EmailStr, computed_field, field_validator
 import re
 
@@ -661,8 +661,16 @@ class BookingV2Create(BaseModel):
         return bd_phone(v)
 
 
+# Every status any surface writes today: the admin dropdown
+# (pending/in_progress/completed/cancelled/on_hold) plus "confirmed", which the
+# stats endpoint counts. Kept as a superset so no existing caller breaks.
+BookingV2Status = Literal[
+    "pending", "confirmed", "in_progress", "completed", "cancelled", "on_hold"
+]
+
+
 class BookingV2StatusUpdate(BaseModel):
-    status: str
+    status: BookingV2Status
 
 
 class BookingV2Out(BaseModel):

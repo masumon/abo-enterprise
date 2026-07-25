@@ -254,8 +254,9 @@ export const serviceBookingsApi = {
       ? queueOfflineCreate<BookingV2 & { invoice_id?: string | null }>("service_booking", data as unknown as Record<string, unknown>)
       : api.post<ApiResponse<BookingV2 & { invoice_id?: string | null }>>("/api/v1/service-bookings", data),
 
-  get: (id: string) =>
-    api.get<ApiResponse<BookingV2>>(`/api/v1/service-bookings/${id}`),
+  /** Public booking lookup — gated on the customer phone used at booking time. */
+  get: (id: string, phone: string) =>
+    api.get<ApiResponse<BookingV2>>(`/api/v1/service-bookings/${id}`, { params: { phone } }),
 };
 
 export const serviceLeadsApi = {
