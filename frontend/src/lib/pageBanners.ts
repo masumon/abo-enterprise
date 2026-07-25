@@ -26,6 +26,7 @@ export type PageBannerKey =
   | "privacy"
   | "terms"
   | "refund"
+  | "cookies"
   | "profile";
 
 export interface PageBannerMeta {
@@ -60,6 +61,7 @@ export const PAGE_BANNER_CONFIG: PageBannerMeta[] = [
   { key: "privacy", label: "Privacy Policy" },
   { key: "terms", label: "Terms of Service" },
   { key: "refund", label: "Refund Policy" },
+  { key: "cookies", label: "Cookies Policy" },
   { key: "profile", label: "User Profile" },
 ];
 

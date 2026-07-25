@@ -76,6 +76,7 @@ const LEGAL = [
   { href: "/legal/privacy", labelKey: "footer_privacy" as const },
   { href: "/legal/terms", labelKey: "footer_terms" as const },
   { href: "/legal/refund", labelKey: "footer_refund" as const },
+  { href: "/legal/cookies", labelKey: "footer_cookies" as const },
 ];
 
 const TRUST_ICONS: Record<string, LucideIcon> = {
