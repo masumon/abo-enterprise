@@ -142,8 +142,34 @@ export default function AdminPromoSlidesPage() {
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
-            {slides.map((slide) => (
+          /* Grouped by surface, with a count and its own add button — a
+             carousel needs several slides, and a flat list made it look like
+             one per placement was the limit. */
+          <div>
+            {PLACEMENTS.map(({ value, label }) => {
+              const group = slides.filter((s) => s.placement === value);
+              return (
+                <div key={value} className="border-b border-gray-100 last:border-0">
+                  <div className="flex items-center justify-between px-4 py-2.5 bg-gray-50">
+                    <p className="text-xs font-bold uppercase tracking-wider text-gray-500">
+                      {label}
+                      <span className="ml-2 font-medium normal-case tracking-normal text-gray-400">
+                        {group.length} {group.length === 1 ? "slide" : "slides"}
+                        {group.length > 1 && " · rotates"}
+                      </span>
+                    </p>
+                    <button
+                      onClick={() => setEditing({ ...EMPTY, placement: value })}
+                      className="text-xs font-semibold text-brand-600 hover:underline"
+                    >
+                      + Add
+                    </button>
+                  </div>
+                  {group.length === 0 ? (
+                    <p className="px-4 py-3 text-sm text-gray-400">No slides yet for this surface.</p>
+                  ) : (
+                    <div className="divide-y divide-gray-100">
+                      {group.map((slide) => (
               <div key={slide.id} className="flex items-center gap-4 p-4">
                 <div className="w-24 h-14 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                   {slide.image_url ? (
@@ -192,7 +218,12 @@ export default function AdminPromoSlidesPage() {
                   {deletingId === slide.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                 </button>
               </div>
-            ))}
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
