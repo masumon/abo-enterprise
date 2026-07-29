@@ -380,8 +380,12 @@
      plate or they vanish — which is exactly what happened without it. */
   /* Promo carousel: pin the slide box so a slide can never grow past its
      media, even in the moment before Swiper's own stylesheet applies. */
-  .promo-swiper { @apply w-full max-w-full; }
-  .promo-swiper .swiper-slide { @apply h-auto; }
+  .promo-swiper { @apply w-full max-w-full overflow-hidden; }
+  /* Force the horizontal track even if Swiper's base flex layout is dropped
+     by CSS ordering in production: a single slide stayed fine, several stacked
+     because the wrapper wasn't a flex row and slides had no fixed width. */
+  .promo-swiper .swiper-wrapper { @apply flex; }
+  .promo-swiper .swiper-slide { width: 100% !important; flex-shrink: 0; height: auto; }
   .promo-swiper .swiper-pagination-bullet { @apply bg-white/60; }
   .promo-swiper .swiper-pagination-bullet-active { @apply bg-white; }
   .footer-pay-card {
