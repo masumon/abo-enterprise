@@ -164,13 +164,16 @@ export default function Hero() {
               <PromoSlider
                 placement="hero"
                 fallback={
-                  heroPromo && (heroPromoMedia || !heroMobileImg) ? (
-                    <div className="relative overflow-hidden rounded-2xl border border-white/15 shadow-xl bg-black/20">
+                  // Only an EXPLICIT promo media falls back here; the hero
+                  // background image is not repeated as a promo card. Pinned to
+                  // 16:9 so a tall source can never fill the screen on a phone.
+                  heroPromoMedia ? (
+                    <div className="relative aspect-video overflow-hidden rounded-2xl border border-white/15 shadow-xl bg-black/20">
                       {heroPromoIsVideo ? (
-                        <AutoVideo src={heroPromo} className="w-full h-auto block" tapToPlay aria-hidden />
+                        <AutoVideo src={heroPromoMedia} className="absolute inset-0 w-full h-full object-cover" tapToPlay aria-hidden />
                       ) : (
-                        // eslint-disable-next-line @next/next/no-img-element -- hero art at natural aspect; next/image adds no value here
-                        <img src={heroPromo} alt="" className="w-full h-auto block" />
+                        // eslint-disable-next-line @next/next/no-img-element -- hero art; next/image adds no value here
+                        <img src={heroPromoMedia} alt="" className="absolute inset-0 w-full h-full object-cover" />
                       )}
                     </div>
                   ) : null
