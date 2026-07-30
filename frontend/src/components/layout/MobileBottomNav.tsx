@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Store, ShoppingCart, Wrench, Package, User } from "lucide-react";
+import { Home, Store, ShoppingCart, Wrench, Package, User, Search } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useCustomerStore } from "@/store/customer";
 import { useCartStore } from "@/store/cart";
@@ -30,9 +30,15 @@ export default function MobileBottomNav() {
     : { en: "Track", bn: "ট্র্যাক" };
   const ProfileIcon = isLoggedIn ? User : Package;
 
+  // GAP-07 — Search had no permanent tab, despite being the primary discovery
+  // action on a catalogue of this size. It takes the slot next to the centre
+  // (the easiest reach after the centre itself). Services moves right; it stays
+  // reachable from the homepage lane switcher and the header menu.
+  // Cart deliberately keeps its slot: it holds committed intent and a live badge.
   const LEFT_ITEMS = [
     { href: "/", icon: Home, label: { en: "Home", bn: "হোম" } },
     { href: "/products", icon: Store, label: { en: "Shop", bn: "শপ" } },
+    { href: "/search", icon: Search, label: { en: "Search", bn: "খুঁজুন" } },
   ];
   const RIGHT_ITEMS = [
     { href: "/services", icon: Wrench, label: { en: "Services", bn: "সেবা" } },
@@ -55,7 +61,9 @@ export default function MobileBottomNav() {
         key={item.href}
         href={item.href}
         className={cn(
-          "relative flex flex-col items-center justify-center gap-[3px] px-3",
+          // flex-1 so five tabs plus the centre cart button share the row
+          // evenly and still fit at 360px, the common low-cost Android width.
+          "relative flex flex-1 min-w-0 flex-col items-center justify-center gap-[3px] px-1.5",
           "rounded-[20px] transition-all duration-250",
           isActive
             ? "text-brand-700 dark:text-brand-200 bg-gradient-to-b from-brand-50 to-brand-100/60 dark:from-brand-900/45 dark:to-brand-800/25 ring-1 ring-brand-200/50 dark:ring-brand-700/40 scale-[1.04]"
@@ -71,7 +79,9 @@ export default function MobileBottomNav() {
             isActive ? "-translate-y-px" : ""
           )}
         />
-        <span className={cn("text-[9px] font-medium leading-none", isActive && "font-semibold")}>
+        {/* Labels must never wrap to a second line — Bengali strings run
+            20-30% longer than English, so truncate rather than reflow. */}
+        <span className={cn("text-[9px] font-medium leading-none max-w-full truncate", isActive && "font-semibold")}>
           {lang === "bn" ? item.label.bn : item.label.en}
         </span>
       </Link>
