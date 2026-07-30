@@ -11,10 +11,20 @@ const ICONS = {
   info: Info,
 };
 
-const STYLES = {
-  success: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  error: "border-red-200 bg-red-50 text-red-800",
-  info: "border-brand-200 bg-brand-50 text-brand-800",
+/**
+ * The kit draws one toast: a dark ink bar sitting just above the tab bar, its
+ * action in marigold at the right edge. Only the icon changes with the type.
+ *
+ * It used to be a pale card pinned to the top-right — the far corner from the
+ * thumb, above the fold the visitor was already looking at, and styled like the
+ * page's own alerts, so a toast and an inline error read as the same thing.
+ * Bottom-anchored and inverted, it reads as system feedback and its undo is
+ * reachable without moving the hand.
+ */
+const ICON_TONE = {
+  success: "text-emerald-400",
+  error: "text-red-400",
+  info: "text-brand-300",
 };
 
 export default function ToastProvider() {
@@ -24,7 +34,10 @@ export default function ToastProvider() {
 
   return (
     <div
-      className="fixed top-24 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none"
+      /* Above the mobile tab bar, and clear of it entirely on desktop where
+         there is no tab bar to avoid. */
+      className="fixed inset-x-0 z-[100] flex flex-col gap-2 px-3 pointer-events-none lg:left-auto lg:right-6 lg:bottom-6 lg:px-0 lg:max-w-sm"
+      style={{ bottom: "calc(var(--mobile-chrome-bottom) + 12px)" }}
       aria-live="polite"
     >
       {toasts.map((toast) => {
@@ -32,43 +45,38 @@ export default function ToastProvider() {
         return (
           <div
             key={toast.id}
-            className={cn(
-              "pointer-events-auto flex items-start gap-3 p-4 rounded-xl border shadow-glass animate-slide-up",
-              STYLES[toast.type]
-            )}
+            className="pointer-events-auto flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-[#14182b] text-[#f1f2f7] shadow-glass-strong motion-safe:animate-slide-up"
             role="alert"
           >
-            <Icon className="w-5 h-5 flex-shrink-0 mt-0.5" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium">{toast.message}</p>
-              {/* GAP-29 — an action may navigate (href) or run a callback
-                  (onClick, e.g. undo). Existing href callers are unchanged. */}
-              {toast.action?.href && (
-                <Link
-                  href={toast.action.href}
-                  onClick={() => dismiss(toast.id)}
-                  className="inline-block mt-1 text-xs font-semibold underline underline-offset-2 hover:opacity-80"
-                >
-                  {toast.action.label} →
-                </Link>
-              )}
-              {toast.action && !toast.action.href && toast.action.onClick && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    toast.action?.onClick?.();
-                    dismiss(toast.id);
-                  }}
-                  className="inline-block mt-1 text-xs font-semibold underline underline-offset-2 hover:opacity-80"
-                >
-                  {toast.action.label}
-                </button>
-              )}
-            </div>
+            <Icon className={cn("w-4 h-4 flex-shrink-0", ICON_TONE[toast.type])} />
+            <p className="flex-1 min-w-0 text-sm">{toast.message}</p>
+            {/* GAP-29 — an action may navigate (href) or run a callback
+                (onClick, e.g. undo). Existing href callers are unchanged. */}
+            {toast.action?.href && (
+              <Link
+                href={toast.action.href}
+                onClick={() => dismiss(toast.id)}
+                className="flex-shrink-0 text-sm font-bold text-accent-400 hover:text-accent-300"
+              >
+                {toast.action.label}
+              </Link>
+            )}
+            {toast.action && !toast.action.href && toast.action.onClick && (
+              <button
+                type="button"
+                onClick={() => {
+                  toast.action?.onClick?.();
+                  dismiss(toast.id);
+                }}
+                className="flex-shrink-0 text-sm font-bold text-accent-400 hover:text-accent-300"
+              >
+                {toast.action.label}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => dismiss(toast.id)}
-              className="opacity-60 hover:opacity-100"
+              className="flex-shrink-0 opacity-60 hover:opacity-100"
               aria-label="Dismiss"
             >
               <X className="w-4 h-4" />

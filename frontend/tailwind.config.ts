@@ -148,11 +148,15 @@ const config: Config = {
         },
       },
       boxShadow: {
-        glow: "0 0 20px rgba(30,91,168,0.3)",
-        card: "0 4px 24px rgba(30,91,168,0.06), 0 1px 4px rgba(0,0,0,0.04)",
-        "card-hover": "0 12px 40px rgba(30,91,168,0.12), 0 4px 12px rgba(0,0,0,0.06)",
-        glass: "0 8px 32px rgba(30,91,168,0.08), 0 2px 8px rgba(0,0,0,0.04)",
-        "glass-strong": "0 16px 48px rgba(30,91,168,0.14), 0 4px 16px rgba(0,0,0,0.06)",
+        // The system has two elevations. These names are all in use across the
+        // app, so each maps onto the nearer of the two rather than inventing a
+        // third; the tints are ink, not the old brand blue, which is why the
+        // shadows had a faint blue cast that no card in the design has.
+        glow: "0 0 20px rgba(30,43,107,0.3)",
+        card: "0 1px 2px rgba(20,24,43,0.06), 0 4px 12px rgba(20,24,43,0.05)",
+        "card-hover": "0 2px 4px rgba(20,24,43,0.07), 0 16px 40px rgba(20,24,43,0.10)",
+        glass: "0 1px 2px rgba(20,24,43,0.06), 0 4px 12px rgba(20,24,43,0.05)",
+        "glass-strong": "0 2px 4px rgba(20,24,43,0.07), 0 16px 40px rgba(20,24,43,0.10)",
         admin: "0 2px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03)",
       },
       backdropBlur: {
