@@ -172,12 +172,12 @@ export default function CartDrawer() {
               </>
             )}
             <div className="space-y-2 mb-4 text-sm">
-              <div className="flex justify-between"><span className="text-muted">{t("cart_subtotal")}</span><span>{formatPrice(cartSubtotal)}</span></div>
-              {discount > 0 && <div className="flex justify-between text-green-600 dark:text-green-400 font-medium"><span>{lang === "bn" ? "ছাড়" : "Discount"}</span><span>-{formatPrice(discount)}</span></div>}
+              <div className="flex justify-between"><span className="text-muted">{t("cart_subtotal")}</span><span className="money">{formatPrice(cartSubtotal)}</span></div>
+              {discount > 0 && <div className="flex justify-between text-green-600 dark:text-green-400 font-medium"><span>{lang === "bn" ? "ছাড়" : "Discount"}</span><span className="money">-{formatPrice(discount)}</span></div>}
               <div className="flex justify-between"><span className="text-muted">{t("cart_delivery")}</span><span className="text-green-600 font-medium">{lang === "bn" ? "ফ্রি" : "FREE"}</span></div>
               <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-white/10">
                 <span className="font-bold text-heading">{t("cart_total")}</span>
-                <span className="text-2xl font-bold text-accent-500">{formatPrice(cartTotal)}</span>
+                <span className="money text-2xl font-bold text-accent-500">{formatPrice(cartTotal)}</span>
               </div>
             </div>
             <button

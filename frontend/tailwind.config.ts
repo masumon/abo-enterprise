@@ -43,7 +43,7 @@ const config: Config = {
         // costs no webfont; Bengali still resolves to a real Bengali face
         // rather than falling back, which was the rule the artifact set.
         sans: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "Noto Sans Bengali", "Hind Siliguri", "sans-serif"],
-        display: ["ui-serif", "Charter", "Bitstream Charter", "Iowan Old Style", "Source Serif 4", "Georgia", "serif"],
+        display: ["ui-serif", "Charter", "Bitstream Charter", "Iowan Old Style", "Source Serif 4", "Georgia", "Noto Serif Bengali", "serif"],
         mono: ["ui-monospace", "SF Mono", "Cascadia Mono", "Roboto Mono", "Menlo", "monospace"],
         bangla: ["Noto Sans Bengali", "Hind Siliguri", "SolaimanLipi", "sans-serif"],
       },

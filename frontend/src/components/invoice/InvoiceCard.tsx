@@ -220,12 +220,12 @@ export default function InvoiceCard({ invoice, lang }: Props) {
         <div className="space-y-1.5 text-sm">
           <div className="flex justify-between text-muted">
             <span>{bn ? "সাবটোটাল" : "Subtotal"}</span>
-            <span className="tabular-nums">{formatPrice(invoice.subtotal)}</span>
+            <span className="money">{formatPrice(invoice.subtotal)}</span>
           </div>
           {discount > 0 && (
             <div className="flex justify-between text-muted">
               <span>{bn ? "ছাড়" : "Discount"}</span>
-              <span className="tabular-nums">-{formatPrice(discount)}</span>
+              <span className="money">-{formatPrice(discount)}</span>
             </div>
           )}
           {/* Delivery is ALWAYS shown — free orders read ৳0 rather than hiding it. */}
@@ -235,12 +235,12 @@ export default function InvoiceCard({ invoice, lang }: Props) {
                 ? bn ? "ডেলিভারি চার্জ" : "Delivery"
                 : bn ? "ডেলিভারি চার্জ (ফ্রি)" : "Delivery (Free)"}
             </span>
-            <span className="tabular-nums">{formatPrice(deliveryCharge)}</span>
+            <span className="money">{formatPrice(deliveryCharge)}</span>
           </div>
           {invoice.tax > 0 && (
             <div className="flex justify-between text-muted">
               <span>{bn ? "ট্যাক্স" : "Tax"}</span>
-              <span className="tabular-nums">{formatPrice(invoice.tax)}</span>
+              <span className="money">{formatPrice(invoice.tax)}</span>
             </div>
           )}
           <div className="mt-2 flex justify-between items-center rounded-xl bg-brand-50 dark:bg-brand-900/30 border border-brand-100 dark:border-brand-800 px-4 py-3">

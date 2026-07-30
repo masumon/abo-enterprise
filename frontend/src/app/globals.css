@@ -1,6 +1,6 @@
 /* Bengali only. Latin runs on the system stack, as the artifact specifies, so
    the page no longer waits on a webfont for its primary text. */
-@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -25,7 +25,10 @@
     --radius-sm: 6px;
     --radius-lg: 20px;
     --tap: 44px;
-    --face-display: ui-serif, "Charter", "Bitstream Charter", "Iowan Old Style", "Source Serif 4", Georgia, serif;
+    /* Latin resolves to the first face that exists; Bengali has no glyphs in
+       any of them, so it falls through to Noto Serif Bengali — a real Bengali
+       serif, chosen, not a fallback the browser picked. */
+    --face-display: ui-serif, "Charter", "Bitstream Charter", "Iowan Old Style", "Source Serif 4", Georgia, "Noto Serif Bengali", serif;
     --glass-bg: rgba(255, 255, 255, 0.72);
     --glass-border: rgba(255, 255, 255, 0.35);
     --glass-shadow: 0 1px 2px rgba(20, 24, 43, 0.06), 0 4px 12px rgba(20, 24, 43, 0.05);
@@ -103,12 +106,15 @@
    * glyphs, so a Bengali heading would silently fall back to a face nobody
    * chose — the artifact's rule is that Bengali is never a fallback.
    */
-  :where(h1, h2, h3):not(:lang(bn)):not(.admin-shell *) {
+  :where(h1, h2, h3):not(.admin-shell *) {
     font-family: var(--face-display);
     letter-spacing: -0.015em;
   }
-  html[lang="bn"] :where(h1, h2, h3) {
-    font-family: 'Noto Sans Bengali', 'Hind Siliguri', system-ui, sans-serif;
+  /* Bengali conjuncts need the extra leading, and the tight Latin tracking
+     works against them. */
+  html[lang="bn"] :where(h1, h2, h3):not(.admin-shell *) {
+    letter-spacing: 0;
+    line-height: 1.3;
   }
 
   /* Money and reference numbers are data: monospace with tabular figures, so

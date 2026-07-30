@@ -567,7 +567,7 @@ export default function CheckoutPage() {
                         <p className="text-sm font-medium truncate">{lang === "bn" ? item.name_bn : item.name_en}</p>
                         <p className="text-xs text-muted">{formatPrice(item.price)} × {item.quantity}</p>
                       </div>
-                      <p className="text-sm font-semibold">{formatPrice(item.price * item.quantity)}</p>
+                      <p className="money text-sm font-semibold">{formatPrice(item.price * item.quantity)}</p>
                     </div>
                   ))}
                 </div>
@@ -589,12 +589,12 @@ export default function CheckoutPage() {
                       {couponError && <p className="text-red-500 text-xs">{couponError}</p>}
                     </>
                   )}
-                  <div className="flex justify-between"><span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span><span>{formatPrice(subtotal)}</span></div>
-                  {discount > 0 && <div className="flex justify-between text-green-600"><span>{lang === "bn" ? "ছাড়" : "Discount"}</span><span>−{formatPrice(discount)}</span></div>}
-                  <div className="flex justify-between"><span>{lang === "bn" ? "ডেলিভারি" : "Delivery"}</span><span>{deliveryCharge === 0 ? (lang === "bn" ? "ফ্রি" : "FREE") : formatPrice(deliveryCharge)}</span></div>
+                  <div className="flex justify-between"><span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span><span className="money">{formatPrice(subtotal)}</span></div>
+                  {discount > 0 && <div className="flex justify-between text-green-600"><span>{lang === "bn" ? "ছাড়" : "Discount"}</span><span className="money">−{formatPrice(discount)}</span></div>}
+                  <div className="flex justify-between"><span>{lang === "bn" ? "ডেলিভারি" : "Delivery"}</span><span className="money">{deliveryCharge === 0 ? (lang === "bn" ? "ফ্রি" : "FREE") : formatPrice(deliveryCharge)}</span></div>
                   <div className="flex justify-between pt-2 border-t font-bold text-lg">
                     <span>{lang === "bn" ? "মোট" : "Total"}</span>
-                    <span className="text-green-600">{formatPrice(cartTotal)}</span>
+                    <span className="money text-green-600">{formatPrice(cartTotal)}</span>
                   </div>
                   {advanceCharge > 0 && (
                     <div className="mt-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
@@ -612,7 +612,7 @@ export default function CheckoutPage() {
 
       <div className="sticky-cta-bar px-4 py-3">
         <div className="flex items-center gap-3 max-w-6xl mx-auto">
-          <div className="flex-1"><p className="text-xs text-muted">{lang === "bn" ? "মোট" : "Total"}</p><p className="text-lg font-bold text-success-600">{formatPrice(cartTotal)}</p></div>
+          <div className="flex-1"><p className="text-xs text-muted">{lang === "bn" ? "মোট" : "Total"}</p><p className="money text-lg font-bold text-success-600">{formatPrice(cartTotal)}</p></div>
           <button type="submit" form="checkout-form" disabled={isSubmitting || stockIssue} className="btn btn-success btn-md min-w-[9rem]">
             {isSubmitting ? "..." : ctaLabel}
           </button>
