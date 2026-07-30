@@ -40,7 +40,9 @@
     --navbar-height: 4rem;
     --announcement-height: 2.25rem;
     --navbar-offset: calc(var(--announcement-height) + var(--navbar-height));
-    --bottom-nav-height: 4rem;
+    /* The tab bar is flush to the bottom edge now, one 44px row plus the safe
+       area, so the space every page reserves below its content matches it. */
+    --bottom-nav-height: 2.75rem;
     --mobile-chrome-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
     --sticky-cta-height: 3.5rem;
     --mobile-float-bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-cta-height) + 0.75rem);
