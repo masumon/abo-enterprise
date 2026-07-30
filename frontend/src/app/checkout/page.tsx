@@ -701,11 +701,39 @@ export default function CheckoutPage() {
                     <span>{lang === "bn" ? "মোট" : "Total"}</span>
                     <span className="money text-green-600">{formatPrice(cartTotal)}</span>
                   </div>
+                  {/*
+                    Screen 11b — an advance order was one amber warning under
+                    the total, so the customer read a single figure and then
+                    found out at the door that it was not the figure they were
+                    paying today. The split is now stated as two rows, the way
+                    the total above it is: what leaves the wallet now, and what
+                    the rider collects.
+
+                    The amounts are the ones the order actually carries —
+                    calcAdvanceCharge over the same settings the backend bills
+                    from. The design's 30% split is not invented here; a
+                    percentage the API does not compute would be a number this
+                    page cannot honour.
+                  */}
                   {advanceCharge > 0 && (
-                    <div className="mt-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
-                      {lang === "bn"
-                        ? `⚠️ এই অর্ডারে ৳${advanceCharge} অগ্রিম দিতে হবে; অগ্রিম পাওয়ার পর অর্ডার কনফার্ম হবে।`
-                        : `⚠️ This order requires a ৳${advanceCharge} advance; it will be confirmed once the advance is received.`}
+                    <div className="mt-2 pt-2 border-t space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-semibold text-heading">
+                          {lang === "bn" ? "এখন দিচ্ছেন" : "Paying now"}
+                        </span>
+                        <span className="money font-semibold">{formatPrice(advanceCharge)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted">
+                          {lang === "bn" ? "ডেলিভারিতে দেবেন" : "Paying on delivery"}
+                        </span>
+                        <span className="money text-muted">{formatPrice(Math.max(cartTotal - advanceCharge, 0))}</span>
+                      </div>
+                      <p className="text-xs text-muted">
+                        {lang === "bn"
+                          ? "অগ্রিম পাওয়ার পর অর্ডার কনফার্ম হবে।"
+                          : "The order is confirmed once the advance is received."}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -717,7 +745,16 @@ export default function CheckoutPage() {
 
       <div className="sticky-cta-bar px-4 py-3">
         <div className="flex items-center gap-3 max-w-6xl mx-auto">
-          <div className="flex-1"><p className="text-xs text-muted">{lang === "bn" ? "মোট" : "Total"}</p><p className="money text-lg font-bold text-success-600">{formatPrice(cartTotal)}</p></div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted truncate">
+              {advanceCharge > 0
+                ? (lang === "bn" ? "এখন · বাকি ডেলিভারিতে" : "now · rest on delivery")
+                : (lang === "bn" ? "মোট" : "Total")}
+            </p>
+            <p className="money text-lg font-bold text-success-600">
+              {formatPrice(advanceCharge > 0 ? advanceCharge : cartTotal)}
+            </p>
+          </div>
           <button type="submit" form="checkout-form" disabled={isSubmitting || stockIssue} className="btn btn-success btn-md min-w-[9rem]">
             {isSubmitting ? "..." : ctaLabel}
           </button>
