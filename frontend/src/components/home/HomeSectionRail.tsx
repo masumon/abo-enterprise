@@ -14,7 +14,8 @@ import { cn } from "@/lib/utils";
  * beyond this component. Sticky under the header, one 44px row.
  */
 const SECTIONS = [
-  { id: "categories", en: "Categories", bn: "ক্যাটাগরি" },
+  // No "Categories" entry: the lane switcher is the categories control and it
+  // sits above this rail, so a chip pointing at it would scroll upward.
   { id: "popular", en: "Popular", bn: "জনপ্রিয়" },
   { id: "reviews", en: "Reviews", bn: "রিভিউ" },
   { id: "faq", en: "FAQ", bn: "প্রশ্ন" },

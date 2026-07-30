@@ -146,7 +146,7 @@ function SearchResults() {
   }, [q, lang]);
 
   const ICONS = { product: Package, service: Calendar, project: Briefcase, blog: BookOpen };
-  const COLORS = { product: "text-blue-600 bg-blue-50", service: "text-green-600 bg-green-50", project: "text-purple-600 bg-purple-50", blog: "text-amber-600 bg-amber-50" };
+  const COLORS = { product: "text-brand-600 bg-brand-50", service: "text-green-600 bg-green-50", project: "text-brand-600 bg-brand-50", blog: "text-accent-600 bg-accent-50" };
 
   const title = q
     ? lang === "bn" ? `"${q}" এর ফলাফল` : `Results for "${q}"`
@@ -170,7 +170,7 @@ function SearchResults() {
             disappeared the moment it routed here. */}
         <SearchField initialQuery={q} className="mb-6" />
         {fromCache && results.length > 0 && (
-          <p className="text-sm text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-4 py-2 mb-4" role="status">
+          <p className="text-sm text-brand-700 bg-brand-50 border border-brand-200 rounded-xl px-4 py-2 mb-4" role="status">
             {lang === "bn" ? "সংরক্ষিত ফলাফল দেখানো হচ্ছে" : "Showing saved results"}
           </p>
         )}

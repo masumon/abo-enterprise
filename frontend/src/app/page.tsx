@@ -2,14 +2,12 @@ import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import Hero from "@/components/home/Hero";
 import TrustBadges from "@/components/home/TrustBadges";
-import QuickCategories from "@/components/home/QuickCategories";
 import HomeLanes from "@/components/home/HomeLanes";
 import HomeSectionRail from "@/components/home/HomeSectionRail";
 import Reveal from "@/components/ui/Reveal";
 import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, getBrandFullTitle } from "@/lib/tokens";
 import { jsonLdString } from "@/lib/metadata";
 
-const EntryPoints = dynamic(() => import("@/components/home/EntryPoints"), { loading: () => <SectionSkeleton /> });
 const ServicesOverview = dynamic(() => import("@/components/home/ServicesOverview"), { loading: () => <CardsSkeleton label="Services" /> });
 const FeaturedProducts = dynamic(() => import("@/components/home/FeaturedProducts"), { loading: () => <CardsSkeleton label="Products" /> });
 const CustomerReviews = dynamic(() => import("@/components/home/CustomerReviews"), { loading: () => <SectionSkeleton /> });
@@ -135,11 +133,7 @@ export default function HomePage() {
       />
       <Hero />
       <HomeSectionRail />
-      <div id="categories" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
-        <Reveal><QuickCategories /></Reveal>
-      </div>
       <Reveal><TrustBadges /></Reveal>
-      <Reveal><EntryPoints /></Reveal>
       {/* GAP-23 — the three arms of the business used to stack, so whichever
           one a visitor came for sat below the other two. Shop is the default
           lane; the others are one tap away and stay in the document. */}

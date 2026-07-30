@@ -60,7 +60,7 @@ const SERVICE_GROUPS = [
   {
     anchor: "software-lab",
     icon: Wrench,
-    color: "bg-orange-600",
+    color: "bg-accent-600",
     title: { en: "Mobile Software Lab", bn: "মোবাইল সফটওয়্যার ল্যাব" },
     items: [
       { en: "Android Flash", bn: "অ্যান্ড্রয়েড ফ্ল্যাশ" },
@@ -74,7 +74,7 @@ const SERVICE_GROUPS = [
   {
     anchor: "computer-software",
     icon: Monitor,
-    color: "bg-cyan-600",
+    color: "bg-brand-600",
     title: { en: "Computer Software", bn: "কম্পিউটার সফটওয়্যার" },
     items: [
       { en: "Windows Install", bn: "উইন্ডোজ ইন্সটল" },
@@ -87,7 +87,7 @@ const SERVICE_GROUPS = [
   {
     anchor: "business-software",
     icon: Briefcase,
-    color: "bg-indigo-600",
+    color: "bg-brand-600",
     title: { en: "Business Software", bn: "বিজনেস সফটওয়্যার" },
     items: [
       { en: "POS", bn: "POS" },
@@ -99,7 +99,7 @@ const SERVICE_GROUPS = [
   {
     anchor: "ai-solutions",
     icon: Bot,
-    color: "bg-purple-600",
+    color: "bg-brand-600",
     title: { en: "AI Solutions", bn: "AI সমাধান" },
     items: [
       { en: "AI Assistant", bn: "AI অ্যাসিস্ট্যান্ট" },
@@ -111,7 +111,7 @@ const SERVICE_GROUPS = [
   {
     anchor: "web-software",
     icon: Globe,
-    color: "bg-sky-600",
+    color: "bg-brand-600",
     title: { en: "Web & Software", bn: "ওয়েব ও সফটওয়্যার" },
     items: [
       { en: "Website", bn: "ওয়েবসাইট" },
@@ -142,8 +142,8 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 
 /** Rotating accents for DB-driven category cards (same palette as the static groups). */
 const CATEGORY_COLORS = [
-  "bg-emerald-600", "bg-brand-600", "bg-sky-600", "bg-orange-600",
-  "bg-rose-600", "bg-pink-600", "bg-indigo-600", "bg-purple-600", "bg-cyan-600",
+  "bg-emerald-600", "bg-brand-600", "bg-brand-600", "bg-accent-600",
+  "bg-rose-600", "bg-accent-600", "bg-brand-600", "bg-brand-600", "bg-brand-600",
 ];
 
 /**
