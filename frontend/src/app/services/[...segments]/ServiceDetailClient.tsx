@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { fulfilmentDetail, fulfilmentLabel } from "@/lib/fulfilment";
+import VisitRequiredPanel from "@/components/services/VisitRequiredPanel";
 import { formatPrice } from "@/lib/utils";
 import { WHATSAPP_NUMBER } from "@/lib/utils";
 import type { Service } from "@/types";
@@ -339,6 +340,12 @@ export default function ServiceDetailClient({ service }: Props) {
         )}
 
         {/* What you need to provide — surfaced before booking, not after */}
+        {/* Screen 08b, pattern ঘ — when the service is completed at the counter,
+            what to bring and where to come outrank every other section, so this
+            sits above them. Services the admin has not classified are
+            unaffected. */}
+        {needsVisit && <VisitRequiredPanel service={service} />}
+
         {(requirements.length > 0 || documents.length > 0) && (
           <section className="grid sm:grid-cols-2 gap-6">
             {requirements.length > 0 && (
