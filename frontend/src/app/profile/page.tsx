@@ -59,8 +59,8 @@ export default function ProfilePage() {
             </p>
             <p className="text-sm text-muted mb-4">
               {lang === "bn"
-                ? "ফোন নম্বর আর একটি কোড। পাসওয়ার্ড লাগবে না।"
-                : "Phone number and a code. No password needed."}
+                ? "ফোন ও ইমেইল দিন — কোডটি ইমেইলে যাবে। পাসওয়ার্ড লাগবে না।"
+                : "Your phone and email — the code arrives by email. No password needed."}
             </p>
             <div className="flex flex-wrap gap-2">
               <Link href="/login?redirect=/profile" className="btn btn-brand btn-sm">

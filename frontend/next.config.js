@@ -58,6 +58,8 @@ const nextConfig = {
       { source: "/home", destination: "/", permanent: true },
       { source: "/shop", destination: "/products", permanent: true },
       { source: "/dashboard", destination: "/profile", permanent: true },
+      // GAP-10 — /register was a second door onto the same OTP form as /login.
+      { source: "/register", destination: "/login", permanent: true },
       { source: "/admin/dashboard", destination: "/admin", permanent: true },
       { source: "/admin/revenue", destination: "/admin/analytics", permanent: true },
       { source: "/manifest.json", destination: "/manifest.webmanifest", permanent: false },

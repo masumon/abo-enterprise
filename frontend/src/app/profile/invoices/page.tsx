@@ -63,8 +63,8 @@ export default function InvoicesPage() {
             </h2>
             <p className="text-sm text-muted mb-6">
               {lang === "bn"
-                ? "ফোন নম্বর আর একটি কোড। সাইন ইনের পরে সোজা এখানেই ফিরিয়ে আনব।"
-                : "Phone number and a code. We'll bring you straight back here."}
+                ? "ফোন ও ইমেইল দিন — কোডটি ইমেইলে যাবে। সাইন ইনের পরে সোজা এখানেই ফিরিয়ে আনব।"
+                : "Your phone and email — the code arrives by email. We'll bring you straight back here."}
             </p>
             <Link href="/login?redirect=/profile/invoices" className="btn btn-brand btn-md">
               {lang === "bn" ? "সাইন ইন" : "Sign in"}
