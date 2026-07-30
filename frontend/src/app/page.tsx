@@ -4,21 +4,19 @@ import Hero from "@/components/home/Hero";
 import TrustBadges from "@/components/home/TrustBadges";
 import QuickCategories from "@/components/home/QuickCategories";
 import HomeLanes from "@/components/home/HomeLanes";
+import HomeSectionRail from "@/components/home/HomeSectionRail";
 import Reveal from "@/components/ui/Reveal";
 import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, getBrandFullTitle } from "@/lib/tokens";
 import { jsonLdString } from "@/lib/metadata";
 
 const EntryPoints = dynamic(() => import("@/components/home/EntryPoints"), { loading: () => <SectionSkeleton /> });
-const Stats = dynamic(() => import("@/components/home/Stats"), { loading: () => <SectionSkeleton /> });
-const ServicesOverview = dynamic(() => import("@/components/home/ServicesOverview"), { loading: () => <SectionSkeleton /> });
-const FeaturedProducts = dynamic(() => import("@/components/home/FeaturedProducts"), { loading: () => <SectionSkeleton /> });
-const WhyChooseUs = dynamic(() => import("@/components/home/WhyChooseUs"), { loading: () => <SectionSkeleton /> });
+const ServicesOverview = dynamic(() => import("@/components/home/ServicesOverview"), { loading: () => <CardsSkeleton label="Services" /> });
+const FeaturedProducts = dynamic(() => import("@/components/home/FeaturedProducts"), { loading: () => <CardsSkeleton label="Products" /> });
 const CustomerReviews = dynamic(() => import("@/components/home/CustomerReviews"), { loading: () => <SectionSkeleton /> });
 const FAQ = dynamic(() => import("@/components/home/FAQ"), { loading: () => <SectionSkeleton /> });
 const LeadCapture = dynamic(() => import("@/components/home/LeadCapture"), { loading: () => <SectionSkeleton /> });
 const ContactSection = dynamic(() => import("@/components/home/ContactSection"), { loading: () => <SectionSkeleton /> });
-const Portfolio = dynamic(() => import("@/components/home/Portfolio"), { loading: () => <SectionSkeleton /> });
-const ClientLogos = dynamic(() => import("@/components/home/ClientLogos"), { loading: () => <SectionSkeleton /> });
+const Portfolio = dynamic(() => import("@/components/home/Portfolio"), { loading: () => <CardsSkeleton label="Projects" /> });
 
 export const metadata: Metadata = {
   title: getBrandFullTitle("bn"),
@@ -92,8 +90,32 @@ const websiteJsonLd = {
   },
 };
 
+/*
+ * Screen 04 — every lazy block used the same grey pulse, so the page told the
+ * visitor that something was coming but never what, and each block jumped when
+ * it landed. These hold the shape of what replaces them (GAP-18).
+ */
 function SectionSkeleton() {
-  return <div className="py-16 animate-pulse bg-gray-50/50 dark:bg-[var(--surface-secondary)]/60" aria-hidden />;
+  return <div className="py-16 motion-safe:animate-pulse bg-gray-50/50 dark:bg-[var(--surface-secondary)]/60" aria-hidden />;
+}
+
+function CardsSkeleton({ label }: { label: string }) {
+  return (
+    <section className="container mx-auto px-4 py-12" aria-busy="true" aria-label={label}>
+      <div className="h-6 w-48 mb-6 rounded-lg bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden">
+            <div className="h-40 bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
+            <div className="p-4 space-y-2">
+              <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
+              <div className="h-4 w-1/2 rounded bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 export default function HomePage() {
@@ -112,10 +134,12 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: jsonLdString(localBusinessJsonLd) }}
       />
       <Hero />
-      <Reveal><QuickCategories /></Reveal>
+      <HomeSectionRail />
+      <div id="categories" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal><QuickCategories /></Reveal>
+      </div>
       <Reveal><TrustBadges /></Reveal>
       <Reveal><EntryPoints /></Reveal>
-      <Reveal><Stats /></Reveal>
       {/* GAP-23 — the three arms of the business used to stack, so whichever
           one a visitor came for sat below the other two. Shop is the default
           lane; the others are one tap away and stay in the document. */}
@@ -123,17 +147,22 @@ export default function HomePage() {
           an IntersectionObserver, and an element that mounts inside a hidden
           panel has nothing to intersect. Switching lanes must never land on a
           section that is still waiting to fade in. */}
+      <div id="popular" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]" />
       <HomeLanes
         shop={<FeaturedProducts />}
         services={<ServicesOverview />}
         software={<Portfolio />}
       />
-      <Reveal><ClientLogos /></Reveal>
-      <Reveal><WhyChooseUs /></Reveal>
-      <Reveal><CustomerReviews /></Reveal>
-      <Reveal><FAQ /></Reveal>
+      <div id="reviews" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal><CustomerReviews /></Reveal>
+      </div>
+      <div id="faq" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal><FAQ /></Reveal>
+      </div>
       <Reveal><LeadCapture /></Reveal>
-      <Reveal><ContactSection /></Reveal>
+      <div id="contact" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal><ContactSection /></Reveal>
+      </div>
     </>
   );
 }

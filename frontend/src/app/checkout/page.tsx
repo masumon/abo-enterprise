@@ -131,7 +131,11 @@ export default function CheckoutPage() {
     register, handleSubmit, watch, setValue, formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { payment_gateway: "bkash", district: "Sylhet" },
+    // Left blank on purpose: the effect below selects the first available
+    // method, which is now cash on delivery. Hardcoding "bkash" here listed COD
+    // first and then pre-selected something else — the list said one thing and
+    // the radio said another.
+    defaultValues: { payment_gateway: "", district: "Sylhet" },
   });
 
   const selectedGateway = watch("payment_gateway");

@@ -349,6 +349,49 @@ export default function ServicesPageClient({
         ]}
       />
 
+      {/*
+        Screen 08 — the search box sat below eight category cards, roughly two
+        phone screens down, so a visitor who arrived knowing what they wanted
+        had to scroll past the whole taxonomy to type it. Search belongs where
+        the page begins.
+      */}
+      <div className="sticky top-[var(--navbar-offset)] z-30 bg-white/95 dark:bg-[var(--surface-card)]/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/10">
+        <div className="container mx-auto px-4 max-w-6xl py-3 flex flex-col sm:flex-row gap-3">
+          <form
+            className="relative flex-1"
+            onSubmit={(e) => { e.preventDefault(); setSearch(searchInput.trim()); setPage(1); }}
+            role="search"
+          >
+            <SearchIcon aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(e) => {
+                const v = e.target.value;
+                setSearchInput(v);
+                if (searchTimer.current) clearTimeout(searchTimer.current);
+                searchTimer.current = setTimeout(() => { setSearch(v.trim()); setPage(1); }, 400);
+              }}
+              placeholder={t({ en: "Search services…", bn: "সেবা খুঁজুন…" })}
+              aria-label={t({ en: "Search services", bn: "সেবা খুঁজুন" })}
+              className="input w-full pl-9"
+            />
+          </form>
+          <select
+            value={sort}
+            onChange={(e) => { setSort(e.target.value); setPage(1); }}
+            aria-label={t({ en: "Sort services", bn: "সাজান" })}
+            className="input sm:w-56"
+          >
+            <option value="">{t({ en: "Recommended", bn: "প্রস্তাবিত" })}</option>
+            <option value="name">{t({ en: "Name (A–Z)", bn: "নাম (A–Z)" })}</option>
+            <option value="price_low">{t({ en: "Price: Low to High", bn: "মূল্য: কম থেকে বেশি" })}</option>
+            <option value="price_high">{t({ en: "Price: High to Low", bn: "মূল্য: বেশি থেকে কম" })}</option>
+            <option value="newest">{t({ en: "Newest First", bn: "নতুন আগে" })}</option>
+          </select>
+        </div>
+      </div>
+
       <section className="enterprise-section-alt">
         <div className="container mx-auto px-4 max-w-6xl">
           <h2 className="text-xl font-bold text-heading mb-2">{t({ en: "What We Offer", bn: "আমরা যা দিই" })}</h2>
@@ -452,41 +495,6 @@ export default function ServicesPageClient({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
             <h2 className="text-xl font-bold text-heading">{t({ en: "All Services", bn: "সব সেবা" })}</h2>
             <ServiceFilters categories={categories} selectedCategory={category} onCategoryChange={setCategory} />
-          </div>
-
-          {/* Search + sort. Debounced so typing doesn't fire a request per key. */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <form
-              className="relative flex-1"
-              onSubmit={(e) => { e.preventDefault(); setSearch(searchInput.trim()); setPage(1); }}
-            >
-              <SearchIcon aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-              <input
-                type="search"
-                value={searchInput}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setSearchInput(v);
-                  if (searchTimer.current) clearTimeout(searchTimer.current);
-                  searchTimer.current = setTimeout(() => { setSearch(v.trim()); setPage(1); }, 400);
-                }}
-                placeholder={t({ en: "Search services…", bn: "সেবা খুঁজুন…" })}
-                aria-label={t({ en: "Search services", bn: "সেবা খুঁজুন" })}
-                className="input w-full pl-9"
-              />
-            </form>
-            <select
-              value={sort}
-              onChange={(e) => { setSort(e.target.value); setPage(1); }}
-              aria-label={t({ en: "Sort services", bn: "সাজান" })}
-              className="input sm:w-56"
-            >
-              <option value="">{t({ en: "Recommended", bn: "প্রস্তাবিত" })}</option>
-              <option value="name">{t({ en: "Name (A–Z)", bn: "নাম (A–Z)" })}</option>
-              <option value="price_low">{t({ en: "Price: Low to High", bn: "মূল্য: কম থেকে বেশি" })}</option>
-              <option value="price_high">{t({ en: "Price: High to Low", bn: "মূল্য: বেশি থেকে কম" })}</option>
-              <option value="newest">{t({ en: "Newest First", bn: "নতুন আগে" })}</option>
-            </select>
           </div>
 
           <DemoModeBanner show={catalogSource === "cache" && !loading} source={catalogSource} />

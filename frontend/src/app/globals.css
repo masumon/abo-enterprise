@@ -500,13 +500,23 @@
   .footer-contact-sub   { @apply block text-xs text-white/60 mt-0.5 leading-snug; }
   .footer-contact-action{ @apply block text-[13px] font-bold mt-1.5; }
   /* Plain navigation link — generous row height for thumbs, no card around it. */
+  /*
+   * Footer links were ~27px tall in a two-column grid — well under the 44px the
+   * system asks for, and the hardest targets on the page to hit with a thumb.
+   * They clear 44 on touch widths and stay compact from md up, where a mouse
+   * does the pointing. 13.5px was also off the type scale; text-sm is 13.
+   *
+   * outline-none is gone for the same reason it went from .btn: it cancelled
+   * the system's focus ring and drew a paler one in its place.
+   */
   .footer-nav-link {
-    @apply flex items-center gap-2 py-1.5 text-[13.5px] text-white/70 no-underline
-           rounded-lg transition-colors duration-150
-           hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40;
+    @apply flex items-center gap-2 py-2.5 min-h-[44px] md:min-h-0 md:py-1.5 text-sm
+           text-white/70 no-underline rounded-lg transition-colors duration-150
+           hover:text-white;
   }
+  /* 40px was just under the bar; social icons are a common mis-tap. */
   .footer-social-btn {
-    @apply w-10 h-10 rounded-full flex items-center justify-center
+    @apply w-11 h-11 rounded-full flex items-center justify-center
            bg-white/10 border border-white/20 text-white/90 backdrop-blur-sm
            transition-all duration-200 hover:text-white hover:-translate-y-0.5
            hover:bg-sky-300/25 hover:border-sky-300/50
