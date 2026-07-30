@@ -19,9 +19,26 @@ const schema = z.object({
   email: z.string().email("সঠিক ইমেইল দিন").optional().or(z.literal("")),
   lead_type: z.enum(["software_development", "ai_solutions", "automation", "erp", "general"]),
   project_description: z.string().min(20, "কমপক্ষে ২০ অক্ষরে প্রজেক্ট বর্ণনা করুন"),
+  // Screen 08b (X2) — a band, and optional. A buyer who is asked for an exact
+  // figure before they have a quote either guesses low to stay safe or leaves;
+  // "I'm not sure yet" is a real answer and it still tells sales something.
+  budget_range: z.string().optional(),
 });
 
 type FormData = z.infer<typeof schema>;
+
+/**
+ * Bands the sales desk can act on, including the honest one. Values are stored
+ * verbatim on LeadV2.budget_range, which is a free-text column, so no schema
+ * change is involved.
+ */
+const BUDGET_BANDS = [
+  { value: "under_50k", en: "Under ৳50k", bn: "৳৫০ হাজারের নিচে" },
+  { value: "50k_2l", en: "৳50k – ৳2L", bn: "৳৫০ হাজার–২ লাখ" },
+  { value: "2l_5l", en: "৳2L – ৳5L", bn: "৳২–৫ লাখ" },
+  { value: "5l_plus", en: "৳5L+", bn: "৳৫ লাখ+" },
+  { value: "not_sure", en: "Not sure yet", bn: "জানি না" },
+];
 
 import { toLeadV2Type } from "@/lib/leadTypes";
 
@@ -45,6 +62,7 @@ export default function LeadCapture() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -52,6 +70,7 @@ export default function LeadCapture() {
   });
 
   const selectedType = watch("lead_type");
+  const selectedBudget = watch("budget_range");
 
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true);
@@ -65,6 +84,7 @@ export default function LeadCapture() {
         email: data.email || undefined,
         company: data.company || undefined,
         project_description: data.project_description,
+        budget_range: data.budget_range || undefined,
       });
       const wasQueued = isQueuedResponse(response);
       setQueued(wasQueued);
@@ -245,6 +265,44 @@ export default function LeadCapture() {
                   <p id="lead-description-error" className="text-red-300 text-xs mt-1">{errors.project_description.message}</p>
                 )}
               </div>
+
+              {/* Screen 08b (X2) — bands, not a number, and skippable. */}
+              <div>
+                <p className="block text-sm font-medium text-white mb-1">
+                  {lang === "bn" ? "আনুমানিক বাজেট" : "Approximate budget"}
+                  <span className="font-normal text-white/70">
+                    {lang === "bn" ? " — ঐচ্ছিক" : " — optional"}
+                  </span>
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {BUDGET_BANDS.map((band) => {
+                    const active = selectedBudget === band.value;
+                    return (
+                      <button
+                        key={band.value}
+                        type="button"
+                        onClick={() => setValue("budget_range", active ? "" : band.value)}
+                        aria-pressed={active}
+                        className={cn(
+                          "px-3 py-2 rounded-full text-xs font-semibold border min-h-[36px]",
+                          active
+                            ? "bg-accent-500 text-[#14182b] border-accent-500"
+                            : "bg-white/10 text-white border-white/25 hover:bg-white/15"
+                        )}
+                      >
+                        {lang === "bn" ? band.bn : band.en}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* The promise the quote form is really making. */}
+              <p className="text-xs text-white/75">
+                {lang === "bn"
+                  ? "১ কর্মদিবসের মধ্যে কোটেশন পাঠাব — ইমেইলে, যাতে প্রতিষ্ঠানের ভেতরে ফরোয়ার্ড করতে পারেন।"
+                  : "We send the quote within 1 working day — by email, so you can forward it inside your organisation."}
+              </p>
 
               <button
                 type="submit"
