@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ShoppingCart, Menu, X, Globe, Search, Briefcase, Moon, Sun, ChevronDown, User,
+  ShoppingCart, X, Globe, Search, Briefcase, Moon, Sun, User,
 } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
@@ -17,36 +17,8 @@ import { getBrandFullTitle, getBrandName, getBrandTagline } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { useTaxonomy } from "@/hooks/useTaxonomy";
 
-const MOBILE_LINKS = [
-  { href: "/blog", key: "nav_blog" as const },
-  { href: "/projects", key: "nav_solutions" as const },
-  { href: "/about", key: "nav_about" as const },
-  { href: "/contact", key: "nav_contact" as const },
-];
-
-const MOBILE_PRODUCT_LINKS = [
-  { href: "/products", label: { en: "All Products", bn: "সব পণ্য" } },
-  { href: "/products?category=accessories", label: { en: "Mobile Accessories", bn: "মোবাইল এক্সেসরিজ" } },
-  { href: "/products?category=gadgets", label: { en: "Premium Gadgets", bn: "প্রিমিয়াম গ্যাজেট" } },
-  { href: "/products?category=electronics", label: { en: "Electronics", bn: "ইলেকট্রনিক্স" } },
-  { href: "/products?category=computer", label: { en: "Computer Accessories", bn: "কম্পিউটার এক্সেসরিজ" } },
-  { href: "/profile/wishlist", label: { en: "Wishlist", bn: "উইশলিস্ট" } },
-  { href: "/compare", label: { en: "Compare", bn: "তুলনা" } },
-];
-
-const MOBILE_SERVICE_LINKS = [
-  { href: "/services", label: { en: "All Services", bn: "সব সেবা" } },
-  { href: "/services#digital-services", label: { en: "Digital Services", bn: "ডিজিটাল সেবা" } },
-  { href: "/services#software-lab", label: { en: "Software Lab", bn: "সফটওয়্যার ল্যাব" } },
-  { href: "/services#business-software", label: { en: "Business Software", bn: "বিজনেস সফটওয়্যার" } },
-  { href: "/services#ai-solutions", label: { en: "AI Solutions", bn: "AI সমাধান" } },
-  { href: "/services#it-support", label: { en: "IT Support", bn: "আইটি সাপোর্ট" } },
-];
-
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [mobileMega, setMobileMega] = useState<"products" | "services" | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -60,24 +32,6 @@ export default function Navbar() {
   const productRoots = useTaxonomy("product");
   const serviceRoots = useTaxonomy("service");
   const searchListId = "site-search-suggestions";
-
-  const mobileProductLinks =
-    productRoots.length > 0
-      ? [
-          { href: "/products", label: { en: "All Products", bn: "সব পণ্য" } },
-          ...productRoots.map((c) => ({ href: `/products?category=${c.slug}`, label: { en: c.name_en, bn: c.name_bn || c.name_en } })),
-          { href: "/profile/wishlist", label: { en: "Wishlist", bn: "উইশলিস্ট" } },
-          { href: "/compare", label: { en: "Compare", bn: "তুলনা" } },
-        ]
-      : MOBILE_PRODUCT_LINKS;
-
-  const mobileServiceLinks =
-    serviceRoots.length > 0
-      ? [
-          { href: "/services", label: { en: "All Services", bn: "সব সেবা" } },
-          ...serviceRoots.map((c) => ({ href: `/services/${c.slug}`, label: { en: c.name_en, bn: c.name_bn || c.name_en } })),
-        ]
-      : MOBILE_SERVICE_LINKS;
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 10);
@@ -95,7 +49,6 @@ export default function Navbar() {
       router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchOpen(false);
       setSearchQuery("");
-      setMobileOpen(false);
     }
   };
 
@@ -137,7 +90,7 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <MegaMenu onNavigate={() => setMobileOpen(false)} />
+          <MegaMenu />
 
           <div className="flex items-center gap-1 flex-shrink-0">
             {searchOpen ? (
@@ -225,102 +178,10 @@ export default function Navbar() {
               {t("nav_get_quote")}
             </Link>
 
-            <button type="button" onClick={() => setMobileOpen((v) => !v)}
-              className="lg:hidden w-11 h-11 flex items-center justify-center rounded-full text-gray-700 dark:text-gray-200 hover:bg-gray-100/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation"
-              aria-label={mobileOpen ? "Close menu" : "Open menu"}
-              aria-expanded={mobileOpen}>
-              {mobileOpen ? <X className="w-[20px] h-[20px]" strokeWidth={2.5} /> : <Menu className="w-[20px] h-[20px]" strokeWidth={2.5} />}
-            </button>
           </div>
         </nav>
       </div>
 
-      {/* Mobile dropdown — separate floating panel below the capsule */}
-      {mobileOpen && (
-        <div className="flex justify-center px-4 mt-2">
-          <div className="w-full max-w-[92%] sm:max-w-[90%] lg:max-w-7xl lg:hidden bg-white/90 dark:bg-[#0b1f3a]/95 backdrop-blur-2xl border border-white/50 dark:border-white/[0.09] rounded-2xl shadow-[0_8px_32px_rgba(30,43,107,0.14),0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.50)] animate-slide-up max-h-[calc(100vh-7rem)] overflow-y-auto">
-            <div className="px-4 pt-4 pb-2 flex items-center gap-2.5 sm:hidden">
-              <BrandLogo size="xs" href={false} />
-              <p className="text-[10px] font-medium text-brand-700 dark:text-brand-200 min-w-0 leading-snug">
-                {getBrandFullTitle(lang)}
-              </p>
-            </div>
-            <div className="px-4 pt-2">
-              <form onSubmit={handleSearch} className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" strokeWidth={2.5} />
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t("nav_search") + "..."}
-                  className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm outline-none focus:border-brand-400 input"
-                />
-              </form>
-            </div>
-            <ul className="px-4 py-3 space-y-1">
-              {(["products", "services"] as const).map((section) => {
-                const isOpen = mobileMega === section;
-                const title = section === "products" ? t("nav_products") : t("nav_services");
-                const links = section === "products" ? mobileProductLinks : mobileServiceLinks;
-                return (
-                  <li key={section}>
-                    <button
-                      type="button"
-                      onClick={() => setMobileMega(isOpen ? null : section)}
-                      className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-gray-800 dark:text-gray-100 font-medium hover:bg-brand-50 dark:hover:bg-white/10 text-sm"
-                      aria-expanded={isOpen}
-                    >
-                      {title}
-                      <ChevronDown className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")} strokeWidth={2.5} />
-                    </button>
-                    {isOpen && (
-                      <ul className="ml-3 mt-1 space-y-0.5 border-l border-brand-100 dark:border-white/10 pl-3">
-                        {links.map((link) => (
-                          <li key={link.href}>
-                            <Link
-                              href={link.href}
-                              onClick={() => setMobileOpen(false)}
-                              className="block px-3 py-2 rounded-lg text-sm text-gray-600 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-white/10"
-                            >
-                              {lang === "bn" ? link.label.bn : link.label.en}
-                            </Link>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </li>
-                );
-              })}
-              {MOBILE_LINKS.map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} onClick={() => setMobileOpen(false)}
-                    className="block px-3 py-2.5 rounded-xl text-gray-800 dark:text-gray-100 font-medium hover:bg-brand-50 dark:hover:bg-white/10 text-sm">
-                    {t(link.key)}
-                  </Link>
-                </li>
-              ))}
-              <li>
-                <Link href="/track" onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-white/10 text-sm">
-                  {t("nav_track")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/profile" onClick={() => setMobileOpen(false)}
-                  className="block px-3 py-2.5 rounded-xl text-gray-600 dark:text-gray-300 hover:bg-brand-50 dark:hover:bg-white/10 text-sm">
-                  {lang === "bn" ? "ড্যাশবোর্ড" : "Dashboard"}
-                </Link>
-              </li>
-            </ul>
-            <div className="px-4 pb-4">
-              <Link href="/projects" onClick={() => setMobileOpen(false)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent-500 text-white text-sm font-medium">
-                <Briefcase className="w-4 h-4" strokeWidth={2.5} />
-                {t("nav_get_quote")}
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
     </header>
   );
 }
