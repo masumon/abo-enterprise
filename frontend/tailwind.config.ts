@@ -39,6 +39,21 @@ const config: Config = {
         },
       },
       /*
+       * The system's type scale: 29 / 23 / 18 / 15 / 13 / 11. Tailwind's
+       * defaults run 30 / 20 / 18 / 16 / 14 / 12, so body text was a pixel
+       * coarser and the steps between sizes did not match the design. Sizes are
+       * paired with their line-heights, as Tailwind's own entries are, so no
+       * utility loses its leading.
+       */
+      fontSize: {
+        xs: ["0.6875rem", { lineHeight: "1rem" }],
+        sm: ["0.8125rem", { lineHeight: "1.15rem" }],
+        base: ["0.9375rem", { lineHeight: "1.5rem" }],
+        lg: ["1.125rem", { lineHeight: "1.6rem" }],
+        xl: ["1.4375rem", { lineHeight: "1.85rem" }],
+        "2xl": ["1.8125rem", { lineHeight: "2.2rem" }],
+      },
+      /*
        * The system has three radii — 6, 12, 20 — plus pill. Tailwind's defaults
        * add 8, 16 and 24, so the app was drawing six different corner sizes.
        * Snapping the scale here rounds every existing class onto the system
