@@ -21,6 +21,7 @@ import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phon
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { useCustomerStore } from "@/store/customer";
 import { mapPaymentMethods } from "@/lib/paymentDisplay";
 import { useDistrictUpazila, BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
 import { calcDeliveryCharge, calcAdvanceCharge } from "@/lib/checkoutHelpers";
@@ -96,6 +97,17 @@ export default function CheckoutPage() {
     "whatsapp_number", "contact_phone", "contact_email",
   ]);
   const couponsEnabled = useFeatureFlag("feature_coupons", true);
+  /*
+   * Screen 11c — one design, two configurations. With guest checkout allowed
+   * (the default), signing in is offered as a convenience and never blocks the
+   * order. With the flag off, the same card becomes the gate. The setting has
+   * existed in the admin panel all along; checkout simply never read it, so
+   * turning it off changed nothing.
+   */
+  const guestAllowed = useFeatureFlag("feature_guest_checkout", true);
+  const customerSession = useCustomerStore((st) => st.session);
+  const signedIn = Boolean(customerSession?.token);
+  const signInRequired = !guestAllowed && !signedIn;
 
   const otpRequired = getSettingValue(settings, "checkout_otp_required") === "true";
 
@@ -441,6 +453,25 @@ export default function CheckoutPage() {
           })}
         </ol>
 
+        {!signedIn && (
+          <div className={cn("mb-6", signInRequired ? "alert-warning" : "alert-info")} role={signInRequired ? "alert" : undefined}>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="flex-1 min-w-[14rem] text-sm">
+                {signInRequired
+                  ? (lang === "bn"
+                      ? "অর্ডার করতে সাইন ইন করুন। ফোন ও ইমেইল দিন — কোডটি ইমেইলে যাবে।"
+                      : "Sign in to place this order. Your phone and email — the code arrives by email.")
+                  : (lang === "bn"
+                      ? "সাইন ইন করলে পরের বার ঠিকানা নিজেই বসবে আর অর্ডার ট্র্যাক করা যাবে। না করলেও অর্ডার করতে পারবেন।"
+                      : "Sign in and your address fills itself next time, and you can track the order. You can also order without it.")}
+              </p>
+              <Link href="/login?redirect=/checkout" className={cn("btn btn-sm", signInRequired ? "btn-primary" : "btn-outline")}>
+                {lang === "bn" ? "সাইন ইন" : "Sign in"}
+              </Link>
+            </div>
+          </div>
+        )}
+
         {stockIssue && (
           <div role="alert" className="mb-6 alert-warning">
             {lang === "bn" ? "কিছু পণ্যের স্টক সীমিত — কার্ট যাচাই করুন।" : "Limited stock — review your cart."}
@@ -643,7 +674,7 @@ export default function CheckoutPage() {
                 <div className="flex items-center gap-1.5"><Truck className="w-4 h-4 text-brand-500" />{lang === "bn" ? "দেশwide ডেলিভারি" : "Nationwide delivery"}</div>
               </div>
 
-              <button type="submit" disabled={isSubmitting || stockIssue} className="btn btn-success btn-lg w-full hidden lg:flex">
+              <button type="submit" disabled={isSubmitting || stockIssue || signInRequired} className="btn btn-success btn-lg w-full hidden lg:flex">
                 {isSubmitting ? (lang === "bn" ? "প্রক্রিয়া..." : "Processing...") : ctaLabel}
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -755,7 +786,7 @@ export default function CheckoutPage() {
               {formatPrice(advanceCharge > 0 ? advanceCharge : cartTotal)}
             </p>
           </div>
-          <button type="submit" form="checkout-form" disabled={isSubmitting || stockIssue} className="btn btn-success btn-md min-w-[9rem]">
+          <button type="submit" form="checkout-form" disabled={isSubmitting || stockIssue || signInRequired} className="btn btn-success btn-md min-w-[9rem]">
             {isSubmitting ? "..." : ctaLabel}
           </button>
         </div>
