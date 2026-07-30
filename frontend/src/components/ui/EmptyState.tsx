@@ -2,15 +2,23 @@ import Link from "next/link";
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface EmptyStateProps {
+/**
+ * GAP-28 — an empty state that offers no next action is a dead end, and the
+ * component previously allowed one to be built by accident. The action is now
+ * required at the type level: supply a label plus either a destination
+ * (actionHref) or a handler (onAction). Guidance in a document does not
+ * survive future development; a required prop does.
+ */
+type EmptyStateAction =
+  | { actionLabel: string; actionHref: string; onAction?: never }
+  | { actionLabel: string; actionHref?: never; onAction: () => void };
+
+type EmptyStateProps = {
   icon: LucideIcon;
   title: string;
   description?: string;
-  actionLabel?: string;
-  actionHref?: string;
-  onAction?: () => void;
   className?: string;
-}
+} & EmptyStateAction;
 
 export default function EmptyState({
   icon: Icon,
