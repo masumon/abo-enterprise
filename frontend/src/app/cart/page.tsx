@@ -23,6 +23,7 @@ export default function CartPage() {
   const couponsEnabled = useFeatureFlag("feature_coupons", true);
   const [coupon, setCoupon] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
 
   const cartSubtotal = total();
@@ -49,11 +50,17 @@ export default function CartPage() {
       .finally(() => setValidating(false));
   }, [items, setStockWarnings, updateQuantity]);
 
+  // GAP-02 — the rejection was previously swallowed, so an invalid, expired or
+  // below-minimum coupon produced no message at all. Checkout already surfaces
+  // this error (checkout/page.tsx:146-152); the cart is brought up to match it.
   const applyCoupon = async () => {
     if (!couponsEnabled || !coupon.trim()) return;
+    setCouponError(null);
     try {
       setAppliedCoupon(await validateCoupon(coupon, cartSubtotal));
-    } catch { /* ignore */ }
+    } catch {
+      setCouponError(lang === "bn" ? "কুপন সঠিক নয়" : "Invalid coupon");
+    }
   };
 
   return (
@@ -135,10 +142,13 @@ export default function CartPage() {
                     <div className="flex gap-2 mb-4">
                       <div className="relative flex-1">
                         <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-                        <input value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder={t("cart_coupon")} className="input pl-9 text-sm py-2" disabled={!!appliedCoupon} />
+                        <input value={coupon} onChange={(e) => { setCoupon(e.target.value); if (couponError) setCouponError(null); }} placeholder={t("cart_coupon")} className="input pl-9 text-sm py-2" disabled={!!appliedCoupon} aria-invalid={!!couponError} />
                       </div>
                       <button type="button" onClick={applyCoupon} className="btn btn-outline btn-sm">{t("cart_apply")}</button>
                     </div>
+                    {couponError && (
+                      <p role="status" className="text-xs text-red-500 mb-3">{couponError}</p>
+                    )}
                     {appliedCoupon && (
                       <p className="text-xs text-green-600 mb-3">{appliedCoupon.code} — {lang === "bn" ? "আপনি সাশ্রয়" : "You save"} {formatPrice(discount)}</p>
                     )}
