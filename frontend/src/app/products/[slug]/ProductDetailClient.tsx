@@ -211,9 +211,12 @@ export default function ProductDetailClient({ product }: Props) {
                 {product.original_price && <span className="text-lg text-gray-400 line-through">{formatPrice(product.original_price)}</span>}
               </div>
               {savings > 0 && (
-                <p className="text-sm text-green-600 font-medium mb-4">
-                  {lang === "bn" ? `আপনি ${formatPrice(savings)} সাশ্রয় করছেন` : `You save ${formatPrice(savings)}`}
-                </p>
+                /* Screen 07 — the saving beside the price, not a sentence under
+                   it: the number is the argument, and a pill puts it where the
+                   eye already is. */
+                <span className="inline-flex items-center self-start px-2.5 py-1 mb-4 rounded-full text-xs font-bold bg-red-50 text-red-700 dark:bg-red-900/25 dark:text-red-300">
+                  {lang === "bn" ? `সাশ্রয় ${formatPrice(savings)}` : `Save ${formatPrice(savings)}`}
+                </span>
               )}
               <div className="mb-4">
                 {(product.stock_quantity ?? 0) > 0 ? (
@@ -249,9 +252,36 @@ export default function ProductDetailClient({ product }: Props) {
                 </div>
               )}
 
-              {desc && <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-6">{desc}</p>}
+              {/* Screen 07 — the page's own sections, so a buyer who wants the
+                  specs or the reviews is not asked to scroll the whole page to
+                  find out whether they exist. Anchors only; each entry is
+                  dropped when its section is not rendered. */}
+              <nav
+                aria-label={lang === "bn" ? "পাতার অংশ" : "Page sections"}
+                className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 mb-5"
+              >
+                {[
+                  { id: "overview", en: "Overview", bn: "সংক্ষেপে", show: Boolean(desc) },
+                  { id: "specs", en: "Specs", bn: "স্পেসিফিকেশন", show: Boolean(product.specifications && Object.keys(product.specifications).length > 0) },
+                  { id: "reviews", en: "Reviews", bn: "রিভিউ", show: true },
+                ].filter((x) => x.show).map((x) => (
+                  <a
+                    key={x.id}
+                    href={`#${x.id}`}
+                    className="flex-shrink-0 min-h-[36px] flex items-center px-3.5 rounded-full text-sm font-semibold whitespace-nowrap border border-gray-200 dark:border-white/10 text-muted hover:text-brand-600"
+                  >
+                    {lang === "bn" ? x.bn : x.en}
+                  </a>
+                ))}
+              </nav>
+
+              {desc && (
+                <div id="overview" className="scroll-mt-24">
+                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-6">{desc}</p>
+                </div>
+              )}
               {product.specifications && Object.keys(product.specifications).length > 0 && (
-                <div className="mb-6">
+                <div id="specs" className="mb-6 scroll-mt-24">
                   <h3 className="font-semibold mb-3 text-sm">{lang === "bn" ? "স্পেসিফিকেশন" : "Specifications"}</h3>
                   <div className="space-y-2">
                     {Object.entries(product.specifications).map(([k, v]) => (
