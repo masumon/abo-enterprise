@@ -48,7 +48,29 @@ export default function InvoicesPage() {
         ]}
       />
       <div className="container mx-auto px-4 py-8 max-w-2xl">
-        {loading ? (
+        {/* GAP-05 — with no session token the effect previously set loading
+            false with an empty list, so a signed-out customer saw the same
+            "No invoices yet" screen as a verified customer with zero orders.
+            Three distinct states are now rendered. Server-side gating at the
+            destination is unchanged; this is a prompt, not a security gate. */}
+        {!session?.token ? (
+          <GlassCard className="p-8 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-7 h-7 text-brand-600" />
+            </div>
+            <h2 className="text-lg font-bold text-heading mb-2">
+              {lang === "bn" ? "ইনভয়েস দেখতে সাইন ইন করুন" : "Sign in to see your invoices"}
+            </h2>
+            <p className="text-sm text-muted mb-6">
+              {lang === "bn"
+                ? "ফোন নম্বর আর একটি কোড। সাইন ইনের পরে সোজা এখানেই ফিরিয়ে আনব।"
+                : "Phone number and a code. We'll bring you straight back here."}
+            </p>
+            <Link href="/login?redirect=/profile/invoices" className="btn btn-brand btn-md">
+              {lang === "bn" ? "সাইন ইন" : "Sign in"}
+            </Link>
+          </GlassCard>
+        ) : loading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 text-brand-500 animate-spin" /></div>
         ) : orders.length === 0 ? (
           <GlassCard className="p-8 text-center text-muted">
