@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { FileText, Loader2, ChevronRight } from "lucide-react";
+import { FileText, ChevronRight } from "lucide-react";
 import { useCustomerStore } from "@/store/customer";
 import { useLanguageStore } from "@/store/language";
 import { ordersApi } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import PageHero from "@/components/ui/PageHero";
 import GlassCard from "@/components/ui/GlassCard";
+import { ListRowSkeleton } from "@/components/common/Skeletons";
 
 interface OrderSummary {
   order_number: string;
@@ -71,7 +72,7 @@ export default function InvoicesPage() {
             </Link>
           </GlassCard>
         ) : loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 text-brand-500 animate-spin" /></div>
+          <ListRowSkeleton rows={4} />
         ) : orders.length === 0 ? (
           <GlassCard className="p-8 text-center text-muted">
             {lang === "bn" ? "কোনো ইনভয়েস নেই" : "No invoices yet"}
