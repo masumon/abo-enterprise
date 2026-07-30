@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import {
   ShoppingCart, ChevronLeft, Package, CheckCircle,
-  Heart, GitCompare, Share2, MessageCircle, Zap, Star,
+  Heart, GitCompare, Share2, MessageCircle, Zap, Star, Truck,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,7 @@ import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
 import { formatPrice, discountPercent, cn, WHATSAPP_NUMBER } from "@/lib/utils";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import ImageZoom from "@/components/ui/ImageZoom";
 import ProductBookingModal from "@/components/products/ProductBookingModal";
 import ProductCard from "@/components/features/ProductCard";
@@ -35,7 +36,13 @@ export default function ProductDetailClient({ product }: Props) {
   const [added, setAdded] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
   const [reviewCount, setReviewCount] = useState(product.review_count ?? 0);
-  const [avgRating, setAvgRating] = useState(product.rating ?? 4.5);
+  /*
+   * Screen 07 — the rating opened at a hardcoded 4.5 whenever the product had
+   * none, and the star row rendered whether or not a review stood behind it.
+   * The structured data was corrected under GAP-01; the page itself was still
+   * making the claim. A rating is measured or absent, never assumed.
+   */
+  const [avgRating, setAvgRating] = useState(product.rating ?? 0);
   const [showStickyBar, setShowStickyBar] = useState(false);
   const [bookingOpen, setBookingOpen] = useState(false);
   // Single source: the API-computed capabilities array, with a flag fallback.
@@ -111,6 +118,25 @@ export default function ProductDetailClient({ product }: Props) {
   const waMsg = encodeURIComponent(`${lang === "bn" ? "অর্ডার করতে চাই" : "I want to order"}: ${name} - ${formatPrice(product.price)}`);
   const savings = product.original_price ? product.original_price - product.price : 0;
 
+  /*
+   * The delivery line, built from the settings checkout bills from. A
+   * per-product override wins where the admin set one; free delivery is only
+   * claimed when this product's price alone already clears the threshold, so
+   * the promise holds for a single-item order — the case the line describes.
+   */
+  const { settings } = usePublicSettings();
+  const sylhetCharge = product.delivery_charge ?? Number(getSettingValue(settings, "delivery_charge_sylhet") || NaN);
+  const freeMin = Number(getSettingValue(settings, "free_delivery_min_amount") || NaN);
+  const deliveryLine = (() => {
+    if (!Number.isFinite(sylhetCharge)) return null;
+    const free = Number.isFinite(freeMin) && product.price >= freeMin && product.delivery_charge == null;
+    const cost = free
+      ? (lang === "bn" ? "ফ্রি" : "Free")
+      : formatPrice(sylhetCharge);
+    const parts = [cost, lang === "bn" ? "১–২ দিন" : "1–2 days", lang === "bn" ? "ক্যাশ অন ডেলিভারি" : "cash on delivery"];
+    return parts.join(" · ");
+  })();
+
   return (
     <main className="min-h-screen py-8 px-4 pb-[calc(var(--mobile-chrome-bottom)+5rem)] lg:pb-8">
       <div className="max-w-6xl mx-auto">
@@ -150,14 +176,28 @@ export default function ProductDetailClient({ product }: Props) {
 
             <div className="p-6 flex flex-col">
               <div className="flex items-center gap-2 mb-3">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" aria-hidden />
-                  <span className="font-semibold text-sm">{avgRating.toFixed(1)}</span>
-                </div>
-                {reviewCount > 0 && (
-                  <span className="text-sm text-gray-500">({reviewCount} {lang === "bn" ? "রিভিউ" : "reviews"})</span>
+                {reviewCount > 0 ? (
+                  <>
+                    <div className="flex items-center gap-1">
+                      <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" aria-hidden />
+                      <span className="font-semibold text-sm">{avgRating.toFixed(1)}</span>
+                    </div>
+                    <span className="text-sm text-gray-500">
+                      ({reviewCount} {lang === "bn" ? "রিভিউ" : "reviews"})
+                    </span>
+                  </>
+                ) : (
+                  /* Neutral grey, never amber or red — a new product having no
+                     reviews yet is ordinary, not a warning. */
+                  <>
+                    <span className="badge badge-default">
+                      {lang === "bn" ? "এখনো রিভিউ নেই" : "No reviews yet"}
+                    </span>
+                    <a href="#reviews" className="text-xs font-semibold text-brand-600 hover:underline">
+                      {lang === "bn" ? "প্রথম রিভিউ দিন" : "Be the first to review"}
+                    </a>
+                  </>
                 )}
-                <span className="text-xs text-green-600 font-medium ml-auto">{lang === "bn" ? "✓ যাচাইকৃত বিক্রেতা" : "✓ Verified seller"}</span>
               </div>
 
               {product.is_flash_sale && (
@@ -185,6 +225,30 @@ export default function ProductDetailClient({ product }: Props) {
                   <span className="text-red-500 text-sm font-medium">{t("out_of_stock")}</span>
                 )}
               </div>
+              {/*
+                Screen 07 — in Bangladesh the delivery cost and the wait are the
+                decision variables right after the price, and both used to live
+                two screens away in the cart. The numbers come from the same
+                settings checkout bills from (delivery_charge_sylhet,
+                free_delivery_min_amount), never from a figure typed here, so
+                the page cannot promise something the invoice contradicts.
+                A per-product override wins when the admin has set one.
+              */}
+              {deliveryLine && (
+                <div className="flex items-start gap-2.5 mb-5 p-3 rounded-lg border border-gray-200 dark:border-white/10">
+                  <Truck className="w-4 h-4 mt-0.5 text-brand-600 flex-shrink-0" aria-hidden />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-heading">
+                      {lang === "bn" ? "সিলেট সদরে ডেলিভারি" : "Delivery to Sylhet Sadar"}
+                    </p>
+                    <p className="text-xs text-muted">{deliveryLine}</p>
+                  </div>
+                  <Link href="/shipping" className="text-xs font-semibold text-brand-600 hover:underline flex-shrink-0">
+                    {lang === "bn" ? "বিস্তারিত" : "details"}
+                  </Link>
+                </div>
+              )}
+
               {desc && <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-6">{desc}</p>}
               {product.specifications && Object.keys(product.specifications).length > 0 && (
                 <div className="mb-6">
@@ -243,7 +307,10 @@ export default function ProductDetailClient({ product }: Props) {
           </div>
         </GlassCard>
 
-        <ProductReviews productId={product.id} />
+        {/* Anchor for "Be the first to review" above. */}
+        <div id="reviews" className="scroll-mt-24">
+          <ProductReviews productId={product.id} />
+        </div>
         <ProductFAQ />
         {related.length > 0 && (
           <section className="mt-10">
