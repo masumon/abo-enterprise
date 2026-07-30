@@ -787,16 +787,17 @@
   .enterprise-section-alt {
     @apply enterprise-section bg-[var(--surface)] dark:bg-[var(--surface-secondary)];
   }
+  /* The kit's CTA bar is a solid surface with a single hairline above it. It
+     was translucent with a 16px blur and a deep shadow, which let the page
+     scroll visibly underneath the one control the screen is asking for — and
+     cost a compositor pass on every scroll frame on the cheap Android phones
+     most of this traffic arrives on. */
   .sticky-cta-bar {
-    @apply fixed left-0 right-0 z-[45] lg:hidden;
+    @apply fixed left-0 right-0 z-[45] lg:hidden bg-white dark:bg-[var(--surface-card)];
     /* --mobile-chrome-bottom already includes env(safe-area-inset-bottom);
        adding it again here doubled the inset and left a blank strip. */
     bottom: var(--mobile-chrome-bottom);
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    border-top: 1px solid rgba(30, 43, 107,0.08);
-    box-shadow: 0 -4px 24px rgba(30, 43, 107,0.08);
+    border-top: 1px solid var(--line);
   }
   .dark .sticky-cta-bar {
     background: color-mix(in srgb, var(--surface-card) 94%, transparent);
