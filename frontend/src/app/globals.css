@@ -220,24 +220,36 @@
        brand-coloured one; the design system's ring is marigold, defined once in
        the base layer, and it can only show if nothing cancels it. */
   }
+  /*
+   * The system allows exactly one marigold action per screen, and btn-primary
+   * is what the app already uses for that one action — checkout, add to cart,
+   * the hero CTA. It was green, a colour the system reserves for state ("in
+   * stock", "paid"), never for a button; a green button and a green stock label
+   * on the same card told the eye they meant the same thing.
+   *
+   * Flat, not a gradient: the system's buttons are solid, and a gradient reads
+   * as a third colour that is in no palette. Ink text on marigold, per the kit.
+   */
   .btn-primary {
-    @apply btn bg-gradient-to-r from-green-600 to-green-700 text-white
-           hover:from-green-700 hover:to-green-800 shadow-md shadow-green-500/20
-           hover:shadow-lg hover:shadow-green-500/30 hover:-translate-y-px active:translate-y-0;
+    @apply btn bg-accent-500 text-[#14182b] hover:bg-accent-600
+           shadow-sm active:bg-accent-700;
   }
   .btn-success {
     @apply btn bg-gradient-to-r from-green-600 to-emerald-600 text-white
            hover:from-green-700 hover:to-emerald-700 shadow-md shadow-green-500/25
            hover:shadow-lg hover:-translate-y-px active:translate-y-0;
   }
+  /* The ordinary action: solid nil. Everything that is not the one marigold
+     action on the screen lands here. */
   .btn-brand {
-    @apply btn bg-gradient-to-r from-brand-500 to-brand-600 text-white
-           hover:from-brand-600 hover:to-brand-700 shadow-md shadow-brand-500/20
-           hover:shadow-lg hover:shadow-brand-500/30 hover:-translate-y-px active:translate-y-0;
+    @apply btn bg-brand-600 text-white hover:bg-brand-700 shadow-sm
+           active:bg-brand-800;
   }
+  /* Secondary: a single-weight rule in nil, as the kit draws it. The 2px
+     border made outline buttons compete with the solid ones beside them. */
   .btn-outline {
-    @apply btn border-2 border-brand-200 text-brand-600 hover:bg-brand-50
-           hover:border-brand-300 active:bg-brand-100;
+    @apply btn border border-brand-600 text-brand-600 hover:bg-brand-50
+           active:bg-brand-100;
   }
   .btn-ghost {
     @apply btn text-gray-600 hover:bg-gray-100/80 hover:text-gray-800;
