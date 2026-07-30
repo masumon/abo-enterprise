@@ -41,7 +41,9 @@ export default function ToastProvider() {
             <Icon className="w-5 h-5 flex-shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium">{toast.message}</p>
-              {toast.action && (
+              {/* GAP-29 — an action may navigate (href) or run a callback
+                  (onClick, e.g. undo). Existing href callers are unchanged. */}
+              {toast.action?.href && (
                 <Link
                   href={toast.action.href}
                   onClick={() => dismiss(toast.id)}
@@ -49,6 +51,18 @@ export default function ToastProvider() {
                 >
                   {toast.action.label} →
                 </Link>
+              )}
+              {toast.action && !toast.action.href && toast.action.onClick && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    toast.action?.onClick?.();
+                    dismiss(toast.id);
+                  }}
+                  className="inline-block mt-1 text-xs font-semibold underline underline-offset-2 hover:opacity-80"
+                >
+                  {toast.action.label}
+                </button>
               )}
             </div>
             <button
