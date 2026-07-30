@@ -31,11 +31,15 @@ const TIMELINE = [
   { year: "2025", title: { en: "AI & Automation", bn: "AI ও অটোমেশন" }, desc: { en: "AI assistant, automation and custom development with nationwide reach.", bn: "AI সহকারী, অটোমেশন ও কাস্টম ডেভেলপমেন্ট — সারাদেশে পৌঁছানো।" } },
 ];
 
+// GAP-13 — the previous figures (10,000+ customers, 50+ projects, 200+
+// products, 8+ years) were placeholder/demo values confirmed by the owner.
+// Only statements that can be verified from the business record are kept.
+// Catalogue counts are intentionally omitted here rather than hardcoded;
+// they should be read live before being displayed again.
 const ACHIEVEMENTS = [
-  { icon: Users, value: "10,000+", label: { en: "Happy Customers", bn: "সন্তুষ্ট গ্রাহক" } },
-  { icon: Briefcase, value: "50+", label: { en: "Projects Delivered", bn: "সম্পন্ন প্রজেক্ট" } },
-  { icon: ShoppingCart, value: "200+", label: { en: "Products", bn: "পণ্য" } },
-  { icon: Award, value: "8+", label: { en: "Years Experience", bn: "বছরের অভিজ্ঞতা" } },
+  { icon: Award, value: "2017", label: { en: "Trading since", bn: "প্রতিষ্ঠা সাল" } },
+  { icon: Briefcase, value: "3", label: { en: "Business divisions", bn: "ব্যবসায়িক বিভাগ" } },
+  { icon: ShoppingCart, value: "Sylhet", label: { en: "Head office", bn: "প্রধান কার্যালয়" } },
 ];
 
 const TEAM_FALLBACK: CmsTeamMember[] = [
