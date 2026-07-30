@@ -4,6 +4,7 @@ import Hero from "@/components/home/Hero";
 import TrustBadges from "@/components/home/TrustBadges";
 import QuickCategories from "@/components/home/QuickCategories";
 import HomeLanes from "@/components/home/HomeLanes";
+import HomeSectionRail from "@/components/home/HomeSectionRail";
 import Reveal from "@/components/ui/Reveal";
 import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, getBrandFullTitle } from "@/lib/tokens";
 import { jsonLdString } from "@/lib/metadata";
@@ -133,7 +134,10 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: jsonLdString(localBusinessJsonLd) }}
       />
       <Hero />
-      <Reveal><QuickCategories /></Reveal>
+      <HomeSectionRail />
+      <div id="categories" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal><QuickCategories /></Reveal>
+      </div>
       <Reveal><TrustBadges /></Reveal>
       <Reveal><EntryPoints /></Reveal>
       {/* GAP-23 — the three arms of the business used to stack, so whichever
@@ -143,15 +147,22 @@ export default function HomePage() {
           an IntersectionObserver, and an element that mounts inside a hidden
           panel has nothing to intersect. Switching lanes must never land on a
           section that is still waiting to fade in. */}
+      <div id="popular" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]" />
       <HomeLanes
         shop={<FeaturedProducts />}
         services={<ServicesOverview />}
         software={<Portfolio />}
       />
-      <Reveal><CustomerReviews /></Reveal>
-      <Reveal><FAQ /></Reveal>
+      <div id="reviews" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal><CustomerReviews /></Reveal>
+      </div>
+      <div id="faq" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal><FAQ /></Reveal>
+      </div>
       <Reveal><LeadCapture /></Reveal>
-      <Reveal><ContactSection /></Reveal>
+      <div id="contact" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal><ContactSection /></Reveal>
+      </div>
     </>
   );
 }
