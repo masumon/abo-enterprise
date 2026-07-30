@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import String, Text, Boolean, Integer, Numeric, ForeignKey, DateTime, JSON
+from sqlalchemy import String, Text, Boolean, Integer, SmallInteger, Numeric, ForeignKey, DateTime, JSON
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
@@ -257,6 +257,10 @@ class Service(Base):
     # Where the service is completed (manual_sql/0008). NULL = unspecified,
     # which preserves the pre-0008 behaviour exactly.
     fulfilment: Mapped[str | None] = mapped_column(String(20))  # remote|at_shop|hybrid
+    # How long it takes, in working days (manual_sql/0011). A range, because
+    # that is what these are in practice. NULL = not published.
+    turnaround_days_min: Mapped[int | None] = mapped_column(SmallInteger)
+    turnaround_days_max: Mapped[int | None] = mapped_column(SmallInteger)
     # CTA override (NULL = infer from pricing_type/capabilities; see schemas.resolve_service_cta).
     cta_type: Mapped[str | None] = mapped_column(String(20))  # book|order|quote|contact
     cta_label_en: Mapped[str | None] = mapped_column(String(120))
