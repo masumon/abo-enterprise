@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   ShoppingBag, Tag, AlertCircle, ArrowLeft, Truck, Shield, ChevronRight, Copy, Check,
+  Building2, ChevronDown,
 } from "lucide-react";
 import { apiErrorMessage } from "@/lib/apiError";
 import { trackEvent } from "@/components/analytics/GoogleAnalytics";
@@ -38,6 +39,13 @@ const schema = z.object({
   payment_gateway: z.string().min(1, "Select payment method"),
   payment_trx_id: z.string().optional(),
   otp_code: z.string().optional(),
+  // Institutional invoice identity (manual_sql/0009). All optional: a personal
+  // order sends none of them and behaves exactly as before.
+  company_name: z.string().optional(),
+  company_bin: z.string().optional(),
+  company_tin: z.string().optional(),
+  po_number: z.string().optional(),
+  billing_address: z.string().optional(),
   notes: z.string().optional(),
 });
 
@@ -63,6 +71,7 @@ export default function CheckoutPage() {
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [companyOpen, setCompanyOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [stockIssue, setStockIssue] = useState(false);
@@ -225,6 +234,13 @@ export default function CheckoutPage() {
         delivery_address: fullAddress,
         payment_method: data.payment_gateway,
         payment_number: data.payment_trx_id?.trim() || undefined,
+        // Sent only when the buyer opened the company section and filled it in;
+        // blanks stay undefined so a personal order's payload is unchanged.
+        company_name: data.company_name?.trim() || undefined,
+        company_bin: data.company_bin?.trim() || undefined,
+        company_tin: data.company_tin?.trim() || undefined,
+        po_number: data.po_number?.trim() || undefined,
+        billing_address: data.billing_address?.trim() || undefined,
         notes: data.notes,
         items: orderItems,
         subtotal,
@@ -416,6 +432,62 @@ export default function CheckoutPage() {
                     <textarea {...register("street_address")} rows={2} className={cn("input resize-none", errors.street_address && "input-error")}
                       placeholder={lang === "bn" ? "রোড, এলাকা, ইউনিয়ন..." : "Road, area, union..."} />
                     {errors.street_address && <p className="text-red-500 text-xs mt-1">{errors.street_address.message}</p>}
+                  </div>
+                  {/* X4 — an institution buying here got an invoice in an
+                      individual's name, which their bookkeeping cannot accept,
+                      and a government purchase cannot be settled at all without
+                      a PO number on the bill. Collapsed by default so a personal
+                      order never sees it. */}
+                  <div className="border-t border-gray-100 dark:border-white/10 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setCompanyOpen((v) => !v)}
+                      aria-expanded={companyOpen}
+                      aria-controls="checkout-company-fields"
+                      className="w-full flex items-center justify-between gap-2 text-sm font-semibold text-heading py-1"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Building2 aria-hidden className="w-4 h-4 text-brand-600" />
+                        {lang === "bn" ? "প্রতিষ্ঠানের নামে ইনভয়েস" : "Invoice to a company"}
+                      </span>
+                      <ChevronDown
+                        aria-hidden
+                        className={cn("w-4 h-4 motion-safe:transition-transform", companyOpen && "rotate-180")}
+                      />
+                    </button>
+                    <div id="checkout-company-fields" hidden={!companyOpen} className="space-y-3 mt-3">
+                      <div>
+                        <label className="form-label" htmlFor="co-name">{lang === "bn" ? "প্রতিষ্ঠানের নাম" : "Company name"}</label>
+                        <input id="co-name" {...register("company_name")} className="input" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="form-label" htmlFor="co-bin">BIN</label>
+                          <input id="co-bin" {...register("company_bin")} className="input" />
+                        </div>
+                        <div>
+                          <label className="form-label" htmlFor="co-tin">TIN</label>
+                          <input id="co-tin" {...register("company_tin")} className="input" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="form-label" htmlFor="co-po">
+                          {lang === "bn" ? "PO / ওয়ার্ক অর্ডার নম্বর" : "PO / work order number"}
+                        </label>
+                        <input id="co-po" {...register("po_number")} className="input" />
+                        <p className="text-xs text-muted mt-1">
+                          {lang === "bn"
+                            ? "সরকারি ক্রয়ের বিল PO নম্বর ছাড়া পরিশোধ হয় না।"
+                            : "Government purchases are not settled without it."}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="form-label" htmlFor="co-billing">
+                          {lang === "bn" ? "বিলিং ঠিকানা (ভিন্ন হলে)" : "Billing address (if different)"}
+                        </label>
+                        <textarea id="co-billing" {...register("billing_address")} rows={2} className="input resize-none" />
+                      </div>
+                    </div>
                   </div>
                   <div>
                     <label className="form-label">{lang === "bn" ? "নোট" : "Notes"}</label>

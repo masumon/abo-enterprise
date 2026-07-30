@@ -10,6 +10,7 @@ import { useCustomerStore } from "@/store/customer";
 import { useCustomerProfileStore } from "@/store/customerProfile";
 import { useThemeStore, applyTheme } from "@/store/theme";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
+import { writeLangCookie } from "@/lib/lang";
 
 export default function StoreHydration() {
   const pathname = usePathname();
@@ -20,6 +21,10 @@ export default function StoreHydration() {
 
   useEffect(() => {
     useLanguageStore.persist.rehydrate();
+    // GAP-24 — visitors who already had a language in localStorage have no
+    // cookie yet, so seed it from the rehydrated value; the next request then
+    // renders server-side in their language.
+    writeLangCookie(useLanguageStore.getState().lang);
     useCartStore.persist.rehydrate();
     useWishlistStore.persist.rehydrate();
     useCompareStore.persist.rehydrate();

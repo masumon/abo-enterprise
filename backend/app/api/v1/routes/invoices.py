@@ -55,6 +55,14 @@ def _public_invoice_payload(
         "discount_amount": float(order.discount_amount or 0) if order else None,
         "courier_provider": order.courier_provider if order else None,
         "courier_tracking_id": order.courier_tracking_id if order else None,
+        # Institutional invoice identity. The invoice's own copy (0010) wins;
+        # the order is the fallback for invoices issued before that column
+        # existed. All None on a personal order.
+        "company_name": invoice.company_name or (order.company_name if order else None),
+        "company_bin": invoice.company_bin or (order.company_bin if order else None),
+        "company_tin": invoice.company_tin or (order.company_tin if order else None),
+        "po_number": invoice.po_number or (order.po_number if order else None),
+        "billing_address": invoice.billing_address or (order.billing_address if order else None),
         "booking_number": booking.booking_number if booking else (legacy_booking.booking_number if legacy_booking else None),
         "booking_status": booking.status if booking else (legacy_booking.status if legacy_booking else None),
         "service_name": booking.service_name if booking else (_legacy_service_label(legacy_booking) if legacy_booking else None),

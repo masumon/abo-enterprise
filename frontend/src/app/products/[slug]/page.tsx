@@ -88,13 +88,15 @@ function buildJsonLd(product: Product) {
   };
 
   if (product.image_url) jsonLd.image = [product.image_url];
-  if (product.rating) {
+  // Emit aggregateRating only when real reviews exist. A rating with a
+  // fabricated ratingCount is invalid structured data (GAP-01).
+  if (product.rating && (product.review_count ?? 0) > 0) {
     jsonLd.aggregateRating = {
       "@type": "AggregateRating",
       ratingValue: product.rating,
       bestRating: 5,
       worstRating: 1,
-      ratingCount: 1,
+      ratingCount: product.review_count,
     };
   }
   if (product.category) jsonLd.category = product.category;

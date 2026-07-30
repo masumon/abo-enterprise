@@ -19,9 +19,36 @@ export default function AddressesPage() {
     useCustomerProfileStore.persist.rehydrate();
   }, []);
 
+  // GAP-06 — the three validation rules previously caused a bare return with
+  // no feedback, so Save appeared to do nothing. Each rule now names what is
+  // wrong and why it matters, in delivery terms: Bangladeshi addresses are
+  // landmark-based, and a technically valid but vague address is the common
+  // cause of a failed delivery.
+  const errors = {
+    label: !label.trim()
+      ? lang === "bn"
+        ? "একটি নাম দিন যাতে checkout-এ বেছে নিতে পারেন — যেমন “বাড়ি” বা “দোকান”।"
+        : "Give it a name so you can pick it at checkout — “Home” or “Shop”."
+      : null,
+    address: address.trim().length < 10
+      ? lang === "bn"
+        ? "খুব ছোট। বাসা, রোড ও এলাকা লিখুন — রাইডারকে খুঁজে পেতে হবে।"
+        : "Too short. Include house, road and area — the rider needs to find it."
+      : null,
+    phone: !BD_PHONE_REGEX.test(phone)
+      ? lang === "bn"
+        ? "বাংলাদেশি মোবাইল নম্বর ১১ সংখ্যার, ০১ দিয়ে শুরু।"
+        : "A Bangladeshi mobile number has 11 digits, starting 01."
+      : null,
+  };
+  const isValid = !errors.label && !errors.address && !errors.phone;
+  const [attempted, setAttempted] = useState(false);
+
   const handleAdd = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!label.trim() || address.trim().length < 10 || !BD_PHONE_REGEX.test(phone)) return;
+    setAttempted(true);
+    if (!isValid) return;
+    setAttempted(false);
     addAddress({
       label: label.trim(),
       address: address.trim(),
@@ -92,10 +119,24 @@ export default function AddressesPage() {
             {lang === "bn" ? "নতুন ঠিকানা" : "Add Address"}
           </h2>
           <form onSubmit={handleAdd} className="space-y-3">
-            <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={lang === "bn" ? "লেবেল (যেমন: বাড়ি)" : "Label (e.g. Home)"} className="input" required />
-            <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder={lang === "bn" ? "সম্পূর্ণ ঠিকানা" : "Full address"} className="input resize-none" rows={3} required />
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={BD_PHONE_PLACEHOLDER} className="input" required />
-            <button type="submit" className="btn btn-brand btn-md w-full">{lang === "bn" ? "সংরক্ষণ" : "Save Address"}</button>
+            <div>
+              <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={lang === "bn" ? "লেবেল (যেমন: বাড়ি)" : "Label (e.g. Home)"} className="input" aria-invalid={attempted && !!errors.label} required />
+              {attempted && errors.label && <p className="text-xs text-red-500 mt-1">{errors.label}</p>}
+            </div>
+            <div>
+              <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder={lang === "bn" ? "সম্পূর্ণ ঠিকানা" : "Full address"} className="input resize-none" rows={3} aria-invalid={attempted && !!errors.address} required />
+              {attempted && errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
+            </div>
+            <div>
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={BD_PHONE_PLACEHOLDER} className="input" aria-invalid={attempted && !!errors.phone} required />
+              {attempted && errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+            </div>
+            <button type="submit" disabled={attempted && !isValid} className="btn btn-brand btn-md w-full disabled:opacity-50 disabled:cursor-not-allowed">{lang === "bn" ? "সংরক্ষণ" : "Save Address"}</button>
+            {attempted && !isValid && (
+              <p className="text-xs text-muted text-center">
+                {lang === "bn" ? "উপরের ফিল্ডগুলো ঠিক করলে সংরক্ষণ হবে" : "Fix the fields above to save"}
+              </p>
+            )}
           </form>
         </GlassCard>
       </div>

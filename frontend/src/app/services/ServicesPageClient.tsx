@@ -200,6 +200,17 @@ export default function ServicesPageClient({
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(initialTotal);
   const [catalogSource, setCatalogSource] = useState<CatalogSource>("api");
+  /**
+   * GAP-11 — eight category cards, each with its full chip cloud, put roughly
+   * three phone screens of taxonomy between the hero and the actual service
+   * list. On a phone the cards stack, so the visitor scrolls past every chip of
+   * every group they did not come for. Collapsing the chips below `sm` turns
+   * that into a scannable index; from `sm` up the grid has the room, so the
+   * chips stay open and nothing changes on tablet or desktop.
+   */
+  const [openCards, setOpenCards] = useState<Record<string, boolean>>({});
+  const toggleCard = (key: string) =>
+    setOpenCards((prev) => ({ ...prev, [key]: !prev[key] }));
   const skipInitial = useRef(!initialIsDemo && initialServices.length > 0);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -385,7 +396,31 @@ export default function ServicesPageClient({
                         <h3 className="font-bold text-heading">{title}</h3>
                       </div>
                     )}
-                    <div className="flex flex-wrap gap-2">
+                    {chips.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => toggleCard(key)}
+                        aria-expanded={!!openCards[key]}
+                        aria-controls={`service-chips-${key}`}
+                        className="sm:hidden w-full flex items-center justify-between gap-2 -mt-1 mb-2 py-2 text-xs font-semibold text-brand-700 dark:text-brand-200"
+                      >
+                        <span>
+                          {chips.length}{" "}
+                          {t({ en: chips.length === 1 ? "service" : "services", bn: "টি সেবা" })}
+                        </span>
+                        <ChevronRight
+                          aria-hidden
+                          className={cn(
+                            "w-4 h-4 motion-safe:transition-transform",
+                            openCards[key] && "rotate-90"
+                          )}
+                        />
+                      </button>
+                    )}
+                    <div
+                      id={`service-chips-${key}`}
+                      className={cn("flex-wrap gap-2", openCards[key] ? "flex" : "hidden sm:flex")}
+                    >
                       {chips.map((chip) =>
                         chip.href ? (
                           <Link

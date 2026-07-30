@@ -12,6 +12,8 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import LivePreview from "@/components/admin/LivePreview";
 import ServiceCard from "@/components/services/ServiceCard";
 import type { Service, ServicePricingTier, ServiceBookingFormField, Category } from "@/types";
+
+type ServiceFulfilment = NonNullable<Service["fulfilment"]> | null;
 import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -845,6 +847,21 @@ export default function AdminServicesPage() {
                     <label className="form-label">Pricing Type <span className="text-red-400">*</span></label>
                     <select value={editing.pricing_type ?? "fixed"} onChange={f("pricing_type")} className="input w-full text-sm">
                       {PRICING_TYPES.map(pt => <option key={pt} value={pt} className="capitalize">{pt}</option>)}
+                    </select>
+                  </div>
+                  {/* GAP-15 — where the service is completed. Left blank, the
+                      public pages say nothing, which is the pre-0008 behaviour. */}
+                  <div>
+                    <label className="form-label">Fulfilment</label>
+                    <select
+                      value={editing.fulfilment ?? ""}
+                      onChange={(e) => setEditing(prev => prev ? { ...prev, fulfilment: (e.target.value || null) as ServiceFulfilment } : prev)}
+                      className="input w-full text-sm"
+                    >
+                      <option value="">Unspecified (say nothing)</option>
+                      <option value="remote">Remote — no visit needed</option>
+                      <option value="at_shop">At shop — customer must come in</option>
+                      <option value="hybrid">Hybrid — starts online, finishes at shop</option>
                     </select>
                   </div>
                   <div>

@@ -433,6 +433,12 @@ export interface PublicInvoiceData {
   discount_amount?: number | null;
   courier_provider?: string | null;
   courier_tracking_id?: string | null;
+  /** Institutional invoice identity (manual_sql/0009). Null on a personal order. */
+  company_name?: string | null;
+  company_bin?: string | null;
+  company_tin?: string | null;
+  po_number?: string | null;
+  billing_address?: string | null;
   booking_number?: string | null;
   booking_status?: string | null;
   service_name?: string | null;

@@ -6,16 +6,47 @@ import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import Accordion from "@/components/ui/Accordion";
 import { FAQ_ITEMS } from "@/lib/data/faq";
+import { usePublicSettings } from "@/hooks/usePublicSettings";
+import { getSettingValue } from "@/hooks/usePublicSettings";
 
-const COVERAGE = [
-  { region: { en: "Sylhet City", bn: "সিলেট শহর" }, time: { en: "Same day", bn: "একই দিন" }, charge: { en: "Free", bn: "ফ্রি" } },
-  { region: { en: "Sylhet District", bn: "সিলেট জেলা" }, time: { en: "1-2 days", bn: "১-২ দিন" }, charge: { en: "From ৳40", bn: "৳৪০ থেকে" } },
-  { region: { en: "Nationwide", bn: "সারাদেশ" }, time: { en: "2-3 days", bn: "২-৩ দিন" }, charge: { en: "From ৳60", bn: "৳৬০ থেকে" } },
-];
+const COVERAGE_TIMES = [
+  { key: "sylhet", region: { en: "Sylhet City", bn: "সিলেট শহর" }, time: { en: "Same day", bn: "একই দিন" } },
+  { key: "dhaka", region: { en: "Dhaka", bn: "ঢাকা" }, time: { en: "1-2 days", bn: "১-২ দিন" } },
+  { key: "outside", region: { en: "Nationwide", bn: "সারাদেশ" }, time: { en: "2-3 days", bn: "২-৩ দিন" } },
+] as const;
+
+/**
+ * GAP-09 — the charges shown here were previously a hardcoded constant while
+ * checkout computed them from zone settings via calcDeliveryCharge. Today the
+ * two may agree; any change to a zone, a surcharge or a promotion would make
+ * them disagree silently, and the customer would discover it at checkout after
+ * choosing products on the published figure.
+ *
+ * Both now read the same settings keys, so divergence is structurally
+ * impossible. Keys match calcDeliveryCharge in lib/checkoutHelpers.ts.
+ */
+const CHARGE_KEYS: Record<string, { setting: string; fallback: string }> = {
+  sylhet: { setting: "delivery_charge_sylhet", fallback: "60" },
+  dhaka: { setting: "delivery_charge_dhaka", fallback: "120" },
+  outside: { setting: "delivery_charge_outside", fallback: "130" },
+};
 
 export default function ShippingPage() {
   const { lang } = useLanguageStore();
   const t = (o: { en: string; bn: string }) => (lang === "bn" ? o.bn : o.en);
+  const { settings } = usePublicSettings();
+
+  const freeMin = getSettingValue(settings, "free_delivery_min_amount") || "2000";
+  const chargeFor = (key: string) => {
+    const spec = CHARGE_KEYS[key];
+    const value = getSettingValue(settings, spec.setting) || spec.fallback;
+    if (key === "sylhet") {
+      return lang === "bn"
+        ? `৳${freeMin}+ অর্ডারে ফ্রি · নইলে ৳${value}`
+        : `Free over ৳${freeMin} · otherwise ৳${value}`;
+    }
+    return lang === "bn" ? `৳${value} থেকে` : `From ৳${value}`;
+  };
 
   const shippingFaqs = FAQ_ITEMS.filter((f) => f.category === "shipping").map((item, i) => ({
     id: `ship-${i}`,
@@ -59,11 +90,11 @@ export default function ShippingPage() {
                 </tr>
               </thead>
               <tbody>
-                {COVERAGE.map((row) => (
-                  <tr key={row.region.en}>
+                {COVERAGE_TIMES.map((row) => (
+                  <tr key={row.key}>
                     <td className="font-medium text-heading">{t(row.region)}</td>
                     <td className="text-muted">{t(row.time)}</td>
-                    <td className="text-brand-600 font-semibold">{t(row.charge)}</td>
+                    <td className="text-brand-600 font-semibold">{chargeFor(row.key)}</td>
                   </tr>
                 ))}
               </tbody>

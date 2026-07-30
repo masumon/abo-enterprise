@@ -119,7 +119,7 @@ def _qr_image(data: str):
         return None
 
 
-def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path, verify_url: str | None = None) -> bytes:
+def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path, verify_url: str | None = None, bill_to: dict | None = None) -> bytes:
     """Render the branded invoice with fpdf2 + HarfBuzz text shaping.
 
     reportlab cannot shape complex scripts, so Bengali (matras/conjuncts) broke
@@ -209,16 +209,37 @@ def _build_invoice_pdf(invoice, company: dict, ref_label, ref_value, logo_path, 
     # ── BILL TO card (left) ──
     bill_w = CW * 0.52
     pad = 14.0
-    extras = [t for t in (invoice.customer_phone, invoice.customer_email) if t]
+    # X4 — when the order carries an institution, the PDF must bill to that
+    # institution, exactly as the on-screen invoice does; the person who placed
+    # it stays on the card as the contact. bill_to is None for every personal
+    # order and for booking invoices, which keeps the original layout.
+    bill_to = bill_to or {}
+    bill_name = bill_to.get("company_name") or invoice.customer_name or "—"
+    ident = " · ".join(
+        part for part in (
+            f"BIN {bill_to['company_bin']}" if bill_to.get("company_bin") else None,
+            f"TIN {bill_to['company_tin']}" if bill_to.get("company_tin") else None,
+        ) if part
+    )
+    extras = [
+        t for t in (
+            bill_to.get("company_name") and invoice.customer_name,
+            invoice.customer_phone,
+            invoice.customer_email,
+            ident or None,
+            f"PO {bill_to['po_number']}" if bill_to.get("po_number") else None,
+            bill_to.get("billing_address"),
+        ) if t
+    ]
     card_h = 12 + 10 + 6 + 16 + (14 * len(extras)) + 12
     fill(ROW_ALT); draw(BORDER); pdf.set_line_width(0.75)
     pdf.rect(M, y, bill_w, card_h, style="DF", round_corners=True, corner_radius=8)
     line(M + pad, y + 12, bill_w - 2 * pad, 10, "BILL TO", "B", 7.5, MUTED)
     cy = y + 12 + 10 + 6
-    line(M + pad, cy, bill_w - 2 * pad, 16, fit(invoice.customer_name or "—", bill_w - 2 * pad, "B", 11.5), "B", 11.5, INK)
+    line(M + pad, cy, bill_w - 2 * pad, 16, fit(bill_name, bill_w - 2 * pad, "B", 11.5), "B", 11.5, INK)
     cy += 16
     for extra in extras:
-        line(M + pad, cy, bill_w - 2 * pad, 14, extra, "", 10, INK)
+        line(M + pad, cy, bill_w - 2 * pad, 14, fit(str(extra), bill_w - 2 * pad, "", 10), "", 10, INK)
         cy += 14
 
     # ── Meta rows (right) ──
@@ -440,6 +461,14 @@ class InvoiceService:
             customer_name=order.customer_name,
             customer_email=order.customer_email,
             customer_phone=order.customer_phone,
+            # Copied at issue time (manual_sql/0010), like every other field on
+            # an invoice, so a later edit to the order cannot change a bill that
+            # has already gone out. All None on a personal order.
+            company_name=order.company_name,
+            company_bin=order.company_bin,
+            company_tin=order.company_tin,
+            po_number=order.po_number,
+            billing_address=order.billing_address,
             items=items,
             subtotal=float(order.subtotal),
             tax=0,
@@ -595,12 +624,35 @@ class InvoiceService:
         ref_label = None
         ref_value = None
         verify_url = None
+        # The invoice's own copy wins. The order fallback below stays for
+        # invoices issued before 0010, whose columns are NULL.
+        bill_to: dict | None = None
+        if invoice.company_name:
+            bill_to = {
+                "company_name": invoice.company_name,
+                "company_bin": invoice.company_bin,
+                "company_tin": invoice.company_tin,
+                "po_number": invoice.po_number,
+                "billing_address": invoice.billing_address,
+            }
         if invoice.order_id:
             order_result = await self.db.execute(
-                select(Order.order_number).where(Order.id == invoice.order_id)
+                select(
+                    Order.order_number, Order.company_name, Order.company_bin,
+                    Order.company_tin, Order.po_number, Order.billing_address,
+                ).where(Order.id == invoice.order_id)
             )
-            ref_value = order_result.scalar_one_or_none()
+            row = order_result.first()
+            ref_value = row[0] if row else None
             ref_label = "Order #"
+            # Only institutional orders carry an override; a personal order
+            # leaves bill_to None and the card renders exactly as before.
+            if bill_to is None and row and row[1]:
+                bill_to = {
+                    "company_name": row[1], "company_bin": row[2],
+                    "company_tin": row[3], "po_number": row[4],
+                    "billing_address": row[5],
+                }
         elif invoice.booking_id:
             bk_result = await self.db.execute(
                 select(BookingV2.booking_number).where(BookingV2.id == invoice.booking_id)
@@ -622,7 +674,7 @@ class InvoiceService:
                 verify_url = None
 
         return _build_invoice_pdf(
-            invoice, company, ref_label, ref_value, _find_logo_path(), verify_url
+            invoice, company, ref_label, ref_value, _find_logo_path(), verify_url, bill_to
         )
 
     def format_currency(self, amount: float) -> str:

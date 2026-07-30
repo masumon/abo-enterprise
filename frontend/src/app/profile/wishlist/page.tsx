@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, ArrowRight } from "lucide-react";
+import { Heart, ArrowRight, Trash2 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useWishlistStore } from "@/store/wishlist";
+import { useToastStore } from "@/store/toast";
 import { formatPrice } from "@/lib/utils";
 import GlassCard from "@/components/ui/GlassCard";
 
 export default function WishlistPage() {
   const { lang } = useLanguageStore();
-  const { items, remove } = useWishlistStore();
+  const { items, remove, toggle } = useWishlistStore();
+  const push = useToastStore((s) => s.push);
 
   return (
     <div className="min-h-screen py-8">
@@ -43,8 +45,27 @@ export default function WishlistPage() {
                 <Link href={`/products/${item.slug}`} className="btn btn-outline btn-sm">
                   <ArrowRight className="w-4 h-4" />
                 </Link>
-                <button onClick={() => remove(item.product_id)} className="text-gray-400 hover:text-red-500 p-2" aria-label="Remove">
-                  <Heart className="w-5 h-5 fill-current text-accent-400" />
+                {/* GAP-16 — a filled heart means "saved" everywhere else on the
+                    site, so using it to unsave asked the customer to press the
+                    symbol for keeping in order to stop keeping. A trash icon
+                    reads unambiguously, and removal is reversible via undo
+                    rather than guarded by a confirmation dialog. */}
+                <button
+                  onClick={() => {
+                    remove(item.product_id);
+                    push(
+                      "info",
+                      lang === "bn" ? "উইশলিস্ট থেকে সরানো হয়েছে" : "Removed from wishlist",
+                      {
+                        label: lang === "bn" ? "ফিরিয়ে আনুন" : "Undo",
+                        onClick: () => toggle(item),
+                      }
+                    );
+                  }}
+                  className="text-gray-400 hover:text-red-500 p-2"
+                  aria-label={lang === "bn" ? "সরান" : "Remove"}
+                >
+                  <Trash2 className="w-5 h-5" />
                 </button>
               </GlassCard>
             ))}

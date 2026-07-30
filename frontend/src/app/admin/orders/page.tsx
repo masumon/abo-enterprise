@@ -21,6 +21,9 @@ interface AdminOrder {
   order_status: string; subtotal: number; delivery_charge: number; total: number;
   advance_amount?: number; advance_paid?: boolean;
   courier_provider?: string | null; courier_tracking_id?: string | null;
+  /** Institutional invoice identity (manual_sql/0009); all null on a personal order. */
+  company_name?: string | null; company_bin?: string | null; company_tin?: string | null;
+  po_number?: string | null; billing_address?: string | null;
   notes?: string; items: AdminOrderItem[]; created_at: string;
 }
 
@@ -513,6 +516,13 @@ export default function AdminOrdersPage() {
                     <div><span className="text-gray-500">Phone</span><p className="font-medium">{detail.customer_phone}</p></div>
                     {detail.customer_email && <div className="col-span-2"><span className="text-gray-500">Email</span><p className="font-medium">{detail.customer_email}</p></div>}
                     <div className="col-span-2"><span className="text-gray-500">Address</span><p className="font-medium">{detail.delivery_address}</p></div>
+                    {/* X4 — an institutional order must be recognisable here,
+                        or the invoice goes out in the wrong name. */}
+                    {detail.company_name && <div className="col-span-2"><span className="text-gray-500">Company</span><p className="font-medium">{detail.company_name}</p></div>}
+                    {detail.company_bin && <div><span className="text-gray-500">BIN</span><p className="font-medium font-mono">{detail.company_bin}</p></div>}
+                    {detail.company_tin && <div><span className="text-gray-500">TIN</span><p className="font-medium font-mono">{detail.company_tin}</p></div>}
+                    {detail.po_number && <div className="col-span-2"><span className="text-gray-500">PO number</span><p className="font-medium font-mono">{detail.po_number}</p></div>}
+                    {detail.billing_address && <div className="col-span-2"><span className="text-gray-500">Billing address</span><p className="font-medium whitespace-pre-line">{detail.billing_address}</p></div>}
                   </div>
                 </div>
 

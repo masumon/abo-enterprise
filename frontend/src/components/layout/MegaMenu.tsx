@@ -19,6 +19,40 @@ export default function MegaMenu({ onNavigate }: MegaMenuProps) {
   const [openMenu, setOpenMenu] = useState<"products" | "services" | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
+  /**
+   * GAP-25 — the panel previously opened synchronously on mouseenter, so a
+   * pointer merely crossing a trigger opened a full panel, and closed
+   * synchronously on mouseleave, so a diagonal path toward the panel dismissed
+   * it. Hover is genuinely faster for deliberate desktop use; the defect was
+   * the absence of intent detection, not the interaction itself.
+   *
+   * Click and focus still open immediately — a keyboard user should never wait.
+   */
+  const OPEN_DELAY_MS = 140;
+  const CLOSE_DELAY_MS = 180;
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearHoverTimer = () => {
+    if (hoverTimer.current) {
+      clearTimeout(hoverTimer.current);
+      hoverTimer.current = null;
+    }
+  };
+  const openAfterDelay = (id: "products" | "services") => {
+    clearHoverTimer();
+    hoverTimer.current = setTimeout(() => setOpenMenu(id), OPEN_DELAY_MS);
+  };
+  const closeAfterDelay = () => {
+    clearHoverTimer();
+    hoverTimer.current = setTimeout(() => setOpenMenu(null), CLOSE_DELAY_MS);
+  };
+  const openNow = (id: "products" | "services") => {
+    clearHoverTimer();
+    setOpenMenu(id);
+  };
+
+  useEffect(() => clearHoverTimer, []);
+
   useEffect(() => {
     const close = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpenMenu(null);
@@ -115,8 +149,13 @@ export default function MegaMenu({ onNavigate }: MegaMenuProps) {
         <div key={menu.id} className="relative">
           <button
             type="button"
-            onClick={() => setOpenMenu(openMenu === menu.id ? null : menu.id)}
-            onMouseEnter={() => setOpenMenu(menu.id)}
+            onClick={() => {
+              clearHoverTimer();
+              setOpenMenu(openMenu === menu.id ? null : menu.id);
+            }}
+            onMouseEnter={() => openAfterDelay(menu.id)}
+            onMouseLeave={closeAfterDelay}
+            onFocus={() => openNow(menu.id)}
             className={cn(
               "flex items-center gap-1 px-3.5 py-2 rounded-xl text-sm font-medium transition-all",
               openMenu === menu.id
@@ -133,7 +172,8 @@ export default function MegaMenu({ onNavigate }: MegaMenuProps) {
           {openMenu === menu.id && (
             <div
               className="absolute top-full left-0 mt-2 w-[min(100vw-2rem,28rem)] enterprise-card p-4 shadow-glass-strong animate-fade-in z-50"
-              onMouseLeave={() => setOpenMenu(null)}
+              onMouseEnter={clearHoverTimer}
+              onMouseLeave={closeAfterDelay}
             >
               <div className={cn("grid gap-4", menu.columns.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
                 {menu.columns.map((col) => (

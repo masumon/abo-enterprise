@@ -1,10 +1,14 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import "./globals.css";
+import LanguageBootstrap from "@/components/providers/LanguageBootstrap";
+import { LANG_COOKIE, normalizeLang } from "@/lib/lang";
 import StoreHydration from "@/components/providers/StoreHydration";
 import PublicShell from "@/components/layout/PublicShell";
 import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
 import PWASplashScreen from "@/components/pwa/PWASplashScreen";
 import NetworkStatusBar from "@/components/network/NetworkStatusBar";
+import RouteProgress from "@/components/layout/RouteProgress";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import UtmTracker from "@/lib/utm";
 import { DEFAULT_OG_IMAGE, SITE_URL, getBrandFullTitle } from "@/lib/tokens";
@@ -120,8 +124,16 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  /* GAP-24 — the language lived only in localStorage, so every page was sent
+     in Bengali and repainted in English after hydration for an English reader,
+     and <html lang> was wrong until JavaScript ran. Reading the cookie here
+     makes the server render the right language on the first paint. It also
+     makes this layout dynamic: pages are rendered per request rather than
+     served from the static shell, which is the price of getting `lang` and the
+     first paint correct for both audiences. */
+  const lang = normalizeLang(cookies().get(LANG_COOKIE)?.value);
   return (
-    <html lang="bn" suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -131,7 +143,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href={API_ORIGIN} />
       </head>
       <body className="min-h-screen flex flex-col">
+        <LanguageBootstrap lang={lang} />
         <PWASplashScreen />
+        <RouteProgress />
         <NetworkStatusBar />
         <GoogleAnalytics />
         <StoreHydration />

@@ -106,22 +106,30 @@ export default function GalleryPage() {
               {lang === "bn" ? "ভিডিও গ্যালারি" : "Video Gallery"}
             </h3>
             {videos.length === 0 ? (
-              <Link
-                href="/admin/showcase"
-                className="enterprise-card p-8 text-center max-w-2xl mx-auto flex flex-col items-center hover:border-brand-300 dark:hover:border-brand-500/40 transition-colors"
-              >
+              /* GAP-08 — this empty state previously showed admin content
+                 instructions ("Admin → Showcase") to the public. Visitors now
+                 get a neutral message that redirects them to the photo tab;
+                 the admin guidance is reachable from the admin panel itself. */
+              <div className="enterprise-card p-8 text-center max-w-2xl mx-auto flex flex-col items-center">
                 <span className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mb-4">
                   <Play className="w-7 h-7 text-brand-600" />
                 </span>
-                <span className="text-sm text-muted">
+                <span className="text-base font-semibold text-heading">
+                  {lang === "bn" ? "ভিডিও শীঘ্রই আসছে" : "Videos coming soon"}
+                </span>
+                <span className="text-sm text-muted mt-2">
                   {lang === "bn"
-                    ? "প্রতিটি প্রজেক্টের “Demo Video URL”-এ YouTube/Vimeo লিংক দিন — Admin → Showcase।"
-                    : "Add a YouTube/Vimeo link in each project's “Demo Video URL” — Admin → Showcase."}
+                    ? "আমাদের কাজের ভিডিও শীঘ্রই যুক্ত হবে — এখন ছবিগুলো দেখুন।"
+                    : "Videos of our work are coming soon — see the photos meanwhile."}
                 </span>
-                <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-600">
-                  Admin → Showcase <ExternalLink className="w-3 h-3" />
-                </span>
-              </Link>
+                <Link
+                  href="/projects"
+                  className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline"
+                >
+                  {lang === "bn" ? "প্রজেক্ট দেখুন" : "Browse projects"}
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+              </div>
             ) : (
               <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                 {videos.map((p) => (

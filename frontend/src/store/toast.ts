@@ -2,9 +2,17 @@ import { create } from "zustand";
 
 export type ToastType = "success" | "error" | "info";
 
+/**
+ * GAP-29 — a toast action was previously required to be a navigation link,
+ * so a reversible operation (undo an add-to-cart, undo a wishlist removal)
+ * could not be attached. `href` is kept for existing callers; `onClick` is
+ * additive and optional. Supplying neither renders the action as inert, so
+ * every existing call site keeps working unchanged.
+ */
 export interface ToastAction {
   label: string;
-  href: string;
+  href?: string;
+  onClick?: () => void;
 }
 
 export interface Toast {

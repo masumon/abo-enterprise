@@ -1,10 +1,11 @@
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Image from "next/image";
-import type { BlogPost } from "@/types";
+import type { BlogPost, Product } from "@/types";
 
 import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import BlogProductRail from "@/components/blog/BlogProductRail";
 import BlogPostActions from "./BlogPostActions";
 import BlogPostBreadcrumb from "./BlogPostBreadcrumb";
 import BlogPostMeta from "./BlogPostMeta";
@@ -23,6 +24,38 @@ async function fetchPost(slug: string): Promise<BlogPost | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * GAP-17 — products for the in-article rail. Tried against the post's category
+ * first so the rail is topical when it can be; an unfiltered page is the
+ * fallback, and the label downstream says which one the reader is looking at.
+ * Every failure path returns an empty list, which renders nothing — the
+ * article must never depend on the catalogue being reachable.
+ */
+async function fetchRailProducts(
+  category?: string | null
+): Promise<{ products: Product[]; matched: boolean }> {
+  const get = async (qs: string): Promise<Product[]> => {
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/products?${qs}`, {
+        next: { revalidate: 300 },
+      });
+      if (!res.ok) return [];
+      const json = await res.json();
+      return (json.data ?? []) as Product[];
+    } catch {
+      return [];
+    }
+  };
+
+  if (category) {
+    const matchedProducts = await get(
+      `page=1&per_page=3&search=${encodeURIComponent(category)}`
+    );
+    if (matchedProducts.length > 0) return { products: matchedProducts, matched: true };
+  }
+  return { products: await get("page=1&per_page=3"), matched: false };
 }
 
 export async function generateMetadata({
@@ -100,6 +133,7 @@ export default async function BlogPostPage({
   const post = await fetchPost(params.slug);
   if (!post) notFound();
 
+  const rail = await fetchRailProducts(post.category);
   const jsonLd = buildArticleJsonLd(post);
 
   return (
@@ -149,6 +183,7 @@ export default async function BlogPostPage({
             contentBn={post.content_bn ?? null}
           />
 
+          <BlogProductRail products={rail.products} matched={rail.matched} />
         </div>
       </main>
     </>

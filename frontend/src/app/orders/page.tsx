@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Package, LogOut, Loader2, ChevronRight } from "lucide-react";
+import { Package, LogOut, ChevronRight } from "lucide-react";
 import { useCustomerStore } from "@/store/customer";
 import { useLanguageStore } from "@/store/language";
 import { ordersApi } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import GlassCard from "@/components/ui/GlassCard";
 import PageHero from "@/components/ui/PageHero";
+import { ListRowSkeleton } from "@/components/common/Skeletons";
 
 interface OrderSummary {
   order_number: string;
@@ -81,7 +82,7 @@ export default function OrdersPage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>
+          <ListRowSkeleton rows={4} />
         ) : error ? (
           <GlassCard className="p-8 text-center">
             <p className="text-gray-500">{lang === "bn" ? "অর্ডার লোড করা যায়নি" : "Could not load orders"}</p>

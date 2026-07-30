@@ -208,6 +208,13 @@ async def create_order(
         advance_amount=advance_amount,
         advance_paid=False,
         total=trusted_total,
+        # Institutional identity is copied verbatim; it never participates in
+        # totals, tax or payment state.
+        company_name=payload.company_name,
+        company_bin=payload.company_bin,
+        company_tin=payload.company_tin,
+        po_number=payload.po_number,
+        billing_address=payload.billing_address,
         notes=payload.notes,
     )
     db.add(order)

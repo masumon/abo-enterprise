@@ -9,6 +9,15 @@ import { useLanguageStore } from "@/store/language";
 
 type Status = "verifying" | "success" | "failed" | "error";
 
+/**
+ * GAP-27 — both redirect sites previously used a literal 2500ms delay,
+ * independent of when verification actually resolved. A fixed wait punishes
+ * fast verification and does nothing for slow. This is a minimum: it holds the
+ * success state long enough to be readable, then moves. Named here so the two
+ * call sites can never drift apart.
+ */
+const SUCCESS_REDIRECT_MS = 1200;
+
 function PaymentCallbackContent() {
   const params = useSearchParams();
   const router = useRouter();
@@ -40,7 +49,7 @@ function PaymentCallbackContent() {
         setStatus("success");
         setTimeout(() => {
           router.push(buildSuccessUrl(orderNum, phoneParam));
-        }, 2500);
+        }, SUCCESS_REDIRECT_MS);
       } else {
         setStatus("failed");
         if (sslStatus === "cancelled") {
@@ -77,7 +86,7 @@ function PaymentCallbackContent() {
           if (order) setOrderNumber(order);
           setTimeout(() => {
             router.push(buildSuccessUrl(order ?? orderNum, phone ?? phoneParam));
-          }, 2500);
+          }, SUCCESS_REDIRECT_MS);
         } else {
           setStatus("failed");
         }

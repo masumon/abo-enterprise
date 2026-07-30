@@ -229,6 +229,13 @@ class OrderCreate(BaseModel):
     coupon_code: str | None = None
     delivery_charge: float = 0
     total: float
+    # Institutional invoice identity (manual_sql/0009). Every field optional:
+    # a personal order sends none of them and is unchanged.
+    company_name: str | None = None
+    company_bin: str | None = None
+    company_tin: str | None = None
+    po_number: str | None = None
+    billing_address: str | None = None
     notes: str | None = None
 
     @field_validator("customer_phone")
@@ -283,6 +290,11 @@ class OrderOut(BaseModel):
     total: float
     courier_provider: str | None = None
     courier_tracking_id: str | None = None
+    company_name: str | None = None
+    company_bin: str | None = None
+    company_tin: str | None = None
+    po_number: str | None = None
+    billing_address: str | None = None
     notes: str | None
     items: list[OrderItemOut]
     created_at: datetime
@@ -523,6 +535,8 @@ class ServiceBase(BaseModel):
     featured_image_url: str | None = None
     icon_color: str | None = None
     pricing_type: str
+    # Where the service is completed (manual_sql/0008). None = unspecified.
+    fulfilment: str | None = None
     # CTA override (None = infer from pricing_type/capabilities).
     cta_type: str | None = None
     cta_label_en: str | None = None
@@ -564,6 +578,10 @@ class ServiceBase(BaseModel):
 # schemas only, for the same reason as ServiceFieldType above.
 ServicePricingType = Literal["fixed", "hourly", "package", "custom", "custom_quote"]
 
+# Where the service is completed. Validated on input only: existing rows are
+# NULL and any legacy value already stored must still be readable.
+ServiceFulfilment = Literal["remote", "at_shop", "hybrid"]
+
 # Money columns that must never be negative.
 _PRICE_FIELDS = (
     "base_price", "min_price", "max_price", "hourly_rate",
@@ -579,6 +597,7 @@ def _reject_negative(v: float | None, info) -> float | None:
 
 class ServiceCreate(ServiceBase):
     pricing_type: ServicePricingType
+    fulfilment: ServiceFulfilment | None = None
     # Capability overrides can be set at creation too (additive; default NULL).
     is_orderable: bool | None = None
     is_bookable: bool | None = None
@@ -608,6 +627,7 @@ class ServiceUpdate(BaseModel):
     is_orderable: bool | None = None
     is_bookable: bool | None = None
     pricing_type: ServicePricingType | None = None
+    fulfilment: ServiceFulfilment | None = None
     cta_type: str | None = None
     cta_label_en: str | None = None
     cta_label_bn: str | None = None
@@ -897,6 +917,13 @@ class InvoiceCreate(BaseModel):
     tax: float = 0
     total: float
     payment_method: str | None = None
+    # Institutional identity printed on this invoice (manual_sql/0010).
+    # Optional: a personal invoice sends none of them.
+    company_name: str | None = None
+    company_bin: str | None = None
+    company_tin: str | None = None
+    po_number: str | None = None
+    billing_address: str | None = None
     notes: str | None = None
 
 
@@ -916,6 +943,11 @@ class InvoiceOut(BaseModel):
     total: float
     payment_method: str | None
     payment_status: str
+    company_name: str | None = None
+    company_bin: str | None = None
+    company_tin: str | None = None
+    po_number: str | None = None
+    billing_address: str | None = None
     issued_date: datetime | None
     due_date: datetime | None
     paid_date: datetime | None

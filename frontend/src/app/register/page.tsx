@@ -1,38 +1,17 @@
-"use client";
+import { permanentRedirect } from "next/navigation";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useCustomerStore } from "@/store/customer";
-import { useLanguageStore } from "@/store/language";
-import AuthSplitLayout from "@/components/layout/AuthSplitLayout";
-import CustomerOtpForm from "@/components/auth/CustomerOtpForm";
-
-export default function RegisterPage() {
-  const { lang } = useLanguageStore();
-  const { isLoggedIn } = useCustomerStore();
-  const router = useRouter();
-
-  useEffect(() => {
-    useCustomerStore.persist.rehydrate();
-  }, []);
-
-  useEffect(() => {
-    if (isLoggedIn()) router.replace("/profile");
-  }, [isLoggedIn, router]);
-
-  return (
-    <AuthSplitLayout
-      title={lang === "bn" ? "রেজিস্ট্রেশন" : "Create Account"}
-      subtitle={lang === "bn" ? "ফোন নম্বর OTP দিয়ে যাচাই করুন" : "Verify your phone number with OTP"}
-    >
-      <CustomerOtpForm redirectTo="/profile" />
-      <p className="text-center text-xs text-muted mt-4">
-        {lang === "bn" ? "আগে থেকেই অ্যাকাউন্ট আছে? " : "Already have an account? "}
-        <Link href="/login" className="text-brand-600 hover:underline font-medium">
-          {lang === "bn" ? "লগইন করুন" : "Sign in"}
-        </Link>
-      </p>
-    </AuthSplitLayout>
-  );
+/**
+ * GAP-10 — /register and /login rendered the same CustomerOtpForm against the
+ * same endpoint: there was never a separate registration flow, only two doors
+ * into one. Two doors made the visitor choose before they had anything to
+ * choose between, and the "Create Account" heading implied a step that does
+ * not exist — the account is created on first verified OTP either way.
+ *
+ * The redirect is permanent and server-side so external links and search
+ * engines carry their equity to /login. next.config.js carries the same rule
+ * at the edge; this file keeps the route correct if it is ever reached
+ * directly, and keeps the path from 404-ing.
+ */
+export default function RegisterPage(): never {
+  permanentRedirect("/login");
 }

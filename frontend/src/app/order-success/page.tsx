@@ -51,8 +51,15 @@ function OrderSuccessContent() {
   const [invoiceLoading, setInvoiceLoading] = useState(false);
 
   useEffect(() => {
+    // GAP-20 — the invoice previously required both `order` and `phone` to
+    // survive the gateway redirect. The verify endpoint types both as Optional
+    // and returns None when the order lookup fails
+    // (backend/app/schemas/schemas.py:1076-1077,
+    //  backend/app/api/v1/routes/payments.py:135-136), so the parameters are a
+    // hint, not a contract. The checkout-time snapshot is local and already
+    // trusted, so it resolves first and the URL fills any gap.
     const order = params.get("order");
-    const ph = params.get("phone");
+    const ph = params.get("phone") || (order ? readOrderSnapshot(order)?.phone ?? null : null);
     setOrderNumber(order);
     setPhone(ph);
     if (order) {

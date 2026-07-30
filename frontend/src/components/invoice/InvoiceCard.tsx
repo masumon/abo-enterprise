@@ -110,9 +110,35 @@ export default function InvoiceCard({ invoice, lang }: Props) {
             <p className="text-[10px] text-muted uppercase tracking-wider mb-1">
               {bn ? "গ্রাহক" : "Billed To"}
             </p>
-            <p className="font-semibold text-heading leading-tight">{invoice.customer_name}</p>
+            {/* X4 — when the buyer is an institution the invoice must carry
+                its name, not the individual's, or their bookkeeping cannot
+                accept it. The person who placed the order stays on the line
+                below as the contact. */}
+            <p className="font-semibold text-heading leading-tight">
+              {invoice.company_name || invoice.customer_name}
+            </p>
+            {invoice.company_name && (
+              <p className="text-xs text-muted mt-0.5">{invoice.customer_name}</p>
+            )}
             {invoice.customer_phone && (
               <p className="text-xs text-muted mt-0.5 font-mono">{invoice.customer_phone}</p>
+            )}
+            {(invoice.company_bin || invoice.company_tin) && (
+              <p className="text-xs text-muted mt-0.5 font-mono">
+                {invoice.company_bin && `BIN ${invoice.company_bin}`}
+                {invoice.company_bin && invoice.company_tin && " · "}
+                {invoice.company_tin && `TIN ${invoice.company_tin}`}
+              </p>
+            )}
+            {invoice.po_number && (
+              <p className="text-xs text-heading mt-0.5 font-mono">
+                {bn ? "PO নম্বর" : "PO"} {invoice.po_number}
+              </p>
+            )}
+            {invoice.billing_address && (
+              <p className="text-xs text-muted mt-1 max-w-[16rem] whitespace-pre-line">
+                {invoice.billing_address}
+              </p>
             )}
             {invoice.service_name && (
               <p className="text-xs text-brand-600 dark:text-brand-300 mt-1 font-medium">

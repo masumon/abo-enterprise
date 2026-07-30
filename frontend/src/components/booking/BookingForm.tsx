@@ -14,6 +14,36 @@ import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
 import { useDistrictUpazila, BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
 import { useLanguageStore } from "@/store/language";
+import { fulfilmentDetail } from "@/lib/fulfilment";
+
+/**
+ * GAP-12 — the booking form presents contact fields, scheduling, location,
+ * package choice, admin-defined custom fields, documents, a coupon box and a
+ * requirements textarea as one undifferentiated column. On a phone that is a
+ * long scroll with no sense of how much is left, which is where booking forms
+ * lose people.
+ *
+ * These headings group the existing fields into three named stages. They are
+ * headings, not a wizard: every field stays mounted, validation and the single
+ * submit are untouched, so a partially-filled form can never be trapped behind
+ * a step boundary and nothing about the request payload changes.
+ */
+function StepHeading({ n, title, hint }: { n: number; title: string; hint: string }) {
+  return (
+    <div className="flex items-start gap-3 pt-4 mt-2 border-t border-gray-100 dark:border-white/10 first:pt-0 first:mt-0 first:border-t-0">
+      <span
+        aria-hidden
+        className="w-7 h-7 rounded-full bg-brand-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0"
+      >
+        {n}
+      </span>
+      <div className="min-w-0">
+        <h3 className="font-semibold text-heading leading-tight">{title}</h3>
+        <p className="text-xs text-muted mt-0.5">{hint}</p>
+      </div>
+    </div>
+  );
+}
 
 const bookingSchema = z.object({
   customer_name: z.string().min(2, "Name must be at least 2 characters"),
@@ -408,6 +438,9 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
 
   /** Every control the form renders, so an error banner can always name the
    *  field it is talking about — including the admin-defined ones. */
+  const fulfilmentNote = fulfilmentDetail(service.fulfilment, lang);
+  const needsVisit = service.fulfilment === "at_shop" || service.fulfilment === "hybrid";
+
   const fieldLabels: Record<string, { label: string; id: string }> = {
     customer_name: { label: L("Full Name", "পূর্ণ নাম"), id: "booking-name" },
     customer_phone: { label: L("Phone Number", "মোবাইল নম্বর"), id: "booking-phone" },
@@ -442,6 +475,12 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
           </p>
         </div>
       )}
+
+      <StepHeading
+        n={1}
+        title={L("Your details", "আপনার তথ্য")}
+        hint={L("So we can confirm the booking with you.", "বুকিং নিশ্চিত করতে আমরা এখানেই যোগাযোগ করব।")}
+      />
 
       <div>
         <label htmlFor="booking-name" className="form-label">{L("Full Name *", "পূর্ণ নাম *")}</label>
@@ -501,6 +540,20 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
           placeholder={L("Company name", "কোম্পানির নাম")}
         />
       </div>
+
+      <StepHeading
+        n={2}
+        title={L("When & where", "কখন ও কোথায়")}
+        hint={L("Pick a time and tell us your area.", "সময় বেছে নিন এবং আপনার এলাকা জানান।")}
+      />
+
+      {/* GAP-15 — a service that can only be completed at the shop must say so
+          before the customer picks a date, not after they have waited at home. */}
+      {fulfilmentNote && (
+        <div className={needsVisit ? "alert-warning" : "alert-info"} role="note">
+          <p className="text-sm">{fulfilmentNote}</p>
+        </div>
+      )}
 
       {scheduling ? (
         <div>
@@ -577,6 +630,12 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
           </select>
         </div>
       </div>
+
+      <StepHeading
+        n={3}
+        title={L("What you need", "আপনার প্রয়োজন")}
+        hint={L("The details that let us quote and prepare.", "যে তথ্য পেলে আমরা প্রস্তুতি ও দর দিতে পারি।")}
+      />
 
       {hasTiers && (
         <fieldset>

@@ -301,7 +301,12 @@ export default function ProductsClient({
             <option value="price_desc">{lang === "bn" ? "দাম: বেশি→কম" : "Price: High→Low"}</option>
             <option value="newest">{lang === "bn" ? "নতুন আগে" : "Newest"}</option>
           </select>
-          <div className="flex rounded-xl border border-gray-200 overflow-hidden" role="group" aria-label={lang === "bn" ? "ভিউ মোড" : "View mode"}>
+          {/* GAP-21 — at 390px a list row and a two-up grid card carry nearly
+              the same information, so the toggle spent a permanent control slot
+              on a preference most mobile users never change. Hidden below md;
+              it returns at tablet width where the two layouts genuinely differ.
+              The toggle is not removed, and viewMode still defaults to grid. */}
+          <div className="hidden md:flex rounded-xl border border-gray-200 overflow-hidden" role="group" aria-label={lang === "bn" ? "ভিউ মোড" : "View mode"}>
             <button type="button" onClick={() => setViewMode("grid")} className={cn("p-2.5", viewMode === "grid" ? "bg-brand-600 text-white" : "bg-white text-gray-500")} aria-label={t("grid_view")} aria-pressed={viewMode === "grid"}>
               <LayoutGrid className="w-4 h-4" />
             </button>

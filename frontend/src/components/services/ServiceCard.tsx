@@ -2,9 +2,10 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Service } from "@/types";
 import type { Language } from "@/types";
-import { ArrowRight, Star } from "lucide-react";
+import { ArrowRight, Star, MapPin, Wifi } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { resolveServiceImage } from "@/lib/demoImages";
+import { fulfilmentLabel, isFulfilment } from "@/lib/fulfilment";
 
 interface ServiceCardProps {
   service: Service;
@@ -23,6 +24,11 @@ export default function ServiceCard({ service, lang = "en", categoryLabel }: Ser
     service.description_en;
 
   const imageSrc = resolveServiceImage(service.featured_image_url, service.slug);
+  /* GAP-15 — an at-shop service looked identical to a remote one, so a
+     customer could book a biometric capture and wait at home. Unclassified
+     services show nothing rather than a guessed promise. */
+  const fulfilment = fulfilmentLabel(service.fulfilment, lang);
+  const needsVisit = service.fulfilment === "at_shop" || service.fulfilment === "hybrid";
 
   return (
     <Link href={`/services/${service.slug}`} className="block h-full group">
@@ -40,11 +46,25 @@ export default function ServiceCard({ service, lang = "en", categoryLabel }: Ser
         </div>
 
         <div className="p-5">
-          {tag && (
-            <span className="inline-block px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 text-xs font-semibold rounded-full mb-2">
-              {tag}
-            </span>
-          )}
+          <div className="flex flex-wrap items-center gap-1.5 mb-2">
+            {tag && (
+              <span className="inline-block px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 text-xs font-semibold rounded-full">
+                {tag}
+              </span>
+            )}
+            {fulfilment && isFulfilment(service.fulfilment) && (
+              <span
+                className={
+                  needsVisit
+                    ? "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200"
+                    : "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200"
+                }
+              >
+                {needsVisit ? <MapPin aria-hidden className="w-3 h-3" /> : <Wifi aria-hidden className="w-3 h-3" />}
+                {fulfilment}
+              </span>
+            )}
+          </div>
 
           <h3 className="text-lg font-bold text-heading mb-2 group-hover:text-brand-600 transition-colors line-clamp-2">
             {name}

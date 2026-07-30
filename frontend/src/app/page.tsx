@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import Hero from "@/components/home/Hero";
 import TrustBadges from "@/components/home/TrustBadges";
 import QuickCategories from "@/components/home/QuickCategories";
+import HomeLanes from "@/components/home/HomeLanes";
 import Reveal from "@/components/ui/Reveal";
 import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, getBrandFullTitle } from "@/lib/tokens";
 import { jsonLdString } from "@/lib/metadata";
@@ -115,9 +116,14 @@ export default function HomePage() {
       <Reveal><TrustBadges /></Reveal>
       <Reveal><EntryPoints /></Reveal>
       <Reveal><Stats /></Reveal>
-      <Reveal><ServicesOverview /></Reveal>
-      <Reveal><FeaturedProducts /></Reveal>
-      <Reveal><Portfolio /></Reveal>
+      {/* GAP-23 — the three arms of the business used to stack, so whichever
+          one a visitor came for sat below the other two. Shop is the default
+          lane; the others are one tap away and stay in the document. */}
+      <HomeLanes
+        shop={<Reveal><FeaturedProducts /></Reveal>}
+        services={<Reveal><ServicesOverview /></Reveal>}
+        software={<Reveal><Portfolio /></Reveal>}
+      />
       <Reveal><ClientLogos /></Reveal>
       <Reveal><WhyChooseUs /></Reveal>
       <Reveal><CustomerReviews /></Reveal>
