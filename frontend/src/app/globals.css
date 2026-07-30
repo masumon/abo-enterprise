@@ -126,7 +126,7 @@
 
   /* The artifact's focus ring — marigold, 3px, offset. One rule, every
      control, instead of the browser default disappearing on dark surfaces. */
-  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  :where(a, button, [role="button"], [tabindex]):focus-visible {
     outline: 3px solid var(--accent);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
@@ -214,9 +214,11 @@
   /* ── Buttons ── */
   .btn {
     @apply inline-flex items-center justify-center gap-2 font-semibold rounded-xl
-           transition-all duration-200 focus-visible:outline-none focus-visible:ring-2
-           focus-visible:ring-brand-500 focus-visible:ring-offset-2
+           transition-all duration-200
            disabled:opacity-50 disabled:cursor-not-allowed select-none;
+    /* No outline-none here. It used to suppress the focus ring and substitute a
+       brand-coloured one; the design system's ring is marigold, defined once in
+       the base layer, and it can only show if nothing cancels it. */
   }
   .btn-primary {
     @apply btn bg-gradient-to-r from-green-600 to-green-700 text-white
@@ -247,9 +249,9 @@
   }
   .btn-glass:hover { background: rgba(255,255,255,0.25); }
 
-  .btn-sm  { @apply px-3.5 py-1.5 text-sm; }
-  .btn-md  { @apply px-5 py-2.5 text-sm; }
-  .btn-lg  { @apply px-7 py-3.5 text-base; }
+  .btn-sm  { @apply px-3.5 py-1.5 text-sm min-h-[36px]; }
+  .btn-md  { @apply px-5 py-2.5 text-sm min-h-[44px]; }
+  .btn-lg  { @apply px-7 py-3.5 text-base min-h-[48px]; }
 
   .btn-ripple {
     @apply relative overflow-hidden;
@@ -263,7 +265,7 @@
 
   /* ── Inputs ── */
   .input {
-    @apply w-full px-4 py-3 border border-gray-200 rounded-xl bg-white/90
+    @apply w-full px-4 py-3 min-h-[44px] border border-gray-200 rounded-xl bg-white/90
            text-gray-900 placeholder-gray-400 transition-all duration-200
            focus:border-brand-400 focus:ring-4 focus:ring-brand-100/60 focus:outline-none
            focus:bg-white;

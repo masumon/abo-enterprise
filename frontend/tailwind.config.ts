@@ -38,6 +38,18 @@ const config: Config = {
           900: "#614004",
         },
       },
+      /*
+       * The system has three radii — 6, 12, 20 — plus pill. Tailwind's defaults
+       * add 8, 16 and 24, so the app was drawing six different corner sizes.
+       * Snapping the scale here rounds every existing class onto the system
+       * without touching a single call site: md stays 6, lg and xl are 12,
+       * 2xl and 3xl are 20, full is the pill.
+       */
+      borderRadius: {
+        lg: "12px",
+        "2xl": "20px",
+        "3xl": "20px",
+      },
       fontFamily: {
         // The artifact's three faces. Body is the system stack so Latin text
         // costs no webfont; Bengali still resolves to a real Bengali face
