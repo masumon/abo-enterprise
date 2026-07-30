@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ShoppingBag, Wrench, Code2 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 
 type Lane = "shop" | "services" | "software";
+const LANE_IDS: Lane[] = ["shop", "services", "software"];
 
 /**
  * GAP-23 — the homepage stacked all three arms of the business into one
@@ -37,7 +39,34 @@ export default function HomeLanes({
   software: ReactNode;
 }) {
   const { lang } = useLanguageStore();
-  const [lane, setLane] = useState<Lane>("shop");
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  /*
+   * Screen 04 — the lane lives in the URL, so a link someone shares keeps its
+   * meaning: sending "look at their software work" should not open on Shop.
+   * Shop stays the default and is not written to the URL, so the canonical
+   * homepage address is unchanged and nothing new is indexable.
+   */
+  const laneParam = searchParams.get("lane");
+  const [lane, setLaneState] = useState<Lane>(
+    LANE_IDS.includes(laneParam as Lane) ? (laneParam as Lane) : "shop"
+  );
+
+  useEffect(() => {
+    const next = LANE_IDS.includes(laneParam as Lane) ? (laneParam as Lane) : "shop";
+    setLaneState((prev) => (prev === next ? prev : next));
+  }, [laneParam]);
+
+  const setLane = (next: Lane) => {
+    setLaneState(next);
+    const params = new URLSearchParams(searchParams.toString());
+    if (next === "shop") params.delete("lane");
+    else params.set("lane", next);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
   const panels: Record<Lane, ReactNode> = { shop, services, software };
 
   return (
