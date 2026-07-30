@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Phone, User, KeyRound, Loader2, ArrowLeft, Mail } from "lucide-react";
+import { User, KeyRound, Loader2, ArrowLeft, Mail } from "lucide-react";
 import { BD_PHONE_REGEX } from "@/lib/phone";
+import PhoneField, { PHONE_COUNTRIES, composePhone, type PhoneCountry } from "@/components/ui/PhoneField";
 import { customerOtpApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useCustomerStore } from "@/store/customer";
@@ -21,7 +22,11 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
 
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [name, setName] = useState("");
+  // Screen 15b — the number is entered as country + local digits. Bangladesh
+  // adds no prefix, so the common case submits the same string it always did.
+  const [country, setCountry] = useState<PhoneCountry>(PHONE_COUNTRIES[0]);
   const [phone, setPhone] = useState("");
+  const fullPhone = composePhone(country, phone);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState("");
@@ -31,7 +36,7 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
   const sendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    if (!BD_PHONE_REGEX.test(phone)) {
+    if (!BD_PHONE_REGEX.test(fullPhone)) {
       setError(bn ? "সঠিক ফোন নম্বর দিন (01XXXXXXXXX)" : "Enter a valid BD phone number");
       return;
     }
@@ -45,7 +50,7 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
     }
     setLoading(true);
     try {
-      const r = await customerOtpApi.send(phone, email.trim());
+      const r = await customerOtpApi.send(fullPhone, email.trim());
       setDevHint(!(r.data.data as { via_email?: boolean })?.via_email);
       setStep("otp");
     } catch (err) {
@@ -64,10 +69,10 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
     }
     setLoading(true);
     try {
-      const r = await customerOtpApi.verify(phone, code.trim());
+      const r = await customerOtpApi.verify(fullPhone, code.trim());
       const token = r.data.data?.access_token;
       if (!token) throw new Error("no token");
-      login(phone, name.trim(), token);
+      login(fullPhone, name.trim(), token);
       router.push(redirectTo);
     } catch (err) {
       setError(apiErrorMessage(err, bn ? "কোডটি সঠিক নয় বা মেয়াদ শেষ" : "Invalid or expired code"));
@@ -134,21 +139,21 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
           <input id="cust-name" value={name} onChange={(e) => setName(e.target.value)} className="input pl-10" autoComplete="name" />
         </div>
       </div>
-      <div>
-        <label className="form-label" htmlFor="cust-phone">{bn ? "ফোন" : "Phone"}</label>
-        <div className="relative">
-          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
-          <input
-            id="cust-phone"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="input pl-10"
-            placeholder="01XXXXXXXXX"
-            inputMode="tel"
-            autoComplete="tel"
-          />
-        </div>
-      </div>
+      <PhoneField
+        id="cust-phone"
+        label={bn ? "ফোন" : "Phone"}
+        country={country}
+        onCountryChange={setCountry}
+        value={phone}
+        onChange={setPhone}
+        hint={
+          country.code === "BD"
+            ? undefined
+            : bn
+              ? "প্রবাসে থাকলে নিজের দেশ বেছে নিন — ডেলিভারি বাংলাদেশেই হবে।"
+              : "Living abroad? Pick your country — delivery still happens inside Bangladesh."
+        }
+      />
       <div>
         <label className="form-label" htmlFor="cust-email">{bn ? "ইমেইল (OTP এখানে যাবে)" : "Email (OTP is sent here)"}</label>
         <div className="relative">

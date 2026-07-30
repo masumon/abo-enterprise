@@ -14,7 +14,7 @@ import InvoiceCard from "@/components/invoice/InvoiceCard";
 
 function ConfettiBurst() {
   useEffect(() => {
-    const colors = ["#1e5ba8", "#e91e63", "#16a34a", "#f59e0b", "#8b5cf6"];
+    const colors = ["#1e2b6b", "#e4a11b", "#2e7d4f", "#35479b", "#a87008"];
     const pieces = Array.from({ length: 40 }, (_, i) => {
       const el = document.createElement("div");
       el.style.cssText = `

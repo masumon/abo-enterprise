@@ -124,7 +124,7 @@ export default function CartPage() {
                         </button>
                       </div>
                     </div>
-                    <p className="font-bold text-heading">{formatPrice(item.price * item.quantity)}</p>
+                    <p className="money font-bold text-heading">{formatPrice(item.price * item.quantity)}</p>
                   </div>
                 ))}
 
@@ -156,11 +156,11 @@ export default function CartPage() {
                 )}
 
                 <div className="space-y-2 text-sm border-t border-gray-100 dark:border-white/10 pt-4">
-                  <div className="flex justify-between"><span className="text-muted">{t("cart_subtotal")}</span><span>{formatPrice(cartSubtotal)}</span></div>
-                  {discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span>-{formatPrice(discount)}</span></div>}
+                  <div className="flex justify-between"><span className="text-muted">{t("cart_subtotal")}</span><span className="money">{formatPrice(cartSubtotal)}</span></div>
+                  {discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span className="money">-{formatPrice(discount)}</span></div>}
                   <div className="flex justify-between"><span className="text-muted">{t("cart_delivery")}</span><span>{lang === "bn" ? "চেকআউটে" : "At checkout"}</span></div>
                   <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-100 dark:border-white/10">
-                    <span>{t("cart_total")}</span><span className="text-brand-600">{formatPrice(cartTotal)}</span>
+                    <span>{t("cart_total")}</span><span className="money text-brand-600">{formatPrice(cartTotal)}</span>
                   </div>
                 </div>
 

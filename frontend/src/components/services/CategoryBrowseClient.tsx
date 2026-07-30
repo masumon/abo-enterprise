@@ -77,7 +77,8 @@ export default function CategoryBrowseClient({ trail, initialServices, initialTo
         pageKey="services"
         imageUrl={node.image_url ?? trail[0]?.image_url ?? undefined}
         title={name(node)}
-        subtitle={description}
+        /* Shown as a note above the list instead — see below. */
+        subtitle={undefined}
         breadcrumbs={[
           { label: lang === "bn" ? "হোম" : "Home", href: "/" },
           { label: lang === "bn" ? "সেবা" : "Services", href: "/services" },
@@ -89,6 +90,21 @@ export default function CategoryBrowseClient({ trail, initialServices, initialTo
 
       <section className="enterprise-section-alt">
         <div className="container mx-auto px-4 max-w-6xl">
+          {/*
+            Screen 08c — a category's own description is where the shop sets
+            expectations for everything inside it: that an application is
+            processed here but approved by the department, that a repair is
+            quoted after inspection. As a hero subtitle it read as a tagline and
+            was skimmed past. Standing above the list, in the shape of a note,
+            it reads as the statement it is. Written by the admin, so nothing is
+            hardcoded to a category that could be renamed tomorrow.
+          */}
+          {description && (
+            <div className="alert-info mb-8" role="note">
+              {description}
+            </div>
+          )}
+
           {children.length > 0 && (
             <div className="mb-8">
               <h2 className="text-sm font-semibold text-muted uppercase tracking-wide mb-3">

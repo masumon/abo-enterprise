@@ -377,7 +377,7 @@ export default function ServicesPageClient({
                 >
                   <div
                     id={anchorId}
-                    className="group/card enterprise-card p-5 scroll-mt-24 relative h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(30,91,168,0.35)]"
+                    className="group/card enterprise-card p-5 scroll-mt-24 relative h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(30,43,107,0.35)]"
                   >
                     {/* Coloured top accent that grows on hover — premium touch */}
                     <span aria-hidden className={cn("absolute inset-x-0 top-0 h-1 opacity-80 transition-opacity duration-300 group-hover/card:opacity-100", color)} />

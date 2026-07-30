@@ -236,6 +236,9 @@ export interface Service {
   is_bookable?: boolean | null;
   /** Where the service is completed (manual_sql/0008). null = unclassified. */
   fulfilment?: "remote" | "at_shop" | "hybrid" | null;
+  /** How long it takes, in working days (manual_sql/0011). null = not published. */
+  turnaround_days_min?: number | null;
+  turnaround_days_max?: number | null;
   /** Computed by the API (single source: core/capabilities.py): e.g. ["bookable","orderable"]. */
   capabilities?: string[];
   /** CTA override columns (null = infer) + the API-computed effective CTA. */

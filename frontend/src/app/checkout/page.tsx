@@ -21,6 +21,7 @@ import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phon
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { useCustomerStore } from "@/store/customer";
 import { mapPaymentMethods } from "@/lib/paymentDisplay";
 import { useDistrictUpazila, BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
 import { calcDeliveryCharge, calcAdvanceCharge } from "@/lib/checkoutHelpers";
@@ -56,7 +57,39 @@ export default function CheckoutPage() {
   const { items, total, clearCart, setStockWarnings } = useCartStore();
   const { lang } = useLanguageStore();
   const { methods: paymentMethods } = usePaymentMethods();
-  const paymentOptions = useMemo(() => mapPaymentMethods(paymentMethods, lang), [paymentMethods, lang]);
+  /*
+   * Screen 11 — payment methods are ordered by how customers actually pay, not
+   * by margin: adding friction to the majority flow to nudge a minority is a
+   * poor trade one step before revenue. Cash on delivery leads and is marked
+   * Popular. Ordering is presentational; nothing about which methods are
+   * enabled, or their settings, changes here.
+   */
+  const paymentOptions = useMemo(() => {
+    const mapped = mapPaymentMethods(paymentMethods, lang);
+    const isCod = (g: string) => g === "cod" || g === "cash_on_delivery";
+    return [...mapped].sort((a, b) => Number(isCod(b.gateway)) - Number(isCod(a.gateway)));
+  }, [paymentMethods, lang]);
+
+  /*
+   * What pressing this option will do. A customer who knows a redirect is
+   * coming does not read the gateway's page as a failure — and the ones that
+   * stay on site should say so just as plainly.
+   */
+  const paymentConsequence = (opt: { gateway: string; label: string; isManual: boolean }) => {
+    if (opt.gateway === "cod" || opt.gateway === "cash_on_delivery") {
+      return lang === "bn"
+        ? "রাইডারকে দিন। এখন কিছু দিতে হবে না।"
+        : "Pay the rider. Nothing to pay now.";
+    }
+    if (opt.isManual) {
+      return lang === "bn"
+        ? "Send Money করে TrxID দিন — এই পাতাতেই।"
+        : "Send Money, then enter the TrxID — you stay on this page.";
+    }
+    return lang === "bn"
+      ? `নিশ্চিত করতে ${opt.label}-এ যাবে`
+      : `Continues on ${opt.label} to confirm`;
+  };
 
   const { settings } = usePublicSettings([
     "delivery_charge_dhaka", "delivery_charge_outside", "delivery_charge_sylhet",
@@ -64,6 +97,17 @@ export default function CheckoutPage() {
     "whatsapp_number", "contact_phone", "contact_email",
   ]);
   const couponsEnabled = useFeatureFlag("feature_coupons", true);
+  /*
+   * Screen 11c — one design, two configurations. With guest checkout allowed
+   * (the default), signing in is offered as a convenience and never blocks the
+   * order. With the flag off, the same card becomes the gate. The setting has
+   * existed in the admin panel all along; checkout simply never read it, so
+   * turning it off changed nothing.
+   */
+  const guestAllowed = useFeatureFlag("feature_guest_checkout", true);
+  const customerSession = useCustomerStore((st) => st.session);
+  const signedIn = Boolean(customerSession?.token);
+  const signInRequired = !guestAllowed && !signedIn;
 
   const otpRequired = getSettingValue(settings, "checkout_otp_required") === "true";
 
@@ -329,7 +373,30 @@ export default function CheckoutPage() {
     );
   }
 
-  const ctaLabel = lang === "bn" ? "অর্ডার নিশ্চিত করুন" : "Confirm Order";
+  /*
+   * Where the customer stands. Derived from the fields they have already
+   * filled — the form is not gated, so this reports progress rather than
+   * controlling it.
+   */
+  const deliveryValues = watch(["customer_name", "customer_phone", "district", "street_address"]);
+  const deliveryStepDone = deliveryValues.every((v) => (v ?? "").toString().trim().length > 1);
+  const paymentStepDone = deliveryStepDone && Boolean(selectedGateway) && (!otpRequired || otpVerified);
+
+  /*
+   * The button states its own outcome. The OTP gate is a runtime setting, so a
+   * fixed label is guaranteed to be wrong in one configuration or the other:
+   * with the gate on, pressing this sends a code rather than placing anything.
+   */
+  const ctaLabel = (() => {
+    if (otpRequired && !otpVerified) {
+      return lang === "bn" ? "কোড পাঠান" : "Send code";
+    }
+    const gw = paymentOptions.find((p) => p.gateway === selectedGateway);
+    if (gw && !gw.isManual && gw.gateway !== "cod" && gw.gateway !== "cash_on_delivery") {
+      return lang === "bn" ? `${gw.label}-এ যান` : `Continue to ${gw.label}`;
+    }
+    return lang === "bn" ? "অর্ডার নিশ্চিত করুন" : "Place order";
+  })();
 
   return (
     <div className="min-h-screen page-surface pb-mobile-float lg:pb-8">
@@ -346,10 +413,64 @@ export default function CheckoutPage() {
       />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
-        <Link href="/cart" className="inline-flex items-center gap-2 text-sm text-muted hover:text-brand-600 mb-6">
+        <Link href="/cart" className="inline-flex items-center gap-2 text-sm text-muted hover:text-brand-600 mb-4">
           <ArrowLeft className="w-4 h-4" />
           {lang === "bn" ? "কার্টে ফিরুন" : "Back to Cart"}
         </Link>
+
+        {/*
+          Screen 11 — Delivery → Payment → Confirm. The form stays one page and
+          one submit; this reports where the customer stands rather than gating
+          the fields, so nothing they have typed can be trapped behind a step.
+          A checkout that hides its remaining length is a checkout people leave.
+        */}
+        <ol className="flex gap-2 mb-6" aria-label={lang === "bn" ? "চেকআউটের ধাপ" : "Checkout steps"}>
+          {[
+            { key: "delivery", label: { en: "Delivery", bn: "ঠিকানা" }, done: deliveryStepDone },
+            { key: "payment", label: { en: "Payment", bn: "পেমেন্ট" }, done: paymentStepDone },
+            { key: "confirm", label: { en: "Confirm", bn: "নিশ্চিত" }, done: false },
+          ].map((step, i, all) => {
+            const active = !step.done && all.slice(0, i).every((p) => p.done);
+            return (
+              <li key={step.key} className="flex-1 grid gap-1.5">
+                <span
+                  aria-hidden
+                  className={cn(
+                    "h-[3px] rounded-full",
+                    step.done ? "bg-green-600" : active ? "bg-brand-600" : "bg-gray-200 dark:bg-white/10"
+                  )}
+                />
+                <span
+                  className={cn(
+                    "text-[11px] text-center",
+                    step.done ? "text-green-700 dark:text-green-400" : active ? "font-bold text-heading" : "text-muted"
+                  )}
+                >
+                  {lang === "bn" ? step.label.bn : step.label.en}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
+
+        {!signedIn && (
+          <div className={cn("mb-6", signInRequired ? "alert-warning" : "alert-info")} role={signInRequired ? "alert" : undefined}>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="flex-1 min-w-[14rem] text-sm">
+                {signInRequired
+                  ? (lang === "bn"
+                      ? "অর্ডার করতে সাইন ইন করুন। ফোন ও ইমেইল দিন — কোডটি ইমেইলে যাবে।"
+                      : "Sign in to place this order. Your phone and email — the code arrives by email.")
+                  : (lang === "bn"
+                      ? "সাইন ইন করলে পরের বার ঠিকানা নিজেই বসবে আর অর্ডার ট্র্যাক করা যাবে। না করলেও অর্ডার করতে পারবেন।"
+                      : "Sign in and your address fills itself next time, and you can track the order. You can also order without it.")}
+              </p>
+              <Link href="/login?redirect=/checkout" className={cn("btn btn-sm", signInRequired ? "btn-primary" : "btn-outline")}>
+                {lang === "bn" ? "সাইন ইন" : "Sign in"}
+              </Link>
+            </div>
+          </div>
+        )}
 
         {stockIssue && (
           <div role="alert" className="mb-6 alert-warning">
@@ -507,8 +628,18 @@ export default function CheckoutPage() {
                       <input type="radio" value={opt.gateway} {...register("payment_gateway")} className="sr-only" />
                       <span className="text-xl">{opt.icon}</span>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm">{opt.label}</p>
-                        <p className="text-xs text-muted mt-0.5 truncate">{opt.detail}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-sm">{opt.label}</p>
+                          {(opt.gateway === "cod" || opt.gateway === "cash_on_delivery") && (
+                            <span className="badge badge-default text-[10px]">
+                              {lang === "bn" ? "জনপ্রিয়" : "Popular"}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted mt-0.5">{paymentConsequence(opt)}</p>
+                        {opt.detail && opt.gateway !== "cod" && opt.gateway !== "cash_on_delivery" && (
+                          <p className="text-[11px] text-muted mt-0.5 truncate">{opt.detail}</p>
+                        )}
                       </div>
                       {selectedGateway === opt.gateway && (
                         <div className="w-4 h-4 rounded-full bg-brand-500 flex items-center justify-center">
@@ -543,7 +674,7 @@ export default function CheckoutPage() {
                 <div className="flex items-center gap-1.5"><Truck className="w-4 h-4 text-brand-500" />{lang === "bn" ? "দেশwide ডেলিভারি" : "Nationwide delivery"}</div>
               </div>
 
-              <button type="submit" disabled={isSubmitting || stockIssue} className="btn btn-success btn-lg w-full hidden lg:flex">
+              <button type="submit" disabled={isSubmitting || stockIssue || signInRequired} className="btn btn-success btn-lg w-full hidden lg:flex">
                 {isSubmitting ? (lang === "bn" ? "প্রক্রিয়া..." : "Processing...") : ctaLabel}
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -567,7 +698,7 @@ export default function CheckoutPage() {
                         <p className="text-sm font-medium truncate">{lang === "bn" ? item.name_bn : item.name_en}</p>
                         <p className="text-xs text-muted">{formatPrice(item.price)} × {item.quantity}</p>
                       </div>
-                      <p className="text-sm font-semibold">{formatPrice(item.price * item.quantity)}</p>
+                      <p className="money text-sm font-semibold">{formatPrice(item.price * item.quantity)}</p>
                     </div>
                   ))}
                 </div>
@@ -589,18 +720,51 @@ export default function CheckoutPage() {
                       {couponError && <p className="text-red-500 text-xs">{couponError}</p>}
                     </>
                   )}
-                  <div className="flex justify-between"><span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span><span>{formatPrice(subtotal)}</span></div>
-                  {discount > 0 && <div className="flex justify-between text-green-600"><span>{lang === "bn" ? "ছাড়" : "Discount"}</span><span>−{formatPrice(discount)}</span></div>}
-                  <div className="flex justify-between"><span>{lang === "bn" ? "ডেলিভারি" : "Delivery"}</span><span>{deliveryCharge === 0 ? (lang === "bn" ? "ফ্রি" : "FREE") : formatPrice(deliveryCharge)}</span></div>
+                  <div className="flex justify-between"><span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span><span className="money">{formatPrice(subtotal)}</span></div>
+                  {discount > 0 && <div className="flex justify-between text-green-600"><span>{lang === "bn" ? "ছাড়" : "Discount"}</span><span className="money">−{formatPrice(discount)}</span></div>}
+                  {/* Announced: the charge changes when the district changes,
+                      and a screen-reader user gets no repaint to notice. */}
+                  <div className="flex justify-between" role="status">
+                    <span>{lang === "bn" ? "ডেলিভারি" : "Delivery"}</span>
+                    <span className="money">{deliveryCharge === 0 ? (lang === "bn" ? "ফ্রি" : "FREE") : formatPrice(deliveryCharge)}</span>
+                  </div>
                   <div className="flex justify-between pt-2 border-t font-bold text-lg">
                     <span>{lang === "bn" ? "মোট" : "Total"}</span>
-                    <span className="text-green-600">{formatPrice(cartTotal)}</span>
+                    <span className="money text-green-600">{formatPrice(cartTotal)}</span>
                   </div>
+                  {/*
+                    Screen 11b — an advance order was one amber warning under
+                    the total, so the customer read a single figure and then
+                    found out at the door that it was not the figure they were
+                    paying today. The split is now stated as two rows, the way
+                    the total above it is: what leaves the wallet now, and what
+                    the rider collects.
+
+                    The amounts are the ones the order actually carries —
+                    calcAdvanceCharge over the same settings the backend bills
+                    from. The design's 30% split is not invented here; a
+                    percentage the API does not compute would be a number this
+                    page cannot honour.
+                  */}
                   {advanceCharge > 0 && (
-                    <div className="mt-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
-                      {lang === "bn"
-                        ? `⚠️ এই অর্ডারে ৳${advanceCharge} অগ্রিম দিতে হবে; অগ্রিম পাওয়ার পর অর্ডার কনফার্ম হবে।`
-                        : `⚠️ This order requires a ৳${advanceCharge} advance; it will be confirmed once the advance is received.`}
+                    <div className="mt-2 pt-2 border-t space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-semibold text-heading">
+                          {lang === "bn" ? "এখন দিচ্ছেন" : "Paying now"}
+                        </span>
+                        <span className="money font-semibold">{formatPrice(advanceCharge)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted">
+                          {lang === "bn" ? "ডেলিভারিতে দেবেন" : "Paying on delivery"}
+                        </span>
+                        <span className="money text-muted">{formatPrice(Math.max(cartTotal - advanceCharge, 0))}</span>
+                      </div>
+                      <p className="text-xs text-muted">
+                        {lang === "bn"
+                          ? "অগ্রিম পাওয়ার পর অর্ডার কনফার্ম হবে।"
+                          : "The order is confirmed once the advance is received."}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -612,8 +776,17 @@ export default function CheckoutPage() {
 
       <div className="sticky-cta-bar px-4 py-3">
         <div className="flex items-center gap-3 max-w-6xl mx-auto">
-          <div className="flex-1"><p className="text-xs text-muted">{lang === "bn" ? "মোট" : "Total"}</p><p className="text-lg font-bold text-success-600">{formatPrice(cartTotal)}</p></div>
-          <button type="submit" form="checkout-form" disabled={isSubmitting || stockIssue} className="btn btn-success btn-md min-w-[9rem]">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted truncate">
+              {advanceCharge > 0
+                ? (lang === "bn" ? "এখন · বাকি ডেলিভারিতে" : "now · rest on delivery")
+                : (lang === "bn" ? "মোট" : "Total")}
+            </p>
+            <p className="money text-lg font-bold text-success-600">
+              {formatPrice(advanceCharge > 0 ? advanceCharge : cartTotal)}
+            </p>
+          </div>
+          <button type="submit" form="checkout-form" disabled={isSubmitting || stockIssue || signInRequired} className="btn btn-success btn-md min-w-[9rem]">
             {isSubmitting ? "..." : ctaLabel}
           </button>
         </div>

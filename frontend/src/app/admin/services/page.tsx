@@ -864,6 +864,26 @@ export default function AdminServicesPage() {
                       <option value="hybrid">Hybrid — starts online, finishes at shop</option>
                     </select>
                   </div>
+                  {/* Screen 08c — published turnaround, in working days. Leave
+                      both blank and the public pages say nothing about time. */}
+                  <div>
+                    <label className="form-label">Turnaround (working days)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number" min={1} max={365}
+                        value={editing.turnaround_days_min ?? ""}
+                        onChange={fNum("turnaround_days_min")}
+                        placeholder="min" className="input w-full"
+                      />
+                      <span className="text-gray-400">–</span>
+                      <input
+                        type="number" min={1} max={365}
+                        value={editing.turnaround_days_max ?? ""}
+                        onChange={fNum("turnaround_days_max")}
+                        placeholder="max" className="input w-full"
+                      />
+                    </div>
+                  </div>
                   <div>
                     <label className="form-label">Lead Priority (1-10)</label>
                     <input type="number" min={1} max={10} value={editing.lead_priority ?? 5} onChange={fNum("lead_priority")} className="input w-full" />

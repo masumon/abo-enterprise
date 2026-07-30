@@ -426,6 +426,9 @@ export interface PublicInvoiceData {
   tax: number;
   total: number;
   issued_date: string | null;
+  /** Screen 17b — an invoice has three states, not two. */
+  due_date?: string | null;
+  paid_date?: string | null;
   created_at: string | null;
   order_number?: string | null;
   order_status?: string | null;

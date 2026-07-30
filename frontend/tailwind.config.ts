@@ -6,34 +6,73 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // "Nil & Marigold" — the artifact's palette. nil is Bengali indigo,
+        // gada the marigold sold at the shop door. The scale is anchored so the
+        // steps already used across the app land on the artifact's own tokens:
+        // brand-600 = nil #1E2B6B, brand-500 = nil-lift #35479B,
+        // brand-50 = nil-wash #E7EAF6. Nothing had to change at a call site.
         brand: {
-          50: "#e8f0fe",
-          100: "#c5d8fb",
-          200: "#9dbef8",
-          300: "#6fa3f4",
-          400: "#2979d4",
-          500: "#1e5ba8",
-          600: "#1565c0",
-          700: "#0d47a1",
-          800: "#093782",
-          900: "#062563",
+          50: "#e7eaf6",
+          100: "#cfd6ec",
+          200: "#a9b5dc",
+          300: "#7c8cc7",
+          400: "#5568b0",
+          500: "#35479b",
+          600: "#1e2b6b",
+          700: "#182357",
+          800: "#131c45",
+          900: "#0e1533",
         },
+        // accent-500 = gada #E4A11B, accent-700 = gada-deep #A87008,
+        // accent-50 = gada-wash #FBF0D8.
         accent: {
-          50: "#fce4ec",
-          100: "#f8bbd0",
-          200: "#f48fb1",
-          300: "#f06292",
-          400: "#ec407a",
-          500: "#e91e63",
-          600: "#c2185b",
-          700: "#ad1457",
-          800: "#880e4f",
-          900: "#560027",
+          50: "#fbf0d8",
+          100: "#f6e0ae",
+          200: "#f0cc7c",
+          300: "#ebb84a",
+          400: "#e7ac2e",
+          500: "#e4a11b",
+          600: "#c08610",
+          700: "#a87008",
+          800: "#855806",
+          900: "#614004",
         },
       },
+      /*
+       * The system's type scale: 29 / 23 / 18 / 15 / 13 / 11. Tailwind's
+       * defaults run 30 / 20 / 18 / 16 / 14 / 12, so body text was a pixel
+       * coarser and the steps between sizes did not match the design. Sizes are
+       * paired with their line-heights, as Tailwind's own entries are, so no
+       * utility loses its leading.
+       */
+      fontSize: {
+        xs: ["0.6875rem", { lineHeight: "1rem" }],
+        sm: ["0.8125rem", { lineHeight: "1.15rem" }],
+        base: ["0.9375rem", { lineHeight: "1.5rem" }],
+        lg: ["1.125rem", { lineHeight: "1.6rem" }],
+        xl: ["1.4375rem", { lineHeight: "1.85rem" }],
+        "2xl": ["1.8125rem", { lineHeight: "2.2rem" }],
+      },
+      /*
+       * The system has three radii — 6, 12, 20 — plus pill. Tailwind's defaults
+       * add 8, 16 and 24, so the app was drawing six different corner sizes.
+       * Snapping the scale here rounds every existing class onto the system
+       * without touching a single call site: md stays 6, lg and xl are 12,
+       * 2xl and 3xl are 20, full is the pill.
+       */
+      borderRadius: {
+        lg: "12px",
+        "2xl": "20px",
+        "3xl": "20px",
+      },
       fontFamily: {
-        sans: ["Inter", "Hind Siliguri", "system-ui", "sans-serif"],
-        bangla: ["Hind Siliguri", "SolaimanLipi", "sans-serif"],
+        // The artifact's three faces. Body is the system stack so Latin text
+        // costs no webfont; Bengali still resolves to a real Bengali face
+        // rather than falling back, which was the rule the artifact set.
+        sans: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "Noto Sans Bengali", "Hind Siliguri", "sans-serif"],
+        display: ["ui-serif", "Charter", "Bitstream Charter", "Iowan Old Style", "Source Serif 4", "Georgia", "Noto Serif Bengali", "serif"],
+        mono: ["ui-monospace", "SF Mono", "Cascadia Mono", "Roboto Mono", "Menlo", "monospace"],
+        bangla: ["Noto Sans Bengali", "Hind Siliguri", "SolaimanLipi", "sans-serif"],
       },
       animation: {
         float: "float 3s ease-in-out infinite",
@@ -109,11 +148,15 @@ const config: Config = {
         },
       },
       boxShadow: {
-        glow: "0 0 20px rgba(30,91,168,0.3)",
-        card: "0 4px 24px rgba(30,91,168,0.06), 0 1px 4px rgba(0,0,0,0.04)",
-        "card-hover": "0 12px 40px rgba(30,91,168,0.12), 0 4px 12px rgba(0,0,0,0.06)",
-        glass: "0 8px 32px rgba(30,91,168,0.08), 0 2px 8px rgba(0,0,0,0.04)",
-        "glass-strong": "0 16px 48px rgba(30,91,168,0.14), 0 4px 16px rgba(0,0,0,0.06)",
+        // The system has two elevations. These names are all in use across the
+        // app, so each maps onto the nearer of the two rather than inventing a
+        // third; the tints are ink, not the old brand blue, which is why the
+        // shadows had a faint blue cast that no card in the design has.
+        glow: "0 0 20px rgba(30,43,107,0.3)",
+        card: "0 1px 2px rgba(20,24,43,0.06), 0 4px 12px rgba(20,24,43,0.05)",
+        "card-hover": "0 2px 4px rgba(20,24,43,0.07), 0 16px 40px rgba(20,24,43,0.10)",
+        glass: "0 1px 2px rgba(20,24,43,0.06), 0 4px 12px rgba(20,24,43,0.05)",
+        "glass-strong": "0 2px 4px rgba(20,24,43,0.07), 0 16px 40px rgba(20,24,43,0.10)",
         admin: "0 2px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03)",
       },
       backdropBlur: {

@@ -3,18 +3,31 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Store, ShoppingCart, Wrench, Package, User, Search } from "lucide-react";
+import { Home, Store, ShoppingCart, Search, Menu } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useCustomerStore } from "@/store/customer";
 import { useCartStore } from "@/store/cart";
+import MoreDrawer from "@/components/layout/MoreDrawer";
 import { cn } from "@/lib/utils";
 
+/**
+ * Screen 03 — the tab bar as the design system draws it: a flat surface with a
+ * single hairline above it and five equal columns, Home · Shop · Search · Cart
+ * · More.
+ *
+ * Two things this fixes beyond the styling. The fifth tab used to change
+ * identity with the session — Track when signed out, Profile when signed in —
+ * so the bar the visitor learned in one minute was a different bar the next.
+ * More is fixed; only its contents change. And Search now has a permanent slot
+ * (GAP-07): it replaced Services, not Cart, because Cart carries committed
+ * intent and a live badge.
+ */
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const { lang } = useLanguageStore();
-  const isLoggedIn = useCustomerStore((s) => s.isLoggedIn());
   const cartCount = useCartStore((s) => s.itemCount());
   const [mounted, setMounted] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   useEffect(() => {
     useCustomerStore.persist.rehydrate();
@@ -22,137 +35,86 @@ export default function MobileBottomNav() {
     setMounted(true);
   }, []);
 
+  // Close the sheet on navigation, so a back gesture never leaves it stranded.
+  useEffect(() => {
+    setMoreOpen(false);
+  }, [pathname]);
+
   if (pathname?.startsWith("/admin")) return null;
 
-  const profileHref = isLoggedIn ? "/profile" : "/track";
-  const profileLabel = isLoggedIn
-    ? { en: "Profile", bn: "প্রোফাইল" }
-    : { en: "Track", bn: "ট্র্যাক" };
-  const ProfileIcon = isLoggedIn ? User : Package;
-
-  // GAP-07 — Search had no permanent tab, despite being the primary discovery
-  // action on a catalogue of this size. It takes the slot next to the centre
-  // (the easiest reach after the centre itself). Services moves right; it stays
-  // reachable from the homepage lane switcher and the header menu.
-  // Cart deliberately keeps its slot: it holds committed intent and a live badge.
-  const LEFT_ITEMS = [
+  const TABS = [
     { href: "/", icon: Home, label: { en: "Home", bn: "হোম" } },
     { href: "/products", icon: Store, label: { en: "Shop", bn: "শপ" } },
     { href: "/search", icon: Search, label: { en: "Search", bn: "খুঁজুন" } },
-  ];
-  const RIGHT_ITEMS = [
-    { href: "/services", icon: Wrench, label: { en: "Services", bn: "সেবা" } },
-    { href: profileHref, icon: ProfileIcon, label: profileLabel },
+    { href: "/cart", icon: ShoppingCart, label: { en: "Cart", bn: "কার্ট" } },
   ];
 
-  const isItemActive = (href: string) =>
-    pathname === href || (href !== "/" && pathname.startsWith(href));
-  // On /cart the user is already in the cart — don't visually pull them back
-  // to it. Only /checkout keeps the active highlight so the customer
-  // knows the cart button will take them back to review.
-  const cartActive = pathname.startsWith("/checkout");
-  const showBadge = mounted && cartCount > 0;
-
-  const renderTab = (item: { href: string; icon: typeof Home; label: { en: string; bn: string } }) => {
-    const Icon = item.icon;
-    const isActive = isItemActive(item.href);
-    return (
-      <Link
-        key={item.href}
-        href={item.href}
-        className={cn(
-          // flex-1 so five tabs plus the centre cart button share the row
-          // evenly and still fit at 360px, the common low-cost Android width.
-          "relative flex flex-1 min-w-0 flex-col items-center justify-center gap-[3px] px-1.5",
-          "rounded-[20px] transition-all duration-250",
-          isActive
-            ? "text-brand-700 dark:text-brand-200 bg-gradient-to-b from-brand-50 to-brand-100/60 dark:from-brand-900/45 dark:to-brand-800/25 ring-1 ring-brand-200/50 dark:ring-brand-700/40 scale-[1.04]"
-            : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100/60 dark:hover:bg-white/[0.08] active:scale-95"
-        )}
-        aria-label={lang === "bn" ? item.label.bn : item.label.en}
-        aria-current={isActive ? "page" : undefined}
-      >
-        <Icon
-          strokeWidth={isActive ? 2.4 : 2.3}
-          className={cn(
-            "w-[20px] h-[20px] transition-all duration-250",
-            isActive ? "-translate-y-px" : ""
-          )}
-        />
-        {/* Labels must never wrap to a second line — Bengali strings run
-            20-30% longer than English, so truncate rather than reflow. */}
-        <span className={cn("text-[9px] font-medium leading-none max-w-full truncate", isActive && "font-semibold")}>
-          {lang === "bn" ? item.label.bn : item.label.en}
-        </span>
-      </Link>
-    );
+  const isItemActive = (href: string) => {
+    // On /cart the customer is already in the cart — don't pull them back to
+    // it. Only /checkout keeps the highlight, so they know the tab returns them
+    // to review. (Unchanged from the previous bar; easy to lose in a rewrite.)
+    if (href === "/cart") return pathname.startsWith("/checkout");
+    return pathname === href || (href !== "/" && pathname.startsWith(href));
   };
 
-  return (
-    <nav
-      className="fixed left-1/2 -translate-x-1/2 z-50 lg:hidden"
-      style={{ bottom: "max(12px, calc(env(safe-area-inset-bottom, 0px) + 4px))" }}
-      aria-label={lang === "bn" ? "মোবাইল নেভিগেশন" : "Mobile navigation"}
-    >
-      <div
-        className={cn(
-          "flex items-stretch",
-          "h-[52px] px-1.5 gap-0.5",
-          "rounded-[26px]",
-          /* Match top navbar glassmorphism */
-          "bg-white/72 dark:bg-[#0b1f3a]/82 backdrop-blur-2xl",
-          "border border-white/60 dark:border-white/[0.09]",
-          "shadow-[0_4px_20px_rgba(30,91,168,0.10),0_1px_3px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.82)]",
-          "dark:shadow-[0_4px_24px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.05)]",
-          "transition-all duration-500",
-        )}
-      >
-        {LEFT_ITEMS.map(renderTab)}
+  const showBadge = mounted && cartCount > 0;
 
-        {/* Center cart button */}
-        <Link
-          href="/cart"
-          aria-label={lang === "bn" ? "কার্ট" : "Cart"}
-          aria-current={cartActive ? "page" : undefined}
+  return (
+    <>
+      <nav
+        className="fixed inset-x-0 bottom-0 z-50 lg:hidden grid grid-cols-5 bg-white dark:bg-[var(--surface-card)] border-t border-gray-200 dark:border-white/10"
+        style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+        aria-label={lang === "bn" ? "মোবাইল নেভিগেশন" : "Mobile navigation"}
+      >
+        {TABS.map((item) => {
+          const Icon = item.icon;
+          const active = isItemActive(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "relative min-h-[44px] flex flex-col items-center justify-center gap-0.5 px-1 py-1.5",
+                active
+                  ? "text-brand-600 dark:text-brand-300 font-bold"
+                  : "text-muted"
+              )}
+            >
+              <span className="relative">
+                <Icon className="w-[18px] h-[18px]" strokeWidth={active ? 2.5 : 2} />
+                {item.href === "/cart" && showBadge && (
+                  <span
+                    className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] px-0.5 rounded-full bg-accent-500 text-[#14182b] text-[9px] font-bold flex items-center justify-center"
+                    aria-label={lang === "bn" ? `কার্টে ${cartCount}টি পণ্য` : `${cartCount} items in cart`}
+                  >
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                )}
+              </span>
+              <span className="text-[10px] leading-none max-w-full truncate">
+                {lang === "bn" ? item.label.bn : item.label.en}
+              </span>
+            </Link>
+          );
+        })}
+
+        <button
+          type="button"
+          onClick={() => setMoreOpen(true)}
+          aria-expanded={moreOpen}
+          aria-haspopup="dialog"
           className={cn(
-            "relative flex flex-col items-center justify-center gap-[3px] px-3",
-            "transition-all duration-250 active:scale-90",
-            cartActive && "scale-105"
+            "min-h-[44px] flex flex-col items-center justify-center gap-0.5 px-1 py-1.5",
+            moreOpen ? "text-brand-600 dark:text-brand-300 font-bold" : "text-muted"
           )}
         >
-          <span
-            className={cn(
-              "relative w-[38px] h-[38px] rounded-full flex items-center justify-center",
-              "bg-gradient-to-br from-brand-500 to-brand-700 text-white",
-              "shadow-[0_4px_14px_rgba(30,91,168,0.42)]",
-              "transition-all duration-250",
-              cartActive
-                ? "from-brand-600 to-brand-800 shadow-[0_6px_20px_rgba(30,91,168,0.58)] ring-2 ring-brand-200/70 dark:ring-brand-700/60"
-                : ""
-            )}
-          >
-            <ShoppingCart className="w-[18px] h-[18px]" strokeWidth={2.5} />
-            {showBadge && (
-              <span
-                className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] px-0.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-[#0b1f3a]"
-                aria-label={lang === "bn" ? `কার্টে ${cartCount}টি পণ্য` : `${cartCount} items in cart`}
-              >
-                {cartCount > 99 ? "99+" : cartCount}
-              </span>
-            )}
-          </span>
-          <span
-            className={cn(
-              "text-[9px] font-medium transition-colors duration-200 leading-none",
-              cartActive ? "text-brand-700 dark:text-brand-200 font-semibold" : "text-gray-500 dark:text-gray-400"
-            )}
-          >
-            {lang === "bn" ? "কার্ট" : "Cart"}
-          </span>
-        </Link>
+          <Menu className="w-[18px] h-[18px]" strokeWidth={moreOpen ? 2.5 : 2} />
+          <span className="text-[10px] leading-none">{lang === "bn" ? "আরও" : "More"}</span>
+        </button>
+      </nav>
 
-        {RIGHT_ITEMS.map(renderTab)}
-      </div>
-    </nav>
+      <MoreDrawer open={moreOpen} onClose={() => setMoreOpen(false)} />
+    </>
   );
 }

@@ -84,7 +84,7 @@ export default function CartDrawer() {
         onKeyDown={(e) => {
           if (e.key === "Escape") closeCart();
         }}
-        className="fixed right-0 top-0 bottom-0 z-[60] w-full max-w-md flex flex-col animate-slide-right pb-safe bg-white/97 dark:bg-[#0f1a2e]/97 backdrop-blur-xl shadow-[-8px_0_40px_rgba(30,91,168,0.12)] dark:shadow-[-8px_0_40px_rgba(0,0,0,0.35)]"
+        className="fixed right-0 top-0 bottom-0 z-[60] w-full max-w-md flex flex-col animate-slide-right pb-safe bg-white/97 dark:bg-[#0f1a2e]/97 backdrop-blur-xl shadow-[-8px_0_40px_rgba(30,43,107,0.12)] dark:shadow-[-8px_0_40px_rgba(0,0,0,0.35)]"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0px)" }}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100/80 gradient-brand">
@@ -172,12 +172,12 @@ export default function CartDrawer() {
               </>
             )}
             <div className="space-y-2 mb-4 text-sm">
-              <div className="flex justify-between"><span className="text-muted">{t("cart_subtotal")}</span><span>{formatPrice(cartSubtotal)}</span></div>
-              {discount > 0 && <div className="flex justify-between text-green-600 dark:text-green-400 font-medium"><span>{lang === "bn" ? "ছাড়" : "Discount"}</span><span>-{formatPrice(discount)}</span></div>}
+              <div className="flex justify-between"><span className="text-muted">{t("cart_subtotal")}</span><span className="money">{formatPrice(cartSubtotal)}</span></div>
+              {discount > 0 && <div className="flex justify-between text-green-600 dark:text-green-400 font-medium"><span>{lang === "bn" ? "ছাড়" : "Discount"}</span><span className="money">-{formatPrice(discount)}</span></div>}
               <div className="flex justify-between"><span className="text-muted">{t("cart_delivery")}</span><span className="text-green-600 font-medium">{lang === "bn" ? "ফ্রি" : "FREE"}</span></div>
               <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-white/10">
                 <span className="font-bold text-heading">{t("cart_total")}</span>
-                <span className="text-2xl font-bold text-accent-500">{formatPrice(cartTotal)}</span>
+                <span className="money text-2xl font-bold text-accent-500">{formatPrice(cartTotal)}</span>
               </div>
             </div>
             <button

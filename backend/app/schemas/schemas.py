@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import Any, Literal
-from pydantic import BaseModel, EmailStr, computed_field, field_validator
+from pydantic import BaseModel, EmailStr, Field, computed_field, field_validator
 import re
 
 
@@ -537,6 +537,9 @@ class ServiceBase(BaseModel):
     pricing_type: str
     # Where the service is completed (manual_sql/0008). None = unspecified.
     fulfilment: str | None = None
+    # How long it takes, in working days (manual_sql/0011). None = not published.
+    turnaround_days_min: int | None = None
+    turnaround_days_max: int | None = None
     # CTA override (None = infer from pricing_type/capabilities).
     cta_type: str | None = None
     cta_label_en: str | None = None
@@ -598,6 +601,8 @@ def _reject_negative(v: float | None, info) -> float | None:
 class ServiceCreate(ServiceBase):
     pricing_type: ServicePricingType
     fulfilment: ServiceFulfilment | None = None
+    turnaround_days_min: int | None = Field(default=None, ge=1, le=365)
+    turnaround_days_max: int | None = Field(default=None, ge=1, le=365)
     # Capability overrides can be set at creation too (additive; default NULL).
     is_orderable: bool | None = None
     is_bookable: bool | None = None
@@ -628,6 +633,8 @@ class ServiceUpdate(BaseModel):
     is_bookable: bool | None = None
     pricing_type: ServicePricingType | None = None
     fulfilment: ServiceFulfilment | None = None
+    turnaround_days_min: int | None = Field(default=None, ge=1, le=365)
+    turnaround_days_max: int | None = Field(default=None, ge=1, le=365)
     cta_type: str | None = None
     cta_label_en: str | None = None
     cta_label_bn: str | None = None

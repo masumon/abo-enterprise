@@ -20,6 +20,9 @@ import { useT } from "@/lib/i18n/useT";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { useAssistantStore } from "@/store/assistant";
+import { hasBottomActionBar } from "@/lib/actionBarRoutes";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 
 interface ChatMessage {
@@ -128,7 +131,11 @@ export default function AssistantWidget() {
   const t = useT();
   const { lang } = useLanguageStore();
   const [config, setConfig] = useState<AssistantConfig>(DEFAULT_CONFIG);
-  const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const hasActionBar = hasBottomActionBar(pathname);
+  // Screen 02b — shared with the header launcher (see store/assistant.ts).
+  const open = useAssistantStore((s) => s.open);
+  const setOpen = useAssistantStore((s) => s.setOpen);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -209,7 +216,7 @@ export default function AssistantWidget() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, setOpen]);
 
   const sendText = useCallback(
     async (text: string) => {
@@ -307,7 +314,7 @@ export default function AssistantWidget() {
               className="absolute inset-0 opacity-30"
               style={{
                 backgroundImage:
-                  "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.25) 0%, transparent 50%), radial-gradient(circle at 80% 0%, rgba(233,30,99,0.2) 0%, transparent 40%)",
+                  "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.25) 0%, transparent 50%), radial-gradient(circle at 80% 0%, rgba(228,161,27,0.2) 0%, transparent 40%)",
               }}
             />
             <div className="relative flex items-center justify-between gap-3">
@@ -492,8 +499,16 @@ export default function AssistantWidget() {
         </div>
       )}
 
+      {/*
+        Screen 02b — on a product page the tab bar, the action bar and this
+        launcher stacked into roughly 140px of fixed chrome, and the launcher
+        sat over Add to cart: the system's rule is that the primary action is
+        never covered. On those screens the launcher moves into the header
+        (Navbar renders it there); everywhere else it floats as before.
+      */}
       <div className={cn(
         "fixed bottom-mobile-float right-4 lg:bottom-6 lg:right-6 z-50 transition-all duration-300",
+        hasActionBar && "hidden lg:block",
         footerNear && !open && "opacity-0 pointer-events-none translate-y-4"
       )}>
         {open && (
@@ -509,7 +524,7 @@ export default function AssistantWidget() {
 
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
+          onClick={() => setOpen(!open)}
           className={cn(
             "relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
             "ring-2 ring-brand-400/40 shadow-lg shadow-brand-500/30",

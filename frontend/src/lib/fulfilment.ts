@@ -55,3 +55,21 @@ export function fulfilmentDetail(value: unknown, lang: Language): string | null 
   if (!isFulfilment(value)) return null;
   return lang === "bn" ? COPY[value].detail.bn : COPY[value].detail.en;
 }
+
+/**
+ * Screen 08c — how long the service takes, in working days. A range where the
+ * shop published one, a single figure where both ends match, and nothing at all
+ * when it is unset: an unpublished turnaround must never be guessed, because
+ * the customer will hold the shop to whatever number they were shown.
+ */
+export function turnaroundLabel(
+  min: number | null | undefined,
+  max: number | null | undefined,
+  lang: Language
+): string | null {
+  if (!min && !max) return null;
+  const lo = min ?? max!;
+  const hi = max ?? min!;
+  const range = lo === hi ? `${lo}` : `${lo}–${hi}`;
+  return lang === "bn" ? `${range} কর্মদিবস` : `${range} working day${hi === 1 ? "" : "s"}`;
+}

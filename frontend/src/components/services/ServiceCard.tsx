@@ -2,10 +2,10 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Service } from "@/types";
 import type { Language } from "@/types";
-import { ArrowRight, Star, MapPin, Wifi } from "lucide-react";
+import { ArrowRight, Star, MapPin, Wifi, Clock } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { resolveServiceImage } from "@/lib/demoImages";
-import { fulfilmentLabel, isFulfilment } from "@/lib/fulfilment";
+import { fulfilmentLabel, isFulfilment, turnaroundLabel } from "@/lib/fulfilment";
 
 interface ServiceCardProps {
   service: Service;
@@ -29,6 +29,9 @@ export default function ServiceCard({ service, lang = "en", categoryLabel }: Ser
      services show nothing rather than a guessed promise. */
   const fulfilment = fulfilmentLabel(service.fulfilment, lang);
   const needsVisit = service.fulfilment === "at_shop" || service.fulfilment === "hybrid";
+  /* Screen 08c — for an application the customer cannot chase themselves, the
+     wait is the product. Unset stays silent rather than guessing. */
+  const turnaround = turnaroundLabel(service.turnaround_days_min, service.turnaround_days_max, lang);
 
   return (
     <Link href={`/services/${service.slug}`} className="block h-full group">
@@ -50,6 +53,12 @@ export default function ServiceCard({ service, lang = "en", categoryLabel }: Ser
             {tag && (
               <span className="inline-block px-2.5 py-0.5 bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300 text-xs font-semibold rounded-full">
                 {tag}
+              </span>
+            )}
+            {turnaround && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-200">
+                <Clock aria-hidden className="w-3 h-3" />
+                {turnaround}
               </span>
             )}
             {fulfilment && isFulfilment(service.fulfilment) && (

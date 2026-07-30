@@ -27,7 +27,23 @@ export default function InvoiceCard({ invoice, lang }: Props) {
   const deliveryCharge =
     invoice.delivery_charge ??
     Math.max(invoice.total - invoice.subtotal + discount - (invoice.tax ?? 0), 0);
-  const isPaid = ["paid", "completed"].includes(invoice.payment_status);
+  /*
+   * Screen 17b — paid · due · overdue. The invoice has carried issued_date,
+   * due_date and paid_date all along; the card could only say paid or not,
+   * so a bill three weeks past its date looked exactly like one sent this
+   * morning. Overdue is red — the one place the amber rule does not apply,
+   * because for an institutional buyer this genuinely is a problem.
+   */
+  const isPaid =
+    Boolean(invoice.paid_date) || ["paid", "completed"].includes(invoice.payment_status);
+  const isOverdue =
+    !isPaid && Boolean(invoice.due_date) && new Date(invoice.due_date as string).getTime() < Date.now();
+  const statusTone = isPaid ? "paid" : isOverdue ? "overdue" : "due";
+  const statusLabel = isPaid
+    ? (bn ? "পরিশোধিত" : "PAID")
+    : isOverdue
+      ? (bn ? "মেয়াদোত্তীর্ণ" : "OVERDUE")
+      : (bn ? "বকেয়া" : "DUE");
   const issued = invoice.issued_date ?? invoice.created_at;
   const reference = invoice.order_number || invoice.booking_number;
   // QR resolves to the live, public tracking record so a scan verifies the
@@ -54,10 +70,14 @@ export default function InvoiceCard({ invoice, lang }: Props) {
         <span
           className={cn(
             "font-black uppercase tracking-[0.15em] text-6xl sm:text-7xl -rotate-[18deg] border-4 rounded-2xl px-6 py-2 whitespace-nowrap",
-            isPaid ? "text-green-600 border-green-600" : "text-amber-600 border-amber-600"
+            statusTone === "paid"
+              ? "text-green-600 border-green-600"
+              : statusTone === "overdue"
+                ? "text-red-600 border-red-600"
+                : "text-amber-600 border-amber-600"
           )}
         >
-          {isPaid ? (bn ? "পরিশোধিত" : "PAID") : (bn ? "বকেয়া" : "DUE")}
+          {statusLabel}
         </span>
       </div>
 
@@ -91,14 +111,23 @@ export default function InvoiceCard({ invoice, lang }: Props) {
             </p>
             <span
               className={`inline-flex items-center gap-1 mt-2 text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 ${
-                isPaid
+                statusTone === "paid"
                   ? "bg-green-400/15 text-green-50 ring-green-300/40"
-                  : "bg-amber-400/15 text-amber-50 ring-amber-300/40"
+                  : statusTone === "overdue"
+                    ? "bg-red-400/20 text-red-50 ring-red-300/50"
+                    : "bg-amber-400/15 text-amber-50 ring-amber-300/40"
               }`}
             >
               {isPaid ? <CheckCircle2 className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-              {isPaid ? (bn ? "পরিশোধিত" : "PAID") : (bn ? "অপরিশোধিত" : "PENDING")}
+              {statusLabel}
             </span>
+            {/* The date the state turns on, so "due" is never an open-ended
+                claim the customer cannot check. */}
+            {!isPaid && invoice.due_date && (
+              <p className="text-[10px] text-white/70 mt-1">
+                {bn ? "শেষ তারিখ" : "Due"} {new Date(invoice.due_date).toLocaleDateString()}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -220,12 +249,12 @@ export default function InvoiceCard({ invoice, lang }: Props) {
         <div className="space-y-1.5 text-sm">
           <div className="flex justify-between text-muted">
             <span>{bn ? "সাবটোটাল" : "Subtotal"}</span>
-            <span className="tabular-nums">{formatPrice(invoice.subtotal)}</span>
+            <span className="money">{formatPrice(invoice.subtotal)}</span>
           </div>
           {discount > 0 && (
             <div className="flex justify-between text-muted">
               <span>{bn ? "ছাড়" : "Discount"}</span>
-              <span className="tabular-nums">-{formatPrice(discount)}</span>
+              <span className="money">-{formatPrice(discount)}</span>
             </div>
           )}
           {/* Delivery is ALWAYS shown — free orders read ৳0 rather than hiding it. */}
@@ -235,12 +264,12 @@ export default function InvoiceCard({ invoice, lang }: Props) {
                 ? bn ? "ডেলিভারি চার্জ" : "Delivery"
                 : bn ? "ডেলিভারি চার্জ (ফ্রি)" : "Delivery (Free)"}
             </span>
-            <span className="tabular-nums">{formatPrice(deliveryCharge)}</span>
+            <span className="money">{formatPrice(deliveryCharge)}</span>
           </div>
           {invoice.tax > 0 && (
             <div className="flex justify-between text-muted">
               <span>{bn ? "ট্যাক্স" : "Tax"}</span>
-              <span className="tabular-nums">{formatPrice(invoice.tax)}</span>
+              <span className="money">{formatPrice(invoice.tax)}</span>
             </div>
           )}
           <div className="mt-2 flex justify-between items-center rounded-xl bg-brand-50 dark:bg-brand-900/30 border border-brand-100 dark:border-brand-800 px-4 py-3">

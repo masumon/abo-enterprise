@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, SlidersHorizontal, Loader2, LayoutGrid, List } from "lucide-react";
+import { Search, SlidersHorizontal, Loader2, LayoutGrid, List, X } from "lucide-react";
 import type { Category, Product, Subcategory } from "@/types";
 import ProductCard from "@/components/features/ProductCard";
 import Reveal from "@/components/ui/Reveal";
@@ -12,6 +12,7 @@ import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { cn } from "@/lib/utils";
+import ProductFilterSheet from "@/components/products/ProductFilterSheet";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
 import type { CatalogSource } from "@/lib/catalogLoader";
@@ -61,6 +62,7 @@ export default function ProductsClient({
   const [page, setPage] = useState(initialPage);
   const [total, setTotal] = useState(initialTotal);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [catalogSource, setCatalogSource] = useState<CatalogSource>("api");
   const { openCart } = useCartStore();
   const infiniteScroll = useFeatureFlag("feature_infinite_scroll");
@@ -167,6 +169,51 @@ export default function ProductsClient({
     syncUrl(category, value);
   };
 
+  /**
+   * What the visitor has actually narrowed by, as removable chips. Derived
+   * rather than tracked: the page already holds category, subcategory, sort and
+   * search, and a second copy of that truth would be one more thing to keep in
+   * step.
+   */
+  const activeFilters: { key: string; label: string; clear: () => void }[] = [];
+  if (category) {
+    const chip = chips.find((c) => c.value === category);
+    activeFilters.push({
+      key: "category",
+      label: chip ? (lang === "bn" ? chip.label.bn : chip.label.en) : category,
+      clear: () => handleCategoryChange(""),
+    });
+  }
+  if (subcategory) {
+    const node = selectedPath[selectedPath.length - 1];
+    activeFilters.push({
+      key: "sub",
+      label: node ? (lang === "bn" && node.name_bn ? node.name_bn : node.name_en) : subcategory,
+      // Clearing a depth step returns to its parent, not to the top.
+      clear: () => handleSubcategoryChange(selectedPath.length > 1 ? selectedPath[selectedPath.length - 2].slug : ""),
+    });
+  }
+  if (sortBy) {
+    const SORT_LABELS: Record<string, { en: string; bn: string }> = {
+      price_asc: { en: "Price: Low → High", bn: "দাম: কম → বেশি" },
+      price_desc: { en: "Price: High → Low", bn: "দাম: বেশি → কম" },
+      newest: { en: "Newest first", bn: "নতুন আগে" },
+    };
+    const l = SORT_LABELS[sortBy];
+    if (l) activeFilters.push({ key: "sort", label: lang === "bn" ? l.bn : l.en, clear: () => setSortBy("") });
+  }
+  if (search) {
+    activeFilters.push({ key: "search", label: `"${search}"`, clear: () => setSearch("") });
+  }
+
+  const clearAllFilters = () => {
+    setSearch("");
+    setSortBy("");
+    setCategory("");
+    setSubcategory("");
+    syncUrl("", "");
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(timer);
@@ -253,60 +300,49 @@ export default function ProductsClient({
       <LoadingProgress loading={loading} message={t("loading_products")} className="mb-6" />
       <DemoModeBanner show={catalogSource === "cache" && !loading} source={catalogSource} />
 
-      <div className="flex flex-col lg:flex-row gap-4 mb-8">
-        <div className="relative flex-1">
-          <label htmlFor="product-search" className="sr-only">
-            {lang === "bn" ? "পণ্য খুঁজুন" : "Search products"}
-          </label>
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden />
-          <input
-            id="product-search"
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={lang === "bn" ? "পণ্য খুঁজুন..." : "Search products..."}
-            className="input pl-10 w-full"
-          />
-        </div>
-        {/* Category pills — horizontal scroll on mobile so they never wrap
-            to a second row (saves ~44px of above-the-fold space) */}
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 py-0.5 sm:flex-wrap sm:overflow-visible">
-          <SlidersHorizontal className="w-4 h-4 text-gray-400 flex-shrink-0" aria-hidden />
-          {chips.map((c) => (
-            <button
-              key={c.value}
-              type="button"
-              onClick={() => handleCategoryChange(c.value)}
-              className={cn(
-                "px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 whitespace-nowrap flex-shrink-0",
-                category === c.value
-                  ? "bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-md shadow-brand-900/20 ring-1 ring-brand-500/40"
-                  : "bg-gradient-to-b from-white to-brand-50/70 dark:from-white/[0.06] dark:to-brand-900/20 text-brand-700 dark:text-brand-200 ring-1 ring-brand-100 dark:ring-brand-800/70 shadow-sm shadow-brand-900/[0.04] hover:-translate-y-0.5 hover:ring-brand-300 dark:hover:ring-brand-600 hover:shadow-md"
-              )}
-            >
-              {lang === "bn" ? c.label.bn : c.label.en}
-            </button>
-          ))}
-        </div>
+      {/*
+        Screen 06 — one control row. Search plus a single Filter button that
+        carries a marigold count, with the applied filters shown as removable
+        chips beneath it. There used to be four rows (search, category,
+        sub-category, sort/view) taking roughly a third of a 390px viewport, so
+        a catalogue of a few hundred products opened on two and a half cards.
+        Category, depth and sort moved into a bottom sheet; no state, handler or
+        URL parameter changed.
+      */}
+      <div className="sticky top-[var(--navbar-offset)] z-30 -mx-4 px-4 py-3 mb-3 bg-white/95 dark:bg-[var(--surface-card)]/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/10">
         <div className="flex items-center gap-2">
-          <label htmlFor="sort-products" className="sr-only">{t("sort_default")}</label>
-          <select
-            id="sort-products"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="input text-sm w-auto"
+          <div className="relative flex-1 min-w-0">
+            <label htmlFor="product-search" className="sr-only">
+              {lang === "bn" ? "পণ্য খুঁজুন" : "Search products"}
+            </label>
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" aria-hidden />
+            <input
+              id="product-search"
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={lang === "bn" ? "পণ্য খুঁজুন..." : "Search products..."}
+              className="input pl-10 w-full"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            aria-expanded={filtersOpen}
+            aria-haspopup="dialog"
+            className="relative flex-shrink-0 min-h-[44px] px-3.5 rounded-xl border border-gray-200 dark:border-white/10 flex items-center gap-2 text-sm font-semibold text-heading"
           >
-            <option value="">{t("sort_default")}</option>
-            <option value="price_asc">{lang === "bn" ? "দাম: কম→বেশি" : "Price: Low→High"}</option>
-            <option value="price_desc">{lang === "bn" ? "দাম: বেশি→কম" : "Price: High→Low"}</option>
-            <option value="newest">{lang === "bn" ? "নতুন আগে" : "Newest"}</option>
-          </select>
-          {/* GAP-21 — at 390px a list row and a two-up grid card carry nearly
-              the same information, so the toggle spent a permanent control slot
-              on a preference most mobile users never change. Hidden below md;
-              it returns at tablet width where the two layouts genuinely differ.
-              The toggle is not removed, and viewMode still defaults to grid. */}
-          <div className="hidden md:flex rounded-xl border border-gray-200 overflow-hidden" role="group" aria-label={lang === "bn" ? "ভিউ মোড" : "View mode"}>
+            <SlidersHorizontal className="w-4 h-4" aria-hidden />
+            <span className="hidden sm:inline">{lang === "bn" ? "ফিল্টার" : "Filters"}</span>
+            {activeFilters.length > 0 && (
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-accent-500 text-[#14182b] text-[10px] font-bold flex items-center justify-center">
+                {activeFilters.length}
+              </span>
+            )}
+          </button>
+          {/* GAP-21 — below md a list row and a two-up card carry nearly the
+              same information, so the toggle returns only at tablet width. */}
+          <div className="hidden md:flex rounded-xl border border-gray-200 overflow-hidden flex-shrink-0" role="group" aria-label={lang === "bn" ? "ভিউ মোড" : "View mode"}>
             <button type="button" onClick={() => setViewMode("grid")} className={cn("p-2.5", viewMode === "grid" ? "bg-brand-600 text-white" : "bg-white text-gray-500")} aria-label={t("grid_view")} aria-pressed={viewMode === "grid"}>
               <LayoutGrid className="w-4 h-4" />
             </button>
@@ -315,48 +351,49 @@ export default function ProductsClient({
             </button>
           </div>
         </div>
+
+        {/* Applied-filter rail: what is on, how many results it left, and one
+            way to clear all of it. */}
+        {activeFilters.length > 0 && (
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide mt-2.5">
+            <span className="text-xs text-muted whitespace-nowrap flex-shrink-0">
+              {total} {lang === "bn" ? "পণ্য" : "products"}
+            </span>
+            {activeFilters.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={f.clear}
+                className="flex-shrink-0 inline-flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full text-xs font-semibold bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-200 border border-brand-100 dark:border-brand-800"
+              >
+                {f.label}
+                <X className="w-3 h-3" aria-hidden />
+                <span className="sr-only">{lang === "bn" ? "সরান" : "Remove"}</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={clearAllFilters}
+              className="flex-shrink-0 text-xs font-semibold text-brand-600 underline underline-offset-2 whitespace-nowrap"
+            >
+              {lang === "bn" ? "সব মুছুন" : "Clear all"}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Cascading taxonomy chips — one row per depth level along the
-          selected path, so any nesting depth stays browsable in place */}
-      {chipRows.map((row, i) => (
-        <div
-          key={row.key}
-          className={cn(
-            "flex items-center gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1",
-            i === 0 ? "-mt-4" : "-mt-4 sm:-mt-2",
-            i === chipRows.length - 1 ? "mb-8" : "mb-6"
-          )}
-        >
-          <button
-            type="button"
-            onClick={() => handleSubcategoryChange(row.allValue)}
-            className={cn(
-              "px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap flex-shrink-0",
-              !row.active
-                ? "bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-sm shadow-brand-900/20 ring-1 ring-brand-500/40"
-                : "bg-gradient-to-b from-white to-brand-50/70 dark:from-white/[0.06] dark:to-brand-900/20 text-brand-700 dark:text-brand-200 ring-1 ring-brand-100 dark:ring-brand-800/70 hover:-translate-y-0.5 hover:ring-brand-300 dark:hover:ring-brand-600"
-            )}
-          >
-            {lang === "bn" ? "সব" : "All"}
-          </button>
-          {row.items.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => handleSubcategoryChange(s.slug)}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 whitespace-nowrap flex-shrink-0",
-                row.active === s.slug
-                  ? "bg-gradient-to-b from-brand-500 to-brand-600 text-white shadow-sm shadow-brand-900/20 ring-1 ring-brand-500/40"
-                  : "bg-gradient-to-b from-white to-brand-50/70 dark:from-white/[0.06] dark:to-brand-900/20 text-brand-700 dark:text-brand-200 ring-1 ring-brand-100 dark:ring-brand-800/70 hover:-translate-y-0.5 hover:ring-brand-300 dark:hover:ring-brand-600"
-              )}
-            >
-              {lang === "bn" && s.name_bn ? s.name_bn : s.name_en}
-            </button>
-          ))}
-        </div>
-      ))}
+      <ProductFilterSheet
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        chips={chips}
+        category={category}
+        onCategoryChange={handleCategoryChange}
+        chipRows={chipRows}
+        onSubcategoryChange={handleSubcategoryChange}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        resultCount={total}
+      />
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-24 gap-3" aria-busy="true">

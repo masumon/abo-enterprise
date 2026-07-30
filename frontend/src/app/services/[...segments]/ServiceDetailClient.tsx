@@ -18,7 +18,8 @@ import {
   Wifi,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
-import { fulfilmentDetail, fulfilmentLabel } from "@/lib/fulfilment";
+import { fulfilmentDetail, fulfilmentLabel, turnaroundLabel } from "@/lib/fulfilment";
+import VisitRequiredPanel from "@/components/services/VisitRequiredPanel";
 import { formatPrice } from "@/lib/utils";
 import { WHATSAPP_NUMBER } from "@/lib/utils";
 import type { Service } from "@/types";
@@ -101,6 +102,7 @@ export default function ServiceDetailClient({ service }: Props) {
 
   // Dynamic CTA — computed by the API per service (book/order/quote/contact).
   const fulfilment = fulfilmentLabel(service.fulfilment, lang);
+  const turnaround = turnaroundLabel(service.turnaround_days_min, service.turnaround_days_max, lang);
   const fulfilmentNote = fulfilmentDetail(service.fulfilment, lang);
   const needsVisit = service.fulfilment === "at_shop" || service.fulfilment === "hybrid";
   const cta = service.cta;
@@ -147,6 +149,12 @@ export default function ServiceDetailClient({ service }: Props) {
           {/* GAP-15 — where the service is completed, stated before the CTA so
               the customer knows whether a visit is coming. Silent when the
               admin has not classified the service. */}
+          {turnaround && (
+            <span className="inline-flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5 text-sm font-semibold">
+              <Clock className="w-4 h-4" aria-hidden />
+              {turnaround}
+            </span>
+          )}
           {fulfilment && (
             <span className="inline-flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5 text-sm font-semibold">
               {needsVisit ? <MapPin className="w-4 h-4" aria-hidden /> : <Wifi className="w-4 h-4" aria-hidden />}
@@ -339,6 +347,12 @@ export default function ServiceDetailClient({ service }: Props) {
         )}
 
         {/* What you need to provide — surfaced before booking, not after */}
+        {/* Screen 08b, pattern ঘ — when the service is completed at the counter,
+            what to bring and where to come outrank every other section, so this
+            sits above them. Services the admin has not classified are
+            unaffected. */}
+        {needsVisit && <VisitRequiredPanel service={service} />}
+
         {(requirements.length > 0 || documents.length > 0) && (
           <section className="grid sm:grid-cols-2 gap-6">
             {requirements.length > 0 && (
