@@ -55,6 +55,13 @@ def _public_invoice_payload(
         "discount_amount": float(order.discount_amount or 0) if order else None,
         "courier_provider": order.courier_provider if order else None,
         "courier_tracking_id": order.courier_tracking_id if order else None,
+        # Institutional invoice identity (manual_sql/0009). Captured at
+        # checkout and printed on the invoice; all None on a personal order.
+        "company_name": order.company_name if order else None,
+        "company_bin": order.company_bin if order else None,
+        "company_tin": order.company_tin if order else None,
+        "po_number": order.po_number if order else None,
+        "billing_address": order.billing_address if order else None,
         "booking_number": booking.booking_number if booking else (legacy_booking.booking_number if legacy_booking else None),
         "booking_status": booking.status if booking else (legacy_booking.status if legacy_booking else None),
         "service_name": booking.service_name if booking else (_legacy_service_label(legacy_booking) if legacy_booking else None),

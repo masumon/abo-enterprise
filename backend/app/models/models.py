@@ -123,6 +123,13 @@ class Order(Base):
     total: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     courier_provider: Mapped[str | None] = mapped_column(String(50))
     courier_tracking_id: Mapped[str | None] = mapped_column(String(100))
+    # Institutional invoice identity (manual_sql/0009). All NULL on a personal
+    # order, which is exactly how every existing row behaves.
+    company_name: Mapped[str | None] = mapped_column(String(255))
+    company_bin: Mapped[str | None] = mapped_column(String(50))
+    company_tin: Mapped[str | None] = mapped_column(String(50))
+    po_number: Mapped[str | None] = mapped_column(String(100))
+    billing_address: Mapped[str | None] = mapped_column(Text)
     notes: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

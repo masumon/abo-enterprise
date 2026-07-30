@@ -229,6 +229,13 @@ class OrderCreate(BaseModel):
     coupon_code: str | None = None
     delivery_charge: float = 0
     total: float
+    # Institutional invoice identity (manual_sql/0009). Every field optional:
+    # a personal order sends none of them and is unchanged.
+    company_name: str | None = None
+    company_bin: str | None = None
+    company_tin: str | None = None
+    po_number: str | None = None
+    billing_address: str | None = None
     notes: str | None = None
 
     @field_validator("customer_phone")
@@ -283,6 +290,11 @@ class OrderOut(BaseModel):
     total: float
     courier_provider: str | None = None
     courier_tracking_id: str | None = None
+    company_name: str | None = None
+    company_bin: str | None = None
+    company_tin: str | None = None
+    po_number: str | None = None
+    billing_address: str | None = None
     notes: str | None
     items: list[OrderItemOut]
     created_at: datetime

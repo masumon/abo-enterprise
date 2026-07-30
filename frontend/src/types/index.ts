@@ -132,6 +132,12 @@ export interface Order {
   courier_tracking_id?: string | null;
   delivery_charge: number;
   total: number;
+  /** Institutional invoice identity (manual_sql/0009). All null on a personal order. */
+  company_name?: string | null;
+  company_bin?: string | null;
+  company_tin?: string | null;
+  po_number?: string | null;
+  billing_address?: string | null;
   notes?: string;
   items: OrderItem[];
   created_at?: string;
