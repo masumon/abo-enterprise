@@ -41,11 +41,37 @@ export default function ProfilePage() {
         variant="light"
       />
       <div className="container mx-auto px-4 max-w-2xl py-8">
-        <GlassCard className="p-5 text-center mb-6">
-          <div className="w-14 h-14 bg-brand-50 dark:bg-brand-900/30 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">👤</div>
-          <p className="font-semibold text-heading">{session?.name ?? (lang === "bn" ? "গ্রাহক" : "Customer")}</p>
-          {session?.phone && <p className="text-sm text-muted mt-1">{session.phone}</p>}
-        </GlassCard>
+        {/* GAP-22 — signed out, the portal showed a generic "Customer" avatar
+            and no prompt, so the visitor's next action was a tile tap that hit
+            a gate they were given no warning about. The destinations gate
+            themselves server-side and that is unchanged; this is a prompt, not
+            a client-side auth gate, and every tile stays reachable. */}
+        {session?.token ? (
+          <GlassCard className="p-5 text-center mb-6">
+            <div className="w-14 h-14 bg-brand-50 dark:bg-brand-900/30 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">👤</div>
+            <p className="font-semibold text-heading">{session?.name ?? (lang === "bn" ? "গ্রাহক" : "Customer")}</p>
+            {session?.phone && <p className="text-sm text-muted mt-1">{session.phone}</p>}
+          </GlassCard>
+        ) : (
+          <GlassCard className="p-5 mb-6">
+            <p className="font-semibold text-heading mb-1">
+              {lang === "bn" ? "সাইন ইন করে অর্ডার দেখুন" : "Sign in to see your orders"}
+            </p>
+            <p className="text-sm text-muted mb-4">
+              {lang === "bn"
+                ? "ফোন নম্বর আর একটি কোড। পাসওয়ার্ড লাগবে না।"
+                : "Phone number and a code. No password needed."}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Link href="/login?redirect=/profile" className="btn btn-brand btn-sm">
+                {lang === "bn" ? "সাইন ইন" : "Sign in"}
+              </Link>
+              <Link href="/track" className="btn btn-outline btn-sm">
+                {lang === "bn" ? "সাইন ইন ছাড়াই ট্র্যাক করুন" : "Track without signing in"}
+              </Link>
+            </div>
+          </GlassCard>
+        )}
 
         <div className="grid sm:grid-cols-2 gap-3">
           {PORTAL_ITEMS.map((item) => {
