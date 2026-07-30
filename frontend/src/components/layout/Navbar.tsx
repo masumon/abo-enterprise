@@ -132,7 +132,7 @@ export default function Navbar() {
                 {getBrandName(lang)}
               </span>
               <p className="text-[10px] font-medium text-brand-600/90 dark:text-brand-200/80 truncate max-w-[11rem] md:max-w-[15rem] leading-snug">
-                : {getBrandTagline(lang)}
+                {getBrandTagline(lang)}
               </p>
             </span>
           </Link>
