@@ -166,7 +166,7 @@ export default function QuickCategories() {
                 <Link
                   href={v.href}
                   className={`group relative flex h-full flex-col items-start gap-2 p-3 sm:p-3.5 rounded-2xl ring-1 ${style.ring} ${style.tint}
-                    transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_12px_26px_-10px_rgba(30,91,168,0.30)]
+                    transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_12px_26px_-10px_rgba(30,43,107,0.30)]
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500`}
                   aria-label={label}
                 >

@@ -6,34 +6,46 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // "Nil & Marigold" — the artifact's palette. nil is Bengali indigo,
+        // gada the marigold sold at the shop door. The scale is anchored so the
+        // steps already used across the app land on the artifact's own tokens:
+        // brand-600 = nil #1E2B6B, brand-500 = nil-lift #35479B,
+        // brand-50 = nil-wash #E7EAF6. Nothing had to change at a call site.
         brand: {
-          50: "#e8f0fe",
-          100: "#c5d8fb",
-          200: "#9dbef8",
-          300: "#6fa3f4",
-          400: "#2979d4",
-          500: "#1e5ba8",
-          600: "#1565c0",
-          700: "#0d47a1",
-          800: "#093782",
-          900: "#062563",
+          50: "#e7eaf6",
+          100: "#cfd6ec",
+          200: "#a9b5dc",
+          300: "#7c8cc7",
+          400: "#5568b0",
+          500: "#35479b",
+          600: "#1e2b6b",
+          700: "#182357",
+          800: "#131c45",
+          900: "#0e1533",
         },
+        // accent-500 = gada #E4A11B, accent-700 = gada-deep #A87008,
+        // accent-50 = gada-wash #FBF0D8.
         accent: {
-          50: "#fce4ec",
-          100: "#f8bbd0",
-          200: "#f48fb1",
-          300: "#f06292",
-          400: "#ec407a",
-          500: "#e91e63",
-          600: "#c2185b",
-          700: "#ad1457",
-          800: "#880e4f",
-          900: "#560027",
+          50: "#fbf0d8",
+          100: "#f6e0ae",
+          200: "#f0cc7c",
+          300: "#ebb84a",
+          400: "#e7ac2e",
+          500: "#e4a11b",
+          600: "#c08610",
+          700: "#a87008",
+          800: "#855806",
+          900: "#614004",
         },
       },
       fontFamily: {
-        sans: ["Inter", "Hind Siliguri", "system-ui", "sans-serif"],
-        bangla: ["Hind Siliguri", "SolaimanLipi", "sans-serif"],
+        // The artifact's three faces. Body is the system stack so Latin text
+        // costs no webfont; Bengali still resolves to a real Bengali face
+        // rather than falling back, which was the rule the artifact set.
+        sans: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "Noto Sans Bengali", "Hind Siliguri", "sans-serif"],
+        display: ["ui-serif", "Charter", "Bitstream Charter", "Iowan Old Style", "Source Serif 4", "Georgia", "serif"],
+        mono: ["ui-monospace", "SF Mono", "Cascadia Mono", "Roboto Mono", "Menlo", "monospace"],
+        bangla: ["Noto Sans Bengali", "Hind Siliguri", "SolaimanLipi", "sans-serif"],
       },
       animation: {
         float: "float 3s ease-in-out infinite",

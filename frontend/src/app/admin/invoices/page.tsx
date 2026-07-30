@@ -357,7 +357,7 @@ export default function AdminInvoicesPage() {
             className="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col"
             style={{
               background: "rgba(255,255,255,0.98)",
-              boxShadow: "0 24px 64px rgba(30,91,168,0.16), 0 8px 24px rgba(0,0,0,0.08)",
+              boxShadow: "0 24px 64px rgba(30,43,107,0.16), 0 8px 24px rgba(0,0,0,0.08)",
             }}
             onClick={(e) => e.stopPropagation()}
           >

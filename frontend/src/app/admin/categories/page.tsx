@@ -314,7 +314,7 @@ export default function AdminCategoriesPage() {
       {/* ---------- Premium header ---------- */}
       <header
         className="relative overflow-hidden rounded-[20px] px-5 sm:px-7 py-6 sm:py-7 text-white shadow-[0_10px_40px_rgba(21,101,192,0.25)]"
-        style={{ background: "radial-gradient(120% 140% at 85% -20%, rgba(233,30,99,.38), transparent 55%), linear-gradient(135deg, #0d47a1, #1565c0)" }}
+        style={{ background: "radial-gradient(120% 140% at 85% -20%, rgba(228,161,27,.38), transparent 55%), linear-gradient(135deg, #0d47a1, #1565c0)" }}
       >
         <div className="relative z-10 flex items-start justify-between gap-4 flex-wrap">
           <div>

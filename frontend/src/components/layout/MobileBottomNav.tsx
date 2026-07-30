@@ -102,7 +102,7 @@ export default function MobileBottomNav() {
           /* Match top navbar glassmorphism */
           "bg-white/72 dark:bg-[#0b1f3a]/82 backdrop-blur-2xl",
           "border border-white/60 dark:border-white/[0.09]",
-          "shadow-[0_4px_20px_rgba(30,91,168,0.10),0_1px_3px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.82)]",
+          "shadow-[0_4px_20px_rgba(30,43,107,0.10),0_1px_3px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.82)]",
           "dark:shadow-[0_4px_24px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.05)]",
           "transition-all duration-500",
         )}
@@ -124,10 +124,10 @@ export default function MobileBottomNav() {
             className={cn(
               "relative w-[38px] h-[38px] rounded-full flex items-center justify-center",
               "bg-gradient-to-br from-brand-500 to-brand-700 text-white",
-              "shadow-[0_4px_14px_rgba(30,91,168,0.42)]",
+              "shadow-[0_4px_14px_rgba(30,43,107,0.42)]",
               "transition-all duration-250",
               cartActive
-                ? "from-brand-600 to-brand-800 shadow-[0_6px_20px_rgba(30,91,168,0.58)] ring-2 ring-brand-200/70 dark:ring-brand-700/60"
+                ? "from-brand-600 to-brand-800 shadow-[0_6px_20px_rgba(30,43,107,0.58)] ring-2 ring-brand-200/70 dark:ring-brand-700/60"
                 : ""
             )}
           >

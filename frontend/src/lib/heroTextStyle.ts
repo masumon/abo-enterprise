@@ -78,7 +78,7 @@ export function heroVAlignClass(s: HeroTextStyle): string {
 }
 
 // ── Admin option lists ──
-export const HERO_COLOR_OPTIONS = ["#ffd54f", "#ffffff", "#e91e63", "#1565c0", "#10b981", "#e8eefb"];
+export const HERO_COLOR_OPTIONS = ["#e4a11b", "#ffffff", "#f0b441", "#35479b", "#2e7d4f", "#e7eaf6"];
 export const HERO_TITLE_SIZES = [
   { v: "sm", label: "S" }, { v: "md", label: "M" }, { v: "lg", label: "L" }, { v: "xl", label: "XL" },
 ] as const;

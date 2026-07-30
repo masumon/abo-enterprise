@@ -84,7 +84,7 @@ export default function CartDrawer() {
         onKeyDown={(e) => {
           if (e.key === "Escape") closeCart();
         }}
-        className="fixed right-0 top-0 bottom-0 z-[60] w-full max-w-md flex flex-col animate-slide-right pb-safe bg-white/97 dark:bg-[#0f1a2e]/97 backdrop-blur-xl shadow-[-8px_0_40px_rgba(30,91,168,0.12)] dark:shadow-[-8px_0_40px_rgba(0,0,0,0.35)]"
+        className="fixed right-0 top-0 bottom-0 z-[60] w-full max-w-md flex flex-col animate-slide-right pb-safe bg-white/97 dark:bg-[#0f1a2e]/97 backdrop-blur-xl shadow-[-8px_0_40px_rgba(30,43,107,0.12)] dark:shadow-[-8px_0_40px_rgba(0,0,0,0.35)]"
         style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0px)" }}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100/80 gradient-brand">

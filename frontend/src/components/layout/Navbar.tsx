@@ -111,13 +111,13 @@ export default function Navbar() {
             "bg-white/72 dark:bg-[#0b1f3a]/82 backdrop-blur-2xl",
             "border border-white/60 dark:border-white/[0.09]",
             /* Ambient glow + premium shadow */
-            "shadow-[0_4px_20px_rgba(30,91,168,0.10),0_1px_3px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.82)]",
+            "shadow-[0_4px_20px_rgba(30,43,107,0.10),0_1px_3px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.82)]",
             "dark:shadow-[0_4px_24px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.05)]",
             "transition-all duration-500",
             /* Scroll: intensify glass */
             isScrolled && [
               "bg-white/84 dark:bg-[#0b1f3a]/92",
-              "shadow-[0_8px_32px_rgba(30,91,168,0.16),0_2px_8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.92)]",
+              "shadow-[0_8px_32px_rgba(30,43,107,0.16),0_2px_8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.92)]",
               "dark:shadow-[0_8px_40px_rgba(0,0,0,0.52),0_0_0_1px_rgba(59,130,246,0.10),inset_0_1px_0_rgba(255,255,255,0.07)]",
             ],
             /* Width: 90–92% on mobile, unconstrained on desktop via max-w */
@@ -238,7 +238,7 @@ export default function Navbar() {
       {/* Mobile dropdown — separate floating panel below the capsule */}
       {mobileOpen && (
         <div className="flex justify-center px-4 mt-2">
-          <div className="w-full max-w-[92%] sm:max-w-[90%] lg:max-w-7xl lg:hidden bg-white/90 dark:bg-[#0b1f3a]/95 backdrop-blur-2xl border border-white/50 dark:border-white/[0.09] rounded-2xl shadow-[0_8px_32px_rgba(30,91,168,0.14),0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.50)] animate-slide-up max-h-[calc(100vh-7rem)] overflow-y-auto">
+          <div className="w-full max-w-[92%] sm:max-w-[90%] lg:max-w-7xl lg:hidden bg-white/90 dark:bg-[#0b1f3a]/95 backdrop-blur-2xl border border-white/50 dark:border-white/[0.09] rounded-2xl shadow-[0_8px_32px_rgba(30,43,107,0.14),0_2px_8px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_40px_rgba(0,0,0,0.50)] animate-slide-up max-h-[calc(100vh-7rem)] overflow-y-auto">
             <div className="px-4 pt-4 pb-2 flex items-center gap-2.5 sm:hidden">
               <BrandLogo size="xs" href={false} />
               <p className="text-[10px] font-medium text-brand-700 dark:text-brand-200 min-w-0 leading-snug">

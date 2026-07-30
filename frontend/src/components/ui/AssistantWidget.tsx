@@ -307,7 +307,7 @@ export default function AssistantWidget() {
               className="absolute inset-0 opacity-30"
               style={{
                 backgroundImage:
-                  "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.25) 0%, transparent 50%), radial-gradient(circle at 80% 0%, rgba(233,30,99,0.2) 0%, transparent 40%)",
+                  "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.25) 0%, transparent 50%), radial-gradient(circle at 80% 0%, rgba(228,161,27,0.2) 0%, transparent 40%)",
               }}
             />
             <div className="relative flex items-center justify-between gap-3">

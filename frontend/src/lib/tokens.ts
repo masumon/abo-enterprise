@@ -1,14 +1,14 @@
 /** Centralized design tokens — synced with globals.css CSS variables */
 export const tokens = {
   colors: {
-    brand: "#1e5ba8",
-    accent: "#e91e63",
-    success: "#10b981",
-    warning: "#f59e0b",
-    error: "#ef4444",
-    surface: "#fafbff",
-    surfaceSecondary: "#f0f4ff",
-    navy: "#0a1628",
+    brand: "#1e2b6b",
+    accent: "#e4a11b",
+    success: "#2e7d4f",
+    warning: "#b8860b",
+    error: "#b3341f",
+    surface: "#f1f2f7",
+    surfaceSecondary: "#e9ebf3",
+    navy: "#14182b",
   },
   radius: {
     sm: "8px",
