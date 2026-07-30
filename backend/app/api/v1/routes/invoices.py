@@ -48,6 +48,11 @@ def _public_invoice_payload(
         "tax": float(invoice.tax or 0),
         "total": float(invoice.total or 0),
         "issued_date": invoice.issued_date.isoformat() if invoice.issued_date else None,
+        # Screen 17b — an invoice has three states, not two. due_date and
+        # paid_date are already stored; without them the customer-facing card
+        # could only say paid or not-paid.
+        "due_date": invoice.due_date.isoformat() if invoice.due_date else None,
+        "paid_date": invoice.paid_date.isoformat() if invoice.paid_date else None,
         "created_at": invoice.created_at.isoformat() if invoice.created_at else None,
         "order_number": order.order_number if order else None,
         "order_status": order.order_status if order else None,
