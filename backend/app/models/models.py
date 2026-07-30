@@ -453,6 +453,16 @@ class Invoice(Base):
     total: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     payment_method: Mapped[str | None] = mapped_column(String(50))
     payment_status: Mapped[str] = mapped_column(String(20), default="pending")
+    # Institutional identity as printed on THIS invoice (manual_sql/0010).
+    # An invoice already keeps its own copy of the customer name, phone, email,
+    # item lines and totals; this is the same idea, so editing or deleting the
+    # order can never change a bill that has already gone out. NULL on every
+    # personal order and on every invoice issued before 0010.
+    company_name: Mapped[str | None] = mapped_column(String(255))
+    company_bin: Mapped[str | None] = mapped_column(String(50))
+    company_tin: Mapped[str | None] = mapped_column(String(50))
+    po_number: Mapped[str | None] = mapped_column(String(100))
+    billing_address: Mapped[str | None] = mapped_column(Text)
     issued_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     due_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     paid_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

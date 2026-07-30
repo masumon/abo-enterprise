@@ -917,6 +917,13 @@ class InvoiceCreate(BaseModel):
     tax: float = 0
     total: float
     payment_method: str | None = None
+    # Institutional identity printed on this invoice (manual_sql/0010).
+    # Optional: a personal invoice sends none of them.
+    company_name: str | None = None
+    company_bin: str | None = None
+    company_tin: str | None = None
+    po_number: str | None = None
+    billing_address: str | None = None
     notes: str | None = None
 
 
@@ -936,6 +943,11 @@ class InvoiceOut(BaseModel):
     total: float
     payment_method: str | None
     payment_status: str
+    company_name: str | None = None
+    company_bin: str | None = None
+    company_tin: str | None = None
+    po_number: str | None = None
+    billing_address: str | None = None
     issued_date: datetime | None
     due_date: datetime | None
     paid_date: datetime | None

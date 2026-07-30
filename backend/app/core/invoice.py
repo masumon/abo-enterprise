@@ -461,6 +461,14 @@ class InvoiceService:
             customer_name=order.customer_name,
             customer_email=order.customer_email,
             customer_phone=order.customer_phone,
+            # Copied at issue time (manual_sql/0010), like every other field on
+            # an invoice, so a later edit to the order cannot change a bill that
+            # has already gone out. All None on a personal order.
+            company_name=order.company_name,
+            company_bin=order.company_bin,
+            company_tin=order.company_tin,
+            po_number=order.po_number,
+            billing_address=order.billing_address,
             items=items,
             subtotal=float(order.subtotal),
             tax=0,
@@ -616,7 +624,17 @@ class InvoiceService:
         ref_label = None
         ref_value = None
         verify_url = None
+        # The invoice's own copy wins. The order fallback below stays for
+        # invoices issued before 0010, whose columns are NULL.
         bill_to: dict | None = None
+        if invoice.company_name:
+            bill_to = {
+                "company_name": invoice.company_name,
+                "company_bin": invoice.company_bin,
+                "company_tin": invoice.company_tin,
+                "po_number": invoice.po_number,
+                "billing_address": invoice.billing_address,
+            }
         if invoice.order_id:
             order_result = await self.db.execute(
                 select(
@@ -629,7 +647,7 @@ class InvoiceService:
             ref_label = "Order #"
             # Only institutional orders carry an override; a personal order
             # leaves bill_to None and the card renders exactly as before.
-            if row and row[1]:
+            if bill_to is None and row and row[1]:
                 bill_to = {
                     "company_name": row[1], "company_bin": row[2],
                     "company_tin": row[3], "po_number": row[4],
