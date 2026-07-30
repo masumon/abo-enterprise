@@ -18,13 +18,25 @@ const ICONS: Record<string, LucideIcon> = {
   clock: Clock,
 };
 
+/*
+ * Screen 04's proof strip. GAP-13 took the invented figures off /about but this
+ * list still shipped "10,000+ Customers" and "8+ Years Experience" on the
+ * homepage, which is the same claim in a louder place — and the artifact names
+ * it directly: those numbers may not come back into the proof strip.
+ *
+ * What replaces them is what the shop can actually be held to: how you pay,
+ * whether you can send it back, what delivery costs in Sylhet, and which
+ * wallets work. Every line here is checkable by the customer on the day.
+ *
+ * These are only the fallback. An admin who fills site_trust_badges_json still
+ * overrides all of it.
+ */
 const FALLBACK: CmsIconLabel[] = [
-  { icon: "award", en: "8+ Years Experience", bn: "৮+ বছরের অভিজ্ঞতা" },
-  { icon: "users", en: "10,000+ Customers", bn: "১০,০০০+ গ্রাহক" },
-  { icon: "globe", en: "Online & Offline", bn: "অনলাইন ও অফলাইন" },
-  { icon: "headphones", en: "Professional Support", bn: "পেশাদার সাপোর্ট" },
-  { icon: "shield", en: "Verified Business", bn: "যাচাইকৃত ব্যবসা" },
-  { icon: "credit-card", en: "Secure Payment", bn: "নিরাপদ পেমেন্ট" },
+  { icon: "truck", en: "Cash on delivery", bn: "নগদে ডেলিভারি" },
+  { icon: "shield", en: "7-day return", bn: "৭ দিনে ফেরত" },
+  { icon: "store", en: "Sylhet · free delivery", bn: "সিলেটে ফ্রি ডেলিভারি" },
+  { icon: "credit-card", en: "bKash · Nagad", bn: "বিকাশ · নগদ" },
+  { icon: "clock", en: "Since 2017", bn: "২০১৭ সাল থেকে" },
 ];
 
 export default function TrustBadges() {

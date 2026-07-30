@@ -15,7 +15,8 @@ import ServiceFilters from "@/components/services/ServiceFilters";
 import PageHero from "@/components/ui/PageHero";
 import Reveal from "@/components/ui/Reveal";
 import { ServiceCardSkeleton } from "@/components/common/Skeletons";
-import { cn } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
+import { turnaroundLabel } from "@/lib/fulfilment";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
 import type { CatalogSource } from "@/lib/catalogLoader";
 import { loadServices, peekCachedServices } from "@/lib/catalogLoader";
@@ -178,6 +179,8 @@ interface Props {
   initialIsDemo?: boolean;
   /** Live taxonomy (Category → Subcategory) from the API; falls back to the static groups when empty. */
   initialCategories?: Category[];
+  /** Screen 08 — the admin-curated shortlist shown above the catalogue. */
+  featuredServices?: Service[];
 }
 
 export default function ServicesPageClient({
@@ -185,6 +188,7 @@ export default function ServicesPageClient({
   initialTotal,
   initialIsDemo = false,
   initialCategories = [],
+  featuredServices = [],
 }: Props) {
   const { lang } = useLanguageStore();
   const t = (o: { en: string; bn: string }) => (lang === "bn" ? o.bn : o.en);
@@ -391,6 +395,50 @@ export default function ServicesPageClient({
           </select>
         </div>
       </div>
+
+      {/*
+        Screen 08 — the shortlist before the catalogue. Most visitors arrive for
+        one of a handful of things, and making them read eight category cards
+        first serves the taxonomy rather than the visitor. Each row carries the
+        one number that decides the next step: a starting price, or Quote when
+        the price genuinely depends on the job.
+      */}
+      {featuredServices.length > 0 && (
+        <section className="container mx-auto px-4 max-w-6xl pt-6">
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted mb-2">
+            {t({ en: "Most requested", bn: "সবচেয়ে বেশি চাওয়া" })}
+          </p>
+          <ul className="grid gap-2">
+            {featuredServices.map((s) => {
+              const price =
+                s.pricing_type === "fixed" && s.base_price != null
+                  ? formatPrice(s.base_price)
+                  : s.min_price != null
+                    ? `${formatPrice(s.min_price)}+`
+                    : t({ en: "Quote", bn: "কোটেশন" });
+              const turn = turnaroundLabel(s.turnaround_days_min, s.turnaround_days_max, lang);
+              return (
+                <li key={s.id}>
+                  <Link
+                    href={`/services/${s.slug}`}
+                    className="flex items-center gap-3 min-h-[44px] px-3 py-3 rounded-xl border border-gray-200 dark:border-white/10 hover:border-brand-300"
+                  >
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-semibold text-heading truncate">
+                        {lang === "bn" && s.name_bn ? s.name_bn : s.name_en}
+                      </span>
+                      <span className="block text-xs text-muted truncate">
+                        {[s.category, turn].filter(Boolean).join(" · ")}
+                      </span>
+                    </span>
+                    <span className="money text-sm font-bold text-heading flex-shrink-0">{price}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <section className="enterprise-section-alt">
         <div className="container mx-auto px-4 max-w-6xl">

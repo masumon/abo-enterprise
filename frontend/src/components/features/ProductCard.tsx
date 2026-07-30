@@ -117,7 +117,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
           <button type="button" onClick={handleWishlist} className={cn("w-9 h-9 rounded-lg border flex items-center justify-center", wished ? "text-accent-500 border-accent-200 bg-accent-50" : "text-gray-400 border-gray-200")} aria-label={t("wishlist")}>
             <Heart className={cn("w-4 h-4", wished && "fill-current")} />
           </button>
-          <button type="button" onClick={handleAdd} disabled={isOutOfStock} className="btn btn-brand btn-sm">{t("add_to_cart")}</button>
+          <button type="button" onClick={handleAdd} disabled={isOutOfStock} className="btn btn-primary btn-sm">{t("add_to_cart")}</button>
         </div>
       </article>
     );
@@ -212,7 +212,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
             <span className="text-[10px] text-gray-400 ml-auto">{reviewCount} {lang === "bn" ? "রিভিউ" : "reviews"}</span>
           )}
         </div>
-        <button type="button" onClick={handleAdd} disabled={isOutOfStock} className="btn btn-brand btn-sm w-full relative z-10 btn-ripple">
+        <button type="button" onClick={handleAdd} disabled={isOutOfStock} className="btn btn-primary btn-sm w-full relative z-10 btn-ripple">
           <ShoppingCart className="w-4 h-4" aria-hidden />
           {t("add_to_cart")}
         </button>
