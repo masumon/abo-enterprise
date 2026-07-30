@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
-  ShoppingCart, X, Globe, Search, Briefcase, Moon, Sun, User,
+  ShoppingCart, X, Globe, Search, Briefcase, Moon, Sun, User, MessageCircle,
 } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
@@ -16,9 +16,14 @@ import BrandLogo from "@/components/ui/BrandLogo";
 import { getBrandFullTitle, getBrandName, getBrandTagline } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { useTaxonomy } from "@/hooks/useTaxonomy";
+import { useAssistantStore } from "@/store/assistant";
+import { hasBottomActionBar } from "@/lib/actionBarRoutes";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const pathname = usePathname();
+  const toggleAssistant = useAssistantStore((s) => s.toggle);
+  const showAssistantInHeader = hasBottomActionBar(pathname);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
@@ -172,6 +177,20 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
+
+            {/* Screen 02b — on screens that already pin an action bar, the
+                assistant's floating launcher lands on top of the primary
+                action, so it lives here instead. Same widget, same state. */}
+            {showAssistantInHeader && (
+              <button
+                type="button"
+                onClick={toggleAssistant}
+                className="lg:hidden w-11 h-11 flex items-center justify-center rounded-full text-brand-600 dark:text-brand-300 hover:bg-brand-50 dark:hover:bg-white/10 transition-colors"
+                aria-label={lang === "bn" ? "সহায়ক চ্যাট" : "Assistant chat"}
+              >
+                <MessageCircle className="w-[20px] h-[20px]" strokeWidth={2.5} />
+              </button>
+            )}
 
             <Link href="/projects" className="hidden md:inline-flex btn btn-primary btn-sm btn-ripple">
               <Briefcase className="w-4 h-4" strokeWidth={2.5} />
