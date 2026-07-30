@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import type { Language } from "@/types";
-import { writeLangCookie } from "@/lib/lang";
+import { readLangCookie, writeLangCookie } from "@/lib/lang";
 
 interface LanguageStore {
   lang: Language;
@@ -23,7 +23,11 @@ const ssrSafeStorage = createJSONStorage(() => {
 export const useLanguageStore = create<LanguageStore>()(
   persist(
     (set, get) => ({
-      lang: "bn",
+      // GAP-24 — the cookie the server rendered from is readable synchronously
+      // here, so the store's very first value already matches the HTML. Seeding
+      // it from a component instead meant writing to the store while React was
+      // rendering, and left one render where the two could disagree.
+      lang: readLangCookie() ?? "bn",
       // GAP-24 — every change is mirrored to a cookie so the next request can
       // be server-rendered in the right language instead of repainting.
       setLang: (lang) => {
