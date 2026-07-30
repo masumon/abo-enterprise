@@ -980,32 +980,6 @@
     transition: all 0.35s ease;
   }
 
-  @keyframes blurInUp {
-    0%   { opacity: 0; transform: translateY(10px); filter: blur(8px); }
-    100% { opacity: 1; transform: translateY(0);    filter: blur(0);   }
-  }
-  @keyframes fadeUp {
-    0%   { opacity: 0; transform: translateY(16px); }
-    100% { opacity: 1; transform: translateY(0);    }
-  }
-  @keyframes glowBreathe {
-    0%, 100% { opacity: 0.4; transform: scale(1);    }
-    50%       { opacity: 0.85; transform: scale(1.1); }
-  }
-  @keyframes orbDrift1 {
-    0%, 100% { transform: translate(0px, 0px);     }
-    30%       { transform: translate(45px, -28px);  }
-    65%       { transform: translate(-22px, 18px);  }
-  }
-  @keyframes orbDrift2 {
-    0%, 100% { transform: translate(0px, 0px);    }
-    40%       { transform: translate(-32px, 24px); }
-    72%       { transform: translate(22px, -18px); }
-  }
-  @keyframes orbDrift3 {
-    0%, 100% { transform: translate(0px, 0px);    }
-    50%       { transform: translate(18px, -32px); }
-  }
   @keyframes shimmerSlide {
     0%   { background-position: -200% 0; }
     100% { background-position:  200% 0; }
@@ -1197,4 +1171,36 @@
   /* No motion — fall back to a normal horizontal scroll the user controls. */
   .marquee-track { animation: none; }
   .marquee-viewport { overflow-x: auto; }
+
+  /*
+   * The design system asks for motion-safe animation everywhere, but the
+   * animation utilities are used at ~220 call sites across the app and a
+   * per-site prefix would leave the next one to be written unguarded. One
+   * global rule cannot be forgotten.
+   *
+   * Decorative motion is removed outright. Every entry animation here fills
+   * `both` and ends at the element's natural state, so with the animation gone
+   * the element simply renders in place — nothing depends on an animation
+   * running to become visible.
+   *
+   * Transitions collapse to ~0 rather than `none`, so any handler waiting on
+   * transitionend still fires and no interaction can hang.
+   */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /*
+   * Exception: a spinner is feedback, not decoration. Stopping it would tell
+   * a waiting user that nothing is happening, so it keeps turning — slowly.
+   */
+  .animate-spin {
+    animation-duration: 1.6s !important;
+    animation-iteration-count: infinite !important;
+  }
 }
