@@ -228,6 +228,8 @@ export interface Service {
   subcategory_id?: string | null;
   is_orderable?: boolean | null;
   is_bookable?: boolean | null;
+  /** Where the service is completed (manual_sql/0008). null = unclassified. */
+  fulfilment?: "remote" | "at_shop" | "hybrid" | null;
   /** Computed by the API (single source: core/capabilities.py): e.g. ["bookable","orderable"]. */
   capabilities?: string[];
   /** CTA override columns (null = infer) + the API-computed effective CTA. */

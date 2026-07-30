@@ -10,12 +10,15 @@ import {
   ClipboardList,
   Clock,
   FileText,
+  MapPin,
   MessageCircle,
   Package,
   Star,
   Tag,
+  Wifi,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
+import { fulfilmentDetail, fulfilmentLabel } from "@/lib/fulfilment";
 import { formatPrice } from "@/lib/utils";
 import { WHATSAPP_NUMBER } from "@/lib/utils";
 import type { Service } from "@/types";
@@ -97,6 +100,9 @@ export default function ServiceDetailClient({ service }: Props) {
   );
 
   // Dynamic CTA — computed by the API per service (book/order/quote/contact).
+  const fulfilment = fulfilmentLabel(service.fulfilment, lang);
+  const fulfilmentNote = fulfilmentDetail(service.fulfilment, lang);
+  const needsVisit = service.fulfilment === "at_shop" || service.fulfilment === "hybrid";
   const cta = service.cta;
   const ctaLabel = (lang === "bn" ? cta?.label_bn : cta?.label_en) ?? t("Book Now", "বুকিং করুন");
   const ctaHref =
@@ -138,6 +144,15 @@ export default function ServiceDetailClient({ service }: Props) {
             </span>
           )}
           <PricingBadge service={service} lang={lang} />
+          {/* GAP-15 — where the service is completed, stated before the CTA so
+              the customer knows whether a visit is coming. Silent when the
+              admin has not classified the service. */}
+          {fulfilment && (
+            <span className="inline-flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5 text-sm font-semibold">
+              {needsVisit ? <MapPin className="w-4 h-4" aria-hidden /> : <Wifi className="w-4 h-4" aria-hidden />}
+              {fulfilment}
+            </span>
+          )}
           {typeof service.rating === "number" && (service.review_count ?? 0) > 0 && (
             <span className="inline-flex items-center gap-1.5 bg-white/20 rounded-full px-3 py-1.5 text-sm font-semibold">
               <Star className="w-4 h-4 fill-yellow-300 text-yellow-300" aria-hidden />
@@ -189,6 +204,13 @@ export default function ServiceDetailClient({ service }: Props) {
             sizes="(max-width: 1024px) 100vw, 896px"
           />
         </div>
+
+        {fulfilmentNote && (
+          <div className={needsVisit ? "alert-warning" : "alert-info"} role="note">
+            <p className="text-sm font-semibold text-heading mb-0.5">{fulfilment}</p>
+            <p className="text-sm text-muted">{fulfilmentNote}</p>
+          </div>
+        )}
 
         {/* Description */}
         {description && (

@@ -523,6 +523,8 @@ class ServiceBase(BaseModel):
     featured_image_url: str | None = None
     icon_color: str | None = None
     pricing_type: str
+    # Where the service is completed (manual_sql/0008). None = unspecified.
+    fulfilment: str | None = None
     # CTA override (None = infer from pricing_type/capabilities).
     cta_type: str | None = None
     cta_label_en: str | None = None
@@ -564,6 +566,10 @@ class ServiceBase(BaseModel):
 # schemas only, for the same reason as ServiceFieldType above.
 ServicePricingType = Literal["fixed", "hourly", "package", "custom", "custom_quote"]
 
+# Where the service is completed. Validated on input only: existing rows are
+# NULL and any legacy value already stored must still be readable.
+ServiceFulfilment = Literal["remote", "at_shop", "hybrid"]
+
 # Money columns that must never be negative.
 _PRICE_FIELDS = (
     "base_price", "min_price", "max_price", "hourly_rate",
@@ -579,6 +585,7 @@ def _reject_negative(v: float | None, info) -> float | None:
 
 class ServiceCreate(ServiceBase):
     pricing_type: ServicePricingType
+    fulfilment: ServiceFulfilment | None = None
     # Capability overrides can be set at creation too (additive; default NULL).
     is_orderable: bool | None = None
     is_bookable: bool | None = None
@@ -608,6 +615,7 @@ class ServiceUpdate(BaseModel):
     is_orderable: bool | None = None
     is_bookable: bool | None = None
     pricing_type: ServicePricingType | None = None
+    fulfilment: ServiceFulfilment | None = None
     cta_type: str | None = None
     cta_label_en: str | None = None
     cta_label_bn: str | None = None

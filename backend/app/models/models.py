@@ -247,6 +247,9 @@ class Service(Base):
     featured_image_url: Mapped[str | None] = mapped_column(Text)
     icon_color: Mapped[str | None] = mapped_column(String(20))
     pricing_type: Mapped[str] = mapped_column(String(20), nullable=False)  # fixed|hourly|package|custom_quote
+    # Where the service is completed (manual_sql/0008). NULL = unspecified,
+    # which preserves the pre-0008 behaviour exactly.
+    fulfilment: Mapped[str | None] = mapped_column(String(20))  # remote|at_shop|hybrid
     # CTA override (NULL = infer from pricing_type/capabilities; see schemas.resolve_service_cta).
     cta_type: Mapped[str | None] = mapped_column(String(20))  # book|order|quote|contact
     cta_label_en: Mapped[str | None] = mapped_column(String(120))

@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX } from "@/lib/phone";
 import { useDistrictUpazila, BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
 import { useLanguageStore } from "@/store/language";
+import { fulfilmentDetail } from "@/lib/fulfilment";
 
 /**
  * GAP-12 — the booking form presents contact fields, scheduling, location,
@@ -437,6 +438,9 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
 
   /** Every control the form renders, so an error banner can always name the
    *  field it is talking about — including the admin-defined ones. */
+  const fulfilmentNote = fulfilmentDetail(service.fulfilment, lang);
+  const needsVisit = service.fulfilment === "at_shop" || service.fulfilment === "hybrid";
+
   const fieldLabels: Record<string, { label: string; id: string }> = {
     customer_name: { label: L("Full Name", "পূর্ণ নাম"), id: "booking-name" },
     customer_phone: { label: L("Phone Number", "মোবাইল নম্বর"), id: "booking-phone" },
@@ -542,6 +546,14 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         title={L("When & where", "কখন ও কোথায়")}
         hint={L("Pick a time and tell us your area.", "সময় বেছে নিন এবং আপনার এলাকা জানান।")}
       />
+
+      {/* GAP-15 — a service that can only be completed at the shop must say so
+          before the customer picks a date, not after they have waited at home. */}
+      {fulfilmentNote && (
+        <div className={needsVisit ? "alert-warning" : "alert-info"} role="note">
+          <p className="text-sm">{fulfilmentNote}</p>
+        </div>
+      )}
 
       {scheduling ? (
         <div>
