@@ -9,16 +9,13 @@ import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, getBrandFullTitle } from "
 import { jsonLdString } from "@/lib/metadata";
 
 const EntryPoints = dynamic(() => import("@/components/home/EntryPoints"), { loading: () => <SectionSkeleton /> });
-const Stats = dynamic(() => import("@/components/home/Stats"), { loading: () => <StatsRowSkeleton /> });
 const ServicesOverview = dynamic(() => import("@/components/home/ServicesOverview"), { loading: () => <CardsSkeleton label="Services" /> });
 const FeaturedProducts = dynamic(() => import("@/components/home/FeaturedProducts"), { loading: () => <CardsSkeleton label="Products" /> });
-const WhyChooseUs = dynamic(() => import("@/components/home/WhyChooseUs"), { loading: () => <SectionSkeleton /> });
 const CustomerReviews = dynamic(() => import("@/components/home/CustomerReviews"), { loading: () => <SectionSkeleton /> });
 const FAQ = dynamic(() => import("@/components/home/FAQ"), { loading: () => <SectionSkeleton /> });
 const LeadCapture = dynamic(() => import("@/components/home/LeadCapture"), { loading: () => <SectionSkeleton /> });
 const ContactSection = dynamic(() => import("@/components/home/ContactSection"), { loading: () => <SectionSkeleton /> });
 const Portfolio = dynamic(() => import("@/components/home/Portfolio"), { loading: () => <CardsSkeleton label="Projects" /> });
-const ClientLogos = dynamic(() => import("@/components/home/ClientLogos"), { loading: () => <SectionSkeleton /> });
 
 export const metadata: Metadata = {
   title: getBrandFullTitle("bn"),
@@ -120,22 +117,6 @@ function CardsSkeleton({ label }: { label: string }) {
   );
 }
 
-function StatsRowSkeleton() {
-  return (
-    <section className="container mx-auto px-4 py-12" aria-busy="true">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-gray-100 dark:border-white/10 p-5 space-y-3">
-            <div className="w-10 h-10 rounded-xl bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
-            <div className="h-7 w-20 rounded bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
-            <div className="h-3 w-24 rounded bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export default function HomePage() {
   return (
     <>
@@ -155,7 +136,6 @@ export default function HomePage() {
       <Reveal><QuickCategories /></Reveal>
       <Reveal><TrustBadges /></Reveal>
       <Reveal><EntryPoints /></Reveal>
-      <Reveal><Stats /></Reveal>
       {/* GAP-23 — the three arms of the business used to stack, so whichever
           one a visitor came for sat below the other two. Shop is the default
           lane; the others are one tap away and stay in the document. */}
@@ -168,8 +148,6 @@ export default function HomePage() {
         services={<ServicesOverview />}
         software={<Portfolio />}
       />
-      <Reveal><ClientLogos /></Reveal>
-      <Reveal><WhyChooseUs /></Reveal>
       <Reveal><CustomerReviews /></Reveal>
       <Reveal><FAQ /></Reveal>
       <Reveal><LeadCapture /></Reveal>

@@ -6,6 +6,9 @@ import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import BrandLogo from "@/components/ui/BrandLogo";
 import Reveal from "@/components/ui/Reveal";
+import Stats from "@/components/home/Stats";
+import WhyChooseUs from "@/components/home/WhyChooseUs";
+import ClientLogos from "@/components/home/ClientLogos";
 import Image from "next/image";
 import { getBrandFullTitle } from "@/lib/tokens";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
@@ -199,6 +202,18 @@ export default function AboutPage() {
           </div>
         </div>
       </Reveal>
+
+      {/*
+        Screen 04 — the homepage carried six trust sections in a row, and the
+        artifact's rule is that repetition does not build trust, it thins it:
+        one proof strip at the top, one review block at the bottom. These three
+        are the surplus, and they are not deleted — they belong on the page a
+        visitor opens precisely to ask "who are you", where they answer the
+        question instead of interrupting a shopper.
+      */}
+      <Reveal><Stats /></Reveal>
+      <Reveal><WhyChooseUs /></Reveal>
+      <Reveal><ClientLogos /></Reveal>
     </main>
   );
 }
