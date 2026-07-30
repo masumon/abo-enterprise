@@ -18,6 +18,17 @@ export function normalizeLang(value: string | undefined | null): Language {
   return value === "en" ? "en" : "bn";
 }
 
+/**
+ * Client-side read of the same cookie the server used to render. Returns null
+ * on the server and when no cookie is set, so the caller keeps its default.
+ */
+export function readLangCookie(): Language | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp(`(?:^|; )${LANG_COOKIE}=([^;]*)`));
+  if (!match) return null;
+  return normalizeLang(decodeURIComponent(match[1]));
+}
+
 /** Client-side write. No-op on the server. */
 export function writeLangCookie(lang: Language) {
   if (typeof document === "undefined") return;

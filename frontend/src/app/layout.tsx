@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import "./globals.css";
-import LanguageBootstrap from "@/components/providers/LanguageBootstrap";
 import { LANG_COOKIE, normalizeLang } from "@/lib/lang";
 import StoreHydration from "@/components/providers/StoreHydration";
 import PublicShell from "@/components/layout/PublicShell";
@@ -143,7 +142,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href={API_ORIGIN} />
       </head>
       <body className="min-h-screen flex flex-col">
-        <LanguageBootstrap lang={lang} />
         <PWASplashScreen />
         <RouteProgress />
         <NetworkStatusBar />

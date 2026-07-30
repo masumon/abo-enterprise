@@ -119,10 +119,14 @@ export default function HomePage() {
       {/* GAP-23 — the three arms of the business used to stack, so whichever
           one a visitor came for sat below the other two. Shop is the default
           lane; the others are one tap away and stay in the document. */}
+      {/* No Reveal inside the panels: a Reveal starts at opacity-0 and waits for
+          an IntersectionObserver, and an element that mounts inside a hidden
+          panel has nothing to intersect. Switching lanes must never land on a
+          section that is still waiting to fade in. */}
       <HomeLanes
-        shop={<Reveal><FeaturedProducts /></Reveal>}
-        services={<Reveal><ServicesOverview /></Reveal>}
-        software={<Reveal><Portfolio /></Reveal>}
+        shop={<FeaturedProducts />}
+        services={<ServicesOverview />}
+        software={<Portfolio />}
       />
       <Reveal><ClientLogos /></Reveal>
       <Reveal><WhyChooseUs /></Reveal>
