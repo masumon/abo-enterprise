@@ -13,18 +13,18 @@ export async function validateCoupon(code: string, subtotal: number): Promise<Ap
   const res = await couponsApi.validate(normalized, subtotal);
   const data = res.data.data;
   if (!data) {
-    // Provide actionable error reasons
-    const error = res.data.error || "Invalid coupon";
-    if (error.toLowerCase().includes("not found")) {
+    // Provide actionable error reasons from message or errors
+    const msg = res.data.message || "Invalid coupon";
+    if (msg.toLowerCase().includes("not found")) {
       throw new Error("Coupon does not exist");
-    } else if (error.toLowerCase().includes("expired")) {
+    } else if (msg.toLowerCase().includes("expired")) {
       throw new Error("Coupon has expired");
-    } else if (error.toLowerCase().includes("minimum")) {
+    } else if (msg.toLowerCase().includes("minimum")) {
       throw new Error("Order total is below minimum amount");
-    } else if (error.toLowerCase().includes("used")) {
+    } else if (msg.toLowerCase().includes("used")) {
       throw new Error("Coupon has already been used");
     }
-    throw new Error(error);
+    throw new Error(msg);
   }
   return {
     code: data.code,

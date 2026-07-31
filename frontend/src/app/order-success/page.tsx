@@ -60,13 +60,17 @@ function OrderSuccessContent() {
     // trusted, so it resolves first and the URL fills any gap.
     const order = params.get("order");
     const ph = params.get("phone") || (order ? readOrderSnapshot(order)?.phone ?? null : null);
+    const paymentMethod = params.get("method") || "cod";
     setOrderNumber(order);
     setPhone(ph);
     if (order) {
       trackPurchase(0, order);
       trackEvent("purchase", { currency: "BDT", transaction_id: order });
     }
-    const t = setTimeout(() => setShowConfetti(false), 3000);
+    // GAP-27 — confetti duration varies by payment method: faster for COD
+    // (already confirmed), longer for redirects (verifying upstream).
+    const confettiDuration = paymentMethod === "cod" ? 1800 : 3000;
+    const t = setTimeout(() => setShowConfetti(false), confettiDuration);
     return () => clearTimeout(t);
   }, [params]);
 
