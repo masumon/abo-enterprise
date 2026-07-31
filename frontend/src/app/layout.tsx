@@ -123,7 +123,7 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  /* GAP-24 — the language lived only in localStorage, so every page was sent
+  /* GAP-01 — the language lived only in localStorage, so every page was sent
      in Bengali and repainted in English after hydration for an English reader,
      and <html lang> was wrong until JavaScript ran. Reading the cookie here
      makes the server render the right language on the first paint. It also
