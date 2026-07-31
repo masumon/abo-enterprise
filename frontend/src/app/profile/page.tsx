@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
-  Package, Calendar, Heart, FileText, MapPin, Headphones, Settings, Search,
+  Package, Calendar, Heart, FileText, MapPin, Headphones, Settings, Search, LogOut,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
@@ -23,10 +25,17 @@ const PORTAL_ITEMS = [
 ];
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { lang } = useLanguageStore();
   const t = useT();
-  const { session } = useCustomerStore();
+  const { session, logout } = useCustomerStore();
   const wishlistCount = useWishlistStore((s) => s.count());
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+
+  const handleSignOut = () => {
+    logout();
+    router.push("/");
+  };
 
   return (
     <main className="min-h-screen">
@@ -47,11 +56,53 @@ export default function ProfilePage() {
             themselves server-side and that is unchanged; this is a prompt, not
             a client-side auth gate, and every tile stays reachable. */}
         {session?.token ? (
-          <GlassCard className="p-5 text-center mb-6">
-            <div className="w-14 h-14 bg-brand-50 dark:bg-brand-900/30 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">👤</div>
-            <p className="font-semibold text-heading">{session?.name ?? (lang === "bn" ? "গ্রাহক" : "Customer")}</p>
-            {session?.phone && <p className="text-sm text-muted mt-1">{session.phone}</p>}
-          </GlassCard>
+          <>
+            <GlassCard className="p-5 mb-6">
+              <div className="flex items-start gap-4 mb-4">
+                <div className="w-14 h-14 bg-brand-50 dark:bg-brand-900/30 rounded-full flex items-center justify-center flex-shrink-0 text-2xl">👤</div>
+                <div className="flex-1">
+                  <p className="font-semibold text-heading">{session?.name ?? (lang === "bn" ? "গ্রাহক" : "Customer")}</p>
+                  {session?.phone && <p className="text-sm text-muted mt-1">{session.phone}</p>}
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSignOutConfirm(true)}
+                className="btn btn-outline btn-sm w-full flex items-center justify-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                {lang === "bn" ? "সাইন আউট" : "Sign Out"}
+              </button>
+            </GlassCard>
+
+            {showSignOutConfirm && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <GlassCard className="p-6 max-w-sm">
+                  <h3 className="font-bold text-heading mb-2">
+                    {lang === "bn" ? "সাইন আউট করবেন?" : "Sign out?"}
+                  </h3>
+                  <p className="text-sm text-muted mb-4">
+                    {lang === "bn"
+                      ? "আপনি চলে যাবেন এবং আপনার অ্যাকাউন্ট অ্যাক্সেস হারাবেন। পরে আবার সাইন ইন করতে পারবেন।"
+                      : "You'll be signed out and lose access to your account. You can sign back in anytime."}
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => setShowSignOutConfirm(false)}
+                      className="btn btn-outline btn-sm flex-1"
+                    >
+                      {lang === "bn" ? "বাতিল" : "Cancel"}
+                    </button>
+                    <button
+                      onClick={handleSignOut}
+                      className="btn btn-error btn-sm flex-1"
+                    >
+                      {lang === "bn" ? "সাইন আউট" : "Sign Out"}
+                    </button>
+                  </div>
+                </GlassCard>
+              </div>
+            )}
+          </>
         ) : (
           <GlassCard className="p-5 mb-6">
             <p className="font-semibold text-heading mb-1">

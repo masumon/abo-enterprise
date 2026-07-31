@@ -28,6 +28,7 @@ import { calcDeliveryCharge, calcAdvanceCharge } from "@/lib/checkoutHelpers";
 import { validateCoupon, type AppliedCoupon } from "@/lib/coupons";
 import { isOffline } from "@/lib/networkStatus";
 import { saveOrderSnapshot } from "@/lib/orderSnapshot";
+import CountrySelector from "@/components/ui/CountrySelector";
 import PageHero from "@/components/ui/PageHero";
 
 const schema = z.object({
@@ -123,6 +124,7 @@ export default function CheckoutPage() {
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
   const [copiedAcct, setCopiedAcct] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState("BD");
   // Set before clearCart() so the empty-cart redirect below can't hijack the
   // navigation to /order-success (a race customers hit on slower devices).
   const orderPlacedRef = useRef(false);
@@ -354,7 +356,7 @@ export default function CheckoutPage() {
       orderPlacedRef.current = true;
       clearCart();
       router.push(
-        `/order-success${orderNumber ? `?order=${orderNumber}&phone=${encodeURIComponent(data.customer_phone)}` : ""}`
+        `/order-success${orderNumber ? `?order=${orderNumber}&phone=${encodeURIComponent(data.customer_phone)}&method=${selectedGateway}` : ""}`
       );
     } catch (err) {
       setSubmitError(
@@ -469,9 +471,16 @@ export default function CheckoutPage() {
                       ? "সাইন ইন করলে পরের বার ঠিকানা নিজেই বসবে আর অর্ডার ট্র্যাক করা যাবে। না করলেও অর্ডার করতে পারবেন।"
                       : "Sign in and your address fills itself next time, and you can track the order. You can also order without it.")}
               </p>
-              <Link href="/login?redirect=/checkout" className={cn("btn btn-sm", signInRequired ? "btn-primary" : "btn-outline")}>
-                {lang === "bn" ? "সাইন ইন" : "Sign in"}
-              </Link>
+              <div className="flex gap-2">
+                <Link href="/login?redirect=/checkout" className={cn("btn btn-sm", signInRequired ? "btn-primary" : "btn-outline")}>
+                  {lang === "bn" ? "সাইন ইন" : "Sign in"}
+                </Link>
+                {!signInRequired && guestAllowed && (
+                  <button type="button" className="btn btn-sm btn-outline" onClick={() => { /* proceed as guest by submitting form */ }}>
+                    {lang === "bn" ? "অতিথি হিসেবে চালিয়ে যান" : "Continue as guest"}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -503,7 +512,12 @@ export default function CheckoutPage() {
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
                       <label className="form-label">{lang === "bn" ? "মোবাইল *" : "Mobile *"}</label>
-                      <input {...register("customer_phone")} type="tel" className={cn("input", errors.customer_phone && "input-error")} placeholder="01XXXXXXXXX" />
+                      <div className="flex gap-2">
+                        <div className="w-24">
+                          <CountrySelector selected={selectedCountry} onChange={setSelectedCountry} />
+                        </div>
+                        <input {...register("customer_phone")} type="tel" className={cn("input flex-1", errors.customer_phone && "input-error")} placeholder={selectedCountry === "BD" ? "01XXXXXXXXX" : "+..."} />
+                      </div>
                       {errors.customer_phone && <p className="text-red-500 text-xs mt-1">{errors.customer_phone.message}</p>}
                     </div>
                     <div>
