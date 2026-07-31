@@ -117,23 +117,21 @@ export default function FeaturedProducts() {
   }, []);
 
   return (
-    <section id="products" className="py-16 gradient-surface">
-      <div className="container mx-auto px-4">
-        <div className="section-title text-center mb-10">
-          {showFlashSale && (
-            <div className="flex flex-col items-center gap-2 mb-2">
-              <CountdownTimer endDate={flashEnd} label={flashTitle} size={flashSize} icon={flashIcon} />
-              {/* Admin-managed flash-sale banners; renders nothing when unset. */}
-              <PromoSlider placement="flash_sale" className="mt-4 w-full max-w-3xl" aspect="aspect-[21/9] sm:aspect-[3/1]" />
-            </div>
-          )}
-          <h2>{lang === "bn" ? "জনপ্রিয় পণ্য" : "Featured Products"}</h2>
-          <div className="section-divider" />
-          <p className="text-gray-500 text-sm max-w-md mx-auto">
-            {lang === "bn"
-              ? "সেরা মানের মোবাইল এক্সেসরিজ ও গ্যাজেট — সরাসরি আপনার দোরগোড়ায়"
-              : "Best quality mobile accessories and gadgets — delivered right to your door"}
-          </p>
+    <section id="products" className="py-4 lg:py-16 gradient-surface">
+      <div className="container mx-auto px-3 lg:px-4">
+        {showFlashSale && (
+          <div className="flex flex-col items-center gap-2 mb-4">
+            <CountdownTimer endDate={flashEnd} label={flashTitle} size={flashSize} icon={flashIcon} />
+            <PromoSlider placement="flash_sale" className="mt-4 w-full max-w-3xl" aspect="aspect-[21/9] sm:aspect-[3/1]" />
+          </div>
+        )}
+        <div className="flex items-baseline justify-between gap-2 mb-2">
+          <h2 className="font-display text-[15px] font-semibold tracking-[-0.01em] lg:text-2xl">
+            {lang === "bn" ? "এই সপ্তাহে জনপ্রিয়" : "Popular this week"}
+          </h2>
+          <Link href="/products" className="text-[11px] font-semibold text-brand-600 dark:text-brand-300 whitespace-nowrap lg:text-sm">
+            {lang === "bn" ? `সব ${products.length || ""} →` : `All ${products.length || ""} →`}
+          </Link>
         </div>
 
         {/* Flash-sale stock — its own strip above the featured grid, so the
@@ -173,7 +171,7 @@ export default function FeaturedProducts() {
           </div>
         )}
 
-        <div className="text-center mt-10">
+        <div className="text-center mt-6 lg:mt-10">
           <Link href="/products" className="btn btn-outline btn-lg">
             {lang === "bn" ? "সব পণ্য দেখুন" : "View All Products"}
             <ArrowRight className="w-5 h-5" />

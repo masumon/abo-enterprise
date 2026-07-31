@@ -63,14 +63,8 @@ export default function Hero() {
 
   const heroImage = resolveHomeBannerImage(settings);
   const heroIsVideo = isVideoUrl(heroImage);
-  // Admin-managed mobile-only hero background (portrait-friendly). When set it
-  // sits behind the text on phones with a dark overlay; the media card is then
-  // hidden. Empty → clean gradient (unchanged).
   const heroMobileImg = getSettingValue(settings, "hero_mobile_image_url");
   const heroMobileIsVideo = isVideoUrl(heroMobileImg);
-  // Dedicated admin-managed promo media for the hero card (any format, autoplay).
-  // `heroPromoMedia` is the explicit admin value; `heroPromo` adds a banner-image
-  // fallback so the mobile card is never empty when only a banner is set.
   const heroPromoMedia = getSettingValue(settings, "hero_promo_media_url");
   const heroPromo = heroPromoMedia || heroImage;
   const heroPromoIsVideo = isVideoUrl(heroPromo);
@@ -101,90 +95,73 @@ export default function Hero() {
   }, []);
 
   return (
-    <section
-      className={cn(
-        "gradient-hero lg:min-h-[92vh] lg:min-h-[92dvh] flex relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]",
-        heroVAlignClass(hstyle)
-      )}
-    >
-      {/* Admin MOBILE hero background — covers the WHOLE hero (cover + dark
-          overlay for readability). Image or autoplay video. lg:hidden. */}
-      {heroMobileImg && (
-        <div className="lg:hidden absolute inset-0" aria-hidden>
-          {heroMobileIsVideo ? (
-            <AutoVideo src={heroMobileImg} className="absolute inset-0 w-full h-full object-cover" />
-          ) : (
-            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${heroMobileImg})` }} />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-b from-brand-950/72 via-brand-900/60 to-gray-950/85" />
+    <>
+      {/* ── Mobile hero — matches artifact Screen 04 ── */}
+      <section className="lg:hidden bg-gradient-to-b from-brand-50 to-transparent dark:from-brand-900/20 dark:to-transparent">
+        <div className="px-3 pt-4 pb-3">
+          <h1 className="font-display text-[20px] leading-[1.15] tracking-[-0.02em] font-semibold text-[var(--ink)] dark:text-[var(--ink)] text-balance">
+            {heroTitleOverride || (lang === "bn"
+              ? "সিলেটের দোকান, সেবা ও সফটওয়্যার টিম"
+              : "Sylhet's store, service desk and software team.")}
+            <span className="block font-sans text-xs text-[var(--ink-muted)] font-medium tracking-normal mt-1">
+              {heroTitleOverride
+                ? (lang === "bn"
+                    ? "Sylhet's store, service desk and software team."
+                    : "সিলেটের দোকান, সেবা ও সফটওয়্যার টিম")
+                : (lang === "bn"
+                    ? "Sylhet's store, service desk and software team."
+                    : "সিলেটের দোকান, সেবা ও সফটওয়্যার টিম")}
+            </span>
+          </h1>
+          <p className="text-xs text-[var(--ink-muted)] mt-1">
+            {lang === "bn"
+              ? "সারাদেশে নগদে ডেলিভারি · ২০১৭ সাল থেকে"
+              : "Cash on delivery across Bangladesh · Since 2017"}
+          </p>
         </div>
-      )}
+      </section>
 
-      {/* Media background is DESKTOP-ONLY. On mobile the hero keeps the clean
-          brand gradient and the uploaded image/video shows in a card below the
-          text — so text stays crisp and the media is never cropped. */}
-      {heroImage && !heroIsVideo && (
-        <div
-          className="hidden lg:block absolute inset-0"
-          style={{
-            backgroundImage: `linear-gradient(135deg, rgba(53,71,155,0.25) 0%, rgba(30,43,107,0.20) 50%, rgba(228,161,27,0.15) 100%), url(${heroImage})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
-          aria-hidden
-        />
-      )}
-      {heroIsVideo && (
-        <>
-          <AutoVideo
-            src={heroImage}
-            className="hidden lg:block absolute inset-0 w-full h-full object-cover"
-            aria-hidden
-          />
+      {/* ── Desktop hero — rich media layout ── */}
+      <section
+        className={cn(
+          "hidden lg:flex gradient-hero min-h-[92vh] min-h-[92dvh] relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]",
+          heroVAlignClass(hstyle)
+        )}
+      >
+        {heroImage && !heroIsVideo && (
           <div
-            className="hidden lg:block absolute inset-0"
-            style={{ background: "linear-gradient(135deg, rgba(53,71,155,0.25) 0%, rgba(30,43,107,0.20) 50%, rgba(228,161,27,0.15) 100%)" }}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `linear-gradient(135deg, rgba(53,71,155,0.25) 0%, rgba(30,43,107,0.20) 50%, rgba(228,161,27,0.15) 100%), url(${heroImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+            }}
             aria-hidden
           />
-        </>
-      )}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-0 left-0 w-72 h-72 bg-accent-500/10 rounded-full blur-3xl" />
-      </div>
+        )}
+        {heroIsVideo && (
+          <>
+            <AutoVideo
+              src={heroImage}
+              className="absolute inset-0 w-full h-full object-cover"
+              aria-hidden
+            />
+            <div
+              className="absolute inset-0"
+              style={{ background: "linear-gradient(135deg, rgba(53,71,155,0.25) 0%, rgba(30,43,107,0.20) 50%, rgba(228,161,27,0.15) 100%)" }}
+              aria-hidden
+            />
+          </>
+        )}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-20 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-float" />
+          <div className="absolute bottom-0 left-0 w-72 h-72 bg-accent-500/10 rounded-full blur-3xl" />
+        </div>
 
-      <div className="container mx-auto px-4 pt-4 pb-[calc(var(--bottom-nav-height)+1.25rem)] sm:py-12 lg:py-16 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div className="text-white flex flex-col gap-4 sm:gap-6 animate-slide-up">
-            {/* MOBILE/tablet promo — directly below the top bar, full-fit (no
-                crop). Edges are masked so the media blends into the brand
-                background. Explicit promo always shows; the banner fallback
-                yields to a mobile background image. Video autoplays. */}
-            <div className="lg:hidden w-full">
-              <PromoSlider
-                placement="hero"
-                fallback={
-                  // Only an EXPLICIT promo media falls back here; the hero
-                  // background image is not repeated as a promo card. Pinned to
-                  // 16:9 so a tall source can never fill the screen on a phone.
-                  heroPromoMedia ? (
-                    <div className="relative aspect-video overflow-hidden rounded-2xl border border-white/15 shadow-xl bg-black/20">
-                      {heroPromoIsVideo ? (
-                        <AutoVideo src={heroPromoMedia} className="absolute inset-0 w-full h-full object-cover" tapToPlay aria-hidden />
-                      ) : (
-                        // eslint-disable-next-line @next/next/no-img-element -- hero art; next/image adds no value here
-                        <img src={heroPromoMedia} alt="" className="absolute inset-0 w-full h-full object-cover" />
-                      )}
-                    </div>
-                  ) : null
-                }
-              />
-            </div>
-
-            {/* Text block — sits on top of the full-hero background (mobile) or
-                the clean gradient (desktop). */}
-            <div className="relative w-full">
-              <div className={cn("hero-legible-scrim relative z-10 flex flex-col gap-4 sm:gap-6", heroAlignClass(hstyle))}>
+        <div className="container mx-auto px-4 py-16 relative z-10">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div className="text-white flex flex-col gap-6 animate-slide-up">
+              <div className={cn("relative z-10 flex flex-col gap-6", heroAlignClass(hstyle))}>
                 <div className="flex flex-wrap items-center gap-2">
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 glass-panel rounded-full text-sm font-medium">
                     <Zap className="w-3.5 h-3.5 text-yellow-300" aria-hidden />
@@ -193,13 +170,10 @@ export default function Hero() {
                   <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-600/80 backdrop-blur-sm text-white border border-green-300/40 shadow-sm">
                     🚚 {lang === "bn" ? `সিলেটে ফ্রি ডেলিভারি ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+` : `Free Sylhet delivery ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+`}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium bg-black/35 backdrop-blur-sm text-white border border-white/20 shadow-sm">
-                    👥 {lang === "bn" ? `${stats.clients}+ গ্রাহক` : `${stats.clients}+ clients`}
-                  </span>
                 </div>
 
                 <h1
-                  className={cn("leading-tight text-balance hero-legible-shadow", heroTitleClass(hstyle))}
+                  className={cn("leading-tight text-balance", heroTitleClass(hstyle))}
                   style={hstyle.titleColor ? { color: hstyle.titleColor } : undefined}
                 >
                   {heroTitleOverride ? (
@@ -209,8 +183,7 @@ export default function Hero() {
                       <span className="block text-yellow-300 font-extrabold tracking-[0.06em] sm:tracking-[0.08em] drop-shadow-sm">
                         {t("hero_brand")}
                       </span>
-                      <span className="block mt-1 sm:mt-3 text-white font-bold leading-snug">
-                        <span className="text-white/80 font-semibold">: </span>
+                      <span className="block mt-3 text-white font-bold leading-snug">
                         {t("hero_tagline")}
                       </span>
                     </>
@@ -218,107 +191,105 @@ export default function Hero() {
                 </h1>
 
                 <p
-                  className={cn("max-w-lg leading-relaxed hero-legible-shadow", heroSubClass(hstyle), !hstyle.subColor && "text-white/80")}
+                  className={cn("max-w-lg leading-relaxed", heroSubClass(hstyle), !hstyle.subColor && "text-white/80")}
                   style={hstyle.subColor ? { color: hstyle.subColor } : undefined}
                 >
                   {heroSubtitle}
                 </p>
 
-                <p className="hidden sm:block text-white/60 text-xs max-w-lg">
+                <p className="text-white/60 text-xs max-w-lg">
                   {lang === "bn" ? ABO_ACRONYM.bn : ABO_ACRONYM.en}
                 </p>
 
-                <div className="flex flex-row gap-2 sm:gap-3 pt-2 w-full">
-                  <Link href="/services" className="btn btn-lg btn-primary btn-ripple flex-1 justify-center min-w-0 px-3 sm:px-6 text-[13px] sm:text-base">
-                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 flex-none" aria-hidden />
+                <div className="flex flex-row gap-3 pt-2 w-full">
+                  <Link href="/services" className="btn btn-lg btn-primary btn-ripple flex-1 justify-center min-w-0 px-6 text-base">
+                    <Calendar className="w-5 h-5 flex-none" aria-hidden />
                     <span className="truncate">{t("hero_cta_services")}</span>
-                    <ArrowRight className="w-4 h-4 flex-none hidden sm:block" aria-hidden />
+                    <ArrowRight className="w-4 h-4 flex-none" aria-hidden />
                   </Link>
-                  <Link href={heroCtaUrl.startsWith("/") ? heroCtaUrl : "/products"} className="btn btn-lg btn-outline border-white/40 text-white hover:bg-white/10 btn-ripple flex-1 justify-center min-w-0 px-3 sm:px-6 text-[13px] sm:text-base">
-                    <ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5 flex-none" aria-hidden />
+                  <Link href={heroCtaUrl.startsWith("/") ? heroCtaUrl : "/products"} className="btn btn-lg btn-outline border-white/40 text-white hover:bg-white/10 btn-ripple flex-1 justify-center min-w-0 px-6 text-base">
+                    <ShoppingBag className="w-5 h-5 flex-none" aria-hidden />
                     <span className="truncate">{heroCtaText || t("hero_cta_products")}</span>
                   </Link>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="hidden lg:flex items-center justify-center animate-fade-in">
-            <div className="relative w-full max-w-md space-y-4">
-              {/* Desktop/tablet promo media — admin-managed image/video, autoplay.
-                  Sits above the live-stats card when set. */}
-              <PromoSlider
-                placement="hero"
-                fallback={
-                  heroPromoMedia ? (
-                    <div className="relative rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-black/20">
-                      {heroPromoIsVideo ? (
-                        <AutoVideo src={heroPromoMedia} className="w-full aspect-video object-cover block" tapToPlay aria-hidden />
-                      ) : (
-                        // eslint-disable-next-line @next/next/no-img-element -- hero art in a fixed-ratio card; next/image adds no value here
-                        <img src={heroPromoMedia} alt="" className="w-full aspect-video object-cover block" />
-                      )}
+            <div className="flex items-center justify-center animate-fade-in">
+              <div className="relative w-full max-w-md space-y-4">
+                <PromoSlider
+                  placement="hero"
+                  fallback={
+                    heroPromoMedia ? (
+                      <div className="relative rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-black/20">
+                        {heroPromoIsVideo ? (
+                          <AutoVideo src={heroPromoMedia} className="w-full aspect-video object-cover block" tapToPlay aria-hidden />
+                        ) : (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={heroPromoMedia} alt="" className="w-full aspect-video object-cover block" />
+                        )}
+                      </div>
+                    ) : null
+                  }
+                />
+                <div className="glass-panel rounded-3xl p-6 shadow-2xl border border-white/20">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                      <BrandLogo size="md" href={false} variant="glass" />
+                      <div>
+                        <p className="text-white font-semibold text-sm">{getBrandName(lang)}</p>
+                        <p className="text-white/70 text-[11px]">{getBrandTagline(lang)}</p>
+                      </div>
                     </div>
-                  ) : null
-                }
-              />
-              <div className="glass-panel rounded-3xl p-6 shadow-2xl border border-white/20">
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-3">
-                    <BrandLogo size="md" href={false} variant="glass" />
-                    <div>
-                      <p className="text-white font-semibold text-sm">{getBrandName(lang)}</p>
-                      <p className="text-white/70 text-[11px]">: {getBrandTagline(lang)}</p>
-                    </div>
+                    <span className="flex items-center gap-1.5 text-xs text-green-300 font-medium bg-green-500/20 px-2.5 py-1 rounded-full border border-green-500/30">
+                      <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" aria-hidden />
+                      Live
+                    </span>
                   </div>
-                  <span className="flex items-center gap-1.5 text-xs text-green-300 font-medium bg-green-500/20 px-2.5 py-1 rounded-full border border-green-500/30">
-                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" aria-hidden />
-                    Live
-                  </span>
-                </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                  {[
-                    { label: lang === "bn" ? "অর্ডার" : "Orders", end: stats.orders, suffix: "+", icon: "📦" },
-                    { label: lang === "bn" ? "সেবা" : "Services", end: stats.services, suffix: "+", icon: "⚙️" },
-                    { label: lang === "bn" ? "গ্রাহক" : "Clients", end: stats.clients, suffix: "+", icon: "👥" },
-                    { label: lang === "bn" ? "প্রজেক্ট" : "Projects", end: stats.projects, suffix: "+", icon: "🚀" },
-                  ].map((item) => (
-                    <div key={item.label} className="glass-panel rounded-xl p-3.5 animate-scale-in">
-                      <span className="text-xl" aria-hidden>{item.icon}</span>
-                      <p className="text-white font-bold text-lg mt-1">
-                        <AnimatedCounter end={item.end} suffix={item.suffix} />
-                      </p>
-                      <p className="text-white/60 text-xs">{item.label}</p>
-                    </div>
-                  ))}
-                </div>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    {[
+                      { label: lang === "bn" ? "অর্ডার" : "Orders", end: stats.orders, suffix: "+", icon: "📦" },
+                      { label: lang === "bn" ? "সেবা" : "Services", end: stats.services, suffix: "+", icon: "⚙️" },
+                      { label: lang === "bn" ? "গ্রাহক" : "Clients", end: stats.clients, suffix: "+", icon: "👥" },
+                      { label: lang === "bn" ? "প্রজেক্ট" : "Projects", end: stats.projects, suffix: "+", icon: "🚀" },
+                    ].map((item) => (
+                      <div key={item.label} className="glass-panel rounded-xl p-3.5 animate-scale-in">
+                        <span className="text-xl" aria-hidden>{item.icon}</span>
+                        <p className="text-white font-bold text-lg mt-1">
+                          <AnimatedCounter end={item.end} suffix={item.suffix} />
+                        </p>
+                        <p className="text-white/60 text-xs">{item.label}</p>
+                      </div>
+                    ))}
+                  </div>
 
-                <div className="space-y-2">
-                  <p className="text-white/50 text-xs font-medium uppercase tracking-wider">
-                    {lang === "bn" ? "সাম্প্রতিক কার্যক্রম" : "Recent Activity"}
-                  </p>
-                  {activity.map((item, i) => (
-                    <div key={i} className="flex items-center gap-3 py-2 border-b border-white/10 last:border-0">
-                      <span aria-hidden>{item.icon}</span>
-                      <span className="text-xs flex-1 text-white/80">
-                        {lang === "bn" ? item.text_bn : item.text_en}
-                      </span>
-                      <span className="text-white/40 text-[10px]">{item.time}</span>
-                    </div>
-                  ))}
+                  <div className="space-y-2">
+                    <p className="text-white/50 text-xs font-medium uppercase tracking-wider">
+                      {lang === "bn" ? "সাম্প্রতিক কার্যক্রম" : "Recent Activity"}
+                    </p>
+                    {activity.map((item, i) => (
+                      <div key={i} className="flex items-center gap-3 py-2 border-b border-white/10 last:border-0">
+                        <span aria-hidden>{item.icon}</span>
+                        <span className="text-xs flex-1 text-white/80">
+                          {lang === "bn" ? item.text_bn : item.text_en}
+                        </span>
+                        <span className="text-white/40 text-[10px]">{item.time}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="absolute bottom-0 left-0 right-0" aria-hidden>
-        <svg viewBox="0 0 1440 60" fill="none" className="w-full">
-          <path d="M0 60L48 52C96 44 192 28 288 24C384 20 480 28 576 36C672 44 768 52 864 48C960 44 1056 28 1152 24C1248 20 1344 28 1392 32L1440 36V60H0Z" fill="var(--surface, #fafbff)"/>
-        </svg>
-      </div>
-    </section>
+        <div className="absolute bottom-0 left-0 right-0" aria-hidden>
+          <svg viewBox="0 0 1440 60" fill="none" className="w-full">
+            <path d="M0 60L48 52C96 44 192 28 288 24C384 20 480 28 576 36C672 44 768 52 864 48C960 44 1056 28 1152 24C1248 20 1344 28 1392 32L1440 36V60H0Z" fill="var(--surface, #fafbff)"/>
+          </svg>
+        </div>
+      </section>
+    </>
   );
 }

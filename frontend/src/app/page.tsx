@@ -132,21 +132,9 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: jsonLdString(localBusinessJsonLd) }}
       />
       <Hero />
-      {/* GAP-23 — the three arms of the business used to stack, so whichever
-          one a visitor came for sat below the other two. Shop is the default
-          lane; the others are one tap away and stay in the document. */}
-      {/* No Reveal inside the panels: a Reveal starts at opacity-0 and waits for
-          an IntersectionObserver, and an element that mounts inside a hidden
-          panel has nothing to intersect. Switching lanes must never land on a
-          section that is still waiting to fade in. */}
-      {/*
-        Screen 04's order, which the page did not follow: the switcher comes
-        first because it is the question the hero just asked, the proof strip
-        answers "can I trust this" immediately after the choice, and only then
-        does the section rail appear — a rail above the switcher would have
-        scrolled the reader back up to reach the thing they had not used yet.
-      */}
       <div id="popular" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]" />
+      <div id="deals" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]" />
+      <div id="categories" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]" />
       <HomeLanes
         shop={<FeaturedProducts />}
         services={<ServicesOverview />}
