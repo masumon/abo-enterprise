@@ -4,6 +4,7 @@ import Hero from "@/components/home/Hero";
 import TrustBadges from "@/components/home/TrustBadges";
 import HomeLanes from "@/components/home/HomeLanes";
 import HomeSectionRail from "@/components/home/HomeSectionRail";
+import LaneSwitcher from "@/components/home/LaneSwitcher";
 import Reveal from "@/components/ui/Reveal";
 import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, getBrandFullTitle } from "@/lib/tokens";
 import { jsonLdString } from "@/lib/metadata";
@@ -132,6 +133,7 @@ export default function HomePage() {
         dangerouslySetInnerHTML={{ __html: jsonLdString(localBusinessJsonLd) }}
       />
       <Hero />
+      <LaneSwitcher />
       <div id="popular" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]" />
       <div id="deals" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]" />
       <div id="categories" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]" />
