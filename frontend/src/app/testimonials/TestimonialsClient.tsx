@@ -105,16 +105,21 @@ export default function TestimonialsClient() {
             invitation instead of an unearned score (GAP-14). */}
         {reviews.length > 0 ? (
           <div className="flex items-center gap-2 mt-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Star
-                key={i}
-                className={
-                  i <= Math.round(Number(avg))
-                    ? "w-5 h-5 text-yellow-400 fill-yellow-400"
-                    : "w-5 h-5 text-white/30"
-                }
-              />
-            ))}
+            {[1, 2, 3, 4, 5].map((i) => {
+              const avgNum = Number(avg);
+              const isFilled = i <= Math.floor(avgNum);
+              const isPartial = i === Math.ceil(avgNum) && avgNum % 1 !== 0;
+              return (
+                <div key={i} className="relative w-5 h-5">
+                  <Star className="w-5 h-5 text-white/30" />
+                  {(isFilled || isPartial) && (
+                    <div className="absolute inset-0 overflow-hidden" style={{ width: isFilled ? "100%" : `${(avgNum % 1) * 100}%` }}>
+                      <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             <span className="font-bold text-white text-lg">{avg}</span>
             <span className="text-white/70 text-sm">({reviews.length} {lang === "bn" ? "রিভিউ" : "reviews"})</span>
           </div>
