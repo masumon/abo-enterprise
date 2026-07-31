@@ -59,37 +59,85 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-[var(--announcement-height)] left-0 right-0 z-50">
-      {/* Floating capsule nav */}
-      <div className="flex justify-center pt-2 px-4">
+      {/* ── Mobile header — artifact Screen 03 m-head ── */}
+      <nav
+        className="lg:hidden flex items-center gap-2 px-3 min-h-[48px] bg-white dark:bg-[var(--surface-card)] border-b border-[var(--line)] dark:border-[var(--line)]"
+        aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
+      >
+        <Link href="/" className="font-display font-bold text-[15px] tracking-[-0.01em] text-[var(--ink)]">
+          ABO<span className="text-[var(--accent-deep,#a87008)]">.</span>
+        </Link>
+        <span className="flex-1" />
+
+        {showAssistantInHeader && (
+          <button
+            type="button"
+            onClick={toggleAssistant}
+            className="w-[30px] h-[30px] rounded-md border border-[var(--line)] flex items-center justify-center text-xs text-brand-600 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30"
+            aria-label={lang === "bn" ? "সহায়ক চ্যাট" : "Assistant chat"}
+          >
+            <MessageCircle className="w-3.5 h-3.5" strokeWidth={2.5} />
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={toggle}
+          className="font-mono text-[10px] font-semibold tracking-[0.06em] px-2 py-1.5 rounded-full bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300 flex-none"
+          aria-label="Toggle language"
+        >
+          {lang === "en" ? "বাং" : "EN"}
+        </button>
+
+        <Link
+          href="/cart"
+          className="relative w-[30px] h-[30px] rounded-md border border-[var(--line)] flex items-center justify-center text-xs text-[var(--ink-muted)]"
+          aria-label={`${t("nav_cart")} (${count})`}
+        >
+          <ShoppingCart className="w-3.5 h-3.5" strokeWidth={2} />
+          {count > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-accent-500 text-[#14182b] text-[8px] font-bold flex items-center justify-center">
+              {count > 99 ? "99+" : count}
+            </span>
+          )}
+        </Link>
+
+        <Link
+          href="/login"
+          className="w-[30px] h-[30px] rounded-md border border-[var(--line)] flex items-center justify-center text-xs text-[var(--ink-muted)]"
+          aria-label={lang === "bn" ? "গ্রাহক লগইন" : "Customer login"}
+        >
+          <User className="w-3.5 h-3.5" strokeWidth={2} />
+        </Link>
+      </nav>
+
+      {/* ── Desktop floating capsule ── */}
+      <div className="hidden lg:flex justify-center pt-2 px-4">
         <nav
           className={cn(
             "w-full flex items-center justify-between gap-3 px-4",
             "h-[54px] rounded-full",
-            /* Glassmorphism */
             "bg-white/72 dark:bg-[#0b1f3a]/82 backdrop-blur-2xl",
             "border border-white/60 dark:border-white/[0.09]",
-            /* Ambient glow + premium shadow */
             "shadow-[0_4px_20px_rgba(30,43,107,0.10),0_1px_3px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.82)]",
             "dark:shadow-[0_4px_24px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.05)]",
             "transition-all duration-500",
-            /* Scroll: intensify glass */
             isScrolled && [
               "bg-white/84 dark:bg-[#0b1f3a]/92",
               "shadow-[0_8px_32px_rgba(30,43,107,0.16),0_2px_8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.92)]",
               "dark:shadow-[0_8px_40px_rgba(0,0,0,0.52),0_0_0_1px_rgba(59,130,246,0.10),inset_0_1px_0_rgba(255,255,255,0.07)]",
             ],
-            /* Width: 90–92% on mobile, unconstrained on desktop via max-w */
-            "max-w-[92%] sm:max-w-[90%] lg:max-w-7xl"
+            "max-w-7xl"
           )}
           aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
         >
           <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 min-w-0">
             <BrandLogo size="sm" href={false} priority />
-            <span className="hidden sm:block min-w-0">
+            <span className="min-w-0">
               <span className="font-bold text-lg tracking-tight block text-brand-800 dark:text-white truncate">
                 {getBrandName(lang)}
               </span>
-              <p className="text-[10px] font-medium text-brand-600/90 dark:text-brand-200/80 truncate max-w-[11rem] md:max-w-[15rem] leading-snug">
+              <p className="text-[10px] font-medium text-brand-600/90 dark:text-brand-200/80 truncate max-w-[15rem] leading-snug">
                 {getBrandTagline(lang)}
               </p>
             </span>
@@ -110,7 +158,7 @@ export default function Navbar() {
                     aria-expanded={searchQuery.trim().length >= 2}
                     aria-controls={searchListId}
                     aria-autocomplete="list"
-                    className="w-36 xs:w-44 sm:w-56 px-3 py-1.5 pr-8 rounded-xl text-sm input max-w-[calc(100vw-8rem)]"
+                    className="w-56 px-3 py-1.5 pr-8 rounded-xl text-sm input"
                   />
                   <button type="submit" aria-label="Submit search" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-brand-600">
                     <Search className="w-4 h-4" strokeWidth={2.5} />
@@ -132,10 +180,8 @@ export default function Navbar() {
 
             <button type="button" onClick={toggleTheme}
               className={cn(
-                "w-11 h-11 items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation",
-                // Hide while searching on mobile so the expanded search field
-                // doesn't push these icons outside the capsule.
-                searchOpen ? "hidden sm:flex" : "flex"
+                "w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation",
+                searchOpen && "hidden"
               )}
               aria-label="Toggle dark mode">
               {theme === "dark" ? <Sun className="w-[19px] h-[19px]" strokeWidth={2.5} /> : <Moon className="w-[19px] h-[19px]" strokeWidth={2.5} />}
@@ -143,8 +189,8 @@ export default function Navbar() {
 
             <button type="button" onClick={toggle}
               className={cn(
-                "items-center gap-1 px-3 h-11 rounded-full text-[10px] sm:text-xs font-semibold border border-brand-200/80 text-brand-700 hover:bg-brand-50/80 hover:scale-105 active:scale-95 transition-all duration-200 dark:border-brand-700/70 dark:text-brand-300 touch-manipulation",
-                searchOpen ? "hidden sm:flex" : "flex"
+                "flex items-center gap-1 px-3 h-11 rounded-full text-xs font-semibold border border-brand-200/80 text-brand-700 hover:bg-brand-50/80 hover:scale-105 active:scale-95 transition-all duration-200 dark:border-brand-700/70 dark:text-brand-300 touch-manipulation",
+                searchOpen && "hidden"
               )}
               aria-label="Toggle language">
               <Globe className="w-3.5 h-3.5" strokeWidth={2.5} />
@@ -156,8 +202,8 @@ export default function Navbar() {
               aria-label={lang === "bn" ? "গ্রাহক লগইন / ড্যাশবোর্ড" : "Customer login / dashboard"}
               title={lang === "bn" ? "গ্রাহক লগইন" : "Customer login"}
               className={cn(
-                "w-11 h-11 items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation",
-                searchOpen ? "hidden sm:flex" : "flex"
+                "w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation",
+                searchOpen && "hidden"
               )}
             >
               <User className="w-[19px] h-[19px]" strokeWidth={2.5} />
@@ -165,9 +211,7 @@ export default function Navbar() {
 
             <Link
               href="/cart"
-              // Mobile has the bottom-nav cart button — hide from the header to
-              // remove icon crowding. Desktop keeps it (no bottom nav there).
-              className="relative w-8 h-8 hidden lg:flex items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 hover:scale-110 active:scale-95 transition-all duration-200 shadow-md shadow-brand-500/25"
+              className="relative w-8 h-8 flex items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 hover:scale-110 active:scale-95 transition-all duration-200 shadow-md shadow-brand-500/25"
               aria-label={`${t("nav_cart")} (${count})`}
             >
               <ShoppingCart className="w-[18px] h-[18px]" strokeWidth={2.5} />
@@ -177,20 +221,6 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
-
-            {/* Screen 02b — on screens that already pin an action bar, the
-                assistant's floating launcher lands on top of the primary
-                action, so it lives here instead. Same widget, same state. */}
-            {showAssistantInHeader && (
-              <button
-                type="button"
-                onClick={toggleAssistant}
-                className="lg:hidden w-11 h-11 flex items-center justify-center rounded-full text-brand-600 dark:text-brand-300 hover:bg-brand-50 dark:hover:bg-white/10 transition-colors"
-                aria-label={lang === "bn" ? "সহায়ক চ্যাট" : "Assistant chat"}
-              >
-                <MessageCircle className="w-[20px] h-[20px]" strokeWidth={2.5} />
-              </button>
-            )}
 
             <Link href="/projects" className="hidden md:inline-flex btn btn-primary btn-sm btn-ripple">
               <Briefcase className="w-4 h-4" strokeWidth={2.5} />
