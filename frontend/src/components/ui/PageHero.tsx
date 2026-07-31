@@ -57,7 +57,7 @@ export default function PageHero({
   // The gradient overlay (kept separate for the video case, where a CSS
   // background can't play the clip).
   const overlayGradient = isBrand
-    ? "linear-gradient(135deg, rgba(10,22,40,0.9) 0%, rgba(21,101,192,0.82) 48%, rgba(13,71,161,0.88) 100%)"
+    ? "linear-gradient(135deg, rgba(10,22,40,0.9) 0%, rgba(53,71,155,0.82) 48%, rgba(30,43,107,0.88) 100%)"
     : "linear-gradient(180deg, rgba(248,250,255,0.93) 0%, rgba(236,242,255,0.9) 100%)";
 
   const sectionStyle = hasImage && !isVideo

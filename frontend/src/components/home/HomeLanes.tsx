@@ -49,10 +49,19 @@ export default function HomeLanes({
   shop,
   services,
   software,
+  interstitial,
 }: {
   shop: ReactNode;
   services: ReactNode;
   software: ReactNode;
+  /**
+   * Screen 04 puts the proof strip and the section rail between the switcher
+   * and the lane's content — the strip answers "can I trust this" the moment
+   * the choice is made, and the rail cannot sit above the switcher without
+   * scrolling the reader back to something they have not used yet. They belong
+   * to the page, not to this component, so the page passes them in.
+   */
+  interstitial?: ReactNode;
 }) {
   const { lang } = useLanguageStore();
   const router = useRouter();
@@ -137,6 +146,8 @@ export default function HomeLanes({
           })}
         </div>
       </div>
+
+      {interstitial}
 
       {LANES.map(({ id }) => (
         <div
