@@ -132,7 +132,7 @@ export default function Hero() {
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: `linear-gradient(135deg, rgba(21,101,192,0.25) 0%, rgba(13,71,161,0.20) 50%, rgba(228,161,27,0.15) 100%), url(${heroImage})`,
+              backgroundImage: `linear-gradient(135deg, rgba(53,71,155,0.25) 0%, rgba(30,43,107,0.20) 50%, rgba(228,161,27,0.15) 100%), url(${heroImage})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
             }}
@@ -148,7 +148,7 @@ export default function Hero() {
             />
             <div
               className="absolute inset-0"
-              style={{ background: "linear-gradient(135deg, rgba(21,101,192,0.25) 0%, rgba(13,71,161,0.20) 50%, rgba(228,161,27,0.15) 100%)" }}
+              style={{ background: "linear-gradient(135deg, rgba(53,71,155,0.25) 0%, rgba(30,43,107,0.20) 50%, rgba(228,161,27,0.15) 100%)" }}
               aria-hidden
             />
           </>

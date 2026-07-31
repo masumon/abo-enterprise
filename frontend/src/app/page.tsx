@@ -141,11 +141,12 @@ export default function HomePage() {
         software={<Portfolio />}
         interstitial={
           <>
-            <TrustBadges />
+            <Reveal><TrustBadges /></Reveal>
             <HomeSectionRail />
           </>
         }
       />
+
       <div id="reviews" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
         <Reveal><CustomerReviews /></Reveal>
       </div>
