@@ -232,7 +232,7 @@ export default function B2BQuotationForm({ onSuccess }: Props) {
         disabled={submitting}
         className="w-full btn btn-primary btn-lg disabled:opacity-50"
       >
-        {submitting ? <LoadingSpinner size={20} /> : (lang === "bn" ? "কোটেশন পাঠান" : "Request Quotation")}
+        {submitting ? <LoadingSpinner className="w-5 h-5" /> : (lang === "bn" ? "কোটেশন পাঠান" : "Request Quotation")}
       </button>
     </form>
   );
