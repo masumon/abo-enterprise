@@ -6,6 +6,7 @@ import { BrandAppIcon } from "@/components/ui/BrandLogo";
 import { X, Download, ChevronUp, Smartphone } from "lucide-react";
 import { SITE_URL } from "@/lib/tokens";
 import { useLanguageStore } from "@/store/language";
+import { hasBottomActionBar } from "@/lib/actionBarRoutes";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -129,6 +130,16 @@ export default function PWAInstallPrompt() {
     chip: bn ? "অ্যাপ ইনস্টল" : "Install app",
     installing: bn ? "ইনস্টল হচ্ছে…" : "Installing…",
   };
+
+  /*
+   * The minimised chip is fixed at the bottom-left of every page. On cart,
+   * checkout, booking and the product page it lands on top of the page's own
+   * content — in the screenshot it covered the coupon field — and those screens
+   * already carry an action bar, so the chip would be the fourth fixed layer
+   * competing for the same strip of glass. It stands down on those routes; the
+   * install offer is not urgent and the browser keeps its own.
+   */
+  if (mode === "minimized" && hasBottomActionBar(pathname)) return null;
 
   if (mode === "minimized") {
     return (

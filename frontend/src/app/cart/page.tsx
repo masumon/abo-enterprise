@@ -106,9 +106,32 @@ export default function CartPage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-heading truncate">{lang === "bn" ? item.name_bn : item.name_en}</h3>
-                      <p className="text-brand-600 font-bold mt-1">{formatPrice(item.price)}</p>
-                      <div className="flex items-center gap-3 mt-3">
+                      {/*
+                        The line total used to sit in its own flex column beside
+                        this one. Nothing in that column could shrink — the
+                        quantity stepper and the Remove label have a hard
+                        minimum — so on a 360px phone the row grew wider than
+                        the screen and the total was cut off at the edge, on the
+                        one page where the number is the whole point.
+
+                        It now sits on the title's line inside this column, and
+                        every row below it wraps, so the card cannot outgrow the
+                        viewport at any width.
+                      */}
+                      <div className="flex items-start gap-2">
+                        <h3 className="flex-1 min-w-0 font-semibold text-heading line-clamp-2">
+                          {lang === "bn" ? item.name_bn : item.name_en}
+                        </h3>
+                        <p className="money font-bold text-heading flex-shrink-0 whitespace-nowrap">
+                          {formatPrice(item.price * item.quantity)}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted mt-0.5">
+                        <span className="money">{formatPrice(item.price)}</span>
+                        {" × "}
+                        {item.quantity}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3 mt-3">
                         <div className="flex items-center border border-gray-200 dark:border-white/10 rounded-lg">
                           <button type="button" onClick={() => updateQuantity(item.product_id, item.quantity - 1)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-white/5" aria-label="Decrease">
                             <Minus className="w-3.5 h-3.5" />
@@ -124,7 +147,6 @@ export default function CartPage() {
                         </button>
                       </div>
                     </div>
-                    <p className="money font-bold text-heading">{formatPrice(item.price * item.quantity)}</p>
                   </div>
                 ))}
 

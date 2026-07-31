@@ -340,7 +340,7 @@
     background: linear-gradient(135deg, #35479b 0%, #1e2b6b 50%, #131c45 100%);
   }
   .gradient-hero {
-    background: linear-gradient(135deg, rgba(21,101,192,0.97) 0%, rgba(30, 43, 107,0.95) 50%, rgba(13,71,161,0.97) 100%);
+    background: linear-gradient(135deg, rgba(53,71,155,0.97) 0%, rgba(30, 43, 107,0.95) 50%, rgba(30,43,107,0.97) 100%);
   }
   .gradient-surface {
     background: linear-gradient(145deg, #eef2f8 0%, #e7edf6 50%, #edf1f8 100%);
