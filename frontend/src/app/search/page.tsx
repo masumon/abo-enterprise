@@ -3,26 +3,24 @@
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Search, Package, Calendar, Briefcase, BookOpen } from "lucide-react";
+import { useLanguageStore } from "@/store/language";
+import SearchField from "@/components/search/SearchField";
 import { loadProducts, loadServices, peekCachedProducts, peekCachedServices } from "@/lib/catalogLoader";
 import type { Product, Service, BlogPost } from "@/types";
-import { ProductCardSkeleton } from "@/components/common/Skeletons";
-import { useLanguageStore } from "@/store/language";
-import PageHero from "@/components/ui/PageHero";
-import SearchField from "@/components/search/SearchField";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { WHATSAPP_NUMBER } from "@/lib/utils";
+import PageHero from "@/components/ui/PageHero";
 
 interface Result {
-  type: "product" | "service" | "project" | "blog";
+  type: "product" | "service" | "blog";
   id: string;
   title: string;
   subtitle: string;
   href: string;
   price?: number;
+  priceLabel?: string;
 }
 
-// Blog isn't in the catalog loader, so query the public blog endpoint and
-// filter client-side by title/excerpt/content. Read-only, best-effort.
 async function searchBlog(query: string): Promise<BlogPost[]> {
   try {
     const res = await fetch(`${getApiBaseUrl()}/api/v1/blog?per_page=50`, {
@@ -43,9 +41,6 @@ async function searchBlog(query: string): Promise<BlogPost[]> {
   }
 }
 
-// Every service links to its exact detail URL — /services/[...segments]
-// resolves every slug (service first, then category, then the legacy
-// printing/legal/software fallbacks), so this is always the canonical page.
 function resolveServiceHref(slug: string): string {
   return `/services/${slug}`;
 }
@@ -56,9 +51,10 @@ function toResults(products: Product[], services: Service[], posts: BlogPost[], 
     type: "product",
     id: p.id ?? p.slug,
     title: lang === "bn" && p.name_bn ? p.name_bn : p.name_en,
-    subtitle: `৳${p.price?.toLocaleString("bn-BD") ?? "—"}`,
+    subtitle: p.category ?? "",
     href: `/products/${p.slug}`,
     price: p.price,
+    priceLabel: `৳${p.price?.toLocaleString("bn-BD") ?? "—"}`,
   }));
   services.forEach((s) => items.push({
     type: "service",
@@ -66,6 +62,7 @@ function toResults(products: Product[], services: Service[], posts: BlogPost[], 
     title: lang === "bn" && s.name_bn ? s.name_bn : s.name_en,
     subtitle: s.category ?? "",
     href: resolveServiceHref(s.slug),
+    priceLabel: s.base_price ? `৳${s.base_price.toLocaleString("bn-BD")}` : (lang === "bn" ? "কোটেশন" : "Quote"),
   }));
   posts.forEach((p) => items.push({
     type: "blog",
@@ -77,16 +74,36 @@ function toResults(products: Product[], services: Service[], posts: BlogPost[], 
   return items;
 }
 
+type TypeFilter = "all" | "product" | "service" | "blog";
+
+function HighlightMatch({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <>{text}</>;
+  const words = query.trim().split(/\s+/).filter(Boolean);
+  const escaped = words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
+  const parts = text.split(pattern);
+  return (
+    <>
+      {parts.map((part, i) =>
+        pattern.test(part) ? (
+          <mark key={i} className="bg-accent-50 dark:bg-accent-900/30 text-inherit rounded-sm px-0.5">{part}</mark>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
 function SearchResults() {
   const params = useSearchParams();
   const { lang } = useLanguageStore();
   const q = params.get("q") || "";
   const [results, setResults] = useState<Result[]>([]);
   const [loading, setLoading] = useState(false);
+  const [blogLoading, setBlogLoading] = useState(false);
   const [fromCache, setFromCache] = useState(false);
-  // Core (product + service) and blog results are tracked separately so a slow
-  // blog request — e.g. a cold-starting free-tier backend — never delays the
-  // main results. Each resolves independently and is merged as it arrives.
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const coreRef = useRef<Result[]>([]);
   const blogRef = useRef<Result[]>([]);
 
@@ -97,6 +114,8 @@ function SearchResults() {
     }
     setLoading(true);
     setFromCache(false);
+    setBlogLoading(true);
+    setTypeFilter("all");
     coreRef.current = [];
     blogRef.current = [];
     let active = true;
@@ -116,8 +135,6 @@ function SearchResults() {
       }
     });
 
-    // Products + services drive the visible results; blog is appended when it
-    // arrives so it can never block the core search on a slow backend.
     Promise.allSettled([
       loadProducts(searchParams),
       loadServices(searchParams),
@@ -135,9 +152,13 @@ function SearchResults() {
     });
 
     searchBlog(q).then((posts) => {
-      if (!active || posts.length === 0) return;
+      if (!active) return;
       blogRef.current = toResults([], [], posts, lang);
       setResults([...coreRef.current, ...blogRef.current]);
+      setBlogLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      setBlogLoading(false);
     });
 
     return () => {
@@ -145,8 +166,13 @@ function SearchResults() {
     };
   }, [q, lang]);
 
-  const ICONS = { product: Package, service: Calendar, project: Briefcase, blog: BookOpen };
-  const COLORS = { product: "text-brand-600 bg-brand-50", service: "text-green-600 bg-green-50", project: "text-brand-600 bg-brand-50", blog: "text-accent-600 bg-accent-50" };
+  const productResults = results.filter((r) => r.type === "product");
+  const serviceResults = results.filter((r) => r.type === "service");
+  const blogResults = results.filter((r) => r.type === "blog");
+  const filtered = typeFilter === "all" ? results : results.filter((r) => r.type === typeFilter);
+  const total = results.length;
+
+  const TYPE_EMOJI: Record<string, string> = { product: "📦", service: "🧾", blog: "📝" };
 
   const title = q
     ? lang === "bn" ? `"${q}" এর ফলাফল` : `Results for "${q}"`
@@ -154,33 +180,234 @@ function SearchResults() {
 
   return (
     <main className="min-h-screen page-surface">
-      <PageHero
-        pageKey="search"
-        title={title}
-        subtitle={q ? (lang === "bn" ? `${results.length}টি ফলাফল` : `${results.length} results found`) : (lang === "bn" ? "পণ্য, সেবা, সফটওয়্যার ও ব্লগ খুঁজুন" : "Find products, services, software & blog")}
-        breadcrumbs={[
-          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
-          { label: lang === "bn" ? "খুঁজুন" : "Search" },
-        ]}
-        variant="light"
-      />
-      <div className="container mx-auto px-4 py-10 max-w-3xl">
-        {/* GAP-03 — the query is now editable in place. Search is iterative;
-            without this the page was a dead end and the 404 page's search box
-            disappeared the moment it routed here. */}
+      {/* ── Desktop: keep PageHero for visual consistency ── */}
+      <div className="hidden lg:block">
+        <PageHero
+          pageKey="search"
+          title={title}
+          subtitle={q ? (lang === "bn" ? `${total}টি ফলাফল` : `${total} results found`) : (lang === "bn" ? "পণ্য, সেবা, সফটওয়্যার ও ব্লগ খুঁজুন" : "Find products, services, software & blog")}
+          breadcrumbs={[
+            { label: lang === "bn" ? "হোম" : "Home", href: "/" },
+            { label: lang === "bn" ? "খুঁজুন" : "Search" },
+          ]}
+          variant="light"
+        />
+      </div>
+
+      {/* ── Mobile: artifact Screen 05 layout ── */}
+      <div className="lg:hidden">
+        {/* Sticky search bar */}
+        <div className="sticky top-[var(--navbar-offset)] z-30 bg-white dark:bg-[var(--surface-card)] border-b border-[var(--line)] px-3 py-2">
+          <SearchField initialQuery={q} className="" />
+        </div>
+
+        {/* Cache banner */}
+        {fromCache && total > 0 && (
+          <div className="mx-3 mt-2 flex items-center gap-2 text-[11px] font-semibold px-3 py-2 rounded-lg bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+            <span aria-hidden>💾</span>
+            <span>{lang === "bn" ? "সংরক্ষিত ফলাফল দেখানো হচ্ছে" : "Showing saved results"}</span>
+          </div>
+        )}
+
+        {/* Typed filter chips */}
+        {q && !loading && total > 0 && (
+          <div className="flex gap-1.5 px-3 py-2 overflow-x-auto scrollbar-hide">
+            {([
+              { key: "all" as TypeFilter, label: lang === "bn" ? `সব ${total}` : `All ${total}` },
+              ...(productResults.length > 0 ? [{ key: "product" as TypeFilter, label: lang === "bn" ? `পণ্য ${productResults.length}` : `Products ${productResults.length}` }] : []),
+              ...(serviceResults.length > 0 ? [{ key: "service" as TypeFilter, label: lang === "bn" ? `সেবা ${serviceResults.length}` : `Services ${serviceResults.length}` }] : []),
+              ...(blogResults.length > 0 ? [{ key: "blog" as TypeFilter, label: lang === "bn" ? `ব্লগ ${blogResults.length}` : `Blog ${blogResults.length}` }] : []),
+            ]).map((chip) => (
+              <button
+                key={chip.key}
+                type="button"
+                onClick={() => setTypeFilter(chip.key)}
+                className={
+                  typeFilter === chip.key
+                    ? "flex-none text-[11px] font-semibold py-1.5 px-3 rounded-full bg-[var(--ink)] text-[var(--ground,#f1f2f7)] border border-[var(--ink)]"
+                    : "flex-none text-[11px] font-medium py-1.5 px-3 rounded-full border border-[var(--line)] text-[var(--ink-muted)] bg-white dark:bg-[var(--surface)]"
+                }
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Results */}
+        <div className="px-3 pb-24">
+          {loading ? (
+            <div className="space-y-3 pt-3" aria-busy="true">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-3 py-3 border-b border-[var(--line)]">
+                  <div className="w-[42px] h-[42px] rounded-lg bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse flex-none" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3.5 w-3/4 rounded bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
+                    <div className="h-3 w-1/2 rounded bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : total === 0 && q ? (
+            <div className="pt-8 pb-4 text-center">
+              <p className="text-sm text-[var(--ink-muted)]">
+                {lang === "bn" ? "কোনো ফলাফল পাওয়া যায়নি।" : "No results found."}
+              </p>
+              <div className="mt-6 rounded-xl border border-brand-200 dark:border-brand-800 bg-brand-50 dark:bg-brand-900/20 p-4">
+                <p className="text-[12.5px] font-semibold text-[var(--ink)]">
+                  {lang === "bn" ? "খুঁজে পাচ্ছেন না?" : "Can't find it?"}
+                </p>
+                <p className="text-[11px] text-[var(--ink-muted)] mt-1 mb-3">
+                  {lang === "bn" ? "আমরা সোর্স করতে পারি কিনা জানান।" : "Let us know if we can source it."}
+                </p>
+                <a
+                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lang === "bn" ? `আমি "${q}" খুঁজছি` : `I'm looking for "${q}"`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full text-center text-xs font-semibold py-2.5 px-4 rounded-lg border border-[var(--line)] text-[var(--ink)] hover:border-brand-300"
+                >
+                  {lang === "bn" ? "WhatsApp-এ জানান" : "Ask on WhatsApp"}
+                </a>
+              </div>
+            </div>
+          ) : typeFilter === "all" ? (
+            <>
+              {/* Grouped by type — artifact layout */}
+              {productResults.length > 0 && (
+                <div className="pt-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--ink-muted)] mb-1.5">
+                    {lang === "bn" ? `পণ্য · ${productResults.length}` : `Products · ${productResults.length}`}
+                  </p>
+                  <div className="divide-y divide-[var(--line)]">
+                    {productResults.map((r) => (
+                      <Link key={r.id} href={r.href} className="flex items-center gap-3 py-3 min-h-[44px]">
+                        <span className="w-[42px] h-[42px] rounded-lg bg-gradient-to-br from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/20 flex-none flex items-center justify-center text-sm" aria-hidden>
+                          {TYPE_EMOJI.product}
+                        </span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-[13px] font-semibold text-[var(--ink)] truncate">
+                            <HighlightMatch text={r.title} query={q} />
+                          </span>
+                          <span className="block text-[11px] text-[var(--ink-muted)] truncate">
+                            {r.subtitle}{r.subtitle ? " · " : ""}{lang === "bn" ? "স্টকে" : "in stock"}
+                          </span>
+                        </span>
+                        <span className="text-[13px] font-semibold text-[var(--ink)] flex-none">{r.priceLabel}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {serviceResults.length > 0 && (
+                <div className="pt-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--ink-muted)] mb-1.5">
+                    {lang === "bn" ? `সেবা · ${serviceResults.length}` : `Services · ${serviceResults.length}`}
+                  </p>
+                  <div className="divide-y divide-[var(--line)]">
+                    {serviceResults.map((r) => (
+                      <Link key={r.id} href={r.href} className="flex items-center gap-3 py-3 min-h-[44px]">
+                        <span className="text-sm flex-none" aria-hidden>🧾</span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-[13px] font-semibold text-[var(--ink)] truncate">
+                            <HighlightMatch text={r.title} query={q} />
+                          </span>
+                          <span className="block text-[11px] text-[var(--ink-muted)] truncate">{r.subtitle}</span>
+                        </span>
+                        <span className="text-[13px] font-semibold text-[var(--ink)] flex-none">{r.priceLabel}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {blogLoading && blogResults.length === 0 && (
+                <div className="pt-4 pb-2">
+                  <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--ink-muted)]">
+                    {lang === "bn" ? "আর্টিকেল খুঁজছে…" : "Searching articles…"}
+                  </span>
+                  <div className="mt-2 space-y-2">
+                    <div className="h-3.5 w-3/4 rounded bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
+                    <div className="h-3 w-1/2 rounded bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
+                  </div>
+                </div>
+              )}
+              {blogResults.length > 0 && (
+                <div className="pt-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--ink-muted)] mb-1.5">
+                    {lang === "bn" ? `ব্লগ · ${blogResults.length}` : `Blog · ${blogResults.length}`}
+                  </p>
+                  <div className="divide-y divide-[var(--line)]">
+                    {blogResults.map((r) => (
+                      <Link key={r.id} href={r.href} className="flex items-center gap-3 py-3 min-h-[44px]">
+                        <span className="text-sm flex-none" aria-hidden>📝</span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-[13px] font-semibold text-[var(--ink)] truncate">
+                            <HighlightMatch text={r.title} query={q} />
+                          </span>
+                          <span className="block text-[11px] text-[var(--ink-muted)] truncate">{r.subtitle}</span>
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* "Can't find it?" card — always visible when there are results */}
+              {total > 0 && (
+                <div className="mt-6 rounded-xl border border-brand-200 dark:border-brand-800 bg-brand-50 dark:bg-brand-900/20 p-4">
+                  <p className="text-[12.5px] font-semibold text-[var(--ink)]">
+                    {lang === "bn" ? "খুঁজে পাচ্ছেন না?" : "Can't find it?"}
+                  </p>
+                  <p className="text-[11px] text-[var(--ink-muted)] mt-1 mb-3">
+                    {lang === "bn" ? "আমরা সোর্স করতে পারি কিনা জানান।" : "Let us know if we can source it."}
+                  </p>
+                  <a
+                    href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lang === "bn" ? `আমি "${q}" খুঁজছি` : `I'm looking for "${q}"`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full text-center text-xs font-semibold py-2.5 px-4 rounded-lg border border-[var(--line)] text-[var(--ink)] hover:border-brand-300"
+                  >
+                    {lang === "bn" ? "WhatsApp-এ জানান" : "Ask on WhatsApp"}
+                  </a>
+                </div>
+              )}
+            </>
+          ) : (
+            /* Filtered by single type */
+            <div className="pt-3 divide-y divide-[var(--line)]">
+              {filtered.map((r) => (
+                <Link key={r.id + r.type} href={r.href} className="flex items-center gap-3 py-3 min-h-[44px]">
+                  <span className={`flex-none ${r.type === "product" ? "w-[42px] h-[42px] rounded-lg bg-gradient-to-br from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/20 flex items-center justify-center text-sm" : "text-sm"}`} aria-hidden>
+                    {TYPE_EMOJI[r.type] ?? "📄"}
+                  </span>
+                  <span className="flex-1 min-w-0">
+                    <span className="block text-[13px] font-semibold text-[var(--ink)] truncate">
+                      <HighlightMatch text={r.title} query={q} />
+                    </span>
+                    <span className="block text-[11px] text-[var(--ink-muted)] truncate">{r.subtitle}</span>
+                  </span>
+                  {r.priceLabel && <span className="text-[13px] font-semibold text-[var(--ink)] flex-none">{r.priceLabel}</span>}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Desktop: existing layout ── */}
+      <div className="hidden lg:block container mx-auto px-4 py-10 max-w-3xl">
         <SearchField initialQuery={q} className="mb-6" />
-        {fromCache && results.length > 0 && (
+        {fromCache && total > 0 && (
           <p className="text-sm text-brand-700 bg-brand-50 border border-brand-200 rounded-xl px-4 py-2 mb-4" role="status">
             {lang === "bn" ? "সংরক্ষিত ফলাফল দেখানো হচ্ছে" : "Showing saved results"}
           </p>
         )}
         {loading ? (
           <div className="grid gap-4" aria-busy="true">
-            {[1, 2, 3].map((i) => <ProductCardSkeleton key={i} />)}
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-20 rounded-xl bg-gray-100 dark:bg-white/5 motion-safe:animate-pulse" />
+            ))}
           </div>
-        ) : results.length === 0 && q ? (
+        ) : total === 0 && q ? (
           <div className="text-center py-16 enterprise-card p-8">
-            <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-muted">
               {lang === "bn" ? "কোনো ফলাফল পাওয়া যায়নি।" : "No results found."}
             </p>
@@ -195,28 +422,22 @@ function SearchResults() {
           </div>
         ) : (
           <div className="space-y-3">
-            {results.map((r) => {
-              const Icon = ICONS[r.type];
-              const color = COLORS[r.type];
-              return (
-                <Link
-                  key={r.id + r.type}
-                  href={r.href}
-                  className="flex items-center gap-4 enterprise-card p-4 hover:shadow-md transition-all"
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${color}`}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-heading truncate">{r.title}</p>
-                    <p className="text-sm text-muted">{r.subtitle}</p>
-                  </div>
-                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${color}`}>
-                    {r.type}
-                  </span>
-                </Link>
-              );
-            })}
+            {results.map((r) => (
+              <Link
+                key={r.id + r.type}
+                href={r.href}
+                className="flex items-center gap-4 enterprise-card p-4 hover:shadow-md transition-all"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-heading truncate">{r.title}</p>
+                  <p className="text-sm text-muted">{r.subtitle}</p>
+                </div>
+                {r.priceLabel && <span className="text-sm font-medium">{r.priceLabel}</span>}
+                <span className="text-xs font-medium px-2 py-1 rounded-full bg-brand-50 text-brand-600">
+                  {r.type}
+                </span>
+              </Link>
+            ))}
           </div>
         )}
       </div>

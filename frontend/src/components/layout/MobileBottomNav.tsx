@@ -62,7 +62,7 @@ export default function MobileBottomNav() {
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 lg:hidden grid grid-cols-5 bg-white dark:bg-[var(--surface-card)] border-t border-gray-200 dark:border-white/10"
+        className="fixed inset-x-0 bottom-0 z-50 lg:hidden grid grid-cols-5 bg-white dark:bg-[var(--surface-card)] border-t border-[var(--line)]"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         aria-label={lang === "bn" ? "মোবাইল নেভিগেশন" : "Mobile navigation"}
       >
@@ -83,6 +83,9 @@ export default function MobileBottomNav() {
             >
               <span className="relative">
                 <Icon className="w-[18px] h-[18px]" strokeWidth={active ? 2.5 : 2} />
+                {item.href === "/search" && !active && (
+                  <span className="absolute -top-0.5 -right-0.5 w-[6px] h-[6px] rounded-full bg-accent-500" aria-hidden />
+                )}
                 {item.href === "/cart" && showBadge && (
                   <span
                     className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] px-0.5 rounded-full bg-accent-500 text-[#14182b] text-[9px] font-bold flex items-center justify-center"
