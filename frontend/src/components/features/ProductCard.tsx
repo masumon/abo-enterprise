@@ -14,6 +14,7 @@ import { formatPrice, discountPercent } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { resolveProductImage } from "@/lib/demoImages";
 import Badge, { badgeVariantFromProduct } from "@/components/ui/Badge";
+import CountdownTimer, { getWeeklySaleEnd } from "@/components/ui/CountdownTimer";
 import type { Product } from "@/types";
 
 interface Props {
@@ -210,6 +211,9 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
             <span className="text-xs text-gray-400 line-through">{formatPrice(product.original_price)}</span>
           )}
         </div>
+        {flashLive && (
+          <CountdownTimer endDate={getWeeklySaleEnd()} label={lang === "bn" ? "ফ্ল্যাশ সেল শেষ" : "Flash sale ends"} className="mb-2 text-xs" />
+        )}
         <div className="flex flex-wrap gap-1 mb-3">
           {!isOutOfStock && (
             <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100">
