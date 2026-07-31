@@ -9,6 +9,7 @@ import {
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
 import { useThemeStore } from "@/store/theme";
+import { useCustomerStore } from "@/store/customer";
 import { useT } from "@/lib/i18n/useT";
 import SearchSuggestions from "@/components/search/SearchSuggestions";
 import MegaMenu from "@/components/layout/MegaMenu";
@@ -33,6 +34,8 @@ export default function Navbar() {
   const { itemCount } = useCartStore();
   const { lang, toggle } = useLanguageStore();
   const { theme, toggle: toggleTheme } = useThemeStore();
+  const customerSession = useCustomerStore((s) => s.session);
+  const isSignedIn = Boolean(customerSession?.token);
   const count = itemCount();
   const productRoots = useTaxonomy("product");
   const serviceRoots = useTaxonomy("service");
@@ -197,16 +200,17 @@ export default function Navbar() {
               {lang === "en" ? "বাং" : "EN"}
             </button>
 
+            {/* GAP-26 — Account icon is session-aware: signed in → profile, else → login */}
             <Link
-              href="/login"
-              aria-label={lang === "bn" ? "গ্রাহক লগইন / ড্যাশবোর্ড" : "Customer login / dashboard"}
-              title={lang === "bn" ? "গ্রাহক লগইন" : "Customer login"}
+              href={isSignedIn ? "/profile" : "/login"}
+              aria-label={isSignedIn ? (lang === "bn" ? "আমার প্রোফাইল" : "My profile") : (lang === "bn" ? "গ্রাহক লগইন" : "Customer login")}
+              title={isSignedIn ? (lang === "bn" ? "আমার প্রোফাইল" : "My profile") : (lang === "bn" ? "গ্রাহক লগইন" : "Customer login")}
               className={cn(
                 "w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation",
                 searchOpen && "hidden"
               )}
             >
-              <User className="w-[19px] h-[19px]" strokeWidth={2.5} />
+              <User className={cn("w-[19px] h-[19px]", isSignedIn && "fill-current")} strokeWidth={2.5} />
             </Link>
 
             <Link
