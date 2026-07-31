@@ -51,7 +51,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
   const strikePrice = flashLive ? product.price : product.original_price;
   const discount = strikePrice ? discountPercent(strikePrice, effectivePrice) : null;
   const isOutOfStock = product.stock_quantity === 0;
-  const rating = product.rating ?? 4.5;
+  const rating = product.rating ?? 0;
   const reviewCount = product.review_count ?? 0;
   const alt = productAlt(product, lang);
   const imageSrc = resolveProductImage(product.image_url, product.slug);
@@ -99,11 +99,15 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
             <Badge variant="outline" className="text-[10px] capitalize mb-1">{product.category}</Badge>
           )}
           <h3 className="font-semibold text-heading line-clamp-2">{lang === "bn" ? product.name_bn : product.name_en}</h3>
-          <div className="flex items-center gap-1 mt-1">
-            <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" aria-hidden />
-            <span className="text-xs text-gray-500">{rating.toFixed(1)}</span>
-            {reviewCount > 0 && <span className="text-xs text-gray-400">({reviewCount})</span>}
-          </div>
+          {reviewCount > 0 ? (
+            <div className="flex items-center gap-1 mt-1">
+              <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" aria-hidden />
+              <span className="text-xs text-gray-500">{rating.toFixed(1)}</span>
+              <span className="text-xs text-gray-400">({reviewCount})</span>
+            </div>
+          ) : (
+            <span className="text-xs text-gray-400 mt-1">{lang === "bn" ? "এখনো রিভিউ নেই" : "No reviews yet"}</span>
+          )}
           <div className="flex items-baseline gap-2 mt-2">
             <span className={cn("text-lg font-bold", flashLive ? "text-red-600" : "text-accent-600")}>
               {formatPrice(effectivePrice)}
@@ -184,9 +188,15 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
 
       <div className="flex flex-col flex-1 p-4">
         <div className="flex items-center gap-1 mb-1.5">
-          <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" aria-hidden />
-          <span className="text-xs text-gray-500 font-medium">{rating.toFixed(1)}</span>
-          {reviewCount > 0 && <span className="text-xs text-gray-400">({reviewCount})</span>}
+          {reviewCount > 0 ? (
+            <>
+              <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" aria-hidden />
+              <span className="text-xs text-gray-500 font-medium">{rating.toFixed(1)}</span>
+              <span className="text-xs text-gray-400">({reviewCount})</span>
+            </>
+          ) : (
+            <span className="text-xs text-gray-400">{lang === "bn" ? "এখনো রিভিউ নেই" : "No reviews yet"}</span>
+          )}
           <span className="text-xs text-gray-300 ml-auto">
             {isOutOfStock ? t("out_of_stock") : t("in_stock")}
           </span>
