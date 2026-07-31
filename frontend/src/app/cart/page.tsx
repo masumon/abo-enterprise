@@ -58,8 +58,18 @@ export default function CartPage() {
     setCouponError(null);
     try {
       setAppliedCoupon(await validateCoupon(coupon, cartSubtotal));
-    } catch {
-      setCouponError(lang === "bn" ? "কুপন সঠিক নয়" : "Invalid coupon");
+    } catch (err) {
+      const msg = (err as Error).message || "Invalid coupon";
+      // Translate error reasons to user's language
+      const errorMap: Record<string, { en: string; bn: string }> = {
+        "Coupon does not exist": { en: "Coupon does not exist", bn: "এই কুপন নেই" },
+        "Coupon has expired": { en: "Coupon has expired", bn: "কুপনের মেয়াদ শেষ" },
+        "Order total is below minimum amount": { en: "Order amount too low", bn: "অর্ডার সর্বনিম্ন পরিমাণের নিচে" },
+        "Coupon has already been used": { en: "Coupon already used", bn: "এই কুপন আগে ব্যবহৃত" },
+        "Invalid coupon": { en: "Invalid coupon", bn: "অবৈধ কুপন" },
+      };
+      const translated = errorMap[msg] || { en: msg, bn: msg };
+      setCouponError(lang === "bn" ? translated.bn : translated.en);
     }
   };
 
