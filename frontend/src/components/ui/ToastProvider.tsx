@@ -45,7 +45,8 @@ export default function ToastProvider() {
         return (
           <div
             key={toast.id}
-            className="pointer-events-auto flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-[#14182b] text-[#f1f2f7] shadow-glass-strong motion-safe:animate-slide-up"
+            className="pointer-events-auto flex items-center gap-2.5 px-3 py-2.5 rounded-lg shadow-glass-strong motion-safe:animate-slide-up"
+            style={{ backgroundColor: "var(--ink)", color: "var(--surface-light)" }}
             role="alert"
           >
             <Icon className={cn("w-4 h-4 flex-shrink-0", ICON_TONE[toast.type])} />

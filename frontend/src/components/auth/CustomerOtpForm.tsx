@@ -85,7 +85,7 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
     return (
       <form onSubmit={verifyOtp} className="space-y-4">
         {error && (
-          <p role="alert" className="text-sm text-red-600 bg-red-50 dark:bg-red-900/20 rounded-lg px-3 py-2">{error}</p>
+          <p role="alert" className="alert-error">{error}</p>
         )}
         <p className="text-sm text-muted">
           {bn ? `${email} ঠিকানায় ৪ সংখ্যার কোড পাঠানো হয়েছে (ইনবক্স/স্প্যাম দেখুন)` : `A 4-digit code was sent to ${email} (check inbox/spam)`}

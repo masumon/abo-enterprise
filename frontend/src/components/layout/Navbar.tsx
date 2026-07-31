@@ -67,7 +67,7 @@ export default function Navbar() {
         className="lg:hidden flex items-center gap-2 px-3 min-h-[48px] bg-white dark:bg-[var(--surface-card)] border-b border-[var(--line)] dark:border-[var(--line)]"
         aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
       >
-        <Link href="/" className="font-display font-bold text-[15px] tracking-[-0.01em] text-[var(--ink)]">
+        <Link href="/" className="font-display font-bold text-base tracking-[-0.01em] text-[var(--ink)]">
           ABO<span className="text-[var(--accent-deep,#a87008)]">.</span>
         </Link>
         <span className="flex-1" />
@@ -140,7 +140,7 @@ export default function Navbar() {
               <span className="font-bold text-lg tracking-tight block text-brand-800 dark:text-white truncate">
                 {getBrandName(lang)}
               </span>
-              <p className="text-[10px] font-medium text-brand-600/90 dark:text-brand-200/80 truncate max-w-[15rem] leading-snug">
+              <p className="text-xs font-medium text-brand-600/90 dark:text-brand-200/80 truncate max-w-[15rem] leading-snug">
                 {getBrandTagline(lang)}
               </p>
             </span>
@@ -177,7 +177,7 @@ export default function Navbar() {
               <button type="button" onClick={() => setSearchOpen(true)}
                 className="w-11 h-11 flex items-center justify-center rounded-full text-gray-600 dark:text-gray-300 hover:bg-brand-50/80 dark:hover:bg-white/10 hover:scale-110 active:scale-95 transition-all duration-200 touch-manipulation"
                 aria-label={t("nav_search")}>
-                <Search className="w-[19px] h-[19px]" strokeWidth={2.5} />
+                <Search className="w-5 h-5" strokeWidth={2.5} />
               </button>
             )}
 

@@ -167,12 +167,6 @@
     @apply bg-[var(--surface-card)] text-gray-100;
   }
 
-  .dark .card {
-    background: color-mix(in srgb, var(--surface-card) 94%, transparent);
-    border-color: rgba(96, 165, 250, 0.14);
-    color: rgb(243 244 246);
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(59, 130, 246, 0.06);
-  }
 
   .dark .btn-outline {
     @apply border-brand-700 text-brand-300 hover:bg-brand-900/40;
@@ -288,7 +282,7 @@
 
   /* ── Glass Cards ── */
   .card {
-    @apply rounded-2xl border border-gray-100 bg-white transition-all duration-300;
+    @apply rounded-xl border border-gray-100 dark:border-brand-400/15 bg-white transition-all duration-300;
     box-shadow: 0 2px 12px rgba(30, 43, 107,0.06), 0 1px 3px rgba(0,0,0,0.04);
   }
   .card-hover {
@@ -296,6 +290,11 @@
   }
   .card-hover:hover {
     box-shadow: 0 12px 40px rgba(30, 43, 107,0.12), 0 4px 12px rgba(0,0,0,0.06);
+  }
+  .dark .card {
+    background: color-mix(in srgb, var(--surface-card) 94%, transparent);
+    color: rgb(243 244 246);
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(59, 130, 246, 0.06);
   }
   .glass {
     background: var(--glass-bg);
@@ -780,18 +779,12 @@
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
 
-  /* ── Enterprise design system ── */
+  /* ── Enterprise design system (unified with .card) ── */
   .enterprise-card {
-    @apply rounded-xl border border-gray-100 dark:border-brand-400/15 bg-white transition-all duration-300;
-    box-shadow: 0 2px 12px rgba(30, 43, 107,0.06), 0 1px 3px rgba(0,0,0,0.04);
-  }
-  .dark .enterprise-card {
-    background: color-mix(in srgb, var(--surface-card) 96%, transparent);
-    color: rgb(243 244 246);
-    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(59, 130, 246, 0.07);
+    @apply card;
   }
   .enterprise-card-hover {
-    @apply enterprise-card hover:-translate-y-1 hover:shadow-card-hover;
+    @apply card-hover;
   }
   .enterprise-section {
     @apply py-14 md:py-20;
