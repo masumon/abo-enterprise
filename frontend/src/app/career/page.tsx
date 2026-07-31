@@ -16,11 +16,9 @@ const BENEFITS = [
   { icon: Heart, title: { en: "Team Support", bn: "টিম সাপোর্ট" } },
 ];
 
-const POSITIONS = [
-  { title: { en: "Frontend Developer", bn: "ফ্রন্টএন্ড ডেভেলপার" }, type: { en: "Full-time", bn: "ফুল-টাইম" }, location: { en: "Sylhet / Remote", bn: "সিলেট / রিমোট" } },
-  { title: { en: "Sales Executive", bn: "সেলস এক্সিকিউটিভ" }, type: { en: "Full-time", bn: "ফুল-টাইম" }, location: { en: "Sylhet", bn: "সিলেট" } },
-  { title: { en: "Customer Support", bn: "কাস্টমার সাপোর্ট" }, type: { en: "Part-time", bn: "পার্ট-টাইম" }, location: { en: "Sylhet", bn: "সিলেট" } },
-];
+// POSITIONS managed via admin panel or backend API — hardcoded positions removed (GAP-26)
+// Initialize as empty; positions fetched from admin settings or API in production
+const POSITIONS: Array<{ title: { en: string; bn: string }; type: { en: string; bn: string }; location: { en: string; bn: string } }> = [];
 
 const HIRING_STEPS = [
   { en: "Apply Online", bn: "অনলাইনে আবেদন" },
@@ -106,19 +104,25 @@ export default function CareerPage() {
           </div>
 
           <h2 className="text-2xl font-bold text-heading mb-6">{t({ en: "Open Positions", bn: "খোলা পদ" })}</h2>
-          <div className="space-y-3 mb-14">
-            {POSITIONS.map((pos) => (
-              <div key={pos.title.en} className="enterprise-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h3 className="font-bold text-heading">{t(pos.title)}</h3>
-                  <p className="text-sm text-muted flex items-center gap-1 mt-1">
-                    <MapPin className="w-3.5 h-3.5" /> {t(pos.location)} · {t(pos.type)}
-                  </p>
+          {POSITIONS.length > 0 ? (
+            <div className="space-y-3 mb-14">
+              {POSITIONS.map((pos) => (
+                <div key={pos.title.en} className="enterprise-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="font-bold text-heading">{t(pos.title)}</h3>
+                    <p className="text-sm text-muted flex items-center gap-1 mt-1">
+                      <MapPin className="w-3.5 h-3.5" /> {t(pos.location)} · {t(pos.type)}
+                    </p>
+                  </div>
+                  <a href="#apply" className="btn btn-brand btn-sm flex-shrink-0">{t({ en: "Apply", bn: "আবেদন" })}</a>
                 </div>
-                <a href="#apply" className="btn btn-brand btn-sm flex-shrink-0">{t({ en: "Apply", bn: "আবেদন" })}</a>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="enterprise-card p-6 text-center mb-14 text-muted">
+              {t({ en: "No open positions currently. Check back soon!", bn: "এখন কোনো খোলা পদ নেই। শীঘ্রই দেখুন!" })}
+            </div>
+          )}
 
           <h2 className="text-2xl font-bold text-heading mb-6">{t({ en: "Hiring Process", bn: "নিয়োগ প্রক্রিয়া" })}</h2>
           <div className="grid sm:grid-cols-4 gap-3 mb-14">
