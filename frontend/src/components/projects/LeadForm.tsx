@@ -123,7 +123,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
         </label>
         <select
           {...register("lead_type")}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="input"
         >
           <option value="">Select a service...</option>
           {SERVICE_OPTIONS.map((option) => (
@@ -145,7 +145,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
         <input
           type="text"
           {...register("name")}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="input"
           placeholder="Your full name"
         />
         {errors.name && (
@@ -162,7 +162,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
           <input
             type="email"
             {...register("email")}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="input"
             placeholder="your@email.com"
           />
           {errors.email && (
@@ -177,7 +177,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
           <input
             type="tel"
             {...register("phone")}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="input"
             placeholder="01XXXXXXXXX"
           />
           {errors.phone && (
@@ -194,7 +194,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
         <input
           type="text"
           {...register("company")}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="input"
           placeholder="Company name"
         />
       </div>
@@ -207,7 +207,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
         <textarea
           {...register("project_description")}
           rows={4}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="input"
           placeholder="Tell us about your project..."
         />
         {errors.project_description && (
@@ -223,7 +223,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
         <textarea
           {...register("requirements")}
           rows={4}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="input"
           placeholder="What are your specific requirements?"
         />
         {errors.requirements && (
@@ -241,13 +241,13 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
             <input
               type="number"
               {...register("budget_min", { valueAsNumber: true })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="input"
               placeholder="Min budget (BDT)"
             />
             <input
               type="number"
               {...register("budget_max", { valueAsNumber: true })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="input"
               placeholder="Max budget (BDT)"
             />
           </div>
@@ -259,7 +259,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
           </label>
           <select
             {...register("timeline")}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="input"
           >
             <option value="">Select timeline...</option>
             {TIMELINE_OPTIONS.map((option) => (
@@ -296,7 +296,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
       <button
         type="submit"
         disabled={submitting}
-        className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 flex items-center justify-center gap-2"
+        className="btn btn-brand btn-md w-full flex items-center justify-center gap-2"
       >
         {submitting ? (
           <>

@@ -170,7 +170,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
         </Link>
       </div>
 
-      <div className="relative aspect-[4/5] sm:aspect-square bg-gradient-to-br from-brand-50 via-blue-50 to-brand-100 dark:from-brand-900/30 dark:via-brand-800/20 dark:to-brand-900/40 overflow-hidden pointer-events-none">
+      <div className="relative aspect-[4/5] sm:aspect-square bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-brand-900/40 overflow-hidden pointer-events-none">
         <Image src={imageSrc} alt={alt} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 50vw, 25vw" />
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2">
@@ -218,7 +218,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
         <div className="flex flex-wrap gap-1 mb-3 items-center">
           <PaymentMethodBadges />
           {reviewCount > 0 && (
-            <span className="text-[10px] text-gray-400 ml-auto">{reviewCount} {lang === "bn" ? "রিভিউ" : "reviews"}</span>
+            <span className="text-xs text-gray-400 ml-auto">{reviewCount} {lang === "bn" ? "রিভিউ" : "reviews"}</span>
           )}
         </div>
         <button type="button" onClick={handleAdd} disabled={isOutOfStock} className="btn btn-primary btn-sm w-full relative z-10 btn-ripple">
