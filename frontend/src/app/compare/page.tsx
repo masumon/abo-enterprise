@@ -145,7 +145,7 @@ export default function ComparePage() {
             {pairPicker(idxB, setPairB, lang === "bn" ? "দ্বিতীয়" : "Second")}
           </div>
         )}
-        <div className="md:hidden">
+        <div className="md:hidden overflow-x-auto">
           {renderTable(pair)}
         </div>
         <div className="hidden md:block overflow-x-auto">
