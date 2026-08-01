@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Phone, Mail, Clock, Facebook, MessageCircle } from "lucide-react";
+import { MapPin, Phone, Mail, Clock } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import GlassCard from "@/components/ui/GlassCard";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
@@ -9,6 +9,7 @@ import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
 import { resolveGoogleMapsEmbed, resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
 import { formatBdPhoneDisplay, toBdTelHref } from "@/lib/phone";
 import MapEmbed from "@/components/common/MapEmbed";
+import { SocialMediaLinks } from "@/components/ui/SocialMediaLinks";
 
 export default function ContactSection() {
   const { lang } = useLanguageStore();
@@ -56,13 +57,11 @@ export default function ContactSection() {
                 </div>
               ))}
             </div>
-            <div className="flex gap-2 pt-2">
-              <a href={getSettingValue(settings, "facebook_url", "https://www.facebook.com/abo.enterprise")} target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white hover:bg-blue-700" aria-label="Facebook">
-                <Facebook className="w-4 h-4" />
-              </a>
-              <a href={`https://wa.me/${getSettingValue(settings, "whatsapp_number", "8801825007977").replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 bg-green-500 rounded-lg flex items-center justify-center text-white hover:bg-green-600" aria-label="WhatsApp">
-                <MessageCircle className="w-4 h-4" />
-              </a>
+            <div className="pt-2">
+              <SocialMediaLinks
+                facebookUrl={getSettingValue(settings, "facebook_url", "https://www.facebook.com/abo.enterprise")}
+                whatsappNumber={getSettingValue(settings, "whatsapp_number", "8801825007977")}
+              />
             </div>
           </GlassCard>
 

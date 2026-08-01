@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { resolveProductImage } from "@/lib/demoImages";
 import Badge, { badgeVariantFromProduct } from "@/components/ui/Badge";
 import CountdownTimer, { getWeeklySaleEnd } from "@/components/ui/CountdownTimer";
+import { PaymentMethodBadges } from "@/components/ui/PaymentMethodBadge";
 import type { Product } from "@/types";
 
 interface Props {
@@ -97,7 +98,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
         </div>
         <div className="flex-1 min-w-0 relative z-10">
           {product.category && (
-            <Badge variant="outline" className="text-[10px] capitalize mb-1">{product.category}</Badge>
+            <Badge variant="outline" className="text-xs capitalize mb-1">{product.category}</Badge>
           )}
           <h3 className="font-semibold text-heading line-clamp-2">{lang === "bn" ? product.name_bn : product.name_en}</h3>
           {reviewCount > 0 ? (
@@ -110,7 +111,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
             <span className="text-xs text-gray-400 mt-1">{lang === "bn" ? "এখনো রিভিউ নেই" : "No reviews yet"}</span>
           )}
           <div className="flex items-baseline gap-2 mt-2">
-            <span className={cn("text-lg font-bold", flashLive ? "text-red-600" : "text-accent-600")}>
+            <span className="text-lg font-bold text-accent-600">
               {formatPrice(effectivePrice)}
             </span>
             {strikePrice && (
@@ -142,11 +143,11 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
             <Badge variant={badgeVariantFromProduct(product.badge)}>{product.badge}</Badge>
           )}
           {product.category && (
-            <Badge variant="outline" className="text-[10px] capitalize">{product.category}</Badge>
+            <Badge variant="outline" className="text-xs capitalize">{product.category}</Badge>
           )}
         </div>
         {discount && (
-          <Badge className={cn("ml-auto font-bold border-0 text-white", flashLive ? "bg-red-600" : "bg-red-500")}>
+          <Badge className="ml-auto font-bold border-0 text-white bg-accent-600">
             {flashLive ? "⚡ " : ""}-{discount}%
           </Badge>
         )}
@@ -169,7 +170,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
         </Link>
       </div>
 
-      <div className="relative aspect-[4/5] sm:aspect-square bg-gradient-to-br from-brand-50 via-blue-50 to-brand-100 overflow-hidden pointer-events-none">
+      <div className="relative aspect-[4/5] sm:aspect-square bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-brand-900/40 overflow-hidden pointer-events-none">
         <Image src={imageSrc} alt={alt} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 50vw, 25vw" />
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2">
@@ -206,7 +207,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
           {lang === "bn" ? product.name_bn : product.name_en}
         </h3>
         <div className="flex items-baseline gap-2 mb-2 mt-auto">
-          <span className="text-xl sm:text-2xl font-bold text-green-600">{formatPrice(product.price)}</span>
+          <span className="text-xl sm:text-2xl font-bold text-accent-600">{formatPrice(product.price)}</span>
           {product.original_price && (
             <span className="text-xs text-gray-400 line-through">{formatPrice(product.original_price)}</span>
           )}
@@ -214,16 +215,10 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
         {flashLive && (
           <CountdownTimer endDate={getWeeklySaleEnd()} label={lang === "bn" ? "ফ্ল্যাশ সেল শেষ" : "Flash sale ends"} className="mb-2 text-xs" />
         )}
-        <div className="flex flex-wrap gap-1 mb-3">
-          {!isOutOfStock && (
-            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-100">
-              {lang === "bn" ? "COD ✓" : "COD ✓"}
-            </span>
-          )}
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-pink-50 text-pink-700 border border-pink-100">bKash</span>
-          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-700 border border-orange-100">Nagad</span>
+        <div className="flex flex-wrap gap-1 mb-3 items-center">
+          <PaymentMethodBadges />
           {reviewCount > 0 && (
-            <span className="text-[10px] text-gray-400 ml-auto">{reviewCount} {lang === "bn" ? "রিভিউ" : "reviews"}</span>
+            <span className="text-xs text-gray-400 ml-auto">{reviewCount} {lang === "bn" ? "রিভিউ" : "reviews"}</span>
           )}
         </div>
         <button type="button" onClick={handleAdd} disabled={isOutOfStock} className="btn btn-primary btn-sm w-full relative z-10 btn-ripple">

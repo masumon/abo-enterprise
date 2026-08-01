@@ -82,7 +82,7 @@ export default function LaneSwitcher() {
                     onClick={() => handleScroll(lane.id)}
                     className={`w-full text-left px-4 py-3 flex items-center gap-3 text-sm font-medium transition-colors ${
                       active === lane.id
-                        ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                        ? "bg-brand-50 dark:bg-brand-900/20 text-brand-600 dark:text-brand-300"
                         : "hover:bg-gray-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300"
                     }`}
                   >
@@ -102,7 +102,7 @@ export default function LaneSwitcher() {
                 title={lang === "bn" ? lane.label.bn : lane.label.en}
                 className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm transition-all ${
                   active === lane.id
-                    ? "bg-blue-600 text-white"
+                    ? "bg-brand-600 text-white"
                     : "bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/20"
                 }`}
               >

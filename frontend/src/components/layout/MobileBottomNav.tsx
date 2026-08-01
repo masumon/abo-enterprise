@@ -95,7 +95,7 @@ export default function MobileBottomNav() {
                   </span>
                 )}
               </span>
-              <span className="text-[10px] leading-none max-w-full truncate">
+              <span className="text-xs leading-none max-w-full truncate">
                 {lang === "bn" ? item.label.bn : item.label.en}
               </span>
             </Link>
@@ -113,7 +113,7 @@ export default function MobileBottomNav() {
           )}
         >
           <Menu className="w-[18px] h-[18px]" strokeWidth={moreOpen ? 2.5 : 2} />
-          <span className="text-[10px] leading-none">{lang === "bn" ? "আরও" : "More"}</span>
+          <span className="text-xs leading-none">{lang === "bn" ? "আরও" : "More"}</span>
         </button>
       </nav>
 
