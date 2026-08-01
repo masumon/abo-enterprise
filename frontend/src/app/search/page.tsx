@@ -23,7 +23,9 @@ interface Result {
 
 async function searchBlog(query: string): Promise<BlogPost[]> {
   try {
-    const res = await fetch(`${getApiBaseUrl()}/api/v1/blog?per_page=50`, {
+    const params = new URLSearchParams({ per_page: "50" });
+    if (query.trim()) params.append("search", query);
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/blog?${params}`, {
       signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) return [];
