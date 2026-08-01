@@ -222,6 +222,7 @@ function SearchResults() {
                 key={chip.key}
                 type="button"
                 onClick={() => setTypeFilter(chip.key)}
+                aria-pressed={typeFilter === chip.key}
                 className={
                   typeFilter === chip.key
                     ? "flex-none text-[11px] font-semibold py-1.5 px-3 rounded-full bg-[var(--ink)] text-[var(--ground,#f1f2f7)] border border-[var(--ink)]"
