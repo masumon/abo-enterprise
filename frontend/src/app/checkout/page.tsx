@@ -505,24 +505,24 @@ export default function CheckoutPage() {
                 <h2 className="font-semibold text-heading mb-4">{lang === "bn" ? "আপনার তথ্য" : "Your Details"}</h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="form-label">{lang === "bn" ? "পুরো নাম *" : "Full Name *"}</label>
-                    <input {...register("customer_name")} className={cn("input", errors.customer_name && "input-error")} />
+                    <label className="form-label" htmlFor="customer-name">{lang === "bn" ? "পুরো নাম *" : "Full Name *"}</label>
+                    <input id="customer-name" {...register("customer_name")} className={cn("input", errors.customer_name && "input-error")} />
                     {errors.customer_name && <p className="text-red-500 text-xs mt-1">{errors.customer_name.message}</p>}
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="form-label">{lang === "bn" ? "মোবাইল *" : "Mobile *"}</label>
+                      <label className="form-label" htmlFor="customer-phone">{lang === "bn" ? "মোবাইল *" : "Mobile *"}</label>
                       <div className="flex gap-2">
                         <div className="w-24">
                           <CountrySelector selected={selectedCountry} onChange={setSelectedCountry} />
                         </div>
-                        <input {...register("customer_phone")} type="tel" className={cn("input flex-1", errors.customer_phone && "input-error")} placeholder={selectedCountry === "BD" ? "01XXXXXXXXX" : "+..."} />
+                        <input id="customer-phone" {...register("customer_phone")} type="tel" className={cn("input flex-1", errors.customer_phone && "input-error")} placeholder={selectedCountry === "BD" ? "01XXXXXXXXX" : "+..."} />
                       </div>
                       {errors.customer_phone && <p className="text-red-500 text-xs mt-1">{errors.customer_phone.message}</p>}
                     </div>
                     <div>
-                      <label className="form-label">{lang === "bn" ? "ইমেইল" : "Email"}</label>
-                      <input {...register("customer_email")} type="email" className="input" placeholder="your@email.com" />
+                      <label className="form-label" htmlFor="customer-email">{lang === "bn" ? "ইমেইল" : "Email"}</label>
+                      <input id="customer-email" {...register("customer_email")} type="email" className="input" placeholder="your@email.com" />
                     </div>
                   </div>
 
@@ -544,15 +544,15 @@ export default function CheckoutPage() {
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="form-label">{lang === "bn" ? "জেলা *" : "District *"}</label>
-                      <select {...register("district")} className={cn("input", errors.district && "input-error")}>
+                      <label className="form-label" htmlFor="district">{lang === "bn" ? "জেলা *" : "District *"}</label>
+                      <select id="district" {...register("district")} className={cn("input", errors.district && "input-error")}>
                         {BD_DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
                       </select>
                       {errors.district && <p className="text-red-500 text-xs mt-1">{errors.district.message}</p>}
                     </div>
                     <div>
-                      <label className="form-label">{lang === "bn" ? "থানা / উপজেলা" : "Upazila / Thana"}</label>
-                      <select {...register("upazila")} className="input">
+                      <label className="form-label" htmlFor="upazila">{lang === "bn" ? "থানা / উপজেলা" : "Upazila / Thana"}</label>
+                      <select id="upazila" {...register("upazila")} className="input">
                         <option value="">{lang === "bn" ? "বাছাই করুন" : "Select"}</option>
                         {upazilaOptions.map((u) => <option key={u} value={u}>{u}</option>)}
                       </select>
@@ -567,8 +567,8 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="form-label">{lang === "bn" ? "বিস্তারিত ঠিকানা *" : "Street Address *"}</label>
-                    <textarea {...register("street_address")} rows={2} className={cn("input resize-none", errors.street_address && "input-error")}
+                    <label className="form-label" htmlFor="street-address">{lang === "bn" ? "বিস্তারিত ঠিকানা *" : "Street Address *"}</label>
+                    <textarea id="street-address" {...register("street_address")} rows={2} className={cn("input resize-none", errors.street_address && "input-error")}
                       placeholder={lang === "bn" ? "রোড, এলাকা, ইউনিয়ন..." : "Road, area, union..."} />
                     {errors.street_address && <p className="text-red-500 text-xs mt-1">{errors.street_address.message}</p>}
                   </div>
