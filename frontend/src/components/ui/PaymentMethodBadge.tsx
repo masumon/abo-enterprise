@@ -1,5 +1,3 @@
-import { Badge } from "./Badge";
-
 export const PAYMENT_METHODS = [
   {
     code: "cod",
