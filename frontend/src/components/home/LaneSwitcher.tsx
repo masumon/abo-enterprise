@@ -65,7 +65,7 @@ export default function LaneSwitcher() {
               onClick={() => setOpen(!open)}
               className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
             >
-              <span className="text-lg">{LANES.find((l) => l.id === active)?.icon}</span>
+              <span className="text-lg" aria-hidden="true">{LANES.find((l) => l.id === active)?.icon}</span>
               <span className="text-sm font-medium">
                 {activeLabel ? (lang === "bn" ? activeLabel.bn : activeLabel.en) : ""}
               </span>
@@ -86,7 +86,7 @@ export default function LaneSwitcher() {
                         : "hover:bg-gray-50 dark:hover:bg-white/5 text-gray-700 dark:text-gray-300"
                     }`}
                   >
-                    <span className="text-lg">{lane.icon}</span>
+                    <span className="text-lg" aria-hidden="true">{lane.icon}</span>
                     <span>{lang === "bn" ? lane.label.bn : lane.label.en}</span>
                   </button>
                 ))}
@@ -105,8 +105,9 @@ export default function LaneSwitcher() {
                     ? "bg-brand-600 text-white"
                     : "bg-gray-100 dark:bg-white/10 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/20"
                 }`}
+                aria-label={lang === "bn" ? lane.label.bn : lane.label.en}
               >
-                {lane.icon}
+                <span aria-hidden="true">{lane.icon}</span>
               </button>
             ))}
           </div>

@@ -37,6 +37,12 @@ export default function ProfilePage() {
     router.push("/");
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      setShowSignOutConfirm(false);
+    }
+  };
+
   return (
     <main className="min-h-screen">
       <PageHero
@@ -75,9 +81,9 @@ export default function ProfilePage() {
             </GlassCard>
 
             {showSignOutConfirm && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" aria-labelledby="signout-modal-title" onKeyDown={handleKeyDown}>
                 <GlassCard className="p-6 max-w-sm">
-                  <h3 className="font-bold text-heading mb-2">
+                  <h3 id="signout-modal-title" className="font-bold text-heading mb-2">
                     {lang === "bn" ? "সাইন আউট করবেন?" : "Sign out?"}
                   </h3>
                   <p className="text-sm text-muted mb-4">
