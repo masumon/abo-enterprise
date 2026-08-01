@@ -203,7 +203,7 @@ function SearchResults() {
 
         {/* Cache banner */}
         {fromCache && total > 0 && (
-          <div className="mx-3 mt-2 flex items-center gap-2 text-[11px] font-semibold px-3 py-2 rounded-lg bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+          <div className="mx-3 mt-2 flex items-center gap-2 text-[11px] font-semibold px-3 py-2 rounded-lg bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800" role="status" aria-live="polite" aria-atomic="true">
             <span aria-hidden>💾</span>
             <span>{lang === "bn" ? "সংরক্ষিত ফলাফল দেখানো হচ্ছে" : "Showing saved results"}</span>
           </div>
@@ -396,7 +396,7 @@ function SearchResults() {
       <div className="hidden lg:block container mx-auto px-4 py-10 max-w-3xl">
         <SearchField initialQuery={q} className="mb-6" />
         {fromCache && total > 0 && (
-          <p className="text-sm text-brand-700 bg-brand-50 border border-brand-200 rounded-xl px-4 py-2 mb-4" role="status">
+          <p className="text-sm text-brand-700 bg-brand-50 border border-brand-200 rounded-xl px-4 py-2 mb-4" role="status" aria-live="polite" aria-atomic="true">
             {lang === "bn" ? "সংরক্ষিত ফলাফল দেখানো হচ্ছে" : "Showing saved results"}
           </p>
         )}
