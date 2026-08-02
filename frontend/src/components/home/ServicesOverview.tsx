@@ -46,32 +46,32 @@ export default function ServicesOverview() {
   useEffect(() => {
     servicesApi
       .list({ per_page: 12, page: 1 })
-      .then((r) => setServices(prioritizeServices(r.data.data ?? []).slice(0, 6)))
+      .then((r) => setServices(prioritizeServices(r.data.data ?? []).slice(0, 4)))
       .catch(() => setServices([]))
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <section id="services" className="py-16">
+    <section id="services" className="py-12 lg:py-16 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
-        <div className="section-title text-center mb-10">
-          <h2>{lang === "bn" ? "ব্যবসার মূল সেবাসমূহ" : "Core Business Services"}</h2>
-          <div className="section-divider" />
-          <p className="text-gray-500 text-sm max-w-lg mx-auto">
-            {lang === "bn"
-              ? "ডিজিটাল সেবা, সফটওয়্যার ল্যাব, বিজনেস সফটওয়্যার ও AI — ব্যবসার জন্য একীভূত সমাধান।"
-              : "Digital services, software lab, business software and AI — one integrated business platform."}
-          </p>
+        {/* Section Header */}
+        <div className="flex items-baseline justify-between gap-4 mb-8 lg:mb-12">
+          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-heading">
+            {lang === "bn" ? "আমাদের সেবাসমূহ" : "Our Services"}
+          </h2>
+          <Link href="/services" className="text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-300 whitespace-nowrap">
+            {lang === "bn" ? "সব সেবা দেখুন →" : "View all services →"}
+          </Link>
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {Array.from({ length: 6 }).map((_, i) => (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
               <ProductCardSkeleton key={i} />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {services.map((service, i) => {
               const name = lang === "bn" && service.name_bn ? service.name_bn : service.name_en;
               const desc =
@@ -80,38 +80,38 @@ export default function ServicesOverview() {
                 service.description_en;
               const imageSrc = resolveServiceImage(service.featured_image_url, service.slug);
               return (
-                <Reveal as="div" key={service.id ?? service.slug} delay={Math.min(i, 6) * 70} className="h-full">
-                <Link href={serviceHref(service.slug)} className="group block h-full">
-                  <GlassCard hover className="overflow-hidden h-full">
-                    <div className="relative h-36 bg-gray-100">
-                      <Image
-                        src={imageSrc}
+                <div key={service.id ?? service.slug} className="h-full">
+                  <Link href={serviceHref(service.slug)} className="group block h-full">
+                    <GlassCard hover className="overflow-hidden h-full flex flex-col">
+                      <div className="relative h-32 sm:h-40 bg-gray-100 dark:bg-gray-800">
+                        <Image
+                          src={imageSrc}
                           alt={name}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
-                        sizes="(max-width:768px) 100vw, 33vw"
-                      />
-                    </div>
-                    <div className="p-5">
-                      {service.category && (
-                        <span className="inline-block px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-brand-600 bg-brand-50 rounded-full mb-2">
-                          {service.category}
+                          sizes="(max-width:640px) 50vw, (max-width:1024px) 50vw, 25vw"
+                        />
+                      </div>
+                      <div className="p-3 sm:p-4 flex flex-col flex-1">
+                        {service.category && (
+                          <span className="inline-block px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-brand-600 bg-brand-50 dark:bg-brand-500/10 rounded-full mb-2 w-fit">
+                            {service.category}
+                          </span>
+                        )}
+                        <h3 className="font-bold text-sm sm:text-base text-heading mb-2 group-hover:text-brand-600 transition-colors line-clamp-2">
+                          {name}
+                        </h3>
+                        {desc && (
+                          <p className="text-gray-500 dark:text-gray-400 text-xs sm:text-sm mb-3 leading-relaxed line-clamp-2 flex-1">{desc}</p>
+                        )}
+                        <span className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-400 group-hover:gap-2 transition-all w-fit">
+                          {lang === "bn" ? "বিস্তারিত দেখুন" : "Learn more"}
+                          <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                         </span>
-                      )}
-                      <h3 className="font-bold text-heading mb-2 group-hover:text-brand-600 transition-colors">
-                        {name}
-                      </h3>
-                      {desc && (
-                        <p className="text-gray-500 text-sm mb-4 leading-relaxed line-clamp-2">{desc}</p>
-                      )}
-                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-brand-600 group-hover:gap-2 transition-all">
-                        {lang === "bn" ? "বিস্তারিত" : "Learn more"}
-                        <ArrowRight className="w-4 h-4" />
-                      </span>
-                    </div>
-                  </GlassCard>
-                </Link>
-                </Reveal>
+                      </div>
+                    </GlassCard>
+                  </Link>
+                </div>
               );
             })}
           </div>

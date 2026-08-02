@@ -1,21 +1,23 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import Hero from "@/components/home/Hero";
-import TrustBadges from "@/components/home/TrustBadges";
-import HomeLanes from "@/components/home/HomeLanes";
-import HomeSectionRail from "@/components/home/HomeSectionRail";
-import LaneSwitcher from "@/components/home/LaneSwitcher";
+import FlashSaleSection from "@/components/home/FlashSaleSection";
+import CategoryCards from "@/components/home/CategoryCards";
+import FeatureIconsRow from "@/components/home/FeatureIconsRow";
+import FeaturedProducts from "@/components/home/FeaturedProducts";
+import WhyChooseUsCards from "@/components/home/WhyChooseUsCards";
+import ReviewStatsCard from "@/components/home/ReviewStatsCard";
 import Reveal from "@/components/ui/Reveal";
 import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, getBrandFullTitle } from "@/lib/tokens";
 import { jsonLdString } from "@/lib/metadata";
 
-const ServicesOverview = dynamic(() => import("@/components/home/ServicesOverview"), { loading: () => <CardsSkeleton label="Services" /> });
-const FeaturedProducts = dynamic(() => import("@/components/home/FeaturedProducts"), { loading: () => <CardsSkeleton label="Products" /> });
+const ServicesOverview = dynamic(() => import("@/components/home/ServicesOverview"), { loading: () => <SectionSkeleton /> });
 const CustomerReviews = dynamic(() => import("@/components/home/CustomerReviews"), { loading: () => <SectionSkeleton /> });
 const FAQ = dynamic(() => import("@/components/home/FAQ"), { loading: () => <SectionSkeleton /> });
 const LeadCapture = dynamic(() => import("@/components/home/LeadCapture"), { loading: () => <SectionSkeleton /> });
 const ContactSection = dynamic(() => import("@/components/home/ContactSection"), { loading: () => <SectionSkeleton /> });
-const Portfolio = dynamic(() => import("@/components/home/Portfolio"), { loading: () => <CardsSkeleton label="Projects" /> });
+const Portfolio = dynamic(() => import("@/components/home/Portfolio"), { loading: () => <SectionSkeleton /> });
+const ClientLogos = dynamic(() => import("@/components/home/ClientLogos"), { loading: () => <SectionSkeleton /> });
 
 export const metadata: Metadata = {
   title: getBrandFullTitle("bn"),
@@ -89,32 +91,8 @@ const websiteJsonLd = {
   },
 };
 
-/*
- * Screen 04 — every lazy block used the same grey pulse, so the page told the
- * visitor that something was coming but never what, and each block jumped when
- * it landed. These hold the shape of what replaces them (GAP-18).
- */
 function SectionSkeleton() {
   return <div className="py-16 motion-safe:animate-pulse bg-gray-50/50 dark:bg-[var(--surface-secondary)]/60" aria-hidden />;
-}
-
-function CardsSkeleton({ label }: { label: string }) {
-  return (
-    <section className="container mx-auto px-4 py-12" aria-busy="true" aria-label={label}>
-      <div className="h-6 w-48 mb-6 rounded-lg bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-xl border border-gray-100 dark:border-white/10 overflow-hidden">
-            <div className="h-40 bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
-            <div className="p-4 space-y-2">
-              <div className="h-4 w-3/4 rounded bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
-              <div className="h-4 w-1/2 rounded bg-gray-200 dark:bg-white/10 motion-safe:animate-pulse" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
 }
 
 export default function HomePage() {
@@ -132,30 +110,65 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdString(localBusinessJsonLd) }}
       />
-      <Hero />
-      <LaneSwitcher />
-      <div id="popular" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]" />
-      <div id="deals" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]" />
-      <div id="categories" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]" />
-      <HomeLanes
-        shop={<FeaturedProducts />}
-        services={<ServicesOverview />}
-        software={<Portfolio />}
-        interstitial={
-          <>
-            <Reveal><TrustBadges /></Reveal>
-            <HomeSectionRail />
-          </>
-        }
-      />
 
-      <div id="reviews" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
-        <Reveal><CustomerReviews /></Reveal>
+      {/* Hero Section */}
+      <Hero />
+
+      {/* Category Cards */}
+      <CategoryCards />
+
+      {/* Feature Icons Row */}
+      <FeatureIconsRow />
+
+      {/* Flash Sale Section */}
+      <FlashSaleSection />
+
+      {/* Featured Products Section */}
+      <FeaturedProducts />
+
+      {/* Services Section */}
+      <div id="services" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal><ServicesOverview /></Reveal>
       </div>
+
+      {/* Software/Projects Section */}
+      <div id="software" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal><Portfolio /></Reveal>
+      </div>
+
+      {/* Brand Partners Section */}
+      <div id="brands" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal><ClientLogos /></Reveal>
+      </div>
+
+      {/* Why Choose Us Section */}
+      <div id="why-choose-us" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal><WhyChooseUsCards /></Reveal>
+      </div>
+
+      {/* Customer Reviews Section */}
+      <div id="reviews" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal>
+          <section className="py-12 lg:py-16">
+            <div className="container mx-auto px-4">
+              <ReviewStatsCard />
+            </div>
+          </section>
+          <CustomerReviews />
+        </Reveal>
+      </div>
+
+      {/* FAQ Section */}
       <div id="faq" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
         <Reveal><FAQ /></Reveal>
       </div>
-      <Reveal><LeadCapture /></Reveal>
+
+      {/* AI Consultation Section */}
+      <div id="consultation" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+        <Reveal><LeadCapture /></Reveal>
+      </div>
+
+      {/* Contact Section */}
       <div id="contact" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
         <Reveal><ContactSection /></Reveal>
       </div>
