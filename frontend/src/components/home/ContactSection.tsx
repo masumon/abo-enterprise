@@ -26,11 +26,15 @@ export default function ContactSection() {
     : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 9:00 PM");
 
   return (
-    <section id="contact" className="py-16 gradient-surface">
+    <section id="contact" className="py-12 lg:py-16 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
-        <div className="section-title text-center mb-10">
-          <h2>{lang === "bn" ? "যোগাযোগ করুন" : "Get In Touch"}</h2>
-          <div className="section-divider" />
+        <div className="mb-10">
+          <h2 className="text-2xl sm:text-3xl font-bold text-heading mb-2">
+            {lang === "bn" ? "যোগাযোগ করুন" : "Get In Touch"}
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+            {lang === "bn" ? "আমাদের সাথে সরাসরি যোগাযোগ করুন" : "Contact us directly"}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">

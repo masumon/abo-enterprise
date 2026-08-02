@@ -104,70 +104,86 @@ export default function LeadCapture() {
   };
 
   return (
-    <section className="py-16 gradient-brand">
+    <section id="consultation" className="py-12 lg:py-16 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
       <div className="container mx-auto px-4">
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-10">
-            <h2 className="text-2xl md:text-3xl font-bold text-white mb-3">
-              {lang === "bn"
-                ? "AI, সফটওয়্যার বা অটোমেশন দরকার?"
-                : "Need AI, Software or Automation?"}
-            </h2>
-            <p className="text-white/70 mb-2">
-              {lang === "bn"
-                ? "আপনার প্রজেক্টের বিবরণ দিন — ২৪ ঘণ্টার মধ্যে বিস্তারিত প্রস্তাব পাবেন।"
-                : "Describe your project and get a detailed proposal within 24 hours."}
-            </p>
-            <p className="text-white/50 text-sm">
-              {lang === "bn"
-                ? "✓ বিনামূল্যে পরামর্শ  ✓ কোনো বাধ্যবাধকতা নেই  ✓ ২৪ ঘণ্টার প্রতিশ্রুতি"
-                : "✓ Free consultation  ✓ No obligation  ✓ 24-hour response guarantee"}
-            </p>
-          </div>
-
-          {isSubmitted ? (
-            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-10 text-center text-white">
-              <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
-              <h3 className="text-xl font-bold mb-2">
-                {queued ? (lang === "bn" ? "অনুরোধ কিউ হয়েছে!" : "Request Queued!") : lang === "bn" ? "আপনার অনুরোধ পেয়েছি!" : "Request Received!"}
-              </h3>
-              <p className="text-white/70">
-                {queued
-                  ? lang === "bn"
-                    ? "ইন্টারনেট ফিরলে অনুরোধটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
-                    : "The request will sync automatically when your connection returns."
-                  : lang === "bn"
-                    ? "২৪ ঘণ্টার মধ্যে WhatsApp বা ফোনে যোগাযোগ করা হবে।"
-                    : "We'll contact you via WhatsApp or phone within 24 hours."}
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+          {/* Left side - Form */}
+          <div>
+            <div className="mb-10">
+              <div className="inline-block mb-3">
+                <span className="text-sm font-semibold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/20 px-4 py-1.5 rounded-full">
+                  ⚡ {lang === "bn" ? "AI কনসালটেশন" : "AI Consultation"}
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-heading mb-3">
+                {lang === "bn"
+                  ? "আপনার ব্যবসার জন্য সেরা AI সলিউশন খুঁজে নিন"
+                  : "Find the Perfect AI Solution for Your Business"}
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 text-base mb-4">
+                {lang === "bn"
+                  ? "আপনার প্রজেক্টের বিবরণ দিন এবং ২৪ ঘণ্টার মধ্যে কাস্টমাইজড সমাধান পান।"
+                  : "Describe your project and get a customized solution within 24 hours."}
               </p>
-              {!queued && reference && <ReferenceBadge reference={reference} />}
+              <div className="flex flex-wrap gap-3">
+                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                  <CheckCircle className="w-4 h-4" />
+                  {lang === "bn" ? "ফ্রি পরামর্শ" : "Free consultation"}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                  <CheckCircle className="w-4 h-4" />
+                  {lang === "bn" ? "দ্রুত সাপোর্ট" : "Fast support"}
+                </div>
+                <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                  <CheckCircle className="w-4 h-4" />
+                  {lang === "bn" ? "কোনো বাধ্যবাধকতা নেই" : "No obligation"}
+                </div>
+              </div>
             </div>
-          ) : (
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 md:p-8 space-y-5"
-            >
+
+            {isSubmitted ? (
+              <div className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-2xl p-8 lg:p-10 text-center">
+                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-heading mb-2">
+                  {queued ? (lang === "bn" ? "অনুরোধ কিউ হয়েছে!" : "Request Queued!") : lang === "bn" ? "আপনার অনুরোধ পেয়েছি!" : "Request Received!"}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400">
+                  {queued
+                    ? lang === "bn"
+                      ? "ইন্টারনেট ফিরলে অনুরোধটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
+                      : "The request will sync automatically when your connection returns."
+                    : lang === "bn"
+                      ? "২৪ ঘণ্টার মধ্যে WhatsApp বা ফোনে যোগাযোগ করা হবে।"
+                      : "We'll contact you via WhatsApp or phone within 24 hours."}
+                </p>
+                {!queued && reference && <ReferenceBadge reference={reference} />}
+              </div>
+            ) : (
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="bg-white dark:bg-white/10 backdrop-blur-sm rounded-2xl p-6 lg:p-8 space-y-5"
+              >
               {submitError && (
-                <p role="alert" className="text-red-200 text-sm bg-red-500/20 border border-red-300/30 rounded-xl px-4 py-2">
+                <p role="alert" className="text-red-600 dark:text-red-400 text-sm bg-red-100 dark:bg-red-500/20 border border-red-300 dark:border-red-300/30 rounded-xl px-4 py-2">
                   {submitError}
                 </p>
               )}
               {/* Service Type */}
               <fieldset>
-                <legend className="block text-sm font-medium text-white mb-3">
+                <legend className="block text-sm font-medium text-heading mb-3">
                   {lang === "bn" ? "কোন সেবা প্রয়োজন?" : "What service do you need?"}
                 </legend>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   {LEAD_TYPES.map((type) => {
                     const Icon = type.icon;
                     return (
                       <label
                         key={type.value}
                         className={cn(
-                          "flex items-center gap-2 p-3 rounded-xl border cursor-pointer transition-all text-sm",
+                          "flex items-center gap-2 p-3 rounded-lg border cursor-pointer transition-all text-sm",
                           selectedType === type.value
-                            ? "border-white bg-white text-brand-700 font-semibold"
-                            : "border-white/30 text-white hover:border-white/60"
+                            ? "border-brand-600 bg-brand-50 dark:bg-brand-500/20 text-brand-700 dark:text-brand-300 font-semibold"
+                            : "border-gray-200 dark:border-white/10 text-gray-700 dark:text-gray-300 hover:border-brand-300"
                         )}
                       >
                         <input
@@ -186,7 +202,7 @@ export default function LeadCapture() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="lead-name" className="block text-sm font-medium text-white mb-1">
+                  <label htmlFor="lead-name" className="block text-sm font-medium text-heading mb-1">
                     {lang === "bn" ? "আপনার নাম *" : "Your Name *"}
                   </label>
                   <input
@@ -197,10 +213,10 @@ export default function LeadCapture() {
                     aria-invalid={errors.name ? true : undefined}
                     aria-describedby={errors.name ? "lead-name-error" : undefined}
                   />
-                  {errors.name && <p id="lead-name-error" className="text-red-300 text-xs mt-1">{errors.name.message}</p>}
+                  {errors.name && <p id="lead-name-error" className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.name.message}</p>}
                 </div>
                 <div>
-                  <label htmlFor="lead-company" className="block text-sm font-medium text-white mb-1">
+                  <label htmlFor="lead-company" className="block text-sm font-medium text-heading mb-1">
                     {lang === "bn" ? "কোম্পানি" : "Company (optional)"}
                   </label>
                   <input
@@ -213,7 +229,7 @@ export default function LeadCapture() {
               </div>
 
               <div>
-                <label htmlFor="lead-phone" className="block text-sm font-medium text-white mb-1">
+                <label htmlFor="lead-phone" className="block text-sm font-medium text-heading mb-1">
                   {lang === "bn" ? "মোবাইল নম্বর *" : "Mobile Number *"}
                 </label>
                 <input
@@ -225,11 +241,11 @@ export default function LeadCapture() {
                   aria-invalid={errors.phone ? true : undefined}
                   aria-describedby={errors.phone ? "lead-phone-error" : undefined}
                 />
-                {errors.phone && <p id="lead-phone-error" className="text-red-300 text-xs mt-1">{errors.phone.message}</p>}
+                {errors.phone && <p id="lead-phone-error" className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.phone.message}</p>}
               </div>
 
               <div>
-                <label htmlFor="lead-email" className="block text-sm font-medium text-white mb-1">
+                <label htmlFor="lead-email" className="block text-sm font-medium text-heading mb-1">
                   {lang === "bn" ? "ইমেইল (ঐচ্ছিক)" : "Email (optional)"}
                 </label>
                 <input
@@ -241,17 +257,17 @@ export default function LeadCapture() {
                   aria-invalid={errors.email ? true : undefined}
                   aria-describedby={errors.email ? "lead-email-error" : undefined}
                 />
-                {errors.email && <p id="lead-email-error" className="text-red-300 text-xs mt-1">{errors.email.message}</p>}
+                {errors.email && <p id="lead-email-error" className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.email.message}</p>}
               </div>
 
               <div>
-                <label htmlFor="lead-description" className="block text-sm font-medium text-white mb-1">
+                <label htmlFor="lead-description" className="block text-sm font-medium text-heading mb-1">
                   {lang === "bn" ? "প্রজেক্টের বিবরণ *" : "Project Description *"}
                 </label>
                 <textarea
                   id="lead-description"
                   {...register("project_description")}
-                  rows={3}
+                  rows={4}
                   className={cn("input resize-none", errors.project_description && "input-error")}
                   placeholder={
                     lang === "bn"
@@ -262,15 +278,15 @@ export default function LeadCapture() {
                   aria-describedby={errors.project_description ? "lead-description-error" : undefined}
                 />
                 {errors.project_description && (
-                  <p id="lead-description-error" className="text-red-300 text-xs mt-1">{errors.project_description.message}</p>
+                  <p id="lead-description-error" className="text-red-600 dark:text-red-400 text-xs mt-1">{errors.project_description.message}</p>
                 )}
               </div>
 
-              {/* Screen 08b (X2) — bands, not a number, and skippable. */}
+              {/* Budget Selection */}
               <div>
-                <p className="block text-sm font-medium text-white mb-1">
+                <p className="block text-sm font-medium text-heading mb-2">
                   {lang === "bn" ? "আনুমানিক বাজেট" : "Approximate budget"}
-                  <span className="font-normal text-white/70">
+                  <span className="font-normal text-gray-500 dark:text-gray-400">
                     {lang === "bn" ? " — ঐচ্ছিক" : " — optional"}
                   </span>
                 </p>
@@ -284,10 +300,10 @@ export default function LeadCapture() {
                         onClick={() => setValue("budget_range", active ? "" : band.value)}
                         aria-pressed={active}
                         className={cn(
-                          "px-3 py-2 rounded-full text-xs font-semibold border min-h-[36px]",
+                          "px-3 py-2 rounded-lg text-xs font-semibold border transition-all min-h-[36px]",
                           active
-                            ? "bg-accent-500 text-[#14182b] border-accent-500"
-                            : "bg-white/10 text-white border-white/25 hover:bg-white/15"
+                            ? "bg-brand-600 text-white border-brand-600"
+                            : "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-brand-300"
                         )}
                       >
                         {lang === "bn" ? band.bn : band.en}
@@ -296,13 +312,6 @@ export default function LeadCapture() {
                   })}
                 </div>
               </div>
-
-              {/* The promise the quote form is really making. */}
-              <p className="text-xs text-white/75">
-                {lang === "bn"
-                  ? "১ কর্মদিবসের মধ্যে কোটেশন পাঠাব — ইমেইলে, যাতে প্রতিষ্ঠানের ভেতরে ফরোয়ার্ড করতে পারেন।"
-                  : "We send the quote within 1 working day — by email, so you can forward it inside your organisation."}
-              </p>
 
               <button
                 type="submit"
@@ -315,7 +324,29 @@ export default function LeadCapture() {
                   : lang === "bn" ? "বিনামূল্যে পরামর্শ পান" : "Get Free Consultation"}
               </button>
             </form>
-          )}
+            )}
+          </div>
+
+          {/* Right side - AI Illustration (hidden on mobile) */}
+          <div className="hidden lg:flex items-center justify-center relative h-[500px]">
+            <div className="relative w-full h-full bg-gradient-to-br from-purple-600 to-blue-600 rounded-3xl p-8 flex items-center justify-center overflow-hidden">
+              {/* AI Illustration - Placeholder */}
+              <div className="relative z-10 text-center">
+                <div className="text-6xl mb-6" aria-hidden>🤖</div>
+                <h3 className="text-2xl font-bold text-white mb-3">
+                  {lang === "bn" ? "AI সহায়ক" : "AI Assistant"}
+                </h3>
+                <p className="text-white/80 text-sm max-w-xs">
+                  {lang === "bn"
+                    ? "আমাদের AI সমাধান আপনার ব্যবসা স্বয়ংক্রিয় করতে সাহায্য করে"
+                    : "Our AI solutions help automate your business"}
+                </p>
+              </div>
+              {/* Decorative circles */}
+              <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20" aria-hidden />
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16" aria-hidden />
+            </div>
+          </div>
         </div>
       </div>
     </section>

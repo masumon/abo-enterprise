@@ -7,12 +7,8 @@ import { useLanguageStore } from "@/store/language";
 import { useCartStore } from "@/store/cart";
 import ProductCard from "@/components/features/ProductCard";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
+import ProductCategoryTabs from "@/components/home/ProductCategoryTabs";
 import type { Product } from "@/types";
-import CountdownTimer, { resolveFlashSaleEnd, isFlashSaleActive, type CountdownSize } from "@/components/ui/CountdownTimer";
-import PromoSlider from "@/components/ui/PromoSlider";
-import { productsApi } from "@/lib/api";
-import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
 import type { CatalogSource } from "@/lib/catalogLoader";
 import { loadProducts, peekCachedProducts } from "@/lib/catalogLoader";
@@ -36,49 +32,14 @@ export default function FeaturedProducts() {
   const { lang } = useLanguageStore();
   const { openCart } = useCartStore();
   const [products, setProducts] = useState<Product[]>([]);
-  // Flash-sale stock, fetched separately. The section above has always shown
-  // *featured* products, which have nothing to do with the sale — so the
-  // countdown ran with no discounted product behind it.
-  const [flashProducts, setFlashProducts] = useState<Product[]>([]);
+  const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [catalogSource, setCatalogSource] = useState<CatalogSource>("api");
-  const flashSaleEnabled = useFeatureFlag("feature_flash_sale");
-
-  // Admin-controlled flash-sale window & label (Settings → Flash Sale).
-  const { settings } = usePublicSettings();
-  const flashEnd = resolveFlashSaleEnd(getSettingValue(settings, "flash_sale_end"));
-  const flashStart = getSettingValue(settings, "flash_sale_start");
-  const flashTitle =
-    lang === "bn"
-      ? getSettingValue(settings, "flash_sale_title_bn") || "ফ্ল্যাশ সেল"
-      : getSettingValue(settings, "flash_sale_title_en") || "Flash Sale";
-  const showFlashSale = flashSaleEnabled && isFlashSaleActive(flashStart, flashEnd);
-  const flashSize = (getSettingValue(settings, "flash_sale_size") || "md") as CountdownSize;
-  const flashIcon = getSettingValue(settings, "flash_sale_icon") || "⚡";
+  const [activeCategory, setActiveCategory] = useState("all");
 
   useEffect(() => {
-    if (!showFlashSale) {
-      setFlashProducts([]);
-      return;
-    }
-    let cancelled = false;
-    productsApi
-      .list({ flash_sale: true, per_page: 8 })
-      .then((r) => {
-        if (!cancelled) setFlashProducts(r.data.data ?? []);
-      })
-      .catch(() => {
-        // A failed fetch just hides the strip; the rest of the page is fine.
-        if (!cancelled) setFlashProducts([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [showFlashSale]);
-
-  useEffect(() => {
-    const params = { featured: true, per_page: 8 };
+    const params = { featured: true, per_page: 12 };
 
     peekCachedProducts(params).then((cached) => {
       if (cached) {
@@ -96,7 +57,7 @@ export default function FeaturedProducts() {
           setError(false);
           return;
         }
-        const fallback = await loadProducts({ per_page: 8 });
+        const fallback = await loadProducts({ per_page: 12 });
         if (fallback.products.length > 0) {
           setProducts(prioritizeProducts(fallback.products));
           setCatalogSource(fallback.source);
@@ -116,68 +77,77 @@ export default function FeaturedProducts() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Filter products by category
+  useEffect(() => {
+    if (activeCategory === "all") {
+      setFilteredProducts(products);
+    } else {
+      setFilteredProducts(
+        products.filter((p) => p.category?.toLowerCase().includes(activeCategory))
+      );
+    }
+  }, [products, activeCategory]);
+
   return (
-    <section id="products" className="py-4 lg:py-16 gradient-surface">
-      <div className="container mx-auto px-3 lg:px-4">
-        {showFlashSale && (
-          <div className="flex flex-col items-center gap-2 mb-4">
-            <CountdownTimer endDate={flashEnd} label={flashTitle} size={flashSize} icon={flashIcon} />
-            <PromoSlider placement="flash_sale" className="mt-4 w-full max-w-3xl" aspect="aspect-[21/9] sm:aspect-[3/1]" />
+    <>
+      {/* Category Tabs */}
+      <div className="bg-white dark:bg-[var(--surface)]">
+        <div className="container mx-auto px-3 lg:px-4">
+          <div className="flex items-baseline justify-between gap-2 mb-4">
+            <h2 className="text-lg sm:text-2xl font-bold text-heading">
+              {lang === "bn" ? "ফিচার্ড প্রোডাক্টস" : "Featured Products"}
+            </h2>
+            <Link href="/products" className="text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-300 whitespace-nowrap">
+              {lang === "bn" ? "সব দেখুন →" : "View all →"}
+            </Link>
           </div>
-        )}
-        <div className="flex items-baseline justify-between gap-2 mb-2">
-          <h2 className="font-display text-[15px] font-semibold tracking-[-0.01em] lg:text-2xl">
-            {lang === "bn" ? "এই সপ্তাহে জনপ্রিয়" : "Popular this week"}
-          </h2>
-          <Link href="/products" className="text-[11px] font-semibold text-brand-600 dark:text-brand-300 whitespace-nowrap lg:text-sm">
-            {lang === "bn" ? `সব ${products.length || ""} →` : `All ${products.length || ""} →`}
-          </Link>
-        </div>
-
-        {/* Flash-sale stock — its own strip above the featured grid, so the
-            countdown finally has the discounted products it was counting for. */}
-        {showFlashSale && flashProducts.length > 0 && (
-          <div className="mb-12">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-              {flashProducts.map((p) => (
-                <ProductCard key={p.id ?? p.slug} product={p} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        <DemoModeBanner show={catalogSource === "cache" && !loading} source={catalogSource} />
-
-        {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)}
-          </div>
-        ) : error ? (
-          <div role="alert" className="text-center py-12">
-            <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500 text-sm">
-              {lang === "bn" ? "পণ্য লোড করা যায়নি।" : "Could not load products."}
-            </p>
-          </div>
-        ) : products.length === 0 ? (
-          <p className="text-center text-gray-400 py-12 text-sm">
-            {lang === "bn" ? "এখন কোনো জনপ্রিয় পণ্য নেই।" : "No featured products right now."}
-          </p>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {products.map((product) => (
-              <ProductCard key={product.id} product={product} onAddToCart={openCart} />
-            ))}
-          </div>
-        )}
-
-        <div className="text-center mt-6 lg:mt-10">
-          <Link href="/products" className="btn btn-outline btn-lg">
-            {lang === "bn" ? "সব পণ্য দেখুন" : "View All Products"}
-            <ArrowRight className="w-5 h-5" />
-          </Link>
         </div>
       </div>
-    </section>
+
+      {/* Products Section */}
+      <section id="featured-products" className="py-8 lg:py-12 bg-white dark:bg-[var(--surface)]">
+        {/* Category Tabs Component */}
+        <div className="container mx-auto px-3 lg:px-4 mb-6">
+          <ProductCategoryTabs
+            activeCategory={activeCategory}
+            onCategoryChange={setActiveCategory}
+          />
+        </div>
+
+        <div className="container mx-auto px-3 lg:px-4">
+          <DemoModeBanner show={catalogSource === "cache" && !loading} source={catalogSource} />
+
+          {loading ? (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+            </div>
+          ) : error ? (
+            <div role="alert" className="text-center py-12">
+              <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500 text-sm">
+                {lang === "bn" ? "পণ্য লোড করা যায়নি।" : "Could not load products."}
+              </p>
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <p className="text-center text-gray-400 py-12 text-sm">
+              {lang === "bn" ? "এই ক্যাটেগরিতে কোনো পণ্য নেই।" : "No products in this category."}
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {filteredProducts.slice(0, 8).map((product) => (
+                <ProductCard key={product.id} product={product} onAddToCart={openCart} />
+              ))}
+            </div>
+          )}
+
+          <div className="text-center mt-8 lg:mt-12">
+            <Link href="/products" className="btn btn-outline btn-lg gap-2">
+              {lang === "bn" ? "সব পণ্য দেখুন" : "View All Products"}
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

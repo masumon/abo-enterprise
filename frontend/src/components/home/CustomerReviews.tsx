@@ -53,18 +53,15 @@ export default function CustomerReviews() {
     : "5.0";
 
   return (
-    <section className="py-16 section-panel">
+    <section className="py-12 lg:py-16 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-10">
-          <div className="flex items-center justify-center gap-1 mb-3">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <Star key={i} className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-            ))}
-            <span className="ml-2 font-bold text-heading">{avg}</span>
-          </div>
-          <h2 className="text-3xl sm:text-4xl font-bold text-heading mb-3">
-            {lang === "bn" ? "গ্রাহকরা কী বলছেন?" : "Verified Client Reviews"}
+        <div className="mb-10">
+          <h2 className="text-2xl sm:text-3xl font-bold text-heading mb-2">
+            {lang === "bn" ? "গ্রাহকদের প্রশংসাপত্র" : "Customer Testimonials"}
           </h2>
+          <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+            {lang === "bn" ? "আমাদের সন্তুষ্ট গ্রাহকদের কাছ থেকে শুনুন" : "Hear from our satisfied customers"}
+          </p>
         </div>
 
         {loading ? (
