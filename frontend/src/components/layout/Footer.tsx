@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Facebook,
@@ -10,29 +10,14 @@ import {
   Phone,
   Send,
   Loader2,
-  PackageSearch,
-  Store,
-  Wrench,
-  Laptop,
-  Bot,
-  CalendarCheck,
   Smartphone,
   Instagram,
   Linkedin,
   Youtube,
-  Shield,
-  Users,
-  CreditCard,
-  Headphones,
-  Award,
-  Globe,
-  Truck,
-  Clock,
+  ArrowUp,
   type LucideIcon,
-  ShieldCheck,
-  CheckCircle2,
+  TrendingUp,
 } from "lucide-react";
-import Image from "next/image";
 import {
   VisaMark,
   MastercardMark,
@@ -40,31 +25,22 @@ import {
   NagadMark,
   RocketMark,
   CardMark,
-  CodMark,
-  BankMark,
   PlayStoreMark,
   AppStoreMark,
 } from "@/components/icons/PaymentIcons";
 import { useLanguageStore } from "@/store/language";
-import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
 import { publicApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
-import { triggerInstall, isStandalone } from "@/lib/pwaInstall";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import {
   SITE_TRUST_BADGES_KEY,
-  SITE_REGISTRATIONS_KEY,
   getTrustBadges,
-  getRegistrations,
 } from "@/lib/cmsContent";
 import { resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
 import BrandLogo from "@/components/ui/BrandLogo";
-import { getBrandName, getBrandTagline } from "@/lib/tokens";
-import { cn } from "@/lib/utils";
 
-/** One white card per gateway; keys match the Payments module's ids. */
 const PAY_BRAND: Record<string, { label: string; Mark: (p: { className?: string }) => JSX.Element }> = {
   card: { label: "Visa", Mark: VisaMark },
   visa: { label: "Visa", Mark: VisaMark },
@@ -72,48 +48,37 @@ const PAY_BRAND: Record<string, { label: string; Mark: (p: { className?: string 
   bkash: { label: "bKash", Mark: BkashMark },
   nagad: { label: "Nagad", Mark: NagadMark },
   rocket: { label: "Rocket", Mark: RocketMark },
-  sslcommerz: { label: "Cards", Mark: CardMark },
-  cod: { label: "Cash on Delivery", Mark: CodMark },
-  bank: { label: "Bank Transfer", Mark: BankMark },
+  sslcommerz: { label: "SSLCommerz", Mark: CardMark },
 };
 
-/** Shown when the Payments module has nothing enabled yet. */
-const DEFAULT_PAY = ["visa", "mastercard", "bkash", "nagad", "rocket", "cod", "bank"];
+const DEFAULT_PAY = ["visa", "mastercard", "bkash", "nagad", "rocket", "sslcommerz"];
 
-/** Primary business destinations — icon tiles (fast to recognise). */
-const DESTINATIONS: { href: string; icon: LucideIcon; label: { en: string; bn: string } }[] = [
-  { href: "/products", icon: Store, label: { en: "Tech Store", bn: "টেক স্টোর" } },
-  { href: "/services", icon: Wrench, label: { en: "Services", bn: "সেবা" } },
-  { href: "/services/software", icon: Laptop, label: { en: "Software", bn: "সফটওয়্যার" } },
-  { href: "/services#ai-solutions", icon: Bot, label: { en: "AI Solutions", bn: "AI সমাধান" } },
-  { href: "/track", icon: PackageSearch, label: { en: "Track Order", bn: "অর্ডার ট্র্যাক" } },
-  { href: "/book", icon: CalendarCheck, label: { en: "Free Consult", bn: "ফ্রি পরামর্শ" } },
+const QUICK_LINKS = [
+  { href: "/", label: { en: "Home", bn: "হোম" } },
+  { href: "/products", label: { en: "Products", bn: "পণ্য" } },
+  { href: "/services", label: { en: "Services", bn: "সেবা" } },
+  { href: "/services/software", label: { en: "Software", bn: "সফটওয়্যার" } },
+  { href: "/projects", label: { en: "Projects", bn: "প্রকল্প" } },
+  { href: "/about", label: { en: "About", bn: "সম্পর্কে" } },
 ];
 
-/** Secondary company links — deliberately no icons (icons on every link add noise). */
-const COMPANY = [
-  { href: "/about", label: { en: "About Us", bn: "আমাদের সম্পর্কে" } },
-  { href: "/projects", label: { en: "Projects", bn: "প্রজেক্ট" } },
-  { href: "/gallery", label: { en: "Gallery", bn: "গ্যালারি" } },
-  { href: "/testimonials", label: { en: "Reviews", bn: "গ্রাহক পর্যালোচনা" } },
-  { href: "/career", label: { en: "Careers", bn: "ক্যারিয়ার" } },
-  { href: "/blog", label: { en: "Blog", bn: "ব্লগ" } },
-  { href: "/faq", label: { en: "FAQ", bn: "প্রশ্নোত্তর" } },
-  { href: "/shipping", label: { en: "Shipping", bn: "শিপিং তথ্য" } },
-  { href: "/contact", label: { en: "Contact", bn: "যোগাযোগ" } },
+const SERVICES_LINKS = [
+  { href: "/services", label: { en: "All Services", bn: "সব সেবা" } },
+  { href: "/services#web", label: { en: "Web Development", bn: "ওয়েব ডেভেলপমেন্ট" } },
+  { href: "/services#mobile", label: { en: "Mobile App", bn: "মোবাইল অ্যাপ" } },
+  { href: "/services#software", label: { en: "Software", bn: "সফটওয়্যার" } },
+  { href: "/services#graphics", label: { en: "Graphics Design", bn: "গ্রাফিক্স ডিজাইন" } },
+  { href: "/services#ecommerce", label: { en: "E-Commerce", bn: "ই-কমার্স" } },
 ];
 
-const LEGAL = [
-  { href: "/legal/privacy", labelKey: "footer_privacy" as const },
-  { href: "/legal/terms", labelKey: "footer_terms" as const },
-  { href: "/legal/refund", labelKey: "footer_refund" as const },
-  { href: "/legal/cookies", labelKey: "footer_cookies" as const },
+const CUSTOMER_CARE_LINKS = [
+  { href: "/faq", label: { en: "FAQ", bn: "সাধারণ প্রশ্ন" } },
+  { href: "/contact", label: { en: "Contact", bn: "যোগাযোগ করুন" } },
+  { href: "/legal/warranty", label: { en: "Warranty", bn: "ওয়ারেন্টি" } },
+  { href: "/legal/return", label: { en: "Returns", bn: "রিটার্ন নীতি" } },
+  { href: "/track", label: { en: "Track Order", bn: "অর্ডার ট্র্যাক করুন" } },
+  { href: "/support", label: { en: "Support", bn: "সহায়তা" } },
 ];
-
-const TRUST_ICONS: Record<string, LucideIcon> = {
-  shield: Shield, users: Users, card: CreditCard, support: Headphones,
-  award: Award, globe: Globe, truck: Truck, store: Store, clock: Clock,
-};
 
 function normalizePhoneDigits(phone: string) {
   const digits = phone.replace(/\D/g, "");
@@ -129,29 +94,20 @@ function formatPhoneDisplay(phone: string) {
   return phone;
 }
 
-/** Small uppercase section label — the name alone carries the meaning. */
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="footer-section-label">{children}</p>;
-}
-
 export default function Footer() {
   const { lang } = useLanguageStore();
-  const t = useT();
   const toast = useToastStore((s) => s.push);
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const newsletterEnabled = useFeatureFlag("feature_newsletter");
 
   const { methods } = usePaymentMethods();
   const { settings } = usePublicSettings([
-    "trade_license",
     "whatsapp_number",
-    "contact_hours_en",
-    "contact_hours_bn",
     "contact_phone",
     "contact_email",
     "contact_address",
-    "google_maps_embed",
     "facebook_url",
     "instagram_url",
     "linkedin_url",
@@ -159,10 +115,8 @@ export default function Footer() {
     "play_store_url",
     "app_store_url",
     SITE_TRUST_BADGES_KEY,
-    SITE_REGISTRATIONS_KEY,
   ]);
 
-  const tradeLicense = getSettingValue(settings, "trade_license");
   const phoneRaw = getSettingValue(settings, "contact_phone", "01825007977");
   const emailAddr = getSettingValue(settings, "contact_email", "info@aboenterprise.com");
   const address = getSettingValue(
@@ -170,16 +124,11 @@ export default function Footer() {
     "contact_address",
     lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN
   );
-  const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
+  const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "contact_address"), address);
   const whatsappDigits = normalizePhoneDigits(getSettingValue(settings, "whatsapp_number", phoneRaw));
   const phoneDigits = normalizePhoneDigits(phoneRaw);
   const phoneDisplay = formatPhoneDisplay(phoneRaw);
-  const hours = lang === "bn"
-    ? getSettingValue(settings, "contact_hours_bn", "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা")
-    : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 9:00 PM");
 
-  // Gateways enabled in the Payments module drive the cards; the default set
-  // keeps the row populated on a fresh install.
   const activeKeys = methods
     .filter((m) => m.is_active)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
@@ -191,12 +140,6 @@ export default function Footer() {
   const appStoreUrl = getSettingValue(settings, "app_store_url") || "/";
 
   const trustBadges = getTrustBadges(settings, []);
-  // Registrations come from the CMS list; the legacy single trade_license key
-  // is used as a fallback so existing setups keep showing their licence.
-  const registrations = getRegistrations(
-    settings,
-    tradeLicense ? [{ label_en: "Trade License", label_bn: "ট্রেড লাইসেন্স", value: tradeLicense }] : []
-  );
 
   const socialLinks = [
     {
@@ -205,11 +148,22 @@ export default function Footer() {
       label: "Facebook",
     },
     { href: whatsappDigits ? `https://wa.me/${whatsappDigits}` : "", icon: MessageCircle, label: "WhatsApp" },
-    { href: emailAddr ? `mailto:${emailAddr}` : "", icon: Mail, label: "Email" },
     { href: getSettingValue(settings, "instagram_url"), icon: Instagram, label: "Instagram" },
     { href: getSettingValue(settings, "linkedin_url"), icon: Linkedin, label: "LinkedIn" },
     { href: getSettingValue(settings, "youtube_url"), icon: Youtube, label: "YouTube" },
   ].filter((item) => item.href);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 300);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleNewsletter = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -226,208 +180,179 @@ export default function Footer() {
     }
   };
 
-  const handleInstall = async () => {
-    if (isStandalone()) {
-      toast("info", lang === "bn" ? "অ্যাপটি ইতিমধ্যে ইনস্টল করা আছে।" : "The app is already installed.");
-      return;
-    }
-    const result = await triggerInstall();
-    if (result === "accepted") {
-      toast("success", lang === "bn" ? "অ্যাপ ইনস্টল হচ্ছে…" : "Installing the app…");
-    } else if (result === "unavailable") {
-      toast(
-        "info",
-        lang === "bn"
-          ? "ইনস্টল করতে ব্রাউজার মেনু থেকে ‘হোম স্ক্রিনে যোগ করুন’ বেছে নিন।"
-          : "To install, use your browser menu → “Add to Home screen”.",
-      );
-    }
-  };
-
   return (
-    <footer className="site-footer relative text-white/85 overflow-hidden">
-      <div className="site-footer-accent relative z-10" aria-hidden />
-      <div className="footer-glow pointer-events-none" aria-hidden />
-
-      <div className="relative z-10 container mx-auto px-4 py-8 md:py-12 space-y-4 md:space-y-6">
-        {/* ── Get in touch: the highest-intent block, so it leads ── */}
-        <section>
-          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            {lang === "bn" ? "যোগাযোগ করুন" : "Get in Touch"}
-          </h2>
-          <p className="text-sm text-white/60 mt-1">
-            {lang === "bn"
-              ? "সপ্তাহে ৬ দিন আমরা আপনার পাশে আছি।"
-              : "We're here to help you 6 days a week."}
-          </p>
-
-          {/* One card per row on a phone — each is a tap target with its own
-              action, so stacking keeps them comfortably large. */}
-          <div className="mt-3 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
-            <a href={`tel:+${phoneDigits}`} className="footer-contact-card group">
-              <Phone className="w-5 h-5 text-sky-300 flex-none mt-0.5" aria-hidden />
-              <span className="min-w-0">
-                <span className="footer-contact-title">{lang === "bn" ? "কল করুন" : "Call Us"}</span>
-                <span className="footer-contact-sub">{hours}</span>
-                <span className="footer-contact-action text-sky-300">{phoneDisplay}</span>
-              </span>
-            </a>
-
-            {whatsappDigits && (
-              <a
-                href={`https://wa.me/${whatsappDigits}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="footer-contact-card group"
-              >
-                <MessageCircle className="w-5 h-5 text-green-400 flex-none mt-0.5" aria-hidden />
-                <span className="min-w-0">
-                  <span className="footer-contact-title">WhatsApp</span>
-                  <span className="footer-contact-sub">{lang === "bn" ? "দ্রুত উত্তর" : "Quick reply"}</span>
-                  <span className="footer-contact-action text-green-400">
-                    {lang === "bn" ? "চ্যাট করুন" : "Chat Now"} <span aria-hidden>→</span>
-                  </span>
-                </span>
-              </a>
-            )}
-
-            <a
-              href={mapsLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="footer-contact-card group sm:col-span-2 lg:col-span-1"
-            >
-              <MapPin className="w-5 h-5 text-purple-300 flex-none mt-0.5" aria-hidden />
-              <span className="min-w-0">
-                <span className="footer-contact-title">{lang === "bn" ? "দোকানে আসুন" : "Visit Store"}</span>
-                <span className="footer-contact-sub">{address}</span>
-                <span className="footer-contact-action text-purple-300">
-                  {lang === "bn" ? "ম্যাপে দেখুন" : "View on map"} <span aria-hidden>→</span>
-                </span>
-              </span>
-            </a>
-          </div>
-        </section>
-
-        {/* ── Navigation: three equal groups, stacked on a phone ── */}
-        <div className="grid gap-6 sm:gap-8 sm:grid-cols-2 lg:grid-cols-3 border-t border-white/10 pt-4 md:pt-5">
-          <nav aria-label={lang === "bn" ? "কেনাকাটা ও সেবা" : "Shop and services"}>
-            <SectionLabel>{lang === "bn" ? "কেনাকাটা ও সেবা" : "Shop & Services"}</SectionLabel>
-            {/* Two columns: six destinations fit in three tidy rows. */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-              {DESTINATIONS.map(({ href, icon: Icon, label }) => (
-                <Link key={href} href={href} className="footer-nav-link group">
-                  <Icon className="w-4 h-4 text-white/50 flex-none group-hover:text-brand-200 transition-colors" aria-hidden />
-                  <span className="truncate">{lang === "bn" ? label.bn : label.en}</span>
-                </Link>
-              ))}
-            </div>
-          </nav>
-
-          <nav aria-label={lang === "bn" ? "কোম্পানি" : "Company"}>
-            <SectionLabel>{lang === "bn" ? "কোম্পানি" : "Company"}</SectionLabel>
-            {/* Two columns like Shop & Services: nine links become five short
-                rows instead of a nine-row column of mostly empty space. */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
-              {COMPANY.map((link) => (
-                <Link key={link.href} href={link.href} className="footer-nav-link">
-                  {lang === "bn" ? link.label.bn : link.label.en}
-                </Link>
-              ))}
-            </div>
-          </nav>
-
-          <div>
+    <footer className="site-footer relative text-white overflow-hidden bg-gradient-to-b from-[#0f1a2e] to-[#051529]">
+      <div className="relative z-10 container mx-auto px-4 py-10 md:py-14 space-y-8 md:space-y-10">
+        <div className="grid gap-8 md:gap-10 md:grid-cols-[1fr_1.5fr]">
+          <div className="space-y-6">
             <div>
-              <SectionLabel>{lang === "bn" ? "আমাদের অনুসরণ করুন" : "Follow Us"}</SectionLabel>
-              <div className="flex flex-wrap gap-2.5">
-                {socialLinks.map(({ href, icon: Icon, label }) => (
-                  <a
-                    key={label}
-                    href={href}
-                    target={href.startsWith("mailto:") ? undefined : "_blank"}
-                    rel="noopener noreferrer"
-                    aria-label={label}
-                    className="footer-social-btn"
-                  >
-                    <Icon className="w-[18px] h-[18px]" aria-hidden />
-                  </a>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── Trust badges (admin: Homepage Content) ── */}
-        {trustBadges.length > 0 && (
-          <div className="border-t border-white/10 pt-4 md:pt-5">
-            <SectionLabel>{lang === "bn" ? "কেন আমাদের বিশ্বাস করবেন" : "Why trust us"}</SectionLabel>
-            <div className="flex flex-wrap gap-2">
-              {trustBadges.map((badge, i) => {
-                const Icon = TRUST_ICONS[badge.icon ?? ""] ?? Shield;
-                return (
-                  <span key={i} className="footer-chip">
-                    <Icon className="w-3.5 h-3.5 text-amber-300 flex-none" aria-hidden />
-                    {lang === "bn" ? badge.bn || badge.en : badge.en || badge.bn}
-                  </span>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ── Secure payments ── */}
-        <div className="border-t border-white/10 pt-4 md:pt-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-base font-bold text-white">
-              {lang === "bn" ? "নিরাপদ পেমেন্ট" : "Secure Payments"}
-            </p>
-            <p className="text-xs text-white/60 mt-0.5">
-              {lang === "bn" ? "১০০% নিরাপদ ও বিশ্বস্ত লেনদেন" : "100% Secure & Trusted Payments"}
-            </p>
-          </div>
-          {/* Scrolls rather than wraps on a phone, so the cards hold one
-              consistent height at every width. */}
-          <div className="footer-pay-scroll flex items-center gap-2 overflow-x-auto no-scrollbar lg:overflow-visible lg:flex-wrap -mx-1 px-1 lg:mx-0 lg:px-0">
-            {payKeys.map((key) => {
-              const brand = PAY_BRAND[key];
-              if (!brand) return null;
-              return (
-                <span key={key} className="footer-pay-card" title={brand.label}>
-                  <brand.Mark className="h-5 w-auto max-w-full" />
-                </span>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── Verified & registered business ── */}
-        {registrations.length > 0 && (
-          <div className="border-t border-white/10 pt-4 md:pt-5 flex flex-col lg:flex-row lg:items-center gap-5">
-            <div className="flex items-center gap-3 lg:pr-6 lg:border-r lg:border-white/10 flex-shrink-0">
-              <span className="w-11 h-11 rounded-xl grid place-items-center flex-shrink-0 bg-gradient-to-br from-brand-500/30 to-brand-700/20 ring-1 ring-inset ring-white/20">
-                <ShieldCheck className="w-6 h-6 text-brand-200" />
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-white leading-tight">
-                  {lang === "bn" ? "যাচাইকৃত ও নিবন্ধিত প্রতিষ্ঠান" : "Verified & Registered Business"}
-                </p>
-                <p className="text-xs text-white/55 mt-0.5">
-                  {lang === "bn" ? "হাজারো গ্রাহকের আস্থা" : "Trusted by thousands of customers"}
-                </p>
-              </div>
+              <BrandLogo size="lg" href={false} variant="light" />
+              <p className="text-xs md:text-sm text-white/70 mt-3 leading-relaxed">
+                {lang === "bn"
+                  ? "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।"
+                  : "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us."}
+              </p>
             </div>
 
-            {/* Numbers stay whole — a truncated licence number is useless. */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-3 flex-1 min-w-0">
-              {registrations.map((r, i) => (
-                <div key={i} className="min-w-0">
-                  <p className="flex items-center gap-1.5 text-[13px] text-white/80">
-                    <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" aria-hidden />
-                    <span>{lang === "bn" ? r.label_bn || r.label_en : r.label_en || r.label_bn}</span>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3">
+                <MapPin className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" aria-hidden />
+                <div className="min-w-0">
+                  <p className="text-xs md:text-sm font-semibold text-white">
+                    {lang === "bn" ? "প্রধান কার্যালয়" : "Head Office"}
                   </p>
-                  <p className="text-sm font-semibold text-white tabular-nums mt-0.5 pl-[22px] break-all">
-                    {r.value}
+                  <a
+                    href={mapsLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs md:text-sm text-white/70 hover:text-green-400 transition-colors"
+                  >
+                    {address}
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Phone className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" aria-hidden />
+                <div className="min-w-0">
+                  <p className="text-xs md:text-sm font-semibold text-white">
+                    {lang === "bn" ? "কল করুন" : "Call Us"}
+                  </p>
+                  <a href={`tel:+${phoneDigits}`} className="text-xs md:text-sm text-white/70 hover:text-blue-400 transition-colors">
+                    {phoneDisplay}
+                  </a>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Mail className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" aria-hidden />
+                <div className="min-w-0">
+                  <p className="text-xs md:text-sm font-semibold text-white">
+                    {lang === "bn" ? "ইমেইল" : "Email"}
+                  </p>
+                  <a href={`mailto:${emailAddr}`} className="text-xs md:text-sm text-white/70 hover:text-red-400 transition-colors break-all">
+                    {emailAddr}
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 flex-wrap pt-2">
+              {socialLinks.map(({ href, icon: Icon, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white hover:scale-110 transition-all duration-200"
+                >
+                  <Icon className="w-4 h-4" aria-hidden />
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            <nav>
+              <h3 className="text-sm md:text-base font-bold text-white mb-3">
+                {lang === "bn" ? "কুইক লিংকস" : "Quick Links"}
+              </h3>
+              <ul className="space-y-2">
+                {QUICK_LINKS.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-xs md:text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2 group"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-green-400 transition-colors" />
+                      {lang === "bn" ? link.label.bn : link.label.en}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <nav>
+              <h3 className="text-sm md:text-base font-bold text-white mb-3">
+                {lang === "bn" ? "সেবা সমূহ" : "Our Services"}
+              </h3>
+              <ul className="space-y-2">
+                {SERVICES_LINKS.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-xs md:text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2 group"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-green-400 transition-colors" />
+                      {lang === "bn" ? link.label.bn : link.label.en}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <nav>
+              <h3 className="text-sm md:text-base font-bold text-white mb-3">
+                {lang === "bn" ? "কাস্টমার সেবা" : "Customer Care"}
+              </h3>
+              <ul className="space-y-2">
+                {CUSTOMER_CARE_LINKS.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="text-xs md:text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2 group"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-green-400 transition-colors" />
+                      {lang === "bn" ? link.label.bn : link.label.en}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <nav className="hidden lg:block">
+              <h3 className="text-sm md:text-base font-bold text-white mb-3">
+                {lang === "bn" ? "সাপোর্ট" : "Support"}
+              </h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    href="/support"
+                    className="text-xs md:text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2 group"
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-green-400 transition-colors" />
+                    {lang === "bn" ? "সাপোর্ট টিকেট" : "Support Ticket"}
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+
+        {trustBadges.length > 0 && (
+          <div className="border-t border-white/10 pt-8 space-y-6">
+            <div className="flex items-center gap-3 justify-center">
+              <div className="w-1 h-1 rounded-full bg-green-400" />
+              <h2 className="text-lg md:text-xl font-bold text-white text-center">
+                {lang === "bn" ? "আমাদের উপর আস্থা রাখুন" : "Trust Us"}
+              </h2>
+              <div className="w-1 h-1 rounded-full bg-green-400" />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {trustBadges.map((badge, i) => (
+                <div
+                  key={i}
+                  className="border border-green-500/50 rounded-xl p-4 hover:border-green-400 hover:bg-green-500/5 transition-all text-center"
+                >
+                  <div className="flex justify-center mb-3">
+                    <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center">
+                      <TrendingUp className="w-6 h-6 text-green-400" aria-hidden />
+                    </div>
+                  </div>
+                  <p className="text-sm md:text-base font-bold text-white">
+                    {lang === "bn" ? badge.bn || badge.en : badge.en || badge.bn}
                   </p>
                 </div>
               ))}
@@ -435,123 +360,156 @@ export default function Footer() {
           </div>
         )}
 
-        {/* ── Newsletter + app install ── */}
-        <div className="border-t border-white/10 pt-4 md:pt-5 grid gap-5 lg:grid-cols-2 lg:items-center">
-          {newsletterEnabled && (
-            <div className="flex items-start gap-3.5">
-              <span className="w-11 h-11 rounded-full grid place-items-center flex-none bg-brand-500/20 ring-1 ring-inset ring-white/15">
-                <Mail className="w-5 h-5 text-brand-100" aria-hidden />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="text-base font-bold text-white">
-                  {lang === "bn" ? "আপডেট পান" : "Stay Updated"}
-                </p>
-                <p className="text-xs text-white/60 mt-0.5">
+        <div className="border-t border-white/10 pt-8 space-y-6">
+          <div className="flex items-center gap-3 justify-center">
+            <div className="w-1 h-1 rounded-full bg-green-400" />
+            <h2 className="text-lg md:text-xl font-bold text-white text-center">
+              {lang === "bn" ? "পেমেন্ট পদ্ধতি সমূহ" : "Payment Methods"}
+            </h2>
+            <div className="w-1 h-1 rounded-full bg-green-400" />
+          </div>
+
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            {payKeys.map((key) => {
+              const brand = PAY_BRAND[key];
+              if (!brand) return null;
+              return (
+                <div
+                  key={key}
+                  className="border border-white/10 rounded-lg p-2 md:p-3 hover:border-white/30 transition-colors bg-white/5"
+                  title={brand.label}
+                >
+                  <brand.Mark className="h-5 md:h-6 w-auto max-w-full" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {newsletterEnabled && (
+          <div className="border-t border-white/10 pt-8 space-y-6">
+            <div className="flex items-start gap-4 md:gap-6">
+              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                <Mail className="w-6 h-6 md:w-7 md:h-7 text-white" aria-hidden />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg md:text-xl font-bold text-white">
+                  {lang === "bn" ? "নিউজলেটারের সাবস্ক্রাইব করুন" : "Subscribe to Newsletter"}
+                </h3>
+                <p className="text-sm text-white/70 mt-1">
                   {lang === "bn"
-                    ? "নতুন অফার ও খবর পেতে সাবস্ক্রাইব করুন।"
-                    : "Subscribe to our newsletter for latest offers and updates."}
+                    ? "নতুন অফার, পণ্য এবং পরিষেবা সম্পর্কে প্রথম জানুন।"
+                    : "Get the latest offers, products, and services delivered to your inbox."}
+                </p>
+
+                <form onSubmit={handleNewsletter} className="mt-4 flex gap-2 max-w-md">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder={lang === "bn" ? "আপনার ইমেইল" : "Your email"}
+                    className="flex-1 px-4 py-2 md:py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-all text-sm md:text-base"
+                    aria-label={lang === "bn" ? "ইমেইল ঠিকানা" : "Email address"}
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="px-4 md:px-6 py-2 md:py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 flex-shrink-0 text-sm md:text-base"
+                  >
+                    {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (lang === "bn" ? "সাবস্ক্রাইব" : "Subscribe")}
+                  </button>
+                </form>
+
+                <p className="text-xs text-white/60 mt-3 flex items-center gap-1">
+                  <span>🔒</span>
+                  {lang === "bn" ? "আমরা আপনার ডেটা নিরাপদ রাখি এবং কখনও স্প্যাম করি না।" : "We keep your data safe and never spam."}
                 </p>
               </div>
             </div>
-          )}
-
-          <div className="space-y-4">
-            {newsletterEnabled && (
-              <form onSubmit={handleNewsletter} className="flex gap-2">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={lang === "bn" ? "আপনার ইমেইল ঠিকানা" : "Your email address"}
-                  className="footer-newsletter-input flex-1 min-w-0"
-                  aria-label={t("footer_newsletter")}
-                  required
-                />
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="footer-newsletter-btn flex-shrink-0"
-                  aria-label={t("footer_subscribe")}
-                >
-                  {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4 sm:hidden" />}
-                  <span className="hidden sm:inline">{t("footer_subscribe")}</span>
-                </button>
-              </form>
-            )}
-
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="text-xs text-white/60">
-                {lang === "bn" ? "অ্যাপ ইনস্টল করুন" : "Install our app"}
-              </span>
-              <button type="button" onClick={handleInstall} className="footer-app-btn">
-                <Smartphone className="w-4 h-4" aria-hidden />
-                {lang === "bn" ? "ইনস্টল" : "Install App"}
-              </button>
-              {/* Store badges sit beside it — the same install intent, for
-                  people who expect to find the app in their store. */}
-              <a
-                href={playStoreUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Google Play"
-                className="footer-store-btn"
-              >
-                <PlayStoreMark className="w-4 h-4" />
-              </a>
-              <a
-                href={appStoreUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="App Store"
-                className="footer-store-btn text-white"
-              >
-                <AppStoreMark className="w-4 h-4" />
-              </a>
-            </div>
           </div>
-        </div>
+        )}
 
-        {/* ── Brand identity ── */}
-        <div className="border-t border-white/10 pt-4 md:pt-5 flex flex-col items-center gap-3 text-center">
-          <BrandLogo size="lg" href={false} variant="light" />
+        <div className="border-t border-white/10 pt-8 space-y-6">
           <div>
-            <h3 className="text-white font-bold text-lg tracking-tight">{getBrandName(lang)}</h3>
-            <p className="text-white/60 text-xs mt-0.5">{getBrandTagline(lang)}</p>
+            <h3 className="text-lg md:text-xl font-bold text-white">
+              {lang === "bn" ? "আমাদের অ্যাপ ডাউনলোড করুন" : "Download Our App"}
+            </h3>
+            <p className="text-sm text-white/70 mt-2">
+              {lang === "bn"
+                ? "যেকোনো সময় সহজেই কেনাকাটা করুন আমাদের মোবাইল অ্যাপ থেকে।"
+                : "Shop anytime, anywhere with our mobile app."}
+            </p>
           </div>
-          {/* Legal sits with the brand line, not in the navigation grid — it is
-              the lightest-weight content on the page. */}
-          <nav className="flex flex-wrap justify-center gap-x-1 gap-y-0.5 mt-1" aria-label={t("footer_legal")}>
-            {LEGAL.map((link, i) => (
-              <span key={link.href} className="inline-flex items-center">
-                {i > 0 && <span className="footer-dot" aria-hidden />}
-                <Link href={link.href} className="footer-legal-link">{t(link.labelKey)}</Link>
-              </span>
-            ))}
-          </nav>
-        </div>
-      </div>
 
-      <div className="relative z-10 footer-bottom-bar">
-        {/* Bottom padding clears the floating mobile bottom-nav (lg:hidden). */}
-        <div className="container mx-auto px-4 pt-4 pb-[calc(var(--mobile-chrome-bottom)+0.75rem)] lg:pb-4 flex flex-col items-center gap-2 text-center">
-          <p className="text-xs text-white/60">
-            &copy; {new Date().getFullYear()} ABO Enterprise.{" "}
-            {lang === "bn" ? "সর্বস্বত্ব সংরক্ষিত।" : "All rights reserved."}
-          </p>
-          <p className="text-xs text-white/55 flex items-center gap-1.5">
-            <span>{lang === "bn" ? "তৈরি করেছেন" : "Built by"}</span>
+          <div className="flex gap-3 flex-wrap">
             <a
-              href="https://mumainsumon.netlify.app"
+              href={playStoreUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold tracking-wide text-white bg-gradient-to-r from-brand-500/90 to-accent-500/90 border border-white/25 shadow-[0_2px_10px_rgba(228,161,27,0.35)] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(228,161,27,0.5)] transition-all duration-200"
+              className="px-4 md:px-6 py-2 md:py-3 rounded-lg border border-white/30 hover:border-white/50 hover:bg-white/5 transition-all flex items-center gap-2 text-sm md:text-base font-semibold text-white"
             >
-              <span aria-hidden className="group-hover:scale-110 transition-transform">💻</span>
-              SUMON
+              <PlayStoreMark className="w-5 h-5" />
+              <span>{lang === "bn" ? "গুগল প্লে" : "Google Play"}</span>
+            </a>
+
+            <a
+              href={appStoreUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 md:px-6 py-2 md:py-3 rounded-lg border border-white/30 hover:border-white/50 hover:bg-white/5 transition-all flex items-center gap-2 text-sm md:text-base font-semibold text-white"
+            >
+              <AppStoreMark className="w-5 h-5" />
+              <span>{lang === "bn" ? "অ্যাপ স্টোর" : "App Store"}</span>
+            </a>
+          </div>
+        </div>
+
+        <div className="border-t border-white/10 pt-8 text-center space-y-4">
+          <p className="text-sm text-white/70">
+            &copy; {new Date().getFullYear()} ABO ENTERPRISE. {lang === "bn" ? "সকল অধ্যকার সংরক্ষিত।" : "All rights reserved."}
+          </p>
+          <p className="text-xs text-white/60 flex items-center justify-center gap-1 flex-wrap justify-center">
+            <span>{lang === "bn" ? "সেরা সার্ভিস" : "Best Services"}</span>
+            <span>•</span>
+            <span>{lang === "bn" ? "সেরা সমাধান" : "Best Solutions"}</span>
+            <span>•</span>
+            <span>{lang === "bn" ? "আমাদের সম্পদ আমাদের লক্ষ্য" : "Our Assets Our Goals"}</span>
+            <span>❤️</span>
+          </p>
+          <p className="text-xs text-white/60">
+            <span>{lang === "bn" ? "তৈরি করেছেন" : "Developed with"}</span>
+            {" ❤️ "}
+            <span>{lang === "bn" ? "দ্বারা" : "by"}</span>
+            {" "}
+            <a href="https://sumonix.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-white hover:text-green-400 transition-colors">
+              SUMONIX
             </a>
           </p>
         </div>
       </div>
+
+      {whatsappDigits && (
+        <a
+          href={`https://wa.me/${whatsappDigits}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-20 left-4 lg:bottom-6 w-14 h-14 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 z-40"
+          aria-label="WhatsApp"
+        >
+          <MessageCircle className="w-6 h-6" />
+        </a>
+      )}
+
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-4 w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 z-40"
+          aria-label={lang === "bn" ? "উপরে যান" : "Back to top"}
+        >
+          <ArrowUp className="w-6 h-6" />
+        </button>
+      )}
     </footer>
   );
 }
