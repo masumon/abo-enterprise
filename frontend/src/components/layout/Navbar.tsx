@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { useTaxonomy } from "@/hooks/useTaxonomy";
 import { useAssistantStore } from "@/store/assistant";
 import { hasBottomActionBar } from "@/lib/actionBarRoutes";
+import { useAnnouncements } from "@/hooks/useAnnouncements";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -40,6 +41,8 @@ export default function Navbar() {
   const productRoots = useTaxonomy("product");
   const serviceRoots = useTaxonomy("service");
   const searchListId = "site-search-suggestions";
+  const { announcements, shouldShow: showTicker, durationSec } = useAnnouncements();
+  const tickerTrack = showTicker ? [...announcements, ...announcements] : [];
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 10);
@@ -70,7 +73,30 @@ export default function Navbar() {
         <Link href="/" className="flex-none flex items-center" aria-label={getBrandName(lang)}>
           <BrandLogo size="xs" href={false} priority />
         </Link>
-        <span className="flex-1" />
+
+        {showTicker ? (
+          <div className="marquee-viewport flex-1 min-w-0 mx-1.5">
+            <div
+              className="marquee-track items-center"
+              style={{ ["--marquee-duration" as string]: `${durationSec}s` }}
+            >
+              {tickerTrack.map((a, i) => (
+                <Link
+                  key={i}
+                  href={a.href || "/"}
+                  aria-hidden={i >= announcements.length}
+                  tabIndex={i >= announcements.length ? -1 : 0}
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-600 dark:text-brand-300 pr-6 whitespace-nowrap"
+                >
+                  {a.icon && <span aria-hidden>{a.icon}</span>}
+                  <span>{lang === "bn" ? a.bn : a.en}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <span className="flex-1" />
+        )}
 
         {showAssistantInHeader && (
           <button

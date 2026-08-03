@@ -2,11 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { X, Zap } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
-import { usePublicSettings } from "@/hooks/usePublicSettings";
-import { SITE_ANNOUNCEMENTS_KEY, getAnnouncements, type CmsAnnouncement } from "@/lib/cmsContent";
+import { useAnnouncements } from "@/hooks/useAnnouncements";
 
 const STORAGE_KEY = "abo-announcement-dismissed";
 const ANNOUNCEMENT_HEIGHT = "2.25rem";
@@ -18,36 +16,12 @@ function setAnnouncementHeight(visible: boolean) {
   );
 }
 
-// Default messages — used only until the admin sets site_announcements_json.
-const FALLBACK_ANNOUNCEMENTS: CmsAnnouncement[] = [
-  {
-    en: "🎉 New AI Solutions available! Get 20% off on first consultation →",
-    bn: "🎉 নতুন AI সমাধান এসেছে! প্রথম পরামর্শে ২০% ছাড় পান →",
-    href: "/services",
-  },
-  {
-    en: "📦 Free delivery on orders over ৳2000 in Sylhet",
-    bn: "📦 সিলেটে ৳২০০০+ অর্ডারে ফ্রি ডেলিভারি",
-    href: "/products",
-  },
-  {
-    en: "💼 Custom POS & ERP Software for your business — Book a free demo",
-    bn: "💼 আপনার ব্যবসার জন্য কাস্টম POS ও ERP — ফ্রি ডেমো বুক করুন",
-    href: "/projects",
-  },
-];
-
 export default function AnnouncementBar() {
   const [visible, setVisible] = useState(true);
   const { lang } = useLanguageStore();
-  const { settings } = usePublicSettings([SITE_ANNOUNCEMENTS_KEY]);
-  const announcements = getAnnouncements(settings, FALLBACK_ANNOUNCEMENTS).filter((a) => a.active !== false);
-  const pathname = usePathname();
-  const suppressedPrefixes = ["/admin", "/cart", "/checkout", "/login", "/register", "/profile", "/track"];
-  const isSuppressed = suppressedPrefixes.some((prefix) => pathname === prefix || pathname?.startsWith(`${prefix}/`));
-  // Promotional bar belongs only where the visitor is browsing, not
-  // mid-purchase or mid-account-action.
-  const shouldShow = !isSuppressed;
+  // Desktop-only strip (mobile shows the in-header ticker instead, see
+  // Navbar.tsx) — same shared data/suppression logic either way.
+  const { announcements, shouldShow, durationSec } = useAnnouncements();
 
   useEffect(() => {
     const dismissed = localStorage.getItem(STORAGE_KEY) === "1";
@@ -66,9 +40,6 @@ export default function AnnouncementBar() {
 
   const barClass = ANNOUNCEMENT_VARIANT_BG[announcements[0].variant ?? "promo"] ?? ANNOUNCEMENT_VARIANT_BG.promo;
   const canDismiss = announcements.some((a) => a.dismissible !== false);
-  // Ticker duration scales with content so speed reads the same whether
-  // there's 1 announcement or 5 — not a fixed, content-length-blind timer.
-  const durationSec = Math.max(12, announcements.length * 9);
   // Track is the announcement list rendered twice back-to-back; animating
   // exactly -50% of that doubled track is a seamless infinite loop no
   // matter how much content is in it.

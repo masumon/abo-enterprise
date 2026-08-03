@@ -51,6 +51,18 @@
     --mobile-float-bottom: calc(var(--mobile-chrome-bottom) + var(--sticky-cta-height) + 0.75rem);
   }
 
+  /* Mobile shows the announcement as an in-header ticker (Navbar.tsx)
+     instead of the separate desktop strip (AnnouncementBar.tsx, hidden
+     below lg in PublicShell.tsx) — so no offset is reserved for it here.
+     !important is required: AnnouncementBar.tsx sets this var as a plain
+     (non-important) inline style on <html>, which this must still win
+     over on mobile regardless of that JS running before or after paint. */
+  @media (max-width: 1023.98px) {
+    :root {
+      --announcement-height: 0px !important;
+    }
+  }
+
   .dark {
     /* The artifact's dark values. nil and gada both lift so they stay legible
        on a dark ground rather than sinking into it. */
