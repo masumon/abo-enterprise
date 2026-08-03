@@ -59,17 +59,17 @@ export default function ReviewStatsCard({
   ];
 
   return (
-    <div className="rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-white/5 dark:to-transparent p-6 sm:p-8">
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 sm:gap-6">
+    <div className="rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-white/5 dark:to-transparent p-4 sm:p-8">
+      <div className="grid grid-cols-5 gap-1.5 sm:gap-6">
         {stats.map(({ icon: Icon, label, value, color, bgColor }, idx) => (
           <div key={idx} className="flex flex-col items-center text-center">
-            <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full ${bgColor} flex items-center justify-center mb-3`}>
-              <Icon className={`w-6 h-6 sm:w-7 sm:h-7 ${color}`} aria-hidden />
+            <div className={`w-8 h-8 sm:w-14 sm:h-14 rounded-full ${bgColor} flex items-center justify-center mb-1.5 sm:mb-3`}>
+              <Icon className={`w-4 h-4 sm:w-7 sm:h-7 ${color}`} aria-hidden />
             </div>
-            <p className="text-xl sm:text-2xl font-bold text-heading mb-1">
+            <p className="text-xs sm:text-2xl font-bold text-heading mb-0.5 sm:mb-1">
               {value}
             </p>
-            <p className="text-xs sm:text-sm text-[var(--ink-muted)]">
+            <p className="text-[9px] sm:text-sm text-[var(--ink-muted)] leading-tight">
               {label}
             </p>
           </div>

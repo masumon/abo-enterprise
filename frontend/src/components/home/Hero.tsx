@@ -119,6 +119,14 @@ export default function Hero() {
               : "Cash on delivery across Bangladesh · Since 2017"}
           </p>
         </div>
+
+        {/* Admin-managed promo carousel (Admin → Promo Slides, placement "hero").
+            Renders nothing when no slide is configured — the wide desktop
+            background image isn't shaped for a small mobile card crop, so we
+            don't force it here; the text hero above still stands on its own. */}
+        <div className="px-3 pb-4">
+          <PromoSlider placement="hero" aspect="aspect-video" />
+        </div>
       </section>
 
       {/* ── Desktop hero — rich media layout ── */}
