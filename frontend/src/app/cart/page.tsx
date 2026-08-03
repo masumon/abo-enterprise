@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Tag, AlertTriangle, ArrowLeft } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Tag, AlertTriangle, ArrowLeft, Truck, CheckCircle2 } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
@@ -14,6 +14,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import { productsApi } from "@/lib/api";
 import { validateCoupon, type AppliedCoupon } from "@/lib/coupons";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 
 export default function CartPage() {
   const { items, updateQuantity, removeItem, total, stockWarnings, setStockWarnings } = useCartStore();
@@ -35,6 +36,12 @@ export default function CartPage() {
     useCartStore.persist.rehydrate();
     setHydrated(true);
   }, []);
+
+  // L1 — same free-delivery threshold checkout bills from
+  // (free_delivery_min_amount), shown as a nudge before the customer even
+  // reaches checkout rather than as a surprise on the delivery-charge line.
+  const { settings: deliverySettings } = usePublicSettings(["free_delivery_min_amount"]);
+  const freeDeliveryMin = Number(getSettingValue(deliverySettings, "free_delivery_min_amount") || NaN);
 
   const cartSubtotal = total();
   const discount = appliedCoupon?.discountAmount ?? 0;
@@ -178,6 +185,22 @@ export default function CartPage() {
 
               <div className="enterprise-card p-6 h-fit sticky top-[calc(var(--navbar-offset)+1rem)]">
                 <h2 className="font-bold text-heading mb-4">{lang === "bn" ? "অর্ডার সারাংশ" : "Order Summary"}</h2>
+
+                {Number.isFinite(freeDeliveryMin) && freeDeliveryMin > 0 && (
+                  cartSubtotal >= freeDeliveryMin ? (
+                    <p className="flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400 mb-4">
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                      {lang === "bn" ? "আপনি ফ্রি ডেলিভারি পাচ্ছেন" : "You qualify for free delivery"}
+                    </p>
+                  ) : (
+                    <p className="flex items-center gap-1.5 text-xs font-medium text-brand-600 dark:text-brand-400 mb-4">
+                      <Truck className="w-4 h-4 flex-shrink-0" />
+                      {lang === "bn"
+                        ? `আরও ${formatPrice(freeDeliveryMin - cartSubtotal)} যোগ করলে ফ্রি ডেলিভারি`
+                        : `Add ${formatPrice(freeDeliveryMin - cartSubtotal)} more for free delivery`}
+                    </p>
+                  )
+                )}
 
                 {couponsEnabled && (
                   <>

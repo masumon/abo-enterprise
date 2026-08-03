@@ -41,6 +41,10 @@ export default function WishlistPage() {
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-gray-900 truncate">{lang === "bn" ? item.name_bn : item.name_en}</p>
                   <p className="text-accent-600 font-bold">{formatPrice(item.price)}</p>
+                  {/* L3 — this is the price snapshotted when the item was
+                      saved, not a live quote; the product page has the
+                      current (and flash-sale-aware) price. */}
+                  <p className="text-[11px] text-muted">{lang === "bn" ? "সংরক্ষণের সময়ের দাম" : "Price when saved"}</p>
                 </div>
                 <Link href={`/products/${item.slug}`} className="btn btn-outline btn-sm">
                   <ArrowRight className="w-4 h-4" />

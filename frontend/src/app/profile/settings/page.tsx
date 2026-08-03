@@ -5,7 +5,7 @@ import Link from "next/link";
 import { LogOut, Save } from "lucide-react";
 import { useCustomerStore } from "@/store/customer";
 import { useCustomerProfileStore } from "@/store/customerProfile";
-import { BD_PHONE_REGEX } from "@/lib/phone";
+import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { useLanguageStore } from "@/store/language";
 import { useRouter } from "next/navigation";
 import PageHero from "@/components/ui/PageHero";
@@ -19,6 +19,10 @@ export default function SettingsPage() {
   const [name, setName] = useState(session?.name ?? "");
   const [phone, setPhone] = useState(session?.phone ?? "");
   const [saved, setSaved] = useState(false);
+  // L2 — invalid input used to fail the save silently (a bare `return`).
+  const [attempted, setAttempted] = useState(false);
+  const phoneError = !BD_PHONE_REGEX.test(phone) ? (lang === "bn" ? BD_PHONE_ERROR_BN : BD_PHONE_ERROR_EN) : null;
+  const nameError = name.trim().length < 2 ? (lang === "bn" ? "নাম দিন (কমপক্ষে ২ অক্ষর)" : "Enter a name (min 2 characters)") : null;
 
   useEffect(() => {
     useCustomerProfileStore.persist.rehydrate();
@@ -30,7 +34,8 @@ export default function SettingsPage() {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!BD_PHONE_REGEX.test(phone) || name.trim().length < 2) return;
+    setAttempted(true);
+    if (phoneError || nameError) return;
     // The session token is bound to the verified phone — a new number
     // must be re-verified with OTP before it can read order history.
     if (!session?.token || phone !== session.phone) {
@@ -66,11 +71,13 @@ export default function SettingsPage() {
           <form onSubmit={handleSave} className="space-y-4">
             <div>
               <label className="form-label">{lang === "bn" ? "নাম" : "Name"}</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} className="input" required />
+              <input value={name} onChange={(e) => setName(e.target.value)} className="input" aria-invalid={attempted && !!nameError} required />
+              {attempted && nameError && <p className="text-xs text-red-500 mt-1">{nameError}</p>}
             </div>
             <div>
               <label className="form-label">{lang === "bn" ? "ফোন" : "Phone"}</label>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="input" required />
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="input" aria-invalid={attempted && !!phoneError} required />
+              {attempted && phoneError && <p className="text-xs text-red-500 mt-1">{phoneError}</p>}
             </div>
             <div>
               <label className="form-label">{lang === "bn" ? "ইমেইল (ঐচ্ছিক)" : "Email (optional)"}</label>

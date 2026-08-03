@@ -13,7 +13,7 @@ import { useToastStore } from "@/store/toast";
 import GlassCard from "@/components/ui/GlassCard";
 import Reveal from "@/components/ui/Reveal";
 import { cn } from "@/lib/utils";
-import { BD_PHONE_REGEX } from "@/lib/phone";
+import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { formatBdPhoneDisplay, toBdTelHref, toBdWhatsappHref } from "@/lib/phone";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
@@ -38,7 +38,7 @@ export default function ContactPage() {
 
   const schema = z.object({
     name: z.string().min(2, lang === "bn" ? "নাম দিন" : "Name is required"),
-    phone: z.string().regex(BD_PHONE_REGEX, lang === "bn" ? "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন" : "Enter valid 11-digit BD phone"),
+    phone: z.string().regex(BD_PHONE_REGEX, lang === "bn" ? BD_PHONE_ERROR_BN : BD_PHONE_ERROR_EN),
     email: z.string().email(lang === "bn" ? "সঠিক ইমেইল দিন" : "Enter valid email").optional().or(z.literal("")),
     project_description: z.string().min(10, lang === "bn" ? "কমপক্ষে ১০ অক্ষর লিখুন" : "Min 10 characters"),
   });
