@@ -80,17 +80,22 @@ export default function AnnouncementBar() {
   return (
     <div className={`${barClass} text-xs sm:text-sm relative z-40 h-9`}>
       <div className="container mx-auto px-4 h-9 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex items-center gap-5 flex-shrink-0">
           {announcements.map((_, i) => (
             <button
               key={i}
               type="button"
               onClick={() => setIdx(i)}
               aria-label={lang === "bn" ? `ঘোষণা ${i + 1}` : `Announcement ${i + 1}`}
-              className={`w-1.5 h-1.5 rounded-full transition-all ${
-                i === idx ? "bg-white scale-125" : "bg-white/40"
-              }`}
-            />
+              className="p-[9px] -m-[9px] flex items-center justify-center touch-manipulation"
+            >
+              <span
+                aria-hidden
+                className={`block w-1.5 h-1.5 rounded-full transition-all ${
+                  i === idx ? "bg-white scale-125" : "bg-white/40"
+                }`}
+              />
+            </button>
           ))}
         </div>
 

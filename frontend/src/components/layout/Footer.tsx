@@ -129,11 +129,15 @@ export default function Footer() {
   const phoneDigits = normalizePhoneDigits(phoneRaw);
   const phoneDisplay = formatPhoneDisplay(phoneRaw);
 
-  const activeKeys = methods
-    .filter((m) => m.is_active)
-    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map((m) => m.payment_gateway.toLowerCase())
-    .filter((k) => k in PAY_BRAND);
+  const activeKeys = [
+    ...new Set(
+      methods
+        .filter((m) => m.is_active)
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+        .map((m) => m.payment_gateway.toLowerCase())
+        .filter((k) => k in PAY_BRAND)
+    ),
+  ];
   const payKeys = activeKeys.length > 0 ? activeKeys : DEFAULT_PAY;
 
   const playStoreUrl = getSettingValue(settings, "play_store_url") || "/";

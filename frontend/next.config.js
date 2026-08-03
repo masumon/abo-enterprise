@@ -26,6 +26,13 @@ const nextConfig = {
     optimizePackageImports: ["lucide-react"],
   },
   async headers() {
+    // Dev-only: the local FastAPI backend runs on plain HTTP, so the
+    // production CSP's HTTPS-only connect-src would silently block every
+    // API call from the browser. Production keeps the strict https-only policy.
+    const connectSrc =
+      process.env.NODE_ENV === "production"
+        ? "connect-src 'self' https: https://www.google-analytics.com https://www.googletagmanager.com;"
+        : "connect-src 'self' https: http://localhost:8000 http://127.0.0.1:8000 ws://localhost:* https://www.google-analytics.com https://www.googletagmanager.com;";
     return [
       {
         source: "/(.*)",
@@ -39,7 +46,7 @@ const nextConfig = {
           {
             key: "Content-Security-Policy",
             value:
-              "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: http:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: https://www.google-analytics.com https://www.googletagmanager.com; media-src 'self' https: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'self' https://www.google.com https://maps.google.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; child-src 'self' https://www.google.com https://maps.google.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; frame-ancestors 'none';",
+              `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: http:; font-src 'self' data: https://fonts.gstatic.com; ${connectSrc} media-src 'self' https: blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'self' https://www.google.com https://maps.google.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; child-src 'self' https://www.google.com https://maps.google.com https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com; frame-ancestors 'none';`,
           },
         ],
       },
