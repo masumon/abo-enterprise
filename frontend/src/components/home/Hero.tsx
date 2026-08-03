@@ -14,6 +14,7 @@ import { resolveHomeBannerImage } from "@/lib/pageBanners";
 import { isVideoUrl } from "@/lib/media";
 import AutoVideo from "@/components/ui/AutoVideo";
 import PromoSlider from "@/components/ui/PromoSlider";
+import HomeSearchBar from "@/components/home/HomeSearchBar";
 import { cn } from "@/lib/utils";
 import {
   HERO_TEXT_STYLE_KEY,
@@ -98,12 +99,16 @@ export default function Hero() {
     <>
       {/* ── Mobile hero — matches artifact Screen 04 ── */}
       <section className="lg:hidden bg-gradient-to-b from-brand-50 to-transparent dark:from-brand-900/20 dark:to-transparent">
-        <div className="px-3 pt-4 pb-3">
-          <h1 className="font-display text-[20px] leading-[1.15] tracking-[-0.02em] font-semibold text-[var(--ink)] dark:text-[var(--ink)] text-balance">
+        {/* Kept in the DOM for the page's one true <h1> (SEO/a11y) but not
+            shown visually — the redesigned mobile hero leads with the promo
+            banner + search bar instead of a text headline. Admin-controlled
+            hero_title/hero_subtitle fields are untouched. */}
+        <div className="sr-only">
+          <h1>
             {heroTitleOverride || (lang === "bn"
               ? "সিলেটের দোকান, সেবা ও সফটওয়্যার টিম"
               : "Sylhet's store, service desk and software team.")}
-            <span className="block font-sans text-xs text-[var(--ink-muted)] font-medium tracking-normal mt-1">
+            <span>
               {heroTitleOverride
                 ? (lang === "bn"
                     ? "Sylhet's store, service desk and software team."
@@ -113,7 +118,7 @@ export default function Hero() {
                     : "সিলেটের দোকান, সেবা ও সফটওয়্যার টিম")}
             </span>
           </h1>
-          <p className="text-xs text-[var(--ink-muted)] mt-1">
+          <p>
             {lang === "bn"
               ? "সারাদেশে নগদে ডেলিভারি · ২০১৭ সাল থেকে"
               : "Cash on delivery across Bangladesh · Since 2017"}
@@ -123,9 +128,13 @@ export default function Hero() {
         {/* Admin-managed promo carousel (Admin → Promo Slides, placement "hero").
             Renders nothing when no slide is configured — the wide desktop
             background image isn't shaped for a small mobile card crop, so we
-            don't force it here; the text hero above still stands on its own. */}
-        <div className="px-3 pb-4">
+            don't force it here. */}
+        <div className="px-3 pt-3">
           <PromoSlider placement="hero" aspect="aspect-video" />
+        </div>
+
+        <div className="px-3 py-3">
+          <HomeSearchBar />
         </div>
       </section>
 
