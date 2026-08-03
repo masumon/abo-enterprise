@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { User, KeyRound, Loader2, ArrowLeft, Mail } from "lucide-react";
 import { BD_PHONE_REGEX } from "@/lib/phone";
@@ -32,6 +32,23 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [devHint, setDevHint] = useState(false);
+  // M8 — the send endpoint had no cooldown affordance on the client, so a
+  // stuck/slow email invited repeated taps. 30s matches typical email OTP
+  // delivery latency without making a genuinely lost code feel unrecoverable.
+  const RESEND_COOLDOWN = 30;
+  const [resendIn, setResendIn] = useState(0);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
+
+  const doSend = async () => {
+    const r = await customerOtpApi.send(fullPhone, email.trim());
+    setDevHint(!(r.data.data as { via_email?: boolean })?.via_email);
+    setResendIn(RESEND_COOLDOWN);
+  };
 
   const sendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,9 +67,21 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
     }
     setLoading(true);
     try {
-      const r = await customerOtpApi.send(fullPhone, email.trim());
-      setDevHint(!(r.data.data as { via_email?: boolean })?.via_email);
+      await doSend();
       setStep("otp");
+    } catch (err) {
+      setError(apiErrorMessage(err, bn ? "OTP পাঠানো যায়নি — আবার চেষ্টা করুন" : "Could not send OTP — try again"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendOtp = async () => {
+    if (resendIn > 0 || loading) return;
+    setError("");
+    setLoading(true);
+    try {
+      await doSend();
     } catch (err) {
       setError(apiErrorMessage(err, bn ? "OTP পাঠানো যায়নি — আবার চেষ্টা করুন" : "Could not send OTP — try again"));
     } finally {
@@ -117,7 +146,17 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
         </button>
         <button
           type="button"
-          onClick={() => { setStep("phone"); setCode(""); setError(""); }}
+          onClick={resendOtp}
+          disabled={loading || resendIn > 0}
+          className="text-xs text-brand-600 dark:text-brand-400 hover:underline w-full text-center disabled:text-muted disabled:no-underline disabled:cursor-not-allowed"
+        >
+          {resendIn > 0
+            ? (bn ? `আবার পাঠান (${resendIn}s)` : `Resend code (${resendIn}s)`)
+            : (bn ? "কোড আবার পাঠান" : "Resend code")}
+        </button>
+        <button
+          type="button"
+          onClick={() => { setStep("phone"); setCode(""); setError(""); setResendIn(0); }}
           className="btn btn-ghost btn-sm w-full flex items-center justify-center gap-1.5 text-muted"
         >
           <ArrowLeft className="w-3.5 h-3.5" />

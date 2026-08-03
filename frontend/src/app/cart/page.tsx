@@ -25,6 +25,16 @@ export default function CartPage() {
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [validating, setValidating] = useState(false);
+  // M4 — mirrors checkout/page.tsx's guard: the store already rehydrates at
+  // app mount (StoreHydration.tsx), but this page can paint before that
+  // finishes, showing "cart is empty" for a returning visitor who actually
+  // has items. Wait for an explicit rehydrate before trusting items.length.
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    useCartStore.persist.rehydrate();
+    setHydrated(true);
+  }, []);
 
   const cartSubtotal = total();
   const discount = appliedCoupon?.discountAmount ?? 0;
@@ -85,7 +95,7 @@ export default function CartPage() {
 
       <section className="enterprise-section">
         <div className="container mx-auto px-4 max-w-5xl">
-          {items.length === 0 ? (
+          {!hydrated ? null : items.length === 0 ? (
             <EmptyState
               icon={ShoppingBag}
               title={lang === "bn" ? "কার্ট খালি" : "Your cart is empty"}
