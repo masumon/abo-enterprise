@@ -22,6 +22,10 @@ interface Props {
   product: Product;
   onAddToCart?: () => void;
   layout?: "grid" | "list";
+  /** "compact" is used by the homepage's Flash Sale / Featured Products
+   *  grids for a denser mobile layout. Every other grid (/products,
+   *  /search, wishlist, compare) keeps the default sizing unchanged. */
+  density?: "default" | "compact";
 }
 
 function productAlt(product: Product, lang: string) {
@@ -30,7 +34,8 @@ function productAlt(product: Product, lang: string) {
     : `${product.name_en} — ABO Enterprise`;
 }
 
-export default function ProductCard({ product, onAddToCart, layout = "grid" }: Props) {
+export default function ProductCard({ product, onAddToCart, layout = "grid", density = "default" }: Props) {
+  const compact = density === "compact";
   const { addItem } = useCartStore();
   const { toggle, has } = useWishlistStore();
   const { add: addCompare, has: isCompared } = useCompareStore();
@@ -137,12 +142,12 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
     >
       <Link href={`/products/${product.slug}`} className="absolute inset-0 z-0" aria-label={alt} />
 
-      <div className="absolute top-3 left-3 right-3 flex justify-between z-10 pointer-events-none">
+      <div className={cn("absolute left-3 right-3 flex justify-between z-10 pointer-events-none", compact ? "top-2" : "top-3")}>
         <div className="flex flex-col gap-1">
           {product.badge && (
             <Badge variant={badgeVariantFromProduct(product.badge)}>{product.badge}</Badge>
           )}
-          {product.category && (
+          {product.category && !compact && (
             <Badge variant="outline" className="text-xs capitalize">{product.category}</Badge>
           )}
         </div>
@@ -154,23 +159,27 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
       </div>
 
       <div className={cn(
-        "absolute top-3 right-3 z-20 flex flex-col gap-1.5 transition-opacity",
+        "absolute z-20 flex flex-col transition-opacity",
+        compact ? "top-2 right-2 gap-1" : "top-3 right-3 gap-1.5",
         // Always visible on touch (mobile/tablet); reveal on hover for desktop.
         "opacity-100 lg:opacity-0",
         actionsOpen && "lg:opacity-100"
       )}>
-        <button type="button" onClick={handleWishlist} className={cn("w-9 h-9 rounded-lg glass flex items-center justify-center pointer-events-auto touch-manipulation", wished ? "text-accent-500" : "text-gray-500")} aria-label={t("wishlist")}>
-          <Heart className={cn("w-4 h-4", wished && "fill-current")} />
+        <button type="button" onClick={handleWishlist} className={cn("rounded-lg glass flex items-center justify-center pointer-events-auto touch-manipulation", compact ? "w-8 h-8" : "w-9 h-9", wished ? "text-accent-500" : "text-gray-500")} aria-label={t("wishlist")}>
+          <Heart className={cn(compact ? "w-3.5 h-3.5" : "w-4 h-4", wished && "fill-current")} />
         </button>
-        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addCompare(product); toast("info", lang === "bn" ? "তুলনায় যোগ" : "Added to compare"); }} disabled={isCompared(productId)} className="w-9 h-9 rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation" aria-label={t("compare")}>
-          <GitCompare className="w-4 h-4" />
+        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addCompare(product); toast("info", lang === "bn" ? "তুলনায় যোগ" : "Added to compare"); }} disabled={isCompared(productId)} className={cn("rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation", compact ? "w-8 h-8" : "w-9 h-9")} aria-label={t("compare")}>
+          <GitCompare className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} />
         </button>
-        <Link href={`/products/${product.slug}`} className="w-9 h-9 rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation" aria-label={t("view_details")}>
-          <Eye className="w-4 h-4" />
+        <Link href={`/products/${product.slug}`} className={cn("rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation", compact ? "w-8 h-8" : "w-9 h-9")} aria-label={t("view_details")}>
+          <Eye className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} />
         </Link>
       </div>
 
-      <div className="relative aspect-[4/5] sm:aspect-square bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-brand-900/40 overflow-hidden pointer-events-none">
+      <div className={cn(
+        "relative bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-brand-900/40 overflow-hidden pointer-events-none",
+        compact ? "aspect-square" : "aspect-[4/5] sm:aspect-square"
+      )}>
         <Image src={imageSrc} alt={alt} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 50vw, 25vw" />
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2">
@@ -188,41 +197,53 @@ export default function ProductCard({ product, onAddToCart, layout = "grid" }: P
         )}
       </div>
 
-      <div className="flex flex-col flex-1 p-4">
-        <div className="flex items-center gap-1 mb-1.5">
+      <div className={cn("flex flex-col flex-1", compact ? "p-2.5" : "p-4")}>
+        <div className={cn("flex items-center gap-1", compact ? "mb-1" : "mb-1.5")}>
           {reviewCount > 0 ? (
             <>
               <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" aria-hidden />
               <span className="text-xs text-gray-500 font-medium">{rating.toFixed(1)}</span>
-              <span className="text-xs text-gray-400">({reviewCount})</span>
+              {!compact && <span className="text-xs text-gray-400">({reviewCount})</span>}
             </>
           ) : (
-            <span className="text-xs text-gray-400">{lang === "bn" ? "এখনো রিভিউ নেই" : "No reviews yet"}</span>
+            !compact && <span className="text-xs text-gray-400">{lang === "bn" ? "এখনো রিভিউ নেই" : "No reviews yet"}</span>
           )}
-          <span className="text-xs text-gray-300 ml-auto">
-            {isOutOfStock ? t("out_of_stock") : t("in_stock")}
-          </span>
+          {!compact && (
+            <span className="text-xs text-gray-300 ml-auto">
+              {isOutOfStock ? t("out_of_stock") : t("in_stock")}
+            </span>
+          )}
         </div>
-        <h3 className="font-semibold text-heading text-sm leading-snug mb-2 line-clamp-2 min-h-[2.5rem]">
+        <h3 className={cn(
+          "font-semibold text-heading leading-snug line-clamp-2",
+          compact ? "text-xs mb-1.5 min-h-[2rem]" : "text-sm mb-2 min-h-[2.5rem]"
+        )}>
           {lang === "bn" ? product.name_bn : product.name_en}
         </h3>
-        <div className="flex items-baseline gap-2 mb-2 mt-auto">
-          <span className="text-xl sm:text-2xl font-bold text-accent-600">{formatPrice(product.price)}</span>
+        <div className={cn("flex items-baseline gap-2 mt-auto", compact ? "mb-1.5" : "mb-2")}>
+          <span className={cn("font-bold text-accent-600", compact ? "text-base" : "text-xl sm:text-2xl")}>{formatPrice(product.price)}</span>
           {product.original_price && (
             <span className="text-xs text-gray-400 line-through">{formatPrice(product.original_price)}</span>
           )}
         </div>
-        {flashLive && (
+        {flashLive && !compact && (
           <CountdownTimer endDate={getWeeklySaleEnd()} label={lang === "bn" ? "ফ্ল্যাশ সেল শেষ" : "Flash sale ends"} className="mb-2 text-xs" />
         )}
-        <div className="flex flex-wrap gap-1 mb-3 items-center">
-          <PaymentMethodBadges />
-          {reviewCount > 0 && (
-            <span className="text-xs text-gray-400 ml-auto">{reviewCount} {lang === "bn" ? "রিভিউ" : "reviews"}</span>
-          )}
-        </div>
-        <button type="button" onClick={handleAdd} disabled={isOutOfStock} className="btn btn-primary btn-sm w-full relative z-10 btn-ripple">
-          <ShoppingCart className="w-4 h-4" aria-hidden />
+        {!compact && (
+          <div className="flex flex-wrap gap-1 mb-3 items-center">
+            <PaymentMethodBadges />
+            {reviewCount > 0 && (
+              <span className="text-xs text-gray-400 ml-auto">{reviewCount} {lang === "bn" ? "রিভিউ" : "reviews"}</span>
+            )}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={handleAdd}
+          disabled={isOutOfStock}
+          className={cn("btn btn-primary w-full relative z-10 btn-ripple", compact ? "btn-sm text-xs gap-1" : "btn-sm")}
+        >
+          <ShoppingCart className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} aria-hidden />
           {t("add_to_cart")}
         </button>
       </div>
