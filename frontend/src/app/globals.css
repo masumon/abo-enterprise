@@ -1,6 +1,9 @@
 /* Bengali only. Latin runs on the system stack, as the artifact specifies, so
-   the page no longer waits on a webfont for its primary text. */
-@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@600;700&display=swap');
+   the page no longer waits on a webfont for its primary text. Hind Siliguri /
+   Noto Serif Bengali are self-hosted via next/font/google in layout.tsx
+   (audit H2) - no runtime request to Google Fonts, no render-blocking
+   cross-origin @import. --font-hind-siliguri / --font-noto-serif-bengali are
+   set there as CSS custom properties on <html>. */
 
 @tailwind base;
 @tailwind components;
@@ -28,7 +31,7 @@
     /* Latin resolves to the first face that exists; Bengali has no glyphs in
        any of them, so it falls through to Noto Serif Bengali — a real Bengali
        serif, chosen, not a fallback the browser picked. */
-    --face-display: ui-serif, "Charter", "Bitstream Charter", "Iowan Old Style", "Source Serif 4", Georgia, "Noto Serif Bengali", serif;
+    --face-display: ui-serif, "Charter", "Bitstream Charter", "Iowan Old Style", "Source Serif 4", Georgia, var(--font-noto-serif-bengali), serif;
     --glass-bg: rgba(255, 255, 255, 0.72);
     --glass-border: rgba(255, 255, 255, 0.35);
     --glass-shadow: 0 1px 2px rgba(20, 24, 43, 0.06), 0 4px 12px rgba(20, 24, 43, 0.05);
@@ -81,7 +84,7 @@
   }
 
   body {
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Bengali", "Hind Siliguri", sans-serif;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Bengali", var(--font-hind-siliguri), sans-serif;
     /* Soft brand-tinted base instead of stark white — easier on the eyes and
        lets white cards read as elevated. */
     @apply bg-[#f1f2f7] text-gray-900;
@@ -95,7 +98,7 @@
   }
 
   html[lang="bn"] body {
-    font-family: 'Noto Sans Bengali', 'Hind Siliguri', 'SolaimanLipi', system-ui, sans-serif;
+    font-family: 'Noto Sans Bengali', var(--font-hind-siliguri), 'SolaimanLipi', system-ui, sans-serif;
   }
 
   /*
@@ -257,7 +260,10 @@
   }
   .btn-glass:hover { background: rgba(255,255,255,0.25); }
 
-  .btn-sm  { @apply px-3.5 py-1.5 text-sm min-h-[36px]; }
+  /* min-h raised 36px -> 44px (audit H3): this class sizes "Add to cart" on
+     every product card sitewide, and 36px was below the --tap: 44px token
+     this file already declares as the site's own touch-target standard. */
+  .btn-sm  { @apply px-3.5 py-1.5 text-sm min-h-[44px]; }
   .btn-md  { @apply px-5 py-2.5 text-sm min-h-[44px]; }
   .btn-lg  { @apply px-7 py-3.5 text-base min-h-[48px]; }
 

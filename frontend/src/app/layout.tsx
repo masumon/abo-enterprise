@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
+import { Hind_Siliguri, Noto_Serif_Bengali } from "next/font/google";
 import "./globals.css";
 import { LANG_COOKIE, normalizeLang } from "@/lib/lang";
 import StoreHydration from "@/components/providers/StoreHydration";
@@ -15,6 +16,22 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 import { fetchPublicSettings, settingValue } from "@/lib/serverSettings";
 
 const API_ORIGIN = getApiBaseUrl();
+
+// Self-hosted at build time (audit H2) - was a render-blocking cross-origin
+// @import in globals.css. Bengali-only: Latin already runs on the system
+// stack (see globals.css's comment on --face-display).
+const hindSiliguri = Hind_Siliguri({
+  subsets: ["bengali"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+  variable: "--font-hind-siliguri",
+});
+const notoSerifBengali = Noto_Serif_Bengali({
+  subsets: ["bengali"],
+  weight: ["600", "700"],
+  display: "swap",
+  variable: "--font-noto-serif-bengali",
+});
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await fetchPublicSettings();
@@ -132,10 +149,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
      first paint correct for both audiences. */
   const lang = normalizeLang(cookies().get(LANG_COOKIE)?.value);
   return (
-    <html lang={lang} suppressHydrationWarning>
+    <html lang={lang} suppressHydrationWarning className={`${hindSiliguri.variable} ${notoSerifBengali.variable}`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://www.google.com" />
         <link rel="dns-prefetch" href="https://maps.google.com" />
         <link rel="preconnect" href={API_ORIGIN} />

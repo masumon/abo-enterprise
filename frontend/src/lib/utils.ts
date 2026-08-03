@@ -18,6 +18,29 @@ export function discountPercent(original: number, current: number): number {
   return Math.round(((original - current) / original) * 100);
 }
 
+/** Same live-flash-sale check used in ProductCard.tsx / ProductDetailClient.tsx
+ *  (audit C1) - a live flash sale overrides the regular price everywhere it's
+ *  shown, measured against the normal price so the badge/strike match what's
+ *  actually charged. New call sites (e.g. Compare) should use this instead of
+ *  reading product.price directly. */
+export function getEffectivePrice(product: {
+  price: number;
+  original_price?: number;
+  is_flash_sale?: boolean;
+  flash_sale_price?: number;
+  flash_sale_ends_at?: string | null;
+}): { effectivePrice: number; strikePrice: number | undefined } {
+  const flashLive =
+    product.is_flash_sale === true &&
+    product.flash_sale_price != null &&
+    product.flash_sale_price < product.price &&
+    (!product.flash_sale_ends_at || new Date(product.flash_sale_ends_at) > new Date());
+  return {
+    effectivePrice: flashLive ? product.flash_sale_price! : product.price,
+    strikePrice: flashLive ? product.price : product.original_price,
+  };
+}
+
 export function generateWhatsAppOrderMessage(
   customerName: string,
   phone: string,
