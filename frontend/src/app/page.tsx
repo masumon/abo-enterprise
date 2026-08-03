@@ -18,6 +18,7 @@ const LeadCapture = dynamic(() => import("@/components/home/LeadCapture"), { loa
 const ContactSection = dynamic(() => import("@/components/home/ContactSection"), { loading: () => <SectionSkeleton /> });
 const Portfolio = dynamic(() => import("@/components/home/Portfolio"), { loading: () => <SectionSkeleton /> });
 const ClientLogos = dynamic(() => import("@/components/home/ClientLogos"), { loading: () => <SectionSkeleton /> });
+const ContactCTABar = dynamic(() => import("@/components/home/ContactCTABar"), { loading: () => <SectionSkeleton /> });
 
 export const metadata: Metadata = {
   title: getBrandFullTitle("bn"),
@@ -146,15 +147,18 @@ export default function HomePage() {
         <Reveal><WhyChooseUsCards /></Reveal>
       </div>
 
+      {/* Contact CTA Bar */}
+      <Reveal><ContactCTABar /></Reveal>
+
       {/* Customer Reviews Section */}
       <div id="reviews" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
         <Reveal>
+          <CustomerReviews />
           <section className="py-12 lg:py-16">
             <div className="container mx-auto px-4">
               <ReviewStatsCard />
             </div>
           </section>
-          <CustomerReviews />
         </Reveal>
       </div>
 
