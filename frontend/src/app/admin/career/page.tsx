@@ -7,6 +7,7 @@ import { Search, Loader2, ChevronLeft, ChevronRight, Trash2, Eye, AlertCircle, C
 import { useToastStore } from "@/store/toast";
 import { apiErrorMessage } from "@/lib/apiError";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import CareerPositionsManager from "@/components/admin/CareerPositionsManager";
 
 interface CareerApp {
   id: string;
@@ -115,6 +116,8 @@ export default function CareerAdminPage() {
         titleBn="ক্যারিয়ার আবেদন"
         description="View and manage job applications"
       />
+
+      <CareerPositionsManager />
 
       {/* Filters */}
       <div className="bg-white rounded-lg border border-gray-200 p-4 space-y-4">

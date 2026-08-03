@@ -13,6 +13,7 @@ export const SITE_FAQ_KEY = "site_faq_json";
 export const SITE_QUICK_CATEGORIES_KEY = "site_quick_categories_json";
 export const SITE_ENTRY_POINTS_KEY = "site_entry_points_json";
 export const SITE_REGISTRATIONS_KEY = "site_registrations_json";
+export const SITE_CAREER_POSITIONS_KEY = "site_career_positions_json";
 
 export interface CmsTeamMember {
   id: string;
@@ -107,6 +108,21 @@ function parseJsonArray<T>(raw: string | undefined, fallback: T[]): T[] {
   } catch {
     return fallback;
   }
+}
+
+/** Open job position — admin-managed, was previously wired to nothing (the
+ * Careers page's fetchPositions was a permanent no-op). */
+export interface CmsCareerPosition {
+  id: string;
+  title: { en: string; bn: string };
+  type: { en: string; bn: string };
+  location: { en: string; bn: string };
+  active?: boolean;
+}
+
+export function getCareerPositions(settings: Record<string, string>, fallback: CmsCareerPosition[]): CmsCareerPosition[] {
+  return parseJsonArray<CmsCareerPosition>(getSettingValue(settings, SITE_CAREER_POSITIONS_KEY), fallback)
+    .filter((p) => p.active !== false);
 }
 
 export function getAboutTeam(settings: Record<string, string>, fallback: CmsTeamMember[]): CmsTeamMember[] {
