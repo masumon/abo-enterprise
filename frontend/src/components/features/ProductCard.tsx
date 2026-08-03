@@ -221,9 +221,9 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
           {lang === "bn" ? product.name_bn : product.name_en}
         </h3>
         <div className={cn("flex items-baseline gap-2 mt-auto", compact ? "mb-1.5" : "mb-2")}>
-          <span className={cn("font-bold text-accent-600", compact ? "text-base" : "text-xl sm:text-2xl")}>{formatPrice(product.price)}</span>
-          {product.original_price && (
-            <span className="text-xs text-gray-400 line-through">{formatPrice(product.original_price)}</span>
+          <span className={cn("font-bold text-accent-600", compact ? "text-base" : "text-xl sm:text-2xl")}>{formatPrice(effectivePrice)}</span>
+          {strikePrice && (
+            <span className="text-xs text-gray-400 line-through">{formatPrice(strikePrice)}</span>
           )}
         </div>
         {flashLive && !compact && (

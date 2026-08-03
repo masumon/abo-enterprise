@@ -111,12 +111,21 @@ export default function ProductDetailClient({ product }: Props) {
   };
 
   const images = [product.image_url, ...(product.images ?? [])].filter(Boolean) as string[];
-  const discount = product.original_price ? discountPercent(product.original_price, product.price) : null;
+  // Same live-flash-sale check as ProductCard.tsx: the discount/savings/price
+  // shown here must always agree with what the flash-sale badge promises.
+  const flashLive =
+    product.is_flash_sale === true &&
+    product.flash_sale_price != null &&
+    product.flash_sale_price < product.price &&
+    (!product.flash_sale_ends_at || new Date(product.flash_sale_ends_at) > new Date());
+  const effectivePrice = flashLive ? product.flash_sale_price! : product.price;
+  const strikePrice = flashLive ? product.price : product.original_price;
+  const discount = strikePrice ? discountPercent(strikePrice, effectivePrice) : null;
   const name = lang === "bn" ? product.name_bn : product.name_en;
   const desc = lang === "bn" ? product.description_bn : product.description_en;
   const productId = product.id ?? product.slug;
-  const waMsg = encodeURIComponent(`${lang === "bn" ? "অর্ডার করতে চাই" : "I want to order"}: ${name} - ${formatPrice(product.price)}`);
-  const savings = product.original_price ? product.original_price - product.price : 0;
+  const waMsg = encodeURIComponent(`${lang === "bn" ? "অর্ডার করতে চাই" : "I want to order"}: ${name} - ${formatPrice(effectivePrice)}`);
+  const savings = strikePrice ? strikePrice - effectivePrice : 0;
 
   /*
    * The delivery line, built from the settings checkout bills from. A
@@ -207,8 +216,8 @@ export default function ProductDetailClient({ product }: Props) {
               {product.category && <span className="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">{product.category}</span>}
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-3">{name}</h1>
               <div className="flex items-baseline gap-3 mb-2">
-                <span className="text-3xl font-bold text-accent-600">{formatPrice(product.price)}</span>
-                {product.original_price && <span className="text-lg text-gray-400 line-through">{formatPrice(product.original_price)}</span>}
+                <span className="text-3xl font-bold text-accent-600">{formatPrice(effectivePrice)}</span>
+                {strikePrice && <span className="text-lg text-gray-400 line-through">{formatPrice(strikePrice)}</span>}
               </div>
               {savings > 0 && (
                 /* Screen 07 — the saving beside the price, not a sentence under
@@ -355,7 +364,7 @@ export default function ProductDetailClient({ product }: Props) {
       {showStickyBar && (product.stock_quantity ?? 0) > 0 && (
         <div className="fixed bottom-mobile-nav left-0 right-0 z-40 surface-card backdrop-blur-md border-t px-4 py-3 flex items-center gap-3 shadow-lg lg:hidden">
           <div className="flex-1 min-w-0">
-            <p className="font-bold text-accent-600">{formatPrice(product.price)}</p>
+            <p className="font-bold text-accent-600">{formatPrice(effectivePrice)}</p>
             <p className="text-xs text-muted truncate">{name}</p>
           </div>
           <button type="button" onClick={handleAdd} className="btn btn-outline btn-sm flex-shrink-0">{t("add_to_cart")}</button>
