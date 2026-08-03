@@ -34,7 +34,7 @@ export default function CategoryCards() {
   return (
     <section className="py-8 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           {CATEGORIES.map(({ id, emoji, label, href, blurb }) => (
             <Link
               key={id}

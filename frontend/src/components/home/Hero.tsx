@@ -226,7 +226,11 @@ export default function Hero() {
                           <AutoVideo src={heroPromoMedia} className="w-full aspect-video object-cover block" tapToPlay aria-hidden />
                         ) : (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={heroPromoMedia} alt="" className="w-full aspect-video object-cover block" />
+                          <img
+                            src={heroPromoMedia}
+                            alt={heroTitleOverride || (lang === "bn" ? "প্রোমোশনাল ব্যানার" : "Promotional banner")}
+                            className="w-full aspect-video object-cover block"
+                          />
                         )}
                       </div>
                     ) : null

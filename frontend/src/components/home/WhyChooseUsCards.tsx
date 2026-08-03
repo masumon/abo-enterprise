@@ -95,17 +95,17 @@ export default function WhyChooseUsCards() {
         </div>
 
         {/* Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
           {WHY_CHOOSE_US.map(({ id, icon: Icon, label, description, color, bgColor }) => (
-            <GlassCard key={id} hover className="flex flex-col items-start gap-4 p-6">
-              <div className={`w-14 h-14 rounded-xl ${bgColor} flex items-center justify-center`}>
-                <Icon className={`w-7 h-7 ${color}`} aria-hidden />
+            <GlassCard key={id} hover className="flex flex-col items-start gap-3 sm:gap-4 p-4 sm:p-6">
+              <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl ${bgColor} flex items-center justify-center`}>
+                <Icon className={`w-5 h-5 sm:w-7 sm:h-7 ${color}`} aria-hidden />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-heading mb-2">
+                <h3 className="font-bold text-sm sm:text-lg text-heading mb-1 sm:mb-2">
                   {lang === "bn" ? label.bn : label.en}
                 </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                   {lang === "bn" ? description.bn : description.en}
                 </p>
               </div>
