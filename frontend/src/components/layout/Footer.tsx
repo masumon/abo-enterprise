@@ -74,10 +74,10 @@ const SERVICES_LINKS = [
 const CUSTOMER_CARE_LINKS = [
   { href: "/faq", label: { en: "FAQ", bn: "সাধারণ প্রশ্ন" } },
   { href: "/contact", label: { en: "Contact", bn: "যোগাযোগ করুন" } },
-  { href: "/legal/warranty", label: { en: "Warranty", bn: "ওয়ারেন্টি" } },
-  { href: "/legal/return", label: { en: "Returns", bn: "রিটার্ন নীতি" } },
+  { href: "/contact", label: { en: "Warranty", bn: "ওয়ারেন্টি" } },
+  { href: "/legal/refund", label: { en: "Returns", bn: "রিটার্ন নীতি" } },
   { href: "/track", label: { en: "Track Order", bn: "অর্ডার ট্র্যাক করুন" } },
-  { href: "/support", label: { en: "Support", bn: "সহায়তা" } },
+  { href: "/faq", label: { en: "Support", bn: "সহায়তা" } },
 ];
 
 function normalizePhoneDigits(phone: string) {
@@ -186,7 +186,7 @@ export default function Footer() {
 
   return (
     <footer className="site-footer relative text-white overflow-hidden bg-gradient-to-b from-[#0f1a2e] to-[#051529]">
-      <div className="relative z-10 container mx-auto px-4 py-10 md:py-14 space-y-8 md:space-y-10">
+      <div className="relative z-10 container mx-auto px-4 py-6 md:py-14 space-y-5 md:space-y-10">
         <div className="grid gap-8 md:gap-10 md:grid-cols-[1fr_1.5fr]">
           <div className="space-y-6">
             <div>
@@ -257,7 +257,7 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-3 gap-3 sm:gap-6 lg:grid-cols-4">
             <nav>
               <h3 className="text-sm md:text-base font-bold text-white mb-3">
                 {lang === "bn" ? "কুইক লিংকস" : "Quick Links"}
@@ -302,7 +302,7 @@ export default function Footer() {
               </h3>
               <ul className="space-y-2">
                 {CUSTOMER_CARE_LINKS.map((link) => (
-                  <li key={link.href}>
+                  <li key={link.label.en}>
                     <Link
                       href={link.href}
                       className="text-xs md:text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2 group"
@@ -322,7 +322,7 @@ export default function Footer() {
               <ul className="space-y-2">
                 <li>
                   <Link
-                    href="/support"
+                    href="/faq"
                     className="text-xs md:text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2 group"
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-green-400 transition-colors" />
@@ -335,7 +335,7 @@ export default function Footer() {
         </div>
 
         {trustBadges.length > 0 && (
-          <div className="border-t border-white/10 pt-8 space-y-6">
+          <div className="border-t border-white/10 pt-5 md:pt-8 space-y-4 md:space-y-6">
             <div className="flex items-center gap-3 justify-center">
               <div className="w-1 h-1 rounded-full bg-green-400" />
               <h2 className="text-lg md:text-xl font-bold text-white text-center">
@@ -364,7 +364,7 @@ export default function Footer() {
           </div>
         )}
 
-        <div className="border-t border-white/10 pt-8 space-y-6">
+        <div className="border-t border-white/10 pt-5 md:pt-8 space-y-4 md:space-y-6">
           <div className="flex items-center gap-3 justify-center">
             <div className="w-1 h-1 rounded-full bg-green-400" />
             <h2 className="text-lg md:text-xl font-bold text-white text-center">
@@ -391,7 +391,7 @@ export default function Footer() {
         </div>
 
         {newsletterEnabled && (
-          <div className="border-t border-white/10 pt-8 space-y-6">
+          <div className="border-t border-white/10 pt-5 md:pt-8 space-y-4 md:space-y-6">
             <div className="flex items-start gap-4 md:gap-6">
               <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
                 <Mail className="w-6 h-6 md:w-7 md:h-7 text-white" aria-hidden />
@@ -434,7 +434,7 @@ export default function Footer() {
           </div>
         )}
 
-        <div className="border-t border-white/10 pt-8 space-y-6">
+        <div className="border-t border-white/10 pt-5 md:pt-8 space-y-4 md:space-y-6">
           <div>
             <h3 className="text-lg md:text-xl font-bold text-white">
               {lang === "bn" ? "আমাদের অ্যাপ ডাউনলোড করুন" : "Download Our App"}

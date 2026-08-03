@@ -65,13 +65,13 @@ export default function ServicesOverview() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
             {Array.from({ length: 4 }).map((_, i) => (
               <ProductCardSkeleton key={i} />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
             {services.map((service, i) => {
               const name = lang === "bn" && service.name_bn ? service.name_bn : service.name_en;
               const desc =
@@ -83,7 +83,7 @@ export default function ServicesOverview() {
                 <div key={service.id ?? service.slug} className="h-full">
                   <Link href={serviceHref(service.slug)} className="group block h-full">
                     <GlassCard hover className="overflow-hidden h-full flex flex-col">
-                      <div className="relative h-32 sm:h-40 bg-gray-100 dark:bg-gray-800">
+                      <div className="relative h-28 sm:h-40 bg-gray-100 dark:bg-gray-800">
                         <Image
                           src={imageSrc}
                           alt={name}
@@ -92,7 +92,7 @@ export default function ServicesOverview() {
                           sizes="(max-width:640px) 50vw, (max-width:1024px) 50vw, 25vw"
                         />
                       </div>
-                      <div className="p-3 sm:p-4 flex flex-col flex-1">
+                      <div className="p-2.5 sm:p-4 flex flex-col flex-1">
                         {service.category && (
                           <span className="inline-block px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-brand-600 bg-brand-50 dark:bg-brand-500/10 rounded-full mb-2 w-fit">
                             {service.category}

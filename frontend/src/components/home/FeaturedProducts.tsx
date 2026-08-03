@@ -133,9 +133,9 @@ export default function FeaturedProducts() {
               {lang === "bn" ? "এই ক্যাটেগরিতে কোনো পণ্য নেই।" : "No products in this category."}
             </p>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
               {filteredProducts.slice(0, 8).map((product) => (
-                <ProductCard key={product.id} product={product} onAddToCart={openCart} />
+                <ProductCard key={product.id} product={product} onAddToCart={openCart} density="compact" />
               ))}
             </div>
           )}

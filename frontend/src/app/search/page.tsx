@@ -19,6 +19,9 @@ interface Result {
   href: string;
   price?: number;
   priceLabel?: string;
+  /** Set only for a product with a live flash sale — the pre-discount
+   *  price to show struck through next to priceLabel. */
+  strikePriceLabel?: string;
 }
 
 async function searchBlog(query: string): Promise<BlogPost[]> {
@@ -47,17 +50,35 @@ function resolveServiceHref(slug: string): string {
   return `/services/${slug}`;
 }
 
+// Same live-flash-sale check as ProductCard.tsx / ProductDetailClient.tsx -
+// keeps the price shown here consistent with what's shown everywhere else.
+function flashSalePricing(p: Product): { effectivePrice: number; strikePrice: number | null | undefined } {
+  const flashLive =
+    p.is_flash_sale === true &&
+    p.flash_sale_price != null &&
+    p.flash_sale_price < p.price &&
+    (!p.flash_sale_ends_at || new Date(p.flash_sale_ends_at) > new Date());
+  return {
+    effectivePrice: flashLive ? p.flash_sale_price! : p.price,
+    strikePrice: flashLive ? p.price : p.original_price,
+  };
+}
+
 function toResults(products: Product[], services: Service[], posts: BlogPost[], lang: string): Result[] {
   const items: Result[] = [];
-  products.forEach((p) => items.push({
-    type: "product",
-    id: p.id ?? p.slug,
-    title: lang === "bn" && p.name_bn ? p.name_bn : p.name_en,
-    subtitle: p.category ?? "",
-    href: `/products/${p.slug}`,
-    price: p.price,
-    priceLabel: `৳${p.price?.toLocaleString("bn-BD") ?? "—"}`,
-  }));
+  products.forEach((p) => {
+    const { effectivePrice, strikePrice } = flashSalePricing(p);
+    items.push({
+      type: "product",
+      id: p.id ?? p.slug,
+      title: lang === "bn" && p.name_bn ? p.name_bn : p.name_en,
+      subtitle: p.category ?? "",
+      href: `/products/${p.slug}`,
+      price: effectivePrice,
+      priceLabel: `৳${effectivePrice?.toLocaleString("bn-BD") ?? "—"}`,
+      strikePriceLabel: strikePrice ? `৳${strikePrice.toLocaleString("bn-BD")}` : undefined,
+    });
+  });
   services.forEach((s) => items.push({
     type: "service",
     id: s.id,
@@ -295,7 +316,12 @@ function SearchResults() {
                             {r.subtitle}{r.subtitle ? " · " : ""}{lang === "bn" ? "স্টকে" : "in stock"}
                           </span>
                         </span>
-                        <span className="text-[13px] font-semibold text-[var(--ink)] flex-none">{r.priceLabel}</span>
+                        <span className="flex flex-col items-end flex-none">
+                          {r.strikePriceLabel && (
+                            <span className="text-[10px] text-gray-400 line-through leading-none">{r.strikePriceLabel}</span>
+                          )}
+                          <span className="text-[13px] font-semibold text-[var(--ink)]">{r.priceLabel}</span>
+                        </span>
                       </Link>
                     ))}
                   </div>
@@ -387,7 +413,14 @@ function SearchResults() {
                     </span>
                     <span className="block text-[11px] text-[var(--ink-muted)] truncate">{r.subtitle}</span>
                   </span>
-                  {r.priceLabel && <span className="text-[13px] font-semibold text-[var(--ink)] flex-none">{r.priceLabel}</span>}
+                  {r.priceLabel && (
+                    <span className="flex flex-col items-end flex-none">
+                      {r.strikePriceLabel && (
+                        <span className="text-[10px] text-gray-400 line-through leading-none">{r.strikePriceLabel}</span>
+                      )}
+                      <span className="text-[13px] font-semibold text-[var(--ink)]">{r.priceLabel}</span>
+                    </span>
+                  )}
                 </Link>
               ))}
             </div>
@@ -435,7 +468,14 @@ function SearchResults() {
                   <p className="font-semibold text-heading truncate">{r.title}</p>
                   <p className="text-sm text-muted">{r.subtitle}</p>
                 </div>
-                {r.priceLabel && <span className="text-sm font-medium">{r.priceLabel}</span>}
+                {r.priceLabel && (
+                  <span className="flex flex-col items-end">
+                    {r.strikePriceLabel && (
+                      <span className="text-xs text-gray-400 line-through leading-none">{r.strikePriceLabel}</span>
+                    )}
+                    <span className="text-sm font-medium">{r.priceLabel}</span>
+                  </span>
+                )}
                 <span className="text-xs font-medium px-2 py-1 rounded-full bg-brand-50 text-brand-600">
                   {r.type}
                 </span>

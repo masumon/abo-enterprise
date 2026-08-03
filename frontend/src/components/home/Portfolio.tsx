@@ -26,11 +26,11 @@ export default function Portfolio() {
         </div>
 
         {/* Software Cards Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-10">
           {projects.slice(0, 4).map((p) => (
             <Link key={p.slug} href={`/projects/${p.slug}`}>
               <GlassCard hover className="overflow-hidden h-full group flex flex-col">
-                <div className="relative h-32 sm:h-40 flex items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-brand-800/20 p-3 sm:p-4 overflow-hidden">
+                <div className="relative h-28 sm:h-40 flex items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-brand-800/20 p-3 sm:p-4 overflow-hidden">
                   <Image
                     src={resolveProjectImage(p.image)}
                     alt={t(p.title)}
@@ -39,7 +39,7 @@ export default function Portfolio() {
                     sizes="(max-width:640px) 50vw, (max-width:1024px) 50vw, 25vw"
                   />
                 </div>
-                <div className="p-3 sm:p-4 flex flex-col flex-1">
+                <div className="p-2.5 sm:p-4 flex flex-col flex-1">
                   <h3 className="font-bold text-sm sm:text-base text-heading mt-1 line-clamp-2">{t(p.title)}</h3>
                   <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-2 line-clamp-2 flex-1">{t(p.result)}</p>
                   <span className="inline-flex items-center gap-1 text-xs sm:text-sm text-brand-600 dark:text-brand-400 font-medium mt-3 w-fit">

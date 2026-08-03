@@ -39,7 +39,6 @@ const FALLBACK_ANNOUNCEMENTS: CmsAnnouncement[] = [
 
 export default function AnnouncementBar() {
   const [visible, setVisible] = useState(true);
-  const [idx, setIdx] = useState(0);
   const { lang } = useLanguageStore();
   const { settings } = usePublicSettings([SITE_ANNOUNCEMENTS_KEY]);
   const announcements = getAnnouncements(settings, FALLBACK_ANNOUNCEMENTS).filter((a) => a.active !== false);
@@ -57,14 +56,6 @@ export default function AnnouncementBar() {
     setAnnouncementHeight(active);
   }, [shouldShow]);
 
-  useEffect(() => {
-    if (!visible || announcements.length <= 1) return;
-    const timer = setInterval(() => {
-      setIdx((i) => (i + 1) % announcements.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, [visible, announcements.length]);
-
   const dismiss = () => {
     setVisible(false);
     setAnnouncementHeight(false);
@@ -73,59 +64,71 @@ export default function AnnouncementBar() {
 
   if (!visible || announcements.length === 0) return null;
 
-  const current = announcements[idx % announcements.length];
-  const barClass = ANNOUNCEMENT_VARIANT_BG[current.variant ?? "promo"] ?? ANNOUNCEMENT_VARIANT_BG.promo;
-  const canDismiss = current.dismissible !== false;
+  const barClass = ANNOUNCEMENT_VARIANT_BG[announcements[0].variant ?? "promo"] ?? ANNOUNCEMENT_VARIANT_BG.promo;
+  const canDismiss = announcements.some((a) => a.dismissible !== false);
+  // Ticker duration scales with content so speed reads the same whether
+  // there's 1 announcement or 5 — not a fixed, content-length-blind timer.
+  const durationSec = Math.max(12, announcements.length * 9);
+  // Track is the announcement list rendered twice back-to-back; animating
+  // exactly -50% of that doubled track is a seamless infinite loop no
+  // matter how much content is in it.
+  const track = [...announcements, ...announcements];
 
   return (
-    <div className={`${barClass} text-xs sm:text-sm relative z-40 h-9`}>
-      <div className="container mx-auto px-4 h-9 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-5 flex-shrink-0">
-          {announcements.map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => setIdx(i)}
-              aria-label={lang === "bn" ? `ঘোষণা ${i + 1}` : `Announcement ${i + 1}`}
-              className="p-[9px] -m-[9px] flex items-center justify-center touch-manipulation"
-            >
-              <span
-                aria-hidden
-                className={`block w-1.5 h-1.5 rounded-full transition-all ${
-                  i === idx ? "bg-white scale-125" : "bg-white/40"
-                }`}
-              />
-            </button>
-          ))}
-        </div>
+    <div className={`${barClass} text-xs sm:text-sm relative z-40 h-9 overflow-hidden`}>
+      <div className="h-9 flex items-center gap-3 pl-3 sm:pl-4">
+        <Zap className="w-3.5 h-3.5 flex-shrink-0 text-yellow-300" strokeWidth={2.2} aria-hidden />
 
-        <Link
-          href={current.href || "/"}
-          className="flex-1 text-center font-medium hover:text-white/90 transition-colors flex items-center justify-center gap-2"
-        >
-          {current.icon ? (
-            <span className="flex-shrink-0 text-sm leading-none" aria-hidden>{current.icon}</span>
-          ) : (
-            <Zap className="w-3.5 h-3.5 flex-shrink-0 text-yellow-300" strokeWidth={2.2} />
-          )}
-          <span className="truncate">
-            {lang === "bn" ? current.bn : current.en}
-          </span>
-        </Link>
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <div
+            className="marquee-track flex items-center whitespace-nowrap motion-reduce:animate-none"
+            style={{ ["--marquee-duration" as string]: `${durationSec}s` }}
+          >
+            {track.map((a, i) => (
+              <Link
+                key={i}
+                href={a.href || "/"}
+                aria-hidden={i >= announcements.length}
+                tabIndex={i >= announcements.length ? -1 : 0}
+                className="inline-flex items-center gap-2 font-medium hover:text-white/90 transition-colors pr-10"
+              >
+                {a.icon && <span aria-hidden>{a.icon}</span>}
+                <span>{lang === "bn" ? a.bn : a.en}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
 
         {canDismiss ? (
           <button
             type="button"
             onClick={dismiss}
-            className="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded hover:bg-white/20 transition-colors"
+            className="flex-shrink-0 w-9 h-9 -mr-1 flex items-center justify-center rounded hover:bg-white/20 transition-colors"
             aria-label={lang === "bn" ? "ঘোষণা বন্ধ করুন" : "Close announcement"}
           >
             <X className="w-3.5 h-3.5" strokeWidth={2.2} />
           </button>
         ) : (
-          <span className="flex-shrink-0 w-6 h-6" aria-hidden />
+          <span className="flex-shrink-0 w-9 h-9" aria-hidden />
         )}
       </div>
+
+      <style jsx>{`
+        .marquee-track {
+          animation: marquee var(--marquee-duration, 20s) linear infinite;
+        }
+        .marquee-track:hover,
+        .marquee-track:focus-within {
+          animation-play-state: paused;
+        }
+        @keyframes marquee {
+          from { transform: translateX(0); }
+          to { transform: translateX(-50%); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .marquee-track { animation: none; }
+        }
+      `}</style>
     </div>
   );
 }
