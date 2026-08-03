@@ -49,7 +49,7 @@ export default function FlashSaleSection() {
   }
 
   return (
-    <section className="py-12 bg-gradient-to-b from-transparent to-gray-50 dark:to-white/5">
+    <section id="flash-sale" className="py-12 bg-gradient-to-b from-transparent to-gray-50 dark:to-white/5 scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="flex items-center justify-between mb-10">
