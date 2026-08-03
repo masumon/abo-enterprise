@@ -5,13 +5,13 @@ import Link from "next/link";
 import {
   Printer, Code2, Megaphone, Briefcase,
   Bot, Cog, Smartphone, FileText, Wrench, Monitor, Globe, Headphones, ChevronRight,
-  Search as SearchIcon,
+  Search as SearchIcon, SlidersHorizontal,
   type LucideIcon,
 } from "lucide-react";
 import type { Category, Service } from "@/types";
 import { useLanguageStore } from "@/store/language";
 import ServiceCard from "@/components/services/ServiceCard";
-import ServiceFilters from "@/components/services/ServiceFilters";
+import ProductFilterSheet from "@/components/products/ProductFilterSheet";
 import PageHero from "@/components/ui/PageHero";
 import Reveal from "@/components/ui/Reveal";
 import { ServiceCardSkeleton } from "@/components/common/Skeletons";
@@ -173,6 +173,18 @@ interface CategoryCardModel {
   chips: { key: string; label: string; href?: string }[];
 }
 
+// Value strings are the real backend contract (backend/app/api/v1/routes/
+// services.py's sort param) — deliberately NOT the same names as Products'
+// (price_asc/price_desc); renaming these without a matching backend change
+// would silently break sorting.
+const SERVICE_SORTS = [
+  { value: "", label: { en: "Recommended", bn: "প্রস্তাবিত" } },
+  { value: "name", label: { en: "Name (A–Z)", bn: "নাম (A–Z)" } },
+  { value: "price_low", label: { en: "Price: Low to High", bn: "মূল্য: কম থেকে বেশি" } },
+  { value: "price_high", label: { en: "Price: High to Low", bn: "মূল্য: বেশি থেকে কম" } },
+  { value: "newest", label: { en: "Newest First", bn: "নতুন আগে" } },
+];
+
 interface Props {
   initialServices: Service[];
   initialTotal: number;
@@ -204,6 +216,7 @@ export default function ServicesPageClient({
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(initialTotal);
   const [catalogSource, setCatalogSource] = useState<CatalogSource>("api");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   /**
    * GAP-11 — eight category cards, each with its full chip cloud, put roughly
    * three phone screens of taxonomy between the hero and the actual service
@@ -261,22 +274,19 @@ export default function ServicesPageClient({
   // category_slug). The legacy flat service.category strings remain only as a
   // fallback when the taxonomy is empty/unreachable.
   const usingTaxonomy = initialCategories.length > 0;
-  const categories = [
-    { id: null, label: lang === "bn" ? "সব" : "All", en: "All" },
+
+  // Same {value, label:{en,bn}} shape ProductFilterSheet expects — built
+  // straight from the taxonomy (or the legacy fallback), same pattern
+  // ProductsClient.tsx uses for its own chips.
+  const filterChips: { value: string; label: { en: string; bn: string } }[] = [
+    { value: "", label: { en: "All", bn: "সব" } },
     ...(usingTaxonomy
-      ? initialCategories.map((c) => ({
-          id: c.slug,
-          label: lang === "bn" && c.name_bn ? c.name_bn : c.name_en,
-          en: c.name_en,
-        }))
+      ? initialCategories.map((c) => ({ value: c.slug, label: { en: c.name_en, bn: c.name_bn || c.name_en } }))
       : Array.from(
           new Set([...initialServices, ...services].map((s) => s.category).filter(Boolean))
-        ).map((c) => ({
-          id: c!,
-          label: c!,
-          en: c!,
-        }))),
+        ).map((c) => ({ value: c!, label: { en: c!, bn: c! } }))),
   ];
+  const activeFilterCount = (category ? 1 : 0) + (sort ? 1 : 0);
 
   // Taxonomy names for the tag on each service card (falls back to the raw
   // legacy category string inside ServiceCard when a service is unassigned).
@@ -381,20 +391,36 @@ export default function ServicesPageClient({
               className="input w-full pl-9"
             />
           </form>
-          <select
-            value={sort}
-            onChange={(e) => { setSort(e.target.value); setPage(1); }}
-            aria-label={t({ en: "Sort services", bn: "সাজান" })}
-            className="input sm:w-56"
+          <button
+            type="button"
+            onClick={() => setFiltersOpen(true)}
+            aria-expanded={filtersOpen}
+            aria-haspopup="dialog"
+            className="relative flex-shrink-0 min-h-[44px] px-3.5 rounded-xl border border-gray-200 dark:border-white/10 flex items-center gap-2 text-sm font-semibold text-heading"
           >
-            <option value="">{t({ en: "Recommended", bn: "প্রস্তাবিত" })}</option>
-            <option value="name">{t({ en: "Name (A–Z)", bn: "নাম (A–Z)" })}</option>
-            <option value="price_low">{t({ en: "Price: Low to High", bn: "মূল্য: কম থেকে বেশি" })}</option>
-            <option value="price_high">{t({ en: "Price: High to Low", bn: "মূল্য: বেশি থেকে কম" })}</option>
-            <option value="newest">{t({ en: "Newest First", bn: "নতুন আগে" })}</option>
-          </select>
+            <SlidersHorizontal className="w-4 h-4" aria-hidden />
+            <span>{t({ en: "Filters", bn: "ফিল্টার" })}</span>
+            {activeFilterCount > 0 && (
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-accent-500 text-[#14182b] text-[10px] font-bold flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
         </div>
       </div>
+
+      <ProductFilterSheet
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
+        chips={filterChips}
+        category={category ?? ""}
+        onCategoryChange={(v) => { setCategory(v || null); setPage(1); }}
+        sortBy={sort}
+        onSortChange={(v) => { setSort(v); setPage(1); }}
+        sorts={SERVICE_SORTS}
+        itemLabel={{ en: "services", bn: "সেবা" }}
+        resultCount={total}
+      />
 
       {/*
         Screen 08 — the shortlist before the catalogue. Most visitors arrive for
@@ -540,9 +566,13 @@ export default function ServicesPageClient({
             })}
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div className="flex items-center justify-between gap-4 mb-4">
             <h2 className="text-xl font-bold text-heading">{t({ en: "All Services", bn: "সব সেবা" })}</h2>
-            <ServiceFilters categories={categories} selectedCategory={category} onCategoryChange={setCategory} />
+            {activeFilterCount > 0 && (
+              <button type="button" onClick={() => { setCategory(null); setSort(""); setPage(1); }} className="text-xs font-semibold text-brand-600 hover:underline flex-shrink-0">
+                {t({ en: "Clear filters", bn: "ফিল্টার মুছুন" })}
+              </button>
+            )}
           </div>
 
           <DemoModeBanner show={catalogSource === "cache" && !loading} source={catalogSource} />

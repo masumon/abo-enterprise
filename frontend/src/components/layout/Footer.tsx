@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Facebook,
@@ -14,9 +14,9 @@ import {
   Instagram,
   Linkedin,
   Youtube,
-  ArrowUp,
   type LucideIcon,
   TrendingUp,
+  BadgeCheck,
 } from "lucide-react";
 import {
   VisaMark,
@@ -37,6 +37,8 @@ import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import {
   SITE_TRUST_BADGES_KEY,
   getTrustBadges,
+  SITE_REGISTRATIONS_KEY,
+  getRegistrations,
 } from "@/lib/cmsContent";
 import { resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
 import BrandLogo from "@/components/ui/BrandLogo";
@@ -59,6 +61,7 @@ const QUICK_LINKS = [
   { href: "/services", label: { en: "Services", bn: "সেবা" } },
   { href: "/services/software", label: { en: "Software", bn: "সফটওয়্যার" } },
   { href: "/projects", label: { en: "Projects", bn: "প্রকল্প" } },
+  { href: "/blog", label: { en: "Blog", bn: "ব্লগ" } },
   { href: "/about", label: { en: "About", bn: "সম্পর্কে" } },
 ];
 
@@ -99,7 +102,6 @@ export default function Footer() {
   const toast = useToastStore((s) => s.push);
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [showBackToTop, setShowBackToTop] = useState(false);
   const newsletterEnabled = useFeatureFlag("feature_newsletter");
 
   const { methods } = usePaymentMethods();
@@ -114,7 +116,9 @@ export default function Footer() {
     "youtube_url",
     "play_store_url",
     "app_store_url",
+    "trade_license",
     SITE_TRUST_BADGES_KEY,
+    SITE_REGISTRATIONS_KEY,
   ]);
 
   const phoneRaw = getSettingValue(settings, "contact_phone", "01825007977");
@@ -144,6 +148,17 @@ export default function Footer() {
   const appStoreUrl = getSettingValue(settings, "app_store_url") || "/";
 
   const trustBadges = getTrustBadges(settings, []);
+  // Already-built parser/admin field (lib/cmsContent.ts, admin/settings)
+  // that Footer never actually called — wiring it up here, not rebuilding
+  // it. Legacy single trade_license string is the fallback only when the
+  // JSON list is empty, matching the admin field's own hint.
+  const registrationsList = getRegistrations(settings, []);
+  const legacyTradeLicense = getSettingValue(settings, "trade_license");
+  const registrations = registrationsList.length > 0
+    ? registrationsList
+    : legacyTradeLicense
+      ? [{ label_en: "Trade License", label_bn: "ট্রেড লাইসেন্স", value: legacyTradeLicense }]
+      : [];
 
   const socialLinks = [
     {
@@ -156,18 +171,6 @@ export default function Footer() {
     { href: getSettingValue(settings, "linkedin_url"), icon: Linkedin, label: "LinkedIn" },
     { href: getSettingValue(settings, "youtube_url"), icon: Youtube, label: "YouTube" },
   ].filter((item) => item.href);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 300);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
 
   const handleNewsletter = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -364,30 +367,59 @@ export default function Footer() {
           </div>
         )}
 
-        <div className="border-t border-white/10 pt-5 md:pt-8 space-y-4 md:space-y-6">
-          <div className="flex items-center gap-3 justify-center">
-            <div className="w-1 h-1 rounded-full bg-green-400" />
-            <h2 className="text-lg md:text-xl font-bold text-white text-center">
-              {lang === "bn" ? "পেমেন্ট পদ্ধতি সমূহ" : "Payment Methods"}
-            </h2>
-            <div className="w-1 h-1 rounded-full bg-green-400" />
+        <div className="border-t border-white/10 pt-5 md:pt-8 grid gap-6 md:gap-10 md:grid-cols-2">
+          <div className="space-y-4 md:space-y-6">
+            <div className="flex items-center gap-3 justify-center md:justify-start">
+              <div className="w-1 h-1 rounded-full bg-green-400" />
+              <h2 className="text-lg md:text-xl font-bold text-white text-center md:text-left">
+                {lang === "bn" ? "পেমেন্ট পদ্ধতি সমূহ" : "Payment Methods"}
+              </h2>
+            </div>
+
+            <div className="flex items-center justify-center md:justify-start gap-3 flex-wrap">
+              {payKeys.map((key) => {
+                const brand = PAY_BRAND[key];
+                if (!brand) return null;
+                return (
+                  <div
+                    key={key}
+                    className="border border-white/10 rounded-lg p-2 md:p-3 hover:border-white/30 transition-colors bg-white/5"
+                    title={brand.label}
+                  >
+                    <brand.Mark className="h-5 md:h-6 w-auto max-w-full" />
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            {payKeys.map((key) => {
-              const brand = PAY_BRAND[key];
-              if (!brand) return null;
-              return (
-                <div
-                  key={key}
-                  className="border border-white/10 rounded-lg p-2 md:p-3 hover:border-white/30 transition-colors bg-white/5"
-                  title={brand.label}
-                >
-                  <brand.Mark className="h-5 md:h-6 w-auto max-w-full" />
-                </div>
-              );
-            })}
-          </div>
+          {registrations.length > 0 && (
+            <div className="space-y-4 md:space-y-6">
+              <div className="flex items-center gap-3 justify-center md:justify-start">
+                <div className="w-1 h-1 rounded-full bg-green-400" />
+                <h2 className="text-lg md:text-xl font-bold text-white text-center md:text-left">
+                  {lang === "bn" ? "ব্যবসায়িক তথ্য" : "Business Registrations"}
+                </h2>
+              </div>
+
+              <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
+                {registrations.map((r, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-2 border border-white/10 rounded-lg px-3 py-2 bg-white/5"
+                  >
+                    <BadgeCheck className="w-4 h-4 text-green-400 flex-shrink-0" aria-hidden />
+                    <div className="min-w-0">
+                      <p className="text-[10px] text-white/50 leading-none mb-0.5">
+                        {lang === "bn" ? r.label_bn || r.label_en : r.label_en || r.label_bn}
+                      </p>
+                      <p className="text-xs font-semibold text-white/90 truncate">{r.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {newsletterEnabled && (
@@ -469,7 +501,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-white/10 pt-8 text-center space-y-4">
+        <div className="border-t border-white/10 pt-8 pb-[calc(var(--mobile-chrome-bottom)+0.5rem)] lg:pb-0 text-center space-y-4">
           <p className="text-sm text-white/70">
             &copy; {new Date().getFullYear()} ABO ENTERPRISE. {lang === "bn" ? "সকল অধ্যকার সংরক্ষিত।" : "All rights reserved."}
           </p>
@@ -492,28 +524,6 @@ export default function Footer() {
           </p>
         </div>
       </div>
-
-      {whatsappDigits && (
-        <a
-          href={`https://wa.me/${whatsappDigits}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="fixed bottom-20 left-4 lg:bottom-6 w-14 h-14 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 z-40"
-          aria-label="WhatsApp"
-        >
-          <MessageCircle className="w-6 h-6" />
-        </a>
-      )}
-
-      {showBackToTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-6 right-4 w-14 h-14 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-white flex items-center justify-center shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-200 z-40"
-          aria-label={lang === "bn" ? "উপরে যান" : "Back to top"}
-        >
-          <ArrowUp className="w-6 h-6" />
-        </button>
-      )}
     </footer>
   );
 }

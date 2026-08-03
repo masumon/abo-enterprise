@@ -3,6 +3,9 @@
 import { useLanguageStore } from "@/store/language";
 import { Shield, Truck, Lock, RotateCcw, Award, Headphones } from "lucide-react";
 import GlassCard from "@/components/ui/GlassCard";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Autoplay, A11y } from "swiper/modules";
+import "swiper/css";
 
 const WHY_CHOOSE_US = [
   {
@@ -94,24 +97,41 @@ export default function WhyChooseUsCards() {
           </p>
         </div>
 
-        {/* Cards Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+        {/* Cards — same content, auto-scrolling carousel instead of a static
+            grid. slidesPerView mirrors the prior grid-cols-2/lg:grid-cols-3
+            so the at-rest look is unchanged; loop+autoplay add the motion,
+            touch/drag swipe come from Swiper itself. */}
+        <Swiper
+          modules={[Autoplay, A11y]}
+          slidesPerView={2}
+          spaceBetween={12}
+          loop
+          autoplay={{ delay: 2600, disableOnInteraction: false, pauseOnMouseEnter: true }}
+          speed={900}
+          grabCursor
+          breakpoints={{
+            1024: { slidesPerView: 3, spaceBetween: 24 },
+          }}
+          className="why-choose-swiper !pb-1"
+        >
           {WHY_CHOOSE_US.map(({ id, icon: Icon, label, description, color, bgColor }) => (
-            <GlassCard key={id} hover className="flex flex-col items-start gap-3 sm:gap-4 p-4 sm:p-6">
-              <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl ${bgColor} flex items-center justify-center`}>
-                <Icon className={`w-5 h-5 sm:w-7 sm:h-7 ${color}`} aria-hidden />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm sm:text-lg text-heading mb-1 sm:mb-2">
-                  {lang === "bn" ? label.bn : label.en}
-                </h3>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  {lang === "bn" ? description.bn : description.en}
-                </p>
-              </div>
-            </GlassCard>
+            <SwiperSlide key={id} className="!h-auto">
+              <GlassCard hover className="h-full flex flex-col items-start gap-3 sm:gap-4 p-4 sm:p-6">
+                <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl ${bgColor} flex items-center justify-center`}>
+                  <Icon className={`w-5 h-5 sm:w-7 sm:h-7 ${color}`} aria-hidden />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm sm:text-lg text-heading mb-1 sm:mb-2">
+                    {lang === "bn" ? label.bn : label.en}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                    {lang === "bn" ? description.bn : description.en}
+                  </p>
+                </div>
+              </GlassCard>
+            </SwiperSlide>
           ))}
-        </div>
+        </Swiper>
       </div>
     </section>
   );

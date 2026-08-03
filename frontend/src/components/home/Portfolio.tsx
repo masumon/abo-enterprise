@@ -4,12 +4,26 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useShowcaseContent } from "@/hooks/useShowcaseContent";
+import { useAssistantStore } from "@/store/assistant";
 import GlassCard from "@/components/ui/GlassCard";
 import { resolveProjectImage } from "@/lib/demoImages";
+
+// Assumption stated in the implementation plan (approved): these 4 labels
+// never had a destination before. Live Demo/Easy Integration point at the
+// two listings this "Software Solutions" section is itself about; Free
+// Consultation is a contact-form action; 24/7 Support opens the live chat
+// widget rather than a page, since "24/7" is a live-chat promise.
+const FEATURES = [
+  { icon: "🎬", label: { en: "Live Demo", bn: "লাইভ ডেমো" }, href: "/projects" },
+  { icon: "🎧", label: { en: "Free Consultation", bn: "ফ্রি কনসালটেশন" }, href: "/contact" },
+  { icon: "🔗", label: { en: "Easy Integration", bn: "সহজ ইন্টিগ্রেশন" }, href: "/services" },
+  { icon: "24", label: { en: "24/7 Support", bn: "২৪/৭ সাপোর্ট" }, href: null },
+] as const;
 
 export default function Portfolio() {
   const { lang } = useLanguageStore();
   const { projects } = useShowcaseContent();
+  const toggleAssistant = useAssistantStore((s) => s.toggle);
   const t = (o: { en: string; bn: string }) => (lang === "bn" ? o.bn : o.en);
 
   return (
@@ -51,22 +65,30 @@ export default function Portfolio() {
           ))}
         </div>
 
-        {/* Software Features Row */}
+        {/* Software Features Row — each tile now navigates/acts (previously
+            decorative only, see FEATURES above for the link rationale). */}
         <div className="bg-gradient-to-r from-brand-50 to-purple-50 dark:from-brand-900/20 dark:to-purple-900/20 rounded-2xl p-6 sm:p-8">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {[
-              { icon: "🎬", label: { en: "Live Demo", bn: "লাইভ ডেমো" } },
-              { icon: "🎧", label: { en: "Free Consultation", bn: "ফ্রি কনসালটেশন" } },
-              { icon: "🔗", label: { en: "Easy Integration", bn: "সহজ ইন্টিগ্রেশন" } },
-              { icon: "24", label: { en: "24/7 Support", bn: "২৪/৭ সাপোর্ট" } },
-            ].map((feature, idx) => (
-              <div key={idx} className="flex flex-col items-center text-center">
-                <span className="text-3xl sm:text-4xl mb-2">{feature.icon}</span>
-                <p className="text-xs sm:text-sm font-semibold text-heading">
-                  {lang === "bn" ? feature.label.bn : feature.label.en}
-                </p>
-              </div>
-            ))}
+            {FEATURES.map((feature, idx) => {
+              const inner = (
+                <>
+                  <span className="text-3xl sm:text-4xl mb-2">{feature.icon}</span>
+                  <p className="text-xs sm:text-sm font-semibold text-heading">
+                    {lang === "bn" ? feature.label.bn : feature.label.en}
+                  </p>
+                </>
+              );
+              const className = "flex flex-col items-center text-center rounded-xl p-2 -m-2 hover:bg-white/60 dark:hover:bg-white/5 hover:-translate-y-0.5 transition-all touch-manipulation";
+              return feature.href ? (
+                <Link key={idx} href={feature.href} className={className}>
+                  {inner}
+                </Link>
+              ) : (
+                <button key={idx} type="button" onClick={toggleAssistant} className={className}>
+                  {inner}
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
