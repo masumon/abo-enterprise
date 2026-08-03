@@ -42,9 +42,9 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <SkipToContent />
       <AnnouncementBar />
       <Navbar />
-      <div id="page-content" className="flex-1 pt-[var(--navbar-offset)] pb-mobile-nav lg:pb-0 min-h-screen page-surface">
+      <main id="page-content" className="flex-1 pt-[var(--navbar-offset)] pb-mobile-nav lg:pb-0 min-h-screen page-surface">
         {children}
-      </div>
+      </main>
       <Footer />
       <CartDrawer />
       <CompareBar />

@@ -87,7 +87,7 @@ export default function Navbar() {
           type="button"
           onClick={toggle}
           className="font-mono text-[10px] font-semibold tracking-[0.06em] px-2 py-1.5 rounded-full bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300 flex-none"
-          aria-label="Toggle language"
+          aria-label={lang === "en" ? "বাং — Switch to Bangla" : "EN — Switch to English"}
         >
           {lang === "en" ? "বাং" : "EN"}
         </button>
@@ -195,7 +195,7 @@ export default function Navbar() {
                 "flex items-center gap-1 px-3 h-11 rounded-full text-xs font-semibold border border-brand-200/80 text-brand-700 hover:bg-brand-50/80 hover:scale-105 active:scale-95 transition-all duration-200 dark:border-brand-700/70 dark:text-brand-300 touch-manipulation",
                 searchOpen && "hidden"
               )}
-              aria-label="Toggle language">
+              aria-label={lang === "en" ? "বাং — Switch to Bangla" : "EN — Switch to English"}>
               <Globe className="w-3.5 h-3.5" strokeWidth={2.5} />
               {lang === "en" ? "বাং" : "EN"}
             </button>
