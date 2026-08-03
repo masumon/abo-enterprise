@@ -104,11 +104,20 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
       ],
     },
     {
+      // Each row is a real page at its own route — no more bundled "X · Y · Z"
+      // labels that quietly routed to only one of the three named pages.
       title: { en: "Company", bn: "প্রতিষ্ঠান" },
       rows: [
-        { href: "/projects", label: { en: "Projects · Gallery · Blog", bn: "প্রজেক্ট · গ্যালারি · ব্লগ" } },
-        { href: "/about", label: { en: "About · Career · Testimonials", bn: "পরিচিতি · ক্যারিয়ার · রিভিউ" } },
-        { href: "/contact", label: { en: "Contact · Shipping · Legal", bn: "যোগাযোগ · ডেলিভারি · আইনি" } },
+        { href: "/projects", label: { en: "Projects", bn: "প্রজেক্ট" } },
+        { href: "/gallery", label: { en: "Gallery", bn: "গ্যালারি" } },
+        { href: "/blog", label: { en: "Blog", bn: "ব্লগ" } },
+        { href: "/about", label: { en: "About", bn: "পরিচিতি" } },
+        { href: "/career", label: { en: "Career", bn: "ক্যারিয়ার" } },
+        { href: "/testimonials", label: { en: "Testimonials", bn: "রিভিউ" } },
+        { href: "/contact", label: { en: "Contact", bn: "যোগাযোগ" } },
+        { href: "/shipping", label: { en: "Shipping", bn: "ডেলিভারি" } },
+        { href: "/faq", label: { en: "FAQ", bn: "সাধারণ প্রশ্ন" } },
+        { href: "/legal/terms", label: { en: "Legal", bn: "আইনি" } },
       ],
     },
   ];

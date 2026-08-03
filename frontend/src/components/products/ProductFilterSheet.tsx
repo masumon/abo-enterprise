@@ -16,22 +16,36 @@ import { cn } from "@/lib/utils";
  * which still holds category, subcategory and sort exactly as before — this is
  * a different place to stand, not a different mechanism.
  */
+const DEFAULT_SORTS = [
+  { value: "", label: { en: "Recommended", bn: "প্রস্তাবিত" } },
+  { value: "price_asc", label: { en: "Price: Low → High", bn: "দাম: কম → বেশি" } },
+  { value: "price_desc", label: { en: "Price: High → Low", bn: "দাম: বেশি → কম" } },
+  { value: "newest", label: { en: "Newest first", bn: "নতুন আগে" } },
+];
+
 export interface FilterSheetProps {
   open: boolean;
   onClose: () => void;
   chips: { value: string; label: { en: string; bn: string } }[];
   category: string;
   onCategoryChange: (value: string) => void;
-  chipRows: { key: string; items: Subcategory[]; active: string; allValue: string }[];
-  onSubcategoryChange: (value: string) => void;
+  chipRows?: { key: string; items: Subcategory[]; active: string; allValue: string }[];
+  onSubcategoryChange?: (value: string) => void;
   sortBy: string;
   onSortChange: (value: string) => void;
   resultCount: number;
+  /** Overrides the default Product sort options (value strings are API
+   * contracts — Services uses different ones, so this is never guessed,
+   * only passed in by the caller that knows its own backend). */
+  sorts?: { value: string; label: { en: string; bn: string } }[];
+  /** "products" by default — the trailing word on the "Show N …" button. */
+  itemLabel?: { en: string; bn: string };
 }
 
 export default function ProductFilterSheet({
   open, onClose, chips, category, onCategoryChange,
-  chipRows, onSubcategoryChange, sortBy, onSortChange, resultCount,
+  chipRows = [], onSubcategoryChange, sortBy, onSortChange, resultCount,
+  sorts, itemLabel,
 }: FilterSheetProps) {
   const { lang } = useLanguageStore();
 
@@ -51,13 +65,8 @@ export default function ProductFilterSheet({
 
   if (!open) return null;
   const bn = lang === "bn";
-
-  const SORTS = [
-    { value: "", label: { en: "Recommended", bn: "প্রস্তাবিত" } },
-    { value: "price_asc", label: { en: "Price: Low → High", bn: "দাম: কম → বেশি" } },
-    { value: "price_desc", label: { en: "Price: High → Low", bn: "দাম: বেশি → কম" } },
-    { value: "newest", label: { en: "Newest first", bn: "নতুন আগে" } },
-  ];
+  const SORTS = sorts ?? DEFAULT_SORTS;
+  const item = itemLabel ?? { en: "products", bn: "পণ্য" };
 
   const pill = (active: boolean) =>
     cn(
@@ -100,21 +109,22 @@ export default function ProductFilterSheet({
         </section>
 
         {/* One row per depth level along the selected path, unchanged — the
-            taxonomy can nest as deep as the admin builds it. */}
-        {chipRows.map((row) => (
+            taxonomy can nest as deep as the admin builds it. Absent entirely
+            when the caller has no cascading subcategories (e.g. Services). */}
+        {onSubcategoryChange && chipRows.map((row) => (
           <section key={row.key} className="px-4 pt-4">
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => onSubcategoryChange(row.allValue)} className={pill(!row.active)}>
                 {bn ? "সব" : "All"}
               </button>
-              {row.items.map((item) => (
+              {row.items.map((sub) => (
                 <button
-                  key={item.slug}
+                  key={sub.slug}
                   type="button"
-                  onClick={() => onSubcategoryChange(item.slug)}
-                  className={pill(row.active === item.slug)}
+                  onClick={() => onSubcategoryChange(sub.slug)}
+                  className={pill(row.active === sub.slug)}
                 >
-                  {bn && item.name_bn ? item.name_bn : item.name_en}
+                  {bn && sub.name_bn ? sub.name_bn : sub.name_en}
                 </button>
               ))}
             </div>
@@ -136,7 +146,7 @@ export default function ProductFilterSheet({
 
         <div className="px-4 pt-5">
           <button type="button" onClick={onClose} className="btn btn-primary btn-md w-full">
-            {bn ? `${resultCount}টি পণ্য দেখুন` : `Show ${resultCount} products`}
+            {bn ? `${resultCount}টি ${item.bn} দেখুন` : `Show ${resultCount} ${item.en}`}
           </button>
         </div>
       </div>

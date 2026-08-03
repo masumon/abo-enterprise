@@ -40,7 +40,12 @@ export default function PublicShell({ children }: { children: React.ReactNode })
       <DynamicFavicon />
       <ScrollProgress />
       <SkipToContent />
-      <AnnouncementBar />
+      {/* Desktop only — mobile shows the same data as an in-header ticker
+          (Navbar.tsx), since there's no free space between logo and toggle
+          on mobile once the strip's own row is removed there. */}
+      <div className="hidden lg:block">
+        <AnnouncementBar />
+      </div>
       <Navbar />
       <main id="page-content" className="flex-1 pt-[var(--navbar-offset)] pb-mobile-nav lg:pb-0 min-h-screen page-surface">
         {children}
