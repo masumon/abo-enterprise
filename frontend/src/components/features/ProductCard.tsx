@@ -71,7 +71,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
       product_id: productId,
       name_en: product.name_en,
       name_bn: product.name_bn,
-      price: product.price,
+      price: effectivePrice,
       image_url: product.image_url,
       stock_quantity: product.stock_quantity,
       delivery_charge: product.delivery_charge ?? null,

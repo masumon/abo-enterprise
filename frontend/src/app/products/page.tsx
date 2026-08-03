@@ -3,8 +3,9 @@ import { Suspense } from "react";
 import type { Category, Product } from "@/types";
 import ProductsPageShell from "./ProductsPageShell";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { pageMeta } from "@/lib/metadata";
+import { pageMeta, jsonLdString } from "@/lib/metadata";
 import { fetchWithRetry } from "@/lib/fetchRetry";
+import { SITE_URL } from "@/lib/tokens";
 
 const API_BASE = getApiBaseUrl();
 // Legacy string categories — kept as fallback when the taxonomy is empty or
@@ -66,8 +67,27 @@ export default async function ProductsPage({
   const taxonomySlugs = new Set(categories.map((c) => c.slug));
   const { products, total, isDemo } = await fetchProducts(category || undefined, taxonomySlugs);
 
+  // L9 — a product listing with no ItemList markup gives search engines no
+  // structured signal of what's on the page beyond plain text.
+  const itemListJsonLd = products.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: products.map((p, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `${SITE_URL}/products/${p.slug}`,
+      name: p.name_en,
+    })),
+  } : null;
+
   return (
     <main className="min-h-screen">
+      {itemListJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdString(itemListJsonLd) }}
+        />
+      )}
       <Suspense fallback={<div className="py-24 text-center text-muted" aria-busy="true">Loading...</div>}>
         <ProductsPageShell
           initialProducts={products}

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import type { Category, Service } from "@/types";
-import { pageMeta } from "@/lib/metadata";
+import { pageMeta, jsonLdString } from "@/lib/metadata";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import ServicesPageClient from "./ServicesPageClient";
 import { fetchWithRetry } from "@/lib/fetchRetry";
+import { SITE_URL } from "@/lib/tokens";
 
 export const metadata: Metadata = pageMeta(
   "Services — Digital, Software Lab, Business Software & AI",
@@ -69,13 +70,36 @@ export default async function ServicesPage() {
     fetchServiceTaxonomy(),
     fetchFeaturedServices(),
   ]);
+
+  // L9 — same ItemList markup as /products; a service is always reachable
+  // at its own short slug regardless of category nesting (see
+  // services/[...segments]/page.tsx), so this URL is always valid.
+  const itemListJsonLd = services.length > 0 ? {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: services.map((s, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: s.canonical_url ?? `${SITE_URL}/services/${s.slug}`,
+      name: s.name_en,
+    })),
+  } : null;
+
   return (
-    <ServicesPageClient
-      initialServices={services}
-      initialTotal={total}
-      initialIsDemo={isDemo}
-      initialCategories={categories}
-      featuredServices={featured}
-    />
+    <>
+      {itemListJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: jsonLdString(itemListJsonLd) }}
+        />
+      )}
+      <ServicesPageClient
+        initialServices={services}
+        initialTotal={total}
+        initialIsDemo={isDemo}
+        initialCategories={categories}
+        featuredServices={featured}
+      />
+    </>
   );
 }

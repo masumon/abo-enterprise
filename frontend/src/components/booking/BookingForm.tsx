@@ -11,10 +11,11 @@ import { saveOrderSnapshot } from "@/lib/orderSnapshot";
 import type { Service, ServiceBookingFormField, ServiceSlot } from "@/types";
 import { LoadingSpinner } from "@/components/common/LoadingSpinner";
 import { cn } from "@/lib/utils";
-import { BD_PHONE_REGEX } from "@/lib/phone";
+import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { useDistrictUpazila, BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
 import { useLanguageStore } from "@/store/language";
 import { fulfilmentDetail } from "@/lib/fulfilment";
+import CountrySelector from "@/components/ui/CountrySelector";
 
 /**
  * GAP-12 — the booking form presents contact fields, scheduling, location,
@@ -47,7 +48,9 @@ function StepHeading({ n, title, hint }: { n: number; title: string; hint: strin
 
 const bookingSchema = z.object({
   customer_name: z.string().min(2, "Name must be at least 2 characters"),
-  customer_phone: z.string().regex(BD_PHONE_REGEX, "Invalid Bangladesh phone number"),
+  // M6 — BD_PHONE_REGEX already accepts BD (01XXXXXXXXX) and international
+  // (+<country code><digits>) formats; the copy just used to claim otherwise.
+  customer_phone: z.string().regex(BD_PHONE_REGEX, BD_PHONE_ERROR_EN),
   customer_email: z
     .string()
     .email("Invalid email address")
@@ -129,6 +132,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
   const router = useRouter();
   const { lang } = useLanguageStore();
   const initialTier = resolveInitialTier(service, initialTierId);
+  const [selectedCountry, setSelectedCountry] = useState("BD");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [queued, setQueued] = useState(false);
@@ -499,18 +503,23 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       </div>
 
       <div>
-        <label htmlFor="booking-phone" className="form-label">{L("Phone Number (BD) *", "মোবাইল নম্বর (BD) *")}</label>
-        <input
-          id="booking-phone"
-          type="tel"
-          {...register("customer_phone")}
-          className={cn("input", errors.customer_phone && "input-error")}
-          placeholder="01XXXXXXXXX"
-          aria-invalid={errors.customer_phone ? true : undefined}
-          aria-describedby={errors.customer_phone ? "booking-phone-error" : undefined}
-        />
+        <label htmlFor="booking-phone" className="form-label">{L("Phone Number *", "মোবাইল নম্বর *")}</label>
+        <div className="flex gap-2">
+          <div className="w-24">
+            <CountrySelector selected={selectedCountry} onChange={setSelectedCountry} />
+          </div>
+          <input
+            id="booking-phone"
+            type="tel"
+            {...register("customer_phone")}
+            className={cn("input flex-1", errors.customer_phone && "input-error")}
+            placeholder={selectedCountry === "BD" ? "01XXXXXXXXX" : "+..."}
+            aria-invalid={errors.customer_phone ? true : undefined}
+            aria-describedby={errors.customer_phone ? "booking-phone-error" : undefined}
+          />
+        </div>
         {errors.customer_phone && (
-          <p id="booking-phone-error" className="text-red-500 dark:text-red-400 text-sm mt-1">{errors.customer_phone.message}</p>
+          <p id="booking-phone-error" className="text-red-500 dark:text-red-400 text-sm mt-1">{L(BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN)}</p>
         )}
       </div>
 

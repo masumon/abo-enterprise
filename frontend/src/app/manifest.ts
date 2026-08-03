@@ -17,8 +17,11 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
   ];
 
   return {
-    name: "ABO Enterprise",
-    short_name: "ABO",
+    // L10 — lang is already "bn" and the description below was already
+    // Bengali; name/short_name (what shows under the home-screen icon)
+    // were the one piece still in English.
+    name: "এবিও এন্টারপ্রাইজ",
+    short_name: "এবিও",
     description: "এবিও এন্টারপ্রাইজ : সহজ সমাধান — মোবাইল এক্সেসরিজ, প্রিন্টিং, আইনি সেবা, সফটওয়্যার",
     start_url: "/",
     scope: "/",

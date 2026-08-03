@@ -4,8 +4,9 @@ import { useState } from "react";
 import { X, CheckCircle, Send, Loader2 } from "lucide-react";
 import { bookingsApi, isQueuedResponse } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
-import { BD_PHONE_REGEX } from "@/lib/phone";
+import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { cn } from "@/lib/utils";
+import CountrySelector from "@/components/ui/CountrySelector";
 import type { Product } from "@/types";
 
 interface Props {
@@ -26,6 +27,7 @@ export default function ProductBookingModal({ product, open, onClose }: Props) {
   const productName = bn ? product.name_bn || product.name_en : product.name_en;
 
   const [name, setName] = useState("");
+  const [selectedCountry, setSelectedCountry] = useState("BD");
   const [phone, setPhone] = useState("");
   const [details, setDetails] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -41,8 +43,8 @@ export default function ProductBookingModal({ product, open, onClose }: Props) {
       setError(bn ? "নাম দিন" : "Enter your name");
       return;
     }
-    if (!BD_PHONE_REGEX.test(phone)) {
-      setError(bn ? "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন" : "Enter a valid Bangladesh number");
+    if (!BD_PHONE_REGEX.test(phone.trim())) {
+      setError(bn ? BD_PHONE_ERROR_BN : BD_PHONE_ERROR_EN);
       return;
     }
     setSubmitting(true);
@@ -108,7 +110,12 @@ export default function ProductBookingModal({ product, open, onClose }: Props) {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{bn ? "মোবাইল নম্বর *" : "Mobile number *"}</label>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" className="input" placeholder="01XXXXXXXXX" />
+              <div className="flex gap-2">
+                <div className="w-24">
+                  <CountrySelector selected={selectedCountry} onChange={setSelectedCountry} />
+                </div>
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} type="tel" className="input flex-1" placeholder={selectedCountry === "BD" ? "01XXXXXXXXX" : "+..."} />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{bn ? "বিস্তারিত (ঐচ্ছিক)" : "Details (optional)"}</label>

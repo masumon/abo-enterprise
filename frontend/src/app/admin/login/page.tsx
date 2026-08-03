@@ -79,6 +79,15 @@ function LoginForm() {
         await authApi.getMe();
         setAdminAuthMarker();
       } catch {
+        // Audit M1: this used to fall back silently. It's still a
+        // self-detecting, zero-lockout-risk fallback (correct - a hardcoded
+        // production-domain check here would risk locking admins out if the
+        // real domain's cookie ever failed for an unrelated reason), but a
+        // fallback firing on the real production domain instead of only on
+        // a cross-site preview host is worth knowing about, not silent.
+        if (typeof window !== "undefined" && !window.location.hostname.endsWith(".vercel.app")) {
+          console.warn("Admin auth fell back to localStorage token on a non-preview host:", window.location.hostname);
+        }
         setAdminToken(token);
       }
       const redirect = searchParams.get("redirect");

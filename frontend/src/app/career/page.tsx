@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { Heart, Users, Gift, Laptop, Send, MapPin, Loader2 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import { useToastStore } from "@/store/toast";
-import { BD_PHONE_REGEX } from "@/lib/phone";
+import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { careerApi } from "@/lib/api";
+import { usePublicSettings } from "@/hooks/usePublicSettings";
+import { SITE_CAREER_POSITIONS_KEY, getCareerPositions, type CmsCareerPosition } from "@/lib/cmsContent";
 
 const BENEFITS = [
   { icon: Gift, title: { en: "Competitive Salary", bn: "প্রতিযোগিতামূলক বেতন" } },
@@ -16,8 +18,9 @@ const BENEFITS = [
   { icon: Heart, title: { en: "Team Support", bn: "টিম সাপোর্ট" } },
 ];
 
-// GAP-15 — Positions managed via admin panel — fetched from API, not hardcoded
-type Position = { title: { en: string; bn: string }; type: { en: string; bn: string }; location: { en: string; bn: string } };
+// GAP-15 / audit C3 — Positions managed via admin panel (Admin -> Career ->
+// Open Positions), same settings-JSON CMS pattern as Announcements.
+type Position = CmsCareerPosition;
 
 const HIRING_STEPS = [
   { en: "Apply Online", bn: "অনলাইনে আবেদন" },
@@ -36,26 +39,8 @@ export default function CareerPage() {
   const [role, setRole] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [positions, setPositions] = useState<Position[]>([]);
-  const [loadingPositions, setLoadingPositions] = useState(true);
-
-  useEffect(() => {
-    // Fetch open positions from admin settings or default empty
-    // In production, this would hit an API endpoint that reads from the admin panel
-    const fetchPositions = async () => {
-      try {
-        // For now, fetch from CMS or return empty (admin controls this)
-        // Placeholder until backend endpoint is available
-        setPositions([]);
-      } catch (err) {
-        console.warn("Failed to load career positions", err);
-        setPositions([]);
-      } finally {
-        setLoadingPositions(false);
-      }
-    };
-    fetchPositions();
-  }, []);
+  const { settings, loading: loadingPositions } = usePublicSettings([SITE_CAREER_POSITIONS_KEY]);
+  const positions: Position[] = getCareerPositions(settings, []);
 
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +49,7 @@ export default function CareerPage() {
       return;
     }
     if (!BD_PHONE_REGEX.test(phone.trim())) {
-      toast("error", lang === "bn" ? "সঠিক ১১ ডিজিটের মোবাইল নম্বর দিন" : "Enter a valid 11-digit BD phone number");
+      toast("error", lang === "bn" ? BD_PHONE_ERROR_BN : BD_PHONE_ERROR_EN);
       return;
     }
     if (!role) {
@@ -131,7 +116,7 @@ export default function CareerPage() {
           ) : positions.length > 0 ? (
             <div className="space-y-3 mb-14">
               {positions.map((pos) => (
-                <div key={pos.title.en} className="enterprise-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div key={pos.id} className="enterprise-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
                     <h3 className="font-bold text-heading">{t(pos.title)}</h3>
                     <p className="text-sm text-muted flex items-center gap-1 mt-1">
@@ -178,7 +163,7 @@ export default function CareerPage() {
                 <select value={role} onChange={(e) => setRole(e.target.value)} className="input" disabled={loadingPositions}>
                   <option value="">{t({ en: "Select role", bn: "পদ নির্বাচন" })}</option>
                   {positions.map((p) => (
-                    <option key={p.title.en} value={p.title.en}>{t(p.title)}</option>
+                    <option key={p.id} value={p.title.en}>{t(p.title)}</option>
                   ))}
                 </select>
               </div>

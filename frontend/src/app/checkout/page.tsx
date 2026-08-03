@@ -22,6 +22,7 @@ import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { useCustomerStore } from "@/store/customer";
+import { useCustomerProfileStore } from "@/store/customerProfile";
 import { mapPaymentMethods } from "@/lib/paymentDisplay";
 import { useDistrictUpazila, BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
 import { calcDeliveryCharge, calcAdvanceCharge } from "@/lib/checkoutHelpers";
@@ -109,6 +110,8 @@ export default function CheckoutPage() {
   const customerSession = useCustomerStore((st) => st.session);
   const signedIn = Boolean(customerSession?.token);
   const signInRequired = !guestAllowed && !signedIn;
+  const savedAddresses = useCustomerProfileStore((s) => s.addresses);
+  const savedEmail = useCustomerProfileStore((s) => s.email);
 
   const otpRequired = getSettingValue(settings, "checkout_otp_required") === "true";
 
@@ -123,6 +126,10 @@ export default function CheckoutPage() {
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
   const [otpLoading, setOtpLoading] = useState(false);
+  // M8 — same 30s resend cooldown as CustomerOtpForm.tsx; this page has its
+  // own inline OTP send/verify instead of reusing that component, so the
+  // cooldown has to be duplicated here rather than fixed in one place.
+  const [otpResendIn, setOtpResendIn] = useState(0);
   const [copiedAcct, setCopiedAcct] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("BD");
   // Set before clearCart() so the empty-cart redirect below can't hijack the
@@ -130,7 +137,7 @@ export default function CheckoutPage() {
   const orderPlacedRef = useRef(false);
 
   const {
-    register, handleSubmit, watch, setValue, formState: { errors },
+    register, handleSubmit, watch, setValue, getValues, formState: { errors },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     // Left blank on purpose: the effect below selects the first available
@@ -156,6 +163,19 @@ export default function CheckoutPage() {
     }
   }, [paymentOptions, selectedGateway, setValue]);
 
+  // M5 — a signed-in returning customer shouldn't retype what we already
+  // have. Only fills fields that are still empty, so it never overwrites
+  // something mid-typed; district/upazila are left alone since the saved
+  // address is free text and mapping it onto those enums would be a guess.
+  useEffect(() => {
+    if (!signedIn || !customerSession) return;
+    if (!getValues("customer_name")) setValue("customer_name", customerSession.name);
+    if (!getValues("customer_phone")) setValue("customer_phone", customerSession.phone);
+    if (savedEmail && !getValues("customer_email")) setValue("customer_email", savedEmail);
+    const defaultAddr = savedAddresses.find((a) => a.isDefault) ?? savedAddresses[0];
+    if (defaultAddr && !getValues("street_address")) setValue("street_address", defaultAddr.address);
+  }, [signedIn, customerSession, savedAddresses, savedEmail, setValue, getValues]);
+
   // GA4 funnel: fire once when checkout opens.
   useEffect(() => {
     trackEvent("begin_checkout", { currency: "BDT" });
@@ -165,6 +185,12 @@ export default function CheckoutPage() {
     useCartStore.persist.rehydrate();
     setHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (otpResendIn <= 0) return;
+    const t = setTimeout(() => setOtpResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [otpResendIn]);
 
   useEffect(() => {
     if (hydrated && items.length === 0 && !orderPlacedRef.current) router.replace("/products");
@@ -212,6 +238,7 @@ export default function CheckoutPage() {
   };
 
   const sendOtp = async () => {
+    if (otpResendIn > 0) return;
     if (!BD_PHONE_REGEX.test(selectedPhone)) return;
     if (!selectedEmail) {
       setSubmitError(lang === "bn" ? "OTP পেতে ইমেইল দিন" : "Enter an email to receive the OTP");
@@ -222,6 +249,7 @@ export default function CheckoutPage() {
       await customerOtpApi.send(selectedPhone, selectedEmail);
       setOtpSent(true);
       setOtpVerified(false);
+      setOtpResendIn(30);
     } catch {
       setSubmitError(lang === "bn" ? "OTP পাঠানো যায়নি" : "Could not send OTP");
     } finally {
@@ -534,8 +562,14 @@ export default function CheckoutPage() {
                       <div className="flex gap-2">
                         <input {...register("otp_code")} className="input flex-1" placeholder="4-digit OTP" maxLength={4}
                           onChange={(e) => { register("otp_code").onChange(e); if (e.target.value.length === 4) verifyOtp(e.target.value); }} />
-                        <button type="button" onClick={sendOtp} disabled={otpLoading || otpVerified} className="btn btn-outline btn-sm">
-                          {otpVerified ? (lang === "bn" ? "✓" : "✓") : otpSent ? (lang === "bn" ? "আবার" : "Resend") : (lang === "bn" ? "OTP" : "OTP")}
+                        <button type="button" onClick={sendOtp} disabled={otpLoading || otpVerified || otpResendIn > 0} className="btn btn-outline btn-sm">
+                          {otpVerified
+                            ? "✓"
+                            : otpResendIn > 0
+                              ? `${otpResendIn}s`
+                              : otpSent
+                                ? (lang === "bn" ? "আবার" : "Resend")
+                                : "OTP"}
                         </button>
                       </div>
                       {otpVerified && <p className="text-xs text-green-600 dark:text-green-400">{lang === "bn" ? "ভেরিফাই হয়েছে" : "Verified"}</p>}

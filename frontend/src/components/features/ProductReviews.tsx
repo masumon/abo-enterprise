@@ -40,7 +40,7 @@ export default function ProductReviews({ productId }: Props) {
           <GlassCard key={r.id} className="p-4">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                {r.photo_url ? <Image src={r.photo_url} alt="" width={40} height={40} className="object-cover" /> : <span className="text-brand-600 font-bold">{r.customer_name[0]}</span>}
+                {r.photo_url ? <Image src={r.photo_url} alt={r.customer_name} width={40} height={40} className="object-cover" /> : <span className="text-brand-600 font-bold">{r.customer_name[0]}</span>}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
