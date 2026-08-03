@@ -27,9 +27,9 @@ export default function HomeSearchBar() {
     <form
       onSubmit={submit}
       role="search"
-      className="flex items-center gap-1 h-12 rounded-xl border border-[var(--line)] bg-white dark:bg-[var(--surface-card)] shadow-sm focus-within:border-brand-500 dark:focus-within:border-brand-400 transition-colors"
+      className="flex items-center gap-1 h-[52px] rounded-full border border-[var(--line)] bg-white dark:bg-[var(--surface-card)] shadow-[0_2px_10px_rgba(20,24,43,0.06)] focus-within:border-brand-500 focus-within:shadow-[0_4px_16px_rgba(59,102,241,0.15)] dark:focus-within:border-brand-400 transition-all"
     >
-      <Search className="w-4 h-4 ml-3.5 flex-shrink-0 text-[var(--ink-muted)]" strokeWidth={2} aria-hidden />
+      <Search className="w-4 h-4 ml-4 flex-shrink-0 text-[var(--ink-muted)]" strokeWidth={2} aria-hidden />
       <input
         type="search"
         value={value}
@@ -41,7 +41,7 @@ export default function HomeSearchBar() {
       <span className="w-px h-6 bg-[var(--line)] flex-shrink-0" aria-hidden />
       <Link
         href="/products"
-        className="flex items-center gap-1.5 h-full px-3.5 flex-shrink-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-brand-600 dark:hover:text-brand-400 transition-colors touch-manipulation"
+        className="flex items-center gap-1.5 h-[calc(100%-8px)] my-1 mr-1 px-4 flex-shrink-0 rounded-full text-xs font-semibold text-brand-600 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30 hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors touch-manipulation"
       >
         <SlidersHorizontal className="w-4 h-4" strokeWidth={2} aria-hidden />
         {lang === "bn" ? "ফিল্টার" : "Filter"}
