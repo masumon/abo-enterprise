@@ -67,8 +67,8 @@ export default function Navbar() {
         className="lg:hidden flex items-center gap-2 px-3 min-h-[48px] bg-white dark:bg-[var(--surface-card)] border-b border-[var(--line)] dark:border-[var(--line)]"
         aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
       >
-        <Link href="/" className="font-display font-bold text-base tracking-[-0.01em] text-[var(--ink)]">
-          ABO<span className="text-[var(--accent-deep,#a87008)]">.</span>
+        <Link href="/" className="flex-none flex items-center" aria-label={getBrandName(lang)}>
+          <BrandLogo size="xs" href={false} priority />
         </Link>
         <span className="flex-1" />
 
@@ -82,6 +82,15 @@ export default function Navbar() {
             <MessageCircle className="w-3.5 h-3.5" strokeWidth={2.5} />
           </button>
         )}
+
+        <button
+          type="button"
+          onClick={toggleTheme}
+          className="w-[30px] h-[30px] rounded-md border border-[var(--line)] flex items-center justify-center text-[var(--ink-muted)] flex-none"
+          aria-label={lang === "bn" ? "ডার্ক/লাইট মোড পরিবর্তন করুন" : "Toggle dark mode"}
+        >
+          {theme === "dark" ? <Sun className="w-3.5 h-3.5" strokeWidth={2} /> : <Moon className="w-3.5 h-3.5" strokeWidth={2} />}
+        </button>
 
         <button
           type="button"
