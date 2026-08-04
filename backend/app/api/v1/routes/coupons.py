@@ -1,25 +1,22 @@
-"""Public coupon validation — admin-configurable via coupons_json setting."""
-import json
+"""Coupons — real table (alembic/manual_sql 0023). Public validation +
+admin CRUD. Replaces the old coupons_json Setting blob."""
+import uuid
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.models.models import Setting
+from app.core.security import require_role
+from app.models.models import Coupon
 from app.schemas.schemas import ApiResponse
 from app.core.rate_limit import rate_limit
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/public/coupons", tags=["coupons"])
-
-DEFAULT_COUPONS: dict[str, dict] = {
-    "ABO10": {"discount_percent": 10, "min_subtotal": 0, "active": True},
-    "WELCOME": {"discount_percent": 5, "min_subtotal": 500, "active": True},
-}
+router = APIRouter(tags=["coupons"])
 
 
 class CouponValidateRequest(BaseModel):
@@ -32,46 +29,118 @@ class CouponValidateRequest(BaseModel):
         return v.strip().upper()
 
 
-async def _load_coupons(db: AsyncSession) -> dict[str, dict]:
-    result = await db.execute(select(Setting).where(Setting.key == "coupons_json"))
-    row = result.scalar_one_or_none()
-    if not row or not row.value:
-        return DEFAULT_COUPONS
-    try:
-        parsed = json.loads(row.value)
-        if isinstance(parsed, dict):
-            return parsed
-    except json.JSONDecodeError:
-        logger.warning("Invalid coupons_json in settings — using defaults")
-    return DEFAULT_COUPONS
+class CouponUpsert(BaseModel):
+    code: str = Field(..., min_length=1, max_length=50)
+    discount_percent: float = Field(..., ge=0, le=100)
+    min_subtotal: float = Field(0, ge=0)
+    is_active: bool = True
+
+    @field_validator("code")
+    @classmethod
+    def normalize_code(cls, v: str) -> str:
+        return v.strip().upper()
 
 
-@router.post("/validate", response_model=ApiResponse, dependencies=[Depends(rate_limit("coupon_validate", 20, 300))])
+@router.post(
+    "/public/coupons/validate",
+    response_model=ApiResponse,
+    dependencies=[Depends(rate_limit("coupon_validate", 20, 300))],
+)
 async def validate_coupon(payload: CouponValidateRequest, db: AsyncSession = Depends(get_db)):
-    coupons = await _load_coupons(db)
-    entry = coupons.get(payload.code)
-    if not entry or not entry.get("active", True):
+    result = await db.execute(
+        select(Coupon).where(
+            Coupon.code == payload.code,
+            Coupon.is_active == True,  # noqa: E712
+            Coupon.is_deleted == False,  # noqa: E712
+        )
+    )
+    coupon = result.scalar_one_or_none()
+    if not coupon:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid coupon code")
 
-    min_subtotal = float(entry.get("min_subtotal", 0))
+    min_subtotal = float(coupon.min_subtotal)
     if payload.subtotal < min_subtotal:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Minimum order ৳{min_subtotal:.0f} required for this coupon",
         )
 
-    discount_raw = entry.get("discount_percent", entry.get("discount_rate", 0))
-    rate = float(discount_raw)
-    if rate > 1:
-        rate = rate / 100
+    rate = float(coupon.discount_percent) / 100
     discount_amount = round(payload.subtotal * rate)
 
     return ApiResponse(
         data={
-            "code": payload.code,
-            "discount_percent": round(rate * 100, 2),
+            "code": coupon.code,
+            "discount_percent": float(coupon.discount_percent),
             "discount_amount": discount_amount,
             "discount_rate": rate,
         },
         message="Coupon applied",
     )
+
+
+@router.get("/admin/coupons", response_model=ApiResponse, dependencies=[Depends(require_role("settings.read"))])
+async def list_coupons(db: AsyncSession = Depends(get_db)):
+    result = await db.execute(
+        select(Coupon).where(Coupon.is_deleted == False).order_by(Coupon.code)  # noqa: E712
+    )
+    coupons = result.scalars().all()
+    return ApiResponse(data=[
+        {
+            "id": str(c.id),
+            "code": c.code,
+            "discount_percent": float(c.discount_percent),
+            "min_subtotal": float(c.min_subtotal),
+            "is_active": c.is_active,
+        }
+        for c in coupons
+    ])
+
+
+@router.post("/admin/coupons", response_model=ApiResponse, dependencies=[Depends(require_role("settings.write"))])
+async def create_coupon(payload: CouponUpsert, db: AsyncSession = Depends(get_db)):
+    existing = (await db.execute(
+        select(Coupon).where(Coupon.code == payload.code, Coupon.is_deleted == False)  # noqa: E712
+    )).scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"Coupon {payload.code} already exists")
+    coupon = Coupon(
+        id=uuid.uuid4(),
+        code=payload.code,
+        discount_percent=payload.discount_percent,
+        min_subtotal=payload.min_subtotal,
+        is_active=payload.is_active,
+    )
+    db.add(coupon)
+    await db.commit()
+    return ApiResponse(data={"id": str(coupon.id)}, message="Coupon created")
+
+
+@router.put("/admin/coupons/{coupon_id}", response_model=ApiResponse, dependencies=[Depends(require_role("settings.write"))])
+async def update_coupon(coupon_id: str, payload: CouponUpsert, db: AsyncSession = Depends(get_db)):
+    coupon = (await db.execute(select(Coupon).where(Coupon.id == uuid.UUID(coupon_id)))).scalar_one_or_none()
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+    duplicate = (await db.execute(
+        select(Coupon).where(
+            Coupon.code == payload.code, Coupon.id != coupon.id, Coupon.is_deleted == False  # noqa: E712
+        )
+    )).scalar_one_or_none()
+    if duplicate:
+        raise HTTPException(status_code=400, detail=f"Coupon {payload.code} already exists")
+    coupon.code = payload.code
+    coupon.discount_percent = payload.discount_percent
+    coupon.min_subtotal = payload.min_subtotal
+    coupon.is_active = payload.is_active
+    await db.commit()
+    return ApiResponse(data={"id": str(coupon.id)}, message="Coupon updated")
+
+
+@router.delete("/admin/coupons/{coupon_id}", response_model=ApiResponse, dependencies=[Depends(require_role("settings.write"))])
+async def delete_coupon(coupon_id: str, db: AsyncSession = Depends(get_db)):
+    coupon = (await db.execute(select(Coupon).where(Coupon.id == uuid.UUID(coupon_id)))).scalar_one_or_none()
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+    coupon.is_deleted = True
+    await db.commit()
+    return ApiResponse(data={"id": str(coupon.id)}, message="Coupon removed")

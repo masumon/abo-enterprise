@@ -766,12 +766,26 @@ export const promoSlidesApi = {
   delete: (id: string) => api.delete<ApiResponse<null>>(`/api/v1/promo-slides/admin/${id}`),
 };
 
+export interface AdminCoupon {
+  id: string;
+  code: string;
+  discount_percent: number;
+  min_subtotal: number;
+  is_active: boolean;
+}
+
 export const couponsApi = {
   validate: (code: string, subtotal: number) =>
     api.post<ApiResponse<{ code: string; discount_percent: number; discount_amount: number; discount_rate: number }>>(
       "/api/v1/public/coupons/validate",
       { code, subtotal }
     ),
+  adminList: () => api.get<ApiResponse<AdminCoupon[]>>("/api/v1/admin/coupons"),
+  adminCreate: (payload: Omit<AdminCoupon, "id">) =>
+    api.post<ApiResponse<{ id: string }>>("/api/v1/admin/coupons", payload),
+  adminUpdate: (id: string, payload: Omit<AdminCoupon, "id">) =>
+    api.put<ApiResponse<{ id: string }>>(`/api/v1/admin/coupons/${id}`, payload),
+  adminDelete: (id: string) => api.delete<ApiResponse<{ id: string }>>(`/api/v1/admin/coupons/${id}`),
 };
 
 export const paymentsApi = {

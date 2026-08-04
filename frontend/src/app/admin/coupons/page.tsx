@@ -2,25 +2,26 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, Percent, Plus, Save, Trash2 } from "lucide-react";
-import { adminApi } from "@/lib/api";
+import { couponsApi, type AdminCoupon } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
 
 interface Coupon {
+  id?: string;
   code: string;
   discount_percent: number;
   min_subtotal: number;
   active: boolean;
 }
 
-const SETTINGS_KEY = "coupons_json";
-
-/** Structured editor over the coupons_json setting. Non-technical admins no
- *  longer have to hand-edit JSON in the Settings screen. */
+/** Bulk-edit table over the real coupons table (alembic/manual_sql 0023).
+ *  Same UI as before; Save now diffs rows against what loaded and issues
+ *  create/update/delete calls instead of overwriting one Settings blob. */
 export default function AdminCouponsPage() {
   const [rows, setRows] = useState<Coupon[]>([]);
+  const [original, setOriginal] = useState<AdminCoupon[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const toast = useToastStore((s) => s.push);
@@ -28,24 +29,18 @@ export default function AdminCouponsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await adminApi.getSettings();
-      const raw = (res.data.data as Record<string, string>)[SETTINGS_KEY] ?? "";
-      const parsed = raw ? JSON.parse(raw) : {};
-      const list: Coupon[] = Object.entries(parsed).map(([code, v]) => {
-        const entry = v as Partial<Coupon> & { discount_rate?: number };
-        return {
-          code,
-          discount_percent:
-            typeof entry.discount_percent === "number"
-              ? entry.discount_percent
-              : typeof entry.discount_rate === "number"
-                ? entry.discount_rate * 100
-                : 0,
-          min_subtotal: Number(entry.min_subtotal ?? 0),
-          active: entry.active !== false,
-        };
-      });
-      setRows(list);
+      const res = await couponsApi.adminList();
+      const list = res.data.data ?? [];
+      setOriginal(list);
+      setRows(
+        list.map((c) => ({
+          id: c.id,
+          code: c.code,
+          discount_percent: c.discount_percent,
+          min_subtotal: c.min_subtotal,
+          active: c.is_active,
+        }))
+      );
     } catch (err) {
       toast("error", apiErrorMessage(err, "Failed to load coupons"));
     } finally {
@@ -88,20 +83,25 @@ export default function AdminCouponsPage() {
         return;
       }
     }
-    const payload = rows.reduce<Record<string, unknown>>((acc, r) => {
-      acc[r.code.trim().toUpperCase()] = {
-        discount_percent: Math.round(r.discount_percent),
-        min_subtotal: Math.round(r.min_subtotal),
-        active: r.active,
-      };
-      return acc;
-    }, {});
     setSaving(true);
     try {
-      await adminApi.upsertSettings([
-        { key: SETTINGS_KEY, value: JSON.stringify(payload), data_type: "json" },
-      ]);
+      const currentIds = new Set(rows.filter((r) => r.id).map((r) => r.id));
+      const removed = original.filter((o) => !currentIds.has(o.id));
+      await Promise.all(removed.map((o) => couponsApi.adminDelete(o.id)));
+
+      await Promise.all(
+        rows.map((r) => {
+          const payload = {
+            code: r.code.trim().toUpperCase(),
+            discount_percent: Math.round(r.discount_percent),
+            min_subtotal: Math.round(r.min_subtotal),
+            is_active: r.active,
+          };
+          return r.id ? couponsApi.adminUpdate(r.id, payload) : couponsApi.adminCreate(payload);
+        })
+      );
       toast("success", `Saved ${rows.length} coupon${rows.length === 1 ? "" : "s"}`);
+      await load();
     } catch (err) {
       toast("error", apiErrorMessage(err, "Save failed"));
     } finally {

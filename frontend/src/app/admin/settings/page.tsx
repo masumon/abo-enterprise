@@ -295,6 +295,8 @@ const SECTIONS: Section[] = [
       { key: "smtp_from", label: "From Address", type: "email", placeholder: "info@aboenterprise.com" },
       { key: "smtp_from_name", label: "From Name", placeholder: "ABO Enterprise" },
       { key: "admin_notify_email", label: "Notifications To", type: "email", placeholder: "info@aboenterprise.com", hint: "New orders/bookings/leads are emailed here." },
+      { key: "email_provider", label: "Email Provider", placeholder: "smtp", hint: "\"smtp\" (default) or \"resend\". Leave blank to use the server's env setting." },
+      { key: "resend_api_key", label: "Resend API Key", type: "password", placeholder: "re_••••••••", hint: "Only used when Email Provider is \"resend\". Stored masked; not shown again." },
     ],
   },
 
