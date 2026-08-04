@@ -35,6 +35,23 @@ _BOOKING_DOC_TYPES = {
 _BOOKING_DOC_MAX_BYTES = 10 * 1024 * 1024
 
 
+def _sniffed_mime(head: bytes) -> str | None:
+    """Best-effort magic-byte sniff so a renamed/relabelled file can't slip
+    past the declared-Content-Type check above (browsers set that header
+    from the file extension, which a client fully controls)."""
+    if head.startswith(b"%PDF-"):
+        return "application/pdf"
+    if head.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if head.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if head[:4] == b"RIFF" and head[8:12] == b"WEBP":
+        return "image/webp"
+    if head[4:8] == b"ftyp" and head[8:12] in (b"heic", b"heix", b"hevc", b"hevx", b"mif1", b"msf1"):
+        return "image/heic"
+    return None
+
+
 @router.post(
     "/booking-upload",
     dependencies=[Depends(rate_limit("booking_doc_upload", 20, 600))],
@@ -65,6 +82,15 @@ async def upload_booking_document(file: UploadFile = File(...)):
         raise HTTPException(
             status_code=400,
             detail="Unsupported file type. Upload a PDF or an image (JPG, PNG, WEBP, HEIC).",
+        )
+    sniffed = _sniffed_mime(contents[:64])
+    # HEIC brand tables are non-exhaustive, so an unrecognized-but-still-HEIC
+    # file only fails the check if sniffing found some *other*, mismatched
+    # format — not simply because HEIC sniffing came back empty.
+    if sniffed and sniffed != mime_type and not (mime_type == "image/heic" and sniffed is None):
+        raise HTTPException(
+            status_code=400,
+            detail="File content doesn't match its declared type.",
         )
 
     try:

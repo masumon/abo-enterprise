@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import ADMIN_SESSION_COOKIE, create_access_token, require_admin, verify_password
 from app.models.models import AdminUser
-from app.schemas.schemas import ApiResponse, LoginRequest, TokenResponse
+from app.schemas.schemas import ApiResponse, LoginRequest, TokenResponse, TotpCodePayload
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -173,7 +173,7 @@ async def totp_setup(
 
 @router.post("/2fa/enable", response_model=ApiResponse)
 async def totp_enable(
-    payload: dict,
+    payload: TotpCodePayload,
     admin_id: str = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
@@ -182,7 +182,7 @@ async def totp_enable(
 
     import pyotp
 
-    code = str(payload.get("code", "")).strip()
+    code = payload.code
     user = (await db.execute(select(AdminUser).where(AdminUser.id == UUID(admin_id)))).scalar_one_or_none()
     if not user or not user.totp_secret:
         raise HTTPException(status_code=400, detail="Run 2FA setup first")
@@ -195,7 +195,7 @@ async def totp_enable(
 
 @router.post("/2fa/disable", response_model=ApiResponse)
 async def totp_disable(
-    payload: dict,
+    payload: TotpCodePayload,
     admin_id: str = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
@@ -204,7 +204,7 @@ async def totp_disable(
 
     import pyotp
 
-    code = str(payload.get("code", "")).strip()
+    code = payload.code
     user = (await db.execute(select(AdminUser).where(AdminUser.id == UUID(admin_id)))).scalar_one_or_none()
     if not user or not user.totp_enabled or not user.totp_secret:
         raise HTTPException(status_code=400, detail="2FA is not enabled")

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Image from "next/image";
 import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, Star, CheckCircle, XCircle, Trash2, Shield, ShieldCheck, Pencil, X, MessageSquare, Plus, Search } from "lucide-react";
 import api, { reviewsApi } from "@/lib/api";
@@ -270,7 +271,7 @@ export default function AdminReviewsPage() {
                       <td className="px-5 py-3">
                         <div className="flex items-center gap-2.5">
                           {r.photo_url ? (
-                            <img src={r.photo_url} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                            <Image src={r.photo_url} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                           ) : (
                             <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
                               <span className="text-xs font-bold text-brand-600">{r.customer_name[0]?.toUpperCase()}</span>
