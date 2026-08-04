@@ -1,6 +1,7 @@
 "use client";
+import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -39,7 +40,7 @@ export default function AdminUsersPage() {
     setEditing(null);
   });
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const r = await adminApi.listUsers();
@@ -49,9 +50,9 @@ export default function AdminUsersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const openCreate = () => {
     setEditing(null);
@@ -264,7 +265,7 @@ export default function AdminUsersPage() {
           aria-modal="true"
           aria-label={modal === "create" ? "Create user" : "Edit user"}
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
           <div ref={modalRef} className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">

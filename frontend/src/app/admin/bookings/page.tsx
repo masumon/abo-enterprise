@@ -1,4 +1,5 @@
 "use client";
+import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
@@ -469,7 +470,7 @@ export default function AdminBookingsPage() {
       {(detail || detailLoading) && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetail(null)}
           role="dialog"
           aria-modal="true"
@@ -478,7 +479,7 @@ export default function AdminBookingsPage() {
           <div
             ref={detailRef}
             className="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in"
-            style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,43,107,0.16), 0 8px 24px rgba(0,0,0,0.08)" }}
+            style={ADMIN_MODAL_PANEL_STYLE}
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
@@ -559,7 +560,7 @@ export default function AdminBookingsPage() {
       {detailV2 && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetailV2(null)}
           role="dialog"
           aria-modal="true"
@@ -568,7 +569,7 @@ export default function AdminBookingsPage() {
           <div
             ref={detailV2Ref}
             className="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in"
-            style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,43,107,0.16), 0 8px 24px rgba(0,0,0,0.08)" }}
+            style={ADMIN_MODAL_PANEL_STYLE}
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">

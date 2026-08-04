@@ -1,4 +1,5 @@
 "use client";
+import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, Plus, Pencil, Trash2, X, Images, ExternalLink } from "lucide-react";
@@ -229,7 +230,7 @@ export default function AdminPromoSlidesPage() {
       </div>
 
       {editing !== null && (
-        <div className="fixed inset-0 z-50 flex" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }} role="dialog" aria-modal="true" aria-label="Edit slide">
+        <div className="fixed inset-0 z-50 flex" style={ADMIN_MODAL_BACKDROP_STYLE} role="dialog" aria-modal="true" aria-label="Edit slide">
           <div ref={editorRef} className="ml-auto w-full max-w-lg h-full flex flex-col bg-white shadow-2xl animate-slide-in-right">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">{editing.id ? "Edit Slide" : "New Slide"}</h2>

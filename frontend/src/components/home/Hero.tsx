@@ -130,7 +130,7 @@ export default function Hero() {
             background image isn't shaped for a small mobile card crop, so we
             don't force it here. */}
         <div className="px-3 pt-3">
-          <PromoSlider placement="hero" aspect="aspect-video" />
+          <PromoSlider placement="hero" aspect="aspect-video" eagerFirstSlide />
         </div>
 
         <div className="px-3 py-3">

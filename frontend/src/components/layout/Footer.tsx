@@ -252,7 +252,7 @@ export default function Footer() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white hover:scale-110 transition-all duration-200"
+                  className="relative w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white hover:scale-110 transition-all duration-200 before:content-[''] before:absolute before:-inset-1"
                 >
                   <Icon className="w-4 h-4" aria-hidden />
                 </a>

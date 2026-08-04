@@ -250,7 +250,7 @@ export default function Navbar() {
 
             <Link
               href="/cart"
-              className="relative w-8 h-8 flex items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 hover:scale-110 active:scale-95 transition-all duration-200 shadow-md shadow-brand-500/25"
+              className="relative w-8 h-8 flex items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 hover:scale-110 active:scale-95 transition-all duration-200 shadow-md shadow-brand-500/25 before:content-[''] before:absolute before:-inset-1.5"
               aria-label={`${t("nav_cart")} (${count})`}
             >
               <ShoppingCart className="w-[18px] h-[18px]" strokeWidth={2.5} />
