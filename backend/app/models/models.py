@@ -877,6 +877,24 @@ class Category(Base):
     )
 
 
+class Coupon(Base):
+    """Real table backing coupon codes — replaces the coupons_json Setting
+    blob (manual_sql/0023). orders.coupon_code / bookings_v2.coupon_code
+    stay free-text (a coupon can be deleted after use without breaking
+    historical orders that already snapshot their own discount_amount)."""
+
+    __tablename__ = "coupons"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    discount_percent: Mapped[float] = mapped_column(Numeric(5, 2), nullable=False)
+    min_subtotal: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class Subcategory(Base):
     __tablename__ = "subcategories"
 
