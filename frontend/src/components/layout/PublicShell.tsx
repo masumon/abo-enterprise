@@ -16,6 +16,8 @@ import SkipToContent from "@/components/ui/SkipToContent";
 import StickyCTA from "@/components/ui/StickyCTA";
 import DelayedMount from "@/components/ui/DelayedMount";
 import FacebookPixel from "@/components/analytics/FacebookPixel";
+import GoogleTagManager from "@/components/analytics/GoogleTagManager";
+import GscVerification from "@/components/analytics/GscVerification";
 import ScrollProgress from "@/components/ui/ScrollProgress";
 import HtmlLangSync from "@/components/ui/HtmlLangSync";
 import DynamicFavicon from "@/components/ui/DynamicFavicon";
@@ -57,6 +59,8 @@ export default function PublicShell({ children }: { children: React.ReactNode })
         <AssistantWidget />
       </DelayedMount>
       <FacebookPixel />
+      <GoogleTagManager />
+      <GscVerification />
       <StickyCTA />
       <BackToTop />
       <DelayedMount delayMs={4000}>
