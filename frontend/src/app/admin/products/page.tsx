@@ -1,4 +1,5 @@
 "use client";
+import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useCallback, useEffect, useState, useRef } from "react";
 import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Copy } from "lucide-react";
@@ -434,8 +435,8 @@ export default function AdminProductsPage() {
 
       {/* Product Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}>
-          <div ref={modalRef} role="dialog" aria-modal="true" className="rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" style={{ background: "rgba(255,255,255,0.98)", boxShadow: "0 24px 64px rgba(30,43,107,0.16), 0 8px 24px rgba(0,0,0,0.08)" }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE}>
+          <div ref={modalRef} role="dialog" aria-modal="true" className="rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" style={ADMIN_MODAL_PANEL_STYLE}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">{editing ? "Edit Product" : "New Product"}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">

@@ -1,4 +1,5 @@
 "use client";
+import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useCallback, useEffect, useState } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
@@ -264,7 +265,7 @@ export default function AdminUsersPage() {
           aria-modal="true"
           aria-label={modal === "create" ? "Create user" : "Edit user"}
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
           <div ref={modalRef} className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">

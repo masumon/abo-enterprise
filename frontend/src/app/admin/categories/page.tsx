@@ -516,7 +516,7 @@ export default function AdminCategoriesPage() {
                 <Image src={form.image_url} alt="" fill className="object-cover" sizes="54px" />
               </span>
             ) : (
-              <span className="w-[54px] h-[54px] rounded-[15px] flex-shrink-0 grid place-items-center text-white text-xl font-bold" style={{ background: "linear-gradient(135deg,#1565c0,#0d47a1)" }}>
+              <span className="admin-category-badge-gradient w-[54px] h-[54px] rounded-[15px] flex-shrink-0 grid place-items-center text-white text-xl font-bold">
                 {form.icon && [...form.icon].length <= 2 ? form.icon : (form.name_en || "?").charAt(0).toUpperCase()}
               </span>
             )}
@@ -530,7 +530,7 @@ export default function AdminCategoriesPage() {
           <LivePreview showDevice={false}>
             <div className="p-1 pointer-events-none max-w-[210px] mx-auto">
               <div className="enterprise-card p-4 text-center">
-                <div className="w-14 h-14 mx-auto mb-3 rounded-2xl grid place-items-center text-white text-2xl overflow-hidden" style={{ background: "linear-gradient(135deg,#1565c0,#0d47a1)" }}>
+                <div className="admin-category-badge-gradient w-14 h-14 mx-auto mb-3 rounded-2xl grid place-items-center text-white text-2xl overflow-hidden">
                   {form.image_url ? (
                     // eslint-disable-next-line @next/next/no-img-element -- live admin preview
                     <img src={form.image_url} alt="" className="w-full h-full object-cover" />

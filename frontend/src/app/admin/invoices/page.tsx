@@ -1,4 +1,5 @@
 "use client";
+import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
@@ -350,7 +351,7 @@ export default function AdminInvoicesPage() {
       {detail && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetail(null)}
         >
           <div

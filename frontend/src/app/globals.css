@@ -610,6 +610,25 @@
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.055);
   }
 
+  /* ── Modal backdrop/panel (admin) — was copy-pasted as inline style
+     across a dozen admin pages; one definition now. ── */
+  .admin-modal-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+  }
+
+  /* Category icon-badge gradient — was a literal hex pair repeated 3x in
+     admin/categories/page.tsx instead of a shared class. */
+  .admin-category-badge-gradient {
+    background: linear-gradient(135deg, #1565c0, #0d47a1);
+  }
+
+  .admin-modal-panel {
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 24px 64px rgba(30, 43, 107, 0.16), 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
   .admin-page-header {
     @apply rounded-3xl border border-gray-100/90 bg-white px-5 py-5 sm:px-6;
     box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 8px 24px rgba(15, 23, 42, 0.04);

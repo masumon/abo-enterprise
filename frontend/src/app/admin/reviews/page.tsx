@@ -1,4 +1,5 @@
 "use client";
+import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
@@ -418,7 +419,7 @@ export default function AdminReviewsPage() {
       {(editing || creating) && (
         <div
           className="fixed inset-0 z-50 flex"
-          style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
+          style={ADMIN_MODAL_BACKDROP_STYLE}
           role="dialog"
           aria-modal="true"
           aria-label={creating ? "Create review" : "Edit review"}
