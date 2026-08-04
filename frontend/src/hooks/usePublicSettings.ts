@@ -48,6 +48,12 @@ async function fetchSettings(): Promise<Record<string, string>> {
 export function usePublicSettings(keys?: string[]) {
   const [settings, setSettings] = useState<Record<string, string>>(memoryCache ?? {});
   const [loading, setLoading] = useState(!memoryCache);
+  // A joined string, not the `keys` array itself: callers often pass an
+  // inline array literal (e.g. usePublicSettings(["x"])), a new reference
+  // every render, which would re-run this effect every render if `keys`
+  // were the dependency. The string only changes when the actual key
+  // values change.
+  const keysDepKey = keys?.join(",");
 
   useEffect(() => {
     let active = true;
@@ -78,7 +84,8 @@ export function usePublicSettings(keys?: string[]) {
     });
 
     return () => { active = false; };
-  }, [keys?.join(",")]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- see keysDepKey comment above
+  }, [keysDepKey]);
 
   return { settings, loading };
 }

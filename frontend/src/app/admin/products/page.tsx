@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Copy } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -158,7 +158,7 @@ export default function AdminProductsPage() {
   };
   flatten(taxonomy as unknown as { id: string; name_en: string; subcategories?: unknown[] }[], 0);
 
-  const load = async (pageNum = page, search?: string) => {
+  const load = useCallback(async (pageNum = page, search?: string) => {
     setLoading(true);
     setActionError(null);
     try {
@@ -170,9 +170,9 @@ export default function AdminProductsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page]);
 
-  useEffect(() => { load(page); }, [page]);
+  useEffect(() => { load(page); }, [page, load]);
 
   // Load the shared taxonomy once (product-applicable categories) for the
   // optional Category/Subcategory selectors. Failure is non-fatal — the form

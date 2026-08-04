@@ -82,7 +82,7 @@ export default function AdminBlogPage() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, page]);
+  }, [statusFilter, page, toast]);
 
   useEffect(() => { load(); }, [load]);
 

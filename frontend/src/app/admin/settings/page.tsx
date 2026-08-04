@@ -401,6 +401,7 @@ const SECTIONS: Section[] = [
     icon: <Zap className="w-4 h-4" />,
     fields: [
       { key: "facebook_pixel_id", label: "Facebook Pixel ID", placeholder: "1234567890", hint: "Conversion tracking" },
+      { key: "tax_percent", label: "Tax / VAT %", type: "number", placeholder: "0", hint: "Stored for reference and invoice display only — not yet applied to checkout totals (a deliberate, separate decision)." },
       { key: "seo_gtm_id", label: "Google Tag Manager ID", placeholder: "GTM-XXXXXXX", hint: "Container ID from tagmanager.google.com" },
       { key: "seo_gsc_verification", label: "Google Search Console Verification", placeholder: "abc123...", hint: "The content value from GSC's HTML tag verification method (not the whole <meta> tag)" },
     ],
