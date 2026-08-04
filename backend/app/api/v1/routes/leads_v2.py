@@ -65,7 +65,7 @@ def calculate_lead_score(lead: LeadV2) -> int:
             score += 5
 
     # Service type value (max 10 points)
-    high_value_services = ["software", "ai", "automation", "custom_quote"]
+    high_value_services = ["software", "ai", "automation", "custom_quote", "b2b_quotation"]
     if lead.lead_type in high_value_services:
         score += 10
 
