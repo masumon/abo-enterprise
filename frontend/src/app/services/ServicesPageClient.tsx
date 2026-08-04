@@ -363,6 +363,15 @@ export default function ServicesPageClient({
         ]}
       />
 
+      <div className="container mx-auto px-4 max-w-6xl text-center -mt-2 mb-2">
+        <a
+          href="/services/quote"
+          className="inline-block text-sm font-semibold text-brand-600 dark:text-brand-300 hover:underline"
+        >
+          {t({ en: "Business or bulk order? Request a B2B quotation →", bn: "প্রতিষ্ঠানের জন্য কোটেশন দরকার? B2B কোটেশন রিকোয়েস্ট করুন →" })}
+        </a>
+      </div>
+
       {/*
         Screen 08 — the search box sat below eight category cards, roughly two
         phone screens down, so a visitor who arrived knowing what they wanted
