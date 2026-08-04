@@ -6,27 +6,51 @@ from app.core.email_provider import EmailProvider, SMTPProvider, ResendProvider
 logger = logging.getLogger(__name__)
 
 
+async def _db_email_overrides() -> dict[str, str]:
+    """Admin-editable email_provider / resend_api_key overrides (Setting
+    table), same pattern as resolve_email_config() for SMTP fields."""
+    from sqlalchemy import select
+    from app.core.database import AsyncSessionLocal
+    from app.models.models import Setting
+
+    try:
+        async with AsyncSessionLocal() as db:
+            rows = (await db.execute(
+                select(Setting).where(
+                    Setting.key.in_(["email_provider", "resend_api_key"]),
+                    Setting.is_deleted == False,  # noqa: E712
+                )
+            )).scalars().all()
+        return {r.key: (r.value or "").strip() for r in rows if (r.value or "").strip() and r.value != "***HIDDEN***"}
+    except Exception:
+        logger.warning("Could not load email provider override from DB, using env only")
+        return {}
+
+
 async def get_email_provider() -> EmailProvider:
     """
     Instantiate the configured email provider.
 
     Priority:
-    1. EMAIL_PROVIDER environment variable
-    2. Falls back to SMTP (backward-compatible)
+    1. Admin-set "email_provider" / "resend_api_key" Settings (panel, no redeploy)
+    2. EMAIL_PROVIDER / RESEND_API_KEY environment variables
+    3. Falls back to SMTP (backward-compatible)
 
     Raises RuntimeError if provider is misconfigured.
     """
-    provider_name = (settings.EMAIL_PROVIDER or "smtp").lower().strip()
+    overrides = await _db_email_overrides()
+    provider_name = (overrides.get("email_provider") or settings.EMAIL_PROVIDER or "smtp").lower().strip()
+    resend_key = overrides.get("resend_api_key") or settings.RESEND_API_KEY
 
     logger.debug("Initializing email provider: %s", provider_name)
 
     if provider_name == "resend":
-        if not settings.RESEND_API_KEY:
+        if not resend_key:
             logger.error("Resend selected but RESEND_API_KEY not configured, falling back to SMTP")
         else:
             try:
                 provider = ResendProvider(
-                    api_key=settings.RESEND_API_KEY,
+                    api_key=resend_key,
                     from_email=settings.SMTP_FROM or settings.BUSINESS_EMAIL,
                     from_name=settings.EMAIL_SENDER_NAME,
                     reply_to=settings.EMAIL_REPLY_TO,

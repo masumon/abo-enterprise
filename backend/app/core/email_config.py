@@ -17,6 +17,7 @@ EMAIL_SETTING_KEYS = [
     "smtp_host", "smtp_port", "smtp_user", "smtp_password",
     "smtp_from", "smtp_from_name", "smtp_tls",
     "admin_notify_email", "contact_email", "business_email",
+    "email_provider", "resend_api_key",
 ]
 
 _HIDDEN = "***HIDDEN***"
