@@ -75,6 +75,45 @@ app.include_router(health_router)
 
 # ==================== EXCEPTION HANDLERS ====================
 
+_MAINTENANCE_EXEMPT_PREFIXES = (
+    "/health",
+    "/api/v1/auth",
+    "/api/v1/admin",
+    "/api/v1/settings",
+    "/api/v1/ops",
+)
+
+
+@app.middleware("http")
+async def enforce_maintenance_mode(request: Request, call_next):
+    path = request.url.path
+    if path.startswith("/api/") and not path.startswith(_MAINTENANCE_EXEMPT_PREFIXES):
+        try:
+            from app.core.database import AsyncSessionLocal
+            from app.models.models import Setting
+            from sqlalchemy import select
+
+            async with AsyncSessionLocal() as db:
+                row = (
+                    await db.execute(select(Setting).where(Setting.key == "maintenance_mode"))
+                ).scalar_one_or_none()
+            if row and row.value.strip().lower() in ("true", "1", "yes"):
+                return JSONResponse(
+                    status_code=503,
+                    content={
+                        "success": False,
+                        "message": "Site is temporarily under maintenance. Please check back soon.",
+                        "error_code": "MAINTENANCE_MODE",
+                    },
+                    headers={"Retry-After": "600"},
+                )
+        except Exception:
+            # Never let a maintenance-flag lookup failure take the whole
+            # site down — fail open (serve normally) and log it.
+            logger.exception("Maintenance-mode check failed; serving normally")
+    return await call_next(request)
+
+
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
