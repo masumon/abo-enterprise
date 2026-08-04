@@ -18,6 +18,11 @@ interface Props {
   className?: string;
   /** Media box ratio. Hero uses a fixed 16/9 card; flash sale is wider. */
   aspect?: string;
+  /** Hero placement is above-the-fold on mobile (the LCP candidate) — its
+   * first slide must not be `loading="lazy"`, which defers the fetch until
+   * an intersection check and was measured adding real seconds to LCP.
+   * flash_sale is below the fold, so it stays lazy. */
+  eagerFirstSlide?: boolean;
 }
 
 /**
@@ -31,7 +36,7 @@ interface Props {
  * Renders `fallback` (and fetches nothing further) when the API returns no
  * slides, which is what keeps the pre-existing single hero media working.
  */
-export default function PromoSlider({ placement, fallback, className, aspect = "aspect-video" }: Props) {
+export default function PromoSlider({ placement, fallback, className, aspect = "aspect-video", eagerFirstSlide }: Props) {
   const { lang } = useLanguageStore();
   const [slides, setSlides] = useState<PromoSlide[] | null>(null);
 
@@ -65,7 +70,7 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
         a11y={{ enabled: true }}
         className="promo-swiper w-full rounded-2xl lg:rounded-3xl overflow-hidden"
       >
-        {slides.map((slide) => {
+        {slides.map((slide, index) => {
           const title = (lang === "bn" ? slide.title_bn : slide.title_en) || slide.title_en || "";
           const media = (
             <div className={`relative w-full ${aspect} overflow-hidden`}>
@@ -82,7 +87,7 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
                   src={slide.image_url ?? ""}
                   alt={slide.alt_text || title || ""}
                   className="absolute inset-0 w-full h-full object-cover"
-                  loading="lazy"
+                  loading={eagerFirstSlide && index === 0 ? "eager" : "lazy"}
                 />
               )}
             </div>
