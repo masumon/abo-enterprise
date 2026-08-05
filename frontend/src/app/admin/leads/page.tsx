@@ -2,6 +2,7 @@
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import dynamic from "next/dynamic";
 import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, Users, ChevronDown, X, Search, Download, Trash2 } from "lucide-react";
 import { leadsApi, serviceLeadsAdminApi, downloadCsv, downloadPdf } from "@/lib/api";
@@ -10,8 +11,9 @@ import { buildCustomerWhatsAppLink } from "@/lib/utils";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
-import ComposeEmailModal from "@/components/admin/ComposeEmailModal";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+
+const ComposeEmailModal = dynamic(() => import("@/components/admin/ComposeEmailModal"), { ssr: false });
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 
@@ -241,8 +243,9 @@ export default function AdminLeadsPage() {
         <button
           onClick={() => setTab("v1")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "v1" ? "border-brand-500 text-brand-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+          title="Legacy archive — no current form on the site creates new entries here; see Service Leads for live intake"
         >
-          Simple Leads
+          Simple Leads <span className="text-gray-400 font-normal">(Legacy)</span>
         </button>
         <button
           onClick={() => setTab("v2")}

@@ -1,6 +1,8 @@
 import { MetadataRoute } from "next";
 import { SITE_URL } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { fetchPublicSettings } from "@/lib/serverSettings";
+import { getShowcaseProjects } from "@/lib/showcaseContent";
 
 const BASE = SITE_URL;
 
@@ -134,6 +136,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         });
       }
     }
+
+    // Project showcase entries live in a settings JSON blob, not a REST
+    // resource, so they're enumerated separately from the Promise.all above.
+    try {
+      const settings = await fetchPublicSettings();
+      for (const p of getShowcaseProjects(settings)) {
+        dynamicRoutes.push({
+          url: `${BASE}/projects/${p.slug}`,
+          lastModified: now,
+          changeFrequency: "monthly",
+          priority: 0.65,
+        });
+      }
+    } catch { /* settings api not available during build */ }
 
     if (dynamicRoutes.length > 0) return [...staticRoutes, ...dynamicRoutes];
   } catch { /* api not available during build */ }

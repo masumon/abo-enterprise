@@ -14,7 +14,7 @@ from app.core.config import settings
 from app.core.email import send_email, order_notification_html, customer_order_confirmation_html, customer_order_status_html
 from app.core.invoice import InvoiceService
 from app.core.site_url import resolve_site_url
-from app.models.models import Order, OrderItem, Product, ActivityLog, Setting
+from app.models.models import Order, OrderItem, Product, ActivityLog, Setting, Coupon
 from app.schemas.schemas import OrderCreate, OrderOut, OrderStatusUpdate, OrderCourierUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 
 import logging
@@ -80,16 +80,19 @@ async def _server_side_discount(db: AsyncSession, coupon_code: str | None, subto
     """
     if not coupon_code:
         return 0.0
-    from app.api.v1.routes.coupons import _load_coupons
-    coupons = await _load_coupons(db)
-    entry = coupons.get(coupon_code.strip().upper())
-    if not entry or not entry.get("active", True):
+    result = await db.execute(
+        select(Coupon).where(
+            Coupon.code == coupon_code.strip().upper(),
+            Coupon.is_active == True,  # noqa: E712
+            Coupon.is_deleted == False,  # noqa: E712
+        )
+    )
+    coupon = result.scalar_one_or_none()
+    if not coupon:
         return 0.0
-    if subtotal < float(entry.get("min_subtotal", 0)):
+    if subtotal < float(coupon.min_subtotal):
         return 0.0
-    rate = float(entry.get("discount_percent", entry.get("discount_rate", 0)))
-    if rate > 1:
-        rate = rate / 100
+    rate = float(coupon.discount_percent) / 100
     return float(round(subtotal * rate))
 
 

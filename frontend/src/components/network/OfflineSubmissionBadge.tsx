@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, Clock3 } from "lucide-react";
 import { offlineSync, type OfflineSubmissionStatus } from "@/lib/offlineSync";
+import { useLanguageStore } from "@/store/language";
 
 const SYNCED_VISIBILITY_MS = 5000;
 
 export default function OfflineSubmissionBadge() {
+  const { lang } = useLanguageStore();
   const [status, setStatus] = useState<OfflineSubmissionStatus | null>(null);
   const [showSyncedUntil, setShowSyncedUntil] = useState<number | null>(null);
 
@@ -60,13 +62,19 @@ export default function OfflineSubmissionBadge() {
               hasQueued ? "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200" : "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200"
             }`}
           >
-            {hasQueued ? `Queued ${status.queuedSubmissionCount}` : "Synced"}
+            {hasQueued
+              ? (lang === "bn" ? `সারিবদ্ধ ${status.queuedSubmissionCount}` : `Queued ${status.queuedSubmissionCount}`)
+              : (lang === "bn" ? "সিঙ্ক হয়েছে" : "Synced")}
           </span>
           <p className="mt-2 text-sm font-medium text-heading">
-            {hasQueued ? "Offline submission saved" : "Queued submissions synced"}
+            {hasQueued
+              ? (lang === "bn" ? "অফলাইন জমা সংরক্ষিত হয়েছে" : "Offline submission saved")
+              : (lang === "bn" ? "সারিবদ্ধ জমাগুলো সিঙ্ক হয়েছে" : "Queued submissions synced")}
           </p>
           <p className="mt-1 text-xs text-muted">
-            {hasQueued ? "It will sync automatically when your connection returns." : "Your pending submissions have been delivered."}
+            {hasQueued
+              ? (lang === "bn" ? "সংযোগ ফিরে এলে এটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।" : "It will sync automatically when your connection returns.")
+              : (lang === "bn" ? "আপনার মুলতুবি জমাগুলো পৌঁছে দেওয়া হয়েছে।" : "Your pending submissions have been delivered.")}
           </p>
         </div>
       </div>

@@ -1,11 +1,12 @@
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func, and_
 from app.core.database import get_db
-from app.core.security import require_admin
+from app.core.security import require_role
 from app.core.rate_limit import rate_limit
 from app.core.config import settings
-from app.models.models import MediaAsset
+from app.models.models import MediaAsset, ActivityLog
 import uuid
 from datetime import datetime, timezone
 import cloudinary
@@ -122,7 +123,7 @@ async def upload_with_metadata(
     file: UploadFile = File(...),
     folder: str = Query("abo-enterprise/uploads"),
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("media.write")),
 ):
     """Upload file and store metadata (width, height, size, format)"""
     if not settings.CLOUDINARY_CLOUD_NAME or not settings.CLOUDINARY_API_KEY or not settings.CLOUDINARY_API_SECRET:
@@ -186,6 +187,12 @@ async def upload_with_metadata(
         )
 
         db.add(media_asset)
+        await db.flush()
+        db.add(ActivityLog(
+            admin_id=uuid.UUID(admin_id), action="create",
+            entity_type="media_asset", entity_id=media_asset.id,
+            new_values={"filename": media_asset.filename, "url": media_asset.url},
+        ))
         await db.commit()
         await db.refresh(media_asset)
     except HTTPException:
@@ -214,16 +221,30 @@ async def upload_with_metadata(
 
 @router.get("/assets")
 async def list_assets(
-    folder: str = "abo-enterprise/uploads",
+    folder: str | None = None,
+    search: str | None = None,
+    page: int = Query(1, ge=1),
+    per_page: int = Query(40, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    admin = Depends(require_admin),
+    admin = Depends(require_role("media.read")),
 ):
-    """List all media assets with metadata"""
+    """List media assets with metadata (paginated, optionally filtered by
+    folder/filename). folder omitted = across all upload folders."""
+    conditions = [MediaAsset.is_deleted == False]  # noqa: E712
+    if folder:
+        conditions.append(MediaAsset.folder == folder)
+    if search:
+        conditions.append(MediaAsset.filename.ilike(f"%{search}%"))
+
+    total = (await db.execute(
+        select(func.count(MediaAsset.id)).where(and_(*conditions))
+    )).scalar() or 0
+
     result = await db.execute(
-        select(MediaAsset).where(
-            MediaAsset.folder == folder,
-            MediaAsset.is_deleted == False,
-        ).order_by(MediaAsset.created_at.desc())
+        select(MediaAsset).where(and_(*conditions))
+        .order_by(MediaAsset.created_at.desc())
+        .offset((page - 1) * per_page)
+        .limit(per_page)
     )
     assets = result.scalars().all()
 
@@ -234,16 +255,25 @@ async def list_assets(
                 "id": str(a.id),
                 "url": a.url,
                 "filename": a.filename,
+                "folder": a.folder,
                 "width": a.width,
                 "height": a.height,
                 "size": a.file_size,
                 "format": a.format,
+                "mime_type": a.mime_type,
+                "alt_text": a.alt_text,
                 "uploaded_at": a.created_at.isoformat(),
                 "uploaded_by": a.uploaded_by,
                 "tags": a.tags,
             }
             for a in assets
-        ]
+        ],
+        "meta": {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": max(1, -(-total // per_page)),
+        },
     }
 
 
@@ -251,7 +281,7 @@ async def list_assets(
 async def get_asset(
     asset_id: str,
     db: AsyncSession = Depends(get_db),
-    admin = Depends(require_admin),
+    admin = Depends(require_role("media.read")),
 ):
     """Get single asset with metadata"""
     try:
@@ -285,13 +315,17 @@ async def get_asset(
     }
 
 
+class MediaAssetUpdate(BaseModel):
+    alt_text: str | None = None
+    tags: list[str] | None = None
+
+
 @router.patch("/assets/{asset_id}")
 async def update_asset(
     asset_id: str,
-    alt_text: str = None,
-    tags: list = None,
+    payload: MediaAssetUpdate,
     db: AsyncSession = Depends(get_db),
-    admin = Depends(require_admin),
+    admin: str = Depends(require_role("media.write")),
 ):
     """Update asset metadata"""
     try:
@@ -307,11 +341,16 @@ async def update_asset(
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 
-    if alt_text is not None:
-        asset.alt_text = alt_text
-    if tags is not None:
-        asset.tags = tags
+    if payload.alt_text is not None:
+        asset.alt_text = payload.alt_text
+    if payload.tags is not None:
+        asset.tags = payload.tags
 
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin), action="update",
+        entity_type="media_asset", entity_id=asset.id,
+        new_values={"alt_text": asset.alt_text, "tags": asset.tags},
+    ))
     await db.commit()
 
     return {
@@ -324,7 +363,7 @@ async def update_asset(
 async def delete_asset(
     asset_id: str,
     db: AsyncSession = Depends(get_db),
-    admin = Depends(require_admin),
+    admin: str = Depends(require_role("media.write")),
 ):
     """Soft delete asset"""
     try:
@@ -341,6 +380,10 @@ async def delete_asset(
         raise HTTPException(status_code=404, detail="Asset not found")
 
     asset.is_deleted = True
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin), action="delete",
+        entity_type="media_asset", entity_id=asset.id,
+    ))
     await db.commit()
 
     return {"success": True, "message": "Asset deleted"}

@@ -498,43 +498,6 @@ class PaymentMethod(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
-class RevenueTransaction(Base):
-    __tablename__ = "revenue_transactions"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    transaction_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    order_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("orders.id"))
-    booking_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("bookings_v2.id"))
-    lead_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("leads_v2.id"))
-    customer_name: Mapped[str | None] = mapped_column(String(255))
-    customer_email: Mapped[str | None] = mapped_column(String(255))
-    service_name: Mapped[str | None] = mapped_column(String(255))
-    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
-    payment_method: Mapped[str | None] = mapped_column(String(50))
-    payment_status: Mapped[str] = mapped_column(String(20), default="pending")
-    transaction_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
-
-
-class CustomerInteraction(Base):
-    __tablename__ = "customer_interactions"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    customer_email: Mapped[str] = mapped_column(String(255), nullable=False)
-    customer_name: Mapped[str | None] = mapped_column(String(255))
-    interaction_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    message: Mapped[str | None] = mapped_column(Text)
-    source: Mapped[str | None] = mapped_column(String(50))
-    interaction_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("admin_users.id"))
-    next_followup_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
-
-
 class BkashTransaction(Base):
     __tablename__ = "bkash_transactions"
 
@@ -635,25 +598,6 @@ class EmailTemplate(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
-class AdminSetting(Base):
-    __tablename__ = "admin_settings"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    category: Mapped[str] = mapped_column(String(50), nullable=False)
-    key: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
-    value: Mapped[str] = mapped_column(Text, nullable=False)
-    data_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    description_en: Mapped[str | None] = mapped_column(Text)
-    description_bn: Mapped[str | None] = mapped_column(Text)
-    is_editable: Mapped[bool] = mapped_column(Boolean, default=True)
-    is_secret: Mapped[bool] = mapped_column(Boolean, default=False)
-    display_type: Mapped[str | None] = mapped_column(String(50))
-    sort_order: Mapped[int | None] = mapped_column(Integer)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
-
-
 class BlogPost(Base):
     __tablename__ = "blog_posts"
 
@@ -732,25 +676,6 @@ class AssistantActionLog(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
-class LeadFormField(Base):
-    __tablename__ = "lead_form_fields"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    lead_source: Mapped[str] = mapped_column(String(100), nullable=False)
-    field_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    field_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    field_label_en: Mapped[str] = mapped_column(String(255), nullable=False)
-    field_label_bn: Mapped[str] = mapped_column(String(255), nullable=False)
-    is_required: Mapped[bool] = mapped_column(Boolean, default=True)
-    placeholder: Mapped[str | None] = mapped_column(String(255))
-    options: Mapped[list | None] = mapped_column(JSON)
-    sort_order: Mapped[int | None] = mapped_column(Integer)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
-
-
 class MediaAsset(Base):
     __tablename__ = "media_assets"
 
@@ -770,19 +695,6 @@ class MediaAsset(Base):
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
-
-
-class AssetUsage(Base):
-    __tablename__ = "asset_usage"
-
-    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    asset_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("media_assets.id", ondelete="CASCADE"), index=True)
-    entity_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
-    entity_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    field_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    context: Mapped[dict] = mapped_column(JSON, default=dict)
-    used_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
 
 
@@ -893,6 +805,22 @@ class Coupon(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class NewsletterSubscriber(Base):
+    """Real table backing footer newsletter signups — replaces the
+    newsletter_subscribers Setting JSON blob (0024), which had no timestamps,
+    no unsubscribe state, and a check-then-write race under concurrent
+    signups."""
+
+    __tablename__ = "newsletter_subscribers"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    source: Mapped[str | None] = mapped_column(String(50))
+    subscribed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    unsubscribed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Subcategory(Base):

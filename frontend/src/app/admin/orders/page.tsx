@@ -2,9 +2,9 @@
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import dynamic from "next/dynamic";
 import { Loader2, ShoppingCart, ChevronDown, X, Package, Download, CheckSquare, Square, ChevronRight } from "lucide-react";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
-import ComposeEmailModal from "@/components/admin/ComposeEmailModal";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
@@ -14,6 +14,8 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice, buildCustomerWhatsAppLink } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+
+const ComposeEmailModal = dynamic(() => import("@/components/admin/ComposeEmailModal"), { ssr: false });
 
 interface AdminOrderItem { product_name: string; quantity: number; product_price: number; subtotal: number; }
 interface AdminOrder {

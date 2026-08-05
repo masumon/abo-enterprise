@@ -11,14 +11,44 @@ jest.mock("@/components/home/Hero", () => function MockHero() {
   return <section><h1>Hero Section</h1></section>;
 });
 
+// Several statically-imported home sections (CategoryCards, WhyChooseUsCards,
+// ReviewStatsCard) fetch CMS settings / public stats on mount. Unmocked, jsdom's
+// XHR fails with ERR_NETWORK (no backend reachable) — each hook already
+// catches that internally and falls back to its default content, so the test
+// still passes, but the real request leaves Jest waiting on open handles
+// before it can exit cleanly. Mocking both keeps this a fast, quiet unit test.
+jest.mock("@/hooks/usePublicSettings", () => ({
+  usePublicSettings: () => ({ settings: {}, loading: false }),
+  getSettingValue: (_settings: Record<string, string>, _key: string, fallback = "") => fallback,
+}));
+
+jest.mock("@/lib/api", () => {
+  const actual = jest.requireActual("@/lib/api");
+  return {
+    ...actual,
+    publicApi: {
+      ...actual.publicApi,
+      stats: () => Promise.resolve({ data: { data: null } }),
+      featureFlags: () => Promise.resolve({ data: { data: {} } }),
+    },
+  };
+});
+
 describe("Homepage", () => {
-  it("renders the hero section", () => {
-    render(<HomePage />);
+  // HomePage is an async Server Component (it awaits fetchPublicSettings()
+  // for the JSON-LD structured data) — react-dom's classic renderer can't
+  // reconcile a Promise as a child, so the async function is awaited
+  // directly to resolve its JSX first, then that resolved element is what
+  // gets rendered. `fetchPublicSettings` itself fails soft (catches and
+  // returns {}) when there's no backend to reach, so no network mock is
+  // needed here.
+  it("renders the hero section", async () => {
+    render(await HomePage());
     expect(screen.getByText("Hero Section")).toBeInTheDocument();
   });
 
-  it("renders the hero section container", () => {
-    const { container } = render(<HomePage />);
+  it("renders the hero section container", async () => {
+    const { container } = render(await HomePage());
     expect(container.querySelector("section")).toBeTruthy();
   });
 });

@@ -6,7 +6,7 @@ from app.core.database import get_db
 from app.core.http_cache import etag_json_response
 from app.core.security import require_admin, require_role
 from app.core.taxonomy import descendant_ids_for_slug
-from app.models.models import Product
+from app.models.models import Product, ActivityLog
 from app.schemas.schemas import ProductCreate, ProductUpdate, ProductOut, ApiResponse, PaginatedResponse, PaginatedMeta
 
 router = APIRouter(prefix="/products", tags=["products"])
@@ -249,6 +249,11 @@ async def create_product(
     db.add(product)
     await db.flush()
     await db.refresh(product)
+    db.add(ActivityLog(
+        admin_id=UUID(_admin), action="create",
+        entity_type="product", entity_id=product.id,
+        new_values={"slug": product.slug, "name_en": product.name_en},
+    ))
     return ApiResponse(data=ProductOut.model_validate(product), message="Product created")
 
 
@@ -263,10 +268,16 @@ async def update_product(
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    changes = payload.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         setattr(product, field, value)
     await db.flush()
     await db.refresh(product)
+    db.add(ActivityLog(
+        admin_id=UUID(_admin), action="update",
+        entity_type="product", entity_id=product.id,
+        new_values=payload.model_dump(exclude_unset=True, mode="json"),
+    ))
     return ApiResponse(data=ProductOut.model_validate(product), message="Product updated")
 
 
@@ -281,4 +292,8 @@ async def delete_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     product.is_deleted = True
+    db.add(ActivityLog(
+        admin_id=UUID(_admin), action="delete",
+        entity_type="product", entity_id=product.id,
+    ))
     return ApiResponse(message="Product deleted")

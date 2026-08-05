@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-import json
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import Response
@@ -8,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.models.models import BookingV2, LeadV2, Order, Product, Review, Service, Setting
+from app.models.models import BookingV2, LeadV2, Order, Product, Review, Service, Setting, NewsletterSubscriber
 from app.schemas.schemas import ApiResponse
 from app.core.http_cache import etag_json_response
 from app.core.rate_limit import rate_limit
@@ -60,6 +59,10 @@ async def get_public_stats(db: AsyncSession = Depends(get_db)):
         select(func.count(Review.id)).where(Review.is_active == True)  # noqa: E712
     )).scalar() or 0
 
+    avg_rating = (await db.execute(
+        select(func.avg(Review.rating)).where(Review.is_active == True)  # noqa: E712
+    )).scalar()
+
     first_order = (await db.execute(
         select(func.min(Order.created_at)).where(Order.is_deleted == False)  # noqa: E712
     )).scalar()
@@ -77,6 +80,7 @@ async def get_public_stats(db: AsyncSession = Depends(get_db)):
         "projects": max(total_leads, 50),
         "years": years,
         "reviews": total_reviews,
+        "average_rating": round(float(avg_rating), 1) if avg_rating is not None else None,
     })
 
 
@@ -137,31 +141,22 @@ class NewsletterSubscribe(BaseModel):
 
 @router.post("/newsletter", response_model=ApiResponse, dependencies=[Depends(rate_limit("newsletter", 5, 600))])
 async def subscribe_newsletter(payload: NewsletterSubscribe, db: AsyncSession = Depends(get_db)):
-    """Store newsletter subscriber email in settings table."""
+    """Store newsletter subscriber in the real newsletter_subscribers table."""
     email = payload.email.strip().lower()
-    result = await db.execute(
-        select(Setting).where(Setting.key == "newsletter_subscribers", Setting.is_deleted == False)  # noqa: E712
-    )
-    setting = result.scalar_one_or_none()
-    subscribers: list[str] = []
-    if setting:
-        try:
-            subscribers = json.loads(setting.value) if setting.value else []
-        except json.JSONDecodeError:
-            subscribers = []
-    if email not in subscribers:
-        subscribers.append(email)
-        if setting:
-            setting.value = json.dumps(subscribers)
-        else:
-            db.add(Setting(
-                key="newsletter_subscribers",
-                value=json.dumps(subscribers),
-                data_type="json",
-                description="Newsletter subscriber emails",
-                is_editable=False,
-            ))
-    return ApiResponse(data={"subscribed": True, "total": len(subscribers)}, message="Subscribed successfully")
+    existing = (await db.execute(
+        select(NewsletterSubscriber).where(NewsletterSubscriber.email == email)
+    )).scalar_one_or_none()
+    if existing:
+        if not existing.is_active:
+            existing.is_active = True
+            existing.unsubscribed_at = None
+    else:
+        db.add(NewsletterSubscriber(email=email, source="footer"))
+
+    total = (await db.execute(
+        select(func.count(NewsletterSubscriber.id)).where(NewsletterSubscriber.is_active == True)  # noqa: E712
+    )).scalar() or 0
+    return ApiResponse(data={"subscribed": True, "total": total}, message="Subscribed successfully")
 
 
 DEFAULT_FLAGS = {

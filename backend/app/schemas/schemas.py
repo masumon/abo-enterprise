@@ -1007,37 +1007,6 @@ class PaymentMethodOut(PaymentMethodBase):
 
 # ==================== ADMIN SETTINGS SCHEMAS ====================
 
-class AdminSettingBase(BaseModel):
-    category: str
-    key: str
-    value: str
-    data_type: str
-    description_en: str | None = None
-    description_bn: str | None = None
-    is_editable: bool = True
-    is_secret: bool = False
-    display_type: str | None = None
-    sort_order: int | None = None
-
-
-class AdminSettingCreate(AdminSettingBase):
-    pass
-
-
-class AdminSettingUpdate(BaseModel):
-    value: str
-    description_en: str | None = None
-    description_bn: str | None = None
-
-
-class AdminSettingOut(AdminSettingBase):
-    id: uuid.UUID
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = {"from_attributes": True}
-
-
 # ==================== EMAIL TEMPLATE SCHEMAS ====================
 
 class EmailTemplateBase(BaseModel):

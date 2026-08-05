@@ -17,6 +17,7 @@ import {
   type LucideIcon,
   TrendingUp,
   BadgeCheck,
+  Clock,
 } from "lucide-react";
 import {
   VisaMark,
@@ -110,6 +111,8 @@ export default function Footer() {
     "contact_phone",
     "contact_email",
     "contact_address",
+    "contact_hours_en",
+    "contact_hours_bn",
     "facebook_url",
     "instagram_url",
     "linkedin_url",
@@ -129,6 +132,9 @@ export default function Footer() {
     lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN
   );
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "contact_address"), address);
+  const hours = lang === "bn"
+    ? getSettingValue(settings, "contact_hours_bn", "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা")
+    : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 9:00 PM");
   const whatsappDigits = normalizePhoneDigits(getSettingValue(settings, "whatsapp_number", phoneRaw));
   const phoneDigits = normalizePhoneDigits(phoneRaw);
   const phoneDisplay = formatPhoneDisplay(phoneRaw);
@@ -240,6 +246,16 @@ export default function Footer() {
                   <a href={`mailto:${emailAddr}`} className="text-xs md:text-sm text-white/70 hover:text-red-400 transition-colors break-all">
                     {emailAddr}
                   </a>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <Clock className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" aria-hidden />
+                <div className="min-w-0">
+                  <p className="text-xs md:text-sm font-semibold text-white">
+                    {lang === "bn" ? "কার্যসময়" : "Business Hours"}
+                  </p>
+                  <p className="text-xs md:text-sm text-white/70">{hours}</p>
                 </div>
               </div>
             </div>

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import ServicesPageClient from "@/app/services/ServicesPageClient";
 import type { Category } from "@/types";
 
@@ -57,6 +57,9 @@ describe("Services Page", () => {
         initialCategories={mockCategories}
       />
     );
+    // The category chips live inside the filter bottom sheet (Screen 06),
+    // which only renders once opened — not inline on the page.
+    fireEvent.click(screen.getByRole("button", { name: /Filters/i }));
     const chip = screen.getByRole("button", { name: "Print & Documentation" });
     expect(chip).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByRole("button", { name: "All" })).toBeInTheDocument();

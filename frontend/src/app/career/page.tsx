@@ -147,20 +147,20 @@ export default function CareerPage() {
             <h2 className="text-xl font-bold text-heading mb-6">{t({ en: "Apply Now", bn: "এখনই আবেদন করুন" })}</h2>
             <form onSubmit={handleApply} className="grid sm:grid-cols-2 gap-4">
               <div>
-                <label className="form-label">{t({ en: "Full Name", bn: "পূর্ণ নাম" })}</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} className="input" required />
+                <label htmlFor="career-name" className="form-label">{t({ en: "Full Name", bn: "পূর্ণ নাম" })}</label>
+                <input id="career-name" value={name} onChange={(e) => setName(e.target.value)} className="input" required />
               </div>
               <div>
-                <label className="form-label">{t({ en: "Phone", bn: "ফোন" })}</label>
-                <input value={phone} onChange={(e) => setPhone(e.target.value)} className="input" placeholder="01XXXXXXXXX" required />
+                <label htmlFor="career-phone" className="form-label">{t({ en: "Phone", bn: "ফোন" })}</label>
+                <input id="career-phone" value={phone} onChange={(e) => setPhone(e.target.value)} className="input" placeholder="01XXXXXXXXX" required />
               </div>
               <div>
-                <label className="form-label">{t({ en: "Email", bn: "ইমেইল" })}</label>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input" />
+                <label htmlFor="career-email" className="form-label">{t({ en: "Email", bn: "ইমেইল" })}</label>
+                <input id="career-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input" />
               </div>
               <div>
-                <label className="form-label">{t({ en: "Position", bn: "পদ" })}</label>
-                <select value={role} onChange={(e) => setRole(e.target.value)} className="input" disabled={loadingPositions}>
+                <label htmlFor="career-role" className="form-label">{t({ en: "Position", bn: "পদ" })}</label>
+                <select id="career-role" value={role} onChange={(e) => setRole(e.target.value)} className="input" disabled={loadingPositions}>
                   <option value="">{t({ en: "Select role", bn: "পদ নির্বাচন" })}</option>
                   {positions.map((p) => (
                     <option key={p.id} value={p.title.en}>{t(p.title)}</option>
@@ -168,8 +168,8 @@ export default function CareerPage() {
                 </select>
               </div>
               <div className="sm:col-span-2">
-                <label className="form-label">{t({ en: "Cover Letter", bn: "কভার লেটার" })}</label>
-                <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className="input resize-none" />
+                <label htmlFor="career-message" className="form-label">{t({ en: "Cover Letter", bn: "কভার লেটার" })}</label>
+                <textarea id="career-message" value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className="input resize-none" />
               </div>
               <div className="sm:col-span-2">
                 <button type="submit" disabled={submitting} className="btn btn-brand btn-md w-full sm:w-auto disabled:opacity-60">

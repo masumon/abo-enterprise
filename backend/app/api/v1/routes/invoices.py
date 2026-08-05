@@ -4,7 +4,7 @@ from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from app.core.database import get_db
-from app.core.security import require_admin
+from app.core.security import require_role
 from app.core.invoice import InvoiceService
 from app.models.models import Invoice, ActivityLog, BookingV2, Booking
 from app.schemas.schemas import (
@@ -229,7 +229,7 @@ async def public_booking_invoice_pdf(
 async def create_invoice(
     payload: InvoiceCreate,
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("invoices.write")),
 ):
     """Create invoice (admin only)"""
     invoice_service = InvoiceService(db)
@@ -272,7 +272,7 @@ async def create_invoice(
 async def get_invoice(
     invoice_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("invoices.read")),
 ):
     """Get invoice details (admin only)"""
     result = await db.execute(
@@ -295,7 +295,7 @@ async def get_invoice(
 async def get_invoice_pdf(
     invoice_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("invoices.read")),
 ):
     """Download invoice/receipt PDF (admin auth required)"""
     result = await db.execute(
@@ -324,7 +324,7 @@ async def get_invoice_pdf(
 
 @router.get("/admin/invoices", response_model=PaginatedResponse)
 async def list_invoices_admin(
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("invoices.read")),
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -368,7 +368,7 @@ async def list_invoices_admin(
 @router.get("/admin/invoices/{invoice_id}/pdf")
 async def admin_download_invoice_pdf(
     invoice_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("invoices.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Admin PDF download alias."""
@@ -378,7 +378,7 @@ async def admin_download_invoice_pdf(
 @router.get("/admin/bookings-v2/{booking_id}/pdf")
 async def admin_booking_v2_pdf(
     booking_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("invoices.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Download receipt PDF for a service booking (v2)."""
@@ -403,7 +403,7 @@ async def admin_booking_v2_pdf(
 @router.get("/admin/bookings-v1/{booking_id}/pdf")
 async def admin_booking_v1_pdf(
     booking_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("invoices.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Download receipt PDF for a legacy booking (v1)."""
@@ -428,7 +428,7 @@ async def admin_booking_v1_pdf(
 @router.get("/admin/orders/{order_id}/pdf")
 async def admin_order_pdf(
     order_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("invoices.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Download invoice PDF for an order."""
@@ -443,7 +443,7 @@ async def admin_order_pdf(
 async def update_invoice_payment_status(
     invoice_id: uuid.UUID,
     payment_status: str = Query(...),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("invoices.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Update invoice payment status (admin only)"""
@@ -488,7 +488,7 @@ async def update_invoice_payment_status(
 @router.delete("/admin/invoices/{invoice_id}", response_model=ApiResponse)
 async def delete_invoice(
     invoice_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("invoices.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Soft delete invoice (admin only)"""
@@ -519,7 +519,7 @@ async def delete_invoice(
 
 @router.get("/admin/diagnostics", response_model=ApiResponse)
 async def invoice_diagnostics(
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("invoices.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Pinpoint why invoice creation fails in this environment.
@@ -605,7 +605,7 @@ async def invoice_diagnostics(
 
 @router.post("/admin/backfill", response_model=ApiResponse)
 async def backfill_missing_invoices(
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("invoices.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Create invoices for existing orders/bookings that are missing one.
@@ -689,7 +689,7 @@ async def backfill_missing_invoices(
 
 @router.get("/admin/invoices/stats/summary", response_model=ApiResponse)
 async def get_invoice_stats(
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("invoices.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Get invoice statistics"""

@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from app.core.database import get_db
-from app.core.security import require_admin
+from app.core.security import require_role
 from app.models.models import BlogPost, ActivityLog
 from app.schemas.schemas import (
     BlogPostOut,
@@ -117,7 +117,7 @@ def _translate(text: str, source: str, target: str) -> str:
 @router.post("/admin/translate", response_model=ApiResponse)
 async def translate_blog_text(
     payload: TranslateRequest,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("blog.write")),
 ):
     """Translate blog text (admin only). Returns {translated}; 502 on failure so
     the admin UI can prompt for a manual English entry instead of saving Bangla."""
@@ -192,7 +192,7 @@ async def get_post(slug: str, db: AsyncSession = Depends(get_db)):
 
 @router.get("/admin/posts", response_model=PaginatedResponse)
 async def list_posts_admin(
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("blog.read")),
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -227,7 +227,7 @@ async def list_posts_admin(
 @router.post("/admin/posts", response_model=ApiResponse)
 async def create_post(
     payload: BlogPostCreate,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("blog.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Create blog post (admin only)"""
@@ -260,7 +260,7 @@ async def create_post(
 @router.get("/admin/posts/{post_id}", response_model=ApiResponse)
 async def get_post_admin(
     post_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("blog.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Get any blog post (admin)"""
@@ -278,7 +278,7 @@ async def get_post_admin(
 async def update_post(
     post_id: uuid.UUID,
     payload: BlogPostUpdate,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("blog.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Update blog post (admin only)"""
@@ -316,7 +316,7 @@ async def update_post(
 @router.delete("/admin/posts/{post_id}", response_model=ApiResponse)
 async def delete_post(
     post_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("blog.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Soft delete blog post (admin only)"""

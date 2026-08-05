@@ -101,7 +101,13 @@ export default function ProductFilterSheet({
           </p>
           <div className="flex flex-wrap gap-2">
             {chips.map((c) => (
-              <button key={c.value} type="button" onClick={() => onCategoryChange(c.value)} className={pill(category === c.value)}>
+              <button
+                key={c.value}
+                type="button"
+                onClick={() => onCategoryChange(c.value)}
+                aria-pressed={category === c.value}
+                className={pill(category === c.value)}
+              >
                 {bn ? c.label.bn : c.label.en}
               </button>
             ))}

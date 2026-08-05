@@ -64,7 +64,10 @@ describe("Booking Form", () => {
     await user.click(screen.getByText(/Book This Service/i));
 
     await waitFor(() => {
-      expect(screen.getByText(/Invalid Bangladesh phone number/i)).toBeInTheDocument();
+      // Matches lib/phone.ts's BD_PHONE_ERROR_EN — the copy was refined for
+      // clarity (now also mentions the international-number option) after
+      // this assertion was written against the older, shorter wording.
+      expect(screen.getByText(/Enter a valid phone/i)).toBeInTheDocument();
     });
   });
 

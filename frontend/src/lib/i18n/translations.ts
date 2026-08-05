@@ -201,7 +201,3 @@ const translations = {
 export function t(lang: Language, key: TranslationKey): string {
   return translations[lang][key] ?? translations.en[key] ?? key;
 }
-
-export function bilingual<T extends Record<Language, string>>(obj: T, lang: Language): string {
-  return obj[lang];
-}

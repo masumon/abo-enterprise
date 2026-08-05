@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
 
 from app.core.database import get_db
-from app.core.security import require_admin
+from app.core.security import require_role
 from app.models.models import EmailTemplate, ActivityLog
 from app.schemas.schemas import (
     ApiResponse,
@@ -23,7 +23,7 @@ async def list_email_templates(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: str = Depends(require_role("email_templates.read")),
 ):
     total = (await db.execute(select(func.count(EmailTemplate.id)))).scalar_one()
     result = await db.execute(
@@ -43,7 +43,7 @@ async def list_email_templates(
 async def get_email_template(
     template_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: str = Depends(require_role("email_templates.read")),
 ):
     result = await db.execute(select(EmailTemplate).where(EmailTemplate.id == template_id))
     template = result.scalar_one_or_none()
@@ -56,7 +56,7 @@ async def get_email_template(
 async def create_email_template(
     payload: EmailTemplateCreate,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("email_templates.write")),
 ):
     existing = await db.execute(
         select(EmailTemplate).where(EmailTemplate.template_name == payload.template_name)
@@ -90,7 +90,7 @@ async def update_email_template(
     template_id: UUID,
     payload: EmailTemplateUpdate,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("email_templates.write")),
 ):
     result = await db.execute(select(EmailTemplate).where(EmailTemplate.id == template_id))
     template = result.scalar_one_or_none()
@@ -120,7 +120,7 @@ async def update_email_template(
 async def delete_email_template(
     template_id: UUID,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("email_templates.write")),
 ):
     result = await db.execute(select(EmailTemplate).where(EmailTemplate.id == template_id))
     template = result.scalar_one_or_none()

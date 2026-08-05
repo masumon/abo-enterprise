@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
 import { adminApi } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/apiError";
+import { useToastStore } from "@/store/toast";
 import { Loader2, ScrollText, Search } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
@@ -29,6 +31,7 @@ function actionBadgeClass(action: string): string {
 }
 
 export default function AdminAuditPage() {
+  const toast = useToastStore((s) => s.push);
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -45,12 +48,13 @@ export default function AdminAuditPage() {
       const data = (r.data.data ?? []) as AuditLog[];
       setLogs(data);
       setTotal(r.data.meta?.total ?? data.length);
-    } catch {
+    } catch (err) {
       setLogs([]);
+      toast("error", apiErrorMessage(err, "Failed to load audit logs"));
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, toast]);
 
   useEffect(() => { load(); }, [load]);
 

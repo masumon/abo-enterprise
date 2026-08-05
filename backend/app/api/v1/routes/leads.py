@@ -3,21 +3,43 @@ from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
-from app.core.security import require_admin
+from app.core.security import require_role
 from app.core.email import send_email, lead_notification_html
-from app.models.models import Lead
+from app.models.models import Lead, ActivityLog
 from app.schemas.schemas import LeadCreate, LeadOut, LeadStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 from app.core.rate_limit import rate_limit
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/leads", tags=["leads"])
 
-
+# LEGACY — every current public lead-capture surface (contact page, homepage
+# LeadCapture, project inquiry form, B2B quotation form) posts to leads_v2
+# (serviceLeadsApi.create in the frontend), which has qualification scoring,
+# assignment and audit logging that this v1 table never gained. Confirmed by
+# a full-repo search: no frontend code calls this POST endpoint anymore.
+#
+# It is kept live (not removed) only because an external integration outside
+# this repo could still be posting here directly — the warning log below
+# will show up in Admin → Ops if that's ever actually true, which should
+# decide whether it's safe to retire. The `leads` table/admin tab otherwise
+# stays as a read/update archive for whatever it already collected, the same
+# pattern already used for the legacy `bookings` table.
 @router.post("", response_model=ApiResponse, status_code=201, dependencies=[Depends(rate_limit("leads_create", 10, 600))])
 async def create_lead(
     payload: LeadCreate,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
+    # logger.error (not .warning) deliberately — only ERROR+ is captured into
+    # the Admin -> Ops "Errors" feed (app/core/ops_events.py), and that
+    # visibility is the entire point of this line.
+    logger.error(
+        "Legacy leads v1 create endpoint hit (phone=%s) — no known frontend caller; "
+        "verify no other client still depends on it before retiring.",
+        payload.phone,
+    )
     lead = Lead(**payload.model_dump())
     db.add(lead)
     await db.flush()
@@ -46,7 +68,7 @@ async def list_leads(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("leads.read")),
 ):
     conditions = [Lead.is_deleted == False]  # noqa: E712
     if lead_type:
@@ -80,7 +102,7 @@ async def list_leads(
 async def get_lead(
     lead_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("leads.read")),
 ):
     result = await db.execute(select(Lead).where(Lead.id == lead_id))
     lead = result.scalar_one_or_none()
@@ -94,11 +116,17 @@ async def update_lead_status(
     lead_id: UUID,
     payload: LeadStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("leads.write")),
 ):
     result = await db.execute(select(Lead).where(Lead.id == lead_id))
     lead = result.scalar_one_or_none()
     if not lead:
         raise HTTPException(status_code=404, detail="Lead not found")
+    old_status = lead.status
     lead.status = payload.status
+    db.add(ActivityLog(
+        admin_id=UUID(_admin), action="update",
+        entity_type="lead", entity_id=lead.id,
+        old_values={"status": old_status}, new_values={"status": payload.status},
+    ))
     return ApiResponse(data=LeadOut.model_validate(lead), message="Lead status updated")

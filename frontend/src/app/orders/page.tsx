@@ -10,6 +10,7 @@ import { ordersApi } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import GlassCard from "@/components/ui/GlassCard";
 import PageHero from "@/components/ui/PageHero";
+import EmptyState from "@/components/ui/EmptyState";
 import { ListRowSkeleton } from "@/components/common/Skeletons";
 
 interface OrderSummary {
@@ -88,11 +89,12 @@ export default function OrdersPage() {
             <p className="text-gray-500">{lang === "bn" ? "অর্ডার লোড করা যায়নি" : "Could not load orders"}</p>
           </GlassCard>
         ) : orders.length === 0 ? (
-          <GlassCard className="p-8 text-center">
-            <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">{lang === "bn" ? "কোনো অর্ডার নেই" : "No orders found"}</p>
-            <Link href="/products" className="btn btn-brand btn-sm mt-4 inline-flex">{lang === "bn" ? "কেনাকাটা করুন" : "Start Shopping"}</Link>
-          </GlassCard>
+          <EmptyState
+            icon={Package}
+            title={lang === "bn" ? "কোনো অর্ডার নেই" : "No orders found"}
+            actionLabel={lang === "bn" ? "কেনাকাটা করুন" : "Start Shopping"}
+            actionHref="/products"
+          />
         ) : (
           <div className="space-y-3">
             {orders.map((o) => (
