@@ -113,6 +113,8 @@ export default function Footer() {
     "contact_address",
     "contact_hours_en",
     "contact_hours_bn",
+    "footer_about_en",
+    "footer_about_bn",
     "facebook_url",
     "instagram_url",
     "linkedin_url",
@@ -135,6 +137,9 @@ export default function Footer() {
   const hours = lang === "bn"
     ? getSettingValue(settings, "contact_hours_bn", "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা")
     : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 9:00 PM");
+  const aboutText = lang === "bn"
+    ? getSettingValue(settings, "footer_about_bn", "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।")
+    : getSettingValue(settings, "footer_about_en", "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us.");
   const whatsappDigits = normalizePhoneDigits(getSettingValue(settings, "whatsapp_number", phoneRaw));
   const phoneDigits = normalizePhoneDigits(phoneRaw);
   const phoneDisplay = formatPhoneDisplay(phoneRaw);
@@ -200,11 +205,7 @@ export default function Footer() {
           <div className="space-y-6">
             <div>
               <BrandLogo size="lg" href={false} variant="light" />
-              <p className="text-xs md:text-sm text-white/70 mt-3 leading-relaxed">
-                {lang === "bn"
-                  ? "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।"
-                  : "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us."}
-              </p>
+              <p className="text-xs md:text-sm text-white/70 mt-3 leading-relaxed">{aboutText}</p>
             </div>
 
             <div className="space-y-3">
@@ -354,7 +355,7 @@ export default function Footer() {
         </div>
 
         {trustBadges.length > 0 && (
-          <div className="border-t border-white/10 pt-5 md:pt-8 space-y-4 md:space-y-6">
+          <div className="border-t border-white/10 pt-4 md:pt-6 space-y-3 md:space-y-4">
             <div className="flex items-center gap-3 justify-center">
               <div className="w-1 h-1 rounded-full bg-green-400" />
               <h2 className="text-lg md:text-xl font-bold text-white text-center">
@@ -383,26 +384,23 @@ export default function Footer() {
           </div>
         )}
 
-        <div className="border-t border-white/10 pt-5 md:pt-8 grid gap-6 md:gap-10 md:grid-cols-2">
-          <div className="space-y-4 md:space-y-6">
-            <div className="flex items-center gap-3 justify-center md:justify-start">
-              <div className="w-1 h-1 rounded-full bg-green-400" />
-              <h2 className="text-lg md:text-xl font-bold text-white text-center md:text-left">
-                {lang === "bn" ? "পেমেন্ট পদ্ধতি সমূহ" : "Payment Methods"}
-              </h2>
-            </div>
+        <div className="border-t border-white/10 pt-4 md:pt-6 grid gap-4 md:gap-6 md:grid-cols-2">
+          <div className="space-y-2.5 md:space-y-3">
+            <h2 className="text-xs md:text-sm font-bold text-white/80 uppercase tracking-wide text-center md:text-left">
+              {lang === "bn" ? "পেমেন্ট পদ্ধতি সমূহ" : "Payment Methods"}
+            </h2>
 
-            <div className="flex items-center justify-center md:justify-start gap-3 flex-wrap">
+            <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
               {payKeys.map((key) => {
                 const brand = PAY_BRAND[key];
                 if (!brand) return null;
                 return (
                   <div
                     key={key}
-                    className="border border-white/10 rounded-lg p-2 md:p-3 hover:border-white/30 transition-colors bg-white/5"
+                    className="border border-white/10 rounded-lg p-1.5 hover:border-white/30 transition-colors bg-white/5"
                     title={brand.label}
                   >
-                    <brand.Mark className="h-5 md:h-6 w-auto max-w-full" />
+                    <brand.Mark className="h-4 md:h-5 w-auto max-w-full" />
                   </div>
                 );
               })}
@@ -410,21 +408,18 @@ export default function Footer() {
           </div>
 
           {registrations.length > 0 && (
-            <div className="space-y-4 md:space-y-6">
-              <div className="flex items-center gap-3 justify-center md:justify-start">
-                <div className="w-1 h-1 rounded-full bg-green-400" />
-                <h2 className="text-lg md:text-xl font-bold text-white text-center md:text-left">
-                  {lang === "bn" ? "ব্যবসায়িক তথ্য" : "Business Registrations"}
-                </h2>
-              </div>
+            <div className="space-y-2.5 md:space-y-3">
+              <h2 className="text-xs md:text-sm font-bold text-white/80 uppercase tracking-wide text-center md:text-left">
+                {lang === "bn" ? "ব্যবসায়িক তথ্য" : "Business Registrations"}
+              </h2>
 
               <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
                 {registrations.map((r, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-2 border border-white/10 rounded-lg px-3 py-2 bg-white/5"
+                    className="flex items-center gap-2 border border-white/10 rounded-lg px-2.5 py-1.5 bg-white/5"
                   >
-                    <BadgeCheck className="w-4 h-4 text-green-400 flex-shrink-0" aria-hidden />
+                    <BadgeCheck className="w-3.5 h-3.5 text-green-400 flex-shrink-0" aria-hidden />
                     <div className="min-w-0">
                       <p className="text-[10px] text-white/50 leading-none mb-0.5">
                         {lang === "bn" ? r.label_bn || r.label_en : r.label_en || r.label_bn}
@@ -439,41 +434,40 @@ export default function Footer() {
         </div>
 
         {newsletterEnabled && (
-          <div className="border-t border-white/10 pt-5 md:pt-8 space-y-4 md:space-y-6">
-            <div className="flex items-start gap-4 md:gap-6">
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
-                <Mail className="w-6 h-6 md:w-7 md:h-7 text-white" aria-hidden />
+          <div className="border-t border-white/10 pt-4 md:pt-6 space-y-3">
+            <div className="flex items-start gap-3 md:gap-4">
+              <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                <Mail className="w-4 h-4 md:w-5 md:h-5 text-white" aria-hidden />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-lg md:text-xl font-bold text-white">
+                <h3 className="text-sm md:text-base font-bold text-white">
                   {lang === "bn" ? "নিউজলেটারের সাবস্ক্রাইব করুন" : "Subscribe to Newsletter"}
                 </h3>
-                <p className="text-sm text-white/70 mt-1">
+                <p className="text-xs text-white/70 mt-0.5">
                   {lang === "bn"
                     ? "নতুন অফার, পণ্য এবং পরিষেবা সম্পর্কে প্রথম জানুন।"
                     : "Get the latest offers, products, and services delivered to your inbox."}
                 </p>
 
-                <form onSubmit={handleNewsletter} className="mt-4 flex gap-2 max-w-md">
+                <form onSubmit={handleNewsletter} className="mt-3 flex gap-2 max-w-md">
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder={lang === "bn" ? "আপনার ইমেইল" : "Your email"}
-                    className="flex-1 px-4 py-2 md:py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-all text-sm md:text-base"
+                    className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-all text-sm"
                     aria-label={lang === "bn" ? "ইমেইল ঠিকানা" : "Email address"}
                     required
                   />
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="px-4 md:px-6 py-2 md:py-3 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 flex-shrink-0 text-sm md:text-base"
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 flex-shrink-0 text-sm"
                   >
                     {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (lang === "bn" ? "সাবস্ক্রাইব" : "Subscribe")}
                   </button>
                 </form>
-
-                <p className="text-xs text-white/60 mt-3 flex items-center gap-1">
+                <p className="text-[10px] text-white/50 mt-2 flex items-center gap-1">
                   <span>🔒</span>
                   {lang === "bn" ? "আমরা আপনার ডেটা নিরাপদ রাখি এবং কখনও স্প্যাম করি না।" : "We keep your data safe and never spam."}
                 </p>
@@ -482,42 +476,56 @@ export default function Footer() {
           </div>
         )}
 
-        <div className="border-t border-white/10 pt-5 md:pt-8 space-y-4 md:space-y-6">
+        <div className="border-t border-white/10 pt-4 md:pt-6 space-y-3">
           <div>
-            <h3 className="text-lg md:text-xl font-bold text-white">
+            <h3 className="text-sm md:text-base font-bold text-white">
               {lang === "bn" ? "আমাদের অ্যাপ ডাউনলোড করুন" : "Download Our App"}
             </h3>
-            <p className="text-sm text-white/70 mt-2">
+            <p className="text-xs text-white/70 mt-1">
               {lang === "bn"
                 ? "যেকোনো সময় সহজেই কেনাকাটা করুন আমাদের মোবাইল অ্যাপ থেকে।"
                 : "Shop anytime, anywhere with our mobile app."}
             </p>
           </div>
 
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-2.5 flex-wrap">
             <a
               href={playStoreUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 md:px-6 py-2 md:py-3 rounded-lg border border-white/30 hover:border-white/50 hover:bg-white/5 transition-all flex items-center gap-2 text-sm md:text-base font-semibold text-white"
+              className="group px-3.5 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 hover:border-white/30 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2.5"
             >
-              <PlayStoreMark className="w-5 h-5" />
-              <span>{lang === "bn" ? "গুগল প্লে" : "Google Play"}</span>
+              <PlayStoreMark className="w-6 h-6 flex-shrink-0" />
+              <span className="text-left leading-tight">
+                <span className="block text-[9px] text-white/60 uppercase tracking-wide">
+                  {lang === "bn" ? "পাওয়া যাচ্ছে" : "Get it on"}
+                </span>
+                <span className="block text-xs md:text-sm font-bold text-white">
+                  {lang === "bn" ? "গুগল প্লে" : "Google Play"}
+                </span>
+              </span>
             </a>
 
             <a
               href={appStoreUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 md:px-6 py-2 md:py-3 rounded-lg border border-white/30 hover:border-white/50 hover:bg-white/5 transition-all flex items-center gap-2 text-sm md:text-base font-semibold text-white"
+              className="group px-3.5 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 hover:border-white/30 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2.5"
             >
-              <AppStoreMark className="w-5 h-5" />
-              <span>{lang === "bn" ? "অ্যাপ স্টোর" : "App Store"}</span>
+              <AppStoreMark className="w-6 h-6 flex-shrink-0" />
+              <span className="text-left leading-tight">
+                <span className="block text-[9px] text-white/60 uppercase tracking-wide">
+                  {lang === "bn" ? "ডাউনলোড করুন" : "Download on the"}
+                </span>
+                <span className="block text-xs md:text-sm font-bold text-white">
+                  {lang === "bn" ? "অ্যাপ স্টোর" : "App Store"}
+                </span>
+              </span>
             </a>
           </div>
         </div>
 
-        <div className="border-t border-white/10 pt-8 pb-[calc(var(--mobile-chrome-bottom)+0.5rem)] lg:pb-0 text-center space-y-4">
+        <div className="border-t border-white/10 pt-6 pb-[calc(var(--mobile-chrome-bottom)+0.5rem)] lg:pb-0 text-center space-y-3">
           <p className="text-sm text-white/70">
             &copy; {new Date().getFullYear()} ABO ENTERPRISE. {lang === "bn" ? "সকল অধ্যকার সংরক্ষিত।" : "All rights reserved."}
           </p>

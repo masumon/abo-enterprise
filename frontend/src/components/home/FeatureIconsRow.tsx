@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useLanguageStore } from "@/store/language";
 import { Crown, Zap, FileText, Star, HelpCircle, Phone, Check, Truck } from "lucide-react";
+import AutoScrollRow from "@/components/ui/AutoScrollRow";
 
 const FEATURES = [
   {
@@ -69,20 +70,22 @@ export default function FeatureIconsRow() {
   return (
     <section className="py-4 sm:py-6 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 sm:gap-4">
-          {FEATURES.map(({ id, icon: Icon, label, color, href }) => (
+        <AutoScrollRow
+          items={FEATURES}
+          keyExtractor={(f) => f.id}
+          spaceBetween={8}
+          renderItem={({ icon: Icon, label, color, href }) => (
             <Link
-              key={id}
               href={href}
-              className="flex flex-col items-center justify-center gap-1.5 py-1.5 sm:py-3 px-1 sm:px-2 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group touch-manipulation"
+              className="flex flex-col items-center justify-center gap-1.5 py-1.5 sm:py-3 px-3 sm:px-5 w-20 sm:w-24 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group touch-manipulation"
             >
               <Icon className={`w-6 sm:w-8 h-6 sm:h-8 ${color} group-hover:scale-110 transition-transform`} aria-hidden />
               <span className="text-[9px] sm:text-xs font-semibold text-center text-heading leading-tight">
                 {lang === "bn" ? label.bn : label.en}
               </span>
             </Link>
-          ))}
-        </div>
+          )}
+        />
       </div>
     </section>
   );

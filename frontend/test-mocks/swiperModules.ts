@@ -7,3 +7,4 @@ export const Pagination = {};
 export const A11y = {};
 export const Navigation = {};
 export const EffectFade = {};
+export const FreeMode = {};

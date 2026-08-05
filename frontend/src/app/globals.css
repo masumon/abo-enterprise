@@ -40,7 +40,7 @@
     --surface-card: #ffffff;
     --surface-elevated: #ffffff;
     --navy: #14182b;
-    --navbar-height: 4rem;
+    --navbar-height: 4.5rem;
     --announcement-height: 2.25rem;
     --navbar-offset: calc(var(--announcement-height) + var(--navbar-height));
     /* The tab bar is flush to the bottom edge now, one 44px row plus the safe

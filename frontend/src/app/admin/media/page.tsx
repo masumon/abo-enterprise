@@ -110,6 +110,53 @@ function SlotContextPreview({ slotKey, value }: { slotKey: string; value: string
   );
 }
 
+/** Module-scope (not nested in AdminMediaPage) so its identity is stable
+ * across renders — nesting it caused React to remount the whole subtree
+ * (including the search <input> passed via `extra`) on every keystroke,
+ * which dismissed the on-screen keyboard on mobile after one character. */
+function SectionHeader({
+  title,
+  titleBn,
+  sectionId,
+  onSave,
+  saving,
+  saved,
+  extra,
+}: {
+  title: string;
+  titleBn: string;
+  sectionId: string;
+  onSave: () => void;
+  saving: string | null;
+  saved: string | null;
+  extra?: React.ReactNode;
+}) {
+  const isSaving = saving === sectionId;
+  const isSaved = saved === sectionId;
+  return (
+    <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50/50 gap-3 flex-wrap">
+      <div>
+        <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
+        <p className="text-xs text-gray-400">{titleBn}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        {extra}
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={isSaving}
+          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+            isSaved ? "bg-green-500 text-white" : "bg-brand-600 text-white hover:bg-brand-700"
+          } disabled:opacity-60`}
+        >
+          {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : isSaved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
+          {isSaving ? "Saving…" : isSaved ? "Saved!" : "Save"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function SlotEditor({
   slot,
   value,
@@ -365,45 +412,6 @@ export default function AdminMediaPage() {
     }
   };
 
-  const SectionHeader = ({
-    title,
-    titleBn,
-    sectionId,
-    onSave,
-    extra,
-  }: {
-    title: string;
-    titleBn: string;
-    sectionId: string;
-    onSave: () => void;
-    extra?: React.ReactNode;
-  }) => {
-    const isSaving = saving === sectionId;
-    const isSaved = saved === sectionId;
-    return (
-      <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50/50 gap-3 flex-wrap">
-        <div>
-          <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
-          <p className="text-xs text-gray-400">{titleBn}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {extra}
-          <button
-            type="button"
-            onClick={onSave}
-            disabled={isSaving}
-            className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-              isSaved ? "bg-green-500 text-white" : "bg-brand-600 text-white hover:bg-brand-700"
-            } disabled:opacity-60`}
-          >
-            {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : isSaved ? <Check className="w-3.5 h-3.5" /> : <Save className="w-3.5 h-3.5" />}
-            {isSaving ? "Saving…" : isSaved ? "Saved!" : "Save"}
-          </button>
-        </div>
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[40vh]">
@@ -453,7 +461,7 @@ export default function AdminMediaPage() {
 
       {tab === "brand" && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <SectionHeader title="Brand & Site Images" titleBn="ব্র্যান্ড ও সাইট ছবি" sectionId="brand" onSave={saveBrand} />
+          <SectionHeader title="Brand & Site Images" titleBn="ব্র্যান্ড ও সাইট ছবি" sectionId="brand" onSave={saveBrand} saving={saving} saved={saved} />
           {BRAND_IMAGE_SLOTS.map((slot) => (
             <SlotEditor
               key={slot.key}
@@ -472,6 +480,8 @@ export default function AdminMediaPage() {
             titleBn="পেজ ব্যানার ছবি (২৫টি)"
             sectionId="banners"
             onSave={saveBanners}
+            saving={saving}
+            saved={saved}
             extra={
               <div className="relative">
                 <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />

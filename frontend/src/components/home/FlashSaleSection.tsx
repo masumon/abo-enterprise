@@ -12,6 +12,7 @@ import CountdownTimer, { resolveFlashSaleEnd, isFlashSaleActive, type CountdownS
 import { productsApi } from "@/lib/api";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import PromoSlider from "@/components/ui/PromoSlider";
 
 export default function FlashSaleSection() {
   const { lang } = useLanguageStore();
@@ -84,6 +85,10 @@ export default function FlashSaleSection() {
             <CountdownTimer endDate={flashEnd} size="sm" />
           </div>
         )}
+
+        {/* Admin-managed promo banner (Admin → Promo Slides, placement
+            "flash_sale"). Renders nothing when no slide is configured. */}
+        <PromoSlider placement="flash_sale" aspect="aspect-[3/1]" className="mb-6 sm:mb-8" />
 
         {/* Products Grid */}
         {loading ? (

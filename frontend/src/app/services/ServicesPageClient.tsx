@@ -363,13 +363,27 @@ export default function ServicesPageClient({
         ]}
       />
 
-      <div className="container mx-auto px-4 max-w-6xl text-center -mt-2 mb-2">
-        <a
+      <div className="container mx-auto px-4 max-w-6xl -mt-2 mb-4">
+        <Link
           href="/services/quote"
-          className="inline-block text-sm font-semibold text-brand-600 dark:text-brand-300 hover:underline"
+          className="enterprise-card group/cta flex items-center gap-4 p-4 sm:p-5 bg-gradient-to-r from-brand-600 to-brand-800 border-0 text-white hover:-translate-y-0.5 hover:shadow-[0_16px_40px_-16px_rgba(30,43,107,0.45)] transition-all duration-300"
         >
-          {t({ en: "Business or bulk order? Request a B2B quotation →", bn: "প্রতিষ্ঠানের জন্য কোটেশন দরকার? B2B কোটেশন রিকোয়েস্ট করুন →" })}
-        </a>
+          <span className="flex-shrink-0 w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center">
+            <Briefcase className="w-5 h-5" aria-hidden />
+          </span>
+          <span className="flex-1 min-w-0">
+            <span className="block font-bold text-sm sm:text-base">
+              {t({ en: "Business or bulk order?", bn: "প্রতিষ্ঠানের জন্য বাল্ক অর্ডার?" })}
+            </span>
+            <span className="block text-xs sm:text-sm text-white/80">
+              {t({ en: "Request a B2B quotation for your company", bn: "আপনার প্রতিষ্ঠানের জন্য B2B কোটেশন রিকোয়েস্ট করুন" })}
+            </span>
+          </span>
+          <span className="flex-shrink-0 hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold bg-white text-brand-700 group-hover/cta:bg-white/90">
+            {t({ en: "Get a quote", bn: "কোটেশন নিন" })}
+            <ChevronRight className="w-4 h-4" aria-hidden />
+          </span>
+        </Link>
       </div>
 
       {/*
@@ -379,9 +393,9 @@ export default function ServicesPageClient({
         the page begins.
       */}
       <div className="sticky top-[var(--navbar-offset)] z-30 bg-white/95 dark:bg-[var(--surface-card)]/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/10">
-        <div className="container mx-auto px-4 max-w-6xl py-3 flex flex-col sm:flex-row gap-3">
+        <div className="container mx-auto px-4 max-w-6xl py-3 flex flex-row items-center gap-3">
           <form
-            className="relative flex-1"
+            className="relative flex-1 min-w-0"
             onSubmit={(e) => { e.preventDefault(); setSearch(searchInput.trim()); setPage(1); }}
             role="search"
           >

@@ -46,7 +46,12 @@ export default function ToastProvider() {
           <div
             key={toast.id}
             className="pointer-events-auto flex items-center gap-2.5 px-3 py-2.5 rounded-lg shadow-glass-strong motion-safe:animate-slide-up"
-            style={{ backgroundColor: "var(--ink)", color: "var(--surface-light)" }}
+            /* Fixed (not theme-variant) colors — the toast must read the same
+               dark-bar-with-light-text in both light and dark mode. --ink and
+               the old --surface-light reference both inverted with the site
+               theme, which made text and background collapse to the same
+               near-black/near-white pair depending on mode. */
+            style={{ backgroundColor: "#14182b", color: "#f4f5fb" }}
             role="alert"
           >
             <Icon className={cn("w-4 h-4 flex-shrink-0", ICON_TONE[toast.type])} />
