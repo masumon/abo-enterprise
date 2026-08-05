@@ -46,13 +46,17 @@ export default function AnnouncementBar() {
   const track = [...announcements, ...announcements];
 
   return (
-    <div className={`${barClass} text-xs sm:text-sm relative z-40 h-9 overflow-hidden`}>
-      <div className="h-9 flex items-center gap-3 pl-3 sm:pl-4">
-        <Zap className="w-3.5 h-3.5 flex-shrink-0 text-yellow-300" strokeWidth={2.2} aria-hidden />
+    <div className={`${barClass} text-xs sm:text-sm relative z-40 h-9 overflow-hidden shadow-sm`}>
+      <div className="h-9 flex items-center gap-3 pl-3.5 sm:pl-5">
+        <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-white/15">
+          <Zap className="w-3 h-3 text-yellow-300" strokeWidth={2.4} aria-hidden />
+        </span>
 
-        <div className="flex-1 min-w-0 overflow-hidden">
+        {/* Reuses the same shared marquee primitive as Stats.tsx / Navbar.tsx's
+            mobile ticker, instead of a bespoke local <style jsx> keyframe. */}
+        <div className="marquee-viewport flex-1 min-w-0">
           <div
-            className="marquee-track flex items-center whitespace-nowrap motion-reduce:animate-none"
+            className="marquee-track items-center motion-reduce:animate-none"
             style={{ ["--marquee-duration" as string]: `${durationSec}s` }}
           >
             {track.map((a, i) => (
@@ -61,7 +65,7 @@ export default function AnnouncementBar() {
                 href={a.href || "/"}
                 aria-hidden={i >= announcements.length}
                 tabIndex={i >= announcements.length ? -1 : 0}
-                className="inline-flex items-center gap-2 font-medium hover:text-white/90 transition-colors pr-10"
+                className="inline-flex items-center gap-2 font-semibold tracking-[0.01em] hover:text-white transition-colors pr-10"
               >
                 {a.icon && <span aria-hidden>{a.icon}</span>}
                 <span>{lang === "bn" ? a.bn : a.en}</span>
@@ -83,23 +87,6 @@ export default function AnnouncementBar() {
           <span className="flex-shrink-0 w-9 h-9" aria-hidden />
         )}
       </div>
-
-      <style jsx>{`
-        .marquee-track {
-          animation: marquee var(--marquee-duration, 20s) linear infinite;
-        }
-        .marquee-track:hover,
-        .marquee-track:focus-within {
-          animation-play-state: paused;
-        }
-        @keyframes marquee {
-          from { transform: translateX(0); }
-          to { transform: translateX(-50%); }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .marquee-track { animation: none; }
-        }
-      `}</style>
     </div>
   );
 }

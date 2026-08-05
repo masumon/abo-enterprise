@@ -7,7 +7,9 @@ import { cn } from "@/lib/utils";
 interface AccordionItem {
   id: string;
   question: string;
-  answer: string;
+  /** Plain text for FAQ-style entries, or arbitrary content (e.g. a form) for
+   *  a single collapsible-on-click section. */
+  answer: React.ReactNode;
 }
 
 interface AccordionProps {
@@ -56,9 +58,9 @@ export default function Accordion({ items, allowMultiple = false, className }: A
               )}
             >
               <div className="overflow-hidden">
-                <p className="px-5 pb-4 text-sm text-muted leading-relaxed border-t border-gray-100 dark:border-white/5 pt-3">
+                <div className="px-5 pb-4 text-sm text-muted leading-relaxed border-t border-gray-100 dark:border-white/5 pt-3">
                   {item.answer}
-                </p>
+                </div>
               </div>
             </div>
           </div>

@@ -67,11 +67,11 @@ export default function Navbar() {
     <header className="fixed top-[var(--announcement-height)] left-0 right-0 z-50">
       {/* ── Mobile header — artifact Screen 03 m-head ── */}
       <nav
-        className="lg:hidden flex items-center gap-2 px-3 min-h-[48px] bg-white dark:bg-[var(--surface-card)] border-b border-[var(--line)] dark:border-[var(--line)]"
+        className="lg:hidden flex items-center gap-2.5 px-3.5 min-h-[60px] bg-white dark:bg-[var(--surface-card)] border-b border-[var(--line)] dark:border-[var(--line)] shadow-sm"
         aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
       >
         <Link href="/" className="flex-none flex items-center" aria-label={getBrandName(lang)}>
-          <BrandLogo size="xs" href={false} priority />
+          <BrandLogo size="sm" href={false} priority />
         </Link>
 
         {showTicker ? (
@@ -102,26 +102,26 @@ export default function Navbar() {
           <button
             type="button"
             onClick={toggleAssistant}
-            className="w-[30px] h-[30px] rounded-md border border-[var(--line)] flex items-center justify-center text-xs text-brand-600 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30"
+            className="w-9 h-9 rounded-lg border border-[var(--line)] flex items-center justify-center text-xs text-brand-600 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30"
             aria-label={lang === "bn" ? "সহায়ক চ্যাট" : "Assistant chat"}
           >
-            <MessageCircle className="w-3.5 h-3.5" strokeWidth={2.5} />
+            <MessageCircle className="w-4 h-4" strokeWidth={2.5} />
           </button>
         )}
 
         <button
           type="button"
           onClick={toggleTheme}
-          className="w-[30px] h-[30px] rounded-md border border-[var(--line)] flex items-center justify-center text-[var(--ink-muted)] flex-none"
+          className="w-9 h-9 rounded-lg border border-[var(--line)] flex items-center justify-center text-[var(--ink-muted)] flex-none"
           aria-label={lang === "bn" ? "ডার্ক/লাইট মোড পরিবর্তন করুন" : "Toggle dark mode"}
         >
-          {theme === "dark" ? <Sun className="w-3.5 h-3.5" strokeWidth={2} /> : <Moon className="w-3.5 h-3.5" strokeWidth={2} />}
+          {theme === "dark" ? <Sun className="w-4 h-4" strokeWidth={2} /> : <Moon className="w-4 h-4" strokeWidth={2} />}
         </button>
 
         <button
           type="button"
           onClick={toggle}
-          className="font-mono text-[10px] font-semibold tracking-[0.06em] px-2 py-1.5 rounded-full bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300 flex-none"
+          className="font-mono text-xs font-semibold tracking-[0.06em] px-2.5 py-2 rounded-full bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300 flex-none"
           aria-label={lang === "en" ? "বাং — Switch to Bangla" : "EN — Switch to English"}
         >
           {lang === "en" ? "বাং" : "EN"}
@@ -129,10 +129,10 @@ export default function Navbar() {
 
         <Link
           href="/cart"
-          className="relative w-[30px] h-[30px] rounded-md border border-[var(--line)] flex items-center justify-center text-xs text-[var(--ink-muted)]"
+          className="relative w-9 h-9 rounded-lg border border-[var(--line)] flex items-center justify-center text-xs text-[var(--ink-muted)]"
           aria-label={`${t("nav_cart")} (${count})`}
         >
-          <ShoppingCart className="w-3.5 h-3.5" strokeWidth={2} />
+          <ShoppingCart className="w-4 h-4" strokeWidth={2} />
           {count > 0 && (
             <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-accent-500 text-[#14182b] text-[8px] font-bold flex items-center justify-center">
               {count > 99 ? "99+" : count}
@@ -142,10 +142,10 @@ export default function Navbar() {
 
         <Link
           href="/login"
-          className="w-[30px] h-[30px] rounded-md border border-[var(--line)] flex items-center justify-center text-xs text-[var(--ink-muted)]"
+          className="w-9 h-9 rounded-lg border border-[var(--line)] flex items-center justify-center text-xs text-[var(--ink-muted)]"
           aria-label={lang === "bn" ? "গ্রাহক লগইন" : "Customer login"}
         >
-          <User className="w-3.5 h-3.5" strokeWidth={2} />
+          <User className="w-4 h-4" strokeWidth={2} />
         </Link>
       </nav>
 
@@ -153,8 +153,8 @@ export default function Navbar() {
       <div className="hidden lg:flex justify-center pt-2 px-4">
         <nav
           className={cn(
-            "w-full flex items-center justify-between gap-3 px-4",
-            "h-[54px] rounded-full",
+            "w-full flex items-center justify-between gap-3 px-5",
+            "h-16 rounded-full",
             "bg-white/72 dark:bg-[#0b1f3a]/82 backdrop-blur-2xl",
             "border border-white/60 dark:border-white/[0.09]",
             "shadow-[0_4px_20px_rgba(30,43,107,0.10),0_1px_3px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.82)]",
@@ -169,10 +169,10 @@ export default function Navbar() {
           )}
           aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
         >
-          <Link href="/" className="flex items-center gap-2.5 flex-shrink-0 min-w-0">
-            <BrandLogo size="sm" href={false} priority />
+          <Link href="/" className="flex items-center gap-3 flex-shrink-0 min-w-0">
+            <BrandLogo size="md" href={false} priority />
             <span className="min-w-0">
-              <span className="font-bold text-lg tracking-tight block text-brand-800 dark:text-white truncate">
+              <span className="font-bold text-xl tracking-tight block text-brand-800 dark:text-white truncate">
                 {getBrandName(lang)}
               </span>
               <p className="text-xs font-medium text-brand-600/90 dark:text-brand-200/80 truncate max-w-[15rem] leading-snug">
@@ -250,10 +250,10 @@ export default function Navbar() {
 
             <Link
               href="/cart"
-              className="relative w-8 h-8 flex items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 hover:scale-110 active:scale-95 transition-all duration-200 shadow-md shadow-brand-500/25 before:content-[''] before:absolute before:-inset-1.5"
+              className="relative w-11 h-11 flex items-center justify-center rounded-full bg-brand-600 text-white hover:bg-brand-700 hover:scale-110 active:scale-95 transition-all duration-200 shadow-md shadow-brand-500/25"
               aria-label={`${t("nav_cart")} (${count})`}
             >
-              <ShoppingCart className="w-[18px] h-[18px]" strokeWidth={2.5} />
+              <ShoppingCart className="w-5 h-5" strokeWidth={2.5} />
               {count > 0 && (
                 <span className="absolute -top-1 -right-1 w-[17px] h-[17px] bg-accent-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-1 ring-white/80 dark:ring-[#0b1f3a]/80">
                   {count > 9 ? "9+" : count}

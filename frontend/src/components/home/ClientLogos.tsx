@@ -7,6 +7,7 @@ import { X, ArrowRight } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
 import { CLIENT_LOGOS_KEY, getClientLogos, type CmsClientLogo } from "@/lib/cmsContent";
+import AutoScrollRow from "@/components/ui/AutoScrollRow";
 
 const FALLBACK: CmsClientLogo[] = [
   { name: "Retail POS", abbr: "RP" },
@@ -80,31 +81,28 @@ export default function ClientLogos() {
           </div>
         </div>
 
-        {/* Logos Scroll Container */}
-        <div className="overflow-x-auto pb-2">
-          <div className="flex flex-nowrap justify-center items-center gap-4 sm:gap-6 min-w-min px-4 sm:px-0">
-            {clients.map((client, i) =>
-              hasDetail(client) ? (
-                <button
-                  key={`${client.name}-${i}`}
-                  type="button"
-                  onClick={() => setActive(client)}
-                  className={`${baseCls} opacity-90 hover:opacity-100 hover:border-brand-300 dark:hover:border-brand-500/40 hover:-translate-y-0.5 hover:shadow-md cursor-pointer flex-shrink-0`}
-                  aria-label={lang === "bn" ? `${client.name} — বিস্তারিত দেখুন` : `${client.name} — view details`}
-                >
-                  <ClientBadge client={client} />
-                </button>
-              ) : (
-                <div
-                  key={`${client.name}-${i}`}
-                  className={`${baseCls} opacity-80 hover:opacity-100 flex-shrink-0`}
-                >
-                  <ClientBadge client={client} />
-                </div>
-              )
-            )}
-          </div>
-        </div>
+        {/* Logos row — right-to-left auto-scroll, pauses on hover/interaction. */}
+        <AutoScrollRow
+          items={clients}
+          keyExtractor={(client, i) => `${client.name}-${i}`}
+          spaceBetween={16}
+          renderItem={(client) =>
+            hasDetail(client) ? (
+              <button
+                type="button"
+                onClick={() => setActive(client)}
+                className={`${baseCls} opacity-90 hover:opacity-100 hover:border-brand-300 dark:hover:border-brand-500/40 hover:-translate-y-0.5 hover:shadow-md cursor-pointer`}
+                aria-label={lang === "bn" ? `${client.name} — বিস্তারিত দেখুন` : `${client.name} — view details`}
+              >
+                <ClientBadge client={client} />
+              </button>
+            ) : (
+              <div className={`${baseCls} opacity-80 hover:opacity-100`}>
+                <ClientBadge client={client} />
+              </div>
+            )
+          }
+        />
       </div>
 
       {active && (

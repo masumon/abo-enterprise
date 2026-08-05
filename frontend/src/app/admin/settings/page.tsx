@@ -278,6 +278,8 @@ const SECTIONS: Section[] = [
       { key: "contact_address", label: "Address", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh" },
       { key: "contact_hours_en", label: "Business Hours (EN)", placeholder: "Sat–Thu, 9:00 AM – 9:00 PM", hint: "Shown in the footer, homepage and contact page" },
       { key: "contact_hours_bn", label: "Business Hours (বাংলা)", placeholder: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা" },
+      { key: "footer_about_en", label: "Footer About Text (EN)", type: "textarea", hint: "Short company description shown in the site footer", placeholder: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us." },
+      { key: "footer_about_bn", label: "Footer About Text (বাংলা)", type: "textarea", placeholder: "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।" },
       { key: "google_maps_embed", label: "Google Maps Embed", type: "textarea", hint: "Share → Embed a map", placeholder: "Paste iframe or URL" },
       { key: "google_maps_api_key", label: "Google Maps API Key", placeholder: "AIza..." },
     ],

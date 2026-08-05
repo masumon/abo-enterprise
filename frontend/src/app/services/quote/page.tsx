@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { pageMeta } from "@/lib/metadata";
 import { LANG_COOKIE, normalizeLang } from "@/lib/lang";
 import B2BQuotationForm from "@/components/services/B2BQuotationForm";
+import Accordion from "@/components/ui/Accordion";
 
 export const metadata: Metadata = pageMeta(
   "Request a B2B Quotation — ABO Enterprise",
@@ -25,7 +26,18 @@ export default function ServiceQuotePage() {
             : "Share your company details and requirements — we'll get back to you quickly."}
         </p>
       </div>
-      <B2BQuotationForm />
+      <Accordion
+        items={[
+          {
+            id: "b2b-quote-form",
+            question:
+              lang === "bn"
+                ? "কোটেশন ফর্ম পূরণ করুন"
+                : "Fill out the quotation form",
+            answer: <B2BQuotationForm />,
+          },
+        ]}
+      />
     </div>
   );
 }

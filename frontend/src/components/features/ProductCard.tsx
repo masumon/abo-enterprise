@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingCart, Package, Star, Heart, Eye, GitCompare } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ShoppingCart, Package, Star, Heart, Eye, GitCompare, Zap } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useWishlistStore } from "@/store/wishlist";
 import { useCompareStore } from "@/store/compare";
@@ -36,6 +37,7 @@ function productAlt(product: Product, lang: string) {
 
 export default function ProductCard({ product, onAddToCart, layout = "grid", density = "default" }: Props) {
   const compact = density === "compact";
+  const router = useRouter();
   const { addItem } = useCartStore();
   const { toggle, has } = useWishlistStore();
   const { add: addCompare, has: isCompared } = useCompareStore();
@@ -79,6 +81,24 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
     });
     onAddToCart?.();
     toast("success", lang === "bn" ? "কার্টে যোগ হয়েছে" : "Added to cart");
+  };
+
+  // Same add-then-redirect pattern as the Product Details page's Buy Now.
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isOutOfStock) return;
+    addItem({
+      product_id: productId,
+      name_en: product.name_en,
+      name_bn: product.name_bn,
+      price: effectivePrice,
+      image_url: product.image_url,
+      stock_quantity: product.stock_quantity,
+      delivery_charge: product.delivery_charge ?? null,
+      requires_advance: product.requires_advance ?? false,
+    });
+    router.push("/checkout");
   };
 
   const handleWishlist = (e: React.MouseEvent) => {
@@ -237,15 +257,26 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
             )}
           </div>
         )}
-        <button
-          type="button"
-          onClick={handleAdd}
-          disabled={isOutOfStock}
-          className={cn("btn btn-primary w-full relative z-10 btn-ripple", compact ? "btn-sm text-xs gap-1" : "btn-sm")}
-        >
-          <ShoppingCart className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} aria-hidden />
-          {t("add_to_cart")}
-        </button>
+        <div className="flex gap-1.5 relative z-10">
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={isOutOfStock}
+            aria-label={t("add_to_cart")}
+            className="btn btn-outline btn-sm flex-shrink-0"
+          >
+            <ShoppingCart className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} aria-hidden />
+          </button>
+          <button
+            type="button"
+            onClick={handleBuyNow}
+            disabled={isOutOfStock}
+            className={cn("btn btn-primary flex-1 btn-ripple", compact ? "btn-sm text-xs gap-1" : "btn-sm")}
+          >
+            <Zap className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} aria-hidden />
+            {t("buy_now")}
+          </button>
+        </div>
       </div>
     </article>
   );
