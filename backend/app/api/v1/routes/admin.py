@@ -359,7 +359,7 @@ async def list_payment_transactions(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: str = Depends(require_role("payments.read")),
 ):
     rows: list[dict] = []
 
@@ -420,7 +420,7 @@ async def list_payment_reconciliation(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    _: dict = Depends(require_admin),
+    _: str = Depends(require_role("payments.read")),
 ):
     total = (await db.execute(
         select(func.count(PaymentReconciliation.id)).where(PaymentReconciliation.is_deleted == False)  # noqa: E712

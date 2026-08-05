@@ -4,7 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from app.core.database import get_db
-from app.core.security import require_admin
+from app.core.security import require_role
 from app.core.config import settings
 from app.core.email import send_email, lead_notification_html, customer_lead_confirmation_html
 from app.models.models import LeadV2, ActivityLog, AdminUser
@@ -165,7 +165,7 @@ async def get_lead(
 
 @router.get("/admin/leads", response_model=PaginatedResponse)
 async def list_leads_admin(
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("leads.read")),
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
@@ -224,7 +224,7 @@ async def list_leads_admin(
 @router.get("/admin/leads/{lead_id}", response_model=ApiResponse)
 async def get_lead_admin(
     lead_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("leads.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Get lead details (admin)"""
@@ -246,7 +246,7 @@ async def get_lead_admin(
 async def update_lead_status(
     lead_id: uuid.UUID,
     payload: LeadV2StatusUpdate,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("leads.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Update lead status (admin only)"""
@@ -291,7 +291,7 @@ async def update_lead_status(
 async def update_lead_score(
     lead_id: uuid.UUID,
     score: int = Query(..., ge=0, le=100),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("leads.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Update lead qualification score (admin only)"""
@@ -330,7 +330,7 @@ async def update_lead_score(
 async def assign_lead(
     lead_id: uuid.UUID,
     assigned_to: uuid.UUID = Query(...),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("leads.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Assign lead to team member (admin only)"""
@@ -373,7 +373,7 @@ async def assign_lead(
 @router.delete("/admin/leads/{lead_id}", response_model=ApiResponse)
 async def delete_lead(
     lead_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("leads.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Soft delete lead (admin only)"""
@@ -405,7 +405,7 @@ async def delete_lead(
 
 @router.get("/admin/leads/stats/summary", response_model=ApiResponse)
 async def get_lead_stats(
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("leads.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Get lead statistics summary"""
@@ -459,7 +459,7 @@ async def get_lead_stats(
 
 @router.get("/admin/leads/stats/by-service", response_model=ApiResponse)
 async def get_leads_by_service(
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("leads.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Get lead distribution by service type"""

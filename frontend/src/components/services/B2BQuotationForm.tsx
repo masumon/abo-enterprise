@@ -7,7 +7,7 @@ import { z } from "zod";
 import { isQueuedResponse, serviceLeadsApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { BD_PHONE_REGEX } from "@/lib/phone";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { Loader2 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useToastStore } from "@/store/toast";
 import { useT } from "@/lib/i18n/useT";
@@ -232,7 +232,7 @@ export default function B2BQuotationForm({ onSuccess }: Props) {
         disabled={submitting}
         className="w-full btn btn-primary btn-lg disabled:opacity-50"
       >
-        {submitting ? <LoadingSpinner className="w-5 h-5" /> : (lang === "bn" ? "কোটেশন পাঠান" : "Request Quotation")}
+        {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : (lang === "bn" ? "কোটেশন পাঠান" : "Request Quotation")}
       </button>
     </form>
   );

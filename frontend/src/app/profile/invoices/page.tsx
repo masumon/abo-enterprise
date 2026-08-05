@@ -9,6 +9,7 @@ import { ordersApi } from "@/lib/api";
 import { formatPrice } from "@/lib/utils";
 import PageHero from "@/components/ui/PageHero";
 import GlassCard from "@/components/ui/GlassCard";
+import EmptyState from "@/components/ui/EmptyState";
 import { ListRowSkeleton } from "@/components/common/Skeletons";
 
 interface OrderSummary {
@@ -55,28 +56,24 @@ export default function InvoicesPage() {
             Three distinct states are now rendered. Server-side gating at the
             destination is unchanged; this is a prompt, not a security gate. */}
         {!session?.token ? (
-          <GlassCard className="p-8 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-7 h-7 text-brand-600" />
-            </div>
-            <h2 className="text-lg font-bold text-heading mb-2">
-              {lang === "bn" ? "ইনভয়েস দেখতে সাইন ইন করুন" : "Sign in to see your invoices"}
-            </h2>
-            <p className="text-sm text-muted mb-6">
-              {lang === "bn"
-                ? "ফোন ও ইমেইল দিন — কোডটি ইমেইলে যাবে। সাইন ইনের পরে সোজা এখানেই ফিরিয়ে আনব।"
-                : "Your phone and email — the code arrives by email. We'll bring you straight back here."}
-            </p>
-            <Link href="/login?redirect=/profile/invoices" className="btn btn-brand btn-md">
-              {lang === "bn" ? "সাইন ইন" : "Sign in"}
-            </Link>
-          </GlassCard>
+          <EmptyState
+            icon={FileText}
+            title={lang === "bn" ? "ইনভয়েস দেখতে সাইন ইন করুন" : "Sign in to see your invoices"}
+            description={lang === "bn"
+              ? "ফোন ও ইমেইল দিন — কোডটি ইমেইলে যাবে। সাইন ইনের পরে সোজা এখানেই ফিরিয়ে আনব।"
+              : "Your phone and email — the code arrives by email. We'll bring you straight back here."}
+            actionLabel={lang === "bn" ? "সাইন ইন" : "Sign in"}
+            actionHref="/login?redirect=/profile/invoices"
+          />
         ) : loading ? (
           <ListRowSkeleton rows={4} />
         ) : orders.length === 0 ? (
-          <GlassCard className="p-8 text-center text-muted">
-            {lang === "bn" ? "কোনো ইনভয়েস নেই" : "No invoices yet"}
-          </GlassCard>
+          <EmptyState
+            icon={FileText}
+            title={lang === "bn" ? "কোনো ইনভয়েস নেই" : "No invoices yet"}
+            actionLabel={lang === "bn" ? "কেনাকাটা করুন" : "Start Shopping"}
+            actionHref="/products"
+          />
         ) : (
           <div className="space-y-3">
             {orders.map((o) => (

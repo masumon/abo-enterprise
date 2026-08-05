@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.security import ADMIN_SESSION_COOKIE, create_access_token, require_admin, verify_password
+from app.core.totp_crypto import encrypt_totp_secret, decrypt_totp_secret
 from app.models.models import AdminUser
 from app.schemas.schemas import ApiResponse, LoginRequest, TokenResponse, TotpCodePayload
 
@@ -89,7 +90,7 @@ async def login(
         if not payload.totp_code:
             # Password verified; the client should now prompt for the code.
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="totp_required")
-        if not pyotp.TOTP(user.totp_secret).verify(payload.totp_code.strip(), valid_window=1):
+        if not pyotp.TOTP(decrypt_totp_secret(user.totp_secret)).verify(payload.totp_code.strip(), valid_window=1):
             _record_failure(ip)
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authenticator code")
 
@@ -165,7 +166,7 @@ async def totp_setup(
     if user.totp_enabled:
         raise HTTPException(status_code=400, detail="2FA is already enabled. Disable it first.")
     secret = pyotp.random_base32()
-    user.totp_secret = secret
+    user.totp_secret = encrypt_totp_secret(secret)
     await db.commit()
     uri = pyotp.TOTP(secret).provisioning_uri(name=user.email, issuer_name="ABO Enterprise Admin")
     return ApiResponse(data={"secret": secret, "otpauth_uri": uri, "qr_data_uri": _totp_qr_data_uri(uri)})
@@ -186,7 +187,7 @@ async def totp_enable(
     user = (await db.execute(select(AdminUser).where(AdminUser.id == UUID(admin_id)))).scalar_one_or_none()
     if not user or not user.totp_secret:
         raise HTTPException(status_code=400, detail="Run 2FA setup first")
-    if not pyotp.TOTP(user.totp_secret).verify(code, valid_window=1):
+    if not pyotp.TOTP(decrypt_totp_secret(user.totp_secret)).verify(code, valid_window=1):
         raise HTTPException(status_code=400, detail="Invalid authenticator code")
     user.totp_enabled = True
     await db.commit()
@@ -208,7 +209,7 @@ async def totp_disable(
     user = (await db.execute(select(AdminUser).where(AdminUser.id == UUID(admin_id)))).scalar_one_or_none()
     if not user or not user.totp_enabled or not user.totp_secret:
         raise HTTPException(status_code=400, detail="2FA is not enabled")
-    if not pyotp.TOTP(user.totp_secret).verify(code, valid_window=1):
+    if not pyotp.TOTP(decrypt_totp_secret(user.totp_secret)).verify(code, valid_window=1):
         raise HTTPException(status_code=400, detail="Invalid authenticator code")
     user.totp_enabled = False
     user.totp_secret = None

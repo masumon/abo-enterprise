@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import {
   ShoppingCart, ChevronLeft, Package, CheckCircle,
@@ -19,12 +20,13 @@ import { useToastStore } from "@/store/toast";
 import { formatPrice, discountPercent, cn, WHATSAPP_NUMBER } from "@/lib/utils";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import ImageZoom from "@/components/ui/ImageZoom";
-import ProductBookingModal from "@/components/products/ProductBookingModal";
 import ProductCard from "@/components/features/ProductCard";
 import ProductFAQ from "@/components/features/ProductFAQ";
 import ProductReviews from "@/components/features/ProductReviews";
 import GlassCard from "@/components/ui/GlassCard";
 import CountdownTimer, { getWeeklySaleEnd } from "@/components/ui/CountdownTimer";
+
+const ProductBookingModal = dynamic(() => import("@/components/products/ProductBookingModal"), { ssr: false });
 
 interface Props {
   product: Product;

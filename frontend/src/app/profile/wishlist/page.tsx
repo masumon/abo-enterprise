@@ -8,6 +8,7 @@ import { useWishlistStore } from "@/store/wishlist";
 import { useToastStore } from "@/store/toast";
 import { formatPrice } from "@/lib/utils";
 import GlassCard from "@/components/ui/GlassCard";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function WishlistPage() {
   const { lang } = useLanguageStore();
@@ -22,13 +23,12 @@ export default function WishlistPage() {
           {lang === "bn" ? "আমার উইশলিস্ট" : "My Wishlist"}
         </h1>
         {items.length === 0 ? (
-          <GlassCard className="p-12 text-center">
-            <Heart className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-            <p className="text-gray-500">{lang === "bn" ? "উইশলিস্ট খালি" : "Wishlist is empty"}</p>
-            <Link href="/products" className="btn btn-brand btn-md mt-4 inline-flex">
-              {lang === "bn" ? "পণ্য দেখুন" : "Browse Products"}
-            </Link>
-          </GlassCard>
+          <EmptyState
+            icon={Heart}
+            title={lang === "bn" ? "উইশলিস্ট খালি" : "Wishlist is empty"}
+            actionLabel={lang === "bn" ? "পণ্য দেখুন" : "Browse Products"}
+            actionHref="/products"
+          />
         ) : (
           <div className="space-y-3">
             {items.map((item) => (

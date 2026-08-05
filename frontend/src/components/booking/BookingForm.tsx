@@ -9,7 +9,7 @@ import { bookingUploadsApi, isQueuedResponse, serviceBookingsApi, servicesApi } 
 import { apiErrorMessage } from "@/lib/apiError";
 import { saveOrderSnapshot } from "@/lib/orderSnapshot";
 import type { Service, ServiceBookingFormField, ServiceSlot } from "@/types";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { useDistrictUpazila, BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
@@ -935,7 +935,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       <button type="submit" disabled={submitting} className="btn btn-brand btn-lg w-full">
         {submitting ? (
           <>
-            <LoadingSpinner /> {L("Submitting...", "জমা হচ্ছে...")}
+            <Loader2 className="w-4 h-4 animate-spin" /> {L("Submitting...", "জমা হচ্ছে...")}
           </>
         ) : (
           /* Dynamic CTA — computed by the API per service (book/order/quote/contact) */

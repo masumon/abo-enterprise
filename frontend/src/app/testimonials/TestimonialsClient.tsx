@@ -176,8 +176,8 @@ export default function TestimonialsClient() {
           </h2>
           <form onSubmit={handleSubmit} className="enterprise-card p-6 space-y-4">
             <div>
-              <label className="form-label">{lang === "bn" ? "নাম" : "Name"}</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} className="input" required />
+              <label htmlFor="testimonial-name" className="form-label">{lang === "bn" ? "নাম" : "Name"}</label>
+              <input id="testimonial-name" value={name} onChange={(e) => setName(e.target.value)} className="input" required />
             </div>
             <div>
               <label className="form-label">{lang === "bn" ? "রেটিং" : "Rating"}</label>
@@ -190,8 +190,8 @@ export default function TestimonialsClient() {
               </div>
             </div>
             <div>
-              <label className="form-label">{lang === "bn" ? "আপনার মতামত" : "Your Review"}</label>
-              <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className="input resize-none" required />
+              <label htmlFor="testimonial-message" className="form-label">{lang === "bn" ? "আপনার মতামত" : "Your Review"}</label>
+              <textarea id="testimonial-message" value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className="input resize-none" required />
             </div>
             <button type="submit" disabled={submitting} className="btn btn-brand btn-md w-full">
               <Send className="w-4 h-4" />

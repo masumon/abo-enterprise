@@ -563,6 +563,22 @@ export const categoriesAdminApi = {
     api.delete<ApiResponse<{ id: string }>>(`/api/v1/categories/admin/subcategories/${id}`),
 };
 
+export interface MediaAssetRecord {
+  id: string;
+  url: string;
+  filename: string;
+  folder: string;
+  width: number | null;
+  height: number | null;
+  size: number;
+  format: string | null;
+  mime_type?: string;
+  alt_text: string | null;
+  uploaded_at: string;
+  uploaded_by: string | null;
+  tags: string[];
+}
+
 export const adminApi = {
   sendEmail: (data: { to: string; subject: string; message: string }) =>
     api.post<ApiResponse<null>>("/api/v1/admin/email/send", data),
@@ -653,8 +669,17 @@ export const adminApi = {
   listAuditLogs: (params: { page?: number; per_page?: number } = {}) =>
     api.get<PaginatedResponse<{ id: string; action: string; entity_type: string; entity_id: string | null; created_at: string; admin_email?: string }>>("/api/v1/admin/audit-logs", { params }),
 
-  listMedia: (folder = "abo-enterprise/uploads") =>
-    api.get<ApiResponse<{ id: string; url: string; name: string; size: number; uploaded_at: string; type: "image" | "video" }[]>>("/api/v1/media/assets", { params: { folder } }),
+  listMedia: (params: { folder?: string; search?: string; page?: number; per_page?: number } = {}) =>
+    api.get<PaginatedResponse<MediaAssetRecord>>("/api/v1/media/assets", { params }),
+
+  getMediaAsset: (id: string) =>
+    api.get<ApiResponse<MediaAssetRecord & { alt_text: string | null }>>(`/api/v1/media/assets/${id}`),
+
+  updateMediaAsset: (id: string, payload: { alt_text?: string; tags?: string[] }) =>
+    api.patch<ApiResponse<{ id: string; alt_text: string | null; tags: string[] }>>(`/api/v1/media/assets/${id}`, payload),
+
+  deleteMediaAsset: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/media/assets/${id}`),
 
   saveSettings: (items: { key: string; value: string; data_type?: string }[]) =>
     api.post<ApiResponse<{ key: string; value: string }[]>>("/api/v1/settings/upsert", items),
@@ -672,6 +697,21 @@ export interface EmailTemplateRecord {
   created_at: string;
   updated_at: string;
 }
+
+export interface NewsletterSubscriberRecord {
+  id: string;
+  email: string;
+  subscribed_at: string;
+  source: string | null;
+}
+
+export const newsletterAdminApi = {
+  list: (params: { page?: number; per_page?: number; search?: string } = {}) =>
+    api.get<PaginatedResponse<NewsletterSubscriberRecord>>("/api/v1/admin/newsletter/subscribers", { params }),
+
+  remove: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/admin/newsletter/subscribers/${id}`),
+};
 
 export const emailTemplatesAdminApi = {
   list: (page = 1) =>
@@ -831,6 +871,7 @@ export const publicApi = {
       projects: number;
       years: number;
       reviews: number;
+      average_rating: number | null;
     }>>("/api/v1/public/stats"),
 
   activity: () =>

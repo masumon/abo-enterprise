@@ -90,11 +90,4 @@ export function usePublicSettings(keys?: string[]) {
   return { settings, loading };
 }
 
-export function getSettingValue(
-  settings: Record<string, string>,
-  key: string,
-  fallback = ""
-): string {
-  const v = settings[key];
-  return v && v !== "***HIDDEN***" ? v : fallback;
-}
+export { getSettingValue } from "@/lib/settingValue";

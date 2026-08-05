@@ -13,16 +13,28 @@ ROLE_PERMISSIONS = {
         "bulk.read", "bulk.write",
         "settings.read", "settings.write",
         "users.read", "users.write", "users.delete",
+        "blog.read", "blog.write",
+        "media.read", "media.write",
+        "reviews.read", "reviews.write",
+        "career.read", "career.write",
+        "invoices.read", "invoices.write",
+        "email_templates.read", "email_templates.write",
+        "ops.read", "ops.write",
+        "payments.read", "payments.write",
     ],
     "editor": [
         "orders.read", "products.read", "products.write",
         "services.read", "services.write",
         "bookings.read", "bookings.write",
         "leads.read", "analytics.read",
+        "blog.read", "blog.write",
+        "media.read", "media.write",
+        "reviews.read", "reviews.write",
     ],
     "viewer": [
         "orders.read", "products.read", "services.read",
         "bookings.read", "leads.read", "analytics.read",
+        "blog.read", "media.read", "reviews.read",
     ],
 }
 

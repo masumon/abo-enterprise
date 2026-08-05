@@ -5,8 +5,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
-from app.core.security import decode_token, require_admin
-from app.models.models import AdminUser, Setting
+from app.core.security import decode_token, require_role
+from app.models.models import AdminUser, Setting, ActivityLog
 from app.schemas.schemas import SettingOut, SettingUpdate, SettingCreate, ApiResponse
 
 router = APIRouter(prefix="/settings", tags=["settings"])
@@ -110,8 +110,12 @@ def _is_secret_key(key: str) -> bool:
     return any(tok in k for tok in ("password", "secret", "api_key", "private_key", "_token"))
 
 
-@router.post("/upsert", response_model=ApiResponse, dependencies=[Depends(require_admin)])
-async def upsert_settings(payload: list[SettingCreate], db: AsyncSession = Depends(get_db)):
+@router.post("/upsert", response_model=ApiResponse)
+async def upsert_settings(
+    payload: list[SettingCreate],
+    admin_id: str = Depends(require_role("settings.write")),
+    db: AsyncSession = Depends(get_db),
+):
     """Create or update multiple settings at once (admin only)"""
     results = []
     for item in payload:
@@ -139,6 +143,11 @@ async def upsert_settings(payload: list[SettingCreate], db: AsyncSession = Depen
             db.add(setting)
         results.append({"key": item.key, "value": item.value})
 
+    db.add(ActivityLog(
+        admin_id=UUID(admin_id), action="update",
+        entity_type="setting", entity_id=None,
+        new_values={"keys": [r["key"] for r in results]},
+    ))
     await db.commit()
     return ApiResponse(success=True, data=results, message=f"{len(results)} settings saved")
 
@@ -164,8 +173,13 @@ async def get_setting(key: str, request: Request, db: AsyncSession = Depends(get
     return ApiResponse(success=True, data={"key": setting.key, "value": setting.value})
 
 
-@router.put("/{key}", response_model=ApiResponse, dependencies=[Depends(require_admin)])
-async def update_setting(key: str, data: SettingUpdate, db: AsyncSession = Depends(get_db)):
+@router.put("/{key}", response_model=ApiResponse)
+async def update_setting(
+    key: str,
+    data: SettingUpdate,
+    admin_id: str = Depends(require_role("settings.write")),
+    db: AsyncSession = Depends(get_db),
+):
     """Update setting (admin only)"""
     result = await db.execute(
         select(Setting).where((Setting.key == key) & (Setting.is_deleted == False))
@@ -178,11 +192,17 @@ async def update_setting(key: str, data: SettingUpdate, db: AsyncSession = Depen
     if not setting.is_editable:
         raise HTTPException(status_code=403, detail="This setting is not editable")
 
+    old_value = setting.value
     setting.value = data.value
     if data.is_editable is not None:
         setting.is_editable = data.is_editable
 
     db.add(setting)
+    db.add(ActivityLog(
+        admin_id=UUID(admin_id), action="update",
+        entity_type="setting", entity_id=setting.id,
+        old_values={"value": old_value}, new_values={"value": data.value},
+    ))
     await db.commit()
     await db.refresh(setting)
 
@@ -193,8 +213,13 @@ async def update_setting(key: str, data: SettingUpdate, db: AsyncSession = Depen
     )
 
 
-@router.post("/{key}", response_model=ApiResponse, dependencies=[Depends(require_admin)])
-async def create_setting(key: str, value: str, db: AsyncSession = Depends(get_db)):
+@router.post("/{key}", response_model=ApiResponse)
+async def create_setting(
+    key: str,
+    value: str,
+    admin_id: str = Depends(require_role("settings.write")),
+    db: AsyncSession = Depends(get_db),
+):
     """Create new setting (admin only)"""
     existing = await db.execute(
         select(Setting).where((Setting.key == key) & (Setting.is_deleted == False))
@@ -204,6 +229,12 @@ async def create_setting(key: str, value: str, db: AsyncSession = Depends(get_db
 
     new_setting = Setting(key=key, value=value)
     db.add(new_setting)
+    await db.flush()
+    db.add(ActivityLog(
+        admin_id=UUID(admin_id), action="create",
+        entity_type="setting", entity_id=new_setting.id,
+        new_values={"key": key, "value": value},
+    ))
     await db.commit()
     await db.refresh(new_setting)
 

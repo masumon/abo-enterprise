@@ -19,7 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.ops_events import failed_emails, failed_logins, recent_errors, started_at
-from app.core.security import require_admin
+from app.core.security import require_role
 from app.models.models import (
     ActivityLog,
     AdminUser,
@@ -44,7 +44,7 @@ def _iso(ts: float) -> str:
 @router.get("/health")
 async def system_health(
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("ops.read")),
 ):
     """Live status of every integration the platform depends on."""
     checks: dict[str, dict] = {}
@@ -216,7 +216,7 @@ async def system_health(
 @router.get("/errors")
 async def error_center(
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("ops.read")),
 ):
     since = datetime.now(timezone.utc) - timedelta(days=7)
 
@@ -255,7 +255,7 @@ async def error_center(
 @router.get("/security")
 async def security_overview(
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("ops.read")),
 ):
     since = datetime.now(timezone.utc) - timedelta(days=7)
 
@@ -316,7 +316,7 @@ def _row_to_dict(obj) -> dict:
 @router.get("/backup/export")
 async def backup_export(
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("ops.read")),
 ):
     """Download a JSON snapshot of CMS settings + catalog (content backup).
 
@@ -347,7 +347,7 @@ async def backup_restore_settings(
     payload: dict = Body(...),
     dry_run: bool = Query(True),
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("ops.write")),
 ):
     """Restore CMS settings from a content-backup JSON.
 
@@ -396,7 +396,7 @@ async def backup_restore_settings(
 @router.get("/notifications")
 async def notification_center(
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("ops.read")),
 ):
     """Aggregated feed of things that need an admin's attention."""
     items: list[dict] = []

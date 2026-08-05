@@ -3,156 +3,28 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
-from app.core.security import require_admin
-from app.models.models import AdminSetting, PaymentMethod, ActivityLog
+from app.core.security import require_role
+from app.models.models import PaymentMethod, ActivityLog
 from app.schemas.schemas import (
-    AdminSettingOut,
-    AdminSettingCreate,
-    AdminSettingUpdate,
     PaymentMethodOut,
     PaymentMethodCreate,
     PaymentMethodUpdate,
     ApiResponse,
 )
 
+# The generic admin-settings CRUD (AdminSetting model / admin_settings table)
+# that used to live in this file has been removed — confirmed zero frontend
+# callers (the live settings.py's `Setting` table/`/api/v1/settings/*` routes
+# are what the admin panel actually reads/writes). See
+# manual_sql/0025_archive_dead_tables.sql for the corresponding table archive.
+
 router = APIRouter(prefix="/admin", tags=["admin-settings"])
-
-# ==================== ADMIN SETTINGS ====================
-
-@router.get("/settings", response_model=ApiResponse)
-async def get_settings(
-    admin_id: str = Depends(require_admin),
-    db: AsyncSession = Depends(get_db),
-    category: str | None = None,
-):
-    """Get admin settings by category or all"""
-    query = select(AdminSetting).where(AdminSetting.is_deleted == False)
-
-    if category:
-        query = query.where(AdminSetting.category == category)
-
-    query = query.order_by(AdminSetting.sort_order)
-
-    result = await db.execute(query)
-    settings = result.scalars().all()
-
-    # Group by category
-    grouped = {}
-    for setting in settings:
-        if setting.category not in grouped:
-            grouped[setting.category] = []
-        grouped[setting.category].append(AdminSettingOut.model_validate(setting).model_dump())
-
-    return ApiResponse(
-        data=grouped,
-        message="Settings fetched successfully",
-    )
-
-
-@router.get("/settings/{key}", response_model=ApiResponse)
-async def get_setting(
-    key: str,
-    admin_id: str = Depends(require_admin),
-    db: AsyncSession = Depends(get_db),
-):
-    """Get specific setting by key"""
-    result = await db.execute(
-        select(AdminSetting).where(
-            AdminSetting.key == key, AdminSetting.is_deleted == False
-        )
-    )
-    setting = result.scalar_one_or_none()
-
-    if not setting:
-        raise HTTPException(status_code=404, detail="Setting not found")
-
-    return ApiResponse(
-        data=AdminSettingOut.model_validate(setting).model_dump(),
-        message="Setting fetched successfully",
-    )
-
-
-@router.put("/settings/{key}", response_model=ApiResponse)
-async def update_setting(
-    key: str,
-    payload: AdminSettingUpdate,
-    admin_id: str = Depends(require_admin),
-    db: AsyncSession = Depends(get_db),
-):
-    """Update admin setting"""
-    result = await db.execute(
-        select(AdminSetting).where(
-            AdminSetting.key == key, AdminSetting.is_deleted == False
-        )
-    )
-    setting = result.scalar_one_or_none()
-
-    if not setting:
-        raise HTTPException(status_code=404, detail="Setting not found")
-
-    if not setting.is_editable:
-        raise HTTPException(
-            status_code=403, detail="This setting cannot be edited"
-        )
-
-    old_value = setting.value
-
-    # Update
-    update_data = payload.dict(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(setting, field, value)
-
-    await db.commit()
-    await db.refresh(setting)
-
-    # Log activity
-    log = ActivityLog(
-        admin_id=uuid.UUID(admin_id),
-        action="update",
-        entity_type="admin_setting",
-        entity_id=setting.id,
-        old_values={"value": old_value},
-        new_values={"value": setting.value},
-    )
-    db.add(log)
-    await db.commit()
-
-    return ApiResponse(
-        data=AdminSettingOut.model_validate(setting).model_dump(),
-        message="Setting updated successfully",
-    )
-
-
-@router.post("/settings", response_model=ApiResponse)
-async def create_setting(
-    payload: AdminSettingCreate,
-    admin_id: str = Depends(require_admin),
-    db: AsyncSession = Depends(get_db),
-):
-    """Create new admin setting"""
-    # Check if key already exists
-    existing = await db.execute(
-        select(AdminSetting).where(AdminSetting.key == payload.key)
-    )
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Setting key already exists")
-
-    setting = AdminSetting(**payload.model_dump())
-    db.add(setting)
-    await db.commit()
-    await db.refresh(setting)
-
-    return ApiResponse(
-        data=AdminSettingOut.model_validate(setting).model_dump(),
-        message="Setting created successfully",
-    )
-
 
 # ==================== PAYMENT METHODS ====================
 
 @router.get("/payment-methods", response_model=ApiResponse)
 async def list_payment_methods(
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("payments.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """List all payment methods"""
@@ -170,7 +42,7 @@ async def list_payment_methods(
 @router.get("/payment-methods/{method_id}", response_model=ApiResponse)
 async def get_payment_method(
     method_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("payments.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Get payment method details"""
@@ -191,12 +63,18 @@ async def get_payment_method(
 @router.post("/payment-methods", response_model=ApiResponse)
 async def create_payment_method(
     payload: PaymentMethodCreate,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("payments.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Create payment method"""
     method = PaymentMethod(**payload.model_dump())
     db.add(method)
+    await db.flush()
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin_id), action="create",
+        entity_type="payment_method", entity_id=method.id,
+        new_values=payload.model_dump(mode="json"),
+    ))
     await db.commit()
     await db.refresh(method)
 
@@ -210,7 +88,7 @@ async def create_payment_method(
 async def update_payment_method(
     method_id: uuid.UUID,
     payload: PaymentMethodUpdate,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("payments.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Update payment method (partial updates supported)"""
@@ -229,6 +107,11 @@ async def update_payment_method(
     for field, value in updates.items():
         setattr(method, field, value)
 
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin_id), action="update",
+        entity_type="payment_method", entity_id=method.id,
+        new_values=updates,
+    ))
     await db.commit()
     await db.refresh(method)
 
@@ -241,7 +124,7 @@ async def update_payment_method(
 @router.delete("/payment-methods/{method_id}", response_model=ApiResponse)
 async def delete_payment_method(
     method_id: uuid.UUID,
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("payments.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Delete payment method"""
@@ -253,6 +136,10 @@ async def delete_payment_method(
     if not method:
         raise HTTPException(status_code=404, detail="Payment method not found")
 
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin_id), action="delete",
+        entity_type="payment_method", entity_id=method.id,
+    ))
     await db.delete(method)
     await db.commit()
 

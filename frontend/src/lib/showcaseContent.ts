@@ -1,4 +1,4 @@
-import { getSettingValue } from "@/hooks/usePublicSettings";
+import { getSettingValue } from "@/lib/settingValue";
 import { PROJECTS, type ProjectCase } from "@/lib/data/projects";
 import type { LucideIcon } from "lucide-react";
 import { Bot, Code, Cog, Database, Globe, MonitorSmartphone } from "lucide-react";

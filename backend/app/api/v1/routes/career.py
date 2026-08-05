@@ -3,7 +3,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.models.models import CareerApplication
+from app.models.models import CareerApplication, ActivityLog
 from app.schemas.schemas import (
     ApiResponse,
     PaginatedResponse,
@@ -12,8 +12,9 @@ from app.schemas.schemas import (
     CareerApplicationUpdate,
     CareerApplicationResponse,
 )
-from app.core.security import require_admin
+from app.core.security import require_role
 from app.core.rate_limit import rate_limit
+import uuid
 
 router = APIRouter(prefix="/career", tags=["career"])
 
@@ -44,7 +45,7 @@ async def list_career_applications(
     status: str | None = None,
     search: str | None = None,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("career.read")),
 ):
     """Admin endpoint to list all career applications."""
     query = select(CareerApplication).where(CareerApplication.is_deleted == False)  # noqa: E712
@@ -84,7 +85,7 @@ async def list_career_applications(
 async def get_career_application(
     app_id: str,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("career.read")),
 ):
     """Get a specific career application."""
     import uuid
@@ -111,7 +112,7 @@ async def update_career_application(
     app_id: str,
     payload: CareerApplicationUpdate,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("career.write")),
 ):
     """Update career application status and notes."""
     import uuid
@@ -135,6 +136,11 @@ async def update_career_application(
     if payload.notes is not None:
         app.notes = payload.notes
 
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin_id), action="update",
+        entity_type="career_application", entity_id=app.id,
+        new_values=payload.model_dump(exclude_unset=True, mode="json"),
+    ))
     await db.commit()
     await db.refresh(app)
 
@@ -148,7 +154,7 @@ async def update_career_application(
 async def delete_career_application(
     app_id: str,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("career.write")),
 ):
     """Delete (soft) a career application."""
     import uuid
@@ -168,6 +174,10 @@ async def delete_career_application(
         return ApiResponse(success=False, message="Application not found")
 
     app.is_deleted = True
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin_id), action="delete",
+        entity_type="career_application", entity_id=app.id,
+    ))
     await db.commit()
 
     return ApiResponse(message="Application deleted")

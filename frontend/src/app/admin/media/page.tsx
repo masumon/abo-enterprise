@@ -10,17 +10,23 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  Pencil,
+  Trash2,
+  X,
+  ImageOff,
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ImageUpload from "@/components/admin/ImageUpload";
 import LivePreview from "@/components/admin/LivePreview";
 import AutoVideo from "@/components/ui/AutoVideo";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { isVideoUrl } from "@/lib/media";
 import {
   adminApi,
   adminBlogApi,
   productsApi,
   servicesAdminApi,
+  type MediaAssetRecord,
 } from "@/lib/api";
 import api from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -34,14 +40,21 @@ import {
 } from "@/lib/imageRegistry";
 import type { Product, Service, BlogPost } from "@/types";
 
-type TabId = "brand" | "banners" | "catalog";
+type TabId = "brand" | "banners" | "catalog" | "library";
 type SettingValues = Record<string, string>;
 
 const TABS: { id: TabId; label: string; labelBn: string }[] = [
   { id: "brand", label: "Brand & Site", labelBn: "ব্র্যান্ড" },
   { id: "banners", label: "Page Banners", labelBn: "পেজ ব্যানার" },
   { id: "catalog", label: "Catalog", labelBn: "ক্যাটালগ" },
+  { id: "library", label: "Media Library", labelBn: "মিডিয়া লাইব্রেরি" },
 ];
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 function MediaEl({ url, className }: { url: string; className?: string }) {
   if (isVideoUrl(url)) return <AutoVideo src={url} className={className} />;
@@ -145,6 +158,19 @@ export default function AdminMediaPage() {
   const [catalogLoaded, setCatalogLoaded] = useState(false);
   const [catalogLoading, setCatalogLoading] = useState(false);
 
+  const [libraryAssets, setLibraryAssets] = useState<MediaAssetRecord[]>([]);
+  const [libraryLoaded, setLibraryLoaded] = useState(false);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [libraryPage, setLibraryPage] = useState(1);
+  const [libraryTotalPages, setLibraryTotalPages] = useState(1);
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [editingAsset, setEditingAsset] = useState<MediaAssetRecord | null>(null);
+  const [editAltText, setEditAltText] = useState("");
+  const [editTags, setEditTags] = useState("");
+  const [savingAsset, setSavingAsset] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<MediaAssetRecord | null>(null);
+  const [deletingAsset, setDeletingAsset] = useState(false);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -189,6 +215,64 @@ export default function AdminMediaPage() {
   useEffect(() => {
     if (tab === "catalog" && !catalogLoaded && !catalogLoading) void loadCatalog();
   }, [tab, catalogLoaded, catalogLoading, loadCatalog]);
+
+  const loadLibrary = useCallback(async (page: number, search: string) => {
+    setLibraryLoading(true);
+    try {
+      const res = await adminApi.listMedia({ page, per_page: 40, search: search.trim() || undefined });
+      setLibraryAssets(res.data.data ?? []);
+      setLibraryTotalPages(res.data.meta?.total_pages ?? 1);
+      setLibraryLoaded(true);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to load media library"));
+    } finally {
+      setLibraryLoading(false);
+    }
+  }, [toast]);
+
+  // Fetch the asset library the first time its tab is opened.
+  useEffect(() => {
+    if (tab === "library" && !libraryLoaded && !libraryLoading) void loadLibrary(1, "");
+  }, [tab, libraryLoaded, libraryLoading, loadLibrary]);
+
+  const openEditAsset = (asset: MediaAssetRecord) => {
+    setEditingAsset(asset);
+    setEditAltText(asset.alt_text ?? "");
+    setEditTags((asset.tags ?? []).join(", "));
+  };
+
+  const saveAssetEdit = async () => {
+    if (!editingAsset) return;
+    setSavingAsset(true);
+    try {
+      const tags = editTags.split(",").map((t) => t.trim()).filter(Boolean);
+      await adminApi.updateMediaAsset(editingAsset.id, { alt_text: editAltText.trim(), tags });
+      setLibraryAssets((prev) =>
+        prev.map((a) => (a.id === editingAsset.id ? { ...a, alt_text: editAltText.trim(), tags } : a))
+      );
+      toast("success", "Asset updated");
+      setEditingAsset(null);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to update asset"));
+    } finally {
+      setSavingAsset(false);
+    }
+  };
+
+  const confirmDeleteAsset = async () => {
+    if (!deleteTarget) return;
+    setDeletingAsset(true);
+    try {
+      await adminApi.deleteMediaAsset(deleteTarget.id);
+      setLibraryAssets((prev) => prev.filter((a) => a.id !== deleteTarget.id));
+      toast("success", "Asset deleted");
+      setDeleteTarget(null);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to delete asset"));
+    } finally {
+      setDeletingAsset(false);
+    }
+  };
 
   const saveSettings = async (sectionId: string, items: { key: string; value: string; data_type?: string }[]) => {
     setSaving(sectionId);
@@ -572,6 +656,163 @@ export default function AdminMediaPage() {
           })}
         </div>
       )}
+
+      {tab === "library" && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={librarySearch}
+                onChange={(e) => setLibrarySearch(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { setLibraryPage(1); void loadLibrary(1, librarySearch); } }}
+                placeholder="Search by filename…"
+                className="input pl-9 w-full"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => { setLibraryPage(1); void loadLibrary(1, librarySearch); }}
+              className="btn btn-outline btn-sm"
+            >
+              Search
+            </button>
+          </div>
+
+          {libraryLoading && !libraryLoaded ? (
+            <div className="flex justify-center py-16">
+              <Loader2 className="w-7 h-7 animate-spin text-brand-500" />
+            </div>
+          ) : libraryAssets.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-gray-400 gap-2">
+              <ImageOff className="w-8 h-8" />
+              <p className="text-sm">No uploaded assets found</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                {libraryAssets.map((asset) => (
+                  <div key={asset.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
+                      <MediaEl url={asset.url} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="p-3 space-y-1.5">
+                      <p className="text-xs font-medium text-gray-800 truncate" title={asset.filename}>
+                        {asset.filename}
+                      </p>
+                      <p className="text-[11px] text-gray-400">
+                        {formatBytes(asset.size)}
+                        {asset.width && asset.height ? ` · ${asset.width}×${asset.height}` : ""}
+                      </p>
+                      {asset.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {asset.tags.slice(0, 3).map((tag) => (
+                            <span key={tag} className="text-[10px] px-1.5 py-0.5 rounded bg-brand-50 text-brand-700">{tag}</span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => openEditAsset(asset)}
+                          className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-brand-300 hover:text-brand-600"
+                        >
+                          <Pencil className="w-3 h-3" /> Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(asset)}
+                          className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-gray-200 text-red-500 hover:border-red-300 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-3 h-3" /> Delete
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {libraryTotalPages > 1 && (
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    disabled={libraryPage === 1 || libraryLoading}
+                    onClick={() => { const p = libraryPage - 1; setLibraryPage(p); void loadLibrary(p, librarySearch); }}
+                    className="btn btn-outline btn-sm disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
+                    Page {libraryPage} of {libraryTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={libraryPage >= libraryTotalPages || libraryLoading}
+                    onClick={() => { const p = libraryPage + 1; setLibraryPage(p); void loadLibrary(p, librarySearch); }}
+                    className="btn btn-outline btn-sm disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
+      {editingAsset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditingAsset(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-heading">Edit Asset</h3>
+              <button type="button" onClick={() => setEditingAsset(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <MediaEl url={editingAsset.url} className="w-full h-40 object-cover rounded-lg bg-gray-50" />
+            <div>
+              <label htmlFor="asset-alt-text" className="block text-xs font-semibold text-gray-600 mb-1">Alt text</label>
+              <input
+                id="asset-alt-text"
+                type="text"
+                value={editAltText}
+                onChange={(e) => setEditAltText(e.target.value)}
+                className="input w-full"
+                placeholder="Describe this image for accessibility/SEO"
+              />
+            </div>
+            <div>
+              <label htmlFor="asset-tags" className="block text-xs font-semibold text-gray-600 mb-1">Tags (comma-separated)</label>
+              <input
+                id="asset-tags"
+                type="text"
+                value={editTags}
+                onChange={(e) => setEditTags(e.target.value)}
+                className="input w-full"
+                placeholder="banner, homepage, promo"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setEditingAsset(null)} className="btn btn-outline btn-sm">Cancel</button>
+              <button type="button" onClick={saveAssetEdit} disabled={savingAsset} className="btn btn-brand btn-sm disabled:opacity-60">
+                {savingAsset ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Delete Asset"
+        message={`Delete "${deleteTarget?.filename}"? This removes it from the media library (existing pages still using its URL will show a broken image).`}
+        confirmLabel={deletingAsset ? "Deleting…" : "Delete"}
+        variant="danger"
+        onConfirm={confirmDeleteAsset}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

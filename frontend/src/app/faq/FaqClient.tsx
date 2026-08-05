@@ -6,6 +6,7 @@ import { Search, MessageCircle } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import Accordion from "@/components/ui/Accordion";
+import EmptyState from "@/components/ui/EmptyState";
 import { resolveFaqItems, FAQ_CATEGORIES } from "@/lib/data/faq";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
 import { SITE_FAQ_KEY } from "@/lib/cmsContent";
@@ -74,9 +75,12 @@ export default function FaqClient() {
           {accordionItems.length > 0 ? (
             <Accordion items={accordionItems} />
           ) : (
-            <p className="text-center text-muted py-8">
-              {lang === "bn" ? "কোনো প্রশ্ন পাওয়া যায়নি" : "No questions found"}
-            </p>
+            <EmptyState
+              icon={Search}
+              title={lang === "bn" ? "কোনো প্রশ্ন পাওয়া যায়নি" : "No questions found"}
+              actionLabel={lang === "bn" ? "ফিল্টার মুছুন" : "Clear filters"}
+              onAction={() => { setQuery(""); setCategory("all"); }}
+            />
           )}
 
           <div className="enterprise-card p-6 mt-10 text-center">

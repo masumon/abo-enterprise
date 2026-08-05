@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from pydantic import BaseModel
 from app.core.database import get_db
-from app.core.security import require_admin
-from app.models.models import Review
+from app.core.security import require_role
+from app.models.models import Review, ActivityLog
 from app.schemas.schemas import ReviewCreate, ReviewOut, ApiResponse, PaginatedResponse, PaginatedMeta
 from app.core.rate_limit import rate_limit
 
@@ -37,7 +37,7 @@ async def list_reviews(
     per_page: int = Query(20, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
 ):
-    conditions = [Review.is_active == True]  # noqa: E712
+    conditions = [Review.is_active == True, Review.is_deleted == False]  # noqa: E712
     if featured is not None:
         conditions.append(Review.is_featured == featured)
     if product_id:
@@ -75,11 +75,12 @@ async def admin_list_reviews(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    _admin: dict = Depends(require_admin),
+    _admin: str = Depends(require_role("reviews.read")),
 ):
-    total = (await db.execute(select(func.count(Review.id)))).scalar_one()
+    total = (await db.execute(select(func.count(Review.id)).where(Review.is_deleted == False))).scalar_one()  # noqa: E712
     result = await db.execute(
-        select(Review).order_by(Review.created_at.desc())
+        select(Review).where(Review.is_deleted == False)  # noqa: E712
+        .order_by(Review.created_at.desc())
         .offset((page - 1) * per_page).limit(per_page)
     )
     reviews = result.scalars().all()
@@ -94,7 +95,7 @@ async def update_review_admin(
     review_id: UUID,
     payload: ReviewAdminUpdate,
     db: AsyncSession = Depends(get_db),
-    _admin: dict = Depends(require_admin),
+    admin_id: str = Depends(require_role("reviews.write")),
 ):
     result = await db.execute(select(Review).where(Review.id == review_id))
     review = result.scalar_one_or_none()
@@ -106,6 +107,11 @@ async def update_review_admin(
         review.admin_reply_at = datetime.now(timezone.utc) if review.admin_reply else None
     for field, value in updates.items():
         setattr(review, field, value)
+    db.add(ActivityLog(
+        admin_id=UUID(admin_id), action="update",
+        entity_type="review", entity_id=review.id,
+        new_values=payload.model_dump(exclude_unset=True, mode="json"),
+    ))
     await db.commit()
     await db.refresh(review)
     return ApiResponse(data=ReviewOut.model_validate(review))
@@ -115,12 +121,16 @@ async def update_review_admin(
 async def delete_review_admin(
     review_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _admin: dict = Depends(require_admin),
+    admin_id: str = Depends(require_role("reviews.write")),
 ):
     result = await db.execute(select(Review).where(Review.id == review_id))
     review = result.scalar_one_or_none()
     if not review:
         raise HTTPException(status_code=404, detail="Review not found")
-    await db.delete(review)
+    review.is_deleted = True
+    db.add(ActivityLog(
+        admin_id=UUID(admin_id), action="delete",
+        entity_type="review", entity_id=review.id,
+    ))
     await db.commit()
     return ApiResponse(data=None, message="Review deleted")

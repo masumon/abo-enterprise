@@ -7,7 +7,7 @@ import { z } from "zod";
 import { isQueuedResponse, serviceLeadsApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { toLeadV2Type } from "@/lib/leadTypes";
-import { LoadingSpinner } from "@/components/common/LoadingSpinner";
+import { Loader2 } from "lucide-react";
 
 import { BD_PHONE_REGEX } from "@/lib/phone";
 
@@ -300,7 +300,7 @@ export default function LeadForm({ defaultLeadType, onSuccess }: LeadFormProps) 
       >
         {submitting ? (
           <>
-            <LoadingSpinner /> Submitting...
+            <Loader2 className="w-4 h-4 animate-spin" /> Submitting...
           </>
         ) : (
           "Submit Project Inquiry"

@@ -70,18 +70,18 @@ export default function SettingsPage() {
         <GlassCard className="p-6">
           <form onSubmit={handleSave} className="space-y-4">
             <div>
-              <label className="form-label">{lang === "bn" ? "নাম" : "Name"}</label>
-              <input value={name} onChange={(e) => setName(e.target.value)} className="input" aria-invalid={attempted && !!nameError} required />
-              {attempted && nameError && <p className="text-xs text-red-500 mt-1">{nameError}</p>}
+              <label htmlFor="settings-name" className="form-label">{lang === "bn" ? "নাম" : "Name"}</label>
+              <input id="settings-name" value={name} onChange={(e) => setName(e.target.value)} className="input" aria-invalid={attempted && !!nameError} aria-describedby={attempted && nameError ? "settings-name-error" : undefined} required />
+              {attempted && nameError && <p id="settings-name-error" className="text-xs text-red-500 mt-1">{nameError}</p>}
             </div>
             <div>
-              <label className="form-label">{lang === "bn" ? "ফোন" : "Phone"}</label>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="input" aria-invalid={attempted && !!phoneError} required />
-              {attempted && phoneError && <p className="text-xs text-red-500 mt-1">{phoneError}</p>}
+              <label htmlFor="settings-phone" className="form-label">{lang === "bn" ? "ফোন" : "Phone"}</label>
+              <input id="settings-phone" value={phone} onChange={(e) => setPhone(e.target.value)} className="input" aria-invalid={attempted && !!phoneError} aria-describedby={attempted && phoneError ? "settings-phone-error" : undefined} required />
+              {attempted && phoneError && <p id="settings-phone-error" className="text-xs text-red-500 mt-1">{phoneError}</p>}
             </div>
             <div>
-              <label className="form-label">{lang === "bn" ? "ইমেইল (ঐচ্ছিক)" : "Email (optional)"}</label>
-              <input type="email" value={email} onChange={(e) => updateSettings({ email: e.target.value })} className="input" />
+              <label htmlFor="settings-email" className="form-label">{lang === "bn" ? "ইমেইল (ঐচ্ছিক)" : "Email (optional)"}</label>
+              <input id="settings-email" type="email" value={email} onChange={(e) => updateSettings({ email: e.target.value })} className="input" />
             </div>
             <label className="flex items-center gap-2 text-sm cursor-pointer">
               <input type="checkbox" checked={notifyOrders} onChange={(e) => updateSettings({ notifyOrders: e.target.checked })} className="rounded" />

@@ -120,16 +120,47 @@ export default function AddressesPage() {
           </h2>
           <form onSubmit={handleAdd} className="space-y-3">
             <div>
-              <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder={lang === "bn" ? "লেবেল (যেমন: বাড়ি)" : "Label (e.g. Home)"} className="input" aria-invalid={attempted && !!errors.label} required />
-              {attempted && errors.label && <p className="text-xs text-red-500 mt-1">{errors.label}</p>}
+              <input
+                id="address-label"
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder={lang === "bn" ? "লেবেল (যেমন: বাড়ি)" : "Label (e.g. Home)"}
+                aria-label={lang === "bn" ? "লেবেল (যেমন: বাড়ি)" : "Label (e.g. Home)"}
+                className="input"
+                aria-invalid={attempted && !!errors.label}
+                aria-describedby={attempted && errors.label ? "address-label-error" : undefined}
+                required
+              />
+              {attempted && errors.label && <p id="address-label-error" className="text-xs text-red-500 mt-1">{errors.label}</p>}
             </div>
             <div>
-              <textarea value={address} onChange={(e) => setAddress(e.target.value)} placeholder={lang === "bn" ? "সম্পূর্ণ ঠিকানা" : "Full address"} className="input resize-none" rows={3} aria-invalid={attempted && !!errors.address} required />
-              {attempted && errors.address && <p className="text-xs text-red-500 mt-1">{errors.address}</p>}
+              <textarea
+                id="address-full"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder={lang === "bn" ? "সম্পূর্ণ ঠিকানা" : "Full address"}
+                aria-label={lang === "bn" ? "সম্পূর্ণ ঠিকানা" : "Full address"}
+                className="input resize-none"
+                rows={3}
+                aria-invalid={attempted && !!errors.address}
+                aria-describedby={attempted && errors.address ? "address-full-error" : undefined}
+                required
+              />
+              {attempted && errors.address && <p id="address-full-error" className="text-xs text-red-500 mt-1">{errors.address}</p>}
             </div>
             <div>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={BD_PHONE_PLACEHOLDER} className="input" aria-invalid={attempted && !!errors.phone} required />
-              {attempted && errors.phone && <p className="text-xs text-red-500 mt-1">{errors.phone}</p>}
+              <input
+                id="address-phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder={BD_PHONE_PLACEHOLDER}
+                aria-label={BD_PHONE_PLACEHOLDER}
+                className="input"
+                aria-invalid={attempted && !!errors.phone}
+                aria-describedby={attempted && errors.phone ? "address-phone-error" : undefined}
+                required
+              />
+              {attempted && errors.phone && <p id="address-phone-error" className="text-xs text-red-500 mt-1">{errors.phone}</p>}
             </div>
             <button type="submit" disabled={attempted && !isValid} className="btn btn-brand btn-md w-full disabled:opacity-50 disabled:cursor-not-allowed">{lang === "bn" ? "সংরক্ষণ" : "Save Address"}</button>
             {attempted && !isValid && (

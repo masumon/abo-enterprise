@@ -13,6 +13,7 @@ import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { cn } from "@/lib/utils";
 import ProductFilterSheet from "@/components/products/ProductFilterSheet";
+import EmptyState from "@/components/ui/EmptyState";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
 import type { CatalogSource } from "@/lib/catalogLoader";
@@ -410,9 +411,12 @@ export default function ProductsClient({
           <button type="button" onClick={() => load(1)} className="btn btn-brand btn-md btn-ripple">{lang === "bn" ? "আবার চেষ্টা" : "Retry"}</button>
         </div>
       ) : products.length === 0 ? (
-        <div className="text-center py-20 glass rounded-2xl">
-          <p className="text-gray-500">{lang === "bn" ? "কোনো পণ্য পাওয়া যায়নি" : "No products found"}</p>
-        </div>
+        <EmptyState
+          icon={Search}
+          title={lang === "bn" ? "কোনো পণ্য পাওয়া যায়নি" : "No products found"}
+          actionLabel={lang === "bn" ? "ফিল্টার মুছুন" : "Clear filters"}
+          onAction={clearAllFilters}
+        />
       ) : (
         <>
           <p className="text-sm text-gray-500 mb-5">{total} {lang === "bn" ? "টি পণ্য" : "products"}</p>

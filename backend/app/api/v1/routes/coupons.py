@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import require_role
-from app.models.models import Coupon
+from app.models.models import Coupon, ActivityLog
 from app.schemas.schemas import ApiResponse
 from app.core.rate_limit import rate_limit
 
@@ -97,8 +97,12 @@ async def list_coupons(db: AsyncSession = Depends(get_db)):
     ])
 
 
-@router.post("/admin/coupons", response_model=ApiResponse, dependencies=[Depends(require_role("settings.write"))])
-async def create_coupon(payload: CouponUpsert, db: AsyncSession = Depends(get_db)):
+@router.post("/admin/coupons", response_model=ApiResponse)
+async def create_coupon(
+    payload: CouponUpsert,
+    admin_id: str = Depends(require_role("settings.write")),
+    db: AsyncSession = Depends(get_db),
+):
     existing = (await db.execute(
         select(Coupon).where(Coupon.code == payload.code, Coupon.is_deleted == False)  # noqa: E712
     )).scalar_one_or_none()
@@ -112,12 +116,23 @@ async def create_coupon(payload: CouponUpsert, db: AsyncSession = Depends(get_db
         is_active=payload.is_active,
     )
     db.add(coupon)
+    await db.flush()
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin_id), action="create",
+        entity_type="coupon", entity_id=coupon.id,
+        new_values=payload.model_dump(mode="json"),
+    ))
     await db.commit()
     return ApiResponse(data={"id": str(coupon.id)}, message="Coupon created")
 
 
-@router.put("/admin/coupons/{coupon_id}", response_model=ApiResponse, dependencies=[Depends(require_role("settings.write"))])
-async def update_coupon(coupon_id: str, payload: CouponUpsert, db: AsyncSession = Depends(get_db)):
+@router.put("/admin/coupons/{coupon_id}", response_model=ApiResponse)
+async def update_coupon(
+    coupon_id: str,
+    payload: CouponUpsert,
+    admin_id: str = Depends(require_role("settings.write")),
+    db: AsyncSession = Depends(get_db),
+):
     coupon = (await db.execute(select(Coupon).where(Coupon.id == uuid.UUID(coupon_id)))).scalar_one_or_none()
     if not coupon:
         raise HTTPException(status_code=404, detail="Coupon not found")
@@ -132,15 +147,28 @@ async def update_coupon(coupon_id: str, payload: CouponUpsert, db: AsyncSession 
     coupon.discount_percent = payload.discount_percent
     coupon.min_subtotal = payload.min_subtotal
     coupon.is_active = payload.is_active
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin_id), action="update",
+        entity_type="coupon", entity_id=coupon.id,
+        new_values=payload.model_dump(mode="json"),
+    ))
     await db.commit()
     return ApiResponse(data={"id": str(coupon.id)}, message="Coupon updated")
 
 
-@router.delete("/admin/coupons/{coupon_id}", response_model=ApiResponse, dependencies=[Depends(require_role("settings.write"))])
-async def delete_coupon(coupon_id: str, db: AsyncSession = Depends(get_db)):
+@router.delete("/admin/coupons/{coupon_id}", response_model=ApiResponse)
+async def delete_coupon(
+    coupon_id: str,
+    admin_id: str = Depends(require_role("settings.write")),
+    db: AsyncSession = Depends(get_db),
+):
     coupon = (await db.execute(select(Coupon).where(Coupon.id == uuid.UUID(coupon_id)))).scalar_one_or_none()
     if not coupon:
         raise HTTPException(status_code=404, detail="Coupon not found")
     coupon.is_deleted = True
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin_id), action="delete",
+        entity_type="coupon", entity_id=coupon.id,
+    ))
     await db.commit()
     return ApiResponse(data={"id": str(coupon.id)}, message="Coupon removed")

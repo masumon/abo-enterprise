@@ -46,7 +46,9 @@ export default function AdminDeliveryPage() {
         FIELDS.map((f) => {
           const raw = String(values[f.key] ?? "").trim();
           if ((f.type ?? "number") === "number") {
-            return { key: f.key, value: raw || "0", data_type: "number" };
+            const parsed = Number(raw);
+            const safe = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+            return { key: f.key, value: String(safe), data_type: "number" };
           }
           return { key: f.key, value: raw, data_type: "string" };
         })

@@ -7,6 +7,7 @@ import StoreHydration from "@/components/providers/StoreHydration";
 import PublicShell from "@/components/layout/PublicShell";
 import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
 import PWASplashScreen from "@/components/pwa/PWASplashScreen";
+import ApiWarmup from "@/components/ui/ApiWarmup";
 import NetworkStatusBar from "@/components/network/NetworkStatusBar";
 import RouteProgress from "@/components/layout/RouteProgress";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
@@ -158,6 +159,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen flex flex-col">
         <PWASplashScreen />
+        <ApiWarmup />
         <RouteProgress />
         <NetworkStatusBar />
         <GoogleAnalytics />
