@@ -89,70 +89,61 @@ export default function FeaturedProducts() {
   }, [products, activeCategory]);
 
   return (
-    <>
-      {/* Category Tabs */}
-      <div className="bg-white dark:bg-[var(--surface)]">
-        <div className="container mx-auto px-3 lg:px-4">
-          <div className="flex items-center justify-between gap-2 mb-4">
-            <h2 className="flex items-center gap-2 text-lg sm:text-2xl font-bold text-heading">
-              <span className="w-1.5 h-5 sm:h-7 rounded-full bg-gradient-to-b from-accent-400 to-accent-600" aria-hidden />
-              {lang === "bn" ? "ফিচার্ড প্রোডাক্টস" : "Featured Products"}
-            </h2>
-            <Link
-              href="/products"
-              className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-300 whitespace-nowrap px-3 py-1.5 rounded-full bg-brand-50 dark:bg-brand-500/10 hover:bg-brand-100 dark:hover:bg-brand-500/20 transition-colors"
-            >
-              {lang === "bn" ? "সব দেখুন" : "View all"}
-              <span aria-hidden>→</span>
-            </Link>
-          </div>
+    <section id="featured-products" className="py-6 lg:py-9 bg-white dark:bg-[var(--surface)]">
+      <div className="container mx-auto px-3 lg:px-4">
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <h2 className="flex items-center gap-2 text-lg sm:text-2xl font-bold text-heading">
+            <span className="w-1.5 h-5 sm:h-7 rounded-full bg-gradient-to-b from-accent-400 to-accent-600" aria-hidden />
+            {lang === "bn" ? "ফিচার্ড প্রোডাক্টস" : "Featured Products"}
+          </h2>
+          <Link
+            href="/products"
+            className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-300 whitespace-nowrap px-3 py-1.5 rounded-full bg-brand-50 dark:bg-brand-500/10 hover:bg-brand-100 dark:hover:bg-brand-500/20 transition-colors"
+          >
+            {lang === "bn" ? "সব দেখুন" : "View all"}
+            <span aria-hidden>→</span>
+          </Link>
         </div>
-      </div>
 
-      {/* Products Section */}
-      <section id="featured-products" className="py-6 lg:py-9 bg-white dark:bg-[var(--surface)]">
-        {/* Category Tabs Component */}
-        <div className="container mx-auto px-3 lg:px-4 mb-6">
+        <div className="mb-6 -mx-3 lg:mx-0">
           <ProductCategoryTabs
             activeCategory={activeCategory}
             onCategoryChange={setActiveCategory}
           />
         </div>
 
-        <div className="container mx-auto px-3 lg:px-4">
-          <DemoModeBanner show={catalogSource === "cache" && !loading} source={catalogSource} />
+        <DemoModeBanner show={catalogSource === "cache" && !loading} source={catalogSource} />
 
-          {loading ? (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
-            </div>
-          ) : error ? (
-            <div role="alert" className="text-center py-12">
-              <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 text-sm">
-                {lang === "bn" ? "পণ্য লোড করা যায়নি।" : "Could not load products."}
-              </p>
-            </div>
-          ) : filteredProducts.length === 0 ? (
-            <p className="text-center text-gray-400 py-12 text-sm">
-              {lang === "bn" ? "এই ক্যাটেগরিতে কোনো পণ্য নেই।" : "No products in this category."}
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-              {filteredProducts.slice(0, 8).map((product) => (
-                <ProductCard key={product.id} product={product} onAddToCart={openCart} density="compact" />
-              ))}
-            </div>
-          )}
-
-          <div className="text-center mt-8 lg:mt-12">
-            <Link href="/products" className="btn btn-outline btn-lg gap-2">
-              {lang === "bn" ? "সব পণ্য দেখুন" : "View All Products"}
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+        {loading ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
           </div>
+        ) : error ? (
+          <div role="alert" className="text-center py-12">
+            <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-500 text-sm">
+              {lang === "bn" ? "পণ্য লোড করা যায়নি।" : "Could not load products."}
+            </p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <p className="text-center text-gray-400 py-12 text-sm">
+            {lang === "bn" ? "এই ক্যাটেগরিতে কোনো পণ্য নেই।" : "No products in this category."}
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            {filteredProducts.slice(0, 8).map((product) => (
+              <ProductCard key={product.id} product={product} onAddToCart={openCart} density="compact" />
+            ))}
+          </div>
+        )}
+
+        <div className="text-center mt-8 lg:mt-12">
+          <Link href="/products" className="btn btn-outline btn-lg gap-2">
+            {lang === "bn" ? "সব পণ্য দেখুন" : "View All Products"}
+            <ArrowRight className="w-5 h-5" />
+          </Link>
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 }
