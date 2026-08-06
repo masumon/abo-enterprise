@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { Phone, Facebook, MessageCircle, Youtube, Instagram } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
@@ -32,13 +33,63 @@ export default function ContactCTABar() {
     { href: getSettingValue(settings, "instagram_url"), icon: Instagram, label: "Instagram", bg: "bg-gradient-to-br from-[#f09433] via-[#e6683c] to-[#bc1888] hover:opacity-90" },
   ].filter((l) => l.href);
 
+  // Mobile-only RTL ticker. A moving phone number/social icons are harder to
+  // tap than static ones, so a touch pauses the scroll instead of fighting it —
+  // it resumes on its own a couple seconds after the finger lifts.
+  const [paused, setPaused] = useState(false);
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleTouchStart = () => {
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    setPaused(true);
+  };
+  const handleTouchEnd = () => {
+    resumeTimer.current = setTimeout(() => setPaused(false), 2000);
+  };
+
+  const contactBlock = (
+    <div className="flex items-center gap-6 flex-shrink-0 pr-6">
+      <div className="flex items-center gap-2.5">
+        <Phone className="w-4 h-4 text-accent-400 flex-shrink-0" aria-hidden />
+        <div>
+          <p className="text-white/70 text-[11px] leading-tight">
+            {lang === "bn" ? "যেকোনো প্রশ্নে আমাদের সাথে যোগাযোগ করুন" : "Reach out to us for any question"}
+          </p>
+          {phoneHref ? (
+            <a href={phoneHref} className="text-white text-lg font-bold hover:text-accent-300 transition-colors">
+              {phoneDisplay}
+            </a>
+          ) : (
+            <span className="text-white text-lg font-bold">{phoneDisplay}</span>
+          )}
+        </div>
+      </div>
+      {links.length > 0 && (
+        <div className="flex items-center gap-3">
+          {links.map(({ href, icon: Icon, label, bg }) => (
+            <a
+              key={label}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={label}
+              className={`w-10 h-10 rounded-full ${bg} ring-1 ring-white/15 flex items-center justify-center text-white shadow-lg shadow-black/20 flex-shrink-0`}
+            >
+              <Icon className="w-4 h-4" aria-hidden />
+            </a>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <section className="relative overflow-hidden bg-gradient-to-r from-[#0f1a2e] to-[#051529] py-7">
       <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-accent-500/10 blur-3xl pointer-events-none" aria-hidden />
       <div className="container mx-auto px-4 relative">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-5">
-          <div className="flex items-center gap-3.5 text-center sm:text-left">
-            <div className="hidden sm:flex w-12 h-12 rounded-full bg-white/10 ring-1 ring-white/15 items-center justify-center flex-shrink-0">
+        {/* Desktop / tablet — static layout, unchanged. */}
+        <div className="hidden sm:flex items-center justify-between gap-5">
+          <div className="flex items-center gap-3.5">
+            <div className="flex w-12 h-12 rounded-full bg-white/10 ring-1 ring-white/15 items-center justify-center flex-shrink-0">
               <Phone className="w-5 h-5 text-accent-400" aria-hidden />
             </div>
             <div>
@@ -46,11 +97,11 @@ export default function ContactCTABar() {
                 {lang === "bn" ? "যেকোনো প্রশ্নে আমাদের সাথে যোগাযোগ করুন" : "Reach out to us for any question"}
               </p>
               {phoneHref ? (
-                <a href={phoneHref} className="text-white text-xl sm:text-2xl font-bold hover:text-accent-300 transition-colors">
+                <a href={phoneHref} className="text-white text-2xl font-bold hover:text-accent-300 transition-colors">
                   {phoneDisplay}
                 </a>
               ) : (
-                <span className="text-white text-xl sm:text-2xl font-bold">{phoneDisplay}</span>
+                <span className="text-white text-2xl font-bold">{phoneDisplay}</span>
               )}
               <p className="text-white/50 text-xs mt-0.5">{hours}</p>
             </div>
@@ -72,6 +123,26 @@ export default function ContactCTABar() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Mobile — right-to-left ticker; a touch pauses it so tapping the
+            phone number or an icon never has to chase a moving target. */}
+        <div
+          className="marquee-viewport sm:hidden"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+        >
+          <div
+            className="marquee-track"
+            style={{
+              ["--marquee-duration" as string]: "18s",
+              animationPlayState: paused ? "paused" : undefined,
+            }}
+          >
+            {contactBlock}
+            {contactBlock}
+          </div>
         </div>
       </div>
     </section>
