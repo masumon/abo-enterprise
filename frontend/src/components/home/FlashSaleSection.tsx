@@ -49,6 +49,14 @@ export default function FlashSaleSection() {
     return null;
   }
 
+  // GAP — an active sale with zero qualifying products used to still render
+  // the header, countdown and promo banner with an empty grid beneath them,
+  // reading as broken. Once the fetch has settled, no products means nothing
+  // to sell here right now, so the whole section steps aside.
+  if (!loading && products.length === 0) {
+    return null;
+  }
+
   return (
     <section id="flash-sale" className="relative py-8 sm:py-10 overflow-hidden bg-gradient-to-br from-[#0b0b0d] via-[#171310] to-[#0b0b0d] scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
       {/* Ambient gold glow — purely decorative, no layout impact. */}

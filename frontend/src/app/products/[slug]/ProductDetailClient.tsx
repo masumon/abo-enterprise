@@ -58,7 +58,20 @@ export default function ProductDetailClient({ product }: Props) {
   const toast = useToastStore((s) => s.push);
 
   useEffect(() => {
-    productsApi.related(product.slug).then((r) => setRelated(r.data.data ?? [])).catch(() => {});
+    productsApi.related(product.slug)
+      .then((r) => {
+        const items = r.data.data ?? [];
+        if (items.length > 0) {
+          setRelated(items);
+          return;
+        }
+        // No other active product shares this category — show something
+        // instead of a silently empty "Related Products" section.
+        productsApi.list({ featured: true, per_page: 5 })
+          .then((fr) => setRelated((fr.data.data ?? []).filter((p) => p.id !== product.id).slice(0, 4)))
+          .catch(() => {});
+      })
+      .catch(() => {});
     reviewsApi.list({ product_id: product.id, per_page: 50 } as Parameters<typeof reviewsApi.list>[0])
       .then((r) => {
         const reviews = r.data.data ?? [];

@@ -93,12 +93,17 @@ export default function FeaturedProducts() {
       {/* Category Tabs */}
       <div className="bg-white dark:bg-[var(--surface)]">
         <div className="container mx-auto px-3 lg:px-4">
-          <div className="flex items-baseline justify-between gap-2 mb-4">
-            <h2 className="text-lg sm:text-2xl font-bold text-heading">
+          <div className="flex items-center justify-between gap-2 mb-4">
+            <h2 className="flex items-center gap-2 text-lg sm:text-2xl font-bold text-heading">
+              <span className="w-1.5 h-5 sm:h-7 rounded-full bg-gradient-to-b from-accent-400 to-accent-600" aria-hidden />
               {lang === "bn" ? "ফিচার্ড প্রোডাক্টস" : "Featured Products"}
             </h2>
-            <Link href="/products" className="text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-300 whitespace-nowrap">
-              {lang === "bn" ? "সব দেখুন →" : "View all →"}
+            <Link
+              href="/products"
+              className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-300 whitespace-nowrap px-3 py-1.5 rounded-full bg-brand-50 dark:bg-brand-500/10 hover:bg-brand-100 dark:hover:bg-brand-500/20 transition-colors"
+            >
+              {lang === "bn" ? "সব দেখুন" : "View all"}
+              <span aria-hidden>→</span>
             </Link>
           </div>
         </div>

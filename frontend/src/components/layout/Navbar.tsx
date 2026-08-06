@@ -68,7 +68,7 @@ export default function Navbar() {
     <header className="fixed top-[var(--announcement-height)] left-0 right-0 z-50">
       {/* ── Mobile header — artifact Screen 03 m-head ── */}
       <nav
-        className="lg:hidden flex items-center gap-2.5 px-3.5 min-h-[68px] bg-white dark:bg-[var(--surface-card)] border-b border-[var(--line)] dark:border-[var(--line)] shadow-sm"
+        className="lg:hidden flex items-center gap-2.5 px-3.5 min-h-[68px] bg-white/85 dark:bg-[var(--surface-card)]/85 backdrop-blur-xl border-b border-[var(--line)] dark:border-[var(--line)] shadow-sm"
         aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
       >
         <Link href="/" className="flex-none flex items-center" aria-label={getBrandName(lang)}>
@@ -132,19 +132,6 @@ export default function Navbar() {
         >
           {lang === "en" ? "বাং" : "EN"}
         </button>
-
-        <Link
-          href="/cart"
-          className="relative w-9 h-9 rounded-lg border border-[var(--line)] bg-gray-50 dark:bg-white/5 flex items-center justify-center text-xs text-[var(--ink-muted)] hover:text-brand-600 dark:hover:text-brand-300 hover:border-brand-200 dark:hover:border-brand-500/30 transition-colors"
-          aria-label={`${t("nav_cart")} (${count})`}
-        >
-          <ShoppingCart className="w-4 h-4" strokeWidth={2} />
-          {count > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-accent-500 text-[#14182b] text-[8px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-[var(--surface-card)]">
-              {count > 99 ? "99+" : count}
-            </span>
-          )}
-        </Link>
 
         <Link
           href="/login"
