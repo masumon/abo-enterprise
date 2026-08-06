@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Plus, Trash2, ArrowUp, ArrowDown, Save, Loader2 } from "lucide-react";
+import { Plus, Trash2, ArrowUp, ArrowDown, Save, Loader2, Languages } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import HomepageSectionNav from "@/components/admin/HomepageSectionNav";
-import { adminApi } from "@/lib/api";
+import { adminApi, adminBlogApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import { useLanguageStore } from "@/store/language";
@@ -47,6 +47,35 @@ export default function AdminAnnouncementsPage() {
   const [items, setItems] = useState<CmsAnnouncement[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [translating, setTranslating] = useState(false);
+
+  // Fill every announcement's empty Bengali text from its English text
+  // (never overwrites text already written).
+  const autoTranslateAll = async () => {
+    if (translating) return;
+    setTranslating(true);
+    try {
+      const next = await Promise.all(
+        items.map(async (it) => {
+          const en = (it.en ?? "").trim();
+          if (!en || (it.bn ?? "").trim()) return it;
+          try {
+            const r = await adminBlogApi.translate(en, "en", "bn");
+            const bnText = r.data?.data?.translated?.trim();
+            return bnText ? { ...it, bn: bnText } : it;
+          } catch {
+            return it;
+          }
+        })
+      );
+      setItems(next);
+      toast("success", bn ? "বাংলা অনুবাদ পূরণ হয়েছে — সেভ করুন" : "Bangla filled — review & save");
+    } catch {
+      toast("error", bn ? "অনুবাদ ব্যর্থ" : "Translation failed");
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   useEffect(() => {
     adminApi
@@ -91,10 +120,16 @@ export default function AdminAnnouncementsPage() {
         descriptionBn="অফার, নোটিশ ও তথ্য — স্টাইলসহ"
         className="mb-6"
         actions={
-          <button type="button" onClick={save} disabled={saving} className="btn btn-brand btn-sm disabled:opacity-60">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {bn ? "সংরক্ষণ" : "Save"}
-          </button>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={autoTranslateAll} disabled={translating || saving} className="btn btn-outline btn-sm gap-1.5 disabled:opacity-60" title="প্রতিটি ঘোষণার খালি বাংলা ঘর English থেকে অটো-পূরণ করবে">
+              {translating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
+              {bn ? "বাংলা অনুবাদ" : "Translate"}
+            </button>
+            <button type="button" onClick={save} disabled={saving} className="btn btn-brand btn-sm disabled:opacity-60">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {bn ? "সংরক্ষণ" : "Save"}
+            </button>
+          </div>
         }
       />
 
