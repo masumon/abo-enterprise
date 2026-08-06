@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, PackageX } from "lucide-react";
 import { ordersApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
@@ -57,7 +57,8 @@ export default function OrderDetailPage() {
         {loading ? (
           <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 text-brand-500 animate-spin" /></div>
         ) : error || !order ? (
-          <div className="p-8 text-center text-muted rounded-2xl border border-gray-100 bg-white">
+          <div className="p-8 text-center text-muted rounded-2xl border border-gray-100 dark:border-white/10 bg-white dark:bg-[var(--surface-card)]">
+            <PackageX className="w-8 h-8 text-gray-300 dark:text-white/20 mx-auto mb-3" aria-hidden />
             <p role="alert">{lang === "bn" ? "অর্ডার পাওয়া যায়নি" : "Order not found"}</p>
           </div>
         ) : (

@@ -95,10 +95,10 @@ const NAV_GROUPS = [
 
 // Cycles the CMS-driven trust badges through 4 accent tiles.
 const TRUST_TILE_STYLES = [
-  "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300",
-  "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
-  "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300",
-  "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300",
+  "bg-accent-50 text-accent-800 dark:bg-accent-500/10 dark:text-accent-300",
+  "bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-300",
+  "bg-accent-100 text-accent-900 dark:bg-accent-500/15 dark:text-accent-200",
+  "bg-brand-100 text-brand-800 dark:bg-brand-500/15 dark:text-brand-200",
 ];
 
 function normalizePhoneDigits(phone: string) {

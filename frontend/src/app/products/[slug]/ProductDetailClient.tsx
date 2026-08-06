@@ -172,7 +172,7 @@ export default function ProductDetailClient({ product }: Props) {
                     </span>
                   </div>
                 )}
-                {discount && <span className="absolute top-3 right-3 badge bg-red-500 text-white z-10">-{discount}%</span>}
+                {discount && <span className="absolute top-3 right-3 badge bg-accent-600 text-white z-10">-{discount}%</span>}
               </div>
               {images.length > 1 && (
                 <div className="flex gap-2 overflow-x-auto">
@@ -225,7 +225,7 @@ export default function ProductDetailClient({ product }: Props) {
                 /* Screen 07 — the saving beside the price, not a sentence under
                    it: the number is the argument, and a pill puts it where the
                    eye already is. */
-                <span className="inline-flex items-center self-start px-2.5 py-1 mb-4 rounded-full text-xs font-bold bg-red-50 text-red-700 dark:bg-red-900/25 dark:text-red-300">
+                <span className="inline-flex items-center self-start px-2.5 py-1 mb-4 rounded-full text-xs font-bold bg-accent-50 text-accent-800 dark:bg-accent-500/20 dark:text-accent-300">
                   {lang === "bn" ? `সাশ্রয় ${formatPrice(savings)}` : `Save ${formatPrice(savings)}`}
                 </span>
               )}

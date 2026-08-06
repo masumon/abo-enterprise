@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   Printer, Code2, Megaphone, Briefcase,
   Bot, Cog, Smartphone, FileText, Wrench, Monitor, Globe, Headphones, ChevronRight,
-  Search as SearchIcon, SlidersHorizontal,
+  Search as SearchIcon, SlidersHorizontal, AlertCircle,
   type LucideIcon,
 } from "lucide-react";
 import type { Category, Service } from "@/types";
@@ -18,6 +18,7 @@ import { ServiceCardSkeleton } from "@/components/common/Skeletons";
 import { cn, formatPrice } from "@/lib/utils";
 import { turnaroundLabel } from "@/lib/fulfilment";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
+import EmptyState from "@/components/ui/EmptyState";
 import type { CatalogSource } from "@/lib/catalogLoader";
 import { loadServices, peekCachedServices } from "@/lib/catalogLoader";
 import { cacheApiResponse, servicesCacheKey } from "@/lib/apiCache";
@@ -606,15 +607,19 @@ export default function ServicesPageClient({
             </div>
           ) : error ? (
             <div className="text-center py-16 enterprise-card p-8" role="alert">
+              <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-3" aria-hidden />
               <p className="text-muted mb-4">{lang === "bn" ? "সেবা লোড করা যায়নি" : "Could not load services"}</p>
               <button type="button" onClick={() => load(1, category, search, sort)} className="btn btn-brand btn-md">
                 {lang === "bn" ? "আবার চেষ্টা" : "Retry"}
               </button>
             </div>
           ) : services.length === 0 ? (
-            <div className="text-center py-16 text-muted">
-              {lang === "bn" ? "কোনো সেবা পাওয়া যায়নি" : "No services found"}
-            </div>
+            <EmptyState
+              icon={SearchIcon}
+              title={lang === "bn" ? "কোনো সেবা পাওয়া যায়নি" : "No services found"}
+              actionLabel={lang === "bn" ? "ফিল্টার মুছুন" : "Clear filters"}
+              onAction={() => { setCategory(null); setSort(""); setPage(1); }}
+            />
           ) : (
             <>
               <p className="text-sm text-muted mb-4">{total} {lang === "bn" ? "টি সেবা" : "services"}</p>

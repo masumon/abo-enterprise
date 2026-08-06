@@ -9,7 +9,7 @@ import { bookingUploadsApi, isQueuedResponse, serviceBookingsApi, servicesApi } 
 import { apiErrorMessage } from "@/lib/apiError";
 import { saveOrderSnapshot } from "@/lib/orderSnapshot";
 import type { Service, ServiceBookingFormField, ServiceSlot } from "@/types";
-import { Loader2 } from "lucide-react";
+import { Loader2, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { useDistrictUpazila, BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
@@ -779,8 +779,9 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
                   <p className="text-xs text-muted mt-1">{L("Uploading…", "আপলোড হচ্ছে…")}</p>
                 )}
                 {typeof value === "string" && value && !uploading[field.field_name] && (
-                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                    ✓ {L("File attached", "ফাইল সংযুক্ত হয়েছে")}
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                    <Check className="w-3 h-3" aria-hidden />
+                    {L("File attached", "ফাইল সংযুক্ত হয়েছে")}
                   </p>
                 )}
               </div>

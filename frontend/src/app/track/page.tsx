@@ -40,21 +40,21 @@ type Tracking = OrderTracking | BookingTracking;
 // Real backend enums (backend/app/api/v1/routes/orders.py, bulk.py for orders;
 // booking status set mirrors the same admin-facing vocabulary) - not guessed.
 const ORDER_STATUS_LABEL: Record<string, { en: string; bn: string; color: string }> = {
-  pending: { en: "Pending", bn: "অপেক্ষমাণ", color: "bg-blue-100 text-blue-700" },
-  confirmed: { en: "Confirmed", bn: "নিশ্চিত হয়েছে", color: "bg-indigo-100 text-indigo-700" },
-  processing: { en: "Processing", bn: "প্রক্রিয়াধীন", color: "bg-amber-100 text-amber-700" },
-  shipped: { en: "Shipped", bn: "পাঠানো হয়েছে", color: "bg-orange-100 text-orange-700" },
-  delivered: { en: "Delivered", bn: "ডেলিভার হয়েছে", color: "bg-green-100 text-green-700" },
-  cancelled: { en: "Cancelled", bn: "বাতিল হয়েছে", color: "bg-red-100 text-red-700" },
+  pending: { en: "Pending", bn: "অপেক্ষমাণ", color: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300" },
+  confirmed: { en: "Confirmed", bn: "নিশ্চিত হয়েছে", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300" },
+  processing: { en: "Processing", bn: "প্রক্রিয়াধীন", color: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300" },
+  shipped: { en: "Shipped", bn: "পাঠানো হয়েছে", color: "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300" },
+  delivered: { en: "Delivered", bn: "ডেলিভার হয়েছে", color: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300" },
+  cancelled: { en: "Cancelled", bn: "বাতিল হয়েছে", color: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300" },
 };
 
 const BOOKING_STATUS_LABEL: Record<string, { en: string; bn: string; color: string }> = {
-  pending: { en: "Pending", bn: "অপেক্ষমাণ", color: "bg-blue-100 text-blue-700" },
-  confirmed: { en: "Confirmed", bn: "নিশ্চিত হয়েছে", color: "bg-indigo-100 text-indigo-700" },
-  in_progress: { en: "In Progress", bn: "চলমান", color: "bg-amber-100 text-amber-700" },
-  on_hold: { en: "On Hold", bn: "স্থগিত", color: "bg-orange-100 text-orange-700" },
-  completed: { en: "Completed", bn: "সম্পন্ন হয়েছে", color: "bg-green-100 text-green-700" },
-  cancelled: { en: "Cancelled", bn: "বাতিল হয়েছে", color: "bg-red-100 text-red-700" },
+  pending: { en: "Pending", bn: "অপেক্ষমাণ", color: "bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-300" },
+  confirmed: { en: "Confirmed", bn: "নিশ্চিত হয়েছে", color: "bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300" },
+  in_progress: { en: "In Progress", bn: "চলমান", color: "bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300" },
+  on_hold: { en: "On Hold", bn: "স্থগিত", color: "bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300" },
+  completed: { en: "Completed", bn: "সম্পন্ন হয়েছে", color: "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-300" },
+  cancelled: { en: "Cancelled", bn: "বাতিল হয়েছে", color: "bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-300" },
 };
 
 export default function TrackingPage() {
