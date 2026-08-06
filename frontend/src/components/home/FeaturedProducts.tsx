@@ -105,7 +105,7 @@ export default function FeaturedProducts() {
       </div>
 
       {/* Products Section */}
-      <section id="featured-products" className="py-8 lg:py-12 bg-white dark:bg-[var(--surface)]">
+      <section id="featured-products" className="py-6 lg:py-9 bg-white dark:bg-[var(--surface)]">
         {/* Category Tabs Component */}
         <div className="container mx-auto px-3 lg:px-4 mb-6">
           <ProductCategoryTabs

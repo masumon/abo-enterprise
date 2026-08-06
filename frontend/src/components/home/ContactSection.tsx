@@ -26,7 +26,7 @@ export default function ContactSection() {
     : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 9:00 PM");
 
   return (
-    <section id="contact" className="py-12 lg:py-16 bg-white dark:bg-[var(--surface)]">
+    <section id="contact" className="py-8 lg:py-10 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
         <div className="mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-heading mb-2">

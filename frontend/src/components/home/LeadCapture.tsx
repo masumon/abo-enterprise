@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { BD_PHONE_REGEX, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { trackEvent } from "@/components/analytics/GoogleAnalytics";
-import { Send, CheckCircle, Bot, Code, Cog } from "lucide-react";
+import { Send, CheckCircle, Bot, Code, Cog, ChevronDown } from "lucide-react";
 import { isQueuedResponse, serviceLeadsApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
@@ -52,6 +52,7 @@ const LEAD_TYPES = [
 
 export default function LeadCapture() {
   const { lang } = useLanguageStore();
+  const [isOpen, setIsOpen] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [queued, setQueued] = useState(false);
   const [reference, setReference] = useState<string | null>(null);
@@ -104,7 +105,7 @@ export default function LeadCapture() {
   };
 
   return (
-    <section id="consultation" className="py-12 lg:py-16 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+    <section id="consultation" className="py-8 lg:py-10 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left side - Form */}
@@ -158,6 +159,24 @@ export default function LeadCapture() {
                 </p>
                 {!queued && reference && <ReferenceBadge reference={reference} />}
               </div>
+            ) : !isOpen ? (
+              <button
+                type="button"
+                onClick={() => setIsOpen(true)}
+                className="w-full flex items-center justify-between gap-4 bg-white dark:bg-white/10 backdrop-blur-sm rounded-2xl p-6 lg:p-8 text-left hover:shadow-lg transition-shadow"
+              >
+                <span>
+                  <span className="block text-base font-bold text-heading">
+                    {lang === "bn" ? "বিনামূল্যে পরামর্শ পান" : "Get Free Consultation"}
+                  </span>
+                  <span className="block text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                    {lang === "bn" ? "ফর্মটি খুলতে ক্লিক করুন — ১ মিনিট সময় লাগবে" : "Tap to open the form — takes about a minute"}
+                  </span>
+                </span>
+                <span className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-50 dark:bg-brand-500/20 flex items-center justify-center">
+                  <ChevronDown className="w-5 h-5 text-brand-600 dark:text-brand-300" aria-hidden />
+                </span>
+              </button>
             ) : (
               <form
                 onSubmit={handleSubmit(onSubmit)}
