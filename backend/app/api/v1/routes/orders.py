@@ -67,8 +67,31 @@ async def _validate_and_reserve_stock(db: AsyncSession, items: list) -> dict[str
                 detail=f"Insufficient stock for {product.name_en}. Available: {product.stock_quantity}",
             )
         product.stock_quantity -= item_data.quantity
-        trusted_prices[str(idx)] = float(product.price)
+        trusted_prices[str(idx)] = _effective_unit_price(product)
     return trusted_prices
+
+
+def _effective_unit_price(product: Product) -> float:
+    """The price the customer is actually charged for one unit.
+
+    A product in a live flash sale sells at its discounted price, so the order
+    (and the invoice derived from it) must use that price — not the regular
+    one. Previously the regular `price` was always taken, so a customer who
+    bought from the flash sale saw the sale price at checkout but was billed
+    the full price. A sale counts as live only when flagged, actually
+    discounted, and either open-ended or not yet expired — the same rule the
+    catalogue uses to advertise it (see products list `flash_sale` filter).
+    """
+    if (
+        product.is_flash_sale
+        and product.flash_sale_price is not None
+        and (
+            product.flash_sale_ends_at is None
+            or product.flash_sale_ends_at > datetime.now(timezone.utc)
+        )
+    ):
+        return float(product.flash_sale_price)
+    return float(product.price)
 
 
 async def _server_side_discount(db: AsyncSession, coupon_code: str | None, subtotal: float) -> float:

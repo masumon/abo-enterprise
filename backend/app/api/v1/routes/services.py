@@ -8,6 +8,7 @@ from app.core.http_cache import etag_json_response
 from app.core.taxonomy import descendant_ids_for_slug
 from app.core.json_util import to_json_safe
 from app.core.security import require_role
+from app.core.blog_links import set_blogs_for_service, get_blog_ids_for_service
 from app.models.models import (
     Service,
     ServicePricingTier,
@@ -328,9 +329,13 @@ async def create_service(
     )
 
     values = payload.model_dump()
+    blog_ids = values.pop("blog_ids", None)
     await _sync_category_cache(db, values)
     service = Service(**values)
     db.add(service)
+    await db.flush()
+    if blog_ids is not None:
+        await set_blogs_for_service(db, service.id, blog_ids)
     await db.commit()
 
     # Log activity
@@ -444,6 +449,9 @@ async def update_service(
 
     # Update fields
     update_data = payload.dict(exclude_unset=True)
+    # Blog links live in a separate table — pull them out before the column
+    # loop below (Service has no blog_ids attribute).
+    blog_ids = update_data.pop("blog_ids", None)
 
     # Slug is editable, but must stay unique across live services.
     new_slug = update_data.get("slug")
@@ -483,6 +491,9 @@ async def update_service(
 
     for field, value in update_data.items():
         setattr(service, field, value)
+
+    if blog_ids is not None:
+        await set_blogs_for_service(db, service.id, blog_ids)
 
     await db.commit()
 

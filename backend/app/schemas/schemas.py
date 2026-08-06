@@ -85,6 +85,9 @@ class ProductCreate(ProductBase):
     # Capability overrides can be set at creation too (additive; default NULL).
     is_orderable: bool | None = None
     is_bookable: bool | None = None
+    # Blog posts this product is linked to (many-to-many; handled separately
+    # from the product row — see core/blog_links.py).
+    blog_ids: list[uuid.UUID] | None = None
 
 
 class ProductUpdate(BaseModel):
@@ -128,6 +131,9 @@ class ProductUpdate(BaseModel):
     low_stock_threshold: int | None = None
     is_best_seller: bool | None = None
     rating: float | None = None
+    # Blog posts this product is linked to (many-to-many; NULL = leave links
+    # untouched, [] = clear them). Handled in core/blog_links.py, not a column.
+    blog_ids: list[uuid.UUID] | None = None
 
 
 class ProductOut(ProductBase):
@@ -613,6 +619,8 @@ class ServiceCreate(ServiceBase):
     # Taxonomy links can be set at creation too (additive; default NULL).
     category_id: uuid.UUID | None = None
     subcategory_id: uuid.UUID | None = None
+    # Blog posts this service is linked to (many-to-many; see core/blog_links.py).
+    blog_ids: list[uuid.UUID] | None = None
 
     _no_negative_prices = field_validator(*_PRICE_FIELDS)(_reject_negative)
 
@@ -674,6 +682,9 @@ class ServiceUpdate(BaseModel):
     requirements: list[str] | None = None
     required_documents: list[str] | None = None
     faq: list[dict] | None = None
+    # Blog posts this service is linked to (many-to-many; NULL = leave links
+    # untouched, [] = clear them). Handled in core/blog_links.py, not a column.
+    blog_ids: list[uuid.UUID] | None = None
 
     _no_negative_prices = field_validator(*_PRICE_FIELDS)(_reject_negative)
 
@@ -1174,7 +1185,10 @@ class BlogPostBase(BaseModel):
 
 
 class BlogPostCreate(BlogPostBase):
-    pass
+    # Products & services this post features (many-to-many; see
+    # core/blog_links.py). Optional — omitted means no links.
+    product_ids: list[UUID] | None = None
+    service_ids: list[UUID] | None = None
 
 
 class BlogPostUpdate(BaseModel):
@@ -1197,12 +1211,19 @@ class BlogPostUpdate(BaseModel):
     seo_keywords: str | None = None
     canonical_url: str | None = None
     og_image: str | None = None
+    # Linked products & services (many-to-many; NULL = leave untouched,
+    # [] = clear). Handled in core/blog_links.py, not columns.
+    product_ids: list[UUID] | None = None
+    service_ids: list[UUID] | None = None
 
 
 class BlogPostOut(BlogPostBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
+    # Populated by the admin GET so the editor can pre-tick linked items.
+    product_ids: list[UUID] = []
+    service_ids: list[UUID] = []
 
     model_config = {"from_attributes": True}
 

@@ -7,10 +7,11 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
-import { productsApi, categoriesApi, adminApi, downloadCsv, downloadPdf } from "@/lib/api";
+import { productsApi, categoriesApi, adminApi, adminBlogApi, downloadCsv, downloadPdf } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
 import LivePreview from "@/components/admin/LivePreview";
+import LinkChecklist, { type LinkOption } from "@/components/admin/LinkChecklist";
 import ProductCard from "@/components/features/ProductCard";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
@@ -136,6 +137,12 @@ export default function AdminProductsPage() {
   const importInputRef = useRef<HTMLInputElement>(null);
   const [blogRailEnabled, setBlogRailEnabled] = useState(true);
   const [blogRailSaving, setBlogRailSaving] = useState(false);
+  // Blog posts this product can be linked to (many-to-many). Managed outside
+  // react-hook-form since it's a toggle list, not a plain input.
+  const [blogOptions, setBlogOptions] = useState<LinkOption[]>([]);
+  const [blogOptionsLoading, setBlogOptionsLoading] = useState(false);
+  const [productBlogIds, setProductBlogIds] = useState<string[]>([]);
+  const [linkedBlogsLoading, setLinkedBlogsLoading] = useState(false);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -204,6 +211,22 @@ export default function AdminProductsPage() {
       .catch(() => {});
   }, []);
 
+  // Blog options for the per-product "linked blogs" picker, loaded once.
+  useEffect(() => {
+    let alive = true;
+    setBlogOptionsLoading(true);
+    adminBlogApi.list({ per_page: 100 })
+      .then((r) => {
+        if (!alive) return;
+        setBlogOptions((r.data.data ?? []).map((b) => ({
+          id: String(b.id), label: b.title_en || b.title_bn || b.slug, sublabel: b.category,
+        })));
+      })
+      .catch(() => { if (alive) setBlogOptions([]); })
+      .finally(() => { if (alive) setBlogOptionsLoading(false); });
+    return () => { alive = false; };
+  }, []);
+
   const toggleBlogRail = async () => {
     const next = !blogRailEnabled;
     setBlogRailEnabled(next);
@@ -241,6 +264,7 @@ export default function AdminProductsPage() {
     setImageUrl("");
     setGalleryImages([]);
     setSpecs([]);
+    setProductBlogIds([]);
     setSeoOpen(false);
     setExtOpen(false);
     setShowModal(true);
@@ -248,6 +272,15 @@ export default function AdminProductsPage() {
 
   const openEdit = (p: Product) => {
     setEditing(p);
+    // Load the blog posts this product is already linked to (for the ticks).
+    setProductBlogIds([]);
+    if (p.id) {
+      setLinkedBlogsLoading(true);
+      adminBlogApi.productLinks(p.id)
+        .then((r) => setProductBlogIds(r.data.data?.blog_ids ?? []))
+        .catch(() => setProductBlogIds([]))
+        .finally(() => setLinkedBlogsLoading(false));
+    }
     reset({
       slug: p.slug,
       name_en: p.name_en,
@@ -325,6 +358,7 @@ export default function AdminProductsPage() {
     setImageUrl(p.image_url ?? "");
     setGalleryImages([]);
     setSpecs(Object.entries((p.specifications as Record<string, string>) ?? {}).map(([k, v]) => ({ k, v: String(v) })));
+    setProductBlogIds([]); // a clone starts with no blog links
     setSeoOpen(false);
     setExtOpen(false);
     setShowModal(true);
@@ -346,6 +380,8 @@ export default function AdminProductsPage() {
         images: galleryImages.filter(Boolean),
         specifications: Object.fromEntries(specs.filter((r) => r.k.trim()).map((r) => [r.k.trim(), r.v.trim()])),
         flash_sale_ends_at: flash_sale_ends_at ? new Date(flash_sale_ends_at).toISOString() : null,
+        // Blog posts this product is featured in (many-to-many; replaces links).
+        blog_ids: productBlogIds,
       } as Partial<Product>;
       if (editing) {
         await productsApi.update(editing.id!, payload);
@@ -942,6 +978,29 @@ export default function AdminProductsPage() {
                   <input {...register("is_bookable")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
                   <span className="text-sm text-gray-700">Also bookable</span>
                 </label>
+              </div>
+
+              {/* Linked blog posts — many-to-many. Ticking a blog features this
+                  product in that article's rail; the same link shows in the blog
+                  editor. */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                  Blog
+                  {productBlogIds.length > 0 && (
+                    <span className="ml-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-brand-600 text-white text-[10px] font-bold">
+                      {productBlogIds.length}
+                    </span>
+                  )}
+                </label>
+                <p className="text-xs text-gray-500 mb-2">Tick the blog posts to feature this product in.</p>
+                <LinkChecklist
+                  options={blogOptions}
+                  selected={productBlogIds}
+                  loading={blogOptionsLoading || linkedBlogsLoading}
+                  emptyText="No blog posts"
+                  searchPlaceholder="Search blog posts…"
+                  onToggle={(id) => setProductBlogIds((cur) => cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id])}
+                />
               </div>
             </form>
 

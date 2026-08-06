@@ -54,6 +54,9 @@ export interface Product {
   og_image?: string;
   created_at?: string;
   updated_at?: string;
+  /** Blog posts this product is linked to (many-to-many). Sent on save to
+   * replace the links; NULL/undefined leaves them untouched. */
+  blog_ids?: string[];
 }
 
 export interface PromoSlide {
@@ -261,6 +264,9 @@ export interface Service {
   faq?: { question: string; answer: string }[];
   created_at?: string;
   updated_at?: string;
+  /** Blog posts this service is linked to (many-to-many). Sent on save to
+   * replace the links; NULL/undefined leaves them untouched. */
+  blog_ids?: string[];
 }
 
 export interface Booking {
@@ -340,6 +346,10 @@ export interface BlogPost {
   og_image?: string;
   created_at?: string;
   updated_at?: string;
+  // Linked products & services (many-to-many). Present on the admin GET so the
+  // editor can pre-tick them; sent back on save to replace the links.
+  product_ids?: string[];
+  service_ids?: string[];
 }
 
 export interface AdminUser {
