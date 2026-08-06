@@ -81,7 +81,7 @@ export default function Portfolio() {
             when the viewer prefers reduced motion). Tiles are duplicated so the
             loop is seamless; the copies are hidden from a11y. 24/7 Support opens
             WhatsApp. */}
-        <div className="bg-gradient-to-r from-brand-50 to-purple-50 dark:from-brand-900/20 dark:to-purple-900/20 rounded-2xl p-4 sm:p-6">
+        <div className="bg-gradient-to-r from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/10 rounded-2xl p-4 sm:p-6">
           <div className="marquee-viewport">
             <div className="marquee-track gap-3 sm:gap-4 py-0.5" style={{ ["--marquee-duration" as string]: "22s" }}>
               {[...FEATURES, ...FEATURES].map((feature, idx) => {

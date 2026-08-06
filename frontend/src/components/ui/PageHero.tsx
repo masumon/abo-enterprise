@@ -80,7 +80,7 @@ export default function PageHero({
             )
           : cn(
               "page-surface border-b border-gray-100 dark:border-white/10 py-5 md:py-16 pt-[calc(var(--navbar-offset)+1rem)] md:pt-[calc(var(--navbar-offset)+3rem)]",
-              !hasImage && "bg-gradient-to-b from-slate-50 to-white dark:from-[#0f1a2e] dark:to-[#0a1628]"
+              !hasImage && "bg-gradient-to-b from-brand-50 to-white dark:from-brand-900 dark:to-[#0a1020]"
             )
       )}
       style={sectionStyle}

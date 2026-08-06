@@ -140,6 +140,7 @@ export default function Footer() {
     "play_store_url",
     "app_store_url",
     "trade_license",
+    "footer_payment_image_url",
     SITE_TRUST_BADGES_KEY,
     SITE_REGISTRATIONS_KEY,
   ]);
@@ -175,6 +176,10 @@ export default function Footer() {
 
   const playStoreUrl = getSettingValue(settings, "play_store_url") || "/";
   const appStoreUrl = getSettingValue(settings, "app_store_url") || "/";
+  // Admin-uploaded "Pay With" strip (Admin → Settings → Contact & Location).
+  // When set it replaces the built-in payment-brand marks and scales to fit
+  // any screen; empty falls back to the marks so nothing ever goes blank.
+  const paymentImage = getSettingValue(settings, "footer_payment_image_url");
 
   const trustBadges = getTrustBadges(settings, []);
   const registrationsList = getRegistrations(settings, []);
@@ -261,7 +266,7 @@ export default function Footer() {
         {/* Quick-action tiles */}
         <div className="grid grid-cols-4 gap-2 mb-5">
           <a href={`tel:+${phoneDigits}`} className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors">
-            <span className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+            <span className="w-8 h-8 rounded-xl bg-brand-500/15 text-brand-300 flex items-center justify-center">
               <Phone className="w-3.5 h-3.5" aria-hidden />
             </span>
             <span className="text-[10px] font-bold text-white text-center leading-tight">{bn ? "কল করুন" : "Call"}</span>
@@ -275,13 +280,13 @@ export default function Footer() {
             </a>
           )}
           <a href={`mailto:${emailAddr}`} className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors">
-            <span className="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center">
+            <span className="w-8 h-8 rounded-xl bg-brand-500/15 text-brand-300 flex items-center justify-center">
               <Mail className="w-3.5 h-3.5" aria-hidden />
             </span>
             <span className="text-[10px] font-bold text-white text-center leading-tight">{bn ? "ইমেইল" : "Email"}</span>
           </a>
           <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors">
-            <span className="w-8 h-8 rounded-xl bg-pink-500/15 text-pink-400 flex items-center justify-center">
+            <span className="w-8 h-8 rounded-xl bg-accent-500/15 text-accent-300 flex items-center justify-center">
               <MapPin className="w-3.5 h-3.5" aria-hidden />
             </span>
             <span className="text-[10px] font-bold text-white text-center leading-tight">{bn ? "ম্যাপ" : "Map"}</span>
@@ -291,7 +296,7 @@ export default function Footer() {
         {/* Business hours + address card */}
         <div className="rounded-2xl bg-white/[0.06] p-4 mb-5 space-y-3">
           <div className="flex items-start gap-3">
-            <span className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0">
+            <span className="w-7 h-7 rounded-lg bg-accent-500/15 text-accent-300 flex items-center justify-center flex-shrink-0">
               <Clock className="w-3.5 h-3.5" aria-hidden />
             </span>
             <div className="min-w-0">
@@ -302,7 +307,7 @@ export default function Footer() {
             </div>
           </div>
           <div className="flex items-start gap-3">
-            <span className="w-7 h-7 rounded-lg bg-pink-500/15 text-pink-400 flex items-center justify-center flex-shrink-0">
+            <span className="w-7 h-7 rounded-lg bg-accent-500/15 text-accent-300 flex items-center justify-center flex-shrink-0">
               <MapPin className="w-3.5 h-3.5" aria-hidden />
             </span>
             <div className="min-w-0">
@@ -361,7 +366,7 @@ export default function Footer() {
         {trustBadges.length > 0 && (
           <div className="pt-5">
             <div className="flex items-center gap-2 mb-3">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+              <span className="w-1.5 h-1.5 rounded-full bg-accent-400" />
               <h2 className="text-sm font-extrabold text-white">
                 {bn ? "আমাদের উপর আস্থা রাখুন" : "Trust Us"}
               </h2>
@@ -386,17 +391,30 @@ export default function Footer() {
           <h2 className="text-[10px] font-extrabold uppercase tracking-wide text-white/40 mb-2">
             {bn ? "পেমেন্ট পদ্ধতি সমূহ" : "Payment Methods"}
           </h2>
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {payKeys.map((key) => {
-              const brand = PAY_BRAND[key];
-              if (!brand) return null;
-              return (
-                <div key={key} className="rounded-lg bg-white p-1.5 shadow-sm" title={brand.label}>
-                  <brand.Mark className="h-4 w-auto max-w-full" />
-                </div>
-              );
-            })}
-          </div>
+          {paymentImage ? (
+            // Admin-uploaded strip: full-width, aspect kept, fits every screen
+            // (especially mobile). White plate so logos on transparent art stay
+            // visible on the dark footer.
+            // eslint-disable-next-line @next/next/no-img-element -- admin-supplied strip at arbitrary size
+            <img
+              src={paymentImage}
+              alt={bn ? "গৃহীত পেমেন্ট পদ্ধতি সমূহ" : "Accepted payment methods"}
+              loading="lazy"
+              className="w-full h-auto max-w-full rounded-xl bg-white p-2 shadow-sm object-contain"
+            />
+          ) : (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {payKeys.map((key) => {
+                const brand = PAY_BRAND[key];
+                if (!brand) return null;
+                return (
+                  <div key={key} className="rounded-lg bg-white p-1.5 shadow-sm" title={brand.label}>
+                    <brand.Mark className="h-4 w-auto max-w-full" />
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Business registrations */}
@@ -408,7 +426,7 @@ export default function Footer() {
             <div className="flex items-center gap-1.5 flex-wrap">
               {registrations.map((r, i) => (
                 <div key={i} className="flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 py-1.5">
-                  <BadgeCheck className="w-3 h-3 text-emerald-400 flex-shrink-0" aria-hidden />
+                  <BadgeCheck className="w-3 h-3 text-brand-300 flex-shrink-0" aria-hidden />
                   <div className="min-w-0">
                     <p className="text-[9.5px] text-white/50 leading-none">
                       {bn ? r.label_bn || r.label_en : r.label_en || r.label_bn}
@@ -423,7 +441,7 @@ export default function Footer() {
 
         {/* Newsletter */}
         {newsletterEnabled && (
-          <div className="mt-5 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-400 p-4 text-white">
+          <div className="mt-5 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-500 p-4 text-white">
             <h3 className="text-sm font-extrabold">
               {bn ? "নিউজলেটারে সাবস্ক্রাইব করুন" : "Subscribe to Newsletter"}
             </h3>
@@ -505,15 +523,15 @@ export default function Footer() {
             &copy; {new Date().getFullYear()} ABO ENTERPRISE. {bn ? "সকল অধিকার সংরক্ষিত।" : "All rights reserved."}
           </p>
           <p className="flex items-center justify-center gap-2 flex-wrap text-xs font-semibold text-white/70">
-            <Link href="/legal/terms" className="hover:text-orange-400 transition-colors">
+            <Link href="/legal/terms" className="hover:text-accent-400 transition-colors">
               {bn ? "শর্তাবলী" : "Terms & Conditions"}
             </Link>
             <span className="text-white/30">·</span>
-            <Link href="/legal/privacy" className="hover:text-orange-400 transition-colors">
+            <Link href="/legal/privacy" className="hover:text-accent-400 transition-colors">
               {bn ? "গোপনীয়তা নীতি" : "Privacy Policy"}
             </Link>
             <span className="text-white/30">·</span>
-            <Link href="/legal/cookies" className="hover:text-orange-400 transition-colors">
+            <Link href="/legal/cookies" className="hover:text-accent-400 transition-colors">
               {bn ? "কুকি নীতি" : "Cookies"}
             </Link>
           </p>
@@ -522,7 +540,7 @@ export default function Footer() {
             {" ❤️ "}
             <span>{bn ? "দ্বারা" : "by"}</span>
             {" "}
-            <a href="https://mumainsumon.netlify.app" target="_blank" rel="noopener noreferrer" className="font-semibold text-white hover:text-orange-400 transition-colors">
+            <a href="https://mumainsumon.netlify.app" target="_blank" rel="noopener noreferrer" className="font-semibold text-white hover:text-accent-400 transition-colors">
               SUMON
             </a>
           </p>

@@ -33,6 +33,7 @@ _PUBLIC_SETTING_PREFIXES = (
     "seo_",
     "hero_",
     "about_",
+    "footer_",
     "contact_",
     "social_",
     "feature_",
