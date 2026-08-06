@@ -10,5 +10,13 @@ export const metadata: Metadata = pageMeta(
 );
 
 export default function ProfileLayout({ children }: { children: React.ReactNode }) {
-  return <CustomerGuard>{children}</CustomerGuard>;
+  return (
+    <CustomerGuard>
+      {/* A faint brand tint marks the account area as its own place, distinct
+          from the storefront pages either side of it. */}
+      <div className="min-h-screen bg-gradient-to-b from-brand-50/60 via-transparent to-transparent dark:from-brand-500/[0.04]">
+        {children}
+      </div>
+    </CustomerGuard>
+  );
 }

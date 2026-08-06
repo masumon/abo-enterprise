@@ -33,25 +33,26 @@ export default function ContactCTABar() {
   ].filter((l) => l.href);
 
   return (
-    <section className="bg-gradient-to-r from-[#0f1a2e] to-[#051529] py-6">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-center sm:text-left">
-            <div className="hidden sm:flex w-11 h-11 rounded-full bg-white/10 items-center justify-center flex-shrink-0">
-              <Phone className="w-5 h-5 text-white" aria-hidden />
+    <section className="relative overflow-hidden bg-gradient-to-r from-[#0f1a2e] to-[#051529] py-7">
+      <div className="absolute -top-10 -left-10 w-40 h-40 rounded-full bg-accent-500/10 blur-3xl pointer-events-none" aria-hidden />
+      <div className="container mx-auto px-4 relative">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-5">
+          <div className="flex items-center gap-3.5 text-center sm:text-left">
+            <div className="hidden sm:flex w-12 h-12 rounded-full bg-white/10 ring-1 ring-white/15 items-center justify-center flex-shrink-0">
+              <Phone className="w-5 h-5 text-accent-400" aria-hidden />
             </div>
             <div>
-              <p className="text-white/80 text-sm">
+              <p className="text-white/70 text-sm">
                 {lang === "bn" ? "যেকোনো প্রশ্নে আমাদের সাথে যোগাযোগ করুন" : "Reach out to us for any question"}
               </p>
               {phoneHref ? (
-                <a href={phoneHref} className="text-white text-xl font-bold hover:text-brand-300 transition-colors">
+                <a href={phoneHref} className="text-white text-xl sm:text-2xl font-bold hover:text-accent-300 transition-colors">
                   {phoneDisplay}
                 </a>
               ) : (
-                <span className="text-white text-xl font-bold">{phoneDisplay}</span>
+                <span className="text-white text-xl sm:text-2xl font-bold">{phoneDisplay}</span>
               )}
-              <p className="text-white/60 text-xs mt-0.5">{hours}</p>
+              <p className="text-white/50 text-xs mt-0.5">{hours}</p>
             </div>
           </div>
 
@@ -64,7 +65,7 @@ export default function ContactCTABar() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className={`w-11 h-11 rounded-full ${bg} flex items-center justify-center text-white transition-colors`}
+                  className={`w-11 h-11 rounded-full ${bg} ring-1 ring-white/15 flex items-center justify-center text-white shadow-lg shadow-black/20 hover:-translate-y-0.5 hover:shadow-xl transition-all`}
                 >
                   <Icon className="w-5 h-5" aria-hidden />
                 </a>
