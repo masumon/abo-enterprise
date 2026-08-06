@@ -2,12 +2,12 @@
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Plus, Pencil, Trash2, X, Images, ExternalLink } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, X, Images, ExternalLink, Languages } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import HomepageSectionNav from "@/components/admin/HomepageSectionNav";
 import ImageUpload from "@/components/admin/ImageUpload";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
-import { promoSlidesApi } from "@/lib/api";
+import { promoSlidesApi, adminBlogApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import type { PromoSlide } from "@/types";
 import { useToastStore } from "@/store/toast";
@@ -45,6 +45,25 @@ export default function AdminPromoSlidesPage() {
   const [slides, setSlides] = useState<PromoSlide[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<PromoSlide> | null>(null);
+  const [translating, setTranslating] = useState(false);
+
+  // Fill the empty Bengali caption from the English one (never overwrites).
+  const autoTranslate = async () => {
+    if (!editing || translating) return;
+    const en = (editing.title_en ?? "").trim();
+    if (!en || (editing.title_bn ?? "").trim()) { toast("info", "অনুবাদের মতো কিছু নেই"); return; }
+    setTranslating(true);
+    try {
+      const r = await adminBlogApi.translate(en, "en", "bn");
+      const bnText = r.data?.data?.translated?.trim();
+      if (bnText) { setEditing((prev) => prev ? { ...prev, title_bn: bnText } : prev); toast("success", "বাংলা অনুবাদ পূরণ হয়েছে"); }
+      else toast("error", "অনুবাদ পাওয়া যায়নি");
+    } catch {
+      toast("error", "অনুবাদ ব্যর্থ — আবার চেষ্টা করুন");
+    } finally {
+      setTranslating(false);
+    }
+  };
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<{ id: string } | null>(null);
@@ -295,7 +314,13 @@ export default function AdminPromoSlidesPage() {
                   <input value={editing.title_en ?? ""} onChange={(e) => set("title_en", e.target.value)} className="input w-full text-sm" />
                 </div>
                 <div>
-                  <label className="form-label">Caption (বাংলা)</label>
+                  <label className="form-label flex items-center justify-between gap-2">
+                    Caption (বাংলা)
+                    <button type="button" onClick={autoTranslate} disabled={translating} className="text-brand-600 hover:text-brand-700 inline-flex items-center gap-1 text-[11px] font-semibold disabled:opacity-50" title="English থেকে অটো-অনুবাদ">
+                      {translating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Languages className="w-3.5 h-3.5" />}
+                      অনুবাদ
+                    </button>
+                  </label>
                   <input value={editing.title_bn ?? ""} onChange={(e) => set("title_bn", e.target.value)} className="input w-full text-sm" dir="auto" />
                 </div>
               </div>

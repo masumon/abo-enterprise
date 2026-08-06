@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ChevronDown,
   FolderTree,
+  Languages,
   Loader2,
   Pencil,
   Plus,
@@ -14,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { categoriesAdminApi } from "@/lib/api";
+import { categoriesAdminApi, adminBlogApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import type { Category, Subcategory } from "@/types";
@@ -123,7 +124,26 @@ export default function AdminCategoriesPage() {
   const [visibleCount, setVisibleCount] = useState(PAGE_STEP);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [translating, setTranslating] = useState(false);
   const toast = useToastStore((s) => s.push);
+
+  // Fill the empty Bengali name from the English one (never overwrites).
+  const autoTranslate = async () => {
+    if (translating) return;
+    const en = form.name_en.trim();
+    if (!en || form.name_bn.trim()) { toast("info", "অনুবাদের মতো কিছু নেই"); return; }
+    setTranslating(true);
+    try {
+      const r = await adminBlogApi.translate(en, "en", "bn");
+      const bnText = r.data?.data?.translated?.trim();
+      if (bnText) { setForm((p) => ({ ...p, name_bn: bnText })); toast("success", "বাংলা অনুবাদ পূরণ হয়েছে"); }
+      else toast("error", "অনুবাদ পাওয়া যায়নি");
+    } catch {
+      toast("error", "অনুবাদ ব্যর্থ — আবার চেষ্টা করুন");
+    } finally {
+      setTranslating(false);
+    }
+  };
   const editorRef = useFocusTrap(editor !== null, () => setEditor(null));
 
   const load = useCallback(async () => {
@@ -553,7 +573,12 @@ export default function AdminCategoriesPage() {
               <input value={form.name_en} onChange={(e) => setForm((p) => ({ ...p, name_en: e.target.value, slug: p.slug || slugify(e.target.value) }))} className={INP_CLS} placeholder="Fast Chargers" />
             </Field>
             <Field label="নাম (বাংলা)">
-              <input value={form.name_bn} onChange={(e) => setForm((p) => ({ ...p, name_bn: e.target.value }))} className={INP_CLS} placeholder="ফাস্ট চার্জার" />
+              <div className="flex items-center gap-2">
+                <input value={form.name_bn} onChange={(e) => setForm((p) => ({ ...p, name_bn: e.target.value }))} className={INP_CLS} placeholder="ফাস্ট চার্জার" />
+                <button type="button" onClick={autoTranslate} disabled={translating} className="btn btn-outline btn-sm gap-1 flex-shrink-0" title="English থেকে অটো-অনুবাদ">
+                  {translating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
+                </button>
+              </div>
             </Field>
           </div>
 

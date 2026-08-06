@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
 import {
   Loader2, Briefcase, Plus, Pencil, Trash2, X,
-  ToggleLeft, ToggleRight, Star, StarOff, Check, Ban, ChevronDown, ChevronUp,
+  ToggleLeft, ToggleRight, Star, StarOff, Check, Ban, ChevronDown, ChevronUp, Languages,
 } from "lucide-react";
 import { servicesAdminApi, categoriesApi, adminBlogApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -114,6 +114,23 @@ function slugify(t: string) {
   return t.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
 }
 
+// ── Bilingual content helpers (backward-compatible) ──────────────────────────
+// The list blocks (benefits/requirements/documents) store items as {en, bn};
+// a legacy plain string is read as English. In the admin they edit as one line
+// each: "English text | বাংলা টেক্সট" (the bn half is optional).
+type BiPair = { en: string; bn: string };
+const asPair = (x: unknown): BiPair =>
+  typeof x === "string"
+    ? { en: x, bn: "" }
+    : { en: (x as BiPair)?.en ?? "", bn: (x as BiPair)?.bn ?? "" };
+const pairsToText = (items: unknown[] | undefined): string =>
+  (items ?? []).map((x) => { const p = asPair(x); return p.bn ? `${p.en}|${p.bn}` : p.en; }).join("\n");
+const textToPairs = (text: string): BiPair[] =>
+  text.split("\n").filter((l) => l.trim()).map((line) => {
+    const [en, ...rest] = line.split("|");
+    return { en: (en ?? "").trim(), bn: rest.join("|").trim() };
+  });
+
 export default function AdminServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
@@ -122,6 +139,7 @@ export default function AdminServicesPage() {
   const [editing, setEditing] = useState<Partial<Service> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [translating, setTranslating] = useState<null | "basic" | "extended">(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [extOpen, setExtOpen] = useState(false);
@@ -256,6 +274,82 @@ export default function AdminServicesPage() {
     setExtOpen(false);
     setFieldFormOpen(false);
     setNewField(EMPTY_FIELD);
+  };
+
+  // ── Auto-translate (English → বাংলা) ──────────────────────────────────────
+  // Reuses the admin translate endpoint. Only ever FILLS EMPTY Bengali fields —
+  // never overwrites text the admin already wrote, so it is safe to re-run.
+  const translateOne = async (text: string): Promise<string> => {
+    const src = (text ?? "").trim();
+    if (!src) return "";
+    try {
+      const r = await adminBlogApi.translate(src, "en", "bn");
+      return r.data?.data?.translated?.trim() || "";
+    } catch {
+      return "";
+    }
+  };
+
+  const autoTranslateBasic = async () => {
+    if (!editing || translating) return;
+    setTranslating("basic");
+    try {
+      const e = editing;
+      const [name, shortD, desc, longD] = await Promise.all([
+        !e.name_bn?.trim() && e.name_en?.trim() ? translateOne(e.name_en) : Promise.resolve(""),
+        !e.short_description_bn?.trim() && e.short_description_en?.trim() ? translateOne(e.short_description_en) : Promise.resolve(""),
+        !e.description_bn?.trim() && e.description_en?.trim() ? translateOne(e.description_en) : Promise.resolve(""),
+        !e.long_description_bn?.trim() && e.long_description_en?.trim() ? translateOne(e.long_description_en) : Promise.resolve(""),
+      ]);
+      setEditing((prev) => prev ? {
+        ...prev,
+        name_bn: name || prev.name_bn,
+        short_description_bn: shortD || prev.short_description_bn,
+        description_bn: desc || prev.description_bn,
+        long_description_bn: longD || prev.long_description_bn,
+      } : prev);
+      toast("success", "বাংলা অনুবাদ পূরণ হয়েছে — সেভ করার আগে দেখে নিন");
+    } catch {
+      toast("error", "অনুবাদ ব্যর্থ — আবার চেষ্টা করুন");
+    } finally {
+      setTranslating(null);
+    }
+  };
+
+  const autoTranslateExtended = async () => {
+    if (!editing || translating) return;
+    setTranslating("extended");
+    try {
+      const e = editing;
+      // Process steps — fill title_bn/description_bn where empty.
+      const steps = await Promise.all((e.process_steps ?? []).map(async (s) => ({
+        ...s,
+        title_bn: s.title_bn?.trim() ? s.title_bn : await translateOne(s.title ?? ""),
+        description_bn: s.description_bn?.trim() ? s.description_bn : await translateOne(s.description ?? ""),
+      })));
+      // Benefits/requirements/documents — items {en,bn} (or legacy strings).
+      const fillList = (items: (string | { en?: string; bn?: string })[] | undefined) =>
+        Promise.all((items ?? []).map(async (it) => {
+          const en = typeof it === "string" ? it : (it.en ?? "");
+          const bn = typeof it === "string" ? "" : (it.bn ?? "");
+          return { en, bn: bn.trim() ? bn : await translateOne(en) };
+        }));
+      const [benefits, requirements, documents] = await Promise.all([
+        fillList(e.benefits), fillList(e.requirements), fillList(e.required_documents),
+      ]);
+      // FAQ — fill question_bn/answer_bn where empty.
+      const faq = await Promise.all((e.faq ?? []).map(async (f) => ({
+        ...f,
+        question_bn: f.question_bn?.trim() ? f.question_bn : await translateOne(f.question ?? ""),
+        answer_bn: f.answer_bn?.trim() ? f.answer_bn : await translateOne(f.answer ?? ""),
+      })));
+      setEditing((prev) => prev ? { ...prev, process_steps: steps, benefits, requirements, required_documents: documents, faq } : prev);
+      toast("success", "কন্টেন্ট বাংলায় অনুবাদ হয়েছে — সেভ করার আগে দেখে নিন");
+    } catch {
+      toast("error", "অনুবাদ ব্যর্থ — আবার চেষ্টা করুন");
+    } finally {
+      setTranslating(null);
+    }
   };
 
   const closeEditor = () => { setEditing(null); setIsNew(false); };
@@ -870,7 +964,19 @@ export default function AdminServicesPage() {
 
               {/* ── Descriptions ────────────────────────── */}
               <section className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Descriptions</h3>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Descriptions</h3>
+                  <button
+                    type="button"
+                    onClick={autoTranslateBasic}
+                    disabled={translating !== null}
+                    className="btn btn-outline btn-sm gap-1.5"
+                    title="নাম ও বিবরণের খালি বাংলা ঘরগুলো English থেকে অটো-পূরণ করবে"
+                  >
+                    {translating === "basic" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
+                    বাংলা অনুবাদ
+                  </button>
+                </div>
                 <div>
                   <label className="form-label">Short Description (EN)</label>
                   <textarea value={editing.short_description_en ?? ""} onChange={f("short_description_en")} rows={2} placeholder="One-line summary…" className="input w-full resize-none text-sm" />
@@ -918,78 +1024,97 @@ export default function AdminServicesPage() {
                 </button>
                 {extOpen && (
                   <div className="px-4 py-4 space-y-4">
-                    {/* Process Steps */}
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <p className="text-[11px] text-brand-600 bg-brand-50 dark:bg-brand-500/10 rounded-lg px-3 py-2 flex-1 min-w-[12rem]">
+                        বাইলিঙ্গুয়াল: প্রতিটি লাইনে <b>English | বাংলা</b> — বাংলা অংশ ঐচ্ছিক। বাংলা দিলে সাইটে ভাষা টগলে বাংলা দেখাবে, না দিলে ইংরেজি থাকবে।
+                      </p>
+                      <button
+                        type="button"
+                        onClick={autoTranslateExtended}
+                        disabled={translating !== null}
+                        className="btn btn-outline btn-sm gap-1.5 flex-shrink-0"
+                        title="খালি বাংলা ঘরগুলো English থেকে অটো-পূরণ করবে (আগের লেখা মুছবে না)"
+                      >
+                        {translating === "extended" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
+                        বাংলা অনুবাদ
+                      </button>
+                    </div>
+
+                    {/* Process Steps — step|title_en|desc_en|title_bn|desc_bn */}
                     <div>
-                      <label className="form-label">Process Steps (JSON lines: step|title|description)</label>
+                      <label className="form-label">Process Steps</label>
                       <textarea
                         rows={4}
                         className="input w-full resize-y text-sm font-mono"
-                        placeholder={"1|Discovery|We analyze your requirements\n2|Design|We create a solution plan"}
-                        value={(editing.process_steps ?? []).map((s: { step: number; title: string; description: string }) => `${s.step}|${s.title}|${s.description}`).join("\n")}
+                        placeholder={"1|Discovery|We analyze your requirements|আবিষ্কার|আমরা আপনার প্রয়োজন বিশ্লেষণ করি"}
+                        value={(editing.process_steps ?? []).map((s: { step?: number; title?: string; description?: string; title_bn?: string; description_bn?: string }) => [s.step ?? 1, s.title ?? "", s.description ?? "", s.title_bn ?? "", s.description_bn ?? ""].join("|")).join("\n")}
                         onChange={e => {
-                          const steps = e.target.value.split("\n").filter(Boolean).map(line => {
-                            const [step, title, ...rest] = line.split("|");
-                            return { step: Number(step) || 1, title: title ?? "", description: rest.join("|") ?? "" };
+                          const steps = e.target.value.split("\n").filter((l) => l.trim()).map(line => {
+                            const p = line.split("|");
+                            return { step: Number(p[0]) || 1, title: (p[1] ?? "").trim(), description: (p[2] ?? "").trim(), title_bn: (p[3] ?? "").trim(), description_bn: p.slice(4).join("|").trim() };
                           });
                           setEditing(prev => prev ? { ...prev, process_steps: steps } : prev);
                         }}
                       />
-                      <p className="text-[11px] text-gray-400 mt-1">One step per line: number|title|description</p>
+                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: number|title(EN)|description(EN)|title(বাংলা)|description(বাংলা)</p>
                     </div>
 
-                    {/* Benefits */}
+                    {/* Benefits — English|বাংলা per line */}
                     <div>
-                      <label className="form-label">Benefits (one per line)</label>
+                      <label className="form-label">Benefits</label>
                       <textarea
                         rows={4}
                         className="input w-full resize-y text-sm"
-                        placeholder={"Fast delivery\n24/7 support\nMoney-back guarantee"}
-                        value={(editing.benefits ?? []).join("\n")}
-                        onChange={e => setEditing(prev => prev ? { ...prev, benefits: e.target.value.split("\n").filter(Boolean) } : prev)}
+                        placeholder={"Fast delivery|দ্রুত ডেলিভারি\n24/7 support|২৪/৭ সাপোর্ট"}
+                        value={pairsToText(editing.benefits)}
+                        onChange={e => setEditing(prev => prev ? { ...prev, benefits: textToPairs(e.target.value) } : prev)}
                       />
+                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: English | বাংলা</p>
                     </div>
 
                     {/* Requirements */}
                     <div>
-                      <label className="form-label">Requirements (one per line)</label>
+                      <label className="form-label">Requirements</label>
                       <textarea
                         rows={3}
                         className="input w-full resize-y text-sm"
-                        placeholder={"Active internet connection\nValid email address"}
-                        value={(editing.requirements ?? []).join("\n")}
-                        onChange={e => setEditing(prev => prev ? { ...prev, requirements: e.target.value.split("\n").filter(Boolean) } : prev)}
+                        placeholder={"Active internet connection|সচল ইন্টারনেট সংযোগ"}
+                        value={pairsToText(editing.requirements)}
+                        onChange={e => setEditing(prev => prev ? { ...prev, requirements: textToPairs(e.target.value) } : prev)}
                       />
+                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: English | বাংলা</p>
                     </div>
 
                     {/* Required Documents */}
                     <div>
-                      <label className="form-label">Required Documents (one per line)</label>
+                      <label className="form-label">Required Documents</label>
                       <textarea
                         rows={3}
                         className="input w-full resize-y text-sm"
-                        placeholder={"National ID\nTrade License"}
-                        value={(editing.required_documents ?? []).join("\n")}
-                        onChange={e => setEditing(prev => prev ? { ...prev, required_documents: e.target.value.split("\n").filter(Boolean) } : prev)}
+                        placeholder={"National ID|জাতীয় পরিচয়পত্র"}
+                        value={pairsToText(editing.required_documents)}
+                        onChange={e => setEditing(prev => prev ? { ...prev, required_documents: textToPairs(e.target.value) } : prev)}
                       />
+                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: English | বাংলা</p>
                     </div>
 
-                    {/* FAQ */}
+                    {/* FAQ — q_en|a_en|q_bn|a_bn */}
                     <div>
-                      <label className="form-label">FAQ (JSON lines: question|answer)</label>
+                      <label className="form-label">FAQ</label>
                       <textarea
                         rows={4}
                         className="input w-full resize-y text-sm font-mono"
-                        placeholder={"How long does it take?|Usually 3-5 business days\nDo you offer refunds?|Yes, within 7 days"}
-                        value={(editing.faq ?? []).map((f: { question: string; answer: string }) => `${f.question}|${f.answer}`).join("\n")}
+                        placeholder={"How long does it take?|Usually 3-5 business days|কত সময় লাগে?|সাধারণত ৩-৫ কর্মদিবস"}
+                        value={(editing.faq ?? []).map((f: { question?: string; answer?: string; question_bn?: string; answer_bn?: string }) => [f.question ?? "", f.answer ?? "", f.question_bn ?? "", f.answer_bn ?? ""].join("|")).join("\n")}
                         onChange={e => {
-                          const faq = e.target.value.split("\n").filter(Boolean).map(line => {
-                            const [question, ...rest] = line.split("|");
-                            return { question: question ?? "", answer: rest.join("|") ?? "" };
+                          const faq = e.target.value.split("\n").filter((l) => l.trim()).map(line => {
+                            const p = line.split("|");
+                            return { question: (p[0] ?? "").trim(), answer: (p[1] ?? "").trim(), question_bn: (p[2] ?? "").trim(), answer_bn: p.slice(3).join("|").trim() };
                           });
                           setEditing(prev => prev ? { ...prev, faq } : prev);
                         }}
                       />
-                      <p className="text-[11px] text-gray-400 mt-1">One FAQ per line: question|answer</p>
+                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: question(EN)|answer(EN)|question(বাংলা)|answer(বাংলা)</p>
                     </div>
                   </div>
                 )}

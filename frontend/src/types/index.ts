@@ -257,11 +257,14 @@ export interface Service {
   seo_keywords?: string;
   canonical_url?: string;
   og_image?: string;
-  process_steps?: { step: number; title: string; description: string }[];
-  benefits?: string[];
-  requirements?: string[];
-  required_documents?: string[];
-  faq?: { question: string; answer: string }[];
+  // Content blocks are bilingual & backward-compatible: an item may be a plain
+  // string (legacy = English) or carry optional Bengali (_bn / {en,bn}). The
+  // service detail page picks the language with an English fallback.
+  process_steps?: { step: number; title: string; description: string; title_bn?: string; description_bn?: string }[];
+  benefits?: (string | { en: string; bn?: string })[];
+  requirements?: (string | { en: string; bn?: string })[];
+  required_documents?: (string | { en: string; bn?: string })[];
+  faq?: { question: string; answer: string; question_bn?: string; answer_bn?: string }[];
   created_at?: string;
   updated_at?: string;
   /** Blog posts this service is linked to (many-to-many). Sent on save to
