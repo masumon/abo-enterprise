@@ -65,8 +65,8 @@ export default function ServiceCard({ service, lang = "en", categoryLabel }: Ser
               <span
                 className={
                   needsVisit
-                    ? "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-200"
-                    : "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-200"
+                    ? "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-accent-50 text-accent-800 dark:bg-accent-500/20 dark:text-accent-200"
+                    : "inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 dark:bg-brand-500/20 dark:text-brand-300"
                 }
               >
                 {needsVisit ? <MapPin aria-hidden className="w-3 h-3" /> : <Wifi aria-hidden className="w-3 h-3" />}

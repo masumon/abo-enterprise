@@ -22,13 +22,15 @@ const ICONS: Record<string, LucideIcon> = {
 
 /** Cosmetic accent per card — cycles by position since the CMS JSON only
  * carries an icon name, not a color. */
+// Brand + gold alternation so the row stays lively but on-brand with the rest
+// of the homepage (was a green/blue/purple/orange/yellow/red mix that clashed).
 const COLORS = [
-  { color: "text-green-600 dark:text-green-400", bgColor: "bg-green-50 dark:bg-green-500/10" },
-  { color: "text-blue-600 dark:text-blue-400", bgColor: "bg-blue-50 dark:bg-blue-500/10" },
-  { color: "text-purple-600 dark:text-purple-400", bgColor: "bg-purple-50 dark:bg-purple-500/10" },
-  { color: "text-orange-600 dark:text-orange-400", bgColor: "bg-orange-50 dark:bg-orange-500/10" },
-  { color: "text-yellow-600 dark:text-yellow-400", bgColor: "bg-yellow-50 dark:bg-yellow-500/10" },
-  { color: "text-red-600 dark:text-red-400", bgColor: "bg-red-50 dark:bg-red-500/10" },
+  { color: "text-brand-600 dark:text-brand-300", bgColor: "bg-brand-50 dark:bg-brand-500/10" },
+  { color: "text-accent-600 dark:text-accent-300", bgColor: "bg-accent-50 dark:bg-accent-500/15" },
+  { color: "text-brand-700 dark:text-brand-200", bgColor: "bg-brand-100 dark:bg-brand-500/15" },
+  { color: "text-accent-700 dark:text-accent-200", bgColor: "bg-accent-100 dark:bg-accent-500/20" },
+  { color: "text-brand-600 dark:text-brand-300", bgColor: "bg-brand-50 dark:bg-brand-500/10" },
+  { color: "text-accent-600 dark:text-accent-300", bgColor: "bg-accent-50 dark:bg-accent-500/15" },
 ];
 
 const FALLBACK: CmsReason[] = [

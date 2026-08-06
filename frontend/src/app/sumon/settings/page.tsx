@@ -229,6 +229,7 @@ const SECTIONS: Section[] = [
       { key: "contact_hours_bn", label: "Business Hours (বাংলা)", placeholder: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা" },
       { key: "footer_about_en", label: "Footer About Text (EN)", type: "textarea", hint: "Short company description shown in the site footer", placeholder: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us." },
       { key: "footer_about_bn", label: "Footer About Text (বাংলা)", type: "textarea", placeholder: "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।" },
+      { key: "footer_payment_image_url", label: "Payment Methods Image", upload: true, accept: "image", hint: "ফুটারের 'পেমেন্ট পদ্ধতি সমূহ' — সব পেমেন্ট লোগো একসাথে একটি চওড়া ছবি আপলোড করুন (যেমন SSLCommerz 'Pay With' স্ট্রিপ)। এটি বিল্ট-ইন আইকনের বদলে বসবে এবং মোবাইল/ট্যাব/ডেস্কটপে fit হবে। খালি রাখলে বিল্ট-ইন আইকন দেখাবে।" },
       { key: "google_maps_embed", label: "Google Maps Embed", type: "textarea", hint: "Share → Embed a map", placeholder: "Paste iframe or URL" },
       { key: "google_maps_api_key", label: "Google Maps API Key", placeholder: "AIza..." },
     ],
