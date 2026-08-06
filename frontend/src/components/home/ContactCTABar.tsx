@@ -49,19 +49,19 @@ export default function ContactCTABar() {
   const contactBlock = (
     <div className="flex items-center gap-6 flex-shrink-0 pr-6">
       <div className="flex items-center gap-2.5">
-        <span className="flex w-8 h-8 rounded-full bg-gradient-to-br from-[#f4dfa0] via-[#d4af37] to-[#a3801f] ring-1 ring-white/30 items-center justify-center flex-shrink-0">
+        <span className="flex w-8 h-8 rounded-full bg-gradient-to-br from-[#f4dfa0] via-[#d4af37] to-[#a3801f] ring-1 ring-white/50 shadow-sm shadow-amber-500/20 items-center justify-center flex-shrink-0">
           <Phone className="w-4 h-4 text-black/80" aria-hidden />
         </span>
         <div>
-          <p className="text-[9px] font-bold tracking-[0.12em] uppercase bg-gradient-to-r from-[#f4dfa0] to-[#d4af37] bg-clip-text text-transparent leading-tight">
+          <p className="text-[9px] font-bold tracking-[0.12em] uppercase bg-gradient-to-r from-brand-600 via-fuchsia-600 to-amber-600 bg-clip-text text-transparent leading-tight">
             {lang === "bn" ? "যেকোনো প্রশ্নে আমাদের সাথে যোগাযোগ করুন" : "Reach out to us for any question"}
           </p>
           {phoneHref ? (
-            <a href={phoneHref} className="text-white text-lg font-extrabold tracking-tight hover:text-accent-300 transition-colors">
+            <a href={phoneHref} className="text-heading text-lg font-extrabold tracking-tight hover:text-brand-600 transition-colors">
               {phoneDisplay}
             </a>
           ) : (
-            <span className="text-white text-lg font-extrabold tracking-tight">{phoneDisplay}</span>
+            <span className="text-heading text-lg font-extrabold tracking-tight">{phoneDisplay}</span>
           )}
         </div>
       </div>
@@ -74,7 +74,7 @@ export default function ContactCTABar() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={label}
-              className={`w-10 h-10 rounded-full ${bg} ring-1 ring-white/15 flex items-center justify-center text-white shadow-lg shadow-black/20 flex-shrink-0`}
+              className={`w-10 h-10 rounded-full ${bg} ring-1 ring-black/5 flex items-center justify-center text-white shadow-md shadow-black/10 flex-shrink-0`}
             >
               <Icon className="w-4 h-4" aria-hidden />
             </a>
@@ -85,31 +85,31 @@ export default function ContactCTABar() {
   );
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-[#0b1426] via-[#101d38] to-[#0a1830] py-8">
-      {/* Premium gold hairline top + bottom and soft dual glow. */}
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#d4af37]/50 to-transparent" aria-hidden />
-      <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" aria-hidden />
-      <div className="absolute -top-10 -left-10 w-44 h-44 rounded-full bg-accent-500/15 blur-3xl pointer-events-none" aria-hidden />
-      <div className="absolute -bottom-12 right-0 w-52 h-52 rounded-full bg-[#d4af37]/10 blur-3xl pointer-events-none" aria-hidden />
+    <section className="relative overflow-hidden bg-gradient-to-br from-brand-50 via-white to-amber-50/70 dark:from-[var(--surface)] dark:via-[var(--surface)] dark:to-[var(--surface)] border-y border-[var(--line)] py-8">
+      {/* Soft brand/gold glow — decorative, tuned for a light surface so the bar
+          reads as part of the page, not a dark island. */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-400/40 to-transparent" aria-hidden />
+      <div className="absolute -top-10 -left-10 w-44 h-44 rounded-full bg-brand-400/15 blur-3xl pointer-events-none" aria-hidden />
+      <div className="absolute -bottom-12 right-0 w-52 h-52 rounded-full bg-amber-400/15 blur-3xl pointer-events-none" aria-hidden />
       <div className="container mx-auto px-4 relative">
         {/* Desktop / tablet — static layout, unchanged. */}
         <div className="hidden sm:flex items-center justify-between gap-5">
           <div className="flex items-center gap-3.5">
-            <div className="flex w-12 h-12 rounded-full bg-gradient-to-br from-[#f4dfa0] via-[#d4af37] to-[#a3801f] ring-1 ring-white/30 shadow-lg shadow-[#d4af37]/25 items-center justify-center flex-shrink-0">
+            <div className="flex w-12 h-12 rounded-full bg-gradient-to-br from-[#f4dfa0] via-[#d4af37] to-[#a3801f] ring-1 ring-white/50 shadow-lg shadow-amber-500/25 items-center justify-center flex-shrink-0">
               <Phone className="w-5 h-5 text-black/80" aria-hidden />
             </div>
             <div>
-              <p className="text-[10px] sm:text-xs font-bold tracking-[0.15em] uppercase bg-gradient-to-r from-[#f4dfa0] to-[#d4af37] bg-clip-text text-transparent">
+              <p className="text-[10px] sm:text-xs font-bold tracking-[0.15em] uppercase bg-gradient-to-r from-brand-600 via-fuchsia-600 to-amber-600 bg-clip-text text-transparent">
                 {lang === "bn" ? "যেকোনো প্রশ্নে আমাদের সাথে যোগাযোগ করুন" : "Reach out to us for any question"}
               </p>
               {phoneHref ? (
-                <a href={phoneHref} className="text-white text-2xl font-extrabold tracking-tight hover:text-accent-300 transition-colors">
+                <a href={phoneHref} className="text-heading text-2xl font-extrabold tracking-tight hover:text-brand-600 transition-colors">
                   {phoneDisplay}
                 </a>
               ) : (
-                <span className="text-white text-2xl font-extrabold tracking-tight">{phoneDisplay}</span>
+                <span className="text-heading text-2xl font-extrabold tracking-tight">{phoneDisplay}</span>
               )}
-              <p className="text-white/50 text-xs mt-0.5">{hours}</p>
+              <p className="text-[var(--ink-muted)] text-xs mt-0.5">{hours}</p>
             </div>
           </div>
 
@@ -122,7 +122,7 @@ export default function ContactCTABar() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
-                  className={`w-11 h-11 rounded-full ${bg} ring-1 ring-white/15 flex items-center justify-center text-white shadow-lg shadow-black/20 hover:-translate-y-0.5 hover:shadow-xl transition-all`}
+                  className={`w-11 h-11 rounded-full ${bg} ring-1 ring-black/5 flex items-center justify-center text-white shadow-md shadow-black/10 hover:-translate-y-0.5 hover:shadow-lg transition-all`}
                 >
                   <Icon className="w-5 h-5" aria-hidden />
                 </a>
