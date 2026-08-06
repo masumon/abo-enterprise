@@ -58,7 +58,7 @@ export default function FlashSaleSection() {
   }
 
   return (
-    <section id="flash-sale" className="relative py-8 sm:py-10 overflow-hidden bg-gradient-to-br from-[#0b0b0d] via-[#171310] to-[#0b0b0d] scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+    <section id="flash-sale" className="relative py-8 sm:py-10 overflow-hidden bg-gradient-to-br from-brand-900 via-[#1a2456] to-brand-900 scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
       {/* Ambient gold glow — purely decorative, no layout impact. */}
       <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-[#d4af37]/10 blur-3xl pointer-events-none" aria-hidden />
       <div className="absolute -bottom-16 -right-16 w-64 h-64 rounded-full bg-[#d4af37]/10 blur-3xl pointer-events-none" aria-hidden />
