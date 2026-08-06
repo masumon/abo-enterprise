@@ -7,10 +7,11 @@ import {
   Loader2, Briefcase, Plus, Pencil, Trash2, X,
   ToggleLeft, ToggleRight, Star, StarOff, Check, Ban, ChevronDown, ChevronUp,
 } from "lucide-react";
-import { servicesAdminApi, categoriesApi } from "@/lib/api";
+import { servicesAdminApi, categoriesApi, adminBlogApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
 import LivePreview from "@/components/admin/LivePreview";
+import LinkChecklist, { type LinkOption } from "@/components/admin/LinkChecklist";
 import ServiceCard from "@/components/services/ServiceCard";
 import type { Service, ServicePricingTier, ServiceBookingFormField, Category } from "@/types";
 
@@ -146,6 +147,10 @@ export default function AdminServicesPage() {
   const [taxonomy, setTaxonomy] = useState<Category[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  // Blog posts a service can be linked to (many-to-many).
+  const [blogOptions, setBlogOptions] = useState<LinkOption[]>([]);
+  const [blogOptionsLoading, setBlogOptionsLoading] = useState(false);
+  const [linkedBlogsLoading, setLinkedBlogsLoading] = useState(false);
   const editorRef = useFocusTrap(editing !== null, () => {
     setEditing(null);
     setIsNew(false);
@@ -209,15 +214,41 @@ export default function AdminServicesPage() {
       .catch(() => setTaxonomy([]));
   }, []);
 
+  // Blog options for the per-service "linked blogs" picker, loaded once.
+  useEffect(() => {
+    let alive = true;
+    setBlogOptionsLoading(true);
+    adminBlogApi.list({ per_page: 100 })
+      .then((r) => {
+        if (!alive) return;
+        setBlogOptions((r.data.data ?? []).map((b) => ({
+          id: String(b.id), label: b.title_en || b.title_bn || b.slug, sublabel: b.category,
+        })));
+      })
+      .catch(() => { if (alive) setBlogOptions([]); })
+      .finally(() => { if (alive) setBlogOptionsLoading(false); });
+    return () => { alive = false; };
+  }, []);
+
   const openNew = () => { setEditing({ ...EMPTY_SERVICE }); setIsNew(true); setTierFormOpen(false); setNewTier(EMPTY_TIER); setSeoOpen(false); setExtOpen(false); setFieldFormOpen(false); setNewField(EMPTY_FIELD); };
 
   const openEdit = async (s: Service) => {
+    let base: Partial<Service>;
     try {
       const r = await servicesAdminApi.get(s.id);
-      setEditing(r.data.data as Service);
+      base = r.data.data as Service;
     } catch {
-      setEditing({ ...s });
+      base = { ...s };
     }
+    setEditing(base);
+    // Blog links live in a separate table; fetch them so the picker pre-ticks.
+    // On failure blog_ids stays undefined → save won't touch existing links.
+    setLinkedBlogsLoading(true);
+    adminBlogApi.serviceLinks(s.id)
+      .then((r) => setEditing((prev) => (prev && prev.id === s.id
+        ? { ...prev, blog_ids: r.data.data?.blog_ids ?? [] } : prev)))
+      .catch(() => {})
+      .finally(() => setLinkedBlogsLoading(false));
     setIsNew(false);
     setTierFormOpen(false);
     setNewTier(EMPTY_TIER);
@@ -712,6 +743,33 @@ export default function AdminServicesPage() {
                     </div>
                     <span className="text-sm text-gray-700">Bookable</span>
                   </label>
+                </div>
+
+                {/* Linked blog posts — many-to-many. Ticking a blog features
+                    this service in that article; the link shows in the blog
+                    editor too. */}
+                <div>
+                  <label className="form-label">
+                    Blog
+                    {(editing.blog_ids?.length ?? 0) > 0 && (
+                      <span className="ml-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-brand-600 text-white text-[10px] font-bold align-middle">
+                        {editing.blog_ids?.length}
+                      </span>
+                    )}
+                  </label>
+                  <p className="text-xs text-gray-500 mb-2">Tick the blog posts to feature this service in.</p>
+                  <LinkChecklist
+                    options={blogOptions}
+                    selected={editing.blog_ids ?? []}
+                    loading={blogOptionsLoading || linkedBlogsLoading}
+                    emptyText="No blog posts"
+                    searchPlaceholder="Search blog posts…"
+                    onToggle={(id) => setEditing(prev => {
+                      if (!prev) return prev;
+                      const cur = prev.blog_ids ?? [];
+                      return { ...prev, blog_ids: cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id] };
+                    })}
+                  />
                 </div>
 
                 <div>

@@ -506,6 +506,14 @@ export const adminBlogApi = {
 
   translate: (text: string, source = "bn", target = "en") =>
     api.post<ApiResponse<{ translated: string }>>("/api/v1/blog/admin/translate", { text, source, target }),
+
+  /** Blog post ids a product is linked to (for pre-ticking the product form). */
+  productLinks: (productId: string) =>
+    api.get<ApiResponse<{ blog_ids: string[] }>>(`/api/v1/blog/admin/links/product/${productId}`),
+
+  /** Blog post ids a service is linked to (for pre-ticking the service form). */
+  serviceLinks: (serviceId: string) =>
+    api.get<ApiResponse<{ blog_ids: string[] }>>(`/api/v1/blog/admin/links/service/${serviceId}`),
 };
 
 export const servicesAdminApi = {

@@ -7,12 +7,22 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
-from app.core.security import require_role
+from app.core.security import require_role, require_admin
+from app.core.blog_links import (
+    set_products_for_blog,
+    set_services_for_blog,
+    get_product_ids_for_blog,
+    get_service_ids_for_blog,
+    get_blog_ids_for_product,
+    get_blog_ids_for_service,
+    get_linked_products_for_blog,
+)
 from app.models.models import BlogPost, ActivityLog
 from app.schemas.schemas import (
     BlogPostOut,
     BlogPostCreate,
     BlogPostUpdate,
+    ProductOut,
     PaginatedResponse,
     PaginatedMeta,
     ApiResponse,
@@ -188,7 +198,45 @@ async def get_post(slug: str, db: AsyncSession = Depends(get_db)):
     return ApiResponse(data=BlogPostOut.model_validate(post).model_dump(), message="Post fetched successfully")
 
 
+@router.get("/{slug}/products", response_model=ApiResponse)
+async def get_post_products(slug: str, db: AsyncSession = Depends(get_db)):
+    """Active products explicitly linked to a published post (in-article rail).
+
+    Public and resilient: an unknown/unpublished slug or a post with no links
+    just returns an empty list, so the article never depends on this call.
+    """
+    result = await db.execute(
+        select(BlogPost.id).where(
+            and_(BlogPost.slug == slug, BlogPost.is_deleted == False, BlogPost.status == "published")
+        )
+    )
+    post_id = result.scalar_one_or_none()
+    if not post_id:
+        return ApiResponse(data=[], message="No linked products")
+    products = await get_linked_products_for_blog(db, post_id)
+    return ApiResponse(data=[ProductOut.model_validate(p) for p in products])
+
+
 # ==================== ADMIN ENDPOINTS ====================
+
+@router.get("/admin/links/product/{product_id}", response_model=ApiResponse)
+async def get_product_blog_links(
+    product_id: uuid.UUID,
+    _admin: dict = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Blog post ids a product is linked to — powers the ticks in the product form."""
+    return ApiResponse(data={"blog_ids": await get_blog_ids_for_product(db, product_id)})
+
+
+@router.get("/admin/links/service/{service_id}", response_model=ApiResponse)
+async def get_service_blog_links(
+    service_id: uuid.UUID,
+    _admin: dict = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Blog post ids a service is linked to — powers the ticks in the service form."""
+    return ApiResponse(data={"blog_ids": await get_blog_ids_for_service(db, service_id)})
 
 @router.get("/admin/posts", response_model=PaginatedResponse)
 async def list_posts_admin(
@@ -243,11 +291,18 @@ async def create_post(
         raise HTTPException(status_code=400, detail="Slug already exists")
 
     data = payload.model_dump()
+    product_ids = data.pop("product_ids", None)
+    service_ids = data.pop("service_ids", None)
     if data.get("status") == "published" and not data.get("published_at"):
         data["published_at"] = datetime.now(timezone.utc)
 
     post = BlogPost(**data)
     db.add(post)
+    await db.flush()
+    if product_ids is not None:
+        await set_products_for_blog(db, post.id, product_ids)
+    if service_ids is not None:
+        await set_services_for_blog(db, post.id, service_ids)
     await db.commit()
     await db.refresh(post)
 
@@ -261,7 +316,10 @@ async def create_post(
     db.add(log)
     await db.commit()
 
-    return ApiResponse(data=BlogPostOut.model_validate(post).model_dump(), message="Post created successfully")
+    out = BlogPostOut.model_validate(post).model_dump()
+    out["product_ids"] = await get_product_ids_for_blog(db, post.id)
+    out["service_ids"] = await get_service_ids_for_blog(db, post.id)
+    return ApiResponse(data=out, message="Post created successfully")
 
 
 @router.get("/admin/posts/{post_id}", response_model=ApiResponse)
@@ -278,7 +336,10 @@ async def get_post_admin(
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
 
-    return ApiResponse(data=BlogPostOut.model_validate(post).model_dump(), message="Post fetched successfully")
+    out = BlogPostOut.model_validate(post).model_dump()
+    out["product_ids"] = await get_product_ids_for_blog(db, post.id)
+    out["service_ids"] = await get_service_ids_for_blog(db, post.id)
+    return ApiResponse(data=out, message="Post fetched successfully")
 
 
 @router.put("/admin/posts/{post_id}", response_model=ApiResponse)
@@ -297,12 +358,19 @@ async def update_post(
         raise HTTPException(status_code=404, detail="Post not found")
 
     update_data = payload.model_dump(exclude_unset=True)
+    product_ids = update_data.pop("product_ids", None)
+    service_ids = update_data.pop("service_ids", None)
 
     if update_data.get("status") == "published" and not post.published_at and not update_data.get("published_at"):
         update_data["published_at"] = datetime.now(timezone.utc)
 
     for field, value in update_data.items():
         setattr(post, field, value)
+
+    if product_ids is not None:
+        await set_products_for_blog(db, post.id, product_ids)
+    if service_ids is not None:
+        await set_services_for_blog(db, post.id, service_ids)
 
     await db.commit()
     await db.refresh(post)
@@ -317,7 +385,10 @@ async def update_post(
     db.add(log)
     await db.commit()
 
-    return ApiResponse(data=BlogPostOut.model_validate(post).model_dump(), message="Post updated successfully")
+    out = BlogPostOut.model_validate(post).model_dump()
+    out["product_ids"] = await get_product_ids_for_blog(db, post.id)
+    out["service_ids"] = await get_service_ids_for_blog(db, post.id)
+    return ApiResponse(data=out, message="Post updated successfully")
 
 
 @router.delete("/admin/posts/{post_id}", response_model=ApiResponse)

@@ -5,9 +5,10 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp, ExternalLink, Globe, Copy } from "lucide-react";
-import { adminBlogApi } from "@/lib/api";
+import { adminBlogApi, productsApi, servicesAdminApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
 import LivePreview from "@/components/admin/LivePreview";
+import LinkChecklist, { type LinkOption } from "@/components/admin/LinkChecklist";
 import type { BlogPost } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
@@ -67,6 +68,11 @@ export default function AdminBlogPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [seoOpen, setSeoOpen] = useState(false);
   const [enOpen, setEnOpen] = useState(false);
+  const [linksOpen, setLinksOpen] = useState(false);
+  // Product & service options for the "linked items" pickers, loaded once.
+  const [productOptions, setProductOptions] = useState<LinkOption[]>([]);
+  const [serviceOptions, setServiceOptions] = useState<LinkOption[]>([]);
+  const [optionsLoading, setOptionsLoading] = useState(false);
   const [translating, setTranslating] = useState<string | null>(null);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const toast = useToastStore((s) => s.push);
@@ -90,6 +96,32 @@ export default function AdminBlogPage() {
   }, [statusFilter, search, page, toast]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Load product & service options once — used by the "linked items" pickers
+  // so a blog post can feature specific products/services (many-to-many).
+  useEffect(() => {
+    let alive = true;
+    setOptionsLoading(true);
+    Promise.all([
+      productsApi.adminList({ per_page: 100 }).catch(() => null),
+      servicesAdminApi.list({ per_page: 100 }).catch(() => null),
+    ])
+      .then(([pr, sr]) => {
+        if (!alive) return;
+        setProductOptions(
+          (pr?.data.data ?? []).map((p) => ({
+            id: String(p.id), label: p.name_en || p.name_bn || p.slug, sublabel: p.category,
+          }))
+        );
+        setServiceOptions(
+          (sr?.data.data ?? []).map((s) => ({
+            id: String(s.id), label: s.name_en || s.name_bn || s.slug, sublabel: s.category,
+          }))
+        );
+      })
+      .finally(() => { if (alive) setOptionsLoading(false); });
+    return () => { alive = false; };
+  }, []);
 
   const handleSearchChange = (v: string) => {
     setSearchInput(v);
@@ -123,10 +155,26 @@ export default function AdminBlogPage() {
     setSeoOpen(false);
   };
 
-  const openEdit = (post: BlogPost) => {
-    setEditing({ ...post });
+  const openEdit = async (post: BlogPost) => {
+    // Show the row immediately (links left undefined so a failed hydrate can
+    // never save empty arrays and wipe existing links), then hydrate the full
+    // record — the list payload omits product_ids/service_ids, which only the
+    // single GET fills.
+    const rest: Partial<BlogPost> = { ...post };
+    delete rest.product_ids;
+    delete rest.service_ids;
+    setEditing(rest);
     setIsNew(false);
     setSeoOpen(false);
+    setLinksOpen(false);
+    if (post.id) {
+      try {
+        const full = (await adminBlogApi.get(post.id)).data.data as unknown as BlogPost;
+        setEditing((prev) => (prev && prev.id === post.id
+          ? { ...prev, product_ids: full.product_ids ?? [], service_ids: full.service_ids ?? [] }
+          : prev));
+      } catch { /* leave links unset → save won't touch them */ }
+    }
   };
 
   const closeEditor = (discardDraft = false) => {
@@ -682,6 +730,62 @@ export default function AdminBlogPage() {
                         placeholder="Auto-filled from Bangla on save"
                         rows={8}
                         className="input w-full resize-y text-sm leading-relaxed"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Linked Products & Services — many-to-many. Featured under the
+                  post (in-article rail) and reflected in the product/service
+                  forms. Clicking a row ticks it. */}
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <button type="button" onClick={() => setLinksOpen(o => !o)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+                  <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                    Linked Products &amp; Services
+                    {((editing.product_ids?.length ?? 0) + (editing.service_ids?.length ?? 0)) > 0 && (
+                      <span className="ml-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-brand-600 text-white text-[10px] font-bold">
+                        {(editing.product_ids?.length ?? 0) + (editing.service_ids?.length ?? 0)}
+                      </span>
+                    )}
+                  </span>
+                  {linksOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                </button>
+                {linksOpen && (
+                  <div className="px-4 py-4 space-y-4">
+                    <p className="text-xs text-gray-500">
+                      Tick the products &amp; services to feature with this post. They appear in the
+                      product rail under the article, and the link also shows in each item&apos;s own form.
+                    </p>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Products</label>
+                      <LinkChecklist
+                        options={productOptions}
+                        selected={editing.product_ids ?? []}
+                        loading={optionsLoading}
+                        emptyText="No products"
+                        searchPlaceholder="Search products…"
+                        onToggle={(id) => setEditing(prev => {
+                          if (!prev) return prev;
+                          const cur = prev.product_ids ?? [];
+                          return { ...prev, product_ids: cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id] };
+                        })}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Services</label>
+                      <LinkChecklist
+                        options={serviceOptions}
+                        selected={editing.service_ids ?? []}
+                        loading={optionsLoading}
+                        emptyText="No services"
+                        searchPlaceholder="Search services…"
+                        onToggle={(id) => setEditing(prev => {
+                          if (!prev) return prev;
+                          const cur = prev.service_ids ?? [];
+                          return { ...prev, service_ids: cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id] };
+                        })}
                       />
                     </div>
                   </div>

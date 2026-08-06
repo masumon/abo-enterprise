@@ -627,6 +627,32 @@ class BlogPost(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class BlogPostLink(Base):
+    """Many-to-many link between a blog post and a product OR a service.
+
+    One row links a single post to a single item; exactly one of
+    ``product_id`` / ``service_id`` is set (enforced by a CHECK constraint in
+    the DB). Managed from both sides in the admin: a product/service form picks
+    its blogs, and the blog editor picks its products & services — both write
+    here, so there is a single source of truth and no duplicate rows (partial
+    unique indexes). Cascade deletes keep it clean when either side is removed.
+    """
+
+    __tablename__ = "blog_post_links"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    blog_post_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("blog_posts.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    product_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), index=True
+    )
+    service_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("services.id", ondelete="CASCADE"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class AssistantConversation(Base):
     __tablename__ = "assistant_conversations"
 

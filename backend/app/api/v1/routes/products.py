@@ -8,6 +8,7 @@ from app.core.security import require_admin, require_role
 from app.core.taxonomy import descendant_ids_for_slug
 from app.models.models import Product, ActivityLog
 from app.schemas.schemas import ProductCreate, ProductUpdate, ProductOut, ApiResponse, PaginatedResponse, PaginatedMeta
+from app.core.blog_links import set_blogs_for_product, get_blog_ids_for_product
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -245,9 +246,14 @@ async def create_product(
     existing = await db.execute(select(Product).where(Product.slug == payload.slug))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Slug already exists")
-    product = Product(**payload.model_dump())
+    data = payload.model_dump()
+    blog_ids = data.pop("blog_ids", None)
+    product = Product(**data)
     db.add(product)
     await db.flush()
+    if blog_ids is not None:
+        await set_blogs_for_product(db, product.id, blog_ids)
+        await db.flush()
     await db.refresh(product)
     db.add(ActivityLog(
         admin_id=UUID(_admin), action="create",
@@ -269,8 +275,11 @@ async def update_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     changes = payload.model_dump(exclude_unset=True)
+    blog_ids = changes.pop("blog_ids", None)
     for field, value in changes.items():
         setattr(product, field, value)
+    if blog_ids is not None:
+        await set_blogs_for_product(db, product.id, blog_ids)
     await db.flush()
     await db.refresh(product)
     db.add(ActivityLog(

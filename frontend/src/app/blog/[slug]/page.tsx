@@ -35,6 +35,7 @@ async function fetchPost(slug: string): Promise<BlogPost | null> {
  * article must never depend on the catalogue being reachable.
  */
 async function fetchRailProducts(
+  slug: string,
   category?: string | null
 ): Promise<{ products: Product[]; matched: boolean }> {
   const get = async (qs: string): Promise<Product[]> => {
@@ -50,6 +51,22 @@ async function fetchRailProducts(
     }
   };
 
+  // 1) Products an admin explicitly linked to THIS post win — they are the
+  //    hand-picked "related products" and are always the most topical.
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/blog/${encodeURIComponent(slug)}/products`, {
+      next: { revalidate: 300 },
+    });
+    if (res.ok) {
+      const linked = ((await res.json()).data ?? []) as Product[];
+      if (linked.length > 0) return { products: linked.slice(0, 3), matched: true };
+    }
+  } catch {
+    /* fall through to category match */
+  }
+
+  // 2) No explicit links — fall back to a category text-match, then to any
+  //    products, so the rail still has something to show.
   if (category) {
     const matchedProducts = await get(
       `page=1&per_page=3&search=${encodeURIComponent(category)}`
@@ -139,7 +156,7 @@ export default async function BlogPostPage({
   const settings = await fetchPublicSettings();
   const railEnabled = settingValue(settings, "feature_blog_product_rail", "true") !== "false";
   const rail = railEnabled
-    ? await fetchRailProducts(post.category)
+    ? await fetchRailProducts(params.slug, post.category)
     : { products: [], matched: false };
   const jsonLd = buildArticleJsonLd(post);
 
