@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
-import { productsApi, categoriesApi, downloadCsv, downloadPdf } from "@/lib/api";
+import { productsApi, categoriesApi, adminApi, downloadCsv, downloadPdf } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
 import LivePreview from "@/components/admin/LivePreview";
@@ -134,6 +134,8 @@ export default function AdminProductsPage() {
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [importing, setImporting] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const [blogRailEnabled, setBlogRailEnabled] = useState(true);
+  const [blogRailSaving, setBlogRailSaving] = useState(false);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -191,6 +193,36 @@ export default function AdminProductsPage() {
       .then((r) => setTaxonomy(r.data.data ?? []))
       .catch(() => setTaxonomy([]));
   }, []);
+
+  // Blog post pages show a small "products from our store" rail (see
+  // BlogProductRail); this setting is the single on/off switch for it, kept
+  // here in Products rather than the generic Settings page since it's a
+  // product-catalog concern.
+  useEffect(() => {
+    adminApi.getSettings()
+      .then((r) => setBlogRailEnabled((r.data.data?.feature_blog_product_rail ?? "true") !== "false"))
+      .catch(() => {});
+  }, []);
+
+  const toggleBlogRail = async () => {
+    const next = !blogRailEnabled;
+    setBlogRailEnabled(next);
+    setBlogRailSaving(true);
+    try {
+      await adminApi.upsertSettings([{
+        key: "feature_blog_product_rail",
+        value: next ? "true" : "false",
+        data_type: "boolean",
+        description: "Show a product rail at the end of blog posts",
+      }]);
+      toast("success", next ? "Blog product rail enabled" : "Blog product rail disabled");
+    } catch {
+      setBlogRailEnabled(!next);
+      toast("error", "Could not save this setting");
+    } finally {
+      setBlogRailSaving(false);
+    }
+  };
 
   const handleSearchChange = (v: string) => {
     setSearchInput(v);
@@ -463,6 +495,29 @@ export default function AdminProductsPage() {
         onSearchChange={handleSearchChange}
         searchPlaceholder="পণ্য খুঁজুন…"
       />
+
+      <label className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3 cursor-pointer w-fit">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={blogRailEnabled}
+          disabled={blogRailSaving}
+          onClick={toggleBlogRail}
+          className={cn(
+            "relative w-10 h-6 rounded-full transition-colors flex-shrink-0 disabled:opacity-50",
+            blogRailEnabled ? "bg-brand-600" : "bg-gray-300"
+          )}
+        >
+          <span className={cn(
+            "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform",
+            blogRailEnabled && "translate-x-4"
+          )} />
+        </button>
+        <span className="text-sm text-gray-700">
+          ব্লগ পোস্টের নিচে প্রোডাক্ট কার্ড দেখান
+          <span className="block text-xs text-gray-400">Show a product rail at the end of blog posts</span>
+        </span>
+      </label>
 
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">

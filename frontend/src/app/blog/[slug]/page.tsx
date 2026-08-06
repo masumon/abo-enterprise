@@ -5,6 +5,7 @@ import type { BlogPost, Product } from "@/types";
 
 import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { fetchPublicSettings, settingValue } from "@/lib/serverSettings";
 import BlogProductRail from "@/components/blog/BlogProductRail";
 import BlogPostActions from "./BlogPostActions";
 import BlogPostBreadcrumb from "./BlogPostBreadcrumb";
@@ -133,7 +134,13 @@ export default async function BlogPostPage({
   const post = await fetchPost(params.slug);
   if (!post) notFound();
 
-  const rail = await fetchRailProducts(post.category);
+  // Admin → Products has a toggle for this rail; default on so existing
+  // articles keep their current behavior until an admin turns it off.
+  const settings = await fetchPublicSettings();
+  const railEnabled = settingValue(settings, "feature_blog_product_rail", "true") !== "false";
+  const rail = railEnabled
+    ? await fetchRailProducts(post.category)
+    : { products: [], matched: false };
   const jsonLd = buildArticleJsonLd(post);
 
   return (

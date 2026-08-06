@@ -4,14 +4,16 @@ import { useState, useEffect } from "react";
 import { useLanguageStore } from "@/store/language";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+// Must match the product `category` values used in Admin → Products
+// (frontend/src/app/sumon/products/page.tsx CATEGORIES) — these previously
+// listed device types (Mobile/Laptop/Audio...) that no product's `category`
+// field ever contained, so every tab except "All" silently showed nothing.
 const CATEGORY_FILTERS = [
   { id: "all", label: { en: "All", bn: "সব" } },
-  { id: "mobile", label: { en: "Mobile", bn: "মোবাইল" } },
-  { id: "laptop", label: { en: "Laptop", bn: "ল্যাপটপ" } },
-  { id: "audio", label: { en: "Audio", bn: "অডিও" } },
-  { id: "watch", label: { en: "Smart Watch", bn: "স্মার্ট ওয়াচ" } },
-  { id: "camera", label: { en: "Camera", bn: "ক্যামেরা" } },
-  { id: "charger", label: { en: "Charger", bn: "চার্জার" } },
+  { id: "gadgets", label: { en: "Premium Gadgets", bn: "প্রিমিয়াম গ্যাজেট" } },
+  { id: "accessories", label: { en: "Mobile Accessories", bn: "মোবাইল এক্সেসরিজ" } },
+  { id: "electronics", label: { en: "Electronics", bn: "ইলেকট্রনিক্স" } },
+  { id: "computer", label: { en: "Computer", bn: "কম্পিউটার" } },
 ];
 
 interface ProductCategoryTabsProps {
