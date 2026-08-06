@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
 import {
   Loader2, Briefcase, Plus, Pencil, Trash2, X,
-  ToggleLeft, ToggleRight, Star, StarOff, Check, Ban, ChevronDown, ChevronUp,
+  ToggleLeft, ToggleRight, Star, StarOff, Check, Ban, ChevronDown, ChevronUp, Languages,
 } from "lucide-react";
 import { servicesAdminApi, categoriesApi, adminBlogApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -139,6 +139,7 @@ export default function AdminServicesPage() {
   const [editing, setEditing] = useState<Partial<Service> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [translating, setTranslating] = useState<null | "basic" | "extended">(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [extOpen, setExtOpen] = useState(false);
@@ -273,6 +274,82 @@ export default function AdminServicesPage() {
     setExtOpen(false);
     setFieldFormOpen(false);
     setNewField(EMPTY_FIELD);
+  };
+
+  // ── Auto-translate (English → বাংলা) ──────────────────────────────────────
+  // Reuses the admin translate endpoint. Only ever FILLS EMPTY Bengali fields —
+  // never overwrites text the admin already wrote, so it is safe to re-run.
+  const translateOne = async (text: string): Promise<string> => {
+    const src = (text ?? "").trim();
+    if (!src) return "";
+    try {
+      const r = await adminBlogApi.translate(src, "en", "bn");
+      return r.data?.data?.translated?.trim() || "";
+    } catch {
+      return "";
+    }
+  };
+
+  const autoTranslateBasic = async () => {
+    if (!editing || translating) return;
+    setTranslating("basic");
+    try {
+      const e = editing;
+      const [name, shortD, desc, longD] = await Promise.all([
+        !e.name_bn?.trim() && e.name_en?.trim() ? translateOne(e.name_en) : Promise.resolve(""),
+        !e.short_description_bn?.trim() && e.short_description_en?.trim() ? translateOne(e.short_description_en) : Promise.resolve(""),
+        !e.description_bn?.trim() && e.description_en?.trim() ? translateOne(e.description_en) : Promise.resolve(""),
+        !e.long_description_bn?.trim() && e.long_description_en?.trim() ? translateOne(e.long_description_en) : Promise.resolve(""),
+      ]);
+      setEditing((prev) => prev ? {
+        ...prev,
+        name_bn: name || prev.name_bn,
+        short_description_bn: shortD || prev.short_description_bn,
+        description_bn: desc || prev.description_bn,
+        long_description_bn: longD || prev.long_description_bn,
+      } : prev);
+      toast("success", "বাংলা অনুবাদ পূরণ হয়েছে — সেভ করার আগে দেখে নিন");
+    } catch {
+      toast("error", "অনুবাদ ব্যর্থ — আবার চেষ্টা করুন");
+    } finally {
+      setTranslating(null);
+    }
+  };
+
+  const autoTranslateExtended = async () => {
+    if (!editing || translating) return;
+    setTranslating("extended");
+    try {
+      const e = editing;
+      // Process steps — fill title_bn/description_bn where empty.
+      const steps = await Promise.all((e.process_steps ?? []).map(async (s) => ({
+        ...s,
+        title_bn: s.title_bn?.trim() ? s.title_bn : await translateOne(s.title ?? ""),
+        description_bn: s.description_bn?.trim() ? s.description_bn : await translateOne(s.description ?? ""),
+      })));
+      // Benefits/requirements/documents — items {en,bn} (or legacy strings).
+      const fillList = (items: (string | { en?: string; bn?: string })[] | undefined) =>
+        Promise.all((items ?? []).map(async (it) => {
+          const en = typeof it === "string" ? it : (it.en ?? "");
+          const bn = typeof it === "string" ? "" : (it.bn ?? "");
+          return { en, bn: bn.trim() ? bn : await translateOne(en) };
+        }));
+      const [benefits, requirements, documents] = await Promise.all([
+        fillList(e.benefits), fillList(e.requirements), fillList(e.required_documents),
+      ]);
+      // FAQ — fill question_bn/answer_bn where empty.
+      const faq = await Promise.all((e.faq ?? []).map(async (f) => ({
+        ...f,
+        question_bn: f.question_bn?.trim() ? f.question_bn : await translateOne(f.question ?? ""),
+        answer_bn: f.answer_bn?.trim() ? f.answer_bn : await translateOne(f.answer ?? ""),
+      })));
+      setEditing((prev) => prev ? { ...prev, process_steps: steps, benefits, requirements, required_documents: documents, faq } : prev);
+      toast("success", "কন্টেন্ট বাংলায় অনুবাদ হয়েছে — সেভ করার আগে দেখে নিন");
+    } catch {
+      toast("error", "অনুবাদ ব্যর্থ — আবার চেষ্টা করুন");
+    } finally {
+      setTranslating(null);
+    }
   };
 
   const closeEditor = () => { setEditing(null); setIsNew(false); };
@@ -887,7 +964,19 @@ export default function AdminServicesPage() {
 
               {/* ── Descriptions ────────────────────────── */}
               <section className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Descriptions</h3>
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Descriptions</h3>
+                  <button
+                    type="button"
+                    onClick={autoTranslateBasic}
+                    disabled={translating !== null}
+                    className="btn btn-outline btn-sm gap-1.5"
+                    title="নাম ও বিবরণের খালি বাংলা ঘরগুলো English থেকে অটো-পূরণ করবে"
+                  >
+                    {translating === "basic" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
+                    বাংলা অনুবাদ
+                  </button>
+                </div>
                 <div>
                   <label className="form-label">Short Description (EN)</label>
                   <textarea value={editing.short_description_en ?? ""} onChange={f("short_description_en")} rows={2} placeholder="One-line summary…" className="input w-full resize-none text-sm" />
@@ -935,9 +1024,21 @@ export default function AdminServicesPage() {
                 </button>
                 {extOpen && (
                   <div className="px-4 py-4 space-y-4">
-                    <p className="text-[11px] text-brand-600 bg-brand-50 dark:bg-brand-500/10 rounded-lg px-3 py-2">
-                      বাইলিঙ্গুয়াল: প্রতিটি লাইনে <b>English | বাংলা</b> — বাংলা অংশ ঐচ্ছিক। বাংলা দিলে সাইটে ভাষা টগলে বাংলা দেখাবে, না দিলে ইংরেজি থাকবে।
-                    </p>
+                    <div className="flex items-start justify-between gap-3 flex-wrap">
+                      <p className="text-[11px] text-brand-600 bg-brand-50 dark:bg-brand-500/10 rounded-lg px-3 py-2 flex-1 min-w-[12rem]">
+                        বাইলিঙ্গুয়াল: প্রতিটি লাইনে <b>English | বাংলা</b> — বাংলা অংশ ঐচ্ছিক। বাংলা দিলে সাইটে ভাষা টগলে বাংলা দেখাবে, না দিলে ইংরেজি থাকবে।
+                      </p>
+                      <button
+                        type="button"
+                        onClick={autoTranslateExtended}
+                        disabled={translating !== null}
+                        className="btn btn-outline btn-sm gap-1.5 flex-shrink-0"
+                        title="খালি বাংলা ঘরগুলো English থেকে অটো-পূরণ করবে (আগের লেখা মুছবে না)"
+                      >
+                        {translating === "extended" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
+                        বাংলা অনুবাদ
+                      </button>
+                    </div>
 
                     {/* Process Steps — step|title_en|desc_en|title_bn|desc_bn */}
                     <div>

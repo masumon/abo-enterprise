@@ -2,7 +2,7 @@
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Copy, Download, FileText, Upload, Check, Ban, Star, StarOff } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Copy, Download, FileText, Upload, Check, Ban, Star, StarOff, Languages } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -143,8 +143,34 @@ export default function AdminProductsPage() {
   const [blogOptionsLoading, setBlogOptionsLoading] = useState(false);
   const [productBlogIds, setProductBlogIds] = useState<string[]>([]);
   const [linkedBlogsLoading, setLinkedBlogsLoading] = useState(false);
+  const [translating, setTranslating] = useState(false);
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormData>({
+  // Auto-translate English → বাংলা for name & description. Only fills EMPTY
+  // Bengali fields (never overwrites what the admin already wrote). Reuses the
+  // admin translate endpoint.
+  const autoTranslate = async () => {
+    if (translating) return;
+    setTranslating(true);
+    try {
+      const nameEn = (getValues("name_en") || "").trim();
+      const descEn = (getValues("description_en") || "").trim();
+      const nameBn = (getValues("name_bn") || "").trim();
+      const descBn = (getValues("description_bn") || "").trim();
+      const [name, desc] = await Promise.all([
+        !nameBn && nameEn ? adminBlogApi.translate(nameEn, "en", "bn").then((r) => r.data?.data?.translated?.trim() || "").catch(() => "") : Promise.resolve(""),
+        !descBn && descEn ? adminBlogApi.translate(descEn, "en", "bn").then((r) => r.data?.data?.translated?.trim() || "").catch(() => "") : Promise.resolve(""),
+      ]);
+      if (name) setValue("name_bn", name, { shouldDirty: true });
+      if (desc) setValue("description_bn", desc, { shouldDirty: true });
+      toast("success", "বাংলা অনুবাদ পূরণ হয়েছে — সেভ করার আগে দেখে নিন");
+    } catch {
+      toast("error", "অনুবাদ ব্যর্থ — আবার চেষ্টা করুন");
+    } finally {
+      setTranslating(false);
+    }
+  };
+
+  const { register, handleSubmit, reset, setValue, watch, getValues, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { is_active: true, is_featured: false, stock_quantity: 0, low_stock_threshold: 5, is_flash_sale: false, is_best_seller: false },
   });
@@ -769,6 +795,18 @@ export default function AdminProductsPage() {
                     </select>
                   </div>
                 )}
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={autoTranslate}
+                    disabled={translating}
+                    className="btn btn-outline btn-sm gap-1.5"
+                    title="নাম ও বিবরণের খালি বাংলা ঘর English থেকে অটো-পূরণ করবে"
+                  >
+                    {translating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
+                    বাংলা অনুবাদ
+                  </button>
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Name (English)</label>
                   <input {...register("name_en")} className={cn("input", errors.name_en && "input-error")} placeholder="Phone Case" />
