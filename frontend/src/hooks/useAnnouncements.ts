@@ -23,7 +23,7 @@ const FALLBACK_ANNOUNCEMENTS: CmsAnnouncement[] = [
   },
 ];
 
-const SUPPRESSED_PREFIXES = ["/admin", "/cart", "/checkout", "/login", "/register", "/profile", "/track"];
+const SUPPRESSED_PREFIXES = ["/sumon", "/cart", "/checkout", "/login", "/register", "/profile", "/track"];
 
 /** Shared data layer for the announcement bar (desktop strip) and the
  * mobile in-header ticker — same settings key, fallback and per-route

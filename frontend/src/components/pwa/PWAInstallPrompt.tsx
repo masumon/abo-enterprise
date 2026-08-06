@@ -15,7 +15,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 // Never cover checkout / payment / success pages — the full-screen overlay
 // blocks taps mid-checkout and hides the invoice on the success screen.
-const SUPPRESSED_ROUTES = ["/checkout", "/order-success", "/booking-success", "/payment", "/admin"];
+const SUPPRESSED_ROUTES = ["/checkout", "/order-success", "/booking-success", "/payment", "/sumon"];
 
 const REMIND_KEY = "pwa_remind_until";
 const INSTALLED_KEY = "pwa_installed";

@@ -438,7 +438,7 @@ function SectionCard({
         <div className="px-6 py-2.5 bg-brand-50/50 border-b border-brand-100/60 text-xs text-brand-800 flex items-center gap-2 flex-wrap">
           <ImageIcon className="w-3.5 h-3.5 flex-shrink-0" />
           <span>{section.note}</span>
-          <Link href="/admin/media" className="font-semibold underline hover:no-underline">
+          <Link href="/sumon/media" className="font-semibold underline hover:no-underline">
             Image Manager খুলুন →
           </Link>
         </div>
@@ -684,7 +684,7 @@ export default function AdminSettingsPage() {
                 </p>
               </div>
             </div>
-            <Link href="/admin/media" className="btn btn-outline btn-sm flex-shrink-0">
+            <Link href="/sumon/media" className="btn btn-outline btn-sm flex-shrink-0">
               Media Library →
             </Link>
           </div>

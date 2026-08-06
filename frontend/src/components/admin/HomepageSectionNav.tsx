@@ -13,9 +13,9 @@ import { useLanguageStore } from "@/store/language";
  * as one feature by cross-linking each page to the other two.
  */
 const PAGES = [
-  { href: "/admin/homepage", icon: LayoutTemplate, label: "Homepage Content", labelBn: "হোমপেজ কনটেন্ট" },
-  { href: "/admin/promo-slides", icon: Images, label: "Banners & Slider", labelBn: "ব্যানার ও স্লাইড" },
-  { href: "/admin/announcements", icon: Megaphone, label: "Announcement Bar", labelBn: "ঘোষণা বার" },
+  { href: "/sumon/homepage", icon: LayoutTemplate, label: "Homepage Content", labelBn: "হোমপেজ কনটেন্ট" },
+  { href: "/sumon/promo-slides", icon: Images, label: "Banners & Slider", labelBn: "ব্যানার ও স্লাইড" },
+  { href: "/sumon/announcements", icon: Megaphone, label: "Announcement Bar", labelBn: "ঘোষণা বার" },
 ];
 
 export default function HomepageSectionNav() {

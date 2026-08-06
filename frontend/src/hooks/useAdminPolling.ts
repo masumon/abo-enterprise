@@ -35,15 +35,15 @@ export function useAdminPolling(enabled = true) {
         if (prev.current.pendingOrders >= 0) {
           if (pendingOrders > prev.current.pendingOrders) {
             const diff = pendingOrders - prev.current.pendingOrders;
-            toast("info", `${diff} new order${diff > 1 ? "s" : ""} received`, { label: "View", href: "/admin/orders" });
+            toast("info", `${diff} new order${diff > 1 ? "s" : ""} received`, { label: "View", href: "/sumon/orders" });
           }
           if (pendingBookings > prev.current.pendingBookings) {
             const diff = pendingBookings - prev.current.pendingBookings;
-            toast("info", `${diff} new booking${diff > 1 ? "s" : ""} received`, { label: "View", href: "/admin/bookings" });
+            toast("info", `${diff} new booking${diff > 1 ? "s" : ""} received`, { label: "View", href: "/sumon/bookings" });
           }
           if (newLeads > prev.current.newLeads) {
             const diff = newLeads - prev.current.newLeads;
-            toast("info", `${diff} new lead${diff > 1 ? "s" : ""} received`, { label: "View", href: "/admin/leads" });
+            toast("info", `${diff} new lead${diff > 1 ? "s" : ""} received`, { label: "View", href: "/sumon/leads" });
           }
         }
 

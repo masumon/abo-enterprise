@@ -271,7 +271,7 @@ export default function OperationsPanel() {
                 />
               </div>
               <div>
-                <p className="text-xs font-semibold text-gray-500 mb-1.5">Recent Audit Trail <a href="/admin/audit" className="text-brand-600 hover:underline font-normal">— সব দেখুন</a></p>
+                <p className="text-xs font-semibold text-gray-500 mb-1.5">Recent Audit Trail <a href="/sumon/audit" className="text-brand-600 hover:underline font-normal">— সব দেখুন</a></p>
                 <EventList
                   rows={(security.audit_tail as { at: string; action: string; entity: string; by: string | null }[]).map((e) => ({ at: e.at, text: `${e.action} · ${e.entity}${e.by ? ` · ${e.by}` : ""}` }))}
                   empty="কোনো অডিট এন্ট্রি নেই"

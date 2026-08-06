@@ -69,8 +69,8 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Overview",
     labelBn: "সারাংশ",
     items: [
-      { href: "/admin", icon: LayoutDashboard, label: "Dashboard", labelBn: "ড্যাশবোর্ড", exact: true },
-      { href: "/admin/analytics", icon: BarChart2, label: "Analytics", labelBn: "অ্যানালিটিক্স" },
+      { href: "/sumon", icon: LayoutDashboard, label: "Dashboard", labelBn: "ড্যাশবোর্ড", exact: true },
+      { href: "/sumon/analytics", icon: BarChart2, label: "Analytics", labelBn: "অ্যানালিটিক্স" },
     ],
   },
   {
@@ -78,9 +78,9 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Sales",
     labelBn: "বিক্রয়",
     items: [
-      { href: "/admin/orders", icon: ShoppingCart, label: "Orders", labelBn: "অর্ডার", badge: "orders" },
-      { href: "/admin/invoices", icon: FileText, label: "Invoices", labelBn: "ইনভয়েস" },
-      { href: "/admin/payments", icon: CreditCard, label: "Payments", labelBn: "পেমেন্ট" },
+      { href: "/sumon/orders", icon: ShoppingCart, label: "Orders", labelBn: "অর্ডার", badge: "orders" },
+      { href: "/sumon/invoices", icon: FileText, label: "Invoices", labelBn: "ইনভয়েস" },
+      { href: "/sumon/payments", icon: CreditCard, label: "Payments", labelBn: "পেমেন্ট" },
     ],
   },
   {
@@ -88,8 +88,8 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Marketing",
     labelBn: "মার্কেটিং",
     items: [
-      { href: "/admin/coupons", icon: Percent, label: "Coupons", labelBn: "কুপন", minRole: "admin" },
-      { href: "/admin/newsletter", icon: Send, label: "Newsletter", labelBn: "নিউজলেটার" },
+      { href: "/sumon/coupons", icon: Percent, label: "Coupons", labelBn: "কুপন", minRole: "admin" },
+      { href: "/sumon/newsletter", icon: Send, label: "Newsletter", labelBn: "নিউজলেটার" },
     ],
   },
   {
@@ -97,9 +97,9 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Customers",
     labelBn: "গ্রাহক",
     items: [
-      { href: "/admin/bookings", icon: Briefcase, label: "Bookings", labelBn: "বুকিং", badge: "bookings" },
-      { href: "/admin/leads", icon: Users, label: "Leads", labelBn: "লিড", badge: "leads" },
-      { href: "/admin/career", icon: UserPlus, label: "Career Applications", labelBn: "চাকরির আবেদন" },
+      { href: "/sumon/bookings", icon: Briefcase, label: "Bookings", labelBn: "বুকিং", badge: "bookings" },
+      { href: "/sumon/leads", icon: Users, label: "Leads", labelBn: "লিড", badge: "leads" },
+      { href: "/sumon/career", icon: UserPlus, label: "Career Applications", labelBn: "চাকরির আবেদন" },
     ],
   },
   {
@@ -107,10 +107,10 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Catalog",
     labelBn: "ক্যাটালগ",
     items: [
-      { href: "/admin/categories", icon: FolderTree, label: "Categories", labelBn: "ক্যাটাগরি", minRole: "admin" },
-      { href: "/admin/products", icon: Package, label: "Products", labelBn: "পণ্য" },
-      { href: "/admin/services", icon: Wrench, label: "Services", labelBn: "সেবা" },
-      { href: "/admin/reviews", icon: Star, label: "Product Reviews", labelBn: "পণ্য রিভিউ" },
+      { href: "/sumon/categories", icon: FolderTree, label: "Categories", labelBn: "ক্যাটাগরি", minRole: "admin" },
+      { href: "/sumon/products", icon: Package, label: "Products", labelBn: "পণ্য" },
+      { href: "/sumon/services", icon: Wrench, label: "Services", labelBn: "সেবা" },
+      { href: "/sumon/reviews", icon: Star, label: "Product Reviews", labelBn: "পণ্য রিভিউ" },
     ],
   },
   {
@@ -118,13 +118,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Content",
     labelBn: "কনটেন্ট",
     items: [
-      { href: "/admin/homepage", icon: LayoutTemplate, label: "Homepage Content", labelBn: "হোমপেজ কনটেন্ট" },
-      { href: "/admin/announcements", icon: Megaphone, label: "Homepage Announcement Bar", labelBn: "ঘোষণা বার" },
-      { href: "/admin/promo-slides", icon: Images, label: "Homepage Banners & Slider", labelBn: "হোমপেজ ব্যানার ও স্লাইড" },
-      { href: "/admin/media", icon: Images, label: "Image Manager", labelBn: "ছবি ব্যবস্থাপনা" },
-      { href: "/admin/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি" },
-      { href: "/admin/blog", icon: BookOpen, label: "Blog", labelBn: "ব্লগ" },
-      { href: "/admin/email-templates", icon: Mail, label: "Email Templates", labelBn: "ইমেইল" },
+      { href: "/sumon/homepage", icon: LayoutTemplate, label: "Homepage Content", labelBn: "হোমপেজ কনটেন্ট" },
+      { href: "/sumon/announcements", icon: Megaphone, label: "Homepage Announcement Bar", labelBn: "ঘোষণা বার" },
+      { href: "/sumon/promo-slides", icon: Images, label: "Homepage Banners & Slider", labelBn: "হোমপেজ ব্যানার ও স্লাইড" },
+      { href: "/sumon/media", icon: Images, label: "Image Manager", labelBn: "ছবি ব্যবস্থাপনা" },
+      { href: "/sumon/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি" },
+      { href: "/sumon/blog", icon: BookOpen, label: "Blog", labelBn: "ব্লগ" },
+      { href: "/sumon/email-templates", icon: Mail, label: "Email Templates", labelBn: "ইমেইল" },
     ],
   },
   {
@@ -132,11 +132,11 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "System",
     labelBn: "সিস্টেম",
     items: [
-      { href: "/admin/delivery", icon: Truck, label: "Checkout & Delivery", labelBn: "চেকআউট ও ডেলিভারি", minRole: "admin" },
-      { href: "/admin/settings", icon: Settings, label: "Settings", labelBn: "সেটিংস", minRole: "admin" },
-      { href: "/admin/users", icon: Users, label: "Users", labelBn: "ইউজার", minRole: "admin" },
-      { href: "/admin/audit", icon: Shield, label: "Audit Logs", labelBn: "অডিট", minRole: "admin" },
-      { href: "/admin/assistant", icon: Bot, label: "AI Assistant", labelBn: "AI সহকারী", minRole: "editor" },
+      { href: "/sumon/delivery", icon: Truck, label: "Checkout & Delivery", labelBn: "চেকআউট ও ডেলিভারি", minRole: "admin" },
+      { href: "/sumon/settings", icon: Settings, label: "Settings", labelBn: "সেটিংস", minRole: "admin" },
+      { href: "/sumon/users", icon: Users, label: "Users", labelBn: "ইউজার", minRole: "admin" },
+      { href: "/sumon/audit", icon: Shield, label: "Audit Logs", labelBn: "অডিট", minRole: "admin" },
+      { href: "/sumon/assistant", icon: Bot, label: "AI Assistant", labelBn: "AI সহকারী", minRole: "editor" },
     ],
   },
 ];
@@ -153,7 +153,7 @@ export const ADMIN_ALL_PAGES: AdminNavItem[] = [
 ];
 
 export function getAdminPageTitle(pathname: string, lang: "en" | "bn" = "en"): string {
-  if (pathname === "/admin" || pathname === "/admin/dashboard") {
+  if (pathname === "/sumon" || pathname === "/sumon/dashboard") {
     return lang === "bn" ? "ড্যাশবোর্ড" : "Dashboard";
   }
   const match = ADMIN_ALL_PAGES.find((item) =>
@@ -164,10 +164,10 @@ export function getAdminPageTitle(pathname: string, lang: "en" | "bn" = "en"): s
 }
 
 export const ADMIN_QUICK_ACTIONS = [
-  { href: "/admin/orders", label: "Pending Orders", labelBn: "অপেক্ষমান অর্ডার", icon: ShoppingCart, color: "brand" as const },
-  { href: "/admin/products", label: "Add Product", labelBn: "নতুন পণ্য", icon: Package, color: "green" as const },
-  { href: "/admin/bookings", label: "Bookings", labelBn: "বুকিং", icon: Briefcase, color: "accent" as const },
-  { href: "/admin/leads", label: "New Leads", labelBn: "নতুন লিড", icon: Users, color: "amber" as const },
-  { href: "/admin/settings", label: "Site Settings", labelBn: "সাইট সেটিংস", icon: Settings, color: "brand" as const },
-  { href: "/admin/analytics", label: "Analytics", labelBn: "রিপোর্ট", icon: BarChart2, color: "green" as const },
+  { href: "/sumon/orders", label: "Pending Orders", labelBn: "অপেক্ষমান অর্ডার", icon: ShoppingCart, color: "brand" as const },
+  { href: "/sumon/products", label: "Add Product", labelBn: "নতুন পণ্য", icon: Package, color: "green" as const },
+  { href: "/sumon/bookings", label: "Bookings", labelBn: "বুকিং", icon: Briefcase, color: "accent" as const },
+  { href: "/sumon/leads", label: "New Leads", labelBn: "নতুন লিড", icon: Users, color: "amber" as const },
+  { href: "/sumon/settings", label: "Site Settings", labelBn: "সাইট সেটিংস", icon: Settings, color: "brand" as const },
+  { href: "/sumon/analytics", label: "Analytics", labelBn: "রিপোর্ট", icon: BarChart2, color: "green" as const },
 ];

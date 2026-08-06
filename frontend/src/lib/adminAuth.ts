@@ -40,5 +40,5 @@ export function clearAdminToken(): void {
 }
 
 export function isAdminProtectedPath(pathname: string): boolean {
-  return pathname.startsWith("/admin") && !pathname.startsWith("/admin/login");
+  return pathname.startsWith("/sumon") && !pathname.startsWith("/sumon/login");
 }

@@ -26,7 +26,7 @@ import OfflineSubmissionBadge from "@/components/network/OfflineSubmissionBadge"
 
 export default function PublicShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAdmin = pathname?.startsWith("/admin") ?? false;
+  const isAdmin = pathname?.startsWith("/sumon") ?? false;
 
   useEffect(() => {
     offlineSync.init().catch(() => {});

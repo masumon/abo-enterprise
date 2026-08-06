@@ -8,7 +8,7 @@ import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { categoriesApi } from "@/lib/api";
 
-const HIDE_ON = ["/checkout", "/cart", "/login", "/register", "/admin"];
+const HIDE_ON = ["/checkout", "/cart", "/login", "/register", "/sumon"];
 
 const SHOW_ON_PREFIXES = ["/services", "/projects"];
 
@@ -81,7 +81,7 @@ export default function StickyCTA() {
     return () => window.removeEventListener("scroll", onScroll);
   }, [allowed]);
 
-  if (!pathname || pathname.startsWith("/admin")) return null;
+  if (!pathname || pathname.startsWith("/sumon")) return null;
   if (!allowed) return null;
   if (HIDE_ON.some((p) => pathname === p || pathname.startsWith(`${p}/`))) return null;
   if (!visible) return null;

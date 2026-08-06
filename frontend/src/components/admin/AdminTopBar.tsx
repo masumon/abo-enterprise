@@ -28,9 +28,9 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
   const notifItems = [
-    { key: "orders", icon: ShoppingCart, label: lang === "bn" ? "অপেক্ষমান অর্ডার" : "Pending orders", count: pendingOrders, href: "/admin/orders" },
-    { key: "bookings", icon: Briefcase, label: lang === "bn" ? "অপেক্ষমান বুকিং" : "Pending bookings", count: pendingBookings, href: "/admin/bookings" },
-    { key: "leads", icon: Users, label: lang === "bn" ? "নতুন লিড" : "New leads", count: newLeads, href: "/admin/leads" },
+    { key: "orders", icon: ShoppingCart, label: lang === "bn" ? "অপেক্ষমান অর্ডার" : "Pending orders", count: pendingOrders, href: "/sumon/orders" },
+    { key: "bookings", icon: Briefcase, label: lang === "bn" ? "অপেক্ষমান বুকিং" : "Pending bookings", count: pendingBookings, href: "/sumon/bookings" },
+    { key: "leads", icon: Users, label: lang === "bn" ? "নতুন লিড" : "New leads", count: newLeads, href: "/sumon/leads" },
   ].filter((i) => i.count > 0 && !dismissed.has(i.key));
   const visibleTotal = notifItems.reduce((s, i) => s + i.count, 0);
   const dismiss = (key: string) => setDismissed((prev) => new Set(prev).add(key));
@@ -57,10 +57,10 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
         </button>
 
         <nav className="flex items-center gap-1.5 text-sm min-w-0 flex-1" aria-label="Breadcrumb">
-          <Link href="/admin" className="text-gray-400 hover:text-brand-600 transition-colors shrink-0">
+          <Link href="/sumon" className="text-gray-400 hover:text-brand-600 transition-colors shrink-0">
             {lang === "bn" ? "অ্যাডমিন" : "Admin"}
           </Link>
-          {pathname !== "/admin" && (
+          {pathname !== "/sumon" && (
             <>
               <ChevronRight className="w-3.5 h-3.5 text-gray-300 shrink-0" />
               <span className="font-semibold text-gray-900 truncate">{pageTitle}</span>

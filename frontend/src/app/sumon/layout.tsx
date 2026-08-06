@@ -14,7 +14,7 @@ import { Loader2 } from "lucide-react";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, loading, logout } = useAdmin(pathname !== "/admin/login");
+  const { user, loading, logout } = useAdmin(pathname !== "/sumon/login");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dark, setDark] = useState(false);
 
@@ -24,7 +24,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // Per-page browser tab title — every admin page used to share the site title.
   useEffect(() => {
-    if (pathname !== "/admin/login") {
+    if (pathname !== "/sumon/login") {
       document.title = `${getAdminPageTitle(pathname)} · ABO Admin`;
     }
   }, [pathname]);
@@ -35,9 +35,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       return !d;
     });
   };
-  useAdminPolling(pathname !== "/admin/login");
+  useAdminPolling(pathname !== "/sumon/login");
 
-  if (pathname === "/admin/login") {
+  if (pathname === "/sumon/login") {
     return <>{children}</>;
   }
 
