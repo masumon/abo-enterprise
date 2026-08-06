@@ -504,7 +504,11 @@ export default function CheckoutPage() {
                   {lang === "bn" ? "সাইন ইন" : "Sign in"}
                 </Link>
                 {!signInRequired && guestAllowed && (
-                  <button type="button" className="btn btn-sm btn-outline" onClick={() => { /* proceed as guest by submitting form */ }}>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-outline"
+                    onClick={() => document.getElementById("checkout-form")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+                  >
                     {lang === "bn" ? "অতিথি হিসেবে চালিয়ে যান" : "Continue as guest"}
                   </button>
                 )}
@@ -564,7 +568,7 @@ export default function CheckoutPage() {
                           onChange={(e) => { register("otp_code").onChange(e); if (e.target.value.length === 4) verifyOtp(e.target.value); }} />
                         <button type="button" onClick={sendOtp} disabled={otpLoading || otpVerified || otpResendIn > 0} className="btn btn-outline btn-sm">
                           {otpVerified
-                            ? "✓"
+                            ? <Check className="w-4 h-4 text-green-600" aria-label={lang === "bn" ? "ভেরিফাই হয়েছে" : "Verified"} />
                             : otpResendIn > 0
                               ? `${otpResendIn}s`
                               : otpSent
@@ -760,7 +764,7 @@ export default function CheckoutPage() {
                     <>
                       {!appliedCoupon ? (
                         <div className="flex gap-2 mb-3">
-                          <input value={couponInput} onChange={(e) => setCouponInput(e.target.value)} placeholder={lang === "bn" ? "কুপন" : "Coupon"} className="input flex-1 text-sm py-2" />
+                          <input value={couponInput} onChange={(e) => { setCouponInput(e.target.value); if (couponError) setCouponError(null); }} placeholder={lang === "bn" ? "কুপন" : "Coupon"} className="input flex-1 text-sm py-2" aria-invalid={!!couponError} />
                           <button type="button" onClick={applyCoupon} className="btn btn-outline btn-sm"><Tag className="w-4 h-4" /></button>
                         </div>
                       ) : (
@@ -769,7 +773,7 @@ export default function CheckoutPage() {
                           <button type="button" onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} className="text-xs text-gray-400">✕</button>
                         </div>
                       )}
-                      {couponError && <p className="text-red-500 text-xs">{couponError}</p>}
+                      {couponError && <p role="status" className="text-red-500 text-xs">{couponError}</p>}
                     </>
                   )}
                   <div className="flex justify-between"><span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span><span className="money">{formatPrice(subtotal)}</span></div>
@@ -839,7 +843,7 @@ export default function CheckoutPage() {
             </p>
           </div>
           <button type="submit" form="checkout-form" disabled={isSubmitting || stockIssue || signInRequired} className="btn btn-success btn-md min-w-[9rem]">
-            {isSubmitting ? "..." : ctaLabel}
+            {isSubmitting ? (lang === "bn" ? "প্রক্রিয়া..." : "Processing...") : ctaLabel}
           </button>
         </div>
       </div>

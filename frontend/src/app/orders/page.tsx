@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Package, LogOut, ChevronRight } from "lucide-react";
+import { Package, LogOut, ChevronRight, AlertCircle } from "lucide-react";
 import { useCustomerStore } from "@/store/customer";
 import { useLanguageStore } from "@/store/language";
 import { ordersApi } from "@/lib/api";
@@ -29,11 +29,10 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  useEffect(() => {
-    if (!isLoggedIn() || !session?.token) {
-      router.replace("/login");
-      return;
-    }
+  const loadOrders = useCallback(() => {
+    if (!session?.token) return;
+    setLoading(true);
+    setError(false);
     ordersApi.byPhone(session.phone, session.token)
       .then((r) => setOrders(r.data.data ?? []))
       .catch((err) => {
@@ -46,7 +45,15 @@ export default function OrdersPage() {
         setError(true);
       })
       .finally(() => setLoading(false));
-  }, [isLoggedIn, session, router, logout]);
+  }, [session, logout, router]);
+
+  useEffect(() => {
+    if (!isLoggedIn() || !session?.token) {
+      router.replace("/login");
+      return;
+    }
+    loadOrders();
+  }, [isLoggedIn, session, router, loadOrders]);
 
   const statusLabel = (s: string) => {
     const map: Record<string, { en: string; bn: string }> = {
@@ -85,9 +92,13 @@ export default function OrdersPage() {
         {loading ? (
           <ListRowSkeleton rows={4} />
         ) : error ? (
-          <GlassCard className="p-8 text-center">
-            <p className="text-gray-500">{lang === "bn" ? "অর্ডার লোড করা যায়নি" : "Could not load orders"}</p>
-          </GlassCard>
+          <EmptyState
+            icon={AlertCircle}
+            title={lang === "bn" ? "অর্ডার লোড করা যায়নি" : "Could not load orders"}
+            description={lang === "bn" ? "ইন্টারনেট সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।" : "Check your connection and try again."}
+            actionLabel={lang === "bn" ? "আবার চেষ্টা করুন" : "Retry"}
+            onAction={loadOrders}
+          />
         ) : orders.length === 0 ? (
           <EmptyState
             icon={Package}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, SlidersHorizontal, Loader2, LayoutGrid, List, X } from "lucide-react";
+import { Search, SlidersHorizontal, Loader2, LayoutGrid, List, X, AlertCircle } from "lucide-react";
 import type { Category, Product, Subcategory } from "@/types";
 import ProductCard from "@/components/features/ProductCard";
 import Reveal from "@/components/ui/Reveal";
@@ -406,6 +406,7 @@ export default function ProductsClient({
         </div>
       ) : error ? (
         <div className="text-center py-24 glass rounded-2xl p-8" role="alert">
+          <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-3" aria-hidden />
           <p className="text-gray-600 font-semibold mb-1">{t("error_generic")}</p>
           <p className="text-gray-400 text-sm mb-5">{lang === "bn" ? "সার্ভার শীঘ্রই চালু হবে — আবার চেষ্টা করুন।" : "Server may be starting — please retry."}</p>
           <button type="button" onClick={() => load(1)} className="btn btn-brand btn-md btn-ripple">{lang === "bn" ? "আবার চেষ্টা" : "Retry"}</button>

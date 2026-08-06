@@ -7,6 +7,7 @@ import { BD_PHONE_REGEX, BD_PHONE_PLACEHOLDER } from "@/lib/phone";
 import { useCustomerProfileStore } from "@/store/customerProfile";
 import PageHero from "@/components/ui/PageHero";
 import GlassCard from "@/components/ui/GlassCard";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function AddressesPage() {
   const { lang } = useLanguageStore();
@@ -74,9 +75,13 @@ export default function AddressesPage() {
       />
       <div className="container mx-auto px-4 py-8 max-w-2xl space-y-6">
         {addresses.length === 0 ? (
-          <GlassCard className="p-6 text-center text-muted">
-            {lang === "bn" ? "কোনো ঠিকানা সংরক্ষিত নেই" : "No saved addresses"}
-          </GlassCard>
+          <EmptyState
+            icon={MapPin}
+            title={lang === "bn" ? "কোনো ঠিকানা সংরক্ষিত নেই" : "No saved addresses"}
+            description={lang === "bn" ? "দ্রুত চেকআউটের জন্য একটি ঠিকানা যোগ করুন।" : "Add one for faster checkout next time."}
+            actionLabel={lang === "bn" ? "ঠিকানা যোগ করুন" : "Add Address"}
+            onAction={() => document.getElementById("address-label")?.focus()}
+          />
         ) : (
           <div className="space-y-3">
             {addresses.map((a) => (
