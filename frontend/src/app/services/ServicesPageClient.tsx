@@ -33,7 +33,7 @@ const SERVICE_GROUPS = [
   {
     anchor: "digital-services",
     icon: FileText,
-    color: "bg-emerald-600",
+    color: "bg-brand-600",
     title: { en: "Digital Services", bn: "ডিজিটাল সেবা" },
     items: [
       { en: "Passport", bn: "পাসপোর্ট" },
@@ -123,7 +123,7 @@ const SERVICE_GROUPS = [
   {
     anchor: "it-support",
     icon: Headphones,
-    color: "bg-rose-600",
+    color: "bg-accent-600",
     title: { en: "Business & IT Support", bn: "বিজনেস ও আইটি সাপোর্ট" },
     items: [
       { en: "Networking", bn: "নেটওয়ার্কিং" },
@@ -143,8 +143,8 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
 
 /** Rotating accents for DB-driven category cards (same palette as the static groups). */
 const CATEGORY_COLORS = [
-  "bg-emerald-600", "bg-brand-600", "bg-brand-600", "bg-accent-600",
-  "bg-rose-600", "bg-accent-600", "bg-brand-600", "bg-brand-600", "bg-brand-600",
+  "bg-brand-600", "bg-brand-600", "bg-brand-600", "bg-accent-600",
+  "bg-accent-600", "bg-accent-600", "bg-brand-600", "bg-brand-600", "bg-brand-600",
 ];
 
 /**
