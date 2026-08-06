@@ -27,6 +27,9 @@ export default function VisitRequiredPanel({ service }: { service: Service }) {
   const bn = lang === "bn";
 
   const documents = (service.required_documents ?? []).filter(Boolean);
+  // Items may be legacy plain strings or bilingual {en,bn}; pick with EN fallback.
+  const docText = (d: string | { en?: string; bn?: string }): string =>
+    typeof d === "string" ? d : (bn ? d.bn || d.en || "" : d.en || d.bn || "");
   const note = fulfilmentDetail(service.fulfilment, lang);
   // Same keys the footer and contact page publish, so the shop cannot end up
   // with two addresses or two sets of hours.
@@ -54,7 +57,7 @@ export default function VisitRequiredPanel({ service }: { service: Service }) {
             {documents.map((doc, i) => (
               <li key={i} className="flex items-start gap-2 text-sm text-heading">
                 <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" aria-hidden />
-                {doc}
+                {docText(doc)}
               </li>
             ))}
           </ul>

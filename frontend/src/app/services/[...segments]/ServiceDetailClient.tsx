@@ -120,6 +120,16 @@ export default function ServiceDetailClient({ service }: Props) {
   const documents = (service.required_documents ?? []).filter(Boolean);
   const faq = (service.faq ?? []).filter((f) => f?.question && f?.answer);
 
+  // Bilingual content pickers with an English fallback, tolerant of legacy
+  // shapes (plain strings; steps/faq without _bn). So nothing breaks: an item
+  // with no Bengali simply keeps showing its English text in both languages.
+  const listText = (item: string | { en?: string; bn?: string }): string =>
+    typeof item === "string"
+      ? item
+      : (lang === "bn" ? item.bn || item.en || "" : item.en || item.bn || "");
+  const pick = (en?: string, bn?: string): string =>
+    (lang === "bn" ? bn || en : en) ?? "";
+
   const hasTiers =
     service.pricing_tiers && service.pricing_tiers.length > 0;
   const activeTierData = hasTiers
@@ -320,8 +330,10 @@ export default function ServiceDetailClient({ service }: Props) {
                     {s.step ?? i + 1}
                   </span>
                   <div className="pt-1">
-                    <p className="font-semibold text-heading">{s.title}</p>
-                    {s.description && <p className="text-sm text-muted mt-0.5">{s.description}</p>}
+                    <p className="font-semibold text-heading">{pick(s.title, s.title_bn)}</p>
+                    {(s.description || s.description_bn) && (
+                      <p className="text-sm text-muted mt-0.5">{pick(s.description, s.description_bn)}</p>
+                    )}
                   </div>
                 </li>
               ))}
@@ -339,7 +351,7 @@ export default function ServiceDetailClient({ service }: Props) {
               {benefits.map((b, i) => (
                 <li key={i} className="flex items-start gap-2 text-muted">
                   <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>{b}</span>
+                  <span>{listText(b)}</span>
                 </li>
               ))}
             </ul>
@@ -367,7 +379,7 @@ export default function ServiceDetailClient({ service }: Props) {
                   {requirements.map((r, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-muted">
                       <span aria-hidden className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0" />
-                      {r}
+                      {listText(r)}
                     </li>
                   ))}
                 </ul>
@@ -385,7 +397,7 @@ export default function ServiceDetailClient({ service }: Props) {
                   {documents.map((d, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm text-muted">
                       <CheckCircle className="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5" />
-                      {d}
+                      {listText(d)}
                     </li>
                   ))}
                 </ul>
@@ -410,10 +422,10 @@ export default function ServiceDetailClient({ service }: Props) {
               {faq.map((item, i) => (
                 <details key={i} className="enterprise-card p-5 group">
                   <summary className="font-semibold text-heading cursor-pointer list-none flex items-center justify-between gap-3">
-                    {item.question}
+                    {pick(item.question, item.question_bn)}
                     <ChevronDown className="w-4 h-4 text-muted flex-shrink-0 transition-transform group-open:rotate-180" />
                   </summary>
-                  <p className="text-sm text-muted mt-3 leading-relaxed">{item.answer}</p>
+                  <p className="text-sm text-muted mt-3 leading-relaxed">{pick(item.answer, item.answer_bn)}</p>
                 </details>
               ))}
             </div>

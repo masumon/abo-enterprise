@@ -843,12 +843,16 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
             )}
           </p>
           <ul className="space-y-1 mb-3">
-            {service.required_documents!.map((d) => (
-              <li key={d} className="text-sm text-muted flex items-start gap-2">
-                <span aria-hidden className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0" />
-                {d}
-              </li>
-            ))}
+            {service.required_documents!.map((d, i) => {
+              // Item may be a legacy string or bilingual {en,bn}; pick with EN fallback.
+              const text = typeof d === "string" ? d : (bn ? d.bn || d.en || "" : d.en || d.bn || "");
+              return (
+                <li key={i} className="text-sm text-muted flex items-start gap-2">
+                  <span aria-hidden className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0" />
+                  {text}
+                </li>
+              );
+            })}
           </ul>
           <input
             id="booking-documents"

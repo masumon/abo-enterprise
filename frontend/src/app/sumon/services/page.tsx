@@ -114,6 +114,23 @@ function slugify(t: string) {
   return t.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
 }
 
+// ── Bilingual content helpers (backward-compatible) ──────────────────────────
+// The list blocks (benefits/requirements/documents) store items as {en, bn};
+// a legacy plain string is read as English. In the admin they edit as one line
+// each: "English text | বাংলা টেক্সট" (the bn half is optional).
+type BiPair = { en: string; bn: string };
+const asPair = (x: unknown): BiPair =>
+  typeof x === "string"
+    ? { en: x, bn: "" }
+    : { en: (x as BiPair)?.en ?? "", bn: (x as BiPair)?.bn ?? "" };
+const pairsToText = (items: unknown[] | undefined): string =>
+  (items ?? []).map((x) => { const p = asPair(x); return p.bn ? `${p.en}|${p.bn}` : p.en; }).join("\n");
+const textToPairs = (text: string): BiPair[] =>
+  text.split("\n").filter((l) => l.trim()).map((line) => {
+    const [en, ...rest] = line.split("|");
+    return { en: (en ?? "").trim(), bn: rest.join("|").trim() };
+  });
+
 export default function AdminServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
@@ -918,78 +935,85 @@ export default function AdminServicesPage() {
                 </button>
                 {extOpen && (
                   <div className="px-4 py-4 space-y-4">
-                    {/* Process Steps */}
+                    <p className="text-[11px] text-brand-600 bg-brand-50 dark:bg-brand-500/10 rounded-lg px-3 py-2">
+                      বাইলিঙ্গুয়াল: প্রতিটি লাইনে <b>English | বাংলা</b> — বাংলা অংশ ঐচ্ছিক। বাংলা দিলে সাইটে ভাষা টগলে বাংলা দেখাবে, না দিলে ইংরেজি থাকবে।
+                    </p>
+
+                    {/* Process Steps — step|title_en|desc_en|title_bn|desc_bn */}
                     <div>
-                      <label className="form-label">Process Steps (JSON lines: step|title|description)</label>
+                      <label className="form-label">Process Steps</label>
                       <textarea
                         rows={4}
                         className="input w-full resize-y text-sm font-mono"
-                        placeholder={"1|Discovery|We analyze your requirements\n2|Design|We create a solution plan"}
-                        value={(editing.process_steps ?? []).map((s: { step: number; title: string; description: string }) => `${s.step}|${s.title}|${s.description}`).join("\n")}
+                        placeholder={"1|Discovery|We analyze your requirements|আবিষ্কার|আমরা আপনার প্রয়োজন বিশ্লেষণ করি"}
+                        value={(editing.process_steps ?? []).map((s: { step?: number; title?: string; description?: string; title_bn?: string; description_bn?: string }) => [s.step ?? 1, s.title ?? "", s.description ?? "", s.title_bn ?? "", s.description_bn ?? ""].join("|")).join("\n")}
                         onChange={e => {
-                          const steps = e.target.value.split("\n").filter(Boolean).map(line => {
-                            const [step, title, ...rest] = line.split("|");
-                            return { step: Number(step) || 1, title: title ?? "", description: rest.join("|") ?? "" };
+                          const steps = e.target.value.split("\n").filter((l) => l.trim()).map(line => {
+                            const p = line.split("|");
+                            return { step: Number(p[0]) || 1, title: (p[1] ?? "").trim(), description: (p[2] ?? "").trim(), title_bn: (p[3] ?? "").trim(), description_bn: p.slice(4).join("|").trim() };
                           });
                           setEditing(prev => prev ? { ...prev, process_steps: steps } : prev);
                         }}
                       />
-                      <p className="text-[11px] text-gray-400 mt-1">One step per line: number|title|description</p>
+                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: number|title(EN)|description(EN)|title(বাংলা)|description(বাংলা)</p>
                     </div>
 
-                    {/* Benefits */}
+                    {/* Benefits — English|বাংলা per line */}
                     <div>
-                      <label className="form-label">Benefits (one per line)</label>
+                      <label className="form-label">Benefits</label>
                       <textarea
                         rows={4}
                         className="input w-full resize-y text-sm"
-                        placeholder={"Fast delivery\n24/7 support\nMoney-back guarantee"}
-                        value={(editing.benefits ?? []).join("\n")}
-                        onChange={e => setEditing(prev => prev ? { ...prev, benefits: e.target.value.split("\n").filter(Boolean) } : prev)}
+                        placeholder={"Fast delivery|দ্রুত ডেলিভারি\n24/7 support|২৪/৭ সাপোর্ট"}
+                        value={pairsToText(editing.benefits)}
+                        onChange={e => setEditing(prev => prev ? { ...prev, benefits: textToPairs(e.target.value) } : prev)}
                       />
+                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: English | বাংলা</p>
                     </div>
 
                     {/* Requirements */}
                     <div>
-                      <label className="form-label">Requirements (one per line)</label>
+                      <label className="form-label">Requirements</label>
                       <textarea
                         rows={3}
                         className="input w-full resize-y text-sm"
-                        placeholder={"Active internet connection\nValid email address"}
-                        value={(editing.requirements ?? []).join("\n")}
-                        onChange={e => setEditing(prev => prev ? { ...prev, requirements: e.target.value.split("\n").filter(Boolean) } : prev)}
+                        placeholder={"Active internet connection|সচল ইন্টারনেট সংযোগ"}
+                        value={pairsToText(editing.requirements)}
+                        onChange={e => setEditing(prev => prev ? { ...prev, requirements: textToPairs(e.target.value) } : prev)}
                       />
+                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: English | বাংলা</p>
                     </div>
 
                     {/* Required Documents */}
                     <div>
-                      <label className="form-label">Required Documents (one per line)</label>
+                      <label className="form-label">Required Documents</label>
                       <textarea
                         rows={3}
                         className="input w-full resize-y text-sm"
-                        placeholder={"National ID\nTrade License"}
-                        value={(editing.required_documents ?? []).join("\n")}
-                        onChange={e => setEditing(prev => prev ? { ...prev, required_documents: e.target.value.split("\n").filter(Boolean) } : prev)}
+                        placeholder={"National ID|জাতীয় পরিচয়পত্র"}
+                        value={pairsToText(editing.required_documents)}
+                        onChange={e => setEditing(prev => prev ? { ...prev, required_documents: textToPairs(e.target.value) } : prev)}
                       />
+                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: English | বাংলা</p>
                     </div>
 
-                    {/* FAQ */}
+                    {/* FAQ — q_en|a_en|q_bn|a_bn */}
                     <div>
-                      <label className="form-label">FAQ (JSON lines: question|answer)</label>
+                      <label className="form-label">FAQ</label>
                       <textarea
                         rows={4}
                         className="input w-full resize-y text-sm font-mono"
-                        placeholder={"How long does it take?|Usually 3-5 business days\nDo you offer refunds?|Yes, within 7 days"}
-                        value={(editing.faq ?? []).map((f: { question: string; answer: string }) => `${f.question}|${f.answer}`).join("\n")}
+                        placeholder={"How long does it take?|Usually 3-5 business days|কত সময় লাগে?|সাধারণত ৩-৫ কর্মদিবস"}
+                        value={(editing.faq ?? []).map((f: { question?: string; answer?: string; question_bn?: string; answer_bn?: string }) => [f.question ?? "", f.answer ?? "", f.question_bn ?? "", f.answer_bn ?? ""].join("|")).join("\n")}
                         onChange={e => {
-                          const faq = e.target.value.split("\n").filter(Boolean).map(line => {
-                            const [question, ...rest] = line.split("|");
-                            return { question: question ?? "", answer: rest.join("|") ?? "" };
+                          const faq = e.target.value.split("\n").filter((l) => l.trim()).map(line => {
+                            const p = line.split("|");
+                            return { question: (p[0] ?? "").trim(), answer: (p[1] ?? "").trim(), question_bn: (p[2] ?? "").trim(), answer_bn: p.slice(3).join("|").trim() };
                           });
                           setEditing(prev => prev ? { ...prev, faq } : prev);
                         }}
                       />
-                      <p className="text-[11px] text-gray-400 mt-1">One FAQ per line: question|answer</p>
+                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: question(EN)|answer(EN)|question(বাংলা)|answer(বাংলা)</p>
                     </div>
                   </div>
                 )}

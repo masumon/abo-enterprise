@@ -579,11 +579,17 @@ class ServiceBase(BaseModel):
     seo_keywords: str | None = None
     canonical_url: str | None = None
     og_image: str | None = None
-    process_steps: list[dict] = []
-    benefits: list[str] = []
-    requirements: list[str] = []
-    required_documents: list[str] = []
-    faq: list[dict] = []
+    # Content blocks. Items may be plain strings (legacy, treated as English) or
+    # bilingual objects ({en, bn} for lists; title_bn/description_bn on steps;
+    # question_bn/answer_bn on faq). Kept untyped so both shapes are accepted
+    # and stored verbatim in the JSON columns — no DB migration, fully
+    # backward-compatible. The frontend picks the language with an English
+    # fallback (see ServiceDetailClient).
+    process_steps: list = []
+    benefits: list = []
+    requirements: list = []
+    required_documents: list = []
+    faq: list = []
 
 
 # Accepted pricing types. "custom" is retained as a back-compat alias for
@@ -677,11 +683,13 @@ class ServiceUpdate(BaseModel):
     featured_image_url: str | None = None
     icon_color: str | None = None
     tags: list[str] | None = None
-    process_steps: list[dict] | None = None
-    benefits: list[str] | None = None
-    requirements: list[str] | None = None
-    required_documents: list[str] | None = None
-    faq: list[dict] | None = None
+    # Untyped lists so bilingual item shapes ({en,bn} / *_bn keys) and legacy
+    # plain strings are both accepted and stored verbatim (see ServiceBase).
+    process_steps: list | None = None
+    benefits: list | None = None
+    requirements: list | None = None
+    required_documents: list | None = None
+    faq: list | None = None
     # Blog posts this service is linked to (many-to-many; NULL = leave links
     # untouched, [] = clear them). Handled in core/blog_links.py, not a column.
     blog_ids: list[uuid.UUID] | None = None
