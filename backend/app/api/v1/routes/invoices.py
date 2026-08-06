@@ -2,7 +2,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
 from app.core.security import require_role
 from app.core.invoice import InvoiceService
@@ -330,6 +330,7 @@ async def list_invoices_admin(
     per_page: int = Query(20, ge=1, le=100),
     payment_status: str | None = None,
     customer_email: str | None = None,
+    search: str | None = Query(None),
 ):
     """List all invoices (admin only)"""
     conditions = [Invoice.is_deleted == False]
@@ -337,6 +338,14 @@ async def list_invoices_admin(
         conditions.append(Invoice.payment_status == payment_status)
     if customer_email:
         conditions.append(Invoice.customer_email.ilike(f"%{customer_email}%"))
+    if search:
+        term = f"%{search}%"
+        conditions.append(or_(
+            Invoice.invoice_number.ilike(term),
+            Invoice.customer_name.ilike(term),
+            Invoice.customer_email.ilike(term),
+            Invoice.customer_phone.ilike(term),
+        ))
 
     count_result = await db.execute(
         select(func.count(Invoice.id)).where(and_(*conditions))

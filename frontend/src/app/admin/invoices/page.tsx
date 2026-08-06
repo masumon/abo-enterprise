@@ -1,8 +1,9 @@
 "use client";
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
+import AdminToolbar from "@/components/admin/AdminToolbar";
 import { Loader2, FileText, X, Trash2, Download, ChevronDown, Plus, RefreshCw, Stethoscope, CheckCircle2, AlertCircle } from "lucide-react";
 import api, { invoicesAdminApi, downloadPdf } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -38,6 +39,8 @@ export default function AdminInvoicesPage() {
   const [invoices, setInvoices] = useState<AdminInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [detail, setDetail] = useState<AdminInvoice | null>(null);
@@ -63,7 +66,7 @@ export default function AdminInvoicesPage() {
     setLoading(true);
     try {
       const r = await api.get("/api/v1/invoices/admin/invoices", {
-        params: { payment_status: filter || undefined, page, per_page: 20 },
+        params: { payment_status: filter || undefined, search: search || undefined, page, per_page: 20 },
       });
       setInvoices((r.data.data ?? []) as AdminInvoice[]);
       setTotal(r.data.meta?.total ?? 0);
@@ -72,9 +75,16 @@ export default function AdminInvoicesPage() {
     } finally {
       setLoading(false);
     }
-  }, [filter, page, toast]);
+  }, [filter, search, page, toast]);
 
   useEffect(() => { load(); }, [load]);
+
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearchChange = (v: string) => {
+    setSearchInput(v);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => { setSearch(v); setPage(1); }, 400);
+  };
 
   const handleBackfill = async () => {
     setSyncing(true);
@@ -237,18 +247,25 @@ export default function AdminInvoicesPage() {
           <button onClick={() => setShowCreate(true)} className="btn btn-brand btn-md flex items-center gap-2">
             <Plus className="w-4 h-4" /> Create Invoice
           </button>
-          <select
-            value={filter}
-            onChange={(e) => { setFilter(e.target.value); setPage(1); }}
-            className="border border-gray-200 rounded-lg text-sm px-3 py-2 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-          >
-            <option value="">All Status</option>
-            {PAYMENT_STATUSES.map((s) => (
-              <option key={s} value={s} className="capitalize">{s}</option>
-            ))}
-          </select>
         </div>
       </div>
+
+      <AdminToolbar
+        searchValue={searchInput}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="Search invoice #, customer name, phone or email…"
+      >
+        <select
+          value={filter}
+          onChange={(e) => { setFilter(e.target.value); setPage(1); }}
+          className="border border-gray-200 rounded-lg text-sm px-3 py-2 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+        >
+          <option value="">All Status</option>
+          {PAYMENT_STATUSES.map((s) => (
+            <option key={s} value={s} className="capitalize">{s}</option>
+          ))}
+        </select>
+      </AdminToolbar>
 
       {diagReport && (
         <div className={`rounded-xl border p-4 ${diagReport.ok ? "bg-green-50 border-green-200" : "bg-red-50 border-red-200"}`}>

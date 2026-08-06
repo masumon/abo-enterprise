@@ -50,6 +50,8 @@ export default function AdminLeadsPage() {
   const [loadingV2, setLoadingV2] = useState(false);
   const [statusFilterV2, setStatusFilterV2] = useState("");
   const [typeFilterV2, setTypeFilterV2] = useState("");
+  const [searchV2, setSearchV2] = useState("");
+  const [searchInputV2, setSearchInputV2] = useState("");
   const [pageV2, setPageV2] = useState(1);
   const [totalV2, setTotalV2] = useState(0);
   const [updatingIdV2, setUpdatingIdV2] = useState<string | null>(null);
@@ -77,7 +79,7 @@ export default function AdminLeadsPage() {
   const loadV2 = useCallback(async () => {
     setLoadingV2(true);
     try {
-      const r = await serviceLeadsAdminApi.list({ status: statusFilterV2 || undefined, lead_type: typeFilterV2 || undefined, page: pageV2 });
+      const r = await serviceLeadsAdminApi.list({ status: statusFilterV2 || undefined, lead_type: typeFilterV2 || undefined, search: searchV2 || undefined, page: pageV2 });
       setLeadsV2(r.data.data ?? []);
       setTotalV2(r.data.meta?.total ?? 0);
     } catch (err) {
@@ -85,7 +87,14 @@ export default function AdminLeadsPage() {
     } finally {
       setLoadingV2(false);
     }
-  }, [statusFilterV2, typeFilterV2, pageV2, toast]);
+  }, [statusFilterV2, typeFilterV2, searchV2, pageV2, toast]);
+
+  const searchTimerV2 = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearchChangeV2 = (v: string) => {
+    setSearchInputV2(v);
+    if (searchTimerV2.current) clearTimeout(searchTimerV2.current);
+    searchTimerV2.current = setTimeout(() => { setSearchV2(v); setPageV2(1); }, 400);
+  };
 
   useEffect(() => { if (tab === "v1") load(); }, [load, tab]);
   useEffect(() => { if (tab === "v2") loadV2(); }, [loadV2, tab]);
@@ -226,7 +235,11 @@ export default function AdminLeadsPage() {
           </button>
         </AdminToolbar>
       ) : (
-        <AdminToolbar>
+        <AdminToolbar
+          searchValue={searchInputV2}
+          onSearchChange={handleSearchChangeV2}
+          searchPlaceholder="Search name, phone, email or company…"
+        >
           <select value={typeFilterV2} onChange={(e) => { setTypeFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
             <option value="">All Types</option>
             {TYPES_V2.map(t => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}

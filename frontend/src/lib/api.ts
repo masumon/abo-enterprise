@@ -326,7 +326,7 @@ export const serviceLeadsApi = {
 };
 
 export const serviceLeadsAdminApi = {
-  list: (params?: { status?: string; lead_type?: string; min_score?: number; page?: number; per_page?: number }) =>
+  list: (params?: { status?: string; lead_type?: string; min_score?: number; search?: string; page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<LeadV2>>("/api/v1/service-leads/admin/leads", { params }),
 
   updateStatus: (id: string, status: string, reason_lost?: string) =>
@@ -489,7 +489,7 @@ export async function downloadPdf(path: string, filename: string): Promise<void>
 }
 
 export const adminBlogApi = {
-  list: (params?: { status?: string; page?: number; per_page?: number }) =>
+  list: (params?: { status?: string; search?: string; page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<BlogPost>>("/api/v1/blog/admin/posts", { params }),
 
   get: (id: string) =>
@@ -677,8 +677,11 @@ export const adminApi = {
       created_at: string;
     }>>("/api/v1/admin/payment-reconciliation", { params: { page } }),
 
-  listAuditLogs: (params: { page?: number; per_page?: number } = {}) =>
+  listAuditLogs: (params: { page?: number; per_page?: number; action?: string; entity_type?: string; search?: string } = {}) =>
     api.get<PaginatedResponse<{ id: string; action: string; entity_type: string; entity_id: string | null; created_at: string; admin_email?: string }>>("/api/v1/admin/audit-logs", { params }),
+
+  auditLogFilterOptions: () =>
+    api.get<ApiResponse<{ actions: string[]; entity_types: string[] }>>("/api/v1/admin/audit-logs/meta"),
 
   listMedia: (params: { folder?: string; search?: string; page?: number; per_page?: number } = {}) =>
     api.get<PaginatedResponse<MediaAssetRecord>>("/api/v1/media/assets", { params }),

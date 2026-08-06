@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
 from app.core.security import require_role
 from app.core.config import settings
@@ -172,19 +172,9 @@ async def list_leads_admin(
     status: str | None = None,
     lead_type: str | None = None,
     min_score: int | None = None,
+    search: str | None = Query(None),
 ):
     """List all leads (admin only)"""
-    query = select(LeadV2).where(LeadV2.is_deleted == False)
-
-    if status:
-        query = query.where(LeadV2.status == status)
-
-    if lead_type:
-        query = query.where(LeadV2.lead_type == lead_type)
-
-    if min_score is not None:
-        query = query.where(LeadV2.qualification_score >= min_score)
-
     count_conditions = [LeadV2.is_deleted == False]
     if status:
         count_conditions.append(LeadV2.status == status)
@@ -192,6 +182,17 @@ async def list_leads_admin(
         count_conditions.append(LeadV2.lead_type == lead_type)
     if min_score is not None:
         count_conditions.append(LeadV2.qualification_score >= min_score)
+    if search:
+        term = f"%{search}%"
+        count_conditions.append(or_(
+            LeadV2.name.ilike(term),
+            LeadV2.email.ilike(term),
+            LeadV2.phone.ilike(term),
+            LeadV2.company.ilike(term),
+            LeadV2.lead_number.ilike(term),
+        ))
+
+    query = select(LeadV2).where(and_(*count_conditions))
 
     count_result = await db.execute(
         select(func.count(LeadV2.id)).where(and_(*count_conditions))

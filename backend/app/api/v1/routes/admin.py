@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, BackgroundTasks, Depends, UploadFile, File, HTTPException, Query, status
 from pydantic import BaseModel, EmailStr, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import select, func, and_, or_, cast, String
 import cloudinary
 import cloudinary.uploader
 
@@ -458,13 +458,37 @@ async def list_payment_reconciliation(
 async def list_audit_logs(
     page: int = Query(1, ge=1),
     per_page: int = Query(30, ge=1, le=100),
+    action: str | None = Query(None),
+    entity_type: str | None = Query(None),
+    search: str | None = Query(None),
     db: AsyncSession = Depends(get_db),
     _: dict = Depends(require_admin),
 ):
-    total = (await db.execute(select(func.count(ActivityLog.id)))).scalar_one()
+    conditions = []
+    if action:
+        conditions.append(ActivityLog.action == action)
+    if entity_type:
+        conditions.append(ActivityLog.entity_type == entity_type)
+    if search:
+        term = f"%{search}%"
+        conditions.append(or_(
+            ActivityLog.action.ilike(term),
+            ActivityLog.entity_type.ilike(term),
+            cast(ActivityLog.entity_id, String).ilike(term),
+            AdminUser.email.ilike(term),
+        ))
+
+    count_query = (
+        select(func.count(ActivityLog.id))
+        .outerjoin(AdminUser, ActivityLog.admin_id == AdminUser.id)
+        .where(and_(*conditions))
+    )
+    total = (await db.execute(count_query)).scalar_one()
+
     result = await db.execute(
         select(ActivityLog, AdminUser.email)
         .outerjoin(AdminUser, ActivityLog.admin_id == AdminUser.id)
+        .where(and_(*conditions))
         .order_by(ActivityLog.created_at.desc())
         .offset((page - 1) * per_page).limit(per_page)
     )
@@ -484,6 +508,21 @@ async def list_audit_logs(
         ],
         meta=PaginatedMeta(page=page, per_page=per_page, total=total, total_pages=max(1, -(-total // per_page))),
     )
+
+
+@router.get("/audit-logs/meta", response_model=ApiResponse)
+async def audit_log_filter_options(
+    db: AsyncSession = Depends(get_db),
+    _: dict = Depends(require_admin),
+):
+    """Distinct action/entity-type values across the WHOLE audit trail, so the
+    filter dropdowns aren't limited to whatever happens to be on the current page."""
+    actions = (await db.execute(select(ActivityLog.action).distinct())).scalars().all()
+    entity_types = (await db.execute(select(ActivityLog.entity_type).distinct())).scalars().all()
+    return ApiResponse(data={
+        "actions": sorted(a for a in actions if a),
+        "entity_types": sorted(e for e in entity_types if e),
+    })
 
 
 # ── Manual admin → customer email ─────────────────────────────────────────

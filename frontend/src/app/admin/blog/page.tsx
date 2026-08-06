@@ -3,6 +3,7 @@ import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/admin
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
+import AdminToolbar from "@/components/admin/AdminToolbar";
 import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp, ExternalLink, Globe, Copy } from "lucide-react";
 import { adminBlogApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -55,8 +56,11 @@ export default function AdminBlogPage() {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editing, setEditing] = useState<Partial<BlogPost> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -75,7 +79,7 @@ export default function AdminBlogPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await adminBlogApi.list({ status: statusFilter || undefined, page, per_page: 20 });
+      const r = await adminBlogApi.list({ status: statusFilter || undefined, search: search || undefined, page, per_page: 20 });
       setPosts((r.data.data ?? []) as unknown as BlogPost[]);
       setTotal(r.data.meta?.total ?? 0);
     } catch {
@@ -83,9 +87,15 @@ export default function AdminBlogPage() {
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, page, toast]);
+  }, [statusFilter, search, page, toast]);
 
   useEffect(() => { load(); }, [load]);
+
+  const handleSearchChange = (v: string) => {
+    setSearchInput(v);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => { setSearch(v); setPage(1); }, 400);
+  };
 
   useEffect(() => {
     if (!isNew || !editing) return;
@@ -274,22 +284,27 @@ export default function AdminBlogPage() {
           <AdminTitle en="Blog" bn="ব্লগ" />
           <p className="text-gray-500 text-sm mt-1">{total} total posts</p>
         </div>
-        <div className="flex items-center gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-            className="input w-auto text-sm"
-          >
-            <option value="">All Status</option>
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-          </select>
-          <button onClick={openNew} className="btn btn-primary btn-sm gap-1.5">
-            <Plus className="w-4 h-4" />
-            New Post
-          </button>
-        </div>
+        <button onClick={openNew} className="btn btn-primary btn-sm gap-1.5">
+          <Plus className="w-4 h-4" />
+          New Post
+        </button>
       </div>
+
+      <AdminToolbar
+        searchValue={searchInput}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="Search title or slug…"
+      >
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          className="input w-auto text-sm"
+        >
+          <option value="">All Status</option>
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+        </select>
+      </AdminToolbar>
 
       <div className="admin-card overflow-hidden">
         {loading ? (
