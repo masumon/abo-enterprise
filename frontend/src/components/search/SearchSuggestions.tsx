@@ -16,7 +16,7 @@ interface Props {
 }
 
 export default function SearchSuggestions({ query, onSelect, className, listboxId }: Props) {
-  const [items, setItems] = useState<{ slug: string; name_en: string; name_bn: string; price: number }[]>([]);
+  const [items, setItems] = useState<{ slug: string; name_en: string; name_bn: string; price: number; image_url?: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const { lang } = useLanguageStore();
   const router = useRouter();
@@ -51,9 +51,12 @@ export default function SearchSuggestions({ query, onSelect, className, listboxI
       {loading ? (
         <div className="p-4 flex justify-center" role="status" aria-live="polite"><Loader2 className="w-5 h-5 animate-spin text-brand-500" /></div>
       ) : items.length === 0 ? (
-        <p className="p-4 text-sm text-gray-500 text-center">
-          {lang === "bn" ? "কোনো ফলাফল নেই" : "No suggestions"}
-        </p>
+        <div className="p-5 flex flex-col items-center gap-1.5 text-center">
+          <Search className="w-5 h-5 text-gray-300 dark:text-white/20" aria-hidden />
+          <p className="text-sm text-gray-500">
+            {lang === "bn" ? "কোনো ফলাফল নেই" : "No suggestions"}
+          </p>
+        </div>
       ) : (
         <ul id={searchListId} role="listbox" aria-label={lang === "bn" ? "প্রোডাক্ট সাজেশন" : "Product suggestions"}>
           {items.map((item) => (
@@ -64,11 +67,18 @@ export default function SearchSuggestions({ query, onSelect, className, listboxI
                 role="option"
                 aria-selected={false}
                 tabIndex={-1}
-                className="flex items-center gap-3 px-4 py-2.5 hover:bg-brand-50 dark:hover:bg-white/5 text-sm"
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-brand-50 dark:hover:bg-white/5 transition-colors text-sm"
               >
-                <Package className="w-4 h-4 text-brand-500" />
-                <span className="flex-1">{lang === "bn" ? item.name_bn : item.name_en}</span>
-                <span className="text-accent-600 font-medium">৳{item.price.toLocaleString(priceLocale)}</span>
+                <span className="w-9 h-9 flex-shrink-0 rounded-lg bg-brand-50 dark:bg-brand-500/10 overflow-hidden flex items-center justify-center">
+                  {item.image_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- small dropdown thumbnail, next/image overhead not worth it here
+                    <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <Package className="w-4 h-4 text-brand-500" />
+                  )}
+                </span>
+                <span className="flex-1 truncate">{lang === "bn" ? item.name_bn : item.name_en}</span>
+                <span className="text-accent-600 font-medium flex-shrink-0">৳{item.price.toLocaleString(priceLocale)}</span>
               </Link>
             </li>
           ))}
@@ -78,7 +88,7 @@ export default function SearchSuggestions({ query, onSelect, className, listboxI
               onClick={() => { router.push(`/search?q=${encodeURIComponent(query)}`); onSelect(); }}
               role="option"
               aria-selected={false}
-              className="w-full px-4 py-2.5 text-sm text-brand-600 font-medium hover:bg-brand-50 dark:hover:bg-white/5 flex items-center gap-2 border-t border-gray-100 dark:border-white/10"
+              className="w-full px-4 py-2.5 text-sm text-brand-600 dark:text-brand-300 font-medium hover:bg-brand-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2 border-t border-gray-100 dark:border-white/10"
             >
               <Search className="w-4 h-4" />
               {lang === "bn" ? `সব ফলাফল দেখুন "${query}"` : `See all results for "${query}"`}

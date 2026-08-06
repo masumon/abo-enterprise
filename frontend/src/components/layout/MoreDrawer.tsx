@@ -135,12 +135,12 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
         className="absolute inset-y-0 left-0 h-full w-[85%] max-w-[340px] overflow-y-auto rounded-r-2xl bg-white dark:bg-[var(--surface-card)] shadow-2xl motion-safe:animate-slide-in-left"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
       >
-        <div className="sticky top-0 flex items-center gap-2 px-4 py-3 bg-white dark:bg-[var(--surface-card)] border-b border-gray-100 dark:border-white/10">
-          <p className="flex-1 font-bold text-heading">{t({ en: "More", bn: "আরও" })}</p>
+        <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-4 gradient-brand">
+          <p className="flex-1 font-bold text-white text-lg">{t({ en: "More", bn: "আরও" })}</p>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 -mr-2 text-muted"
+            className="p-2 -mr-2 rounded-full text-white/80 hover:bg-white/10 hover:text-white transition-colors"
             aria-label={t({ en: "Close", bn: "বন্ধ" })}
           >
             <X className="w-5 h-5" />
@@ -182,17 +182,24 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
                       href={row.href}
                       onClick={onClose}
                       className={cn(
-                        "flex items-center gap-3 min-h-[44px] px-3 py-2.5 rounded-lg border",
+                        "flex items-center gap-3 min-h-[44px] px-3 py-2.5 rounded-xl border transition-colors",
                         row.gold
-                          ? "border-accent-500 bg-accent-50 dark:bg-accent-900/20"
-                          : "border-gray-200 dark:border-white/10"
+                          ? "border-accent-300 bg-accent-50 dark:border-accent-500/40 dark:bg-accent-900/20"
+                          : "border-transparent bg-gray-50 dark:bg-white/[0.04] hover:border-brand-200 dark:hover:border-brand-500/30"
                       )}
                     >
                       {Icon && (
-                        <Icon
-                          aria-hidden
-                          className={cn("w-4 h-4 flex-shrink-0", row.gold ? "text-accent-700" : "text-brand-600")}
-                        />
+                        <span
+                          className={cn(
+                            "flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center",
+                            row.gold ? "bg-accent-100 dark:bg-accent-500/20" : "bg-brand-50 dark:bg-brand-500/15"
+                          )}
+                        >
+                          <Icon
+                            aria-hidden
+                            className={cn("w-4 h-4", row.gold ? "text-accent-700 dark:text-accent-300" : "text-brand-600 dark:text-brand-300")}
+                          />
+                        </span>
                       )}
                       <span className="flex-1 min-w-0">
                         <span className="block text-sm font-semibold text-heading">{t(row.label)}</span>

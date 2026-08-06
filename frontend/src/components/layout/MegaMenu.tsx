@@ -175,7 +175,12 @@ export default function MegaMenu({ onNavigate }: MegaMenuProps) {
               onMouseEnter={clearHoverTimer}
               onMouseLeave={closeAfterDelay}
             >
-              <div className={cn("grid gap-4", menu.columns.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
+              {/* Caret connecting the panel back to its trigger button. */}
+              <span
+                aria-hidden
+                className="absolute -top-1.5 left-6 w-3 h-3 rotate-45 bg-white dark:bg-[var(--surface-card)] border-l border-t border-gray-100 dark:border-white/10"
+              />
+              <div className={cn("relative grid gap-4", menu.columns.length > 1 ? "grid-cols-2" : "grid-cols-1")}>
                 {menu.columns.map((col) => (
                   <div key={col.title}>
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted mb-2 px-2">{col.title}</p>
@@ -187,9 +192,11 @@ export default function MegaMenu({ onNavigate }: MegaMenuProps) {
                             <Link
                               href={link.href}
                               onClick={close}
-                              className="flex items-center gap-2.5 px-2 py-2 rounded-xl text-sm text-heading hover:bg-brand-50 dark:hover:bg-white/10 transition-colors"
+                              className="group/link flex items-center gap-2.5 px-2 py-2 rounded-xl text-sm text-heading hover:bg-brand-50 dark:hover:bg-white/10 transition-colors"
                             >
-                              <Icon className="w-4 h-4 text-brand-600 dark:text-brand-300 flex-shrink-0" />
+                              <span className="w-7 h-7 rounded-lg bg-brand-50 dark:bg-brand-500/15 flex items-center justify-center flex-shrink-0 transition-transform group-hover/link:scale-110">
+                                <Icon className="w-3.5 h-3.5 text-brand-600 dark:text-brand-300" />
+                              </span>
                               {link.label}
                             </Link>
                           </li>

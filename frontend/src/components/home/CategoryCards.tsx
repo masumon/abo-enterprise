@@ -16,9 +16,9 @@ const ICONS: Record<string, LucideIcon> = {
 /** Cosmetic gradient per tile — cycles by position since the CMS JSON only
  * carries an icon name, not a gradient. */
 const GRADIENTS = [
-  "from-accent-500 to-amber-500",
-  "from-brand-500 to-blue-500",
-  "from-purple-500 to-fuchsia-500",
+  "from-accent-500 to-accent-600",
+  "from-brand-500 to-brand-700",
+  "from-brand-400 to-accent-500",
 ];
 
 const FALLBACK: CmsQuickCategory[] = [

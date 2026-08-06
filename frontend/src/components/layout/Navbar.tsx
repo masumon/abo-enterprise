@@ -118,7 +118,7 @@ export default function Navbar() {
         <button
           type="button"
           onClick={toggleTheme}
-          className="w-9 h-9 rounded-lg border border-[var(--line)] flex items-center justify-center text-[var(--ink-muted)] flex-none"
+          className="w-9 h-9 rounded-lg border border-[var(--line)] bg-gray-50 dark:bg-white/5 flex items-center justify-center text-[var(--ink-muted)] hover:text-accent-600 dark:hover:text-accent-400 hover:border-accent-200 dark:hover:border-accent-500/30 transition-colors flex-none"
           aria-label={lang === "bn" ? "ডার্ক/লাইট মোড পরিবর্তন করুন" : "Toggle dark mode"}
         >
           {theme === "dark" ? <Sun className="w-4 h-4" strokeWidth={2} /> : <Moon className="w-4 h-4" strokeWidth={2} />}
@@ -135,12 +135,12 @@ export default function Navbar() {
 
         <Link
           href="/cart"
-          className="relative w-9 h-9 rounded-lg border border-[var(--line)] flex items-center justify-center text-xs text-[var(--ink-muted)]"
+          className="relative w-9 h-9 rounded-lg border border-[var(--line)] bg-gray-50 dark:bg-white/5 flex items-center justify-center text-xs text-[var(--ink-muted)] hover:text-brand-600 dark:hover:text-brand-300 hover:border-brand-200 dark:hover:border-brand-500/30 transition-colors"
           aria-label={`${t("nav_cart")} (${count})`}
         >
           <ShoppingCart className="w-4 h-4" strokeWidth={2} />
           {count > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-accent-500 text-[#14182b] text-[8px] font-bold flex items-center justify-center">
+            <span className="absolute -top-1.5 -right-1.5 min-w-[14px] h-[14px] px-0.5 rounded-full bg-accent-500 text-[#14182b] text-[8px] font-bold flex items-center justify-center ring-2 ring-white dark:ring-[var(--surface-card)]">
               {count > 99 ? "99+" : count}
             </span>
           )}
@@ -148,7 +148,7 @@ export default function Navbar() {
 
         <Link
           href="/login"
-          className="w-9 h-9 rounded-lg border border-[var(--line)] flex items-center justify-center text-xs text-[var(--ink-muted)]"
+          className="w-9 h-9 rounded-lg border border-[var(--line)] bg-gray-50 dark:bg-white/5 flex items-center justify-center text-xs text-[var(--ink-muted)] hover:text-brand-600 dark:hover:text-brand-300 hover:border-brand-200 dark:hover:border-brand-500/30 transition-colors"
           aria-label={lang === "bn" ? "গ্রাহক লগইন" : "Customer login"}
         >
           <User className="w-4 h-4" strokeWidth={2} />

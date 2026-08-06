@@ -99,9 +99,11 @@ export default function AnnouncementBar() {
  * color instead of the ticker staying plain white. */
 export const ANNOUNCEMENT_VARIANT_BG: Record<string, string> = {
   promo: "bg-gradient-to-r from-brand-700 via-brand-600 to-accent-600 text-white",
-  offer: "bg-gradient-to-r from-accent-600 via-pink-600 to-rose-600 text-white",
-  info: "bg-gradient-to-r from-sky-700 to-blue-600 text-white",
+  offer: "bg-gradient-to-r from-accent-600 via-accent-500 to-brand-700 text-white",
+  info: "bg-gradient-to-r from-brand-800 via-brand-700 to-brand-500 text-white",
+  // success/urgent stay semantic (green = good news, red = urgency) — a
+  // brand-navy "urgent" banner would undersell the urgency it's meant to signal.
   success: "bg-gradient-to-r from-emerald-700 to-green-600 text-white",
-  notice: "bg-gradient-to-r from-amber-500 to-orange-500 text-white",
+  notice: "bg-gradient-to-r from-accent-500 to-accent-600 text-white",
   urgent: "bg-gradient-to-r from-red-700 to-rose-600 text-white",
 };
