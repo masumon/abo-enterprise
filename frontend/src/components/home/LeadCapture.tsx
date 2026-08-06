@@ -105,14 +105,14 @@ export default function LeadCapture() {
   };
 
   return (
-    <section id="consultation" className="py-8 lg:py-10 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+    <section id="consultation" className="py-8 lg:py-10 bg-gradient-to-br from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/10">
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left side - Form */}
           <div>
             <div className="mb-10">
               <div className="inline-block mb-3">
-                <span className="text-sm font-semibold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-500/20 px-4 py-1.5 rounded-full">
+                <span className="text-sm font-semibold text-accent-700 dark:text-accent-300 bg-accent-100 dark:bg-accent-500/20 px-4 py-1.5 rounded-full">
                   ⚡ {lang === "bn" ? "AI কনসালটেশন" : "AI Consultation"}
                 </span>
               </div>
@@ -348,7 +348,7 @@ export default function LeadCapture() {
 
           {/* Right side - AI Illustration (hidden on mobile) */}
           <div className="hidden lg:flex items-center justify-center relative h-[500px]">
-            <div className="relative w-full h-full bg-gradient-to-br from-purple-600 to-blue-600 rounded-3xl p-8 flex items-center justify-center overflow-hidden">
+            <div className="relative w-full h-full bg-gradient-to-br from-brand-700 via-brand-600 to-accent-600 rounded-3xl p-8 flex items-center justify-center overflow-hidden">
               {/* AI Illustration - Placeholder */}
               <div className="relative z-10 text-center">
                 <div className="text-6xl mb-6" aria-hidden>🤖</div>

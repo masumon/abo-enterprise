@@ -156,7 +156,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
 
   return (
     <article
-      className="card-hover group relative flex flex-col overflow-hidden"
+      className="card-hover group relative flex flex-col overflow-hidden hover:border-brand-100 dark:hover:border-brand-400/30"
       onMouseEnter={() => setActionsOpen(true)}
       onMouseLeave={() => setActionsOpen(false)}
     >
@@ -185,13 +185,13 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
         "opacity-100 lg:opacity-0",
         actionsOpen && "lg:opacity-100"
       )}>
-        <button type="button" onClick={handleWishlist} className={cn("rounded-lg glass flex items-center justify-center pointer-events-auto touch-manipulation", compact ? "w-8 h-8" : "w-9 h-9", wished ? "text-accent-500" : "text-gray-500")} aria-label={t("wishlist")}>
+        <button type="button" onClick={handleWishlist} className={cn("rounded-lg glass flex items-center justify-center pointer-events-auto touch-manipulation transition-transform hover:scale-110", compact ? "w-8 h-8" : "w-9 h-9", wished ? "text-accent-500" : "text-gray-500 hover:text-accent-500")} aria-label={t("wishlist")}>
           <Heart className={cn(compact ? "w-3.5 h-3.5" : "w-4 h-4", wished && "fill-current")} />
         </button>
-        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addCompare(product); toast("info", lang === "bn" ? "তুলনায় যোগ" : "Added to compare"); }} disabled={isCompared(productId)} className={cn("rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation", compact ? "w-8 h-8" : "w-9 h-9")} aria-label={t("compare")}>
+        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addCompare(product); toast("info", lang === "bn" ? "তুলনায় যোগ" : "Added to compare"); }} disabled={isCompared(productId)} className={cn("rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation transition-transform hover:scale-110 hover:text-brand-600", compact ? "w-8 h-8" : "w-9 h-9")} aria-label={t("compare")}>
           <GitCompare className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} />
         </button>
-        <Link href={`/products/${product.slug}`} className={cn("rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation", compact ? "w-8 h-8" : "w-9 h-9")} aria-label={t("view_details")}>
+        <Link href={`/products/${product.slug}`} className={cn("rounded-lg glass flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation transition-transform hover:scale-110 hover:text-brand-600", compact ? "w-8 h-8" : "w-9 h-9")} aria-label={t("view_details")}>
           <Eye className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} />
         </Link>
       </div>

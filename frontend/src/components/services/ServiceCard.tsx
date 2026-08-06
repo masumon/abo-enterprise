@@ -35,7 +35,7 @@ export default function ServiceCard({ service, lang = "en", categoryLabel }: Ser
 
   return (
     <Link href={`/services/${service.slug}`} className="block h-full group">
-      <article className="h-full enterprise-card-hover overflow-hidden">
+      <article className="h-full enterprise-card-hover overflow-hidden hover:border-brand-100 dark:hover:border-brand-400/30">
         <div className="relative h-44 bg-brand-50 dark:bg-white/5 overflow-hidden">
           <Image
             src={imageSrc}
