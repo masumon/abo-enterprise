@@ -58,7 +58,7 @@ export default function FlashSaleSection() {
   }
 
   return (
-    <section id="flash-sale" className="relative py-8 sm:py-10 overflow-hidden bg-gradient-to-br from-brand-50 via-white to-amber-50/70 dark:from-[var(--surface)] dark:via-[var(--surface)] dark:to-[var(--surface)] scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
+    <section id="flash-sale" className="relative py-5 sm:py-7 overflow-hidden bg-gradient-to-br from-brand-50 via-white to-amber-50/70 dark:from-[var(--surface)] dark:via-[var(--surface)] dark:to-[var(--surface)] scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
       {/* Ambient multicolour glow — decorative, tuned for a light surface so it
           sits with the rest of the homepage instead of a dark island. */}
       <div className="absolute -top-16 -left-16 w-64 h-64 rounded-full bg-brand-400/15 blur-3xl pointer-events-none" aria-hidden />

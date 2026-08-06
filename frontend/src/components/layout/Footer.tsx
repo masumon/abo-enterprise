@@ -247,12 +247,16 @@ export default function Footer() {
   };
 
   return (
-    <footer className="site-footer relative text-white overflow-hidden bg-gradient-to-b from-[#0f1a2e] to-[#051529]">
+    <footer className="site-footer relative text-white overflow-hidden bg-gradient-to-b from-brand-900 via-[#0b1024] to-[#070b1a]">
+      {/* Brand + gold hairline so the footer reads as part of the site rather
+          than a detached dark block. */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#d4af37]/40 to-transparent" aria-hidden />
+      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[36rem] h-40 rounded-full bg-brand-500/10 blur-3xl pointer-events-none" aria-hidden />
       <div className="relative z-10 mx-auto max-w-3xl px-4 py-6 md:py-10">
 
         {/* Brand + about */}
         <BrandLogo size="lg" href={false} variant="light" />
-        <p className="text-xs text-white/70 mt-3 mb-5 leading-relaxed">{aboutText}</p>
+        <p className="text-[13px] text-white/75 mt-3 mb-5 leading-relaxed tracking-[0.01em]">{aboutText}</p>
 
         {/* Quick-action tiles */}
         <div className="grid grid-cols-4 gap-2 mb-5">
@@ -260,27 +264,27 @@ export default function Footer() {
             <span className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
               <Phone className="w-3.5 h-3.5" aria-hidden />
             </span>
-            <span className="text-[9px] font-bold text-white text-center leading-tight">{bn ? "কল করুন" : "Call"}</span>
+            <span className="text-[10px] font-bold text-white text-center leading-tight">{bn ? "কল করুন" : "Call"}</span>
           </a>
           {whatsappDigits && (
             <a href={`https://wa.me/${whatsappDigits}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors">
               <span className="w-8 h-8 rounded-xl bg-green-500/15 text-green-400 flex items-center justify-center">
                 <MessageCircle className="w-3.5 h-3.5" aria-hidden />
               </span>
-              <span className="text-[9px] font-bold text-white text-center leading-tight">WhatsApp</span>
+              <span className="text-[10px] font-bold text-white text-center leading-tight">WhatsApp</span>
             </a>
           )}
           <a href={`mailto:${emailAddr}`} className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors">
             <span className="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center">
               <Mail className="w-3.5 h-3.5" aria-hidden />
             </span>
-            <span className="text-[9px] font-bold text-white text-center leading-tight">{bn ? "ইমেইল" : "Email"}</span>
+            <span className="text-[10px] font-bold text-white text-center leading-tight">{bn ? "ইমেইল" : "Email"}</span>
           </a>
           <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors">
             <span className="w-8 h-8 rounded-xl bg-pink-500/15 text-pink-400 flex items-center justify-center">
               <MapPin className="w-3.5 h-3.5" aria-hidden />
             </span>
-            <span className="text-[9px] font-bold text-white text-center leading-tight">{bn ? "ম্যাপ" : "Map"}</span>
+            <span className="text-[10px] font-bold text-white text-center leading-tight">{bn ? "ম্যাপ" : "Map"}</span>
           </a>
         </div>
 
@@ -406,10 +410,10 @@ export default function Footer() {
                 <div key={i} className="flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 py-1.5">
                   <BadgeCheck className="w-3 h-3 text-emerald-400 flex-shrink-0" aria-hidden />
                   <div className="min-w-0">
-                    <p className="text-[8.5px] text-white/45 leading-none">
+                    <p className="text-[9.5px] text-white/50 leading-none">
                       {bn ? r.label_bn || r.label_en : r.label_en || r.label_bn}
                     </p>
-                    <p className="text-[10px] font-bold text-white/90 truncate mt-0.5">{r.value}</p>
+                    <p className="text-[11px] font-bold text-white/90 truncate mt-0.5">{r.value}</p>
                   </div>
                 </div>
               ))}
@@ -446,7 +450,7 @@ export default function Footer() {
                 {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" aria-hidden /> : (bn ? "সাবস্ক্রাইব" : "Subscribe")}
               </button>
             </form>
-            <p className="flex items-center gap-1.5 text-[9.5px] opacity-85 mt-2">
+            <p className="flex items-center gap-1.5 text-[10px] opacity-85 mt-2">
               <Lock className="w-2.5 h-2.5" aria-hidden />
               {bn ? "আমরা আপনার ডেটা নিরাপদ রাখি, স্প্যাম করি না।" : "We keep your data safe and never spam."}
             </p>
@@ -469,10 +473,10 @@ export default function Footer() {
             >
               <PlayStoreMark className="w-5 h-5 flex-shrink-0" />
               <span className="text-left leading-tight">
-                <span className="block text-[7px] uppercase tracking-wide text-white/50">
+                <span className="block text-[8px] uppercase tracking-wide text-white/55">
                   {bn ? "পাওয়া যাচ্ছে" : "Get it on"}
                 </span>
-                <span className="block text-[11px] font-extrabold text-white">
+                <span className="block text-[12px] font-extrabold text-white">
                   {bn ? "গুগল প্লে" : "Google Play"}
                 </span>
               </span>
@@ -484,10 +488,10 @@ export default function Footer() {
             >
               <AppStoreMark className="w-5 h-5 flex-shrink-0" />
               <span className="text-left leading-tight">
-                <span className="block text-[7px] uppercase tracking-wide text-white/50">
+                <span className="block text-[8px] uppercase tracking-wide text-white/55">
                   {bn ? "ডাউনলোড করুন" : "Download on the"}
                 </span>
-                <span className="block text-[11px] font-extrabold text-white">
+                <span className="block text-[12px] font-extrabold text-white">
                   {bn ? "অ্যাপ স্টোর" : "App Store"}
                 </span>
               </span>

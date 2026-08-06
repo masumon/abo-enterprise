@@ -68,7 +68,7 @@ export default function FeatureIconsRow() {
   const { lang } = useLanguageStore();
 
   return (
-    <section className="py-4 sm:py-6 bg-white dark:bg-[var(--surface)]">
+    <section className="py-3 sm:py-4 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
         <AutoScrollRow
           items={FEATURES}

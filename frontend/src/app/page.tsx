@@ -174,7 +174,7 @@ export default async function HomePage() {
       <div id="reviews" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
         <Reveal>
           <CustomerReviews />
-          <section className="py-8 lg:py-10">
+          <section className="py-5 lg:py-7">
             <div className="container mx-auto px-4">
               <ReviewStatsCard />
             </div>

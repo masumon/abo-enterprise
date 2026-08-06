@@ -52,15 +52,21 @@ export default function ServicesOverview() {
   }, []);
 
   return (
-    <section id="services" className="py-8 lg:py-10 bg-white dark:bg-[var(--surface)]">
+    <section id="services" className="py-5 lg:py-7 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="flex items-baseline justify-between gap-4 mb-8 lg:mb-12">
-          <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-heading">
-            {lang === "bn" ? "আমাদের সেবাসমূহ" : "Our Services"}
-          </h2>
-          <Link href="/services" className="text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-300 whitespace-nowrap">
-            {lang === "bn" ? "সব সেবা দেখুন →" : "View all services →"}
+        <div className="flex items-end justify-between gap-4 mb-6 sm:mb-8 lg:mb-10">
+          <div>
+            <span className="inline-block text-[10px] sm:text-xs font-bold tracking-[0.15em] uppercase bg-gradient-to-r from-brand-600 to-fuchsia-600 bg-clip-text text-transparent mb-1">
+              {lang === "bn" ? "সেবা" : "Services"}
+            </span>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-heading tracking-tight leading-tight">
+              {lang === "bn" ? "আমাদের সেবাসমূহ" : "Our Services"}
+            </h2>
+          </div>
+          <Link href="/services" className="group inline-flex items-center gap-1.5 flex-shrink-0 rounded-full border border-[var(--line)] bg-white dark:bg-white/5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-300 shadow-sm hover:shadow-md hover:border-brand-200 hover:-translate-y-0.5 transition-all whitespace-nowrap">
+            {lang === "bn" ? "সব সেবা" : "View all"}
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
         </div>
 
@@ -82,23 +88,25 @@ export default function ServicesOverview() {
               return (
                 <div key={service.id ?? service.slug} className="h-full">
                   <Link href={serviceHref(service.slug)} className="group block h-full">
-                    <GlassCard hover className="overflow-hidden h-full flex flex-col">
-                      <div className="relative h-28 sm:h-40 bg-gray-100 dark:bg-gray-800">
+                    <GlassCard hover className="overflow-hidden h-full flex flex-col rounded-2xl sm:rounded-3xl group-hover:shadow-xl group-hover:shadow-brand-500/10 group-hover:-translate-y-1.5 transition-all duration-300">
+                      <div className="relative h-32 sm:h-44 bg-gray-100 dark:bg-gray-800 overflow-hidden">
                         <Image
                           src={imageSrc}
                           alt={name}
                           fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                          className="object-cover group-hover:scale-110 transition-transform duration-500"
                           sizes="(max-width:640px) 50vw, (max-width:1024px) 50vw, 25vw"
                         />
-                      </div>
-                      <div className="p-2.5 sm:p-4 flex flex-col flex-1">
+                        {/* Subtle scrim so a chip/title over any image stays legible. */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden />
                         {service.category && (
-                          <span className="inline-block px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-brand-600 bg-brand-50 dark:bg-brand-500/10 rounded-full mb-2 w-fit">
+                          <span className="absolute top-2 left-2 inline-block px-2 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white bg-black/45 backdrop-blur-sm rounded-full">
                             {service.category}
                           </span>
                         )}
-                        <h3 className="font-bold text-sm sm:text-base text-heading mb-2 group-hover:text-brand-600 transition-colors line-clamp-2">
+                      </div>
+                      <div className="p-3 sm:p-4 flex flex-col flex-1">
+                        <h3 className="font-bold text-sm sm:text-lg text-heading mb-1.5 group-hover:text-brand-600 transition-colors line-clamp-2 leading-snug">
                           {name}
                         </h3>
                         {desc && (

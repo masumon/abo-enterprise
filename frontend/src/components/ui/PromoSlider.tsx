@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination, A11y } from "swiper/modules";
 import "swiper/css";
@@ -9,7 +10,41 @@ import "swiper/css/pagination";
 import { promoSlidesApi } from "@/lib/api";
 import type { PromoSlide } from "@/types";
 import { useLanguageStore } from "@/store/language";
+import { cn } from "@/lib/utils";
 import AutoVideo from "@/components/ui/AutoVideo";
+
+/**
+ * A promo image that shows the site's loading spinner over a soft brand
+ * placeholder until it has decoded, then fades in. Fixes the "black flash" a
+ * slow banner image used to leave while the browser fetched it.
+ */
+function PromoImage({ src, alt, eager }: { src: string; alt: string; eager?: boolean }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <>
+      {!loaded && (
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/40 dark:to-brand-800/30"
+          aria-hidden
+        >
+          <Loader2 className="w-7 h-7 sm:w-8 sm:h-8 text-brand-500 dark:text-brand-300 animate-spin" />
+        </div>
+      )}
+      {/* eslint-disable-next-line @next/next/no-img-element -- admin-supplied promo art at arbitrary CDN sizes */}
+      <img
+        src={src}
+        alt={alt}
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+        className={cn(
+          "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
+          loaded ? "opacity-100" : "opacity-0"
+        )}
+        loading={eager ? "eager" : "lazy"}
+      />
+    </>
+  );
+}
 
 interface Props {
   placement: "hero" | "flash_sale";
@@ -82,19 +117,17 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
                   aria-hidden
                 />
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element -- admin-supplied promo art at arbitrary CDN sizes
-                <img
+                <PromoImage
                   src={slide.image_url ?? ""}
                   alt={slide.alt_text || title || ""}
-                  className="absolute inset-0 w-full h-full object-cover"
-                  loading={eagerFirstSlide && index === 0 ? "eager" : "lazy"}
+                  eager={eagerFirstSlide && index === 0}
                 />
               )}
             </div>
           );
 
           const body = (
-            <div className="relative bg-black/20 border border-white/15 shadow-xl">
+            <div className="relative bg-brand-50 dark:bg-brand-900/30 border border-black/5 dark:border-white/10 shadow-xl">
               {media}
               {title && (
                 <div className="px-3 py-2 sm:px-4 sm:py-2.5 bg-black/55 backdrop-blur-sm">

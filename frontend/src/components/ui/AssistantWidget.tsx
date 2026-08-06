@@ -147,6 +147,71 @@ export default function AssistantWidget() {
   const inputRef = useRef<HTMLInputElement>(null);
   const trapRef = useFocusTrap(open);
 
+  // Draggable floating launcher. The user can reposition the FAB; the offset is
+  // applied to the (bottom-right anchored) container and persisted so it stays
+  // where they left it. A real drag suppresses the click so it never opens the
+  // chat by accident — a plain tap still toggles it exactly as before.
+  const FAB_POS_KEY = "abo_assistant_fab_pos";
+  const [fabOffset, setFabOffset] = useState({ x: 0, y: 0 });
+  const offsetRef = useRef({ x: 0, y: 0 });
+  const draggedRef = useRef(false);
+  const dragState = useRef({ startX: 0, startY: 0, baseX: 0, baseY: 0, moved: false, dragging: false });
+
+  const setOffset = useCallback((o: { x: number; y: number }) => {
+    offsetRef.current = o;
+    setFabOffset(o);
+  }, []);
+
+  const clampOffset = useCallback((x: number, y: number) => {
+    if (typeof window === "undefined") return { x, y };
+    const margin = 8, size = 64;
+    const minX = -(window.innerWidth - size - margin * 2);
+    const minY = -(window.innerHeight - size - margin * 2);
+    return {
+      x: Math.min(margin, Math.max(minX, x)),
+      y: Math.min(margin, Math.max(minY, y)),
+    };
+  }, []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(FAB_POS_KEY);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (typeof p?.x === "number" && typeof p?.y === "number") setOffset(clampOffset(p.x, p.y));
+      }
+    } catch { /* ignore */ }
+  }, [setOffset, clampOffset]);
+
+  const onFabPointerDown = useCallback((e: React.PointerEvent) => {
+    draggedRef.current = false; // fresh interaction — clear any stale drag flag
+    dragState.current = {
+      startX: e.clientX, startY: e.clientY,
+      baseX: offsetRef.current.x, baseY: offsetRef.current.y,
+      moved: false, dragging: true,
+    };
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId); } catch { /* ignore */ }
+  }, []);
+
+  const onFabPointerMove = useCallback((e: React.PointerEvent) => {
+    const st = dragState.current;
+    if (!st.dragging) return;
+    const dx = e.clientX - st.startX, dy = e.clientY - st.startY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) st.moved = true;
+    if (st.moved) setOffset(clampOffset(st.baseX + dx, st.baseY + dy));
+  }, [setOffset, clampOffset]);
+
+  const onFabPointerUp = useCallback((e: React.PointerEvent) => {
+    const st = dragState.current;
+    if (!st.dragging) return;
+    st.dragging = false;
+    if (st.moved) {
+      draggedRef.current = true; // swallow the click that follows a drag
+      try { localStorage.setItem(FAB_POS_KEY, JSON.stringify(offsetRef.current)); } catch { /* ignore */ }
+    }
+    try { (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+  }, []);
+
   const enabled = flagEnabled && config.enabled;
 
   const quickActions = useMemo(() => {
@@ -506,11 +571,14 @@ export default function AssistantWidget() {
         never covered. On those screens the launcher moves into the header
         (Navbar renders it there); everywhere else it floats as before.
       */}
-      <div className={cn(
-        "fixed bottom-mobile-float right-4 lg:bottom-6 lg:right-6 z-50 transition-all duration-300",
-        hasActionBar && "hidden lg:block",
-        footerNear && !open && "opacity-0 pointer-events-none translate-y-4"
-      )}>
+      <div
+        className={cn(
+          "fixed bottom-mobile-float right-4 lg:bottom-6 lg:right-6 z-50 transition-opacity duration-300",
+          hasActionBar && "hidden lg:block",
+          footerNear && !open && "opacity-0 pointer-events-none"
+        )}
+        style={{ transform: `translate(${fabOffset.x}px, ${fabOffset.y}px)` }}
+      >
         {open && (
           <button
             type="button"
@@ -524,15 +592,23 @@ export default function AssistantWidget() {
 
         <button
           type="button"
-          onClick={() => setOpen(!open)}
+          onPointerDown={onFabPointerDown}
+          onPointerMove={onFabPointerMove}
+          onPointerUp={onFabPointerUp}
+          onClick={() => {
+            // A drag just ended → swallow this click so it doesn't toggle.
+            if (draggedRef.current) { draggedRef.current = false; return; }
+            setOpen(!open);
+          }}
           className={cn(
-            "relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden",
+            "relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 overflow-hidden touch-none cursor-grab active:cursor-grabbing",
             "ring-2 ring-brand-400/40 shadow-lg shadow-brand-500/30",
             open ? "scale-95" : "hover:scale-110",
             !open && "assistant-fab-ring"
           )}
           aria-label={open ? "Close assistant" : "Open assistant"}
           aria-expanded={open}
+          title={lang === "bn" ? "টেনে সরাতে পারেন" : "Drag to move"}
         >
           {open ? (
             <X className="w-6 h-6 text-white absolute z-10 bg-brand-600/90 rounded-full p-0.5" />

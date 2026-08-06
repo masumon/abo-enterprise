@@ -53,7 +53,7 @@ export default function CustomerReviews() {
     : "5.0";
 
   return (
-    <section className="py-8 lg:py-10 bg-white dark:bg-[var(--surface)]">
+    <section className="py-5 lg:py-7 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
         <div className="mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-heading mb-2">
