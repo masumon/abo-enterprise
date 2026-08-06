@@ -82,9 +82,9 @@ export default function AdminDashboard() {
   const quickActions = ADMIN_QUICK_ACTIONS.map((a) => ({
     ...a,
     badge:
-      a.href === "/admin/orders" ? pendingOrders :
-      a.href === "/admin/bookings" ? pendingBookings :
-      a.href === "/admin/leads" ? newLeads : undefined,
+      a.href === "/sumon/orders" ? pendingOrders :
+      a.href === "/sumon/bookings" ? pendingBookings :
+      a.href === "/sumon/leads" ? newLeads : undefined,
   }));
 
   const h = new Date().getHours();
@@ -146,7 +146,7 @@ export default function AdminDashboard() {
             icon={DollarSign}
             color="brand"
             loading={loading}
-            href="/admin/analytics"
+            href="/sumon/analytics"
           />
         )}
         <StatsCard
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
           color="brand"
           loading={loading}
           alert={!!stats?.pending_orders}
-          href="/admin/orders"
+          href="/sumon/orders"
         />
         <StatsCard
           title={bn ? "বুকিং" : "Bookings"}
@@ -167,7 +167,7 @@ export default function AdminDashboard() {
           color="accent"
           loading={loading}
           alert={!!stats?.pending_bookings}
-          href="/admin/bookings"
+          href="/sumon/bookings"
         />
         <StatsCard
           title={bn ? "লিড" : "Leads"}
@@ -177,7 +177,7 @@ export default function AdminDashboard() {
           color="green"
           loading={loading}
           alert={!!stats?.new_leads}
-          href="/admin/leads"
+          href="/sumon/leads"
         />
         <StatsCard
           title={bn ? "পণ্য" : "Products"}
@@ -186,7 +186,7 @@ export default function AdminDashboard() {
           icon={Package}
           color="amber"
           loading={loading}
-          href="/admin/products"
+          href="/sumon/products"
         />
       </div>
 
@@ -197,7 +197,7 @@ export default function AdminDashboard() {
               <Clock className="w-4 h-4 text-gray-400" />
               {bn ? "সাম্প্রতিক অর্ডার" : "Recent Orders"}
             </h2>
-            <Link href="/admin/orders" className="text-xs text-brand-600 hover:underline font-medium">
+            <Link href="/sumon/orders" className="text-xs text-brand-600 hover:underline font-medium">
               {bn ? "সব দেখুন" : "View all"} →
             </Link>
           </div>
@@ -214,7 +214,7 @@ export default function AdminDashboard() {
               stats?.recent_orders?.map((order) => (
                 <Link
                   key={order.id}
-                  href={`/admin/orders?open=${order.id}`}
+                  href={`/sumon/orders?open=${order.id}`}
                   className="px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-gray-50/80 transition-colors"
                 >
                   <div className="min-w-0">
@@ -237,7 +237,7 @@ export default function AdminDashboard() {
               <TrendingUp className="w-4 h-4 text-gray-400" />
               {bn ? "সাম্প্রতিক লিড" : "Recent Leads"}
             </h2>
-            <Link href="/admin/leads" className="text-xs text-brand-600 hover:underline font-medium">
+            <Link href="/sumon/leads" className="text-xs text-brand-600 hover:underline font-medium">
               {bn ? "সব দেখুন" : "View all"} →
             </Link>
           </div>
@@ -252,7 +252,7 @@ export default function AdminDashboard() {
               stats?.recent_leads?.map((lead) => (
                 <Link
                   key={lead.id}
-                  href="/admin/leads"
+                  href="/sumon/leads"
                   className="px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-gray-50/80 transition-colors"
                 >
                   <div className="min-w-0">

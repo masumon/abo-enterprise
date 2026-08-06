@@ -40,7 +40,7 @@ export default function MobileBottomNav() {
     setMoreOpen(false);
   }, [pathname]);
 
-  if (pathname?.startsWith("/admin")) return null;
+  if (pathname?.startsWith("/sumon")) return null;
 
   const TABS = [
     { href: "/", icon: Home, label: { en: "Home", bn: "হোম" } },

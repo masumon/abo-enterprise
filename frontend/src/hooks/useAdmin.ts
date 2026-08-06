@@ -45,7 +45,7 @@ export function useAdmin(redirectOnFail = true) {
     if (!token && !hasAdminAuthMarker()) {
       if (redirectOnFail && !redirectedRef.current) {
         redirectedRef.current = true;
-        router.replace("/admin/login");
+        router.replace("/sumon/login");
       }
       setLoading(false);
       return;
@@ -69,7 +69,7 @@ export function useAdmin(redirectOnFail = true) {
       clearAdminToken();
       if (redirectOnFail && !redirectedRef.current) {
         redirectedRef.current = true;
-        router.replace("/admin/login");
+        router.replace("/sumon/login");
       } else {
         setLoading(false);
       }
@@ -86,7 +86,7 @@ export function useAdmin(redirectOnFail = true) {
     // cleanup below is what actually ends the client session.
     authApi.logout().catch(() => {});
     clearAdminToken();
-    router.replace("/admin/login");
+    router.replace("/sumon/login");
   }, [router]);
 
   return { user, loading, logout };

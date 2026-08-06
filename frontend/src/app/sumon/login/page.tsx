@@ -92,9 +92,9 @@ function LoginForm() {
       }
       const redirect = searchParams.get("redirect");
       const safeRedirect =
-        redirect && redirect.startsWith("/admin") && redirect !== "/admin/login"
+        redirect && redirect.startsWith("/sumon") && redirect !== "/sumon/login"
           ? redirect
-          : "/admin";
+          : "/sumon";
       router.replace(safeRedirect);
     } catch (e: unknown) {
       const info = getErrorInfo(e);

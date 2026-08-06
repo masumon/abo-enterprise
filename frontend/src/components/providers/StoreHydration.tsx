@@ -17,7 +17,7 @@ export default function StoreHydration() {
   const searchParams = useSearchParams();
   const lang = useLanguageStore((s) => s.lang);
   const theme = useThemeStore((s) => s.theme);
-  const isAdmin = pathname?.startsWith("/admin") ?? false;
+  const isAdmin = pathname?.startsWith("/sumon") ?? false;
   usePublicSettings();
 
   useEffect(() => {

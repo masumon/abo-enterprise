@@ -4,7 +4,7 @@ import { SITE_URL } from "@/lib/tokens";
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
-      { userAgent: "*", allow: "/", disallow: ["/admin", "/api", "/_next"] },
+      { userAgent: "*", allow: "/", disallow: ["/sumon", "/api", "/_next"] },
     ],
     sitemap: `${SITE_URL}/sitemap.xml`,
     host: SITE_URL,

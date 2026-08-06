@@ -21,7 +21,7 @@ export const BRAND_IMAGE_SLOTS: ImageSlotDef[] = [
   { key: "hero_image_url", label: "Homepage Banner (Desktop)", labelBn: "হোমপেজ ব্যানার (ডেস্কটপ)", usedOn: "Homepage hero — desktop", guide: "1920×1080px (16:9) · JPG/WebP/MP4" },
   { key: "hero_mobile_image_url", label: "Homepage Banner (Mobile)", labelBn: "হোমপেজ ব্যানার (মোবাইল)", usedOn: "Homepage hero — mobile background", guide: "1080×1350px (পোর্ট্রেট) · ছবি/animated/MP4 · খালি রাখলে gradient" },
   { key: "hero_promo_media_url", label: "Hero Promo Media (auto-play)", labelBn: "হিরো প্রমো মিডিয়া (অটো-প্লে)", usedOn: "Homepage hero — promo card", guide: "যেকোন ছবি/animated/ভিডিও (MP4) · অটো-প্লে · খালি হলে ব্যানার ছবি দেখাবে" },
-  { key: "site_login_bg_url", label: "Admin Login Background", labelBn: "অ্যাডমিন লগইন ব্যাকগ্রাউন্ড", usedOn: "/admin/login", guide: "1920×1080px (16:9) · ছবি, animated বা ভিডিও (MP4)" },
+  { key: "site_login_bg_url", label: "Admin Login Background", labelBn: "অ্যাডমিন লগইন ব্যাকগ্রাউন্ড", usedOn: "/sumon/login", guide: "1920×1080px (16:9) · ছবি, animated বা ভিডিও (MP4)" },
   { key: "site_customer_login_bg_url", label: "Customer Login Background", labelBn: "গ্রাহক লগইন ব্যাকগ্রাউন্ড", usedOn: "/login, /register", guide: "1920×1080px (16:9) · ছবি, animated বা ভিডিও (MP4)" },
   { key: "gallery_office_image_url", label: "Gallery Office Photo", labelBn: "গ্যালারি অফিস ছবি", usedOn: "/gallery office tab", guide: "1920×1080px (16:9) · JPG/WebP" },
   { key: "about_story_image_url", label: "About Story Image", labelBn: "আমাদের গল্প ছবি", usedOn: "/about Our Story", guide: "1200×800px (3:2) · JPG/WebP" },
@@ -37,10 +37,10 @@ export const PAGE_BANNER_SLOTS: ImageSlotDef[] = PAGE_BANNER_CONFIG.map(({ key, 
 }));
 
 export const CATALOG_IMAGE_SECTIONS = [
-  { id: "products", label: "Products", labelBn: "পণ্য", adminHref: "/admin/products", imageField: "image_url", galleryField: "images", ogField: "og_image" },
-  { id: "services", label: "Services", labelBn: "সেবা", adminHref: "/admin/services", imageField: "featured_image_url", iconField: "icon_url", ogField: "og_image" },
-  { id: "blog", label: "Blog Posts", labelBn: "ব্লগ", adminHref: "/admin/blog", imageField: "featured_image_url", ogField: "og_image" },
-  { id: "reviews", label: "Reviews", labelBn: "রিভিউ", adminHref: "/admin/reviews", imageField: "photo_url" },
+  { id: "products", label: "Products", labelBn: "পণ্য", adminHref: "/sumon/products", imageField: "image_url", galleryField: "images", ogField: "og_image" },
+  { id: "services", label: "Services", labelBn: "সেবা", adminHref: "/sumon/services", imageField: "featured_image_url", iconField: "icon_url", ogField: "og_image" },
+  { id: "blog", label: "Blog Posts", labelBn: "ব্লগ", adminHref: "/sumon/blog", imageField: "featured_image_url", ogField: "og_image" },
+  { id: "reviews", label: "Reviews", labelBn: "রিভিউ", adminHref: "/sumon/reviews", imageField: "photo_url" },
 ] as const;
 
 /** All single-URL setting keys managed from the media module. */

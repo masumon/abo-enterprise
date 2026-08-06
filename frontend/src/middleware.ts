@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const PUBLIC_ADMIN_PATHS = ["/admin/login"];
+const PUBLIC_ADMIN_PATHS = ["/sumon/login"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (!pathname.startsWith("/admin")) {
+  if (!pathname.startsWith("/sumon")) {
     return NextResponse.next();
   }
 
@@ -20,7 +20,7 @@ export function middleware(request: NextRequest) {
     request.cookies.get("abo_admin_token")?.value ||
     request.cookies.get("abo_admin_auth")?.value;
   if (!token) {
-    const loginUrl = new URL("/admin/login", request.url);
+    const loginUrl = new URL("/sumon/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
   }
@@ -29,5 +29,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/sumon/:path*"],
 };

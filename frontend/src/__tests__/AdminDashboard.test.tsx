@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import AdminDashboard from "@/app/admin/page";
+import AdminDashboard from "@/app/sumon/page";
 
 const mockStats = jest.fn();
 const mockGet = jest.fn();

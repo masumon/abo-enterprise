@@ -19,8 +19,8 @@ const api = axios.create({
   // proxies (GP/Robi/Banglalink) strip Access-Control-Allow-Credentials from
   // responses, making the browser reject every credentialed API call on
   // cellular data. Public pages never need cookies. The request interceptor
-  // below turns credentials on ONLY under /admin, where the HttpOnly
-  // cookie-session (see admin/login) requires them.
+  // below turns credentials on ONLY under /sumon (the admin panel), where the
+  // HttpOnly cookie-session (see sumon/login) requires them.
 });
 
 type RetryConfig = { __retryCount?: number; maxRetries?: number } & NonNullable<Parameters<typeof api.request>[0]>;
@@ -33,11 +33,11 @@ api.interceptors.request.use((config) => {
   if (!config.timeout || config.timeout === 30000) {
     config.timeout = getAdaptiveTimeout(30000);
   }
-  // Admin panel only (including /admin/login, so the login response's
+  // Admin panel only (including /sumon/login, so the login response's
   // Set-Cookie and the cookie-session probe work): send the HttpOnly
   // session cookie. Everywhere else requests stay credential-less so
   // carrier proxies that strip ACA-Credentials can't break the site.
-  if (typeof window !== "undefined" && window.location.pathname.startsWith("/admin")) {
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/sumon")) {
     config.withCredentials = true;
   }
   const token = getAdminToken();
@@ -73,7 +73,7 @@ api.interceptors.response.use(
       clearAdminToken();
       if (isAdminProtectedPath(window.location.pathname)) {
         const redirect = encodeURIComponent(window.location.pathname + window.location.search);
-        window.location.href = `/admin/login?redirect=${redirect}`;
+        window.location.href = `/sumon/login?redirect=${redirect}`;
       }
     }
     return Promise.reject(error);
