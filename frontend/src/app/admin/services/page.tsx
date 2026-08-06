@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
 import {
   Loader2, Briefcase, Plus, Pencil, Trash2, X,
-  ToggleLeft, ToggleRight, Star, ChevronDown, ChevronUp,
+  ToggleLeft, ToggleRight, Star, StarOff, Check, Ban, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { servicesAdminApi, categoriesApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -144,6 +144,8 @@ export default function AdminServicesPage() {
   const toast = useToastStore((s) => s.push);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const [taxonomy, setTaxonomy] = useState<Category[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
   const editorRef = useFocusTrap(editing !== null, () => {
     setEditing(null);
     setIsNew(false);
@@ -293,6 +295,58 @@ export default function AdminServicesPage() {
     } finally {
       setTogglingId(null);
     }
+  };
+
+  const pageIds = services.map((s) => s.id).filter((id): id is string => !!id);
+  const allOnPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const toggleSelected = (id: string) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  const toggleSelectAll = () =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (allOnPageSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+
+  const runBulkUpdate = async (patch: Partial<Service>, label: string) => {
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selected).map((id) => servicesAdminApi.update(id, patch)));
+      toast("success", `${selected.size} service(s) ${label}`);
+      setSelected(new Set());
+      await load();
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Bulk update failed"));
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleBulkDelete = () => {
+    const count = selected.size;
+    setConfirmState({
+      title: `Delete ${count} service${count === 1 ? "" : "s"}?`,
+      message: "This action cannot be undone. Pricing tiers and booking forms for these services will also be deleted.",
+      action: async () => {
+        setConfirmState(null);
+        setBulkLoading(true);
+        try {
+          await Promise.all(Array.from(selected).map((id) => servicesAdminApi.delete(id)));
+          toast("success", `${count} service(s) deleted`);
+          setSelected(new Set());
+          await load();
+        } catch (e) {
+          toast("error", apiErrorMessage(e, "Bulk delete failed"));
+        } finally {
+          setBulkLoading(false);
+        }
+      },
+    });
   };
 
   const openTierEditor = (tier?: ServicePricingTier) => {
@@ -450,6 +504,31 @@ export default function AdminServicesPage() {
         </button>
       </div>
 
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">
+          <span className="text-sm font-medium text-brand-800">{selected.size} selected</span>
+          <button onClick={() => runBulkUpdate({ is_active: true }, "activated")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+            <Check className="w-3.5 h-3.5" /> Activate
+          </button>
+          <button onClick={() => runBulkUpdate({ is_active: false }, "deactivated")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+            <Ban className="w-3.5 h-3.5" /> Deactivate
+          </button>
+          <button onClick={() => runBulkUpdate({ is_featured: true }, "featured")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+            <Star className="w-3.5 h-3.5" /> Feature
+          </button>
+          <button onClick={() => runBulkUpdate({ is_featured: false }, "unfeatured")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+            <StarOff className="w-3.5 h-3.5" /> Unfeature
+          </button>
+          <button onClick={handleBulkDelete} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1 text-red-600 hover:bg-red-50">
+            <Trash2 className="w-3.5 h-3.5" /> Delete
+          </button>
+          {bulkLoading && <Loader2 className="w-4 h-4 animate-spin text-brand-600" />}
+          <button onClick={() => setSelected(new Set())} className="btn btn-ghost btn-sm ml-auto">
+            Clear
+          </button>
+        </div>
+      )}
+
       <div className="admin-card overflow-hidden">
         {loading ? (
           <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
@@ -466,6 +545,15 @@ export default function AdminServicesPage() {
           <table className="table-premium min-w-[480px]">
             <thead>
               <tr>
+                <th className="w-10 px-3">
+                  <input
+                    type="checkbox"
+                    aria-label="Select all services on this page"
+                    checked={allOnPageSelected}
+                    onChange={toggleSelectAll}
+                    className="rounded"
+                  />
+                </th>
                 <th>Service</th>
                 <th className="hidden sm:table-cell">Category</th>
                 <th className="hidden md:table-cell">Pricing</th>
@@ -478,6 +566,15 @@ export default function AdminServicesPage() {
             <tbody>
               {services.map((s) => (
                 <tr key={s.id}>
+                  <td className="px-3 py-3">
+                    <input
+                      type="checkbox"
+                      aria-label={`Select ${s.name_en}`}
+                      checked={!!s.id && selected.has(s.id)}
+                      onChange={() => s.id && toggleSelected(s.id)}
+                      className="rounded"
+                    />
+                  </td>
                   <td className="px-5 py-3">
                     <p className="font-medium text-gray-900">{s.name_en}</p>
                     <p className="text-xs text-gray-400">{s.slug}</p>

@@ -204,8 +204,8 @@ export default function AdminReviewsPage() {
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <AdminTitle en="Reviews" bn="রিভিউ" />
-          <p className="text-gray-500 text-sm mt-1">{total} total reviews</p>
+          <AdminTitle en="Product Reviews" bn="পণ্য রিভিউ" />
+          <p className="text-gray-500 text-sm mt-1">{total} total reviews · homepage testimonials are edited separately in Settings</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <div className="relative">

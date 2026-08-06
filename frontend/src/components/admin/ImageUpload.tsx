@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Upload, Loader2, X, ImageIcon, Check, Sparkles } from "lucide-react";
+import { Upload, Loader2, X, ImageIcon, Check, Sparkles, FolderOpen } from "lucide-react";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { compressImage } from "@/lib/imageCompress";
 import { isVideoUrl } from "@/lib/media";
 import AutoVideo from "@/components/ui/AutoVideo";
+import MediaLibraryPicker from "@/components/admin/MediaLibraryPicker";
 import { cn } from "@/lib/utils";
 
 type AcceptType = "image" | "video" | "both";
@@ -66,6 +67,8 @@ export default function ImageUpload({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingFile | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // Never leak object URLs when the pending file changes or unmounts.
   useEffect(() => {
@@ -86,10 +89,9 @@ export default function ImageUpload({
       img.src = url;
     });
 
-  /** Step 1 — the chosen file becomes a local preview, nothing uploads yet. */
-  const handleSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  /** Step 1 — the chosen file becomes a local preview, nothing uploads yet.
+   *  Shared by the file input, and drag-and-drop below. */
+  const processFile = async (file: File) => {
     setError(null);
 
     // Match the backend limits: 50MB for video, 30MB for images.
@@ -111,6 +113,19 @@ export default function ImageUpload({
       return;
     }
     setPending({ file, previewUrl, width, height });
+  };
+
+  const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) void processFile(file);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    setDragOver(false);
+    if (uploading) return;
+    const file = e.dataTransfer.files?.[0];
+    if (file) void processFile(file);
   };
 
   /** Step 2 — explicit confirm. Images are downscaled/compressed in the browser
@@ -201,10 +216,14 @@ export default function ImageUpload({
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
             disabled={uploading}
-            title="Click to choose a file"
+            title="Click to choose a file, or drag and drop one here"
             className={cn(
-              "relative rounded-xl border-2 border-dashed border-gray-200 overflow-hidden",
+              "relative rounded-xl border-2 border-dashed overflow-hidden",
+              dragOver ? "border-brand-500 bg-brand-50/60" : "border-gray-200",
               "hover:border-brand-400 hover:bg-brand-50/30 transition-colors group flex-shrink-0",
               "disabled:opacity-60 disabled:cursor-not-allowed",
               sizeClass
@@ -236,15 +255,28 @@ export default function ImageUpload({
           </button>
 
           <div className="flex-1 min-w-[180px] space-y-2">
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading}
-              className="btn btn-outline btn-sm flex items-center gap-2"
-            >
-              <ImageIcon className="w-4 h-4" />
-              {value ? "Change file" : "Choose file"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="btn btn-outline btn-sm flex items-center gap-2"
+              >
+                <ImageIcon className="w-4 h-4" />
+                {value ? "Change file" : "Choose file"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                disabled={uploading}
+                className="btn btn-outline btn-sm flex items-center gap-2"
+                title="Reuse an already-uploaded image or video"
+              >
+                <FolderOpen className="w-4 h-4" />
+                Browse Library
+              </button>
+            </div>
+            <p className="text-[11px] text-gray-400">or drag & drop a file onto the box</p>
 
             {value && (
               <button
@@ -290,6 +322,13 @@ export default function ImageUpload({
         accept={ACCEPT_MAP[accept]}
         className="hidden"
         onChange={handleSelect}
+      />
+
+      <MediaLibraryPicker
+        open={pickerOpen}
+        accept={accept}
+        onSelect={onChange}
+        onClose={() => setPickerOpen(false)}
       />
     </div>
   );

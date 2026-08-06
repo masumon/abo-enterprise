@@ -49,7 +49,7 @@ const INTEGRATIONS = [
   { label: "Bookings", table: "bookings_v2", desc: "Service booking + status" },
   { label: "Leads", table: "leads_v2", desc: "Inquiry / quote submission" },
   { label: "Settings", table: "settings", desc: "Delivery charges, welcome, flags" },
-  { label: "FAQ", table: "assistant_faq_knowledge", desc: "Admin-editable Q&A" },
+  { label: "FAQ Knowledge", table: "assistant_faq_knowledge", desc: "Admin-editable Q&A (separate from the public /faq page)" },
   { label: "Coupons", table: "coupons_json", desc: "Validate & list coupons" },
   { label: "Blog", table: "blog_posts", desc: "Search & recent posts" },
   { label: "Conversations", table: "assistant_conversations", desc: "Session history & logs" },

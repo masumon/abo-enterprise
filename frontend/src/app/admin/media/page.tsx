@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Save,
@@ -14,6 +14,7 @@ import {
   Trash2,
   X,
   ImageOff,
+  Upload,
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -217,6 +218,10 @@ export default function AdminMediaPage() {
   const [savingAsset, setSavingAsset] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MediaAssetRecord | null>(null);
   const [deletingAsset, setDeletingAsset] = useState(false);
+  const [bulkDragOver, setBulkDragOver] = useState(false);
+  const [bulkUploading, setBulkUploading] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
+  const bulkFileRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -276,6 +281,30 @@ export default function AdminMediaPage() {
       setLibraryLoading(false);
     }
   }, [toast]);
+
+  /** Bulk-upload one or more files straight into the library (not tied to any
+   * product/service field) — used by the dropzone below. */
+  const bulkUpload = async (files: FileList | File[]) => {
+    const list = Array.from(files);
+    if (list.length === 0) return;
+    setBulkUploading(true);
+    setBulkProgress({ done: 0, total: list.length });
+    let failed = 0;
+    for (const file of list) {
+      try {
+        await adminApi.uploadImage(file, MEDIA_UPLOAD_FOLDER);
+      } catch {
+        failed += 1;
+      } finally {
+        setBulkProgress((p) => ({ ...p, done: p.done + 1 }));
+      }
+    }
+    setBulkUploading(false);
+    if (failed > 0) toast("error", `${failed} of ${list.length} file(s) failed to upload`);
+    else toast("success", `${list.length} file(s) uploaded`);
+    setLibraryPage(1);
+    await loadLibrary(1, librarySearch);
+  };
 
   // Fetch the asset library the first time its tab is opened.
   useEffect(() => {
@@ -669,6 +698,45 @@ export default function AdminMediaPage() {
 
       {tab === "library" && (
         <div className="space-y-4">
+          <div
+            onDragOver={(e) => { e.preventDefault(); setBulkDragOver(true); }}
+            onDragLeave={() => setBulkDragOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setBulkDragOver(false);
+              if (e.dataTransfer.files?.length) void bulkUpload(e.dataTransfer.files);
+            }}
+            className={`rounded-xl border-2 border-dashed p-6 text-center transition-colors ${
+              bulkDragOver ? "border-brand-500 bg-brand-50/60" : "border-gray-200 hover:border-brand-300"
+            }`}
+          >
+            {bulkUploading ? (
+              <div className="flex flex-col items-center gap-2 text-sm text-gray-600">
+                <Loader2 className="w-6 h-6 animate-spin text-brand-500" />
+                Uploading {bulkProgress.done} of {bulkProgress.total}…
+              </div>
+            ) : (
+              <>
+                <Upload className="w-6 h-6 mx-auto text-gray-400 mb-2" />
+                <p className="text-sm text-gray-600">
+                  Drag & drop images or videos here, or{" "}
+                  <button type="button" onClick={() => bulkFileRef.current?.click()} className="text-brand-600 font-semibold hover:underline">
+                    browse files
+                  </button>
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Multiple files supported — uploaded straight into the library</p>
+              </>
+            )}
+            <input
+              ref={bulkFileRef}
+              type="file"
+              multiple
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={(e) => { if (e.target.files?.length) void bulkUpload(e.target.files); e.target.value = ""; }}
+            />
+          </div>
+
           <div className="flex items-center gap-2">
             <div className="relative flex-1 max-w-sm">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />

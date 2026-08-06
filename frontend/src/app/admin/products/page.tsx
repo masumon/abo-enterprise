@@ -2,12 +2,12 @@
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Copy } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Copy, Download, FileText, Upload, Check, Ban, Star, StarOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
-import { productsApi, categoriesApi } from "@/lib/api";
+import { productsApi, categoriesApi, downloadCsv, downloadPdf } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
 import LivePreview from "@/components/admin/LivePreview";
@@ -127,6 +127,13 @@ export default function AdminProductsPage() {
   const [searchInput, setSearchInput] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalRef = useFocusTrap(showModal);
+
+  // Bulk selection + row actions
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -340,6 +347,81 @@ export default function AdminProductsPage() {
     }
   };
 
+  const toggleSelected = (id: string) =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+
+  const pageIds = products.map((p) => p.id).filter((id): id is string => !!id);
+  const allOnPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const toggleSelectAll = () =>
+    setSelected((s) => {
+      const next = new Set(s);
+      if (allOnPageSelected) pageIds.forEach((id) => next.delete(id));
+      else pageIds.forEach((id) => next.add(id));
+      return next;
+    });
+
+  const runBulkUpdate = async (patch: Partial<Product>, label: string) => {
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selected).map((id) => productsApi.update(id, patch)));
+      toast("success", `${selected.size} product(s) ${label}`);
+      setSelected(new Set());
+      await load(page);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Bulk update failed"));
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const runBulkDelete = async () => {
+    setBulkLoading(true);
+    try {
+      await Promise.all(Array.from(selected).map((id) => productsApi.delete(id)));
+      toast("success", `${selected.size} product(s) deleted`);
+      setSelected(new Set());
+      setBulkDeleteConfirm(false);
+      await load(page);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Bulk delete failed"));
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
+  const handleExportCsv = () =>
+    downloadCsv("/api/v1/admin/bulk/export/products", "products.csv").catch((e) =>
+      toast("error", apiErrorMessage(e, "Export failed"))
+    );
+  const handleExportPdf = () =>
+    downloadPdf("/api/v1/admin/bulk/export/products/pdf", "products.pdf").catch((e) =>
+      toast("error", apiErrorMessage(e, "Export failed"))
+    );
+
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImporting(true);
+    try {
+      const r = await productsApi.importCsv(file);
+      const { created, updated, errors } = r.data.data;
+      toast(
+        "success",
+        `Import complete: ${created} created, ${updated} updated${errors.length ? `, ${errors.length} row error(s)` : ""}`
+      );
+      await load(page);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Import failed"));
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6">
       <AdminPageHeader
@@ -347,9 +429,32 @@ export default function AdminProductsPage() {
         titleBn="পণ্য ব্যবস্থাপনা"
         description={`${total} products — add, edit, stock & pricing`}
         actions={
-          <button onClick={openCreate} className="admin-btn-primary">
-            <Plus className="w-4 h-4" /> Add Product
-          </button>
+          <>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept=".csv"
+              className="hidden"
+              onChange={handleImportFile}
+            />
+            <button
+              onClick={() => importInputRef.current?.click()}
+              disabled={importing}
+              className="admin-btn-secondary"
+              title="Bulk import — CSV with slug, name_en, name_bn, price, stock_quantity…"
+            >
+              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Import CSV
+            </button>
+            <button onClick={handleExportCsv} className="admin-btn-secondary" title="Export all products as CSV">
+              <Download className="w-4 h-4" /> Export CSV
+            </button>
+            <button onClick={handleExportPdf} className="admin-btn-secondary" title="Export all products as a PDF report">
+              <FileText className="w-4 h-4" /> Export PDF
+            </button>
+            <button onClick={openCreate} className="admin-btn-primary">
+              <Plus className="w-4 h-4" /> Add Product
+            </button>
+          </>
         }
       />
 
@@ -358,6 +463,31 @@ export default function AdminProductsPage() {
         onSearchChange={handleSearchChange}
         searchPlaceholder="পণ্য খুঁজুন…"
       />
+
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">
+          <span className="text-sm font-medium text-brand-800">{selected.size} selected</span>
+          <button onClick={() => runBulkUpdate({ is_active: true }, "activated")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+            <Check className="w-3.5 h-3.5" /> Activate
+          </button>
+          <button onClick={() => runBulkUpdate({ is_active: false }, "deactivated")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+            <Ban className="w-3.5 h-3.5" /> Deactivate
+          </button>
+          <button onClick={() => runBulkUpdate({ is_featured: true }, "featured")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+            <Star className="w-3.5 h-3.5" /> Feature
+          </button>
+          <button onClick={() => runBulkUpdate({ is_featured: false }, "unfeatured")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+            <StarOff className="w-3.5 h-3.5" /> Unfeature
+          </button>
+          <button onClick={() => setBulkDeleteConfirm(true)} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1 text-red-600 hover:bg-red-50">
+            <Trash2 className="w-3.5 h-3.5" /> Delete
+          </button>
+          {bulkLoading && <Loader2 className="w-4 h-4 animate-spin text-brand-600" />}
+          <button onClick={() => setSelected(new Set())} className="btn btn-ghost btn-sm ml-auto">
+            Clear
+          </button>
+        </div>
+      )}
 
       {actionError && (
         <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-2">
@@ -377,6 +507,15 @@ export default function AdminProductsPage() {
             <table className="table-premium min-w-[480px]">
               <thead>
                 <tr>
+                  <th className="w-10 px-3">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all products on this page"
+                      checked={allOnPageSelected}
+                      onChange={toggleSelectAll}
+                      className="rounded"
+                    />
+                  </th>
                   <th>Product</th>
                   <th className="hidden sm:table-cell">Category</th>
                   <th>Price</th>
@@ -388,6 +527,15 @@ export default function AdminProductsPage() {
               <tbody>
                 {products.map((p) => (
                   <tr key={p.id} onClick={() => openEdit(p)} className="cursor-pointer hover:bg-brand-50/30 transition-colors">
+                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${p.name_en}`}
+                        checked={!!p.id && selected.has(p.id)}
+                        onChange={() => p.id && toggleSelected(p.id)}
+                        className="rounded"
+                      />
+                    </td>
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <ProductThumb src={p.image_url} alt={p.name_en} />
@@ -760,6 +908,16 @@ export default function AdminProductsPage() {
         variant="danger"
         onConfirm={handleDelete}
         onCancel={() => setDeleteId(null)}
+      />
+
+      <ConfirmDialog
+        open={bulkDeleteConfirm}
+        title={`Delete ${selected.size} Product${selected.size === 1 ? "" : "s"}?`}
+        message="This action cannot be undone."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={runBulkDelete}
+        onCancel={() => setBulkDeleteConfirm(false)}
       />
     </div>
   );
