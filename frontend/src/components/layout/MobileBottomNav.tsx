@@ -22,6 +22,24 @@ import { cn } from "@/lib/utils";
  * (GAP-07): it replaced Services, not Cart, because Cart carries committed
  * intent and a live badge.
  */
+// Coloured tab treatment, echoing the top bar's brand + gold icon scheme so
+// the two bars read as one system. Explicit class strings (no interpolation)
+// so Tailwind keeps them.
+const TAB_COLOR = {
+  brand: {
+    idle: "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-300",
+    active: "bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/30 -translate-y-0.5",
+    labelIdle: "text-brand-600/80 dark:text-brand-300/80 font-medium",
+    labelActive: "text-brand-700 dark:text-brand-200 font-bold",
+  },
+  accent: {
+    idle: "bg-accent-50 dark:bg-accent-500/15 text-accent-600 dark:text-accent-300",
+    active: "bg-gradient-to-br from-accent-400 to-accent-600 text-white shadow-md shadow-accent-500/30 -translate-y-0.5",
+    labelIdle: "text-accent-700/80 dark:text-accent-300/80 font-medium",
+    labelActive: "text-accent-700 dark:text-accent-200 font-bold",
+  },
+} as const;
+
 export default function MobileBottomNav() {
   const pathname = usePathname();
   const { lang } = useLanguageStore();
@@ -43,10 +61,10 @@ export default function MobileBottomNav() {
   if (pathname?.startsWith("/sumon")) return null;
 
   const TABS = [
-    { href: "/", icon: Home, label: { en: "Home", bn: "হোম" } },
-    { href: "/products", icon: Store, label: { en: "Shop", bn: "শপ" } },
-    { href: "/search", icon: Search, label: { en: "Search", bn: "খুঁজুন" } },
-    { href: "/cart", icon: ShoppingCart, label: { en: "Cart", bn: "কার্ট" } },
+    { href: "/", icon: Home, label: { en: "Home", bn: "হোম" }, tint: "brand" as const },
+    { href: "/products", icon: Store, label: { en: "Shop", bn: "শপ" }, tint: "accent" as const },
+    { href: "/search", icon: Search, label: { en: "Search", bn: "খুঁজুন" }, tint: "brand" as const },
+    { href: "/cart", icon: ShoppingCart, label: { en: "Cart", bn: "কার্ট" }, tint: "accent" as const },
   ];
 
   const isItemActive = (href: string) => {
@@ -69,6 +87,7 @@ export default function MobileBottomNav() {
         {TABS.map((item) => {
           const Icon = item.icon;
           const active = isItemActive(item.href);
+          const c = TAB_COLOR[item.tint];
           return (
             <Link
               key={item.href}
@@ -76,15 +95,13 @@ export default function MobileBottomNav() {
               aria-current={active ? "page" : undefined}
               className={cn(
                 "relative min-h-[44px] flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 transition-colors",
-                active ? "text-brand-700 dark:text-brand-200 font-bold" : "text-brand-600/80 dark:text-brand-300/80 font-medium"
+                active ? c.labelActive : c.labelIdle
               )}
             >
               <span
                 className={cn(
                   "relative flex items-center justify-center w-10 h-8 rounded-full transition-all",
-                  active
-                    ? "bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/30 -translate-y-0.5"
-                    : "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-300"
+                  active ? c.active : c.idle
                 )}
               >
                 <Icon className="w-[18px] h-[18px]" strokeWidth={active ? 2.5 : 2} />
