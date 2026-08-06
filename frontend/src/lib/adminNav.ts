@@ -81,7 +81,15 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/orders", icon: ShoppingCart, label: "Orders", labelBn: "অর্ডার", badge: "orders" },
       { href: "/admin/invoices", icon: FileText, label: "Invoices", labelBn: "ইনভয়েস" },
       { href: "/admin/payments", icon: CreditCard, label: "Payments", labelBn: "পেমেন্ট" },
+    ],
+  },
+  {
+    id: "marketing",
+    label: "Marketing",
+    labelBn: "মার্কেটিং",
+    items: [
       { href: "/admin/coupons", icon: Percent, label: "Coupons", labelBn: "কুপন", minRole: "admin" },
+      { href: "/admin/newsletter", icon: Send, label: "Newsletter", labelBn: "নিউজলেটার" },
     ],
   },
   {
@@ -102,7 +110,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/categories", icon: FolderTree, label: "Categories", labelBn: "ক্যাটাগরি", minRole: "admin" },
       { href: "/admin/products", icon: Package, label: "Products", labelBn: "পণ্য" },
       { href: "/admin/services", icon: Wrench, label: "Services", labelBn: "সেবা" },
-      { href: "/admin/reviews", icon: Star, label: "Reviews", labelBn: "রিভিউ" },
+      { href: "/admin/reviews", icon: Star, label: "Product Reviews", labelBn: "পণ্য রিভিউ" },
     ],
   },
   {
@@ -111,13 +119,12 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     labelBn: "কনটেন্ট",
     items: [
       { href: "/admin/homepage", icon: LayoutTemplate, label: "Homepage Content", labelBn: "হোমপেজ কনটেন্ট" },
-      { href: "/admin/announcements", icon: Megaphone, label: "Announcements", labelBn: "ঘোষণা" },
-      { href: "/admin/promo-slides", icon: Images, label: "Promo Slides", labelBn: "প্রোমো স্লাইড" },
+      { href: "/admin/announcements", icon: Megaphone, label: "Homepage Announcement Bar", labelBn: "ঘোষণা বার" },
+      { href: "/admin/promo-slides", icon: Images, label: "Homepage Banners & Slider", labelBn: "হোমপেজ ব্যানার ও স্লাইড" },
       { href: "/admin/media", icon: Images, label: "Image Manager", labelBn: "ছবি ব্যবস্থাপনা" },
       { href: "/admin/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি" },
       { href: "/admin/blog", icon: BookOpen, label: "Blog", labelBn: "ব্লগ" },
       { href: "/admin/email-templates", icon: Mail, label: "Email Templates", labelBn: "ইমেইল" },
-      { href: "/admin/newsletter", icon: Send, label: "Newsletter", labelBn: "নিউজলেটার" },
     ],
   },
   {
@@ -125,7 +132,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "System",
     labelBn: "সিস্টেম",
     items: [
-      { href: "/admin/delivery", icon: Truck, label: "Delivery & Charges", labelBn: "ডেলিভারি ও চার্জ", minRole: "admin" },
+      { href: "/admin/delivery", icon: Truck, label: "Checkout & Delivery", labelBn: "চেকআউট ও ডেলিভারি", minRole: "admin" },
       { href: "/admin/settings", icon: Settings, label: "Settings", labelBn: "সেটিংস", minRole: "admin" },
       { href: "/admin/users", icon: Users, label: "Users", labelBn: "ইউজার", minRole: "admin" },
       { href: "/admin/audit", icon: Shield, label: "Audit Logs", labelBn: "অডিট", minRole: "admin" },

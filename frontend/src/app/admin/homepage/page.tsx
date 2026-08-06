@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Save, Loader2 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import HomepageSectionNav from "@/components/admin/HomepageSectionNav";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
@@ -131,11 +132,12 @@ export default function AdminHomepageContentPage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto">
+      <HomepageSectionNav />
       <AdminPageHeader
         title="Homepage Content"
         titleBn="হোমপেজ কনটেন্ট"
-        description="Hero text, Flash Sale, trust badges, Why Choose Us, FAQ, categories & entry cards"
-        descriptionBn="হিরো লেখা, ফ্ল্যাশ সেল, ট্রাস্ট ব্যাজ, কেন আমরা, প্রশ্নোত্তর, ক্যাটাগরি ও এন্ট্রি কার্ড"
+        description="Hero text, Flash Sale, trust badges, Why Choose Us, FAQ, categories & entry cards. Banner images & the announcement bar are edited in the linked pages above."
+        descriptionBn="হিরো লেখা, ফ্ল্যাশ সেল, ট্রাস্ট ব্যাজ, কেন আমরা, প্রশ্নোত্তর, ক্যাটাগরি ও এন্ট্রি কার্ড। ব্যানার ছবি ও ঘোষণা বার উপরের লিংক থেকে সম্পাদনা করুন।"
         className="mb-6"
         actions={
           <button type="button" onClick={save} disabled={saving || loading} className="btn btn-brand btn-sm disabled:opacity-60">

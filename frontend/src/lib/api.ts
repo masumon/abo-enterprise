@@ -129,6 +129,17 @@ export const productsApi = {
 
   delete: (id: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/products/${id}`),
+
+  /** Bulk create/update by slug — matching slugs update price & stock, new slugs are created. */
+  importCsv: (file: File) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    return api.post<ApiResponse<{ created: number; updated: number; errors: { row: number; error: string }[] }>>(
+      "/api/v1/admin/bulk/import/products",
+      fd,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
+  },
 };
 
 export const ordersApi = {

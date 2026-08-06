@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, Trash2, ArrowUp, ArrowDown, Save, Loader2 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import HomepageSectionNav from "@/components/admin/HomepageSectionNav";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
@@ -82,6 +83,7 @@ export default function AdminAnnouncementsPage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-3xl mx-auto">
+      <HomepageSectionNav />
       <AdminPageHeader
         title="Announcements"
         titleBn="ঘোষণা বার"

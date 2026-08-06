@@ -9,7 +9,6 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
 /** Friendly field-editors for the Trust Assets object-array settings.
  * Unknown keys are preserved by JsonListEditor, so existing data is safe. */
-const ICON_HINT = "lucide name or emoji";
 const s = (item: Record<string, unknown>, key: string): string => {
   const v = item[key];
   return v == null ? "" : String(v);
@@ -95,56 +94,6 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
         </div>
       </div>
     ),
-  },
-  // ── Homepage Sections ──
-  site_announcements_json: {
-    fields: [
-      { path: "en", label: "Text (EN)" }, { path: "bn", label: "Text (BN)" },
-      { path: "href", label: "Link" }, { path: "icon", label: "Icon", type: "icon", hint: "emoji" },
-    ],
-    newItem: () => ({ en: "", bn: "", href: "/", icon: "" }),
-  },
-  site_trust_badges_json: {
-    fields: [
-      { path: "icon", label: "Icon", type: "icon", hint: ICON_HINT },
-      { path: "en", label: "Label (EN)" }, { path: "bn", label: "Label (BN)" },
-    ],
-    newItem: () => ({ icon: "award", en: "", bn: "" }),
-  },
-  site_why_choose_json: {
-    fields: [
-      { path: "icon", label: "Icon", type: "icon", hint: ICON_HINT },
-      { path: "title_en", label: "Title (EN)" }, { path: "title_bn", label: "Title (BN)" },
-      { path: "desc_en", label: "Description (EN)", type: "textarea" }, { path: "desc_bn", label: "Description (BN)", type: "textarea" },
-    ],
-    newItem: () => ({ icon: "award", title_en: "", title_bn: "", desc_en: "", desc_bn: "" }),
-  },
-  site_faq_json: {
-    fields: [
-      { path: "q_en", label: "Question (EN)" }, { path: "q_bn", label: "Question (BN)" },
-      { path: "a_en", label: "Answer (EN)", type: "textarea" }, { path: "a_bn", label: "Answer (BN)", type: "textarea" },
-      { path: "category", label: "Category", hint: "general, products, services, software, payment, shipping" },
-    ],
-    newItem: () => ({ q_en: "", q_bn: "", a_en: "", a_bn: "", category: "general" }),
-  },
-  site_quick_categories_json: {
-    fields: [
-      { path: "icon", label: "Icon", type: "icon", hint: ICON_HINT },
-      { path: "label_en", label: "Label (EN)" }, { path: "label_bn", label: "Label (BN)" },
-      { path: "desc_en", label: "Description (EN)" }, { path: "desc_bn", label: "Description (BN)" },
-      { path: "href", label: "Link" },
-    ],
-    newItem: () => ({ icon: "smartphone", label_en: "", label_bn: "", desc_en: "", desc_bn: "", href: "/products" }),
-  },
-  site_entry_points_json: {
-    fields: [
-      { path: "icon", label: "Icon", type: "icon", hint: ICON_HINT },
-      { path: "title_en", label: "Title (EN)" }, { path: "title_bn", label: "Title (BN)" },
-      { path: "desc_en", label: "Description (EN)", type: "textarea" }, { path: "desc_bn", label: "Description (BN)", type: "textarea" },
-      { path: "cta_en", label: "Button (EN)" }, { path: "cta_bn", label: "Button (BN)" },
-      { path: "href", label: "Link" },
-    ],
-    newItem: () => ({ icon: "package", title_en: "", title_bn: "", desc_en: "", desc_bn: "", cta_en: "", cta_bn: "", href: "/" }),
   },
   // ── Company registrations shown in the footer ──
   site_registrations_json: {
@@ -310,12 +259,12 @@ const SECTIONS: Section[] = [
   // ═══════════════════════════════════════════════════════════════════════
   {
     id: "trust_media",
-    title: "Trust Assets (JSON)",
+    title: "Team, Clients & Testimonials",
     icon: <Trophy className="w-4 h-4" />,
     fields: [
-      { key: "about_team_json", label: "Team Members", type: "textarea", hint: "Array with name, role, photo_url, bio" },
-      { key: "client_logos_json", label: "Client Logos", type: "textarea", hint: "Name, logo, and optional description + case-study link (shown on tap)" },
-      { key: "demo_reviews_json", label: "Testimonials", type: "textarea", hint: "Array with name, review, photo_url, rating" },
+      { key: "about_team_json", label: "Team Members", type: "textarea", hint: "Add each team member — name, role, photo & short bio" },
+      { key: "client_logos_json", label: "Client Logos", type: "textarea", hint: "Add each client logo — name, photo, and an optional description + case-study link (shown on tap)" },
+      { key: "demo_reviews_json", label: "Testimonials", type: "textarea", hint: "Add each customer review — name, review text, photo & star rating" },
     ],
   },
   {
@@ -336,10 +285,11 @@ const SECTIONS: Section[] = [
     id: "ecommerce_config",
     title: "E-Commerce Settings",
     icon: <ShoppingBag className="w-4 h-4" />,
-    note: "ডেলিভারি চার্জ, ফ্রি লিমিট, কুরিয়ার ও COD সুরক্ষা → Delivery & Charges মডিউলে। কুপন → Coupons মডিউলে।",
+    note: "চেকআউট OTP, ডেলিভারি চার্জ, ফ্রি লিমিট, কুরিয়ার ও COD সুরক্ষা → Checkout & Delivery মডিউলে। কুপন → Marketing → Coupons মডিউলে।",
     fields: [
       { key: "currency", label: "Currency", placeholder: "BDT" },
       { key: "min_order_amount", label: "Min Order (৳)", type: "number", placeholder: "200" },
+      { key: "tax_percent", label: "Tax / VAT %", type: "number", placeholder: "0", hint: "Shown on invoices for reference — not yet applied to checkout totals (a deliberate, separate decision)." },
     ],
   },
   {
@@ -370,16 +320,6 @@ const SECTIONS: Section[] = [
       },
     ],
   },
-  {
-    id: "checkout_config",
-    title: "Checkout Options",
-    icon: <ShoppingBag className="w-4 h-4" />,
-    fields: [
-      { key: "checkout_confirm_channel", label: "Order Confirm Channel", placeholder: "none" },
-      { key: "checkout_otp_required", label: "Require Phone OTP", placeholder: "false", hint: "true/false" },
-      { key: "whatsapp_number", label: "WhatsApp Order Number", placeholder: "8801825007977" },
-    ],
-  },
 
   // ═══════════════════════════════════════════════════════════════════════
   // MARKETING & SOCIAL
@@ -403,7 +343,6 @@ const SECTIONS: Section[] = [
     icon: <Zap className="w-4 h-4" />,
     fields: [
       { key: "facebook_pixel_id", label: "Facebook Pixel ID", placeholder: "1234567890", hint: "Conversion tracking" },
-      { key: "tax_percent", label: "Tax / VAT %", type: "number", placeholder: "0", hint: "Stored for reference and invoice display only — not yet applied to checkout totals (a deliberate, separate decision)." },
       { key: "seo_gtm_id", label: "Google Tag Manager ID", placeholder: "GTM-XXXXXXX", hint: "Container ID from tagmanager.google.com" },
       { key: "seo_gsc_verification", label: "Google Search Console Verification", placeholder: "abc123...", hint: "The content value from GSC's HTML tag verification method (not the whole <meta> tag)" },
     ],

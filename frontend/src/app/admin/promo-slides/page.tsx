@@ -4,6 +4,7 @@ import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/admin
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, Plus, Pencil, Trash2, X, Images, ExternalLink } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import HomepageSectionNav from "@/components/admin/HomepageSectionNav";
 import ImageUpload from "@/components/admin/ImageUpload";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { promoSlidesApi } from "@/lib/api";
@@ -116,9 +117,10 @@ export default function AdminPromoSlidesPage() {
 
   return (
     <div className="space-y-6 max-w-5xl">
+      <HomepageSectionNav />
       <AdminPageHeader
-        title="Promo Slides"
-        titleBn="প্রোমো স্লাইড"
+        title="Homepage Banners & Slider"
+        titleBn="হোমপেজ ব্যানার ও স্লাইড"
         description="Image/video banners with a link, shown in the hero card and the flash-sale strip"
         descriptionBn="হিরো কার্ড ও ফ্ল্যাশ সেলে দেখানো ছবি/ভিডিও ব্যানার — লিংক সহ"
         actions={
