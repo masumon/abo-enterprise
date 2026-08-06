@@ -6,7 +6,6 @@ import { LANG_COOKIE, normalizeLang } from "@/lib/lang";
 import StoreHydration from "@/components/providers/StoreHydration";
 import PublicShell from "@/components/layout/PublicShell";
 import PWAInstallPrompt from "@/components/pwa/PWAInstallPrompt";
-import PWASplashScreen from "@/components/pwa/PWASplashScreen";
 import NetworkStatusBar from "@/components/network/NetworkStatusBar";
 import RouteProgress from "@/components/layout/RouteProgress";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
@@ -157,7 +156,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href={API_ORIGIN} />
       </head>
       <body className="min-h-screen flex flex-col">
-        <PWASplashScreen />
+        {/* Custom PWASplashScreen removed: the installed app already shows the
+            OS/manifest splash on launch, so this replayed the logo a second
+            time ~3s in. The manifest splash is the single source now. */}
         <RouteProgress />
         <NetworkStatusBar />
         <GoogleAnalytics />
