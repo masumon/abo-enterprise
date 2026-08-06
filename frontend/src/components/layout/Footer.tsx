@@ -8,16 +8,16 @@ import {
   Mail,
   MapPin,
   Phone,
-  Send,
   Loader2,
-  Smartphone,
   Instagram,
   Linkedin,
   Youtube,
-  type LucideIcon,
-  TrendingUp,
+  ChevronDown,
+  CheckCircle2,
   BadgeCheck,
   Clock,
+  Lock,
+  type LucideIcon,
 } from "lucide-react";
 import {
   VisaMark,
@@ -42,6 +42,7 @@ import {
   getRegistrations,
 } from "@/lib/cmsContent";
 import { resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
+import { triggerInstall, isStandalone } from "@/lib/pwaInstall";
 import BrandLogo from "@/components/ui/BrandLogo";
 
 const PAY_BRAND: Record<string, { label: string; Mark: (p: { className?: string }) => JSX.Element }> = {
@@ -75,13 +76,29 @@ const SERVICES_LINKS = [
   { href: "/services#ecommerce", label: { en: "E-Commerce", bn: "ই-কমার্স" } },
 ];
 
+// "Support Ticket" (previously its own near-empty desktop-only column) now
+// lives here — one home for every customer-care link instead of two.
 const CUSTOMER_CARE_LINKS = [
   { href: "/faq", label: { en: "FAQ", bn: "সাধারণ প্রশ্ন" } },
   { href: "/contact", label: { en: "Contact", bn: "যোগাযোগ করুন" } },
   { href: "/contact", label: { en: "Warranty", bn: "ওয়ারেন্টি" } },
   { href: "/legal/refund", label: { en: "Returns", bn: "রিটার্ন নীতি" } },
   { href: "/track", label: { en: "Track Order", bn: "অর্ডার ট্র্যাক করুন" } },
-  { href: "/faq", label: { en: "Support", bn: "সহায়তা" } },
+  { href: "/faq", label: { en: "Support / Support Ticket", bn: "সহায়তা / সাপোর্ট টিকেট" } },
+];
+
+const NAV_GROUPS = [
+  { id: "quick", title: { en: "Quick Links", bn: "কুইক লিংকস" }, links: QUICK_LINKS },
+  { id: "services", title: { en: "Our Services", bn: "সেবা সমূহ" }, links: SERVICES_LINKS },
+  { id: "care", title: { en: "Customer Care", bn: "কাস্টমার সেবা" }, links: CUSTOMER_CARE_LINKS },
+];
+
+// Cycles the CMS-driven trust badges through 4 accent tiles.
+const TRUST_TILE_STYLES = [
+  "bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-300",
+  "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
+  "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300",
+  "bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300",
 ];
 
 function normalizePhoneDigits(phone: string) {
@@ -100,6 +117,7 @@ function formatPhoneDisplay(phone: string) {
 
 export default function Footer() {
   const { lang } = useLanguageStore();
+  const bn = lang === "bn";
   const toast = useToastStore((s) => s.push);
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -131,13 +149,13 @@ export default function Footer() {
   const address = getSettingValue(
     settings,
     "contact_address",
-    lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN
+    bn ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN
   );
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "contact_address"), address);
-  const hours = lang === "bn"
+  const hours = bn
     ? getSettingValue(settings, "contact_hours_bn", "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা")
     : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 9:00 PM");
-  const aboutText = lang === "bn"
+  const aboutText = bn
     ? getSettingValue(settings, "footer_about_bn", "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।")
     : getSettingValue(settings, "footer_about_en", "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us.");
   const whatsappDigits = normalizePhoneDigits(getSettingValue(settings, "whatsapp_number", phoneRaw));
@@ -159,10 +177,6 @@ export default function Footer() {
   const appStoreUrl = getSettingValue(settings, "app_store_url") || "/";
 
   const trustBadges = getTrustBadges(settings, []);
-  // Already-built parser/admin field (lib/cmsContent.ts, admin/settings)
-  // that Footer never actually called — wiring it up here, not rebuilding
-  // it. Legacy single trade_license string is the fallback only when the
-  // JSON list is empty, matching the admin field's own hint.
   const registrationsList = getRegistrations(settings, []);
   const legacyTradeLicense = getSettingValue(settings, "trade_license");
   const registrations = registrationsList.length > 0
@@ -171,16 +185,37 @@ export default function Footer() {
       ? [{ label_en: "Trade License", label_bn: "ট্রেড লাইসেন্স", value: legacyTradeLicense }]
       : [];
 
-  const socialLinks = [
+  const socialLinks: { href: string; icon: LucideIcon; label: string; className: string }[] = [
     {
       href: getSettingValue(settings, "facebook_url", "https://www.facebook.com/abo.enterprise"),
       icon: Facebook,
       label: "Facebook",
+      className: "bg-[#1877f2]",
     },
-    { href: whatsappDigits ? `https://wa.me/${whatsappDigits}` : "", icon: MessageCircle, label: "WhatsApp" },
-    { href: getSettingValue(settings, "instagram_url"), icon: Instagram, label: "Instagram" },
-    { href: getSettingValue(settings, "linkedin_url"), icon: Linkedin, label: "LinkedIn" },
-    { href: getSettingValue(settings, "youtube_url"), icon: Youtube, label: "YouTube" },
+    {
+      href: whatsappDigits ? `https://wa.me/${whatsappDigits}` : "",
+      icon: MessageCircle,
+      label: "WhatsApp",
+      className: "bg-[#25d366]",
+    },
+    {
+      href: getSettingValue(settings, "instagram_url"),
+      icon: Instagram,
+      label: "Instagram",
+      className: "bg-gradient-to-br from-[#f58529] via-[#dd2a7b] to-[#8134af]",
+    },
+    {
+      href: getSettingValue(settings, "linkedin_url"),
+      icon: Linkedin,
+      label: "LinkedIn",
+      className: "bg-[#0a66c2]",
+    },
+    {
+      href: getSettingValue(settings, "youtube_url"),
+      icon: Youtube,
+      label: "YouTube",
+      className: "bg-[#ff0000]",
+    },
   ].filter((item) => item.href);
 
   const handleNewsletter = async (e: React.FormEvent) => {
@@ -189,361 +224,302 @@ export default function Footer() {
     setSubmitting(true);
     try {
       await publicApi.newsletter(email.trim());
-      toast("success", lang === "bn" ? "সাবস্ক্রাইব হয়েছে!" : "Subscribed successfully!");
+      toast("success", bn ? "সাবস্ক্রাইব হয়েছে!" : "Subscribed successfully!");
       setEmail("");
     } catch {
-      toast("error", lang === "bn" ? "সাবস্ক্রাইব করা যায়নি" : "Could not subscribe");
+      toast("error", bn ? "সাবস্ক্রাইব করা যায়নি" : "Could not subscribe");
     } finally {
       setSubmitting(false);
     }
   };
 
+  // Tries the native PWA install dialog first (this IS the "app"); only
+  // falls back to the admin-configured store URL when no prompt is available
+  // (already installed, iOS, or a browser without install support).
+  const handleAppDownload = async (fallbackUrl: string) => {
+    const outcome = await triggerInstall();
+    if (outcome !== "unavailable") return;
+    if (isStandalone()) {
+      toast("success", bn ? "অ্যাপটি ইতিমধ্যে ইনস্টল করা আছে" : "The app is already installed");
+      return;
+    }
+    window.open(fallbackUrl, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <footer className="site-footer relative text-white overflow-hidden bg-gradient-to-b from-[#0f1a2e] to-[#051529]">
-      <div className="relative z-10 container mx-auto px-4 py-6 md:py-14 space-y-5 md:space-y-10">
-        <div className="grid gap-8 md:gap-10 md:grid-cols-[1fr_1.5fr]">
-          <div className="space-y-6">
-            <div>
-              <BrandLogo size="lg" href={false} variant="light" />
-              <p className="text-xs md:text-sm text-white/70 mt-3 leading-relaxed">{aboutText}</p>
-            </div>
+      <div className="relative z-10 mx-auto max-w-3xl px-4 py-6 md:py-10">
 
-            <div className="space-y-3">
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" aria-hidden />
-                <div className="min-w-0">
-                  <p className="text-xs md:text-sm font-semibold text-white">
-                    {lang === "bn" ? "প্রধান কার্যালয়" : "Head Office"}
-                  </p>
-                  <a
-                    href={mapsLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs md:text-sm text-white/70 hover:text-green-400 transition-colors"
-                  >
-                    {address}
-                  </a>
-                </div>
-              </div>
+        {/* Brand + about */}
+        <BrandLogo size="lg" href={false} variant="light" />
+        <p className="text-xs text-white/70 mt-3 mb-5 leading-relaxed">{aboutText}</p>
 
-              <div className="flex items-start gap-3">
-                <Phone className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" aria-hidden />
-                <div className="min-w-0">
-                  <p className="text-xs md:text-sm font-semibold text-white">
-                    {lang === "bn" ? "কল করুন" : "Call Us"}
-                  </p>
-                  <a href={`tel:+${phoneDigits}`} className="text-xs md:text-sm text-white/70 hover:text-blue-400 transition-colors">
-                    {phoneDisplay}
-                  </a>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Mail className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" aria-hidden />
-                <div className="min-w-0">
-                  <p className="text-xs md:text-sm font-semibold text-white">
-                    {lang === "bn" ? "ইমেইল" : "Email"}
-                  </p>
-                  <a href={`mailto:${emailAddr}`} className="text-xs md:text-sm text-white/70 hover:text-red-400 transition-colors break-all">
-                    {emailAddr}
-                  </a>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <Clock className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" aria-hidden />
-                <div className="min-w-0">
-                  <p className="text-xs md:text-sm font-semibold text-white">
-                    {lang === "bn" ? "কার্যসময়" : "Business Hours"}
-                  </p>
-                  <p className="text-xs md:text-sm text-white/70">{hours}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-3 flex-wrap pt-2">
-              {socialLinks.map(({ href, icon: Icon, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="relative w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white hover:scale-110 transition-all duration-200 before:content-[''] before:absolute before:-inset-1"
-                >
-                  <Icon className="w-4 h-4" aria-hidden />
-                </a>
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-3 sm:gap-6 lg:grid-cols-4">
-            <nav>
-              <h3 className="text-sm md:text-base font-bold text-white mb-3">
-                {lang === "bn" ? "কুইক লিংকস" : "Quick Links"}
-              </h3>
-              <ul className="space-y-2">
-                {QUICK_LINKS.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="text-xs md:text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2 group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-green-400 transition-colors" />
-                      {lang === "bn" ? link.label.bn : link.label.en}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-
-            <nav>
-              <h3 className="text-sm md:text-base font-bold text-white mb-3">
-                {lang === "bn" ? "সেবা সমূহ" : "Our Services"}
-              </h3>
-              <ul className="space-y-2">
-                {SERVICES_LINKS.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="text-xs md:text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2 group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-green-400 transition-colors" />
-                      {lang === "bn" ? link.label.bn : link.label.en}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-
-            <nav>
-              <h3 className="text-sm md:text-base font-bold text-white mb-3">
-                {lang === "bn" ? "কাস্টমার সেবা" : "Customer Care"}
-              </h3>
-              <ul className="space-y-2">
-                {CUSTOMER_CARE_LINKS.map((link) => (
-                  <li key={link.label.en}>
-                    <Link
-                      href={link.href}
-                      className="text-xs md:text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2 group"
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-green-400 transition-colors" />
-                      {lang === "bn" ? link.label.bn : link.label.en}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-
-            <nav className="hidden lg:block">
-              <h3 className="text-sm md:text-base font-bold text-white mb-3">
-                {lang === "bn" ? "সাপোর্ট" : "Support"}
-              </h3>
-              <ul className="space-y-2">
-                <li>
-                  <Link
-                    href="/faq"
-                    className="text-xs md:text-sm text-white/70 hover:text-white transition-colors flex items-center gap-2 group"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-green-400 transition-colors" />
-                    {lang === "bn" ? "সাপোর্ট টিকেট" : "Support Ticket"}
-                  </Link>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        </div>
-
-        {trustBadges.length > 0 && (
-          <div className="border-t border-white/10 pt-4 md:pt-6 space-y-3 md:space-y-4">
-            <div className="flex items-center gap-3 justify-center">
-              <div className="w-1 h-1 rounded-full bg-green-400" />
-              <h2 className="text-lg md:text-xl font-bold text-white text-center">
-                {lang === "bn" ? "আমাদের উপর আস্থা রাখুন" : "Trust Us"}
-              </h2>
-              <div className="w-1 h-1 rounded-full bg-green-400" />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {trustBadges.map((badge, i) => (
-                <div
-                  key={i}
-                  className="border border-green-500/50 rounded-xl p-4 hover:border-green-400 hover:bg-green-500/5 transition-all text-center"
-                >
-                  <div className="flex justify-center mb-3">
-                    <div className="w-12 h-12 rounded-lg bg-green-500/20 flex items-center justify-center">
-                      <TrendingUp className="w-6 h-6 text-green-400" aria-hidden />
-                    </div>
-                  </div>
-                  <p className="text-sm md:text-base font-bold text-white">
-                    {lang === "bn" ? badge.bn || badge.en : badge.en || badge.bn}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="border-t border-white/10 pt-4 md:pt-6 grid gap-4 md:gap-6 md:grid-cols-2">
-          <div className="space-y-2.5 md:space-y-3">
-            <h2 className="text-xs md:text-sm font-bold text-white/80 uppercase tracking-wide text-center md:text-left">
-              {lang === "bn" ? "পেমেন্ট পদ্ধতি সমূহ" : "Payment Methods"}
-            </h2>
-
-            <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
-              {payKeys.map((key) => {
-                const brand = PAY_BRAND[key];
-                if (!brand) return null;
-                return (
-                  <div
-                    key={key}
-                    className="border border-white/10 rounded-lg p-1.5 hover:border-white/30 transition-colors bg-white/5"
-                    title={brand.label}
-                  >
-                    <brand.Mark className="h-4 md:h-5 w-auto max-w-full" />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {registrations.length > 0 && (
-            <div className="space-y-2.5 md:space-y-3">
-              <h2 className="text-xs md:text-sm font-bold text-white/80 uppercase tracking-wide text-center md:text-left">
-                {lang === "bn" ? "ব্যবসায়িক তথ্য" : "Business Registrations"}
-              </h2>
-
-              <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
-                {registrations.map((r, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-2 border border-white/10 rounded-lg px-2.5 py-1.5 bg-white/5"
-                  >
-                    <BadgeCheck className="w-3.5 h-3.5 text-green-400 flex-shrink-0" aria-hidden />
-                    <div className="min-w-0">
-                      <p className="text-[10px] text-white/50 leading-none mb-0.5">
-                        {lang === "bn" ? r.label_bn || r.label_en : r.label_en || r.label_bn}
-                      </p>
-                      <p className="text-xs font-semibold text-white/90 truncate">{r.value}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+        {/* Quick-action tiles */}
+        <div className="grid grid-cols-4 gap-2 mb-5">
+          <a href={`tel:+${phoneDigits}`} className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors">
+            <span className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+              <Phone className="w-3.5 h-3.5" aria-hidden />
+            </span>
+            <span className="text-[9px] font-bold text-white text-center leading-tight">{bn ? "কল করুন" : "Call"}</span>
+          </a>
+          {whatsappDigits && (
+            <a href={`https://wa.me/${whatsappDigits}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors">
+              <span className="w-8 h-8 rounded-xl bg-green-500/15 text-green-400 flex items-center justify-center">
+                <MessageCircle className="w-3.5 h-3.5" aria-hidden />
+              </span>
+              <span className="text-[9px] font-bold text-white text-center leading-tight">WhatsApp</span>
+            </a>
           )}
+          <a href={`mailto:${emailAddr}`} className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors">
+            <span className="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-400 flex items-center justify-center">
+              <Mail className="w-3.5 h-3.5" aria-hidden />
+            </span>
+            <span className="text-[9px] font-bold text-white text-center leading-tight">{bn ? "ইমেইল" : "Email"}</span>
+          </a>
+          <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors">
+            <span className="w-8 h-8 rounded-xl bg-pink-500/15 text-pink-400 flex items-center justify-center">
+              <MapPin className="w-3.5 h-3.5" aria-hidden />
+            </span>
+            <span className="text-[9px] font-bold text-white text-center leading-tight">{bn ? "ম্যাপ" : "Map"}</span>
+          </a>
         </div>
 
-        {newsletterEnabled && (
-          <div className="border-t border-white/10 pt-4 md:pt-6 space-y-3">
-            <div className="flex items-start gap-3 md:gap-4">
-              <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center flex-shrink-0">
-                <Mail className="w-4 h-4 md:w-5 md:h-5 text-white" aria-hidden />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm md:text-base font-bold text-white">
-                  {lang === "bn" ? "নিউজলেটারের সাবস্ক্রাইব করুন" : "Subscribe to Newsletter"}
-                </h3>
-                <p className="text-xs text-white/70 mt-0.5">
-                  {lang === "bn"
-                    ? "নতুন অফার, পণ্য এবং পরিষেবা সম্পর্কে প্রথম জানুন।"
-                    : "Get the latest offers, products, and services delivered to your inbox."}
-                </p>
+        {/* Business hours + address card */}
+        <div className="rounded-2xl bg-white/[0.06] p-4 mb-5 space-y-3">
+          <div className="flex items-start gap-3">
+            <span className="w-7 h-7 rounded-lg bg-amber-500/15 text-amber-400 flex items-center justify-center flex-shrink-0">
+              <Clock className="w-3.5 h-3.5" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-white/50">
+                {bn ? "কার্যসময়" : "Business Hours"}
+              </p>
+              <p className="text-xs font-semibold text-white mt-0.5">{hours}</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="w-7 h-7 rounded-lg bg-pink-500/15 text-pink-400 flex items-center justify-center flex-shrink-0">
+              <MapPin className="w-3.5 h-3.5" aria-hidden />
+            </span>
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-white/50">
+                {bn ? "প্রধান কার্যালয়" : "Head Office"}
+              </p>
+              <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-white/80 hover:text-white mt-0.5 block">
+                {address}
+              </a>
+            </div>
+          </div>
+        </div>
 
-                <form onSubmit={handleNewsletter} className="mt-3 flex gap-2 max-w-md">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder={lang === "bn" ? "আপনার ইমেইল" : "Your email"}
-                    className="flex-1 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/50 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-all text-sm"
-                    aria-label={lang === "bn" ? "ইমেইল ঠিকানা" : "Email address"}
-                    required
-                  />
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50 flex-shrink-0 text-sm"
-                  >
-                    {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : (lang === "bn" ? "সাবস্ক্রাইব" : "Subscribe")}
-                  </button>
-                </form>
-                <p className="text-[10px] text-white/50 mt-2 flex items-center gap-1">
-                  <span>🔒</span>
-                  {lang === "bn" ? "আমরা আপনার ডেটা নিরাপদ রাখি এবং কখনও স্প্যাম করি না।" : "We keep your data safe and never spam."}
-                </p>
-              </div>
+        {/* Social */}
+        <div className="flex gap-2 flex-wrap mb-5">
+          {socialLinks.map(({ href, icon: Icon, label, className }) => (
+            <a
+              key={label}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={label}
+              className={`w-9 h-9 rounded-xl flex items-center justify-center text-white hover:scale-105 transition-transform ${className}`}
+            >
+              <Icon className="w-4 h-4" aria-hidden />
+            </a>
+          ))}
+        </div>
+
+        {/* Nav accordions */}
+        <div className="border-t border-white/10">
+          {NAV_GROUPS.map((group) => (
+            <details key={group.id} className="group border-b border-white/10">
+              <summary className="flex items-center justify-between py-3.5 px-0.5 text-sm font-bold text-white cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+                {bn ? group.title.bn : group.title.en}
+                <ChevronDown className="w-4 h-4 text-white/40 transition-transform group-open:rotate-180 group-open:text-green-400" aria-hidden />
+              </summary>
+              <ul className="pb-3 px-0.5 space-y-0.5">
+                {group.links.map((link, i) => (
+                  <li key={`${link.href}-${i}`}>
+                    <Link
+                      href={link.href}
+                      className="flex items-center gap-2 py-1.5 px-1 rounded-lg text-xs text-white/70 hover:text-white hover:bg-white/[0.05] transition-colors"
+                    >
+                      <span className="w-1 h-1 rounded-full bg-white/40" />
+                      {bn ? link.label.bn : link.label.en}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ))}
+        </div>
+
+        {/* Trust band */}
+        {trustBadges.length > 0 && (
+          <div className="pt-5">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
+              <h2 className="text-sm font-extrabold text-white">
+                {bn ? "আমাদের উপর আস্থা রাখুন" : "Trust Us"}
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {trustBadges.map((badge, i) => (
+                <div key={i} className={`rounded-xl p-3 flex flex-col gap-2 ${TRUST_TILE_STYLES[i % TRUST_TILE_STYLES.length]}`}>
+                  <span className="w-6 h-6 rounded-lg bg-white/55 flex items-center justify-center">
+                    <CheckCircle2 className="w-3.5 h-3.5" aria-hidden />
+                  </span>
+                  <span className="text-[10px] font-extrabold leading-tight">
+                    {bn ? badge.bn || badge.en : badge.en || badge.bn}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
-        <div className="border-t border-white/10 pt-4 md:pt-6 space-y-3">
-          <div>
-            <h3 className="text-sm md:text-base font-bold text-white">
-              {lang === "bn" ? "আমাদের অ্যাপ ডাউনলোড করুন" : "Download Our App"}
+        {/* Payment methods */}
+        <div className="pt-4">
+          <h2 className="text-[10px] font-extrabold uppercase tracking-wide text-white/40 mb-2">
+            {bn ? "পেমেন্ট পদ্ধতি সমূহ" : "Payment Methods"}
+          </h2>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {payKeys.map((key) => {
+              const brand = PAY_BRAND[key];
+              if (!brand) return null;
+              return (
+                <div key={key} className="rounded-lg bg-white p-1.5 shadow-sm" title={brand.label}>
+                  <brand.Mark className="h-4 w-auto max-w-full" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Business registrations */}
+        {registrations.length > 0 && (
+          <div className="pt-4">
+            <h2 className="text-[10px] font-extrabold uppercase tracking-wide text-white/40 mb-2">
+              {bn ? "ব্যবসায়িক তথ্য" : "Business Registrations"}
+            </h2>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {registrations.map((r, i) => (
+                <div key={i} className="flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 py-1.5">
+                  <BadgeCheck className="w-3 h-3 text-emerald-400 flex-shrink-0" aria-hidden />
+                  <div className="min-w-0">
+                    <p className="text-[8.5px] text-white/45 leading-none">
+                      {bn ? r.label_bn || r.label_en : r.label_en || r.label_bn}
+                    </p>
+                    <p className="text-[10px] font-bold text-white/90 truncate mt-0.5">{r.value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Newsletter */}
+        {newsletterEnabled && (
+          <div className="mt-5 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-400 p-4 text-white">
+            <h3 className="text-sm font-extrabold">
+              {bn ? "নিউজলেটারে সাবস্ক্রাইব করুন" : "Subscribe to Newsletter"}
             </h3>
-            <p className="text-xs text-white/70 mt-1">
-              {lang === "bn"
-                ? "যেকোনো সময় সহজেই কেনাকাটা করুন আমাদের মোবাইল অ্যাপ থেকে।"
-                : "Shop anytime, anywhere with our mobile app."}
+            <p className="text-[11px] opacity-90 mt-1">
+              {bn
+                ? "নতুন অফার, পণ্য এবং পরিষেবা সম্পর্কে প্রথম জানুন।"
+                : "Get the latest offers, products, and services in your inbox."}
+            </p>
+            <form onSubmit={handleNewsletter} className="flex gap-2 mt-3">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder={bn ? "আপনার ইমেইল" : "you@email.com"}
+                className="flex-1 min-w-0 h-10 rounded-xl border-0 px-3 text-sm text-[#171923] bg-white/95 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-white"
+                aria-label={bn ? "ইমেইল ঠিকানা" : "Email address"}
+                required
+              />
+              <button
+                type="submit"
+                disabled={submitting}
+                className="h-10 px-4 rounded-xl bg-[#171923] text-white font-bold text-xs whitespace-nowrap disabled:opacity-50 flex-shrink-0"
+              >
+                {submitting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" aria-hidden /> : (bn ? "সাবস্ক্রাইব" : "Subscribe")}
+              </button>
+            </form>
+            <p className="flex items-center gap-1.5 text-[9.5px] opacity-85 mt-2">
+              <Lock className="w-2.5 h-2.5" aria-hidden />
+              {bn ? "আমরা আপনার ডেটা নিরাপদ রাখি, স্প্যাম করি না।" : "We keep your data safe and never spam."}
             </p>
           </div>
+        )}
 
-          <div className="flex gap-2.5 flex-wrap">
-            <a
-              href={playStoreUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group px-3.5 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 hover:border-white/30 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2.5"
+        {/* App download — triggers the PWA install prompt */}
+        <div className="pt-5">
+          <h3 className="text-sm font-bold text-white">
+            {bn ? "আমাদের অ্যাপ ডাউনলোড করুন" : "Download Our App"}
+          </h3>
+          <p className="text-[11px] text-white/60 mt-0.5">
+            {bn ? "যেকোনো সময় সহজেই কেনাকাটা করুন।" : "Shop anytime, anywhere."}
+          </p>
+          <div className="flex gap-2 mt-3">
+            <button
+              type="button"
+              onClick={() => handleAppDownload(playStoreUrl)}
+              className="flex-1 flex items-center gap-2 rounded-xl bg-white/[0.06] hover:bg-white/10 transition-colors px-3 py-2"
             >
-              <PlayStoreMark className="w-6 h-6 flex-shrink-0" />
+              <PlayStoreMark className="w-5 h-5 flex-shrink-0" />
               <span className="text-left leading-tight">
-                <span className="block text-[9px] text-white/60 uppercase tracking-wide">
-                  {lang === "bn" ? "পাওয়া যাচ্ছে" : "Get it on"}
+                <span className="block text-[7px] uppercase tracking-wide text-white/50">
+                  {bn ? "পাওয়া যাচ্ছে" : "Get it on"}
                 </span>
-                <span className="block text-xs md:text-sm font-bold text-white">
-                  {lang === "bn" ? "গুগল প্লে" : "Google Play"}
+                <span className="block text-[11px] font-extrabold text-white">
+                  {bn ? "গুগল প্লে" : "Google Play"}
                 </span>
               </span>
-            </a>
-
-            <a
-              href={appStoreUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group px-3.5 py-2 rounded-xl border border-white/15 bg-white/5 hover:bg-white/10 hover:border-white/30 hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2.5"
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAppDownload(appStoreUrl)}
+              className="flex-1 flex items-center gap-2 rounded-xl bg-white/[0.06] hover:bg-white/10 transition-colors px-3 py-2"
             >
-              <AppStoreMark className="w-6 h-6 flex-shrink-0" />
+              <AppStoreMark className="w-5 h-5 flex-shrink-0" />
               <span className="text-left leading-tight">
-                <span className="block text-[9px] text-white/60 uppercase tracking-wide">
-                  {lang === "bn" ? "ডাউনলোড করুন" : "Download on the"}
+                <span className="block text-[7px] uppercase tracking-wide text-white/50">
+                  {bn ? "ডাউনলোড করুন" : "Download on the"}
                 </span>
-                <span className="block text-xs md:text-sm font-bold text-white">
-                  {lang === "bn" ? "অ্যাপ স্টোর" : "App Store"}
+                <span className="block text-[11px] font-extrabold text-white">
+                  {bn ? "অ্যাপ স্টোর" : "App Store"}
                 </span>
               </span>
-            </a>
+            </button>
           </div>
         </div>
 
-        <div className="border-t border-white/10 pt-6 pb-[calc(var(--mobile-chrome-bottom)+0.5rem)] lg:pb-0 text-center space-y-3">
-          <p className="text-sm text-white/70">
-            &copy; {new Date().getFullYear()} ABO ENTERPRISE. {lang === "bn" ? "সকল অধ্যকার সংরক্ষিত।" : "All rights reserved."}
+        {/* Legal */}
+        <div className="border-t border-white/10 mt-6 pt-5 pb-[calc(var(--mobile-chrome-bottom)+0.5rem)] lg:pb-5 text-center space-y-2.5">
+          <p className="text-xs text-white/70">
+            &copy; {new Date().getFullYear()} ABO ENTERPRISE. {bn ? "সকল অধিকার সংরক্ষিত।" : "All rights reserved."}
           </p>
-          <p className="text-xs text-white/60 flex items-center justify-center gap-1 flex-wrap justify-center">
-            <span>{lang === "bn" ? "সেরা সার্ভিস" : "Best Services"}</span>
-            <span>•</span>
-            <span>{lang === "bn" ? "সেরা সমাধান" : "Best Solutions"}</span>
-            <span>•</span>
-            <span>{lang === "bn" ? "আমাদের সম্পদ আমাদের লক্ষ্য" : "Our Assets Our Goals"}</span>
-            <span>❤️</span>
+          <p className="flex items-center justify-center gap-2 flex-wrap text-xs font-semibold text-white/70">
+            <Link href="/legal/terms" className="hover:text-orange-400 transition-colors">
+              {bn ? "শর্তাবলী" : "Terms & Conditions"}
+            </Link>
+            <span className="text-white/30">·</span>
+            <Link href="/legal/privacy" className="hover:text-orange-400 transition-colors">
+              {bn ? "গোপনীয়তা নীতি" : "Privacy Policy"}
+            </Link>
+            <span className="text-white/30">·</span>
+            <Link href="/legal/cookies" className="hover:text-orange-400 transition-colors">
+              {bn ? "কুকি নীতি" : "Cookies"}
+            </Link>
           </p>
           <p className="text-xs text-white/60">
-            <span>{lang === "bn" ? "তৈরি করেছেন" : "Developed with"}</span>
+            <span>{bn ? "তৈরি করেছেন" : "Developed with"}</span>
             {" ❤️ "}
-            <span>{lang === "bn" ? "দ্বারা" : "by"}</span>
+            <span>{bn ? "দ্বারা" : "by"}</span>
             {" "}
-            <a href="https://sumonix.com" target="_blank" rel="noopener noreferrer" className="font-semibold text-white hover:text-green-400 transition-colors">
-              SUMONIX
+            <a href="https://mumainsumon.netlify.app" target="_blank" rel="noopener noreferrer" className="font-semibold text-white hover:text-orange-400 transition-colors">
+              SUMON
             </a>
           </p>
         </div>
