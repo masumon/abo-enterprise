@@ -48,7 +48,7 @@ export default function CategoryCards() {
   const categories = getQuickCategories(settings, FALLBACK);
 
   return (
-    <section className="py-7 sm:py-10 bg-white dark:bg-[var(--surface)]">
+    <section className="py-4 sm:py-6 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-3 gap-3 sm:gap-5">
           {categories.map((cat, i) => {

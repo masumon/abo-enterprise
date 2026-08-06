@@ -76,13 +76,15 @@ export default function MobileBottomNav() {
               aria-current={active ? "page" : undefined}
               className={cn(
                 "relative min-h-[44px] flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 transition-colors",
-                active ? "text-brand-600 dark:text-brand-300 font-bold" : "text-muted"
+                active ? "text-brand-700 dark:text-brand-200 font-bold" : "text-brand-600/80 dark:text-brand-300/80 font-medium"
               )}
             >
               <span
                 className={cn(
-                  "relative flex items-center justify-center w-9 h-7 rounded-full transition-colors",
-                  active && "bg-brand-50 dark:bg-brand-500/15"
+                  "relative flex items-center justify-center w-10 h-8 rounded-full transition-all",
+                  active
+                    ? "bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/30 -translate-y-0.5"
+                    : "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-300"
                 )}
               >
                 <Icon className="w-[18px] h-[18px]" strokeWidth={active ? 2.5 : 2} />
@@ -112,13 +114,15 @@ export default function MobileBottomNav() {
           aria-haspopup="dialog"
           className={cn(
             "min-h-[44px] flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 transition-colors",
-            moreOpen ? "text-brand-600 dark:text-brand-300 font-bold" : "text-muted"
+            moreOpen ? "text-brand-700 dark:text-brand-200 font-bold" : "text-brand-600/80 dark:text-brand-300/80 font-medium"
           )}
         >
           <span
             className={cn(
-              "flex items-center justify-center w-9 h-7 rounded-full transition-colors",
-              moreOpen && "bg-brand-50 dark:bg-brand-500/15"
+              "flex items-center justify-center w-10 h-8 rounded-full transition-all",
+              moreOpen
+                ? "bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/30 -translate-y-0.5"
+                : "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-300"
             )}
           >
             <Menu className="w-[18px] h-[18px]" strokeWidth={moreOpen ? 2.5 : 2} />

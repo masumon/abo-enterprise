@@ -68,22 +68,23 @@ export default function Navbar() {
     <header className="fixed top-[var(--announcement-height)] left-0 right-0 z-50">
       {/* ── Mobile header — artifact Screen 03 m-head ── */}
       <nav
-        className="lg:hidden flex items-center gap-2.5 px-3.5 min-h-[68px] bg-white/85 dark:bg-[var(--surface-card)]/85 backdrop-blur-xl border-b border-[var(--line)] dark:border-[var(--line)] shadow-sm"
+        className="lg:hidden flex items-center gap-2 px-3 min-h-[64px] bg-white/85 dark:bg-[var(--surface-card)]/85 backdrop-blur-xl border-b border-[var(--line)] dark:border-[var(--line)] shadow-sm"
         aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
       >
+        {/* Bigger brand logo (admin-configurable via CMS logo URL). */}
         <Link href="/" className="flex-none flex items-center" aria-label={getBrandName(lang)}>
-          <BrandLogo size="sm" href={false} priority />
+          <BrandLogo size="lg" href={false} priority />
         </Link>
 
         {showTicker ? (
           <div
             className={cn(
-              "marquee-viewport flex-1 min-w-0 mx-1.5 h-8 rounded-full px-3 shadow-sm",
+              "marquee-viewport flex-1 min-w-0 mx-1 h-9 rounded-full px-3 shadow-sm",
               ANNOUNCEMENT_VARIANT_BG[announcements[0]?.variant ?? "promo"] ?? ANNOUNCEMENT_VARIANT_BG.promo
             )}
           >
             <div
-              className="marquee-track items-center h-8"
+              className="marquee-track items-center h-9"
               style={{ ["--marquee-duration" as string]: `${durationSec}s` }}
             >
               {tickerTrack.map((a, i) => (
@@ -92,7 +93,7 @@ export default function Navbar() {
                   href={a.href || "/"}
                   aria-hidden={i >= announcements.length}
                   tabIndex={i >= announcements.length ? -1 : 0}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-white pr-6 whitespace-nowrap"
+                  className="inline-flex items-center gap-1.5 text-[13px] font-bold text-white pr-8 whitespace-nowrap"
                 >
                   {a.icon && <span aria-hidden>{a.icon}</span>}
                   <span>{lang === "bn" ? a.bn : a.en}</span>
@@ -104,11 +105,12 @@ export default function Navbar() {
           <span className="flex-1" />
         )}
 
+        {/* Compact, coloured real-icon action buttons (brand/gold scheme). */}
         {showAssistantInHeader && (
           <button
             type="button"
             onClick={toggleAssistant}
-            className="w-9 h-9 rounded-lg border border-[var(--line)] flex items-center justify-center text-xs text-brand-600 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/30"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-brand-600 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/40 ring-1 ring-brand-200/70 dark:ring-brand-500/30 flex-none active:scale-90 transition-transform"
             aria-label={lang === "bn" ? "সহায়ক চ্যাট" : "Assistant chat"}
           >
             <MessageCircle className="w-4 h-4" strokeWidth={2.5} />
@@ -118,27 +120,27 @@ export default function Navbar() {
         <button
           type="button"
           onClick={toggleTheme}
-          className="w-9 h-9 rounded-lg border border-[var(--line)] bg-gray-50 dark:bg-white/5 flex items-center justify-center text-[var(--ink-muted)] hover:text-accent-600 dark:hover:text-accent-400 hover:border-accent-200 dark:hover:border-accent-500/30 transition-colors flex-none"
+          className="w-8 h-8 rounded-lg bg-accent-50 dark:bg-accent-500/15 ring-1 ring-accent-200/70 dark:ring-accent-500/30 flex items-center justify-center text-accent-600 dark:text-accent-400 flex-none active:scale-90 transition-transform"
           aria-label={lang === "bn" ? "ডার্ক/লাইট মোড পরিবর্তন করুন" : "Toggle dark mode"}
         >
-          {theme === "dark" ? <Sun className="w-4 h-4" strokeWidth={2} /> : <Moon className="w-4 h-4" strokeWidth={2} />}
+          {theme === "dark" ? <Sun className="w-4 h-4" strokeWidth={2.5} /> : <Moon className="w-4 h-4" strokeWidth={2.5} />}
         </button>
 
         <button
           type="button"
           onClick={toggle}
-          className="font-mono text-xs font-semibold tracking-[0.06em] px-2.5 py-2 rounded-full bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-300 flex-none"
+          className="font-mono text-[11px] font-bold tracking-[0.06em] px-2 h-8 rounded-lg bg-brand-50 dark:bg-brand-900/40 ring-1 ring-brand-200/70 dark:ring-brand-500/30 text-brand-600 dark:text-brand-300 flex-none active:scale-90 transition-transform"
           aria-label={lang === "en" ? "বাং — Switch to Bangla" : "EN — Switch to English"}
         >
           {lang === "en" ? "বাং" : "EN"}
         </button>
 
         <Link
-          href="/login"
-          className="w-9 h-9 rounded-lg border border-[var(--line)] bg-gray-50 dark:bg-white/5 flex items-center justify-center text-xs text-[var(--ink-muted)] hover:text-brand-600 dark:hover:text-brand-300 hover:border-brand-200 dark:hover:border-brand-500/30 transition-colors"
-          aria-label={lang === "bn" ? "গ্রাহক লগইন" : "Customer login"}
+          href={isSignedIn ? "/profile" : "/login"}
+          className="w-8 h-8 rounded-lg bg-brand-600 text-white ring-1 ring-brand-700/40 shadow-sm shadow-brand-500/25 flex items-center justify-center flex-none active:scale-90 transition-transform"
+          aria-label={isSignedIn ? (lang === "bn" ? "আমার প্রোফাইল" : "My profile") : (lang === "bn" ? "গ্রাহক লগইন" : "Customer login")}
         >
-          <User className="w-4 h-4" strokeWidth={2} />
+          <User className={cn("w-4 h-4", isSignedIn && "fill-current")} strokeWidth={2.5} />
         </Link>
       </nav>
 

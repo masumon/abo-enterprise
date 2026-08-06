@@ -89,7 +89,7 @@ export default function FeaturedProducts() {
   }, [products, activeCategory]);
 
   return (
-    <section id="featured-products" className="py-6 lg:py-9 bg-white dark:bg-[var(--surface)]">
+    <section id="featured-products" className="py-4 lg:py-6 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-3 lg:px-4">
         <div className="flex items-center justify-between gap-2 mb-4">
           <h2 className="flex items-center gap-2 text-lg sm:text-2xl font-bold text-heading">
