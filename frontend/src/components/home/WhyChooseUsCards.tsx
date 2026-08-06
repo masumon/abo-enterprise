@@ -76,7 +76,7 @@ export default function WhyChooseUsCards() {
   const reasons = getWhyChooseReasons(settings, FALLBACK);
 
   return (
-    <section className="py-12 lg:py-16 bg-white dark:bg-[var(--surface)]">
+    <section className="py-8 lg:py-10 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="text-center mb-12">

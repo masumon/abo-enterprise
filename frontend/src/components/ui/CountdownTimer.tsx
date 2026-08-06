@@ -13,6 +13,13 @@ const SIZES: Record<CountdownSize, { label: string; digit: string; gap: string; 
   xl: { label: "text-lg sm:text-2xl", digit: "text-2xl sm:text-4xl px-3.5 py-2", gap: "gap-3.5", colon: "text-2xl" },
 };
 
+/** Digit-block color themes. "red" (default) keeps every existing call site
+ * unchanged; "gold" is opt-in for a premium/luxury treatment. */
+const TONES = {
+  red: { digit: "bg-gradient-to-b from-red-500 to-red-600 shadow-md shadow-red-600/30 ring-1 ring-inset ring-white/20 text-white", colon: "text-red-500" },
+  gold: { digit: "bg-gradient-to-b from-[#f4dfa0] via-[#d4af37] to-[#a3801f] shadow-md shadow-black/40 ring-1 ring-inset ring-white/30 text-black", colon: "text-[#d4af37]" },
+} as const;
+
 interface Props {
   endDate: Date;
   className?: string;
@@ -21,14 +28,17 @@ interface Props {
   size?: CountdownSize;
   /** Emoji shown on both sides of the label. */
   icon?: string;
+  /** Defaults to "red" — every existing usage keeps its current look. */
+  tone?: keyof typeof TONES;
 }
 
 function pad(n: number) {
   return n.toString().padStart(2, "0");
 }
 
-export default function CountdownTimer({ endDate, className, label, size = "md", icon = "⚡" }: Props) {
+export default function CountdownTimer({ endDate, className, label, size = "md", icon = "⚡", tone = "red" }: Props) {
   const S = SIZES[size] ?? SIZES.md;
+  const T = TONES[tone] ?? TONES.red;
   const [remaining, setRemaining] = useState({ h: 0, m: 0, s: 0, expired: false });
 
   useEffect(() => {
@@ -68,14 +78,8 @@ export default function CountdownTimer({ endDate, className, label, size = "md",
       <div className={cn("flex items-center gap-1.5 font-mono font-black", S.digit.split(" ")[0])}>
         {[remaining.h, remaining.m, remaining.s].map((unit, i) => (
           <span key={i} className="contents">
-            {i > 0 && <span className={cn("text-red-500 font-bold", S.colon)}>:</span>}
-            <span
-              className={cn(
-                "rounded-lg bg-gradient-to-b from-red-500 to-red-600 text-white tabular-nums",
-                "shadow-md shadow-red-600/30 ring-1 ring-inset ring-white/20",
-                S.digit
-              )}
-            >
+            {i > 0 && <span className={cn("font-bold", T.colon, S.colon)}>:</span>}
+            <span className={cn("rounded-lg tabular-nums", T.digit, S.digit)}>
               {pad(unit)}
             </span>
           </span>

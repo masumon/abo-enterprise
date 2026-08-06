@@ -132,7 +132,7 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
       />
       <div
         ref={panelRef}
-        className="absolute inset-x-0 bottom-0 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white dark:bg-[var(--surface-card)] motion-safe:animate-slide-up"
+        className="absolute inset-y-0 left-0 h-full w-[85%] max-w-[340px] overflow-y-auto rounded-r-2xl bg-white dark:bg-[var(--surface-card)] shadow-2xl motion-safe:animate-slide-in-left"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
       >
         <div className="sticky top-0 flex items-center gap-2 px-4 py-3 bg-white dark:bg-[var(--surface-card)] border-b border-gray-100 dark:border-white/10">

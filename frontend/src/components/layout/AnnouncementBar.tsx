@@ -46,10 +46,13 @@ export default function AnnouncementBar() {
   const track = [...announcements, ...announcements];
 
   return (
-    <div className={`${barClass} text-xs sm:text-sm relative z-40 h-9 overflow-hidden shadow-sm`}>
-      <div className="h-9 flex items-center gap-3 pl-3.5 sm:pl-5">
-        <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-white/15">
-          <Zap className="w-3 h-3 text-yellow-300" strokeWidth={2.4} aria-hidden />
+    <div className={`${barClass} text-xs sm:text-sm relative z-40 h-9 overflow-hidden shadow-[0_1px_10px_rgba(0,0,0,0.12)]`}>
+      {/* Soft diagonal shine — same gradient theme, just richer than a flat fill. */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/[0.08] via-transparent to-black/[0.06]" aria-hidden />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-px bg-white/20" aria-hidden />
+      <div className="relative h-9 flex items-center gap-3 pl-3.5 sm:pl-5">
+        <span className="flex-shrink-0 flex items-center justify-center w-5 h-5 rounded-full bg-white/20 shadow-[0_0_0_3px_rgba(255,255,255,0.08)]">
+          <Zap className="w-3 h-3 text-yellow-300 drop-shadow-[0_0_4px_rgba(253,224,71,0.6)]" strokeWidth={2.4} aria-hidden />
         </span>
 
         {/* Reuses the same shared marquee primitive as Stats.tsx / Navbar.tsx's
@@ -91,8 +94,10 @@ export default function AnnouncementBar() {
   );
 }
 
-/** Admin-selectable bar themes → gradient classes. */
-const ANNOUNCEMENT_VARIANT_BG: Record<string, string> = {
+/** Admin-selectable bar themes → gradient classes. Exported for reuse by
+ * Navbar.tsx's mobile ticker so both surfaces share the same admin-picked
+ * color instead of the ticker staying plain white. */
+export const ANNOUNCEMENT_VARIANT_BG: Record<string, string> = {
   promo: "bg-gradient-to-r from-brand-700 via-brand-600 to-accent-600 text-white",
   offer: "bg-gradient-to-r from-accent-600 via-pink-600 to-rose-600 text-white",
   info: "bg-gradient-to-r from-sky-700 to-blue-600 text-white",

@@ -25,7 +25,6 @@ function toE164Bd(raw: string): string {
   return DEFAULT_PHONE;
 }
 
-const EntryPointCards = dynamic(() => import("@/components/home/EntryPointCards"), { loading: () => <SectionSkeleton /> });
 const ServicesOverview = dynamic(() => import("@/components/home/ServicesOverview"), { loading: () => <SectionSkeleton /> });
 const CustomerReviews = dynamic(() => import("@/components/home/CustomerReviews"), { loading: () => <SectionSkeleton /> });
 const FAQ = dynamic(() => import("@/components/home/FAQ"), { loading: () => <SectionSkeleton /> });
@@ -142,9 +141,6 @@ export default async function HomePage() {
       {/* Feature Icons Row */}
       <FeatureIconsRow />
 
-      {/* Entry Point Cards (Shop / Book / Software) */}
-      <EntryPointCards />
-
       {/* Flash Sale Section */}
       <FlashSaleSection />
 
@@ -178,7 +174,7 @@ export default async function HomePage() {
       <div id="reviews" className="scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
         <Reveal>
           <CustomerReviews />
-          <section className="py-12 lg:py-16">
+          <section className="py-8 lg:py-10">
             <div className="container mx-auto px-4">
               <ReviewStatsCard />
             </div>

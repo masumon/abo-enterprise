@@ -67,7 +67,7 @@ export default function ClientLogos() {
     "flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 transition-all";
 
   return (
-    <section id="brands" className="py-12 lg:py-16 bg-gradient-to-b from-white to-gray-50 dark:from-[var(--surface)] dark:to-white/5">
+    <section id="brands" className="py-8 lg:py-10 bg-gradient-to-b from-white to-gray-50 dark:from-[var(--surface)] dark:to-white/5">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <div className="flex items-baseline justify-between gap-4 mb-8 lg:mb-12">

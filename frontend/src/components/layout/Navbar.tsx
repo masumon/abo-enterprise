@@ -20,6 +20,7 @@ import { useTaxonomy } from "@/hooks/useTaxonomy";
 import { useAssistantStore } from "@/store/assistant";
 import { hasBottomActionBar } from "@/lib/actionBarRoutes";
 import { useAnnouncements } from "@/hooks/useAnnouncements";
+import { ANNOUNCEMENT_VARIANT_BG } from "@/components/layout/AnnouncementBar";
 
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -67,7 +68,7 @@ export default function Navbar() {
     <header className="fixed top-[var(--announcement-height)] left-0 right-0 z-50">
       {/* ── Mobile header — artifact Screen 03 m-head ── */}
       <nav
-        className="lg:hidden flex items-center gap-2.5 px-3.5 min-h-[60px] bg-white dark:bg-[var(--surface-card)] border-b border-[var(--line)] dark:border-[var(--line)] shadow-sm"
+        className="lg:hidden flex items-center gap-2.5 px-3.5 min-h-[68px] bg-white dark:bg-[var(--surface-card)] border-b border-[var(--line)] dark:border-[var(--line)] shadow-sm"
         aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
       >
         <Link href="/" className="flex-none flex items-center" aria-label={getBrandName(lang)}>
@@ -75,9 +76,14 @@ export default function Navbar() {
         </Link>
 
         {showTicker ? (
-          <div className="marquee-viewport flex-1 min-w-0 mx-1.5">
+          <div
+            className={cn(
+              "marquee-viewport flex-1 min-w-0 mx-1.5 h-8 rounded-full px-3 shadow-sm",
+              ANNOUNCEMENT_VARIANT_BG[announcements[0]?.variant ?? "promo"] ?? ANNOUNCEMENT_VARIANT_BG.promo
+            )}
+          >
             <div
-              className="marquee-track items-center"
+              className="marquee-track items-center h-8"
               style={{ ["--marquee-duration" as string]: `${durationSec}s` }}
             >
               {tickerTrack.map((a, i) => (
@@ -86,7 +92,7 @@ export default function Navbar() {
                   href={a.href || "/"}
                   aria-hidden={i >= announcements.length}
                   tabIndex={i >= announcements.length ? -1 : 0}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-brand-600 dark:text-brand-300 pr-6 whitespace-nowrap"
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-white pr-6 whitespace-nowrap"
                 >
                   {a.icon && <span aria-hidden>{a.icon}</span>}
                   <span>{lang === "bn" ? a.bn : a.en}</span>
@@ -154,7 +160,7 @@ export default function Navbar() {
         <nav
           className={cn(
             "w-full flex items-center justify-between gap-3 px-5",
-            "h-16 rounded-full",
+            "h-[4.5rem] rounded-full",
             "bg-white/72 dark:bg-[#0b1f3a]/82 backdrop-blur-2xl",
             "border border-white/60 dark:border-white/[0.09]",
             "shadow-[0_4px_20px_rgba(30,43,107,0.10),0_1px_3px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.82)]",
