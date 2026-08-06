@@ -33,6 +33,17 @@ import {
 
 type Tab = "projects" | "services";
 
+// Named color presets so a non-technical admin picks a swatch instead of
+// typing a raw Tailwind gradient class by hand.
+const GRADIENT_PRESETS: { label: string; value: string; swatch: string }[] = [
+  { label: "Green", value: "from-green-500 to-teal-500", swatch: "linear-gradient(to right, #22c55e, #14b8a6)" },
+  { label: "Blue", value: "from-blue-500 to-cyan-500", swatch: "linear-gradient(to right, #3b82f6, #06b6d4)" },
+  { label: "Purple", value: "from-purple-500 to-indigo-500", swatch: "linear-gradient(to right, #a855f7, #6366f1)" },
+  { label: "Orange", value: "from-orange-500 to-amber-500", swatch: "linear-gradient(to right, #f97316, #f59e0b)" },
+  { label: "Pink", value: "from-pink-500 to-rose-500", swatch: "linear-gradient(to right, #ec4899, #f43f5e)" },
+  { label: "Slate", value: "from-slate-600 to-gray-700", swatch: "linear-gradient(to right, #475569, #374151)" },
+];
+
 function emptyProject(): ShowcaseProject {
   const id = `project-${Date.now()}`;
   return {
@@ -346,8 +357,20 @@ export default function AdminShowcasePage() {
                     ))}
                   </select>
                 </Field>
-                <Field label="Gradient Color Class">
-                  <input className="input text-sm" value={service.color} onChange={(e) => updateService(index, { color: e.target.value })} placeholder="from-green-500 to-teal-500" />
+                <Field label="Color Theme">
+                  <div className="flex flex-wrap gap-1.5">
+                    {GRADIENT_PRESETS.map((preset) => (
+                      <button
+                        key={preset.value}
+                        type="button"
+                        onClick={() => updateService(index, { color: preset.value })}
+                        title={preset.label}
+                        aria-label={preset.label}
+                        className={`w-8 h-8 rounded-lg border-2 transition-transform hover:scale-110 ${service.color === preset.value ? "border-gray-800" : "border-transparent"}`}
+                        style={{ background: preset.swatch }}
+                      />
+                    ))}
+                  </div>
                 </Field>
               </div>
 

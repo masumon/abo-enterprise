@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
 from app.core.security import require_role
 from app.models.models import BlogPost, ActivityLog
@@ -197,6 +197,7 @@ async def list_posts_admin(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     status: str | None = None,
+    search: str | None = Query(None),
 ):
     """List all blog posts (admin)"""
     query = select(BlogPost).where(BlogPost.is_deleted == False)
@@ -205,6 +206,12 @@ async def list_posts_admin(
     if status:
         query = query.where(BlogPost.status == status)
         count_query = count_query.where(BlogPost.status == status)
+
+    if search:
+        term = f"%{search}%"
+        search_clause = or_(BlogPost.title_en.ilike(term), BlogPost.title_bn.ilike(term), BlogPost.slug.ilike(term))
+        query = query.where(search_clause)
+        count_query = count_query.where(search_clause)
 
     total = (await db.execute(count_query)).scalar() or 0
     total_pages = max(1, (total + per_page - 1) // per_page)

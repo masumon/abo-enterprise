@@ -29,6 +29,8 @@ function slugify(v: string): string {
 
 const APPLIES = ["product", "service"] as const;
 const PAGE_STEP = 10;
+// Quick-pick emojis so a non-technical admin never has to know a "lucide icon name".
+const QUICK_CATEGORY_ICONS = ["📦", "📱", "💻", "🔌", "🛠️", "🎮", "📷", "👕", "🏠", "⚙️"];
 
 /** Accent palette — one per root vertical (cycles). Keeps each group visually distinct. */
 const ACCENTS = [
@@ -576,7 +578,20 @@ export default function AdminCategoriesPage() {
           )}
 
           <Field label="Icon (ঐচ্ছিক)">
-            <input value={form.icon} onChange={(e) => setForm((p) => ({ ...p, icon: e.target.value }))} className={INP_CLS} placeholder="lucide নাম বা emoji (📦)" />
+            <input value={form.icon} onChange={(e) => setForm((p) => ({ ...p, icon: e.target.value }))} className={INP_CLS} placeholder="একটি ইমোজি বেছে নিন, বা টাইপ করুন" />
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {QUICK_CATEGORY_ICONS.map((emo) => (
+                <button
+                  key={emo}
+                  type="button"
+                  onClick={() => setForm((p) => ({ ...p, icon: emo }))}
+                  className="w-7 h-7 rounded-lg hover:bg-brand-50 text-sm border border-transparent hover:border-brand-100"
+                  aria-label={`icon ${emo}`}
+                >
+                  {emo}
+                </button>
+              ))}
+            </div>
           </Field>
 
           <Field label="বর্ণনা (ঐচ্ছিক)">

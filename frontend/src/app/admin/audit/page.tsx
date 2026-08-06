@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -36,15 +36,25 @@ export default function AdminAuditPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("");
   const [entityFilter, setEntityFilter] = useState("");
+  // Distinct values across the WHOLE audit trail (not just the current page),
+  // so the dropdowns don't miss actions/entities that only appear elsewhere.
+  const [allActions, setAllActions] = useState<string[]>([]);
+  const [allEntities, setAllEntities] = useState<string[]>([]);
   const PER_PAGE = 50;
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await adminApi.listAuditLogs({ page, per_page: PER_PAGE });
+      const r = await adminApi.listAuditLogs({
+        page, per_page: PER_PAGE,
+        action: actionFilter || undefined,
+        entity_type: entityFilter || undefined,
+        search: search || undefined,
+      });
       const data = (r.data.data ?? []) as AuditLog[];
       setLogs(data);
       setTotal(r.data.meta?.total ?? data.length);
@@ -54,28 +64,27 @@ export default function AdminAuditPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, toast]);
+  }, [page, actionFilter, entityFilter, search, toast]);
 
   useEffect(() => { load(); }, [load]);
 
-  const allEntities = [...new Set(logs.map((l) => l.entity_type))].sort();
-  const allActions = [...new Set(logs.map((l) => l.action))].sort();
+  useEffect(() => {
+    adminApi.auditLogFilterOptions()
+      .then((r) => {
+        setAllActions(r.data.data?.actions ?? []);
+        setAllEntities(r.data.data?.entity_types ?? []);
+      })
+      .catch(() => {});
+  }, []);
 
-  const filtered = logs.filter((l) => {
-    if (actionFilter && l.action !== actionFilter) return false;
-    if (entityFilter && l.entity_type !== entityFilter) return false;
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      return (
-        l.action.toLowerCase().includes(q) ||
-        l.entity_type.toLowerCase().includes(q) ||
-        (l.entity_id ?? "").toLowerCase().includes(q) ||
-        (l.admin_email ?? "").toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => { setSearch(value); setPage(1); }, 400);
+  };
 
+  const filtered = logs;
   const totalPages = Math.ceil(total / PER_PAGE);
 
   return (
@@ -94,8 +103,8 @@ export default function AdminAuditPage() {
       />
 
       <AdminToolbar
-        searchValue={search}
-        onSearchChange={(value) => { setSearch(value); setPage(1); }}
+        searchValue={searchInput}
+        onSearchChange={handleSearchChange}
         searchPlaceholder="Search logs…"
       >
         <select
