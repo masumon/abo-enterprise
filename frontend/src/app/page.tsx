@@ -11,6 +11,7 @@ import Reveal from "@/components/ui/Reveal";
 import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, getBrandFullTitle } from "@/lib/tokens";
 import { jsonLdString } from "@/lib/metadata";
 import { fetchPublicSettings, settingValue } from "@/lib/serverSettings";
+import { isVideoUrl } from "@/lib/media";
 
 const DEFAULT_PHONE = "+8801825007977";
 const DEFAULT_STREET_ADDRESS = "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170";
@@ -117,8 +118,17 @@ function SectionSkeleton() {
 
 export default async function HomePage() {
   const settings = await fetchPublicSettings();
+  // The hero banner is a CSS background inside a client component, so the
+  // browser would only discover it after hydration. Preloading it here (server
+  // already has the URL) lets the fetch start with the HTML — a pure hint, no
+  // markup or layout change. Skip videos and the unset case.
+  // Same key resolveHomeBannerImage() reads, but via the server-safe helper so
+  // no client-only module is pulled into this Server Component.
+  const heroBanner = settingValue(settings, "hero_image_url");
+  const heroPreload = heroBanner && !isVideoUrl(heroBanner) ? heroBanner : null;
   return (
     <>
+      {heroPreload && <link rel="preload" as="image" href={heroPreload} />}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdString(buildOrganizationJsonLd(settings)) }}

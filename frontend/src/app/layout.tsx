@@ -159,6 +159,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href="https://maps.google.com" />
         <link rel="preconnect" href={API_ORIGIN} />
         <link rel="dns-prefetch" href={API_ORIGIN} />
+        {/* Product, banner and logo images are served from Cloudinary — warming
+            the connection early shaves the TLS/DNS cost off the first image. */}
+        <link rel="preconnect" href="https://res.cloudinary.com" />
+        <link rel="dns-prefetch" href="https://res.cloudinary.com" />
       </head>
       <body className="min-h-screen flex flex-col">
         {/* Custom PWASplashScreen removed: the installed app already shows the
