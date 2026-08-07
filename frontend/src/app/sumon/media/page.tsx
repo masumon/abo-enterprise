@@ -223,6 +223,29 @@ export default function AdminMediaPage() {
   const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
   const bulkFileRef = useRef<HTMLInputElement>(null);
 
+  // Every image the live site is actually using, gathered from data already
+  // loaded on this page (brand/banner settings + product/service/blog/review
+  // images). Shown read-only in the Library so the admin can see the site's
+  // real images even when nothing was uploaded through the admin.
+  const siteImages = useMemo(() => {
+    const out: { url: string; label: string }[] = [];
+    const seen = new Set<string>();
+    const add = (url: unknown, label: string) => {
+      if (typeof url !== "string") return;
+      const u = url.trim();
+      if (!u || seen.has(u)) return;
+      seen.add(u);
+      out.push({ url: u, label });
+    };
+    for (const slot of BRAND_IMAGE_SLOTS) add(values[slot.key] || slot.fallback, slot.label);
+    for (const slot of PAGE_BANNER_SLOTS) add(values[slot.key], slot.label);
+    for (const p of products) { add(p.image_url, p.name_en || "Product"); (p.images ?? []).forEach((im) => add(im, p.name_en || "Product")); add(p.og_image, p.name_en || "Product"); }
+    for (const s of services) { add(s.featured_image_url, s.name_en || "Service"); add(s.icon_url, s.name_en || "Service"); add(s.og_image, s.name_en || "Service"); }
+    for (const post of posts) { add(post.featured_image_url, post.title_en || "Blog"); add(post.og_image, post.title_en || "Blog"); }
+    for (const r of reviews) add(r.photo_url, r.customer_name || "Review");
+    return out.slice(0, 120);
+  }, [values, products, services, posts, reviews]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -306,10 +329,13 @@ export default function AdminMediaPage() {
     await loadLibrary(1, librarySearch);
   };
 
-  // Fetch the asset library the first time its tab is opened.
+  // Fetch the asset library the first time its tab is opened. Also pull the
+  // catalog once, so the "used on the site" gallery can include product /
+  // service / blog / review images (not just brand & banner settings).
   useEffect(() => {
     if (tab === "library" && !libraryLoaded && !libraryLoading) void loadLibrary(1, "");
-  }, [tab, libraryLoaded, libraryLoading, loadLibrary]);
+    if (tab === "library" && !catalogLoaded && !catalogLoading) void loadCatalog();
+  }, [tab, libraryLoaded, libraryLoading, loadLibrary, catalogLoaded, catalogLoading, loadCatalog]);
 
   const openEditAsset = (asset: MediaAssetRecord) => {
     setEditingAsset(asset);
@@ -495,7 +521,10 @@ export default function AdminMediaPage() {
             <SlotEditor
               key={slot.key}
               slot={slot}
-              value={values[slot.key] ?? ""}
+              // Show the live fallback (e.g. /logo.png) as the current preview
+              // when nothing is saved — display only, so an untouched slot is
+              // never written to the DB on save.
+              value={values[slot.key] || slot.fallback || ""}
               onChange={(url) => setValues((v) => ({ ...v, [slot.key]: url }))}
             />
           ))}
@@ -758,14 +787,34 @@ export default function AdminMediaPage() {
             </button>
           </div>
 
+          {/* Read-only: every image the live site is currently using, so the
+              Library is never misleadingly empty. */}
+          {siteImages.length > 0 && (
+            <div className="mb-6">
+              <p className="text-sm font-semibold text-gray-800 mb-1">সাইটে ব্যবহৃত ছবি · Currently used on the site</p>
+              <p className="text-xs text-gray-400 mb-3">রিড-অনলি — সেটিংস/পণ্য/সেবা/ব্লগ থেকে স্বয়ংক্রিয়ভাবে নেওয়া।</p>
+              <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+                {siteImages.map((img) => (
+                  <div key={img.url} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                    <div className="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
+                      <MediaEl url={img.url} className="w-full h-full object-cover" />
+                    </div>
+                    <p className="text-[10px] text-gray-500 truncate px-2 py-1.5" title={img.label}>{img.label}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="h-px bg-gray-100 mt-6" />
+            </div>
+          )}
+
           {libraryLoading && !libraryLoaded ? (
             <div className="flex justify-center py-16">
               <Loader2 className="w-7 h-7 animate-spin text-brand-500" />
             </div>
           ) : libraryAssets.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-gray-400 gap-2">
+            <div className="flex flex-col items-center justify-center py-10 text-gray-400 gap-2">
               <ImageOff className="w-8 h-8" />
-              <p className="text-sm">No uploaded assets found</p>
+              <p className="text-sm">{siteImages.length > 0 ? "অ্যাডমিন থেকে আপলোড করা আলাদা কোনো ছবি নেই" : "No uploaded assets found"}</p>
             </div>
           ) : (
             <>

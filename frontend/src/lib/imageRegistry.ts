@@ -9,15 +9,18 @@ export interface ImageSlotDef {
   usedOn?: string;
   /** Recommended dimensions + format, shown under the upload control. */
   guide?: string;
+  /** The bundled asset the live site falls back to when this slot is empty.
+   * Shown as the current preview so the admin sees what's actually live. */
+  fallback?: string;
 }
 
 export const MEDIA_UPLOAD_FOLDER = "abo-enterprise/media";
 
 export const BRAND_IMAGE_SLOTS: ImageSlotDef[] = [
-  { key: "logo_url", label: "Site Logo", labelBn: "সাইট লোগো", usedOn: "Navbar, Footer, Hero, Invoice", guide: "512×512px (1:1) · PNG স্বচ্ছ ব্যাকগ্রাউন্ড" },
-  { key: "favicon_url", label: "Favicon", labelBn: "ফ্যাভিকন", usedOn: "Browser tab icon", guide: "64×64px (1:1) · PNG/ICO" },
-  { key: "app_icon_url", label: "PWA App Icon", labelBn: "PWA অ্যাপ আইকন", usedOn: "Mobile home screen, manifest", guide: "512×512px (1:1) · PNG" },
-  { key: "default_og_image_url", label: "Default Social Share Image", labelBn: "সোশ্যাল শেয়ার ছবি", usedOn: "Facebook/Twitter preview fallback", guide: "1200×630px (1.91:1) · JPG/PNG" },
+  { key: "logo_url", label: "Site Logo", labelBn: "সাইট লোগো", usedOn: "Navbar, Footer, Hero, Invoice", guide: "512×512px (1:1) · PNG স্বচ্ছ ব্যাকগ্রাউন্ড", fallback: "/logo.png" },
+  { key: "favicon_url", label: "Favicon", labelBn: "ফ্যাভিকন", usedOn: "Browser tab icon", guide: "64×64px (1:1) · PNG/ICO", fallback: "/favicon.ico" },
+  { key: "app_icon_url", label: "PWA App Icon", labelBn: "PWA অ্যাপ আইকন", usedOn: "Mobile home screen, manifest", guide: "512×512px (1:1) · PNG", fallback: "/icons/icon-192.png" },
+  { key: "default_og_image_url", label: "Default Social Share Image", labelBn: "সোশ্যাল শেয়ার ছবি", usedOn: "Facebook/Twitter preview fallback", guide: "1200×630px (1.91:1) · JPG/PNG", fallback: "/icons/icon-512.png" },
   { key: "hero_image_url", label: "Homepage Banner (Desktop)", labelBn: "হোমপেজ ব্যানার (ডেস্কটপ)", usedOn: "Homepage hero — desktop", guide: "1920×1080px (16:9) · JPG/WebP/MP4" },
   { key: "hero_mobile_image_url", label: "Homepage Banner (Mobile)", labelBn: "হোমপেজ ব্যানার (মোবাইল)", usedOn: "Homepage hero — mobile background", guide: "1080×1350px (পোর্ট্রেট) · ছবি/animated/MP4 · খালি রাখলে gradient" },
   { key: "hero_promo_media_url", label: "Hero Promo Media (auto-play)", labelBn: "হিরো প্রমো মিডিয়া (অটো-প্লে)", usedOn: "Homepage hero — promo card", guide: "যেকোন ছবি/animated/ভিডিও (MP4) · অটো-প্লে · খালি হলে ব্যানার ছবি দেখাবে" },
