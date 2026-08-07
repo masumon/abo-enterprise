@@ -2,9 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Service } from "@/types";
 import type { Language } from "@/types";
-import { ArrowRight, Star, MapPin, Wifi, Clock } from "lucide-react";
+import { ArrowRight, Star, MapPin, Wifi, Clock, Wrench } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
-import { resolveServiceImage } from "@/lib/demoImages";
 import { fulfilmentLabel, isFulfilment, turnaroundLabel } from "@/lib/fulfilment";
 
 interface ServiceCardProps {
@@ -23,7 +22,9 @@ export default function ServiceCard({ service, lang = "en", categoryLabel }: Ser
     service.short_description_en ||
     service.description_en;
 
-  const imageSrc = resolveServiceImage(service.featured_image_url, service.slug);
+  // Only a real, admin-set photo is shown. When none exists we render a branded
+  // panel below instead of a mismatched stock/demo image.
+  const hasImage = Boolean(service.featured_image_url?.trim());
   /* GAP-15 — an at-shop service looked identical to a remote one, so a
      customer could book a biometric capture and wait at home. Unclassified
      services show nothing rather than a guessed promise. */
@@ -36,16 +37,33 @@ export default function ServiceCard({ service, lang = "en", categoryLabel }: Ser
   return (
     <Link href={`/services/${service.slug}`} className="block h-full group">
       <article className="h-full enterprise-card-hover overflow-hidden hover:border-brand-100 dark:hover:border-brand-400/30">
-        <div className="relative h-44 bg-brand-50 dark:bg-white/5 overflow-hidden">
-          <Image
-            src={imageSrc}
-              alt={name}
-              fill
-              className="object-cover group-hover:scale-105 transition-transform duration-500"
-            sizes="(max-width: 768px) 100vw, 33vw"
-          />
-          {/* Subtle scrim adds depth and premium contrast at the image base. */}
-          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent pointer-events-none" />
+        <div className="relative h-36 sm:h-44 bg-brand-50 dark:bg-white/5 overflow-hidden">
+          {hasImage ? (
+            <>
+              <Image
+                src={service.featured_image_url!}
+                alt={name}
+                fill
+                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                sizes="(max-width: 768px) 100vw, 33vw"
+              />
+              {/* Subtle scrim adds depth and premium contrast at the image base. */}
+              <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent pointer-events-none" />
+            </>
+          ) : (
+            /* No real photo yet → an on-brand navy→gold panel (glow, faint
+               initial, gold icon) so the card reads as intentional rather than
+               showing a mismatched stock image. */
+            <div className="absolute inset-0 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 flex items-center justify-center overflow-hidden">
+              <span aria-hidden className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-accent-500/15 blur-2xl" />
+              <span aria-hidden className="absolute -bottom-5 -left-3 text-white/[0.06] font-black text-[6.5rem] leading-none select-none">
+                {name.charAt(0)}
+              </span>
+              <span className="relative w-14 h-14 rounded-2xl bg-white/10 ring-1 ring-white/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
+                <Wrench className="w-7 h-7 text-accent-400" aria-hidden />
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="p-5">

@@ -10,7 +10,7 @@ import PageHero from "@/components/ui/PageHero";
 import GlassCard from "@/components/ui/GlassCard";
 import Reveal from "@/components/ui/Reveal";
 import { useShowcaseContent } from "@/hooks/useShowcaseContent";
-import { ExternalLink, Play } from "lucide-react";
+import { ExternalLink, Play, Code2 } from "lucide-react";
 
 const STEPS = [
   { title: { en: "Submit Requirements", bn: "প্রয়োজনীয়তা জমা দিন" }, desc: { en: "Tell us about your project, timeline, and budget", bn: "প্রজেক্ট, সময়সীমা ও বাজেট জানান" } },
@@ -70,7 +70,15 @@ export default function ProjectsPage() {
                   {p.image ? (
                     <Image src={p.image} alt={t(p.title)} fill className="object-cover" sizes="(max-width:640px) 100vw, 33vw" />
                   ) : (
-                    <div className="h-full bg-gradient-to-br from-brand-100 to-brand-200" />
+                    /* Branded navy→gold panel — same treatment as the service
+                       and home 'software' cards, so the site reads as one system. */
+                    <div className="absolute inset-0 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 flex items-center justify-center overflow-hidden">
+                      <span aria-hidden className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-accent-500/15 blur-2xl" />
+                      <span aria-hidden className="absolute -bottom-5 -left-3 text-white/[0.06] font-black text-[6.5rem] leading-none select-none">{t(p.title).charAt(0)}</span>
+                      <span className="relative w-14 h-14 rounded-2xl bg-white/10 ring-1 ring-white/20 flex items-center justify-center">
+                        <Code2 className="w-7 h-7 text-accent-400" aria-hidden />
+                      </span>
+                    </div>
                   )}
                   {p.videoUrl && (
                     <span className="absolute top-2 right-2 bg-black/60 text-white text-[10px] px-2 py-1 rounded-full flex items-center gap-1">

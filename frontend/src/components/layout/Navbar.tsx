@@ -68,7 +68,7 @@ export default function Navbar() {
     <header className="fixed top-[var(--announcement-height)] left-0 right-0 z-50">
       {/* ── Mobile header — artifact Screen 03 m-head ── */}
       <nav
-        className="lg:hidden flex items-center gap-2 px-3 min-h-[64px] bg-white/85 dark:bg-[var(--surface-card)]/85 backdrop-blur-xl border-b border-[var(--line)] dark:border-[var(--line)] shadow-sm"
+        className="lg:hidden flex items-center gap-2 px-3 min-h-[64px] bg-white/85 dark:bg-[#141930]/92 backdrop-blur-xl border-b border-[var(--line)] dark:border-[var(--line)] shadow-sm"
         aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
       >
         {/* Bigger brand logo (admin-configurable via CMS logo URL). */}
@@ -110,7 +110,7 @@ export default function Navbar() {
           <button
             type="button"
             onClick={toggleAssistant}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-brand-600 dark:text-brand-300 bg-brand-50 dark:bg-brand-900/40 ring-1 ring-brand-200/70 dark:ring-brand-500/30 flex-none active:scale-90 transition-transform"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-brand-600 dark:text-brand-200 bg-brand-50 dark:bg-brand-500/15 ring-1 ring-brand-200/70 dark:ring-brand-400/25 flex-none active:scale-90 transition-transform"
             aria-label={lang === "bn" ? "সহায়ক চ্যাট" : "Assistant chat"}
           >
             <MessageCircle className="w-4 h-4" strokeWidth={2.5} />
@@ -129,7 +129,7 @@ export default function Navbar() {
         <button
           type="button"
           onClick={toggle}
-          className="font-mono text-[11px] font-bold tracking-[0.06em] px-2 h-8 rounded-lg bg-brand-50 dark:bg-brand-900/40 ring-1 ring-brand-200/70 dark:ring-brand-500/30 text-brand-600 dark:text-brand-300 flex-none active:scale-90 transition-transform"
+          className="font-mono text-[11px] font-bold tracking-[0.06em] px-2 h-8 rounded-lg bg-brand-50 dark:bg-brand-500/15 ring-1 ring-brand-200/70 dark:ring-brand-400/25 text-brand-600 dark:text-brand-200 flex-none active:scale-90 transition-transform"
           aria-label={lang === "en" ? "বাং — Switch to Bangla" : "EN — Switch to English"}
         >
           {lang === "en" ? "বাং" : "EN"}
