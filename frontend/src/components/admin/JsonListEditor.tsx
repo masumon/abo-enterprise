@@ -4,13 +4,58 @@ import { useMemo } from "react";
 import { Plus, Trash2, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
 import LivePreview from "@/components/admin/LivePreview";
+import { useLanguageStore } from "@/store/language";
+import { ADMIN_ICON_OPTIONS, ADMIN_EMOJI_OPTIONS, AdminIcon } from "@/lib/adminIcons";
 
 export interface JsonListField {
   path: string; // dotted path, e.g. "role.en"
   label: string;
+  labelBn?: string;
   type?: "text" | "number" | "textarea" | "image" | "icon";
   placeholder?: string;
   hint?: string;
+}
+
+/** Visual icon + emoji picker so a non-technical admin never types a name. */
+function IconPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="rounded-lg border border-gray-200 dark:border-white/10 p-2 space-y-2 bg-white dark:bg-white/5">
+      <div className="flex flex-wrap gap-1.5">
+        {ADMIN_ICON_OPTIONS.map(({ name, Icon }) => (
+          <button
+            key={name}
+            type="button"
+            onClick={() => onChange(name)}
+            title={name}
+            className={`w-9 h-9 rounded-lg flex items-center justify-center border transition ${value === name ? "bg-brand-600 text-white border-transparent" : "bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:border-brand-300"}`}
+          >
+            <Icon className="w-4 h-4" aria-hidden />
+          </button>
+        ))}
+        {ADMIN_EMOJI_OPTIONS.map((emo) => (
+          <button
+            key={emo}
+            type="button"
+            onClick={() => onChange(emo)}
+            className={`w-9 h-9 rounded-lg flex items-center justify-center text-lg border transition ${value === emo ? "bg-brand-600 border-transparent ring-2 ring-brand-300" : "bg-gray-50 dark:bg-white/5 border-gray-200 dark:border-white/10 hover:border-brand-300"}`}
+          >
+            {emo}
+          </button>
+        ))}
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="w-8 h-8 rounded-lg bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-300 flex items-center justify-center flex-shrink-0">
+          <AdminIcon name={value} className="w-4 h-4" />
+        </span>
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder="🎁 বা একটি নাম"
+          className="flex-1 px-2.5 py-1.5 border border-gray-200 dark:border-white/10 rounded-lg text-sm bg-white dark:bg-white/5 focus:outline-none focus:ring-2 focus:ring-brand-100"
+        />
+      </div>
+    </div>
+  );
 }
 
 interface Props {
@@ -49,6 +94,7 @@ function setPath(obj: Record<string, unknown>, path: string, val: unknown): Reco
  * raw textarea so nothing is lost.
  */
 export default function JsonListEditor({ value, onChange, fields, newItem, mapKey, previewRow }: Props) {
+  const { lang } = useLanguageStore();
   const parsed = useMemo(() => {
     try {
       const v = JSON.parse(value || (mapKey ? "{}" : "[]"));
@@ -123,9 +169,11 @@ export default function JsonListEditor({ value, onChange, fields, newItem, mapKe
               const raw = getPath(item, f.path);
               const val = raw == null ? "" : String(raw);
               return (
-                <label key={f.path} className={`block ${f.type === "image" || f.type === "textarea" ? "sm:col-span-2" : ""}`}>
-                  <span className="block text-[11px] text-gray-500 mb-0.5">{f.label}{f.hint ? <em className="text-gray-400 not-italic"> · {f.hint}</em> : null}</span>
-                  {f.type === "image" ? (
+                <label key={f.path} className={`block ${f.type === "image" || f.type === "textarea" || f.type === "icon" ? "sm:col-span-2" : ""}`}>
+                  <span className="block text-[11px] text-gray-500 mb-0.5">{lang === "bn" && f.labelBn ? f.labelBn : f.label}{f.hint ? <em className="text-gray-400 not-italic"> · {f.hint}</em> : null}</span>
+                  {f.type === "icon" ? (
+                    <IconPicker value={val} onChange={(v) => update(i, f.path, v)} />
+                  ) : f.type === "image" ? (
                     <ImageUpload value={val} onChange={(url) => update(i, f.path, url)} folder="abo-enterprise/settings" accept="image" />
                   ) : f.type === "textarea" ? (
                     <textarea value={val} onChange={(e) => update(i, f.path, e.target.value)} rows={2} placeholder={f.placeholder} className="w-full px-2.5 py-1.5 border border-gray-200 dark:border-white/10 rounded-lg text-sm bg-white dark:bg-white/5 resize-y focus:outline-none focus:ring-2 focus:ring-brand-100" />

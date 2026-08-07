@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Truck, Package, Phone, Calendar, ArrowLeft, CreditCard, ClipboardList } from "lucide-react";
+import { Truck, Package, Phone, Calendar, ArrowLeft, CreditCard, ClipboardList, Search, Loader2 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import { cn } from "@/lib/utils";
@@ -59,78 +59,89 @@ const BOOKING_STATUS_LABEL: Record<string, { en: string; bn: string; color: stri
 
 export default function TrackingPage() {
   const params = useSearchParams();
+  const router = useRouter();
   const { lang } = useLanguageStore();
   const [tracking, setTracking] = useState<Tracking | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [input, setInput] = useState("");
 
-  // Every real link in the product sends ?order= or ?booking= (order-success,
-  // booking-success, payment callback, invoices) - this page previously only
-  // read ?id=, which none of them send.
+  // Real links send ?order= / ?booking= (order-success, booking-success,
+  // payment callback, invoices). The on-page form sends ?q=, which is tried as
+  // an order first, then a booking — so the customer never has to know which.
   const orderNumber = params.get("order");
   const bookingNumber = params.get("booking");
+  const query = params.get("q");
 
   useEffect(() => {
     let cancelled = false;
 
-    if (!orderNumber && !bookingNumber) {
-      setError(lang === "bn" ? "একটি অর্ডার বা বুকিং নম্বর প্রয়োজন" : "An order or booking number is required");
+    // No number anywhere → show the search form (not an error).
+    if (!orderNumber && !bookingNumber && !query) {
+      setTracking(null);
+      setError(null);
       setLoading(false);
       return;
     }
 
     setLoading(true);
     setError(null);
+    setTracking(null);
+
+    const mapOrder = (d: Record<string, unknown> & { order_number: string; order_status: string }): OrderTracking => ({
+      kind: "order", number: d.order_number, status: d.order_status,
+      payment_method: d.payment_method as string, payment_status: d.payment_status as string,
+      total: d.total as number, items_count: d.items_count as number, created_at: d.created_at as string,
+      courier_provider: d.courier_provider as string | null, courier_tracking_id: d.courier_tracking_id as string | null,
+    });
+    const mapBooking = (d: Record<string, unknown> & { booking_number: string; booking_status: string }): BookingTracking => ({
+      kind: "booking", number: d.booking_number, status: d.booking_status,
+      service_name: d.service_name as string, payment_status: d.payment_status as string | null,
+      total: d.total as number | null, estimated_price: d.estimated_price as string | null, created_at: d.created_at as string,
+    });
 
     const load = async () => {
+      const tryOrder = orderNumber || query;
+      const tryBooking = bookingNumber || query;
       try {
-        if (orderNumber) {
-          const res = await ordersApi.track(orderNumber);
-          const d = res.data.data;
-          if (cancelled || !d) return;
-          setTracking({
-            kind: "order",
-            number: d.order_number,
-            status: d.order_status,
-            payment_method: d.payment_method,
-            payment_status: d.payment_status,
-            total: d.total,
-            items_count: d.items_count,
-            created_at: d.created_at,
-            courier_provider: d.courier_provider,
-            courier_tracking_id: d.courier_tracking_id,
-          });
-        } else if (bookingNumber) {
-          const res = await bookingsApi.track(bookingNumber);
-          const d = res.data.data;
-          if (cancelled || !d) return;
-          setTracking({
-            kind: "booking",
-            number: d.booking_number,
-            status: d.booking_status,
-            service_name: d.service_name,
-            payment_status: d.payment_status,
-            total: d.total,
-            estimated_price: d.estimated_price,
-            created_at: d.created_at,
-          });
+        if (tryOrder) {
+          try {
+            const res = await ordersApi.track(tryOrder);
+            const d = res.data.data;
+            if (cancelled) return;
+            if (d) { setTracking(mapOrder(d)); return; }
+          } catch { /* fall through to booking when q was used */ if (!query) throw new Error("order"); }
         }
+        if (tryBooking) {
+          const res = await bookingsApi.track(tryBooking);
+          const d = res.data.data;
+          if (cancelled) return;
+          if (d) { setTracking(mapBooking(d)); return; }
+        }
+        if (!cancelled) setError(lang === "bn" ? "এই নম্বরে কিছু খুঁজে পাওয়া যায়নি — নম্বরটি দেখে নিন" : "Nothing found for that number — please check it");
       } catch (err) {
-        if (!cancelled) {
-          setError(apiErrorMessage(err, lang === "bn" ? "খুঁজে পাওয়া যায়নি" : "Not found"));
-        }
+        if (!cancelled) setError(apiErrorMessage(err, lang === "bn" ? "খুঁজে পাওয়া যায়নি" : "Not found"));
       } finally {
         if (!cancelled) setLoading(false);
       }
     };
 
     load();
-    return () => {
-      cancelled = true;
-    };
-  }, [orderNumber, bookingNumber, lang]);
+    return () => { cancelled = true; };
+  }, [orderNumber, bookingNumber, query, lang]);
+
+  // Keep the input showing whatever the URL is tracking (so a shared /track?q=…
+  // link pre-fills the box).
+  useEffect(() => { if (query || orderNumber || bookingNumber) setInput(query || orderNumber || bookingNumber || ""); }, [query, orderNumber, bookingNumber]);
 
   const t = (en: string, bn: string) => (lang === "bn" ? bn : en);
+
+  const submitSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const num = input.trim();
+    if (!num) return;
+    router.replace(`/track?q=${encodeURIComponent(num)}`);
+  };
   const statusMap = tracking?.kind === "booking" ? BOOKING_STATUS_LABEL : ORDER_STATUS_LABEL;
   const status = tracking ? statusMap[tracking.status] : null;
 
@@ -145,6 +156,31 @@ export default function TrackingPage() {
 
       <section className="enterprise-section">
         <div className="container mx-auto px-4 max-w-3xl">
+          {/* Search form — always available so a customer can look up an order
+              or booking by typing its number (previously this page only worked
+              when arriving from a link with the number already in the URL). */}
+          <form onSubmit={submitSearch} className="enterprise-card p-4 sm:p-5 mb-6">
+            <label className="block text-sm font-semibold text-heading mb-2">
+              {t("Enter your order or booking number", "আপনার অর্ডার বা বুকিং নম্বর লিখুন")}
+            </label>
+            <div className="flex flex-col sm:flex-row gap-2.5">
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={t("e.g. ABO-202608-AB12CD", "যেমন ABO-202608-AB12CD")}
+                className="input flex-1"
+                aria-label={t("Order or booking number", "অর্ডার বা বুকিং নম্বর")}
+              />
+              <button type="submit" disabled={loading || !input.trim()} className="btn btn-primary btn-md gap-2 sm:w-auto">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                {t("Track", "ট্র্যাক করুন")}
+              </button>
+            </div>
+            <p className="text-xs text-muted mt-2">
+              {t("You'll find this number in your order/booking confirmation.", "এই নম্বরটি আপনার অর্ডার/বুকিং কনফার্মেশনে পাবেন।")}
+            </p>
+          </form>
+
           {loading && (
             <div className="enterprise-card p-8 text-center">
               <div className="w-8 h-8 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin mx-auto mb-4" />

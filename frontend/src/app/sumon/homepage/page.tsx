@@ -29,11 +29,55 @@ import {
   heroAlignClass,
 } from "@/lib/heroTextStyle";
 import LivePreview from "@/components/admin/LivePreview";
+import { AdminIcon } from "@/lib/adminIcons";
 import { cn } from "@/lib/utils";
 
 const JSON_KEYS = HOMEPAGE_CONTENT_EDITORS.map((e) => e.key);
 const SCALAR_KEYS = HOMEPAGE_SCALAR_FIELDS.map((f) => f.key);
 const ALL_KEYS = [...JSON_KEYS, ...SCALAR_KEYS];
+
+// "As it appears on the website" mini-previews under each row, so a
+// non-technical admin sees the result of what they type. Kept faithful but
+// lightweight (icon + text), language-aware.
+const sv = (v: unknown) => (v == null ? "" : String(v));
+const CONTENT_PREVIEWS: Record<string, (item: Record<string, unknown>, bn: boolean) => JSX.Element> = {
+  site_trust_badges_json: (it, bn) => (
+    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-50 text-accent-800 text-xs font-semibold">
+      <AdminIcon name={sv(it.icon)} className="w-3.5 h-3.5" />
+      {sv(bn ? it.bn : it.en) || "…"}
+    </span>
+  ),
+  site_why_choose_json: (it, bn) => (
+    <div className="flex items-start gap-3">
+      <span className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center flex-shrink-0"><AdminIcon name={sv(it.icon)} className="w-5 h-5" /></span>
+      <div className="min-w-0">
+        <p className="font-bold text-heading text-sm">{sv(bn ? it.title_bn : it.title_en) || "শিরোনাম"}</p>
+        <p className="text-xs text-muted">{sv(bn ? it.desc_bn : it.desc_en)}</p>
+      </div>
+    </div>
+  ),
+  site_faq_json: (it, bn) => (
+    <div>
+      <p className="font-semibold text-heading text-sm">{sv(bn ? it.q_bn : it.q_en) || "প্রশ্ন?"}</p>
+      <p className="text-xs text-muted mt-1">{sv(bn ? it.a_bn : it.a_en)}</p>
+    </div>
+  ),
+  site_quick_categories_json: (it, bn) => (
+    <div className="inline-flex flex-col items-center text-center gap-1.5 w-28 p-3 rounded-2xl border border-[var(--line)]">
+      <span className="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center"><AdminIcon name={sv(it.icon)} className="w-5 h-5" /></span>
+      <span className="text-xs font-bold text-heading">{sv(bn ? it.label_bn : it.label_en) || "নাম"}</span>
+      <span className="text-[10px] text-muted line-clamp-1">{sv(bn ? it.desc_bn : it.desc_en)}</span>
+    </div>
+  ),
+  site_entry_points_json: (it, bn) => (
+    <div className="w-56 max-w-full p-4 rounded-2xl border border-[var(--line)]">
+      <span className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mb-2"><AdminIcon name={sv(it.icon)} className="w-6 h-6" /></span>
+      <p className="font-bold text-heading text-sm">{sv(bn ? it.title_bn : it.title_en) || "শিরোনাম"}</p>
+      <p className="text-xs text-muted">{sv(bn ? it.desc_bn : it.desc_en)}</p>
+      <span className="inline-block mt-2 px-3 py-1 rounded-lg bg-brand-600 text-white text-xs font-semibold">{sv(bn ? it.cta_bn : it.cta_en) || "দেখুন"}</span>
+    </div>
+  ),
+};
 
 export default function AdminHomepageContentPage() {
   const { lang } = useLanguageStore();
@@ -275,13 +319,14 @@ export default function AdminHomepageContentPage() {
             <section key={ed.key} className="enterprise-card p-4">
               <div className="mb-3">
                 <h2 className="text-sm font-bold text-heading">{bn ? ed.titleBn : ed.title}</h2>
-                <p className="text-xs text-muted mt-0.5">{ed.desc}</p>
+                <p className="text-xs text-muted mt-0.5">{bn && ed.descBn ? ed.descBn : ed.desc}</p>
               </div>
               <JsonListEditor
                 value={values[ed.key] ?? ""}
                 onChange={(json) => setValue(ed.key, json)}
                 fields={ed.fields}
                 newItem={ed.newItem}
+                previewRow={CONTENT_PREVIEWS[ed.key] ? (item) => CONTENT_PREVIEWS[ed.key](item, bn) : undefined}
               />
             </section>
           ))}

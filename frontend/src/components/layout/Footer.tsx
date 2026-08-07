@@ -300,7 +300,7 @@ export default function Footer() {
               <Clock className="w-3.5 h-3.5" aria-hidden />
             </span>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-white/50">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-white/70">
                 {bn ? "কার্যসময়" : "Business Hours"}
               </p>
               <p className="text-xs font-semibold text-white mt-0.5">{hours}</p>
@@ -311,7 +311,7 @@ export default function Footer() {
               <MapPin className="w-3.5 h-3.5" aria-hidden />
             </span>
             <div className="min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-wide text-white/50">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-white/70">
                 {bn ? "প্রধান কার্যালয়" : "Head Office"}
               </p>
               <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-white/80 hover:text-white mt-0.5 block">
@@ -350,7 +350,7 @@ export default function Footer() {
                   <li key={`${link.href}-${i}`}>
                     <Link
                       href={link.href}
-                      className="flex items-center gap-2 py-1.5 px-1 rounded-lg text-xs text-white/70 hover:text-white hover:bg-white/[0.05] transition-colors"
+                      className="flex items-center gap-2 py-1.5 px-1 rounded-lg text-[13px] text-white/85 hover:text-white hover:bg-white/[0.05] transition-colors"
                     >
                       <span className="w-1 h-1 rounded-full bg-white/40" />
                       {bn ? link.label.bn : link.label.en}
@@ -428,7 +428,7 @@ export default function Footer() {
                 <div key={i} className="flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 py-1.5">
                   <BadgeCheck className="w-3 h-3 text-brand-300 flex-shrink-0" aria-hidden />
                   <div className="min-w-0">
-                    <p className="text-[9.5px] text-white/50 leading-none">
+                    <p className="text-[9.5px] text-white/70 leading-none">
                       {bn ? r.label_bn || r.label_en : r.label_en || r.label_bn}
                     </p>
                     <p className="text-[11px] font-bold text-white/90 truncate mt-0.5">{r.value}</p>
@@ -480,7 +480,7 @@ export default function Footer() {
           <h3 className="text-sm font-bold text-white">
             {bn ? "আমাদের অ্যাপ ডাউনলোড করুন" : "Download Our App"}
           </h3>
-          <p className="text-[11px] text-white/60 mt-0.5">
+          <p className="text-[11px] text-white/80 mt-0.5">
             {bn ? "যেকোনো সময় সহজেই কেনাকাটা করুন।" : "Shop anytime, anywhere."}
           </p>
           <div className="flex gap-2 mt-3">
@@ -519,10 +519,10 @@ export default function Footer() {
 
         {/* Legal */}
         <div className="border-t border-white/10 mt-6 pt-5 pb-[calc(var(--mobile-chrome-bottom)+0.5rem)] lg:pb-5 text-center space-y-2.5">
-          <p className="text-xs text-white/70">
+          <p className="text-xs text-white/85">
             &copy; {new Date().getFullYear()} ABO ENTERPRISE. {bn ? "সকল অধিকার সংরক্ষিত।" : "All rights reserved."}
           </p>
-          <p className="flex items-center justify-center gap-2 flex-wrap text-xs font-semibold text-white/70">
+          <p className="flex items-center justify-center gap-2 flex-wrap text-xs font-semibold text-white/85">
             <Link href="/legal/terms" className="hover:text-accent-400 transition-colors">
               {bn ? "শর্তাবলী" : "Terms & Conditions"}
             </Link>
@@ -535,7 +535,7 @@ export default function Footer() {
               {bn ? "কুকি নীতি" : "Cookies"}
             </Link>
           </p>
-          <p className="text-xs text-white/60">
+          <p className="text-xs text-white/80">
             <span>{bn ? "তৈরি করেছেন" : "Developed with"}</span>
             {" ❤️ "}
             <span>{bn ? "দ্বারা" : "by"}</span>
