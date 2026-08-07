@@ -189,6 +189,9 @@ interface SettingField {
   hint?: string;
   upload?: boolean;
   accept?: "image" | "video" | "both";
+  /** The value the live site falls back to when this setting is empty. Shown
+   * pre-filled so the admin sees what's actually live (not a blank field). */
+  defaultValue?: string;
 }
 
 interface Section {
@@ -212,8 +215,8 @@ const SECTIONS: Section[] = [
     // for every image, with size guides, preview and auto-optimize.
     note: "লোগো, ফ্যাভিকন, PWA আইকন ও OG ছবি এখন Image Manager-এ (ছবি ব্যবস্থাপনা) — সব ছবি এক জায়গায়।",
     fields: [
-      { key: "site_name", label: "Company Name", placeholder: "ABO Enterprise" },
-      { key: "site_tagline", label: "Tagline", placeholder: "সহজ সমাধান" },
+      { key: "site_name", label: "Company Name", placeholder: "ABO Enterprise", defaultValue: "ABO Enterprise" },
+      { key: "site_tagline", label: "Tagline", placeholder: "সহজ সমাধান", defaultValue: "সহজ সমাধান" },
       { key: "site_url", label: "Site URL", type: "url", placeholder: "https://www.aboenterprise.com", hint: "Your live website address. Used for the 'View in Admin' & order-tracking links in emails. No trailing slash." },
     ],
   },
@@ -222,13 +225,13 @@ const SECTIONS: Section[] = [
     title: "Contact & Location",
     icon: <MapPin className="w-4 h-4" />,
     fields: [
-      { key: "contact_phone", label: "Phone", type: "tel", placeholder: "01825007977" },
-      { key: "contact_email", label: "Email", type: "email", placeholder: "info@aboenterprise.com", hint: "Shown on the site (footer, contact, invoices). Editable here — no redeploy." },
+      { key: "contact_phone", label: "Phone", type: "tel", placeholder: "01825007977", defaultValue: "01825007977" },
+      { key: "contact_email", label: "Email", type: "email", placeholder: "info@aboenterprise.com", defaultValue: "info@aboenterprise.com", hint: "Shown on the site (footer, contact, invoices). Editable here — no redeploy." },
       { key: "contact_address", label: "Address", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh" },
-      { key: "contact_hours_en", label: "Business Hours (EN)", placeholder: "Sat–Thu, 9:00 AM – 9:00 PM", hint: "Shown in the footer, homepage and contact page" },
-      { key: "contact_hours_bn", label: "Business Hours (বাংলা)", placeholder: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা" },
-      { key: "footer_about_en", label: "Footer About Text (EN)", type: "textarea", hint: "Short company description shown in the site footer", placeholder: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us." },
-      { key: "footer_about_bn", label: "Footer About Text (বাংলা)", type: "textarea", placeholder: "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।" },
+      { key: "contact_hours_en", label: "Business Hours (EN)", placeholder: "Sat–Thu, 9:00 AM – 9:00 PM", defaultValue: "Sat–Thu, 9:00 AM – 9:00 PM", hint: "Shown in the footer, homepage and contact page" },
+      { key: "contact_hours_bn", label: "Business Hours (বাংলা)", placeholder: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা", defaultValue: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা" },
+      { key: "footer_about_en", label: "Footer About Text (EN)", type: "textarea", hint: "Short company description shown in the site footer", placeholder: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us.", defaultValue: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us." },
+      { key: "footer_about_bn", label: "Footer About Text (বাংলা)", type: "textarea", placeholder: "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।", defaultValue: "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।" },
       { key: "footer_payment_image_url", label: "Payment Methods Image", upload: true, accept: "image", hint: "ফুটারের 'পেমেন্ট পদ্ধতি সমূহ' — সব পেমেন্ট লোগো একসাথে একটি চওড়া ছবি আপলোড করুন (যেমন SSLCommerz 'Pay With' স্ট্রিপ)। এটি বিল্ট-ইন আইকনের বদলে বসবে এবং মোবাইল/ট্যাব/ডেস্কটপে fit হবে। খালি রাখলে বিল্ট-ইন আইকন দেখাবে।" },
       { key: "google_maps_embed", label: "Google Maps Embed", type: "textarea", hint: "Share → Embed a map", placeholder: "Paste iframe or URL" },
       { key: "google_maps_api_key", label: "Google Maps API Key", placeholder: "AIza..." },
@@ -537,6 +540,14 @@ export default function AdminSettingsPage() {
       const flat: SettingValues = {};
       for (const [k, v] of Object.entries(raw)) {
         if (typeof v === "string") flat[k] = v;
+      }
+      // Pre-fill blank fields with the value the live site actually falls back
+      // to, so the admin sees what's live rather than an empty box. DB values
+      // always win; fields with no known default stay empty.
+      for (const section of SECTIONS) {
+        for (const f of section.fields) {
+          if (f.defaultValue && !(flat[f.key] ?? "").trim()) flat[f.key] = f.defaultValue;
+        }
       }
       setValues(flat);
     } catch {

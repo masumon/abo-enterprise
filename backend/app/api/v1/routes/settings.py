@@ -99,6 +99,24 @@ async def get_all_settings(request: Request, db: AsyncSession = Depends(get_db))
         if is_admin or _is_public_setting_key(setting.key):
             settings_dict[setting.key] = setting.value
 
+    # For admins, surface the *effective* email config from the environment so
+    # the SMTP fields aren't blank when the values come from env rather than the
+    # DB. Only non-secret fields — the password / api key are never returned.
+    if is_admin:
+        from app.core.config import settings as cfg
+        effective_email = {
+            "smtp_host": cfg.SMTP_HOST,
+            "smtp_port": str(cfg.SMTP_PORT) if cfg.SMTP_PORT else "",
+            "smtp_user": cfg.SMTP_USER,
+            "smtp_from": cfg.SMTP_FROM or cfg.SMTP_USER,
+            "smtp_from_name": cfg.EMAIL_SENDER_NAME,
+            "admin_notify_email": cfg.ADMIN_NOTIFY_EMAIL,
+            "email_provider": cfg.EMAIL_PROVIDER,
+        }
+        for k, v in effective_email.items():
+            if v and not settings_dict.get(k):  # DB value wins; only fill blanks
+                settings_dict[k] = v
+
     if not is_admin:
         logger.info("Public settings response filtered: %s keys", len(settings_dict))
 
