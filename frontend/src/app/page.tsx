@@ -5,6 +5,7 @@ import FlashSaleSection from "@/components/home/FlashSaleSection";
 import CategoryCards from "@/components/home/CategoryCards";
 import FeatureIconsRow from "@/components/home/FeatureIconsRow";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
+import ComboSection from "@/components/home/ComboSection";
 import WhyChooseUsCards from "@/components/home/WhyChooseUsCards";
 import ReviewStatsCard from "@/components/home/ReviewStatsCard";
 import Reveal from "@/components/ui/Reveal";
@@ -153,6 +154,9 @@ export default async function HomePage() {
 
       {/* Flash Sale Section */}
       <FlashSaleSection />
+
+      {/* Combo Packs — above Featured Products, two-up on mobile */}
+      <ComboSection />
 
       {/* Featured Products Section */}
       <FeaturedProducts />
