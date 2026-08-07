@@ -22,14 +22,15 @@ import { cn } from "@/lib/utils";
  * (GAP-07): it replaced Services, not Cart, because Cart carries committed
  * intent and a live badge.
  */
-// One calm system in both themes: idle tabs are neutral (no filled pill), and
-// only the ACTIVE tab lights up — a single brand-navy pill that lifts. Gold is
-// kept for meaning (the cart badge, the search "new" dot), never as a per-tab
-// background, so the active tab is unmistakable and the bar reads as one piece
-// with the rest of the site. Explicit class strings so Tailwind keeps them.
-const IDLE_ICON = "text-slate-500 dark:text-slate-400";
-const ACTIVE_ICON = "bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/30 -translate-y-0.5";
-const IDLE_LABEL = "text-slate-500 dark:text-slate-400 font-medium";
+// Matched to the top bar's action chips so the two bars read as one system:
+// every tab is a brand-tinted chip with the same ring (not the old alternating
+// brand/gold "rainbow"), and the ACTIVE tab becomes a solid brand chip that
+// lifts — echoing the top bar's solid brand account/cart button. Gold stays for
+// meaning only (cart badge, search "new" dot). Explicit strings so Tailwind
+// keeps them.
+const IDLE_ICON = "bg-brand-50 dark:bg-brand-900/40 ring-1 ring-brand-200/70 dark:ring-brand-500/30 text-brand-600 dark:text-brand-300";
+const ACTIVE_ICON = "bg-brand-600 text-white ring-1 ring-brand-700/40 shadow-md shadow-brand-500/25 -translate-y-0.5";
+const IDLE_LABEL = "text-brand-600/90 dark:text-brand-300/90 font-medium";
 const ACTIVE_LABEL = "text-brand-700 dark:text-brand-200 font-bold";
 
 export default function MobileBottomNav() {
@@ -91,7 +92,7 @@ export default function MobileBottomNav() {
             >
               <span
                 className={cn(
-                  "relative flex items-center justify-center w-10 h-8 rounded-full transition-all",
+                  "relative flex items-center justify-center w-10 h-8 rounded-xl transition-all",
                   active ? ACTIVE_ICON : IDLE_ICON
                 )}
               >
@@ -127,7 +128,7 @@ export default function MobileBottomNav() {
         >
           <span
             className={cn(
-              "flex items-center justify-center w-10 h-8 rounded-full transition-all",
+              "flex items-center justify-center w-10 h-8 rounded-xl transition-all",
               moreOpen ? ACTIVE_ICON : IDLE_ICON
             )}
           >
