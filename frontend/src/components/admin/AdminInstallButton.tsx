@@ -20,9 +20,9 @@ export default function AdminInstallButton() {
 
   useEffect(() => {
     setInstalled(isStandalone());
-    setAvailable(canInstall());
+    setAvailable(canInstall("admin"));
     setIsIos(/iphone|ipad|ipod/i.test(navigator.userAgent) && !(window as unknown as { MSStream?: unknown }).MSStream);
-    const onPrompt = () => setAvailable(true);
+    const onPrompt = () => setAvailable(canInstall("admin"));
     const onInstalled = () => { setInstalled(true); setAvailable(false); };
     window.addEventListener("beforeinstallprompt", onPrompt);
     window.addEventListener("appinstalled", onInstalled);
@@ -46,13 +46,14 @@ export default function AdminInstallButton() {
       toast("info", "Safari-তে: Share (⬆️) → “Add to Home Screen” চাপুন — অ্যাডমিন অ্যাপ ইনস্টল হবে।");
       return;
     }
-    const outcome = await triggerInstall();
+    const outcome = await triggerInstall("admin");
     if (outcome === "accepted") toast("success", "অ্যাডমিন অ্যাপ ইনস্টল হচ্ছে…");
     else if (outcome === "dismissed") toast("info", "ইনস্টল বাতিল হয়েছে।");
     else
-      // No native prompt yet (Chrome hasn't fired it, or it's already handled)
-      // — guide to the browser menu so the button is never a dead end.
-      toast("info", "ব্রাউজার মেনু (⋮) → “Install app” / “Add to Home screen” চাপুন।");
+      // No admin prompt pending — either Chrome hasn't fired it yet, or the
+      // pending prompt belongs to the customer app (arrived here via in-app
+      // navigation). Reloading /sumon re-evaluates the admin manifest.
+      toast("info", "এই পেজটি রিলোড করুন, তারপর “Install App” চাপুন — অথবা ব্রাউজার মেনু (⋮) → “Install app”।");
   };
 
   // Always show (except once installed) so the admin can install even before
