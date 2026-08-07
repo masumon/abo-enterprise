@@ -41,7 +41,7 @@ import {
   SITE_REGISTRATIONS_KEY,
   getRegistrations,
 } from "@/lib/cmsContent";
-import { resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
+import { resolveGoogleMapsLink, resolveAddress } from "@/lib/maps";
 import { triggerInstall, isStandalone } from "@/lib/pwaInstall";
 import BrandLogo from "@/components/ui/BrandLogo";
 
@@ -129,6 +129,7 @@ export default function Footer() {
     "contact_phone",
     "contact_email",
     "contact_address",
+    "contact_address_en",
     "contact_hours_en",
     "contact_hours_bn",
     "footer_about_en",
@@ -147,11 +148,7 @@ export default function Footer() {
 
   const phoneRaw = getSettingValue(settings, "contact_phone", "01825007977");
   const emailAddr = getSettingValue(settings, "contact_email", "info@aboenterprise.com");
-  const address = getSettingValue(
-    settings,
-    "contact_address",
-    bn ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN
-  );
+  const address = resolveAddress(settings, lang);
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "contact_address"), address);
   const hours = bn
     ? getSettingValue(settings, "contact_hours_bn", "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা")
@@ -252,7 +249,7 @@ export default function Footer() {
   };
 
   return (
-    <footer className="site-footer relative text-white overflow-hidden bg-gradient-to-b from-brand-900 via-[#0b1024] to-[#070b1a]">
+    <footer className="site-footer relative text-white overflow-hidden bg-gradient-to-b from-brand-700 via-brand-800 to-brand-900">
       {/* Brand + gold hairline so the footer reads as part of the site rather
           than a detached dark block. */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#d4af37]/40 to-transparent" aria-hidden />
@@ -343,7 +340,7 @@ export default function Footer() {
             <details key={group.id} className="group border-b border-white/10">
               <summary className="flex items-center justify-between py-3.5 px-0.5 text-sm font-bold text-white cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                 {bn ? group.title.bn : group.title.en}
-                <ChevronDown className="w-4 h-4 text-white/40 transition-transform group-open:rotate-180 group-open:text-green-400" aria-hidden />
+                <ChevronDown className="w-4 h-4 text-white/75 transition-transform group-open:rotate-180 group-open:text-green-400" aria-hidden />
               </summary>
               <ul className="pb-3 px-0.5 space-y-0.5">
                 {group.links.map((link, i) => (
@@ -388,7 +385,7 @@ export default function Footer() {
 
         {/* Payment methods */}
         <div className="pt-4">
-          <h2 className="text-[10px] font-extrabold uppercase tracking-wide text-white/40 mb-2">
+          <h2 className="text-[10px] font-extrabold uppercase tracking-wide text-white/75 mb-2">
             {bn ? "পেমেন্ট পদ্ধতি সমূহ" : "Payment Methods"}
           </h2>
           {paymentImage ? (
@@ -420,7 +417,7 @@ export default function Footer() {
         {/* Business registrations */}
         {registrations.length > 0 && (
           <div className="pt-4">
-            <h2 className="text-[10px] font-extrabold uppercase tracking-wide text-white/40 mb-2">
+            <h2 className="text-[10px] font-extrabold uppercase tracking-wide text-white/75 mb-2">
               {bn ? "ব্যবসায়িক তথ্য" : "Business Registrations"}
             </h2>
             <div className="flex items-center gap-1.5 flex-wrap">
@@ -491,7 +488,7 @@ export default function Footer() {
             >
               <PlayStoreMark className="w-5 h-5 flex-shrink-0" />
               <span className="text-left leading-tight">
-                <span className="block text-[8px] uppercase tracking-wide text-white/55">
+                <span className="block text-[8px] uppercase tracking-wide text-white/80">
                   {bn ? "পাওয়া যাচ্ছে" : "Get it on"}
                 </span>
                 <span className="block text-[12px] font-extrabold text-white">
@@ -506,7 +503,7 @@ export default function Footer() {
             >
               <AppStoreMark className="w-5 h-5 flex-shrink-0" />
               <span className="text-left leading-tight">
-                <span className="block text-[8px] uppercase tracking-wide text-white/55">
+                <span className="block text-[8px] uppercase tracking-wide text-white/80">
                   {bn ? "ডাউনলোড করুন" : "Download on the"}
                 </span>
                 <span className="block text-[12px] font-extrabold text-white">

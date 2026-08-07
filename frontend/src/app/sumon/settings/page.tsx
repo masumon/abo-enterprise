@@ -227,7 +227,8 @@ const SECTIONS: Section[] = [
     fields: [
       { key: "contact_phone", label: "Phone", type: "tel", placeholder: "01825007977", defaultValue: "01825007977" },
       { key: "contact_email", label: "Email", type: "email", placeholder: "info@aboenterprise.com", defaultValue: "info@aboenterprise.com", hint: "Shown on the site (footer, contact, invoices). Editable here — no redeploy." },
-      { key: "contact_address", label: "Address", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh" },
+      { key: "contact_address", label: "Address (বাংলা)", type: "textarea", placeholder: "হাজী বাহার উদ্দিন মার্কেট, আব্দুল্লাপুর, বৈরাগীবাজার-৩১৭০, বিয়ানীবাজার, সিলেট, বাংলাদেশ", hint: "সাইট বাংলায় থাকলে এই ঠিকানা দেখাবে" },
+      { key: "contact_address_en", label: "Address (English)", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh", hint: "Shown when the site is in English. Leave blank to reuse the Bangla address." },
       { key: "contact_hours_en", label: "Business Hours (EN)", placeholder: "Sat–Thu, 9:00 AM – 9:00 PM", defaultValue: "Sat–Thu, 9:00 AM – 9:00 PM", hint: "Shown in the footer, homepage and contact page" },
       { key: "contact_hours_bn", label: "Business Hours (বাংলা)", placeholder: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা", defaultValue: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা" },
       { key: "footer_about_en", label: "Footer About Text (EN)", type: "textarea", hint: "Short company description shown in the site footer", placeholder: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us.", defaultValue: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us." },

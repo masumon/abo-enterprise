@@ -5,7 +5,7 @@ import { MapPin, Clock, CheckCircle, Navigation } from "lucide-react";
 import type { Service } from "@/types";
 import { useLanguageStore } from "@/store/language";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
-import { DEFAULT_ADDRESS_EN, DEFAULT_ADDRESS_BN } from "@/lib/maps";
+import { resolveAddress } from "@/lib/maps";
 import { fulfilmentDetail } from "@/lib/fulfilment";
 
 /**
@@ -33,9 +33,7 @@ export default function VisitRequiredPanel({ service }: { service: Service }) {
   const note = fulfilmentDetail(service.fulfilment, lang);
   // Same keys the footer and contact page publish, so the shop cannot end up
   // with two addresses or two sets of hours.
-  const address =
-    getSettingValue(settings, "contact_address") ||
-    (bn ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN);
+  const address = resolveAddress(settings, lang);
   const hours = getSettingValue(settings, bn ? "contact_hours_bn" : "contact_hours_en");
 
   return (
