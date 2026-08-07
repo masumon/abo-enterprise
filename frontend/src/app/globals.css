@@ -96,6 +96,15 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+    /* Paint the root canvas so a navigation repaint never flashes the UA's
+       default (black on mobile / in dark mode) between pages. color-scheme
+       keeps the UA canvas and form controls aligned with the theme. */
+    color-scheme: light;
+    background-color: #f1f2f7;
+  }
+  html.dark {
+    color-scheme: dark;
+    background-color: var(--navy);
   }
 
   body {
