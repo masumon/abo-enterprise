@@ -1,39 +1,23 @@
 {
-  "name": "ABO Enterprise — মোবাইল এক্সেসরিজ, সফটওয়্যার, AI সমাধান",
-  "short_name": "ABO Enterprise",
-  "description": "সহজ সমাধান — মোবাইল এক্সেসরিজ, গ্যাজেট, প্রিন্টিং, আইনি সেবা, ওয়েবসাইট, AI সমাধান এবং কাস্টম সফটওয়্যার — একটি প্ল্যাটফর্মে।",
+  "id": "/",
+  "name": "এবিও এন্টারপ্রাইজ",
+  "short_name": "এবিও",
+  "description": "এবিও এন্টারপ্রাইজ : সহজ সমাধান — মোবাইল এক্সেসরিজ, প্রিন্টিং, আইনি সেবা, সফটওয়্যার",
   "scope": "/",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#1e5ba8",
-  "theme_color": "#1e5ba8",
+  "background_color": "#1e2b6b",
+  "theme_color": "#1e2b6b",
   "categories": ["shopping", "productivity", "business"],
+  "lang": "bn",
+  "dir": "ltr",
   "icons": [
-    {
-      "src": "/icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icons/icon-maskable-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "/icons/icon-maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" }
   ],
   "shortcuts": [
     {
@@ -58,18 +42,5 @@
       "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ],
-  "share_target": {
-    "action": "/share",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "files": [
-        {
-          "name": "image",
-          "accept": ["image/*"]
-        }
-      ]
-    }
-  },
   "prefer_related_applications": false
 }

@@ -64,6 +64,11 @@ export async function generateMetadata(): Promise<Metadata> {
     creator: "Mumain Ahmed (Sumon) | Mumain.dev",
     publisher: "ABO Enterprise",
     metadataBase: new URL(SITE_URL),
+    // Customer PWA manifest. Declared as a metadata FIELD (not the app/manifest.ts
+    // file convention) so the admin layout can override it with metadata.manifest
+    // for /sumon routes — the file convention could not be overridden and always
+    // forced the customer manifest onto the admin, installing the wrong app.
+    manifest: "/manifest.webmanifest",
     alternates: {
       canonical: SITE_URL,
       // Site content is bilingual on the same URL — declare both plus
