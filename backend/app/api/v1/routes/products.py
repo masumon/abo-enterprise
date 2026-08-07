@@ -59,6 +59,7 @@ async def list_products(
         conditions.extend([
             Product.is_flash_sale == True,  # noqa: E712
             Product.flash_sale_price.isnot(None),
+            Product.flash_sale_price < Product.price,  # actually discounted
             or_(
                 Product.flash_sale_ends_at.is_(None),
                 Product.flash_sale_ends_at > datetime.now(timezone.utc),

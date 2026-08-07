@@ -85,6 +85,11 @@ def _effective_unit_price(product: Product) -> float:
     if (
         product.is_flash_sale
         and product.flash_sale_price is not None
+        # "Actually discounted" — must be strictly below the regular price, the
+        # same guard the storefront uses to decide whether to show the sale. Without
+        # it a misconfigured flash_sale_price >= price would bill the customer MORE
+        # than the price they saw. Fall through to the regular price instead.
+        and float(product.flash_sale_price) < float(product.price)
         and (
             product.flash_sale_ends_at is None
             or product.flash_sale_ends_at > datetime.now(timezone.utc)
