@@ -48,18 +48,21 @@ export default function AdminInstallButton() {
     }
     const outcome = await triggerInstall();
     if (outcome === "accepted") toast("success", "অ্যাডমিন অ্যাপ ইনস্টল হচ্ছে…");
-    else if (outcome === "unavailable")
-      toast("info", "ব্রাউজার মেনু → “Install app / Add to Home screen” থেকে ইনস্টল করুন।");
+    else if (outcome === "dismissed") toast("info", "ইনস্টল বাতিল হয়েছে।");
+    else
+      // No native prompt yet (Chrome hasn't fired it, or it's already handled)
+      // — guide to the browser menu so the button is never a dead end.
+      toast("info", "ব্রাউজার মেনু (⋮) → “Install app” / “Add to Home screen” চাপুন।");
   };
 
-  // On iOS always show (manual flow); elsewhere only when a prompt is available.
-  if (!available && !isIos) return null;
-
+  // Always show (except once installed) so the admin can install even before
+  // Chrome fires its deferred prompt — the click handler covers every case. A
+  // ready native prompt gets a subtle ring to invite the tap.
   return (
     <button
       type="button"
       onClick={handleClick}
-      className="inline-flex items-center gap-1.5 px-2.5 h-9 rounded-lg bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700 active:scale-95 transition-all"
+      className={`inline-flex items-center gap-1.5 px-2.5 h-9 rounded-lg bg-brand-600 text-white text-xs font-semibold hover:bg-brand-700 active:scale-95 transition-all ${available ? "ring-2 ring-brand-300 ring-offset-1" : ""}`}
       title="Install the admin panel as an app"
     >
       <Download className="w-4 h-4" />
