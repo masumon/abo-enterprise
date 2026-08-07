@@ -1,3 +1,15 @@
+import { getSettingValue } from "@/lib/settingValue";
+
+/** Language-aware business address. English uses contact_address_en when the
+ * admin set it, else falls back to the (Bengali) contact_address, then the
+ * built-in default — so English shows an English address once entered, never
+ * a blank. */
+export function resolveAddress(settings: Record<string, string>, lang: string): string {
+  const bn = getSettingValue(settings, "contact_address");
+  const en = getSettingValue(settings, "contact_address_en");
+  return lang === "en" ? (en || bn || DEFAULT_ADDRESS_EN) : (bn || DEFAULT_ADDRESS_BN);
+}
+
 /** Business location defaults — used when CMS settings are empty */
 export const DEFAULT_ADDRESS_BN =
   "হাজী বাহার উদ্দিন মার্কেট, আব্দুল্লাপুর, বৈরাগীবাজার-৩১৭০, বিয়ানীবাজার, সিলেট, বাংলাদেশ";

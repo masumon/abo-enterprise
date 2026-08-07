@@ -17,7 +17,7 @@ import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phon
 import { formatBdPhoneDisplay, toBdTelHref, toBdWhatsappHref } from "@/lib/phone";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
-import { resolveGoogleMapsEmbed, resolveGoogleMapsLink, DEFAULT_ADDRESS_BN, DEFAULT_ADDRESS_EN } from "@/lib/maps";
+import { resolveGoogleMapsEmbed, resolveGoogleMapsLink, resolveAddress } from "@/lib/maps";
 import MapEmbed from "@/components/common/MapEmbed";
 import PageHero from "@/components/ui/PageHero";
 import ReferenceBadge from "@/components/ui/ReferenceBadge";
@@ -26,14 +26,14 @@ export default function ContactPage() {
   const { lang } = useLanguageStore();
   const t = useT();
   const toast = useToastStore((s) => s.push);
-  const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address", "contact_hours_en", "contact_hours_bn", "whatsapp_number"]);
+  const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address", "contact_address_en", "contact_hours_en", "contact_hours_bn", "whatsapp_number"]);
   const mapsEmbed = resolveGoogleMapsEmbed(getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED));
   const phone = getSettingValue(settings, "contact_phone", "01825007977");
   const phoneDisplay = formatBdPhoneDisplay(phone);
   const phoneHref = toBdTelHref(phone);
   const whatsappHref = toBdWhatsappHref(getSettingValue(settings, "whatsapp_number", phone));
   const email = getSettingValue(settings, "contact_email", "info@aboenterprise.com");
-  const address = getSettingValue(settings, "contact_address", lang === "bn" ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN);
+  const address = resolveAddress(settings, lang);
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
 
   const schema = z.object({
