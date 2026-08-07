@@ -22,23 +22,15 @@ import { cn } from "@/lib/utils";
  * (GAP-07): it replaced Services, not Cart, because Cart carries committed
  * intent and a live badge.
  */
-// Coloured tab treatment, echoing the top bar's brand + gold icon scheme so
-// the two bars read as one system. Explicit class strings (no interpolation)
-// so Tailwind keeps them.
-const TAB_COLOR = {
-  brand: {
-    idle: "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-300",
-    active: "bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/30 -translate-y-0.5",
-    labelIdle: "text-brand-600/80 dark:text-brand-300/80 font-medium",
-    labelActive: "text-brand-700 dark:text-brand-200 font-bold",
-  },
-  accent: {
-    idle: "bg-accent-50 dark:bg-accent-500/15 text-accent-600 dark:text-accent-300",
-    active: "bg-gradient-to-br from-accent-400 to-accent-600 text-white shadow-md shadow-accent-500/30 -translate-y-0.5",
-    labelIdle: "text-accent-700/80 dark:text-accent-300/80 font-medium",
-    labelActive: "text-accent-700 dark:text-accent-200 font-bold",
-  },
-} as const;
+// One calm system in both themes: idle tabs are neutral (no filled pill), and
+// only the ACTIVE tab lights up — a single brand-navy pill that lifts. Gold is
+// kept for meaning (the cart badge, the search "new" dot), never as a per-tab
+// background, so the active tab is unmistakable and the bar reads as one piece
+// with the rest of the site. Explicit class strings so Tailwind keeps them.
+const IDLE_ICON = "text-slate-500 dark:text-slate-400";
+const ACTIVE_ICON = "bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/30 -translate-y-0.5";
+const IDLE_LABEL = "text-slate-500 dark:text-slate-400 font-medium";
+const ACTIVE_LABEL = "text-brand-700 dark:text-brand-200 font-bold";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
@@ -87,7 +79,6 @@ export default function MobileBottomNav() {
         {TABS.map((item) => {
           const Icon = item.icon;
           const active = isItemActive(item.href);
-          const c = TAB_COLOR[item.tint];
           return (
             <Link
               key={item.href}
@@ -95,13 +86,13 @@ export default function MobileBottomNav() {
               aria-current={active ? "page" : undefined}
               className={cn(
                 "relative min-h-[44px] flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 transition-colors",
-                active ? c.labelActive : c.labelIdle
+                active ? ACTIVE_LABEL : IDLE_LABEL
               )}
             >
               <span
                 className={cn(
                   "relative flex items-center justify-center w-10 h-8 rounded-full transition-all",
-                  active ? c.active : c.idle
+                  active ? ACTIVE_ICON : IDLE_ICON
                 )}
               >
                 <Icon className="w-[18px] h-[18px]" strokeWidth={active ? 2.5 : 2} />
@@ -131,15 +122,13 @@ export default function MobileBottomNav() {
           aria-haspopup="dialog"
           className={cn(
             "min-h-[44px] flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 transition-colors",
-            moreOpen ? "text-brand-700 dark:text-brand-200 font-bold" : "text-brand-600/80 dark:text-brand-300/80 font-medium"
+            moreOpen ? ACTIVE_LABEL : IDLE_LABEL
           )}
         >
           <span
             className={cn(
               "flex items-center justify-center w-10 h-8 rounded-full transition-all",
-              moreOpen
-                ? "bg-gradient-to-br from-brand-500 to-brand-700 text-white shadow-md shadow-brand-500/30 -translate-y-0.5"
-                : "bg-brand-50 dark:bg-brand-500/10 text-brand-600 dark:text-brand-300"
+              moreOpen ? ACTIVE_ICON : IDLE_ICON
             )}
           >
             <Menu className="w-[18px] h-[18px]" strokeWidth={moreOpen ? 2.5 : 2} />

@@ -380,6 +380,11 @@ export default function ServicesPageClient({
               {t({ en: "Request a B2B quotation for your company", bn: "আপনার প্রতিষ্ঠানের জন্য B2B কোটেশন রিকোয়েস্ট করুন" })}
             </span>
           </span>
+          {/* Mobile: a gold arrow disc makes the card read as tappable (the full
+              pill below is desktop-only). Desktop: the labelled pill. */}
+          <span className="flex-shrink-0 sm:hidden w-9 h-9 rounded-full bg-accent-500 text-[#14182b] flex items-center justify-center shadow-sm">
+            <ChevronRight className="w-5 h-5" aria-hidden />
+          </span>
           <span className="flex-shrink-0 hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold bg-white text-brand-700 group-hover/cta:bg-white/90">
             {t({ en: "Get a quote", bn: "কোটেশন নিন" })}
             <ChevronRight className="w-4 h-4" aria-hidden />
@@ -423,7 +428,7 @@ export default function ServicesPageClient({
             className="relative flex-shrink-0 min-h-[44px] px-3.5 rounded-xl border border-gray-200 dark:border-white/10 flex items-center gap-2 text-sm font-semibold text-heading"
           >
             <SlidersHorizontal className="w-4 h-4" aria-hidden />
-            <span>{t({ en: "Filters", bn: "ফিল্টার" })}</span>
+            <span className="hidden min-[380px]:inline">{t({ en: "Filters", bn: "ফিল্টার" })}</span>
             {activeFilterCount > 0 && (
               <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-accent-500 text-[#14182b] text-[10px] font-bold flex items-center justify-center">
                 {activeFilterCount}
@@ -471,17 +476,20 @@ export default function ServicesPageClient({
                 <li key={s.id}>
                   <Link
                     href={`/services/${s.slug}`}
-                    className="flex items-center gap-3 min-h-[44px] px-3 py-3 rounded-xl border border-gray-200 dark:border-white/10 hover:border-brand-300"
+                    className="group/req flex items-center gap-3 min-h-[44px] px-3 py-2.5 rounded-xl border border-gray-200 dark:border-white/10 hover:border-brand-300 hover:shadow-sm transition-all"
                   >
+                    <span className="flex-shrink-0 w-9 h-9 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white flex items-center justify-center shadow-sm ring-1 ring-white/20">
+                      <Wrench className="w-4 h-4" aria-hidden />
+                    </span>
                     <span className="flex-1 min-w-0">
-                      <span className="block text-sm font-semibold text-heading truncate">
+                      <span className="block text-sm font-semibold text-heading truncate group-hover/req:text-brand-700 dark:group-hover/req:text-brand-200 transition-colors">
                         {lang === "bn" && s.name_bn ? s.name_bn : s.name_en}
                       </span>
                       <span className="block text-xs text-muted truncate">
                         {[s.category, turn].filter(Boolean).join(" · ")}
                       </span>
                     </span>
-                    <span className="money text-sm font-bold text-heading flex-shrink-0">{price}</span>
+                    <span className="money text-sm font-bold text-accent-700 dark:text-accent-300 flex-shrink-0">{price}</span>
                   </Link>
                 </li>
               );
@@ -497,7 +505,7 @@ export default function ServicesPageClient({
           {/* One renderer for both sources: live DB taxonomy (cards/chips are
               links into the nested routes) or the static fallback when the
               taxonomy is empty/unreachable. */}
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-8 sm:mb-10">
             {categoryCards.map(({ key, anchorId, extraAnchorIds, Icon, color, title, titleHref, chips }, i) => {
               const iconTile = (
                 <div
@@ -518,7 +526,7 @@ export default function ServicesPageClient({
                 >
                   <div
                     id={anchorId}
-                    className="group/card enterprise-card p-5 scroll-mt-24 relative h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(30,43,107,0.35)]"
+                    className="group/card enterprise-card p-4 sm:p-5 scroll-mt-24 relative h-full overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_-16px_rgba(30,43,107,0.35)]"
                   >
                     {/* Coloured top accent that grows on hover — premium touch */}
                     <span aria-hidden className={cn("absolute inset-x-0 top-0 h-1 opacity-80 transition-opacity duration-300 group-hover/card:opacity-100", color)} />
@@ -529,12 +537,12 @@ export default function ServicesPageClient({
                     {titleHref ? (
                       <Link href={titleHref} className="flex items-center gap-3 mb-3 group/title">
                         {iconTile}
-                        <h3 className="font-bold text-heading group-hover/title:text-brand-600 transition-colors">{title}</h3>
+                        <h3 className="font-bold text-heading text-sm sm:text-base leading-tight group-hover/title:text-brand-600 transition-colors">{title}</h3>
                       </Link>
                     ) : (
                       <div className="flex items-center gap-3 mb-3">
                         {iconTile}
-                        <h3 className="font-bold text-heading">{title}</h3>
+                        <h3 className="font-bold text-heading text-sm sm:text-base leading-tight">{title}</h3>
                       </div>
                     )}
                     {chips.length > 0 && (
@@ -622,7 +630,11 @@ export default function ServicesPageClient({
             />
           ) : (
             <>
-              <p className="text-sm text-muted mb-4">{total} {lang === "bn" ? "টি সেবা" : "services"}</p>
+              <p className="mb-4">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-500/15 text-brand-700 dark:text-brand-200 text-xs font-bold">
+                  {total} {lang === "bn" ? "টি সেবা" : "services"}
+                </span>
+              </p>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {services.map((s) => (
                   <ServiceCard
@@ -651,13 +663,17 @@ export default function ServicesPageClient({
         </div>
       </section>
 
-      <section className="py-12 px-4 bg-gray-900 text-white">
-        <div className="max-w-4xl mx-auto text-center">
+      <section className="relative overflow-hidden py-10 sm:py-12 px-4 bg-gradient-to-br from-brand-700 via-brand-800 to-brand-900 text-white">
+        {/* Soft gold glow — ties this band to the brand navy+gold system that
+            runs through the footer and hero, instead of the old flat gray. */}
+        <div aria-hidden className="absolute -top-16 right-0 w-72 h-72 rounded-full bg-accent-500/10 blur-3xl" />
+        <div className="relative max-w-4xl mx-auto text-center">
           <h2 className="text-2xl font-bold mb-3">{t({ en: "Powered by Modern Technology", bn: "আধুনিক প্রযুক্তিতে পরিচালিত" })}</h2>
-          <div className="flex justify-center gap-6 flex-wrap mt-6">
+          <span aria-hidden className="block w-16 h-1 rounded-full bg-gradient-to-r from-accent-400 to-accent-600 mx-auto mb-6" />
+          <div className="flex justify-center gap-3 sm:gap-4 flex-wrap">
             {[Bot, Code2, Cog, Smartphone, Megaphone, Briefcase].map((Icon, i) => (
-              <div key={i} className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl">
-                <Icon className="w-4 h-4 text-brand-400" />
+              <div key={i} className="flex items-center gap-2 bg-white/10 ring-1 ring-white/15 px-4 py-2 rounded-xl backdrop-blur-sm">
+                <Icon className="w-4 h-4 text-accent-400" />
                 <span className="text-sm font-medium">{["AI", "Web", "Automation", "Mobile", "Marketing", "Consulting"][i]}</span>
               </div>
             ))}
