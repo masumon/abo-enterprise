@@ -28,6 +28,7 @@ from app.api.v1.routes import (
     media,
     categories,
     newsletter,
+    combos,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -60,3 +61,4 @@ api_router.include_router(career.router)
 api_router.include_router(media.router)
 api_router.include_router(categories.router)
 api_router.include_router(newsletter.router)
+api_router.include_router(combos.router)

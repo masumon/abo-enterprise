@@ -870,3 +870,58 @@ class Subcategory(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
     category: Mapped["Category"] = relationship(back_populates="subcategories")
+
+
+class Combo(Base):
+    """A bundle of products sold together at one combo price (manual_sql/030).
+
+    The combo price is the single source of truth for what the customer pays —
+    orders re-derive it server-side, never trusting a client total, exactly like
+    single-product pricing. `compare_at_price` is optional; when unset the
+    storefront falls back to the summed item prices for the struck-through
+    "was" figure. A combo may also grant free delivery.
+    """
+
+    __tablename__ = "combos"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    title_en: Mapped[str] = mapped_column(String(255), nullable=False)
+    title_bn: Mapped[str] = mapped_column(String(255), nullable=False)
+    description_en: Mapped[str | None] = mapped_column(Text)
+    description_bn: Mapped[str | None] = mapped_column(Text)
+    image_url: Mapped[str | None] = mapped_column(Text)
+    combo_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    compare_at_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    badge_en: Mapped[str | None] = mapped_column(String(80))
+    badge_bn: Mapped[str | None] = mapped_column(String(80))
+    free_delivery: Mapped[bool] = mapped_column(Boolean, default=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    starts_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    items: Mapped[list["ComboItem"]] = relationship(
+        back_populates="combo", cascade="all, delete-orphan", order_by="ComboItem.sort_order"
+    )
+
+
+class ComboItem(Base):
+    """One product line inside a combo (which product, how many)."""
+
+    __tablename__ = "combo_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    combo_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("combos.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    quantity: Mapped[int] = mapped_column(Integer, default=1)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+
+    combo: Mapped["Combo"] = relationship(back_populates="items")
