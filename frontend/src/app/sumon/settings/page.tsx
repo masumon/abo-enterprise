@@ -216,7 +216,8 @@ const SECTIONS: Section[] = [
     note: "লোগো, ফ্যাভিকন, PWA আইকন ও OG ছবি এখন Image Manager-এ (ছবি ব্যবস্থাপনা) — সব ছবি এক জায়গায়।",
     fields: [
       { key: "site_name", label: "Company Name", placeholder: "ABO Enterprise", defaultValue: "ABO Enterprise" },
-      { key: "site_tagline", label: "Tagline", placeholder: "সহজ সমাধান", defaultValue: "সহজ সমাধান" },
+      { key: "site_tagline_en", label: "Tagline (EN)", placeholder: "Simple Solutions", defaultValue: "Simple Solutions", hint: "Shown beside the logo (More menu header) when the site is in English" },
+      { key: "site_tagline_bn", label: "Tagline (বাংলা)", placeholder: "সহজ সমাধান", defaultValue: "সহজ সমাধান" },
       { key: "site_url", label: "Site URL", type: "url", placeholder: "https://www.aboenterprise.com", hint: "Your live website address. Used for the 'View in Admin' & order-tracking links in emails. No trailing slash." },
     ],
   },

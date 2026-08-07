@@ -13,6 +13,8 @@ import { useWishlistStore } from "@/store/wishlist";
 import { useCompareStore } from "@/store/compare";
 import { cn, WHATSAPP_NUMBER } from "@/lib/utils";
 import BrandLogo from "@/components/ui/BrandLogo";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { getBrandName, getBrandTagline } from "@/lib/tokens";
 
 /**
  * The More drawer from screen 03. Four groups, fixed in both signed-in and
@@ -40,6 +42,16 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
   const router = useRouter();
   const isLoggedIn = useCustomerStore((s) => s.isLoggedIn());
   const customerName = useCustomerStore((s) => s.session?.name);
+  // Brand name + tagline shown in the header — admin-controlled (same settings
+  // the rest of the site reads), falling back to the built-in bilingual brand.
+  const { settings } = usePublicSettings(["site_name", "site_tagline_en", "site_tagline_bn", "site_tagline"]);
+  const brandName = getSettingValue(settings, "site_name", getBrandName(lang));
+  // Language-specific tagline; falls back to the legacy single `site_tagline`
+  // key (if an admin set it before), then to the built-in bilingual default.
+  const brandTagline =
+    getSettingValue(settings, lang === "bn" ? "site_tagline_bn" : "site_tagline_en") ||
+    getSettingValue(settings, "site_tagline") ||
+    getBrandTagline(lang);
   const wishlistCount = useWishlistStore((s) => s.count());
   const compareCount = useCompareStore((s) => s.items.length);
   const [query, setQuery] = useState("");
@@ -140,8 +152,8 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
         <div className="sticky top-0 z-10 flex items-center gap-2.5 px-4 py-3.5 gradient-brand">
           <BrandLogo size="sm" href={false} variant="light" />
           <div className="flex-1 min-w-0 leading-tight">
-            <p className="font-bold text-white text-[15px] truncate">ABO Enterprise</p>
-            <p className="text-white/70 text-[11px] truncate">{t({ en: "Simple Solutions", bn: "সহজ সমাধান" })}</p>
+            <p className="font-bold text-white text-[15px] truncate">{brandName}</p>
+            <p className="text-white/70 text-[11px] truncate">{brandTagline}</p>
           </div>
           <button
             type="button"
