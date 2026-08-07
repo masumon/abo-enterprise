@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users } from "lucide-react";
 import { getAdminPageTitle } from "@/lib/adminNav";
+import AdminInstallButton from "@/components/admin/AdminInstallButton";
 import { useAlertStore } from "@/store/alerts";
 import { useLanguageStore } from "@/store/language";
 import { useState } from "react";
@@ -69,6 +70,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
+          <AdminInstallButton />
           {onToggleTheme && (
             <button
               type="button"

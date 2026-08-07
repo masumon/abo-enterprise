@@ -20,6 +20,12 @@ if (typeof window !== "undefined") {
   });
 }
 
+/** Whether a native install prompt is currently available (Android/desktop
+ * Chromium). False on iOS and after install. */
+export function canInstall(): boolean {
+  return deferred !== null;
+}
+
 export function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   return (
