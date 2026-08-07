@@ -1,104 +1,19 @@
-"use client";
+import type { Metadata } from "next";
+import AdminLayoutClient from "./AdminLayoutClient";
 
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
-import { getAdminPageTitle } from "@/lib/adminNav";
-import { useAdmin } from "@/hooks/useAdmin";
-import { useAdminPolling } from "@/hooks/useAdminPolling";
-import AdminSidebar from "@/components/admin/AdminSidebar";
-import AdminTopBar from "@/components/admin/AdminTopBar";
-import AdminCommandPalette from "@/components/admin/AdminCommandPalette";
-import ToastProvider from "@/components/ui/ToastProvider";
-import DynamicFavicon from "@/components/ui/DynamicFavicon";
-import { Loader2 } from "lucide-react";
+/**
+ * Server-render the ADMIN PWA manifest for every /sumon route. This overrides
+ * the customer manifest (app/manifest.ts → /manifest.webmanifest) for this
+ * subtree, so the admin app — start_url /sumon — is the ONLY thing Chrome can
+ * install from inside the admin panel. Doing it in server metadata (not a
+ * client-side <link> swap) is what makes it reliable: the link is in the very
+ * first paint, before the browser fires beforeinstallprompt, so the deferred
+ * prompt is bound to the admin manifest and never the customer one.
+ */
+export const metadata: Metadata = {
+  manifest: "/admin.webmanifest",
+};
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const { user, loading, logout } = useAdmin(pathname !== "/sumon/login");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [dark, setDark] = useState(false);
-
-  useEffect(() => {
-    setDark(localStorage.getItem("abo_admin_theme") === "dark");
-  }, []);
-
-  // Point the PWA manifest at the admin app while inside /sumon, so installing
-  // from here installs the ADMIN panel (start_url /sumon) as its own app —
-  // separate from the customer app. Restored on leaving the admin.
-  useEffect(() => {
-    const head = document.head;
-    let link = head.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
-    const prev = link?.getAttribute("href") ?? null;
-    if (!link) { link = document.createElement("link"); link.rel = "manifest"; head.appendChild(link); }
-    link.setAttribute("href", "/admin.webmanifest");
-    return () => { link?.setAttribute("href", prev ?? "/manifest.webmanifest"); };
-  }, []);
-
-  // Per-page browser tab title — every admin page used to share the site title.
-  useEffect(() => {
-    if (pathname !== "/sumon/login") {
-      document.title = `${getAdminPageTitle(pathname)} · ABO Admin`;
-    }
-  }, [pathname]);
-
-  const toggleTheme = () => {
-    setDark((d) => {
-      localStorage.setItem("abo_admin_theme", d ? "light" : "dark");
-      return !d;
-    });
-  };
-  useAdminPolling(pathname !== "/sumon/login");
-
-  if (pathname === "/sumon/login") {
-    return <>{children}</>;
-  }
-
-  if (loading || !user) {
-    return (
-      <div className="min-h-screen admin-auth-loading flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 text-brand-500 animate-spin mx-auto mb-3" />
-          <p className="text-gray-400 text-sm">যাচাই করছি…</p>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className={`min-h-screen admin-shell${dark ? " admin-dark" : ""}`}>
-      {sidebarOpen && (
-        <button
-          type="button"
-          className="fixed inset-0 z-30 bg-black/50 lg:hidden backdrop-blur-sm"
-          aria-label="Close sidebar"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      <AdminSidebar
-        onLogout={logout}
-        adminName={user.name}
-        adminRole={user.role}
-        mobileOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-      />
-
-      <div className="lg:pl-64 min-h-screen flex flex-col">
-        <AdminTopBar
-          adminName={user.name}
-          adminRole={user.role}
-          onMenuClick={() => setSidebarOpen(true)}
-          dark={dark}
-          onToggleTheme={toggleTheme}
-        />
-        <main className="flex-1 p-4 md:p-6 lg:p-8 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div className="admin-page-container">{children}</div>
-        </main>
-      </div>
-
-      <AdminCommandPalette role={user.role} />
-      <ToastProvider />
-      <DynamicFavicon />
-    </div>
-  );
+  return <AdminLayoutClient>{children}</AdminLayoutClient>;
 }
