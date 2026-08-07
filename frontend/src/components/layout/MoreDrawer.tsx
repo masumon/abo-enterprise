@@ -44,9 +44,14 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
   const customerName = useCustomerStore((s) => s.session?.name);
   // Brand name + tagline shown in the header — admin-controlled (same settings
   // the rest of the site reads), falling back to the built-in bilingual brand.
-  const { settings } = usePublicSettings(["site_name", "site_tagline"]);
+  const { settings } = usePublicSettings(["site_name", "site_tagline_en", "site_tagline_bn", "site_tagline"]);
   const brandName = getSettingValue(settings, "site_name", getBrandName(lang));
-  const brandTagline = getSettingValue(settings, "site_tagline", getBrandTagline(lang));
+  // Language-specific tagline; falls back to the legacy single `site_tagline`
+  // key (if an admin set it before), then to the built-in bilingual default.
+  const brandTagline =
+    getSettingValue(settings, lang === "bn" ? "site_tagline_bn" : "site_tagline_en") ||
+    getSettingValue(settings, "site_tagline") ||
+    getBrandTagline(lang);
   const wishlistCount = useWishlistStore((s) => s.count());
   const compareCount = useCompareStore((s) => s.items.length);
   const [query, setQuery] = useState("");
