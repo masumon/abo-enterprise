@@ -113,7 +113,10 @@ export default function WhyChooseUsCards() {
           className="why-choose-swiper !pb-1"
         >
           {reasons.map((reason, i) => {
-            const Icon = ICONS[reason.icon ?? ""] ?? Shield;
+            // Known lucide name → icon component; anything else (an admin-picked
+            // emoji/text) renders literally; empty → Shield default.
+            const known = ICONS[reason.icon ?? ""];
+            const Icon = known ?? (reason.icon ? null : Shield);
             const { color, bgColor } = COLORS[i % COLORS.length];
             const title = lang === "bn" ? reason.title_bn || reason.title_en : reason.title_en || reason.title_bn;
             const desc = lang === "bn" ? reason.desc_bn || reason.desc_en : reason.desc_en || reason.desc_bn;
@@ -121,7 +124,11 @@ export default function WhyChooseUsCards() {
               <SwiperSlide key={`${reason.title_en || reason.title_bn}-${i}`} className="!h-auto">
                 <GlassCard hover className="h-full flex flex-col items-start gap-3 sm:gap-4 p-4 sm:p-6">
                   <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-xl ${bgColor} flex items-center justify-center`}>
-                    <Icon className={`w-5 h-5 sm:w-7 sm:h-7 ${color}`} aria-hidden />
+                    {Icon ? (
+                      <Icon className={`w-5 h-5 sm:w-7 sm:h-7 ${color}`} aria-hidden />
+                    ) : (
+                      <span className={`text-xl sm:text-2xl ${color}`} aria-hidden>{reason.icon}</span>
+                    )}
                   </div>
                   <div>
                     <h3 className="font-bold text-sm sm:text-lg text-heading mb-1 sm:mb-2">{title}</h3>
