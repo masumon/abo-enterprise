@@ -22,16 +22,24 @@ import { cn } from "@/lib/utils";
  * (GAP-07): it replaced Services, not Cart, because Cart carries committed
  * intent and a live badge.
  */
-// Matched to the top bar's action chips so the two bars read as one system:
-// every tab is a brand-tinted chip with the same ring (not the old alternating
-// brand/gold "rainbow"), and the ACTIVE tab becomes a solid brand chip that
-// lifts — echoing the top bar's solid brand account/cart button. Gold stays for
-// meaning only (cart badge, search "new" dot). Explicit strings so Tailwind
-// keeps them.
-const IDLE_ICON = "bg-brand-50 dark:bg-brand-500/15 ring-1 ring-brand-200/70 dark:ring-brand-400/25 text-brand-600 dark:text-brand-200";
-const ACTIVE_ICON = "bg-brand-600 text-white ring-1 ring-brand-700/40 shadow-md shadow-brand-500/25 -translate-y-0.5";
-const IDLE_LABEL = "text-brand-600/90 dark:text-brand-200/90 font-medium";
-const ACTIVE_LABEL = "text-brand-700 dark:text-brand-200 font-bold";
+// Per-tab colour, echoing the top bar's mixed brand + gold action chips so the
+// two bars read as one system — each tab keeps its own tint (brand or gold),
+// not a single uniform colour. The ACTIVE tab fills solid and lifts. Explicit
+// class strings (no interpolation) so Tailwind keeps them.
+const TAB_COLOR = {
+  brand: {
+    idle: "bg-brand-50 dark:bg-brand-500/15 ring-1 ring-brand-200/70 dark:ring-brand-400/25 text-brand-600 dark:text-brand-200",
+    active: "bg-brand-600 text-white ring-1 ring-brand-700/40 shadow-md shadow-brand-500/25 -translate-y-0.5",
+    labelIdle: "text-brand-600/90 dark:text-brand-200/90 font-medium",
+    labelActive: "text-brand-700 dark:text-brand-200 font-bold",
+  },
+  accent: {
+    idle: "bg-accent-50 dark:bg-accent-500/15 ring-1 ring-accent-200/70 dark:ring-accent-400/25 text-accent-600 dark:text-accent-300",
+    active: "bg-accent-500 text-[#14182b] ring-1 ring-accent-600/40 shadow-md shadow-accent-500/25 -translate-y-0.5",
+    labelIdle: "text-accent-700/90 dark:text-accent-300/90 font-medium",
+    labelActive: "text-accent-700 dark:text-accent-200 font-bold",
+  },
+} as const;
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
@@ -80,6 +88,7 @@ export default function MobileBottomNav() {
         {TABS.map((item) => {
           const Icon = item.icon;
           const active = isItemActive(item.href);
+          const c = TAB_COLOR[item.tint];
           return (
             <Link
               key={item.href}
@@ -87,13 +96,13 @@ export default function MobileBottomNav() {
               aria-current={active ? "page" : undefined}
               className={cn(
                 "relative min-h-[44px] flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 transition-colors",
-                active ? ACTIVE_LABEL : IDLE_LABEL
+                active ? c.labelActive : c.labelIdle
               )}
             >
               <span
                 className={cn(
                   "relative flex items-center justify-center w-10 h-8 rounded-xl transition-all",
-                  active ? ACTIVE_ICON : IDLE_ICON
+                  active ? c.active : c.idle
                 )}
               >
                 <Icon className="w-[18px] h-[18px]" strokeWidth={active ? 2.5 : 2} />
@@ -123,13 +132,13 @@ export default function MobileBottomNav() {
           aria-haspopup="dialog"
           className={cn(
             "min-h-[44px] flex flex-col items-center justify-center gap-0.5 px-1 py-1.5 transition-colors",
-            moreOpen ? ACTIVE_LABEL : IDLE_LABEL
+            moreOpen ? TAB_COLOR.brand.labelActive : TAB_COLOR.brand.labelIdle
           )}
         >
           <span
             className={cn(
               "flex items-center justify-center w-10 h-8 rounded-xl transition-all",
-              moreOpen ? ACTIVE_ICON : IDLE_ICON
+              moreOpen ? TAB_COLOR.brand.active : TAB_COLOR.brand.idle
             )}
           >
             <Menu className="w-[18px] h-[18px]" strokeWidth={moreOpen ? 2.5 : 2} />

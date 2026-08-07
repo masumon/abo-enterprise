@@ -925,3 +925,32 @@ class ComboItem(Base):
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
 
     combo: Mapped["Combo"] = relationship(back_populates="items")
+
+
+class DeliveryZone(Base):
+    """Admin-defined delivery rule for a set of districts (and, optionally,
+    specific upazilas). manual_sql/031.
+
+    Checkout matches the customer's district/upazila to the first active zone
+    (by sort_order) and uses its `charge`, with free delivery when the
+    subtotal-after-discount reaches `free_threshold` (0/NULL = never free). When
+    no zone matches, checkout falls back to the legacy settings-based 3-tier
+    charge, so existing behaviour is never lost.
+    """
+
+    __tablename__ = "delivery_zones"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name_en: Mapped[str] = mapped_column(String(120), nullable=False)
+    name_bn: Mapped[str] = mapped_column(String(120), nullable=False)
+    # District names this zone covers, and (optionally) the specific upazilas.
+    # An empty upazilas list means the whole district(s).
+    districts: Mapped[list] = mapped_column(JSON, default=list)
+    upazilas: Mapped[list] = mapped_column(JSON, default=list)
+    charge: Mapped[float] = mapped_column(Numeric(10, 2), default=0)
+    free_threshold: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
