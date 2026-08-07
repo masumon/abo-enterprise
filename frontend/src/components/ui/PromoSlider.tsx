@@ -11,7 +11,36 @@ import { promoSlidesApi } from "@/lib/api";
 import type { PromoSlide } from "@/types";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
+import { SITE_URL } from "@/lib/tokens";
 import AutoVideo from "@/components/ui/AutoVideo";
+
+/** The site's own host (no leading www), for same-origin link detection. */
+const SITE_HOST = (() => {
+  try { return new URL(SITE_URL).hostname.replace(/^www\./, ""); }
+  catch { return "aboenterprise.com"; }
+})();
+
+/**
+ * Resolve a slide's link to an in-app path when it points at our own site —
+ * even if the admin pasted the full URL (e.g. "www.aboenterprise.com/products").
+ * Those then navigate via <Link> in the same tab (fast, no full reload / black
+ * flash), while genuinely external links still open in a new tab.
+ * Returns null for an internal target (use `path`), or the raw url as external.
+ */
+function resolveSlideLink(raw?: string | null): { path: string | null; external: string | null } {
+  const url = (raw ?? "").trim();
+  if (!url) return { path: null, external: null };
+  if (url.startsWith("/")) return { path: url, external: null };            // already relative
+  if (url.startsWith("#")) return { path: url, external: null };            // in-page anchor
+  const withScheme = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+  try {
+    const u = new URL(withScheme);
+    if (u.hostname.replace(/^www\./, "") === SITE_HOST) {
+      return { path: (u.pathname || "/") + u.search + u.hash, external: null };
+    }
+  } catch { /* not a parseable URL — treat as external below */ }
+  return { path: null, external: url };
+}
 
 /**
  * A promo image that shows the site's loading spinner over a soft brand
@@ -139,17 +168,16 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
 
           return (
             <SwiperSlide key={slide.id}>
-              {slide.link_url ? (
-                slide.link_url.startsWith("/") ? (
-                  <Link href={slide.link_url} className="block">{body}</Link>
-                ) : (
-                  <a href={slide.link_url} target="_blank" rel="noopener noreferrer" className="block">
+              {(() => {
+                const { path, external } = resolveSlideLink(slide.link_url);
+                if (path) return <Link href={path} className="block">{body}</Link>;
+                if (external) return (
+                  <a href={external} target="_blank" rel="noopener noreferrer" className="block">
                     {body}
                   </a>
-                )
-              ) : (
-                body
-              )}
+                );
+                return body;
+              })()}
             </SwiperSlide>
           );
         })}
