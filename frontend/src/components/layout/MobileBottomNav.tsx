@@ -73,7 +73,7 @@ export default function MobileBottomNav() {
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 lg:hidden grid grid-cols-5 bg-white/85 dark:bg-[#141930]/92 backdrop-blur-xl border-t border-[var(--line)] shadow-[0_-4px_16px_rgba(20,24,43,0.06)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.3)]"
+        className="fixed inset-x-0 bottom-0 z-50 lg:hidden grid grid-cols-5 bg-white/85 dark:bg-[#141930]/90 backdrop-blur-xl border-t border-[var(--line)] shadow-[0_-4px_16px_rgba(20,24,43,0.06)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.3)]"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         aria-label={lang === "bn" ? "মোবাইল নেভিগেশন" : "Mobile navigation"}
       >
