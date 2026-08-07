@@ -310,7 +310,7 @@ export default function ProductsClient({
         Category, depth and sort moved into a bottom sheet; no state, handler or
         URL parameter changed.
       */}
-      <div className="sticky top-[var(--navbar-offset)] z-30 -mx-4 px-4 py-3 mb-3 bg-white/95 dark:bg-[var(--surface-card)]/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/10">
+      <div className="sticky top-[var(--navbar-offset)] z-30 -mx-4 px-4 py-3 mb-3 bg-white/95 dark:bg-[#141930]/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/10">
         <div className="flex items-center gap-2">
           <div className="relative flex-1 min-w-0">
             <label htmlFor="product-search" className="sr-only">

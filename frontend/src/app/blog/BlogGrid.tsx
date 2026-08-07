@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { BlogPost } from "@/types";
 import { useLanguageStore } from "@/store/language";
-import { resolveBlogImage } from "@/lib/demoImages";
+import { Newspaper } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 
 interface Props {
@@ -50,14 +50,28 @@ export default function BlogGrid({ posts, page, totalPages }: Props) {
               href={`/blog/${post.slug}`}
               className="group flex flex-col h-full enterprise-card overflow-hidden shadow-sm hover:shadow-md hover:border-brand-200 dark:hover:border-brand-500/30 transition-all"
             >
-              <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
-                <Image
-                  src={resolveBlogImage(post.featured_image_url)}
-                  alt={title}
-                  fill
-                  className="object-contain group-hover:scale-105 transition-transform duration-300"
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                />
+              <div className="relative aspect-video overflow-hidden">
+                {post.featured_image_url?.trim() ? (
+                  <div className="absolute inset-0 bg-gray-100 dark:bg-[#141930] flex items-center justify-center">
+                    <Image
+                      src={post.featured_image_url}
+                      alt={title}
+                      fill
+                      className="object-contain group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                    />
+                  </div>
+                ) : (
+                  /* Branded navy→gold panel instead of a stock image — same
+                     treatment as the service/software/project cards. */
+                  <div className="absolute inset-0 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 flex items-center justify-center overflow-hidden">
+                    <span aria-hidden className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-accent-500/15 blur-2xl" />
+                    <span aria-hidden className="absolute -bottom-5 -left-3 text-white/[0.06] font-black text-[6.5rem] leading-none select-none">{title.charAt(0)}</span>
+                    <span className="relative w-14 h-14 rounded-2xl bg-white/10 ring-1 ring-white/20 flex items-center justify-center">
+                      <Newspaper className="w-7 h-7 text-accent-400" aria-hidden />
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="flex flex-col flex-1 p-5">
                 {post.category && (
