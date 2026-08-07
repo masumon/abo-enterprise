@@ -169,7 +169,7 @@ export default async function BlogPostPage({
       <main className="min-h-screen">
         {/* Hero */}
         {post.featured_image_url ? (
-          <div className="relative w-full overflow-hidden bg-gray-100 dark:bg-gray-900 h-[min(480px,50vh)]">
+          <div className="relative w-full overflow-hidden bg-gray-100 dark:bg-[#141930] h-[min(480px,50vh)]">
             <Image
               src={post.featured_image_url}
               alt={post.title_en}

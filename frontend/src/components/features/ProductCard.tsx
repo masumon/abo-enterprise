@@ -13,7 +13,6 @@ import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
 import { formatPrice, discountPercent } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import { resolveProductImage } from "@/lib/demoImages";
 import Badge, { badgeVariantFromProduct } from "@/components/ui/Badge";
 import CountdownTimer, { getWeeklySaleEnd } from "@/components/ui/CountdownTimer";
 import { PaymentMethodBadges } from "@/components/ui/PaymentMethodBadge";
@@ -63,7 +62,17 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
   const rating = product.rating ?? 0;
   const reviewCount = product.review_count ?? 0;
   const alt = productAlt(product, lang);
-  const imageSrc = resolveProductImage(product.image_url, product.slug);
+  const hasImage = Boolean(product.image_url?.trim());
+  // Branded navy→gold panel when a product has no photo yet — same treatment as
+  // the service/software cards, instead of a mismatched stock image.
+  const imgPlaceholder = (
+    <div className="absolute inset-0 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 flex items-center justify-center overflow-hidden">
+      <span aria-hidden className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-accent-500/15 blur-2xl" />
+      <span className="relative w-11 h-11 rounded-xl bg-white/10 ring-1 ring-white/20 flex items-center justify-center">
+        <Package className="w-6 h-6 text-accent-400" aria-hidden />
+      </span>
+    </div>
+  );
 
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -119,7 +128,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
       <article className="card-hover group flex gap-4 p-4 relative">
         <Link href={`/products/${product.slug}`} className="absolute inset-0 z-0" aria-hidden tabIndex={-1} />
         <div className="relative w-28 aspect-square rounded-xl overflow-hidden bg-brand-50 flex-shrink-0 pointer-events-none">
-          <Image src={imageSrc} alt={alt} fill className="object-cover" sizes="112px" />
+          {hasImage ? <Image src={product.image_url!} alt={alt} fill className="object-cover" sizes="112px" /> : imgPlaceholder}
         </div>
         <div className="flex-1 min-w-0 relative z-10">
           {product.category && (
@@ -200,7 +209,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
         "relative bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-brand-900/40 overflow-hidden pointer-events-none",
         compact ? "aspect-square" : "aspect-[4/5] sm:aspect-square"
       )}>
-        <Image src={imageSrc} alt={alt} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 50vw, 25vw" />
+        {hasImage ? <Image src={product.image_url!} alt={alt} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 50vw, 25vw" /> : imgPlaceholder}
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2">
             <span className="bg-black/50 text-white text-xs font-bold px-3 py-1 rounded-full">{t("out_of_stock")}</span>

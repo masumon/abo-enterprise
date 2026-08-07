@@ -398,7 +398,7 @@ export default function ServicesPageClient({
         had to scroll past the whole taxonomy to type it. Search belongs where
         the page begins.
       */}
-      <div className="sticky top-[var(--navbar-offset)] z-30 bg-white/95 dark:bg-[var(--surface-card)]/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/10">
+      <div className="sticky top-[var(--navbar-offset)] z-30 bg-white/95 dark:bg-[#141930]/95 backdrop-blur-sm border-b border-gray-100 dark:border-white/10">
         <div className="container mx-auto px-4 max-w-6xl py-3 flex flex-row items-center gap-3">
           <form
             className="relative flex-1 min-w-0"
