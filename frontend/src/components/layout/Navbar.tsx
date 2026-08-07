@@ -68,7 +68,7 @@ export default function Navbar() {
     <header className="fixed top-[var(--announcement-height)] left-0 right-0 z-50">
       {/* ── Mobile header — artifact Screen 03 m-head ── */}
       <nav
-        className="lg:hidden flex items-center gap-2 px-3 min-h-[64px] bg-white/85 dark:bg-[#141930]/92 backdrop-blur-xl border-b border-[var(--line)] dark:border-[var(--line)] shadow-sm"
+        className="lg:hidden flex items-center gap-2 px-3 min-h-[64px] bg-white/85 dark:bg-[#141930]/90 backdrop-blur-xl border-b border-[var(--line)] dark:border-[var(--line)] shadow-sm"
         aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
       >
         {/* Bigger brand logo (admin-configurable via CMS logo URL). */}
