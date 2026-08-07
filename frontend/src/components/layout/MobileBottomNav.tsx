@@ -28,9 +28,9 @@ import { cn } from "@/lib/utils";
 // lifts — echoing the top bar's solid brand account/cart button. Gold stays for
 // meaning only (cart badge, search "new" dot). Explicit strings so Tailwind
 // keeps them.
-const IDLE_ICON = "bg-brand-50 dark:bg-brand-900/40 ring-1 ring-brand-200/70 dark:ring-brand-500/30 text-brand-600 dark:text-brand-300";
+const IDLE_ICON = "bg-brand-50 dark:bg-brand-500/15 ring-1 ring-brand-200/70 dark:ring-brand-400/25 text-brand-600 dark:text-brand-200";
 const ACTIVE_ICON = "bg-brand-600 text-white ring-1 ring-brand-700/40 shadow-md shadow-brand-500/25 -translate-y-0.5";
-const IDLE_LABEL = "text-brand-600/90 dark:text-brand-300/90 font-medium";
+const IDLE_LABEL = "text-brand-600/90 dark:text-brand-200/90 font-medium";
 const ACTIVE_LABEL = "text-brand-700 dark:text-brand-200 font-bold";
 
 export default function MobileBottomNav() {
@@ -73,7 +73,7 @@ export default function MobileBottomNav() {
   return (
     <>
       <nav
-        className="fixed inset-x-0 bottom-0 z-50 lg:hidden grid grid-cols-5 bg-white/85 dark:bg-[var(--surface-card)]/85 backdrop-blur-xl border-t border-[var(--line)] shadow-[0_-4px_16px_rgba(20,24,43,0.06)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.3)]"
+        className="fixed inset-x-0 bottom-0 z-50 lg:hidden grid grid-cols-5 bg-white/85 dark:bg-[#141930]/92 backdrop-blur-xl border-t border-[var(--line)] shadow-[0_-4px_16px_rgba(20,24,43,0.06)] dark:shadow-[0_-4px_16px_rgba(0,0,0,0.3)]"
         style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         aria-label={lang === "bn" ? "মোবাইল নেভিগেশন" : "Mobile navigation"}
       >
