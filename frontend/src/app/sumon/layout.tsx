@@ -22,6 +22,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setDark(localStorage.getItem("abo_admin_theme") === "dark");
   }, []);
 
+  // Point the PWA manifest at the admin app while inside /sumon, so installing
+  // from here installs the ADMIN panel (start_url /sumon) as its own app —
+  // separate from the customer app. Restored on leaving the admin.
+  useEffect(() => {
+    const head = document.head;
+    let link = head.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
+    const prev = link?.getAttribute("href") ?? null;
+    if (!link) { link = document.createElement("link"); link.rel = "manifest"; head.appendChild(link); }
+    link.setAttribute("href", "/admin.webmanifest");
+    return () => { link?.setAttribute("href", prev ?? "/manifest.webmanifest"); };
+  }, []);
+
   // Per-page browser tab title — every admin page used to share the site title.
   useEffect(() => {
     if (pathname !== "/sumon/login") {
