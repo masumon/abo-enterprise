@@ -828,6 +828,43 @@ export const promoSlidesApi = {
   delete: (id: string) => api.delete<ApiResponse<null>>(`/api/v1/promo-slides/admin/${id}`),
 };
 
+export interface ComboItemT {
+  product_id: string;
+  quantity: number;
+  name_en?: string;
+  name_bn?: string;
+  slug?: string;
+  image_url?: string | null;
+  price?: number;
+}
+export interface Combo {
+  id: string;
+  slug: string;
+  title_en: string;
+  title_bn: string;
+  description_en?: string | null;
+  description_bn?: string | null;
+  image_url?: string | null;
+  combo_price: number;
+  compare_at_price?: number | null;
+  badge_en?: string | null;
+  badge_bn?: string | null;
+  free_delivery: boolean;
+  sort_order: number;
+  is_active: boolean;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  items: ComboItemT[];
+}
+
+export const combosApi = {
+  list: () => api.get<ApiResponse<Combo[]>>("/api/v1/combos"),
+  adminList: () => api.get<ApiResponse<Combo[]>>("/api/v1/combos/admin/all"),
+  create: (data: Partial<Combo>) => api.post<ApiResponse<Combo>>("/api/v1/combos", data),
+  update: (id: string, data: Partial<Combo>) => api.put<ApiResponse<Combo>>(`/api/v1/combos/${id}`, data),
+  delete: (id: string) => api.delete<ApiResponse<null>>(`/api/v1/combos/${id}`),
+};
+
 export interface AdminCoupon {
   id: string;
   code: string;
