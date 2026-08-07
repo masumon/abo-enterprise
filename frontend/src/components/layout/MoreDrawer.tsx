@@ -5,13 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Search, ChevronRight, X, Store, GitCompare, Heart, Wrench, Calendar,
-  Package, User, LogIn,
+  Package, User, LogIn, MessageCircle, Phone, Globe, ChevronRight as Arrow,
 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useCustomerStore } from "@/store/customer";
 import { useWishlistStore } from "@/store/wishlist";
 import { useCompareStore } from "@/store/compare";
-import { cn } from "@/lib/utils";
+import { cn, WHATSAPP_NUMBER } from "@/lib/utils";
+import BrandLogo from "@/components/ui/BrandLogo";
 
 /**
  * The More drawer from screen 03. Four groups, fixed in both signed-in and
@@ -35,9 +36,10 @@ interface Row {
 }
 
 export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const { lang } = useLanguageStore();
+  const { lang, toggle: toggleLang } = useLanguageStore();
   const router = useRouter();
   const isLoggedIn = useCustomerStore((s) => s.isLoggedIn());
+  const customerName = useCustomerStore((s) => s.session?.name);
   const wishlistCount = useWishlistStore((s) => s.count());
   const compareCount = useCompareStore((s) => s.items.length);
   const [query, setQuery] = useState("");
@@ -132,11 +134,15 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
       />
       <div
         ref={panelRef}
-        className="absolute inset-y-0 left-0 h-full w-[85%] max-w-[340px] overflow-y-auto rounded-r-2xl bg-white dark:bg-[var(--surface-card)] shadow-2xl motion-safe:animate-slide-in-left"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 16px)" }}
+        className="absolute inset-y-0 left-0 h-full w-[85%] max-w-[340px] overflow-y-auto rounded-r-2xl bg-white dark:bg-[var(--surface-card)] shadow-2xl motion-safe:animate-slide-in-left flex flex-col"
       >
-        <div className="sticky top-0 z-10 flex items-center gap-2 px-4 py-4 gradient-brand">
-          <p className="flex-1 font-bold text-white text-lg">{t({ en: "More", bn: "আরও" })}</p>
+        {/* Brand header — gives the sheet an identity instead of a bare word. */}
+        <div className="sticky top-0 z-10 flex items-center gap-2.5 px-4 py-3.5 gradient-brand">
+          <BrandLogo size="sm" href={false} variant="light" />
+          <div className="flex-1 min-w-0 leading-tight">
+            <p className="font-bold text-white text-[15px] truncate">ABO Enterprise</p>
+            <p className="text-white/70 text-[11px] truncate">{t({ en: "Simple Solutions", bn: "সহজ সমাধান" })}</p>
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -145,6 +151,37 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
           >
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        {/* Account chip — signed-in identity, or a clear way in. */}
+        <div className="px-4 pt-3">
+          {isLoggedIn ? (
+            <Link
+              href="/profile"
+              onClick={onClose}
+              className="flex items-center gap-3 p-3 rounded-xl bg-brand-50 dark:bg-brand-500/15 border border-brand-100 dark:border-brand-500/25"
+            >
+              <span className="w-10 h-10 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold flex-shrink-0">
+                {(customerName || "A").charAt(0).toUpperCase()}
+              </span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-sm font-bold text-heading truncate">{customerName || t({ en: "My account", bn: "আমার অ্যাকাউন্ট" })}</span>
+                <span className="block text-[11px] text-muted">{t({ en: "View account", bn: "অ্যাকাউন্ট দেখুন" })}</span>
+              </span>
+              <Arrow className="w-4 h-4 text-muted flex-shrink-0" aria-hidden />
+            </Link>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link href="/login" onClick={onClose} className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-accent-500 text-white text-sm font-bold hover:bg-accent-600 transition-colors">
+                <LogIn className="w-4 h-4" aria-hidden />
+                {t({ en: "Sign in", bn: "সাইন ইন" })}
+              </Link>
+              <Link href="/track" onClick={onClose} className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-brand-200 dark:border-brand-500/30 text-brand-700 dark:text-brand-300 text-sm font-semibold">
+                <Package className="w-4 h-4" aria-hidden />
+                {t({ en: "Track", bn: "ট্র্যাক" })}
+              </Link>
+            </div>
+          )}
         </div>
 
         <form
@@ -213,6 +250,46 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
             </ul>
           </section>
         ))}
+
+        {/* Footer — quick contact + language, with clearance above the bottom
+            nav so the last list rows are no longer cut off underneath it. */}
+        <div
+          className="mt-4 border-t border-[var(--line)] px-4 pt-3"
+          style={{ paddingBottom: "calc(var(--mobile-chrome-bottom, 16px) + 1rem)" }}
+        >
+          <div className="grid grid-cols-3 gap-2">
+            <a
+              href={`https://wa.me/${WHATSAPP_NUMBER}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onClose}
+              className="flex flex-col items-center gap-1 py-2.5 rounded-xl bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400"
+            >
+              <MessageCircle className="w-5 h-5" aria-hidden />
+              <span className="text-[10px] font-semibold">WhatsApp</span>
+            </a>
+            <a
+              href={`tel:+${WHATSAPP_NUMBER}`}
+              onClick={onClose}
+              className="flex flex-col items-center gap-1 py-2.5 rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-300"
+            >
+              <Phone className="w-5 h-5" aria-hidden />
+              <span className="text-[10px] font-semibold">{t({ en: "Call", bn: "কল" })}</span>
+            </a>
+            <button
+              type="button"
+              onClick={toggleLang}
+              className="flex flex-col items-center gap-1 py-2.5 rounded-xl bg-accent-50 dark:bg-accent-500/10 text-accent-700 dark:text-accent-300"
+              aria-label={t({ en: "Switch language", bn: "ভাষা বদলান" })}
+            >
+              <Globe className="w-5 h-5" aria-hidden />
+              <span className="text-[10px] font-semibold">{lang === "bn" ? "English" : "বাংলা"}</span>
+            </button>
+          </div>
+          <p className="text-center text-[10px] text-muted mt-3">
+            © {new Date().getFullYear()} ABO Enterprise
+          </p>
+        </div>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@ from app.core.taxonomy import descendant_ids_for_slug
 from app.models.models import Product, ActivityLog
 from app.schemas.schemas import ProductCreate, ProductUpdate, ProductOut, ApiResponse, PaginatedResponse, PaginatedMeta
 from app.core.blog_links import set_blogs_for_product, get_blog_ids_for_product
+from app.core.search import build_search_condition
 
 router = APIRouter(prefix="/products", tags=["products"])
 
@@ -64,8 +65,19 @@ async def list_products(
             ),
         ])
     if search:
-        term = f"%{search}%"
-        conditions.append(or_(Product.name_en.ilike(term), Product.name_bn.ilike(term)))
+        # Widened well beyond the two name columns (and bilingual/transliterated)
+        # so "anything related" surfaces — name, description, category, brand, SKU.
+        cond = build_search_condition(
+            [
+                Product.name_en, Product.name_bn,
+                Product.description_en, Product.description_bn,
+                Product.category, Product.sub_category,
+                Product.brand, Product.sku,
+            ],
+            search,
+        )
+        if cond is not None:
+            conditions.append(cond)
 
     if sort_by == "price_asc":
         order_clause = Product.price.asc()

@@ -23,7 +23,11 @@ export default function AuthSplitLayout({ children, title, subtitle, badge }: Au
   const bgIsVideo = isVideoUrl(bgUrl);
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 -mt-[var(--navbar-offset)] relative overflow-hidden">
+    // Desktop keeps the full-bleed split (pulled under the fixed navbar). On
+    // mobile the bottom nav is present, so the card is centred in the REAL gap
+    // between the top bar and the bottom nav — not in the whole 100vh, which
+    // left it sitting high and half-hidden behind the bottom nav.
+    <div className="grid lg:grid-cols-2 relative overflow-hidden min-h-[calc(100dvh-var(--navbar-offset)-var(--mobile-chrome-bottom))] lg:min-h-screen lg:-mt-[var(--navbar-offset)]">
       {/* Admin-managed background (image / animated / video). Falls back to the
           brand gradient when unset. Dark overlay keeps the form legible. */}
       {bgUrl && (

@@ -9,6 +9,7 @@ from app.core.taxonomy import descendant_ids_for_slug
 from app.core.json_util import to_json_safe
 from app.core.security import require_role
 from app.core.blog_links import set_blogs_for_service, get_blog_ids_for_service
+from app.core.search import build_search_condition
 from app.models.models import (
     Service,
     ServicePricingTier,
@@ -132,18 +133,20 @@ async def list_services(
     if featured is not None:
         conditions.append(Service.is_featured == featured)
     if search:
-        term = f"%{search}%"
-        # Widened beyond the two name columns so a customer searching for what a
-        # service *does* ("passport", "firmware") finds it, not only its exact title.
-        conditions.append(
-            or_(
-                Service.name_en.ilike(term),
-                Service.name_bn.ilike(term),
-                Service.short_description_en.ilike(term),
-                Service.short_description_bn.ilike(term),
-                Service.description_en.ilike(term),
-            )
+        # Widened beyond the two name columns (and bilingual/transliterated) so a
+        # customer searching for what a service *does* ("passport", "firmware")
+        # finds it, not only its exact title.
+        cond = build_search_condition(
+            [
+                Service.name_en, Service.name_bn,
+                Service.short_description_en, Service.short_description_bn,
+                Service.description_en, Service.description_bn,
+                Service.category,
+            ],
+            search,
         )
+        if cond is not None:
+            conditions.append(cond)
 
     query = select(Service).where(and_(*conditions)).options(
         selectinload(Service.pricing_tiers), selectinload(Service.booking_forms)

@@ -144,6 +144,9 @@ export default function TrackingPage() {
   };
   const statusMap = tracking?.kind === "booking" ? BOOKING_STATUS_LABEL : ORDER_STATUS_LABEL;
   const status = tracking ? statusMap[tracking.status] : null;
+  // Nothing being tracked yet → centre the search box in the empty space with a
+  // premium header, instead of leaving it stranded at the top-left.
+  const isIdle = !loading && !error && !tracking;
 
   return (
     <main>
@@ -155,31 +158,48 @@ export default function TrackingPage() {
       />
 
       <section className="enterprise-section">
-        <div className="container mx-auto px-4 max-w-3xl">
+        <div className={cn("container mx-auto px-4 max-w-3xl", isIdle && "min-h-[60vh] flex flex-col justify-center")}>
           {/* Search form — always available so a customer can look up an order
               or booking by typing its number (previously this page only worked
               when arriving from a link with the number already in the URL). */}
-          <form onSubmit={submitSearch} className="enterprise-card p-4 sm:p-5 mb-6">
-            <label className="block text-sm font-semibold text-heading mb-2">
-              {t("Enter your order or booking number", "আপনার অর্ডার বা বুকিং নম্বর লিখুন")}
-            </label>
-            <div className="flex flex-col sm:flex-row gap-2.5">
-              <input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={t("e.g. ABO-202608-AB12CD", "যেমন ABO-202608-AB12CD")}
-                className="input flex-1"
-                aria-label={t("Order or booking number", "অর্ডার বা বুকিং নম্বর")}
-              />
-              <button type="submit" disabled={loading || !input.trim()} className="btn btn-primary btn-md gap-2 sm:w-auto">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                {t("Track", "ট্র্যাক করুন")}
-              </button>
-            </div>
-            <p className="text-xs text-muted mt-2">
-              {t("You'll find this number in your order/booking confirmation.", "এই নম্বরটি আপনার অর্ডার/বুকিং কনফার্মেশনে পাবেন।")}
-            </p>
-          </form>
+          <div className={cn(isIdle && "w-full max-w-md mx-auto")}>
+            {isIdle && (
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-brand-600 to-brand-800 flex items-center justify-center shadow-lg shadow-brand-900/20">
+                  <Package className="w-8 h-8 text-white" aria-hidden />
+                </div>
+                <h2 className="text-xl font-bold text-heading">
+                  {t("Track your order or booking", "আপনার অর্ডার বা বুকিং ট্র্যাক করুন")}
+                </h2>
+                <p className="text-sm text-muted mt-1">
+                  {t("Enter the number to see live status.", "লাইভ স্ট্যাটাস দেখতে নম্বরটি লিখুন।")}
+                </p>
+              </div>
+            )}
+            <form onSubmit={submitSearch} className={cn("enterprise-card p-4 sm:p-5", !isIdle && "mb-6")}>
+              {!isIdle && (
+                <label className="block text-sm font-semibold text-heading mb-2">
+                  {t("Enter your order or booking number", "আপনার অর্ডার বা বুকিং নম্বর লিখুন")}
+                </label>
+              )}
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={t("e.g. ABO-202608-AB12CD", "যেমন ABO-202608-AB12CD")}
+                  className="input flex-1 text-center sm:text-left"
+                  aria-label={t("Order or booking number", "অর্ডার বা বুকিং নম্বর")}
+                />
+                <button type="submit" disabled={loading || !input.trim()} className="btn btn-primary btn-md gap-2 sm:w-auto">
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  {t("Track", "ট্র্যাক করুন")}
+                </button>
+              </div>
+              <p className={cn("text-xs text-muted mt-2", isIdle && "text-center")}>
+                {t("You'll find this number in your order/booking confirmation.", "এই নম্বরটি আপনার অর্ডার/বুকিং কনফার্মেশনে পাবেন।")}
+              </p>
+            </form>
+          </div>
 
           {loading && (
             <div className="enterprise-card p-8 text-center">
