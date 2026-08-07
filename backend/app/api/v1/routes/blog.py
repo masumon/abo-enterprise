@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
+from app.core.search import build_search_condition
 from app.core.security import require_role, require_admin
 from app.core.blog_links import (
     set_products_for_blog,
@@ -148,6 +149,7 @@ async def list_posts(
     per_page: int = Query(10, ge=1, le=50),
     category: str | None = None,
     featured: bool | None = None,
+    search: str | None = Query(None),
 ):
     """List published blog posts (public)"""
     base_filter = and_(BlogPost.is_deleted == False, BlogPost.status == "published")
@@ -157,12 +159,26 @@ async def list_posts(
         query = query.where(BlogPost.category == category)
     if featured is not None:
         query = query.where(BlogPost.is_featured == featured)
+    # Server-side search (bilingual + transliterated) so /search finds posts
+    # across ALL published articles, not just the latest page the client held.
+    search_cond = build_search_condition(
+        [
+            BlogPost.title_en, BlogPost.title_bn,
+            BlogPost.excerpt_en, BlogPost.excerpt_bn,
+            BlogPost.slug, BlogPost.category,
+        ],
+        search or "",
+    )
+    if search_cond is not None:
+        query = query.where(search_cond)
 
     count_query = select(func.count(BlogPost.id)).where(base_filter)
     if category:
         count_query = count_query.where(BlogPost.category == category)
     if featured is not None:
         count_query = count_query.where(BlogPost.is_featured == featured)
+    if search_cond is not None:
+        count_query = count_query.where(search_cond)
 
     count_result = await db.execute(count_query)
     total = count_result.scalar() or 0

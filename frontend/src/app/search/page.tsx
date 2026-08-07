@@ -12,7 +12,7 @@ import { WHATSAPP_NUMBER } from "@/lib/utils";
 import PageHero from "@/components/ui/PageHero";
 
 interface Result {
-  type: "product" | "service" | "blog";
+  type: "product" | "service" | "blog" | "category";
   id: string;
   title: string;
   subtitle: string;
@@ -26,21 +26,65 @@ interface Result {
 
 async function searchBlog(query: string): Promise<BlogPost[]> {
   try {
-    const params = new URLSearchParams({ per_page: "50" });
+    // The blog list now searches server-side (bilingual + transliterated), so we
+    // trust its results rather than re-filtering here — a client `includes(q)`
+    // pass would drop the very cross-language matches the server just found.
+    const params = new URLSearchParams({ per_page: "20" });
     if (query.trim()) params.append("search", query);
     const res = await fetch(`${getApiBaseUrl()}/api/v1/blog?${params}`, {
       signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) return [];
     const json = await res.json();
-    const posts = (json.data ?? []) as BlogPost[];
+    return ((json.data ?? []) as BlogPost[]).slice(0, 12);
+  } catch {
+    return [];
+  }
+}
+
+interface CategoryNode {
+  id?: string;
+  slug: string;
+  name_en?: string;
+  name_bn?: string;
+  applies_to?: string[];
+  subcategories?: CategoryNode[];
+}
+
+/** Categories match by name in either language (both are always stored, so no
+ * transliteration is needed here). Links to the matching product/service list. */
+async function searchCategories(query: string, lang: string): Promise<Result[]> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/categories`, {
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) return [];
+    const json = await res.json();
+    const flat: CategoryNode[] = [];
+    const walk = (nodes: CategoryNode[] = []) => {
+      for (const n of nodes) {
+        flat.push(n);
+        if (n.subcategories?.length) walk(n.subcategories);
+      }
+    };
+    walk(json.data ?? []);
     const q = query.toLowerCase();
-    return posts
-      .filter((p) => {
-        const hay = `${p.title_en ?? ""} ${p.title_bn ?? ""} ${p.excerpt_en ?? ""} ${p.excerpt_bn ?? ""} ${p.content_en ?? ""} ${(p.tags ?? []).join(" ")}`.toLowerCase();
-        return hay.includes(q);
-      })
-      .slice(0, 6);
+    return flat
+      .filter((c) => `${c.name_en ?? ""} ${c.name_bn ?? ""} ${c.slug}`.toLowerCase().includes(q))
+      .slice(0, 8)
+      .map((c) => {
+        const isService =
+          Array.isArray(c.applies_to) &&
+          c.applies_to.includes("service") &&
+          !c.applies_to.includes("product");
+        return {
+          type: "category" as const,
+          id: c.id ?? c.slug,
+          title: (lang === "bn" && c.name_bn ? c.name_bn : c.name_en) || c.slug,
+          subtitle: isService ? (lang === "bn" ? "ক্যাটাগরি · সেবা" : "Category · Services") : (lang === "bn" ? "ক্যাটাগরি · পণ্য" : "Category · Products"),
+          href: `${isService ? "/services" : "/products"}?category_slug=${c.slug}`,
+        };
+      });
   } catch {
     return [];
   }
@@ -97,7 +141,7 @@ function toResults(products: Product[], services: Service[], posts: BlogPost[], 
   return items;
 }
 
-type TypeFilter = "all" | "product" | "service" | "blog";
+type TypeFilter = "all" | "product" | "service" | "blog" | "category";
 
 function HighlightMatch({ text, query }: { text: string; query: string }) {
   if (!query.trim()) return <>{text}</>;
@@ -129,6 +173,7 @@ function SearchResults() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
   const coreRef = useRef<Result[]>([]);
   const blogRef = useRef<Result[]>([]);
+  const catRef = useRef<Result[]>([]);
 
   useEffect(() => {
     if (!q.trim()) {
@@ -141,9 +186,11 @@ function SearchResults() {
     setTypeFilter("all");
     coreRef.current = [];
     blogRef.current = [];
+    catRef.current = [];
     let active = true;
 
-    const searchParams = { search: q, per_page: 6 };
+    const merge = () => setResults([...catRef.current, ...coreRef.current, ...blogRef.current]);
+    const searchParams = { search: q, per_page: 20 };
 
     Promise.all([
       peekCachedProducts(searchParams),
@@ -152,7 +199,7 @@ function SearchResults() {
       if (!active) return;
       if (prodCache || svcCache) {
         coreRef.current = toResults(prodCache?.products ?? [], svcCache?.services ?? [], [], lang);
-        setResults([...coreRef.current, ...blogRef.current]);
+        merge();
         setFromCache(true);
         setLoading(false);
       }
@@ -166,7 +213,7 @@ function SearchResults() {
       const products = prod.status === "fulfilled" ? prod.value.products : [];
       const services = svc.status === "fulfilled" ? svc.value.services : [];
       coreRef.current = toResults(products, services, [], lang);
-      setResults([...coreRef.current, ...blogRef.current]);
+      merge();
       setFromCache(
         (prod.status === "fulfilled" && prod.value.source === "cache") ||
         (svc.status === "fulfilled" && svc.value.source === "cache")
@@ -177,25 +224,32 @@ function SearchResults() {
     searchBlog(q).then((posts) => {
       if (!active) return;
       blogRef.current = toResults([], [], posts, lang);
-      setResults([...coreRef.current, ...blogRef.current]);
+      merge();
       setBlogLoading(false);
     }).catch(() => {
       if (!active) return;
       setBlogLoading(false);
     });
 
+    searchCategories(q, lang).then((cats) => {
+      if (!active) return;
+      catRef.current = cats;
+      merge();
+    }).catch(() => {});
+
     return () => {
       active = false;
     };
   }, [q, lang]);
 
+  const categoryResults = results.filter((r) => r.type === "category");
   const productResults = results.filter((r) => r.type === "product");
   const serviceResults = results.filter((r) => r.type === "service");
   const blogResults = results.filter((r) => r.type === "blog");
   const filtered = typeFilter === "all" ? results : results.filter((r) => r.type === typeFilter);
   const total = results.length;
 
-  const TYPE_EMOJI: Record<string, string> = { product: "📦", service: "🧾", blog: "📝" };
+  const TYPE_EMOJI: Record<string, string> = { product: "📦", service: "🧾", blog: "📝", category: "🗂️" };
 
   const title = q
     ? lang === "bn" ? `"${q}" এর ফলাফল` : `Results for "${q}"`
@@ -237,6 +291,7 @@ function SearchResults() {
           <div className="flex gap-1.5 px-3 py-2 overflow-x-auto scrollbar-hide">
             {([
               { key: "all" as TypeFilter, label: lang === "bn" ? `সব ${total}` : `All ${total}` },
+              ...(categoryResults.length > 0 ? [{ key: "category" as TypeFilter, label: lang === "bn" ? `ক্যাটাগরি ${categoryResults.length}` : `Categories ${categoryResults.length}` }] : []),
               ...(productResults.length > 0 ? [{ key: "product" as TypeFilter, label: lang === "bn" ? `পণ্য ${productResults.length}` : `Products ${productResults.length}` }] : []),
               ...(serviceResults.length > 0 ? [{ key: "service" as TypeFilter, label: lang === "bn" ? `সেবা ${serviceResults.length}` : `Services ${serviceResults.length}` }] : []),
               ...(blogResults.length > 0 ? [{ key: "blog" as TypeFilter, label: lang === "bn" ? `ব্লগ ${blogResults.length}` : `Blog ${blogResults.length}` }] : []),
@@ -297,6 +352,28 @@ function SearchResults() {
           ) : typeFilter === "all" ? (
             <>
               {/* Grouped by type — artifact layout */}
+              {categoryResults.length > 0 && (
+                <div className="pt-3">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--ink-muted)] mb-1.5">
+                    {lang === "bn" ? `ক্যাটাগরি · ${categoryResults.length}` : `Categories · ${categoryResults.length}`}
+                  </p>
+                  <div className="divide-y divide-[var(--line)]">
+                    {categoryResults.map((r) => (
+                      <Link key={r.id} href={r.href} className="flex items-center gap-3 py-3 min-h-[44px]">
+                        <span className="w-[42px] h-[42px] rounded-lg bg-gradient-to-br from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/20 flex-none flex items-center justify-center text-sm" aria-hidden>
+                          {TYPE_EMOJI.category}
+                        </span>
+                        <span className="flex-1 min-w-0">
+                          <span className="block text-[13px] font-semibold text-[var(--ink)] truncate">
+                            <HighlightMatch text={r.title} query={q} />
+                          </span>
+                          <span className="block text-[11px] text-[var(--ink-muted)] truncate">{r.subtitle}</span>
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
               {productResults.length > 0 && (
                 <div className="pt-3">
                   <p className="text-[11px] font-bold uppercase tracking-[0.08em] text-[var(--ink-muted)] mb-1.5">
