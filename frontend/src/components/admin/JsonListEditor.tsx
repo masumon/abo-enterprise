@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Plus, Trash2, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
 import LivePreview from "@/components/admin/LivePreview";
+import TranslateButton from "@/components/admin/TranslateButton";
 import { useLanguageStore } from "@/store/language";
 import { ADMIN_ICON_OPTIONS, ADMIN_EMOJI_OPTIONS, AdminIcon } from "@/lib/adminIcons";
 
@@ -14,6 +15,9 @@ export interface JsonListField {
   type?: "text" | "number" | "textarea" | "image" | "icon";
   placeholder?: string;
   hint?: string;
+  /** When set, this English field shows a "→ English" button that translates
+   * the sibling Bangla field at this dotted path (e.g. "title_bn"). */
+  translateFrom?: string;
 }
 
 /** Visual icon + emoji picker so a non-technical admin never types a name. */
@@ -170,7 +174,12 @@ export default function JsonListEditor({ value, onChange, fields, newItem, mapKe
               const val = raw == null ? "" : String(raw);
               return (
                 <label key={f.path} className={`block ${f.type === "image" || f.type === "textarea" || f.type === "icon" ? "sm:col-span-2" : ""}`}>
-                  <span className="block text-[11px] text-gray-500 mb-0.5">{lang === "bn" && f.labelBn ? f.labelBn : f.label}{f.hint ? <em className="text-gray-400 not-italic"> · {f.hint}</em> : null}</span>
+                  <span className="flex items-center justify-between gap-2 text-[11px] text-gray-500 mb-0.5">
+                    <span>{lang === "bn" && f.labelBn ? f.labelBn : f.label}{f.hint ? <em className="text-gray-400 not-italic"> · {f.hint}</em> : null}</span>
+                    {f.translateFrom ? (
+                      <TranslateButton bn={(() => { const s = getPath(item, f.translateFrom!); return s == null ? "" : String(s); })()} onResult={(en) => update(i, f.path, en)} />
+                    ) : null}
+                  </span>
                   {f.type === "icon" ? (
                     <IconPicker value={val} onChange={(v) => update(i, f.path, v)} />
                   ) : f.type === "image" ? (
