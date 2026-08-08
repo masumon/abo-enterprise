@@ -865,6 +865,26 @@ export const combosApi = {
   delete: (id: string) => api.delete<ApiResponse<null>>(`/api/v1/combos/${id}`),
 };
 
+export interface DeliveryZone {
+  id: string;
+  name_en: string;
+  name_bn: string;
+  districts: string[];
+  upazilas: string[];
+  charge: number;
+  free_threshold: number | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
+export const deliveryZonesApi = {
+  list: () => api.get<ApiResponse<DeliveryZone[]>>("/api/v1/delivery-zones"),
+  adminList: () => api.get<ApiResponse<DeliveryZone[]>>("/api/v1/delivery-zones/admin/all"),
+  create: (data: Partial<DeliveryZone>) => api.post<ApiResponse<DeliveryZone>>("/api/v1/delivery-zones", data),
+  update: (id: string, data: Partial<DeliveryZone>) => api.put<ApiResponse<DeliveryZone>>(`/api/v1/delivery-zones/${id}`, data),
+  delete: (id: string) => api.delete<ApiResponse<null>>(`/api/v1/delivery-zones/${id}`),
+};
+
 export interface AdminCoupon {
   id: string;
   code: string;

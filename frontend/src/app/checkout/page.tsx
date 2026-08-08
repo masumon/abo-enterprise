@@ -16,7 +16,7 @@ import { trackEvent } from "@/components/analytics/GoogleAnalytics";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
 import { cn, formatPrice } from "@/lib/utils";
-import { ordersApi, productsApi, customerOtpApi, paymentsApi } from "@/lib/api";
+import { ordersApi, productsApi, customerOtpApi, paymentsApi, deliveryZonesApi, type DeliveryZone } from "@/lib/api";
 import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
@@ -132,6 +132,9 @@ export default function CheckoutPage() {
   const [otpResendIn, setOtpResendIn] = useState(0);
   const [copiedAcct, setCopiedAcct] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("BD");
+  // Admin-defined delivery zones (optional). Empty → calcDeliveryCharge falls
+  // back to the legacy settings-based 3-tier charge, so checkout never breaks.
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
   // Set before clearCart() so the empty-cart redirect below can't hijack the
   // navigation to /order-success (a race customers hit on slower devices).
   const orderPlacedRef = useRef(false);
@@ -156,6 +159,14 @@ export default function CheckoutPage() {
   const { upazilaOptions } = useDistrictUpazila(selectedDistrict, selectedUpazila, (v) =>
     setValue("upazila", v)
   );
+
+  useEffect(() => {
+    let active = true;
+    deliveryZonesApi.list()
+      .then((r) => { if (active) setDeliveryZones(r.data.data ?? []); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (paymentOptions.length && !paymentOptions.some((p) => p.gateway === selectedGateway)) {
@@ -220,7 +231,7 @@ export default function CheckoutPage() {
   const discount = appliedCoupon?.discountAmount ?? 0;
   const afterDiscount = subtotal - discount;
   const maxProductCharge = items.reduce((m, i) => Math.max(m, Number(i.delivery_charge) || 0), 0);
-  const deliveryCharge = calcDeliveryCharge(selectedDistrict || "Sylhet", afterDiscount, settings, maxProductCharge);
+  const deliveryCharge = calcDeliveryCharge(selectedDistrict || "Sylhet", afterDiscount, settings, maxProductCharge, { upazila: selectedUpazila, zones: deliveryZones });
   const advanceCharge = calcAdvanceCharge(items, settings);
   const cartTotal = afterDiscount + deliveryCharge;
 

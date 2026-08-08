@@ -1,16 +1,32 @@
 import { isSylhetArea } from "@/lib/bdDistricts";
 import { getSettingValue } from "@/hooks/usePublicSettings";
 import { generateWhatsAppOrderMessage } from "@/lib/utils";
+import type { DeliveryZone } from "@/lib/api";
 
 export function calcDeliveryCharge(
   district: string,
   subtotalAfterDiscount: number,
   settings: Record<string, string>,
   /** Highest per-product delivery override in the cart (0 = none). */
-  maxProductCharge = 0
+  maxProductCharge = 0,
+  /** Admin-defined zones (public list) + the customer's upazila. */
+  opts?: { upazila?: string; zones?: DeliveryZone[] }
 ): number {
-  // Free delivery is a Sylhet-only promise above the threshold — outside Sylhet
-  // always pays the zone charge, no matter the order size.
+  // 1) Admin-defined delivery zones take precedence. The first active zone whose
+  // districts include this district — and, when the zone lists upazilas, whose
+  // upazilas include the customer's — decides the charge. free_threshold > 0
+  // grants free delivery at or above that subtotal.
+  const upazila = opts?.upazila?.trim();
+  for (const z of opts?.zones ?? []) {
+    if (!z.is_active) continue;
+    if (!z.districts?.includes(district)) continue;
+    if (z.upazilas?.length && !(upazila && z.upazilas.includes(upazila))) continue;
+    if (z.free_threshold && z.free_threshold > 0 && subtotalAfterDiscount >= z.free_threshold) return 0;
+    return Math.max(z.charge || 0, maxProductCharge || 0);
+  }
+
+  // 2) Fallback — legacy settings-based 3-tier (unchanged). Free delivery is a
+  // Sylhet-only promise above the threshold; outside Sylhet always pays.
   const isSylhet = isSylhetArea(district);
   const freeMin = parseFloat(getSettingValue(settings, "free_delivery_min_amount") || "2000");
   if (isSylhet && subtotalAfterDiscount >= freeMin) return 0;
