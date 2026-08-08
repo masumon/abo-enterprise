@@ -126,6 +126,14 @@ async def create_coupon(
     return ApiResponse(data={"id": str(coupon.id)}, message="Coupon created")
 
 
+def _parse_coupon_id(coupon_id: str) -> uuid.UUID:
+    """A malformed id is a missing coupon, not a server error (was a 500)."""
+    try:
+        return uuid.UUID(coupon_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=404, detail="Coupon not found")
+
+
 @router.put("/admin/coupons/{coupon_id}", response_model=ApiResponse)
 async def update_coupon(
     coupon_id: str,
@@ -133,7 +141,7 @@ async def update_coupon(
     admin_id: str = Depends(require_role("settings.write")),
     db: AsyncSession = Depends(get_db),
 ):
-    coupon = (await db.execute(select(Coupon).where(Coupon.id == uuid.UUID(coupon_id)))).scalar_one_or_none()
+    coupon = (await db.execute(select(Coupon).where(Coupon.id == _parse_coupon_id(coupon_id)))).scalar_one_or_none()
     if not coupon:
         raise HTTPException(status_code=404, detail="Coupon not found")
     duplicate = (await db.execute(
@@ -162,7 +170,7 @@ async def delete_coupon(
     admin_id: str = Depends(require_role("settings.write")),
     db: AsyncSession = Depends(get_db),
 ):
-    coupon = (await db.execute(select(Coupon).where(Coupon.id == uuid.UUID(coupon_id)))).scalar_one_or_none()
+    coupon = (await db.execute(select(Coupon).where(Coupon.id == _parse_coupon_id(coupon_id)))).scalar_one_or_none()
     if not coupon:
         raise HTTPException(status_code=404, detail="Coupon not found")
     coupon.is_deleted = True

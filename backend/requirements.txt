@@ -23,6 +23,7 @@ pyotp==2.9.0
 qrcode[pil]==7.4.2
 resend==2.34.0
 deep-translator==1.11.4
+openpyxl==3.1.5
 
 # Test tooling (used by backend/tests/*.py; not previously pinned here)
 pytest==9.1.1

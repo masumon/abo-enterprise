@@ -954,3 +954,23 @@ class DeliveryZone(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class ProductImportJob(Base):
+    """One bulk product-import run — its counts and per-row error report, for the
+    admin Import History (manual_sql/032). Additive audit only; nothing here is
+    read by the storefront or the order/checkout path."""
+
+    __tablename__ = "product_import_jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    admin_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    filename: Mapped[str | None] = mapped_column(String(255))
+    total_rows: Mapped[int] = mapped_column(Integer, default=0)
+    created_count: Mapped[int] = mapped_column(Integer, default=0)
+    updated_count: Mapped[int] = mapped_column(Integer, default=0)
+    skipped_count: Mapped[int] = mapped_column(Integer, default=0)
+    error_count: Mapped[int] = mapped_column(Integer, default=0)
+    # Per-row error report: [{"row": n, "errors": [...], "warnings": [...]}].
+    errors: Mapped[list] = mapped_column(JSON, default=list)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

@@ -131,6 +131,9 @@ export interface Order {
   subtotal: number;
   discount_amount?: number;
   coupon_code?: string;
+  /** District/upazila let the server re-derive the delivery charge authoritatively. */
+  district?: string;
+  upazila?: string;
   courier_provider?: string | null;
   courier_tracking_id?: string | null;
   delivery_charge: number;
