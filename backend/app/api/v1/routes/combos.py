@@ -151,8 +151,12 @@ async def _apply_items(db: AsyncSession, combo: Combo, items: list[ComboItemIn])
         combo.items.append(ComboItem(product_id=it.product_id, quantity=it.quantity, sort_order=i))
 
 
-@router.post("", response_model=ApiResponse, dependencies=[Depends(require_role("products.write"))])
-async def create_combo(payload: ComboIn, db: AsyncSession = Depends(get_db)):
+@router.post("", response_model=ApiResponse)
+async def create_combo(
+    payload: ComboIn,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_role("products.write")),
+):
     combo = Combo(
         slug=_slugify(payload.title_en),
         title_en=payload.title_en, title_bn=payload.title_bn,
@@ -165,15 +169,21 @@ async def create_combo(payload: ComboIn, db: AsyncSession = Depends(get_db)):
     )
     await _apply_items(db, combo, payload.items)
     db.add(combo)
-    db.add(ActivityLog(action="combo.create", entity_type="combo", entity_id=combo.id))
+    await db.flush()
+    db.add(ActivityLog(admin_id=uuid.UUID(_admin), action="combo.create", entity_type="combo", entity_id=combo.id))
     await db.commit()
     await db.refresh(combo, ["items"])
     pmap = await _products_map(db, [it.product_id for it in combo.items])
     return ApiResponse(data=_serialize_combo(combo, pmap), message="Combo created")
 
 
-@router.put("/{combo_id}", response_model=ApiResponse, dependencies=[Depends(require_role("products.write"))])
-async def update_combo(combo_id: uuid.UUID, payload: ComboIn, db: AsyncSession = Depends(get_db)):
+@router.put("/{combo_id}", response_model=ApiResponse)
+async def update_combo(
+    combo_id: uuid.UUID,
+    payload: ComboIn,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_role("products.write")),
+):
     combo = (await db.execute(
         select(Combo).options(selectinload(Combo.items)).where(Combo.id == combo_id, Combo.is_deleted == False)  # noqa: E712
     )).scalar_one_or_none()
@@ -194,20 +204,24 @@ async def update_combo(combo_id: uuid.UUID, payload: ComboIn, db: AsyncSession =
     combo.starts_at = payload.starts_at
     combo.ends_at = payload.ends_at
     await _apply_items(db, combo, payload.items)
-    db.add(ActivityLog(action="combo.update", entity_type="combo", entity_id=combo.id))
+    db.add(ActivityLog(admin_id=uuid.UUID(_admin), action="combo.update", entity_type="combo", entity_id=combo.id))
     await db.commit()
     await db.refresh(combo, ["items"])
     pmap = await _products_map(db, [it.product_id for it in combo.items])
     return ApiResponse(data=_serialize_combo(combo, pmap), message="Combo updated")
 
 
-@router.delete("/{combo_id}", response_model=ApiResponse, dependencies=[Depends(require_role("products.delete"))])
-async def delete_combo(combo_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+@router.delete("/{combo_id}", response_model=ApiResponse)
+async def delete_combo(
+    combo_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_role("products.delete")),
+):
     combo = (await db.execute(select(Combo).where(Combo.id == combo_id))).scalar_one_or_none()
     if not combo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Combo not found")
     combo.is_deleted = True
     combo.is_active = False
-    db.add(ActivityLog(action="combo.delete", entity_type="combo", entity_id=combo.id))
+    db.add(ActivityLog(admin_id=uuid.UUID(_admin), action="combo.delete", entity_type="combo", entity_id=combo.id))
     await db.commit()
     return ApiResponse(data={"id": str(combo_id)}, message="Combo deleted")

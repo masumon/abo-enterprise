@@ -65,8 +65,12 @@ async def admin_list_zones(db: AsyncSession = Depends(get_db)):
     return ApiResponse(data=[_serialize(z) for z in rows], message="ok")
 
 
-@router.post("", response_model=ApiResponse, dependencies=[Depends(require_role("settings.write"))])
-async def create_zone(payload: ZoneIn, db: AsyncSession = Depends(get_db)):
+@router.post("", response_model=ApiResponse)
+async def create_zone(
+    payload: ZoneIn,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_role("settings.write")),
+):
     z = DeliveryZone(
         name_en=payload.name_en, name_bn=payload.name_bn,
         districts=payload.districts, upazilas=payload.upazilas,
@@ -74,14 +78,20 @@ async def create_zone(payload: ZoneIn, db: AsyncSession = Depends(get_db)):
         sort_order=payload.sort_order, is_active=payload.is_active,
     )
     db.add(z)
-    db.add(ActivityLog(action="delivery_zone.create", entity_type="delivery_zone", entity_id=z.id))
+    await db.flush()
+    db.add(ActivityLog(admin_id=uuid.UUID(_admin), action="delivery_zone.create", entity_type="delivery_zone", entity_id=z.id))
     await db.commit()
     await db.refresh(z)
     return ApiResponse(data=_serialize(z), message="Zone created")
 
 
-@router.put("/{zone_id}", response_model=ApiResponse, dependencies=[Depends(require_role("settings.write"))])
-async def update_zone(zone_id: uuid.UUID, payload: ZoneIn, db: AsyncSession = Depends(get_db)):
+@router.put("/{zone_id}", response_model=ApiResponse)
+async def update_zone(
+    zone_id: uuid.UUID,
+    payload: ZoneIn,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_role("settings.write")),
+):
     z = (await db.execute(
         select(DeliveryZone).where(DeliveryZone.id == zone_id, DeliveryZone.is_deleted == False)  # noqa: E712
     )).scalar_one_or_none()
@@ -95,19 +105,23 @@ async def update_zone(zone_id: uuid.UUID, payload: ZoneIn, db: AsyncSession = De
     z.free_threshold = payload.free_threshold
     z.sort_order = payload.sort_order
     z.is_active = payload.is_active
-    db.add(ActivityLog(action="delivery_zone.update", entity_type="delivery_zone", entity_id=z.id))
+    db.add(ActivityLog(admin_id=uuid.UUID(_admin), action="delivery_zone.update", entity_type="delivery_zone", entity_id=z.id))
     await db.commit()
     await db.refresh(z)
     return ApiResponse(data=_serialize(z), message="Zone updated")
 
 
-@router.delete("/{zone_id}", response_model=ApiResponse, dependencies=[Depends(require_role("settings.write"))])
-async def delete_zone(zone_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+@router.delete("/{zone_id}", response_model=ApiResponse)
+async def delete_zone(
+    zone_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_role("settings.write")),
+):
     z = (await db.execute(select(DeliveryZone).where(DeliveryZone.id == zone_id))).scalar_one_or_none()
     if not z:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Zone not found")
     z.is_deleted = True
     z.is_active = False
-    db.add(ActivityLog(action="delivery_zone.delete", entity_type="delivery_zone", entity_id=z.id))
+    db.add(ActivityLog(admin_id=uuid.UUID(_admin), action="delivery_zone.delete", entity_type="delivery_zone", entity_id=z.id))
     await db.commit()
     return ApiResponse(data={"id": str(zone_id)}, message="Zone deleted")
