@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Package, Truck, ShoppingCart, X, Check } from "lucide-react";
+import Link from "next/link";
+import { Package, Truck, ShoppingCart, X, ChevronRight } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useCartStore } from "@/store/cart";
 import { getApiBaseUrl } from "@/lib/apiBase";
@@ -210,24 +211,41 @@ function ComboDetailModal({ combo, bn, onClose, onAdd }: { combo: Combo; bn: boo
               {bn ? "এই প্যাকে যা থাকছে" : "What's inside"} ({combo.items.length})
             </p>
             <div className="space-y-2">
-              {combo.items.map((it) => (
-                <div key={it.product_id} className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-brand-50 dark:bg-white/5 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                    {it.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={it.image_url} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <Package className="w-5 h-5 text-brand-300" aria-hidden />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-heading truncate">{bn ? it.name_bn : it.name_en}</p>
-                    <p className="text-xs text-muted">{formatPrice(it.price)} × {it.quantity}</p>
-                  </div>
-                  <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" aria-hidden />
-                </div>
-              ))}
+              {combo.items.map((it) => {
+                const row = (
+                  <>
+                    <div className="w-12 h-12 rounded-lg bg-brand-50 dark:bg-white/5 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                      {it.image_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={it.image_url} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <Package className="w-5 h-5 text-brand-300" aria-hidden />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-heading truncate">{bn ? it.name_bn : it.name_en}</p>
+                      <p className="text-xs text-muted">{formatPrice(it.price)} × {it.quantity}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-gray-300 dark:text-gray-500 flex-shrink-0" aria-hidden />
+                  </>
+                );
+                // Link to the product page when we have a slug; otherwise render
+                // a plain row so a combo with a hard-deleted product still shows.
+                return it.slug ? (
+                  <Link
+                    key={it.product_id}
+                    href={`/products/${it.slug}`}
+                    onClick={onClose}
+                    className="flex items-center gap-3 -mx-2 px-2 py-1.5 rounded-lg hover:bg-brand-50/60 dark:hover:bg-white/5 transition-colors"
+                  >
+                    {row}
+                  </Link>
+                ) : (
+                  <div key={it.product_id} className="flex items-center gap-3 px-2 py-1.5">{row}</div>
+                );
+              })}
             </div>
+            <p className="text-[11px] text-muted mt-1.5">{bn ? "পণ্যে ট্যাপ করে বিস্তারিত দেখুন" : "Tap a product to view its page"}</p>
           </div>
 
           <div className="flex items-end justify-between pt-3 border-t border-[var(--line)]">
