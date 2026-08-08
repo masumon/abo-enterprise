@@ -177,6 +177,67 @@ async def _advance_charge_amount(db: AsyncSession) -> float:
         return 120.0
 
 
+# Sylhet division districts get the "free above threshold" promise + the Sylhet
+# tier; mirrors the storefront's SYLHET_DISTRICTS (frontend/src/lib/bdDistricts).
+_SYLHET_DISTRICTS = {"Sylhet", "Habiganj", "Moulvibazar", "Sunamganj"}
+_DHAKA_TIER = {"Dhaka", "Gazipur", "Narayanganj"}
+
+
+async def _server_delivery_charge(
+    db: AsyncSession, district: str | None, upazila: str | None,
+    subtotal_after_discount: float, max_product_charge: float,
+) -> float:
+    """Re-derive the delivery charge from admin DeliveryZones, then the legacy
+    3-tier settings — the same rules the storefront's calcDeliveryCharge uses,
+    so the customer is billed exactly what they saw, but authoritatively."""
+    from app.models.models import DeliveryZone
+
+    dist = (district or "").strip()
+    upz = (upazila or "").strip()
+
+    # 1) Admin-defined zones — first active zone (by sort_order) that covers the
+    # district and, when it lists upazilas, the customer's upazila.
+    zones = (await db.execute(
+        select(DeliveryZone).where(
+            DeliveryZone.is_deleted == False,  # noqa: E712
+            DeliveryZone.is_active == True,  # noqa: E712
+        ).order_by(DeliveryZone.sort_order.asc(), DeliveryZone.created_at.asc())
+    )).scalars().all()
+    for z in zones:
+        if dist not in (z.districts or []):
+            continue
+        ups = z.upazilas or []
+        if ups and not (upz and upz in ups):
+            continue
+        if z.free_threshold and float(z.free_threshold) > 0 and subtotal_after_discount >= float(z.free_threshold):
+            return 0.0
+        return max(float(z.charge or 0), max_product_charge)
+
+    # 2) Legacy 3-tier from settings (defaults match the storefront).
+    rows = (await db.execute(select(Setting).where(Setting.key.in_([
+        "free_delivery_min_amount", "delivery_charge_sylhet",
+        "delivery_charge_dhaka", "delivery_charge_outside",
+    ])))).scalars().all()
+    s = {r.key: r.value for r in rows}
+
+    def _num(key: str, default: float) -> float:
+        try:
+            return float(s.get(key) or default)
+        except (TypeError, ValueError):
+            return default
+
+    is_sylhet = dist in _SYLHET_DISTRICTS
+    if is_sylhet and subtotal_after_discount >= _num("free_delivery_min_amount", 2000):
+        return 0.0
+    if is_sylhet:
+        tier = _num("delivery_charge_sylhet", 60)
+    elif dist in _DHAKA_TIER:
+        tier = _num("delivery_charge_dhaka", 120)
+    else:
+        tier = _num("delivery_charge_outside", 130)
+    return max(tier, max_product_charge)
+
+
 async def _anti_abuse_guard(db: AsyncSession, payload: OrderCreate) -> None:
     """Block obviously-abusive / fake COD orders. All limits are admin-editable
     via settings; normal orders are never affected.
@@ -253,16 +314,31 @@ async def create_order(
     # Coupons apply to regular products only — combos are already bundle-priced,
     # so a % coupon does not stack on top of them.
     trusted_discount = await _server_side_discount(db, payload.coupon_code, product_subtotal)
-    # Delivery charge is computed client-side from admin zones; the arbitrary-
-    # total attack is closed by deriving the total from trusted subtotal/discount.
-    # A free-delivery combo zeroes it; otherwise clamp to a non-negative number.
-    trusted_delivery = 0.0 if combo_free_delivery else max(0.0, float(payload.delivery_charge or 0))
+    # Delivery charge is RE-DERIVED on the server from admin zones/settings — the
+    # client's delivery_charge is not trusted (a tampered request could zero it).
+    # A free-delivery combo zeroes it; otherwise we compute from the district the
+    # customer selected, falling back to the (clamped) client value only when no
+    # district is supplied (non-browser API clients).
+    product_ids = [i.product_id for i in payload.items if i.product_id]
+    if combo_free_delivery:
+        trusted_delivery = 0.0
+    elif (payload.district or "").strip():
+        max_product_charge = 0.0
+        if product_ids:
+            max_product_charge = float((await db.execute(
+                select(func.max(Product.delivery_charge)).where(Product.id.in_(product_ids))
+            )).scalar() or 0.0)
+        trusted_delivery = await _server_delivery_charge(
+            db, payload.district, payload.upazila,
+            product_subtotal - trusted_discount, max_product_charge,
+        )
+    else:
+        trusted_delivery = max(0.0, float(payload.delivery_charge or 0))
     trusted_total = trusted_subtotal - trusted_discount + trusted_delivery
 
     # Advance / prepaid: if any ordered product is admin-flagged
     # requires_advance, an advance must be paid before the order is confirmed.
     advance_amount = 0.0
-    product_ids = [i.product_id for i in payload.items if i.product_id]
     if product_ids:
         needs_advance = (await db.execute(
             select(Product.id).where(

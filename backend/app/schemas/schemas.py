@@ -243,6 +243,11 @@ class OrderCreate(BaseModel):
     subtotal: float
     discount_amount: float = 0
     coupon_code: str | None = None
+    # Delivery: district/upazila let the server re-derive the charge from admin
+    # zones/settings (never trusting the client). delivery_charge is kept only
+    # as a fallback for API clients that don't send a district.
+    district: str | None = None
+    upazila: str | None = None
     delivery_charge: float = 0
     total: float
     # Institutional invoice identity (manual_sql/0009). Every field optional:

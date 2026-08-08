@@ -346,6 +346,10 @@ export default function CheckoutPage() {
         subtotal: displaySubtotal,
         discount_amount: discount,
         coupon_code: appliedCoupon?.code,
+        // Sent so the server re-derives the delivery charge from admin zones/
+        // settings authoritatively; delivery_charge stays as a display fallback.
+        district: data.district,
+        upazila: data.upazila || undefined,
         delivery_charge: deliveryCharge,
         total: cartTotal,
       });
