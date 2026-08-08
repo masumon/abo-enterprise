@@ -11,6 +11,7 @@ import { servicesAdminApi, categoriesApi, adminBlogApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
 import TranslateButton from "@/components/admin/TranslateButton";
+import JsonListEditor from "@/components/admin/JsonListEditor";
 import { translateBnToEn } from "@/lib/translate";
 import LivePreview from "@/components/admin/LivePreview";
 import LinkChecklist, { type LinkOption } from "@/components/admin/LinkChecklist";
@@ -116,22 +117,15 @@ function slugify(t: string) {
   return t.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
 }
 
-// ── Bilingual content helpers (backward-compatible) ──────────────────────────
-// The list blocks (benefits/requirements/documents) store items as {en, bn};
-// a legacy plain string is read as English. In the admin they edit as one line
-// each: "English text | বাংলা টেক্সট" (the bn half is optional).
-type BiPair = { en: string; bn: string };
-const asPair = (x: unknown): BiPair =>
-  typeof x === "string"
-    ? { en: x, bn: "" }
-    : { en: (x as BiPair)?.en ?? "", bn: (x as BiPair)?.bn ?? "" };
-const pairsToText = (items: unknown[] | undefined): string =>
-  (items ?? []).map((x) => { const p = asPair(x); return p.bn ? `${p.en}|${p.bn}` : p.en; }).join("\n");
-const textToPairs = (text: string): BiPair[] =>
-  text.split("\n").filter((l) => l.trim()).map((line) => {
-    const [en, ...rest] = line.split("|");
-    return { en: (en ?? "").trim(), bn: rest.join("|").trim() };
-  });
+// ── Bilingual content helpers ────────────────────────────────────────────────
+// The extended list blocks (benefits/requirements/documents/process/faq) are
+// stored as arrays of objects on the service. They're edited with the friendly
+// row-based JsonListEditor, so these just wrap/unwrap the JSON string it uses —
+// no raw text/pipe encoding for the admin, and the stored shape is unchanged.
+const arrToJson = (items: unknown[] | undefined): string => JSON.stringify(items ?? []);
+function jsonToArr<T = Record<string, unknown>>(json: string): T[] {
+  try { const v = JSON.parse(json); return Array.isArray(v) ? (v as T[]) : []; } catch { return []; }
+}
 
 export default function AdminServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
@@ -1072,81 +1066,79 @@ export default function AdminServicesPage() {
                       </button>
                     </div>
 
-                    {/* Process Steps — step|title_en|desc_en|title_bn|desc_bn */}
+                    {/* Process Steps — friendly row editor (was pipe-encoded) */}
                     <div>
-                      <label className="form-label">Process Steps</label>
-                      <textarea
-                        rows={4}
-                        className="input w-full resize-y text-sm font-mono"
-                        placeholder={"1|Discovery|We analyze your requirements|আবিষ্কার|আমরা আপনার প্রয়োজন বিশ্লেষণ করি"}
-                        value={(editing.process_steps ?? []).map((s: { step?: number; title?: string; description?: string; title_bn?: string; description_bn?: string }) => [s.step ?? 1, s.title ?? "", s.description ?? "", s.title_bn ?? "", s.description_bn ?? ""].join("|")).join("\n")}
-                        onChange={e => {
-                          const steps = e.target.value.split("\n").filter((l) => l.trim()).map(line => {
-                            const p = line.split("|");
-                            return { step: Number(p[0]) || 1, title: (p[1] ?? "").trim(), description: (p[2] ?? "").trim(), title_bn: (p[3] ?? "").trim(), description_bn: p.slice(4).join("|").trim() };
-                          });
-                          setEditing(prev => prev ? { ...prev, process_steps: steps } : prev);
-                        }}
+                      <label className="form-label">Process Steps <span className="text-gray-400 font-normal text-xs">(ধাপে ধাপে কীভাবে কাজ হয়)</span></label>
+                      <JsonListEditor
+                        value={arrToJson(editing.process_steps)}
+                        onChange={(json) => setEditing(prev => prev ? { ...prev, process_steps: jsonToArr(json) } : prev)}
+                        fields={[
+                          { path: "step", label: "Step #", labelBn: "ধাপ নং", type: "number" },
+                          { path: "title", label: "Title (EN)", labelBn: "শিরোনাম (EN)", translateFrom: "title_bn" },
+                          { path: "title_bn", label: "Title (বাংলা)", labelBn: "শিরোনাম (বাংলা)" },
+                          { path: "description", label: "Description (EN)", labelBn: "বিবরণ (EN)", type: "textarea", translateFrom: "description_bn" },
+                          { path: "description_bn", label: "Description (বাংলা)", labelBn: "বিবরণ (বাংলা)", type: "textarea" },
+                        ]}
+                        newItem={() => ({ step: (editing.process_steps?.length ?? 0) + 1, title: "", description: "", title_bn: "", description_bn: "" })}
                       />
-                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: number|title(EN)|description(EN)|title(বাংলা)|description(বাংলা)</p>
                     </div>
 
-                    {/* Benefits — English|বাংলা per line */}
+                    {/* Benefits — friendly row editor (EN + বাংলা) */}
                     <div>
-                      <label className="form-label">Benefits</label>
-                      <textarea
-                        rows={4}
-                        className="input w-full resize-y text-sm"
-                        placeholder={"Fast delivery|দ্রুত ডেলিভারি\n24/7 support|২৪/৭ সাপোর্ট"}
-                        value={pairsToText(editing.benefits)}
-                        onChange={e => setEditing(prev => prev ? { ...prev, benefits: textToPairs(e.target.value) } : prev)}
+                      <label className="form-label">Benefits <span className="text-gray-400 font-normal text-xs">(সুবিধা)</span></label>
+                      <JsonListEditor
+                        value={arrToJson(editing.benefits)}
+                        onChange={(json) => setEditing(prev => prev ? { ...prev, benefits: jsonToArr(json) } : prev)}
+                        fields={[
+                          { path: "en", label: "Benefit (EN)", labelBn: "সুবিধা (EN)", translateFrom: "bn" },
+                          { path: "bn", label: "Benefit (বাংলা)", labelBn: "সুবিধা (বাংলা)" },
+                        ]}
+                        newItem={() => ({ en: "", bn: "" })}
                       />
-                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: English | বাংলা</p>
                     </div>
 
                     {/* Requirements */}
                     <div>
-                      <label className="form-label">Requirements</label>
-                      <textarea
-                        rows={3}
-                        className="input w-full resize-y text-sm"
-                        placeholder={"Active internet connection|সচল ইন্টারনেট সংযোগ"}
-                        value={pairsToText(editing.requirements)}
-                        onChange={e => setEditing(prev => prev ? { ...prev, requirements: textToPairs(e.target.value) } : prev)}
+                      <label className="form-label">Requirements <span className="text-gray-400 font-normal text-xs">(প্রয়োজনীয় শর্ত)</span></label>
+                      <JsonListEditor
+                        value={arrToJson(editing.requirements)}
+                        onChange={(json) => setEditing(prev => prev ? { ...prev, requirements: jsonToArr(json) } : prev)}
+                        fields={[
+                          { path: "en", label: "Requirement (EN)", labelBn: "শর্ত (EN)", translateFrom: "bn" },
+                          { path: "bn", label: "Requirement (বাংলা)", labelBn: "শর্ত (বাংলা)" },
+                        ]}
+                        newItem={() => ({ en: "", bn: "" })}
                       />
-                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: English | বাংলা</p>
                     </div>
 
                     {/* Required Documents */}
                     <div>
-                      <label className="form-label">Required Documents</label>
-                      <textarea
-                        rows={3}
-                        className="input w-full resize-y text-sm"
-                        placeholder={"National ID|জাতীয় পরিচয়পত্র"}
-                        value={pairsToText(editing.required_documents)}
-                        onChange={e => setEditing(prev => prev ? { ...prev, required_documents: textToPairs(e.target.value) } : prev)}
+                      <label className="form-label">Required Documents <span className="text-gray-400 font-normal text-xs">(প্রয়োজনীয় কাগজপত্র)</span></label>
+                      <JsonListEditor
+                        value={arrToJson(editing.required_documents)}
+                        onChange={(json) => setEditing(prev => prev ? { ...prev, required_documents: jsonToArr(json) } : prev)}
+                        fields={[
+                          { path: "en", label: "Document (EN)", labelBn: "কাগজ (EN)", translateFrom: "bn" },
+                          { path: "bn", label: "Document (বাংলা)", labelBn: "কাগজ (বাংলা)" },
+                        ]}
+                        newItem={() => ({ en: "", bn: "" })}
                       />
-                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: English | বাংলা</p>
                     </div>
 
-                    {/* FAQ — q_en|a_en|q_bn|a_bn */}
+                    {/* FAQ — friendly row editor (was q|a|q_bn|a_bn) */}
                     <div>
-                      <label className="form-label">FAQ</label>
-                      <textarea
-                        rows={4}
-                        className="input w-full resize-y text-sm font-mono"
-                        placeholder={"How long does it take?|Usually 3-5 business days|কত সময় লাগে?|সাধারণত ৩-৫ কর্মদিবস"}
-                        value={(editing.faq ?? []).map((f: { question?: string; answer?: string; question_bn?: string; answer_bn?: string }) => [f.question ?? "", f.answer ?? "", f.question_bn ?? "", f.answer_bn ?? ""].join("|")).join("\n")}
-                        onChange={e => {
-                          const faq = e.target.value.split("\n").filter((l) => l.trim()).map(line => {
-                            const p = line.split("|");
-                            return { question: (p[0] ?? "").trim(), answer: (p[1] ?? "").trim(), question_bn: (p[2] ?? "").trim(), answer_bn: p.slice(3).join("|").trim() };
-                          });
-                          setEditing(prev => prev ? { ...prev, faq } : prev);
-                        }}
+                      <label className="form-label">FAQ <span className="text-gray-400 font-normal text-xs">(প্রশ্ন-উত্তর)</span></label>
+                      <JsonListEditor
+                        value={arrToJson(editing.faq)}
+                        onChange={(json) => setEditing(prev => prev ? { ...prev, faq: jsonToArr(json) } : prev)}
+                        fields={[
+                          { path: "question", label: "Question (EN)", labelBn: "প্রশ্ন (EN)", translateFrom: "question_bn" },
+                          { path: "question_bn", label: "Question (বাংলা)", labelBn: "প্রশ্ন (বাংলা)" },
+                          { path: "answer", label: "Answer (EN)", labelBn: "উত্তর (EN)", type: "textarea", translateFrom: "answer_bn" },
+                          { path: "answer_bn", label: "Answer (বাংলা)", labelBn: "উত্তর (বাংলা)", type: "textarea" },
+                        ]}
+                        newItem={() => ({ question: "", answer: "", question_bn: "", answer_bn: "" })}
                       />
-                      <p className="text-[11px] text-gray-400 mt-1">প্রতি লাইন: question(EN)|answer(EN)|question(বাংলা)|answer(বাংলা)</p>
                     </div>
                   </div>
                 )}
