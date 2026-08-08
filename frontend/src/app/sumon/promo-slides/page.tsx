@@ -8,6 +8,8 @@ import HomepageSectionNav from "@/components/admin/HomepageSectionNav";
 import ImageUpload from "@/components/admin/ImageUpload";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { promoSlidesApi, adminBlogApi } from "@/lib/api";
+import TranslateButton from "@/components/admin/TranslateButton";
+import { translateBnToEn } from "@/lib/translate";
 import { apiErrorMessage } from "@/lib/apiError";
 import type { PromoSlide } from "@/types";
 import { useToastStore } from "@/store/toast";
@@ -90,11 +92,17 @@ export default function AdminPromoSlidesPage() {
       toast("error", "Add an image or a video"); return;
     }
     setSaving(true);
+    // Bangla-first: fill an empty English caption from the Bangla one.
+    let e2 = editing;
+    if (!(e2.title_en ?? "").trim() && (e2.title_bn ?? "").trim()) {
+      try { e2 = { ...e2, title_en: await translateBnToEn(e2.title_bn!) }; setEditing(e2); }
+      catch { setSaving(false); toast("error", "অটো-অনুবাদ ব্যর্থ — English নিজে লিখুন"); return; }
+    }
     try {
       const payload = {
-        ...editing,
-        starts_at: editing.starts_at ? toIso(editing.starts_at) : null,
-        ends_at: editing.ends_at ? toIso(editing.ends_at) : null,
+        ...e2,
+        starts_at: e2.starts_at ? toIso(e2.starts_at) : null,
+        ends_at: e2.ends_at ? toIso(e2.ends_at) : null,
       };
       if (editing.id) await promoSlidesApi.update(editing.id, payload);
       else await promoSlidesApi.create(payload);
@@ -310,7 +318,10 @@ export default function AdminPromoSlidesPage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label">Caption (EN)</label>
+                  <label className="form-label flex items-center justify-between gap-2">
+                    Caption (EN)
+                    <TranslateButton bn={editing.title_bn} onResult={(en) => set("title_en", en)} label="→ English" />
+                  </label>
                   <input value={editing.title_en ?? ""} onChange={(e) => set("title_en", e.target.value)} className="input w-full text-sm" />
                 </div>
                 <div>

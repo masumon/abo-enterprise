@@ -30,6 +30,7 @@ from app.api.v1.routes import (
     newsletter,
     combos,
     delivery_zones,
+    translate,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -64,3 +65,4 @@ api_router.include_router(categories.router)
 api_router.include_router(newsletter.router)
 api_router.include_router(combos.router)
 api_router.include_router(delivery_zones.router)
+api_router.include_router(translate.router)

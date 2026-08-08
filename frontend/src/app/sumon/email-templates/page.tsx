@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, Mail, Plus, Pencil, Trash2, X, CheckCircle, XCircle, Eye, Code } from "lucide-react";
 import { emailTemplatesAdminApi, type EmailTemplateRecord } from "@/lib/api";
+import TranslateButton from "@/components/admin/TranslateButton";
+import { translateBnToEn } from "@/lib/translate";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
@@ -70,16 +72,33 @@ export default function AdminEmailTemplatesPage() {
   }
 
   const handleSave = async () => {
-    if (!editing?.template_name?.trim() || !editing.subject_en?.trim() || !editing.body_en?.trim()) {
-      toast("error", "Template name, subject (EN) and body (EN) are required");
+    if (!editing?.template_name?.trim()) {
+      toast("error", "Template name is required");
+      return;
+    }
+    // Bangla-first: fill empty English subject/body from the Bangla ones.
+    let e2 = editing;
+    setSaving(true);
+    try {
+      const patch: Partial<EmailTemplateRecord> = {};
+      if (!e2.subject_en?.trim() && e2.subject_bn?.trim()) patch.subject_en = await translateBnToEn(e2.subject_bn);
+      if (!e2.body_en?.trim() && e2.body_bn?.trim()) patch.body_en = await translateBnToEn(e2.body_bn);
+      if (Object.keys(patch).length) { e2 = { ...e2, ...patch }; setEditing(e2); }
+    } catch {
+      setSaving(false);
+      toast("error", "অটো-অনুবাদ ব্যর্থ — Subject/Body (EN) নিজে লিখুন");
+      return;
+    }
+    if (!e2.subject_en?.trim() || !e2.body_en?.trim()) {
+      setSaving(false);
+      toast("error", "Subject (EN) ও Body (EN) দিন (বাংলা লিখলে অটো-অনুবাদ হবে)");
       return;
     }
     const payload = {
-      ...editing,
+      ...e2,
       variables: varsInput.split(",").map((v) => v.trim()).filter(Boolean),
     } as Omit<EmailTemplateRecord, "id" | "created_at" | "updated_at">;
 
-    setSaving(true);
     try {
       if (isNew) {
         await emailTemplatesAdminApi.create(payload);
@@ -275,7 +294,10 @@ export default function AdminEmailTemplatesPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="form-label">Subject (EN)</label>
+                  <label className="form-label flex items-center justify-between gap-2">
+                    Subject (EN)
+                    <TranslateButton bn={editing.subject_bn} onResult={(en) => setEditing((p) => p ? { ...p, subject_en: en } : p)} />
+                  </label>
                   <input value={editing.subject_en ?? ""} onChange={(e) => setEditing((p) => p ? { ...p, subject_en: e.target.value } : p)} className="input w-full text-sm" />
                 </div>
                 <div>
@@ -284,7 +306,10 @@ export default function AdminEmailTemplatesPage() {
                 </div>
               </div>
               <div>
-                <label className="form-label">Body (EN)</label>
+                <label className="form-label flex items-center justify-between gap-2">
+                  Body (EN)
+                  <TranslateButton bn={editing.body_bn} onResult={(en) => setEditing((p) => p ? { ...p, body_en: en } : p)} />
+                </label>
                 <textarea rows={6} value={editing.body_en ?? ""} onChange={(e) => setEditing((p) => p ? { ...p, body_en: e.target.value } : p)} className="input w-full resize-y text-sm font-mono" placeholder="Hello {{customer_name}}, ..." />
               </div>
               <div>

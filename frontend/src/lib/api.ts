@@ -857,6 +857,13 @@ export interface Combo {
   items: ComboItemT[];
 }
 
+/** Generic Bangla→English translation for any admin module's bilingual fields.
+ * Gated on any authenticated admin (stateless text utility, writes nothing). */
+export const translateApi = {
+  toEnglish: (text: string, source = "bn", target = "en") =>
+    api.post<ApiResponse<{ translated: string }>>("/api/v1/admin/translate", { text, source, target }),
+};
+
 export const combosApi = {
   list: () => api.get<ApiResponse<Combo[]>>("/api/v1/combos"),
   adminList: () => api.get<ApiResponse<Combo[]>>("/api/v1/combos/admin/all"),

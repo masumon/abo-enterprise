@@ -7,6 +7,8 @@ import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, Star, CheckCircle, XCircle, Trash2, Shield, ShieldCheck, Pencil, X, MessageSquare, Plus, Search } from "lucide-react";
 import api, { reviewsApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
+import TranslateButton from "@/components/admin/TranslateButton";
+import { translateBnToEn } from "@/lib/translate";
 import LivePreview from "@/components/admin/LivePreview";
 import GlassCard from "@/components/ui/GlassCard";
 import { useToastStore } from "@/store/toast";
@@ -114,21 +116,29 @@ export default function AdminReviewsPage() {
   const closeEdit = () => { setEditing(null); setCreating(false); setDraft({}); };
 
   const handleSave = async () => {
+    // Bangla-first: fill an empty English review from the Bangla one.
+    let d = draft;
+    if (!d.review_en?.trim() && d.review_bn?.trim()) {
+      setSaving(true);
+      try { d = { ...d, review_en: await translateBnToEn(d.review_bn) }; setDraft(d); }
+      catch { setSaving(false); toast("error", "অটো-অনুবাদ ব্যর্থ — Review (English) নিজে লিখুন"); return; }
+      setSaving(false);
+    }
     if (creating) {
-      if (!draft.customer_name?.trim() || !draft.review_en?.trim()) {
+      if (!d.customer_name?.trim() || !d.review_en?.trim()) {
         toast("error", "Customer name and review text are required");
         return;
       }
       setSaving(true);
       try {
         const res = await reviewsApi.create({
-          customer_name: draft.customer_name,
-          company: draft.company || undefined,
-          rating: draft.rating ?? 5,
-          review_en: draft.review_en,
-          review_bn: draft.review_bn || undefined,
-          photo_url: draft.photo_url || undefined,
-          source: draft.source ?? "direct",
+          customer_name: d.customer_name,
+          company: d.company || undefined,
+          rating: d.rating ?? 5,
+          review_en: d.review_en,
+          review_bn: d.review_bn || undefined,
+          photo_url: d.photo_url || undefined,
+          source: d.source ?? "direct",
         });
         let created = res.data.data as AdminReview;
         const flags: Partial<AdminReview> = {};
@@ -153,7 +163,7 @@ export default function AdminReviewsPage() {
     if (!editing) return;
     setSaving(true);
     try {
-      const res = await api.patch(`/api/v1/reviews/${editing.id}`, draft);
+      const res = await api.patch(`/api/v1/reviews/${editing.id}`, d);
       const updated = res.data.data as AdminReview;
       setReviews((prev) => prev.map((r) => (r.id === editing.id ? { ...r, ...updated } : r)));
       toast("success", "Review saved");
@@ -530,7 +540,10 @@ export default function AdminReviewsPage() {
               <section className="space-y-4">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Review Content</h3>
                 <div>
-                  <label className="form-label">Review (English)</label>
+                  <label className="form-label flex items-center justify-between gap-2">
+                    Review (English)
+                    <TranslateButton bn={draft.review_bn} onResult={(en) => setDraft(d => ({ ...d, review_en: en }))} />
+                  </label>
                   <textarea
                     rows={4}
                     value={draft.review_en ?? ""}
