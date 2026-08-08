@@ -463,13 +463,21 @@ export default function AdminInvoicesPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {detail.items.map((item, i) => (
-                        <tr key={i}>
-                          <td className="px-4 py-2.5 text-gray-700">{item.name}</td>
-                          <td className="px-4 py-2.5 text-center text-gray-500">{item.quantity}</td>
-                          <td className="px-4 py-2.5 text-right text-gray-900 font-medium">{formatPrice(item.price * item.quantity)}</td>
-                        </tr>
-                      ))}
+                      {detail.items.map((item, i) => {
+                        // A combo line carries a "[Combo] " name prefix; show it
+                        // as a labelled bundle row instead of a plain item.
+                        const isCombo = item.name.startsWith("[Combo] ");
+                        return (
+                          <tr key={i} className={isCombo ? "bg-accent-50/50" : undefined}>
+                            <td className="px-4 py-2.5 text-gray-700">
+                              {isCombo && <span className="mr-1.5 align-middle inline-block px-1.5 py-0.5 rounded bg-accent-500 text-[#14182b] text-[10px] font-bold">COMBO</span>}
+                              {isCombo ? item.name.slice(8) : item.name}
+                            </td>
+                            <td className="px-4 py-2.5 text-center text-gray-500">{item.quantity}</td>
+                            <td className="px-4 py-2.5 text-right text-gray-900 font-medium">{formatPrice(item.price * item.quantity)}</td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
