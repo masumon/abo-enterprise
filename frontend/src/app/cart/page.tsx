@@ -233,7 +233,10 @@ export default function CartPage() {
               <div className="enterprise-card p-6 h-fit sticky top-[calc(var(--navbar-offset)+1rem)]">
                 <h2 className="font-bold text-heading mb-4">{lang === "bn" ? "অর্ডার সারাংশ" : "Order Summary"}</h2>
 
-                {Number.isFinite(freeDeliveryMin) && freeDeliveryMin > 0 && (
+                {/* Product free-delivery nudge is about the product subtotal, so
+                    it only makes sense when there are product items — a
+                    combo-only cart would otherwise read "add ৳X more" off ৳0. */}
+                {items.length > 0 && Number.isFinite(freeDeliveryMin) && freeDeliveryMin > 0 && (
                   cartSubtotal >= freeDeliveryMin ? (
                     <p className="flex items-center gap-1.5 text-xs font-medium text-green-600 dark:text-green-400 mb-4">
                       <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
