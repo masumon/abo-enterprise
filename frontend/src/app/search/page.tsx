@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useLanguageStore } from "@/store/language";
 import SearchField from "@/components/search/SearchField";
+import SearchDiscovery from "@/components/search/SearchDiscovery";
 import { loadProducts, loadServices, peekCachedProducts, peekCachedServices } from "@/lib/catalogLoader";
 import type { Product, Service, BlogPost } from "@/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
@@ -327,6 +328,8 @@ function SearchResults() {
                 </div>
               ))}
             </div>
+          ) : !q ? (
+            <SearchDiscovery />
           ) : total === 0 && q ? (
             <div className="pt-8 pb-4 text-center">
               <p className="text-sm text-[var(--ink-muted)]">
@@ -519,6 +522,8 @@ function SearchResults() {
               <div key={i} className="h-20 rounded-xl bg-gray-100 dark:bg-white/5 motion-safe:animate-pulse" />
             ))}
           </div>
+        ) : !q ? (
+          <SearchDiscovery />
         ) : total === 0 && q ? (
           <div className="text-center py-16 enterprise-card p-8">
             <p className="text-muted">
