@@ -39,21 +39,41 @@ export default function AdminCombosPage() {
   const [form, setForm] = useState<Form>(EMPTY);
   const [delId, setDelId] = useState<string | null>(null);
 
+  // Products fill the combo picker and MUST load even if the combos fetch
+  // fails (e.g. the combos table isn't migrated yet), so the two are fetched
+  // independently — a failure in one never blanks the other.
+  const loadProducts = useCallback(async () => {
+    try {
+      // The admin products endpoint caps per_page at 100 (Query le=100); asking
+      // for more returns 422 and left the picker empty. Page through instead so
+      // every product is selectable regardless of catalogue size.
+      const acc: ProdLite[] = [];
+      let page = 1;
+      for (;;) {
+        const r = await productsApi.adminList({ page, per_page: 100 });
+        acc.push(...((r.data.data ?? []) as ProdLite[]));
+        const totalPages = r.data.meta?.total_pages ?? 1;
+        if (page >= totalPages || (r.data.data ?? []).length === 0) break;
+        page += 1;
+      }
+      setProducts(acc);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "পণ্য লোড করা যায়নি"));
+    }
+  }, [toast]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [c, p] = await Promise.all([
-        combosApi.adminList(),
-        productsApi.adminList({ per_page: 200 }),
-      ]);
+      const c = await combosApi.adminList();
       setCombos(c.data.data ?? []);
-      setProducts((p.data.data ?? []) as ProdLite[]);
     } catch (e) {
-      toast("error", apiErrorMessage(e, "লোড করা যায়নি"));
+      toast("error", apiErrorMessage(e, "কম্বো লোড করা যায়নি — SQL মাইগ্রেশন রান করা হয়েছে কি?"));
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+    await loadProducts();
+  }, [toast, loadProducts]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -82,8 +102,9 @@ export default function AdminCombosPage() {
   const set = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
   const addLine = () => {
+    if (products.length === 0) { toast("error", "কোনো পণ্য পাওয়া যায়নি — আগে পণ্য তৈরি করুন"); return; }
     const first = products.find((p) => !form.items.some((i) => i.product_id === p.id));
-    if (!first) { toast("info", "সব পণ্য যোগ করা হয়েছে"); return; }
+    if (!first) { toast("info", "সব পণ্য ইতিমধ্যে যোগ করা হয়েছে"); return; }
     set("items", [...form.items, { product_id: first.id, quantity: 1 }]);
   };
   const setLine = (idx: number, patch: Partial<Line>) =>
