@@ -11,7 +11,7 @@ from app.core.security import require_admin, require_role
 from app.core import product_import as pi
 from app.core.taxonomy import load_categories, ancestors_of
 from app.models.models import Product, Order, LeadV2, BookingV2, Category, ProductImportJob
-from app.schemas.schemas import BulkOrderStatusUpdate, ApiResponse, ProductCreate
+from app.schemas.schemas import BulkOrderStatusUpdate, ApiResponse, ProductCreate, ProductUpdate
 
 router = APIRouter(prefix="/admin/bulk", tags=["bulk"])
 
@@ -553,41 +553,54 @@ async def import_products_commit(
     error_report: list[dict] = []
 
     for r in results:
+        # Rows that failed validation, or that the admin chose to skip, are never
+        # applied — recorded (with any warnings) and moved past.
         if r.errors or r.action == "skip":
             skipped += 1
             if r.errors or r.warnings:
                 error_report.append({"row": r.row_num, "slug": r.data.get("slug", ""), "errors": r.errors, "warnings": r.warnings})
             continue
+
+        data = dict(r.data)
+        # The update target is read outside the savepoint (a pure read).
+        existing = None
+        if r.action == "update":
+            existing = (await db.execute(
+                select(Product).where(Product.slug == data["slug"], Product.is_deleted == False)  # noqa: E712
+            )).scalar_one_or_none()
+            if not existing:
+                skipped += 1
+                error_report.append({"row": r.row_num, "slug": data.get("slug", ""), "errors": ["product vanished before commit"], "warnings": []})
+                continue
+
+        # Each row is applied inside its own SAVEPOINT + flush: a DB error that
+        # only surfaces at write time (a constraint, an over-long value) rolls
+        # back THIS row alone and is reported — the rest of the batch and the
+        # already-applied rows are never corrupted or lost.
         try:
-            data = dict(r.data)
+            async with db.begin_nested():
+                if r.action == "create":
+                    payload = ProductCreate(**{k: v for k, v in data.items() if k in ProductCreate.model_fields})
+                    fields = payload.model_dump()
+                    fields.pop("blog_ids", None)
+                    product = Product(**fields)
+                    if r.category_id is not None:
+                        product.category_id = r.category_id
+                    db.add(product)
+                else:  # update — validate the incoming changes via ProductUpdate
+                    upd = ProductUpdate(**{k: v for k, v in data.items() if k != "slug" and k in ProductUpdate.model_fields})
+                    for k, v in upd.model_dump(exclude_unset=True).items():
+                        setattr(existing, k, v)
+                    if r.category_id is not None:
+                        existing.category_id = r.category_id
+                await db.flush()
             if r.action == "create":
-                # Validate/normalise through the same schema the admin UI uses.
-                payload = ProductCreate(**{k: v for k, v in data.items() if k in ProductCreate.model_fields})
-                fields = payload.model_dump()
-                fields.pop("blog_ids", None)
-                product = Product(**fields)
-                if r.category_id is not None:
-                    product.category_id = r.category_id
-                db.add(product)
                 created += 1
-            else:  # update
-                existing = (await db.execute(
-                    select(Product).where(Product.slug == data["slug"], Product.is_deleted == False)  # noqa: E712
-                )).scalar_one_or_none()
-                if not existing:
-                    skipped += 1
-                    error_report.append({"row": r.row_num, "slug": data.get("slug", ""), "errors": ["product vanished before commit"], "warnings": []})
-                    continue
-                for k, v in data.items():
-                    if k == "slug":
-                        continue  # never rewrite the match key
-                    setattr(existing, k, v)
-                if r.category_id is not None:
-                    existing.category_id = r.category_id
+            else:
                 updated += 1
         except Exception as exc:  # noqa: BLE001 — one bad row must not abort the batch
             skipped += 1
-            error_report.append({"row": r.row_num, "slug": r.data.get("slug", ""), "errors": [f"apply failed: {exc}"], "warnings": []})
+            error_report.append({"row": r.row_num, "slug": data.get("slug", ""), "errors": [f"apply failed: {exc}"], "warnings": []})
 
     job = ProductImportJob(
         admin_id=uuid.UUID(_admin),
@@ -596,7 +609,7 @@ async def import_products_commit(
         created_count=created,
         updated_count=updated,
         skipped_count=skipped,
-        error_count=sum(1 for r in results if r.errors),
+        error_count=sum(1 for e in error_report if e.get("errors")),
         errors=error_report[:500],  # cap stored report
     )
     db.add(job)
