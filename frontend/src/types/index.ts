@@ -143,6 +143,8 @@ export interface Order {
   billing_address?: string | null;
   notes?: string;
   items: OrderItem[];
+  /** Combo (bundle) lines — id + quantity only; the server re-derives the price. */
+  combos?: { combo_id: string; quantity: number }[];
   created_at?: string;
   updated_at?: string;
 }

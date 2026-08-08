@@ -11,7 +11,7 @@ import AdminEmptyState from "@/components/admin/AdminEmptyState";
 import { ordersApi, downloadCsv, downloadPdf } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { formatPrice, buildCustomerWhatsAppLink } from "@/lib/utils";
+import { formatPrice, buildCustomerWhatsAppLink, cn } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 
@@ -532,18 +532,28 @@ export default function AdminOrdersPage() {
                 <div>
                   <h3 className="font-semibold text-gray-900 text-sm mb-3">Items</h3>
                   <div className="space-y-2">
-                    {detail.items?.map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 py-2 border-b border-gray-50 last:border-0">
-                        <div className="w-8 h-8 bg-brand-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Package className="w-4 h-4 text-brand-400" />
+                    {detail.items?.map((item, i) => {
+                      // Combo lines are stored with a "[Combo] " name prefix
+                      // (backend orders.py); surface them as a distinct bundle
+                      // row so staff never mistake one for a single product.
+                      const isCombo = item.product_name.startsWith("[Combo] ");
+                      const displayName = isCombo ? item.product_name.slice(8) : item.product_name;
+                      return (
+                        <div key={i} className={cn("flex items-center gap-3 py-2 border-b border-gray-50 last:border-0", isCombo && "-mx-2 px-2 rounded-lg bg-accent-50/60")}>
+                          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0", isCombo ? "bg-accent-100" : "bg-brand-50")}>
+                            <Package className={cn("w-4 h-4", isCombo ? "text-accent-600" : "text-brand-400")} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {isCombo && <span className="mr-1.5 align-middle inline-block px-1.5 py-0.5 rounded bg-accent-500 text-[#14182b] text-[10px] font-bold">COMBO</span>}
+                              {displayName}
+                            </p>
+                            <p className="text-xs text-gray-400">{formatPrice(item.product_price)} × {item.quantity}</p>
+                          </div>
+                          <p className="text-sm font-semibold text-gray-900">{formatPrice(item.subtotal)}</p>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{item.product_name}</p>
-                          <p className="text-xs text-gray-400">{formatPrice(item.product_price)} × {item.quantity}</p>
-                        </div>
-                        <p className="text-sm font-semibold text-gray-900">{formatPrice(item.subtotal)}</p>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
 

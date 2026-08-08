@@ -134,6 +134,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     labelBn: "সিস্টেম",
     items: [
       { href: "/sumon/delivery", icon: Truck, label: "Checkout & Delivery", labelBn: "চেকআউট ও ডেলিভারি", minRole: "admin" },
+      { href: "/sumon/delivery-zones", icon: Truck, label: "Delivery Zones", labelBn: "ডেলিভারি জোন", minRole: "admin" },
       { href: "/sumon/settings", icon: Settings, label: "Settings", labelBn: "সেটিংস", minRole: "admin" },
       { href: "/sumon/users", icon: Users, label: "Users", labelBn: "ইউজার", minRole: "admin" },
       { href: "/sumon/audit", icon: Shield, label: "Audit Logs", labelBn: "অডিট", minRole: "admin" },

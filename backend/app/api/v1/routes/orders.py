@@ -124,6 +124,48 @@ async def _server_side_discount(db: AsyncSession, coupon_code: str | None, subto
     return float(round(subtotal * rate))
 
 
+async def _resolve_combos(db: AsyncSession, combos) -> tuple[list, float, bool]:
+    """Re-derive combo lines from the DB — the client never sets a combo price.
+
+    Returns (lines, subtotal, free_delivery) where lines is a list of
+    (title, unit_price, quantity). Inactive, deleted, not-yet-started or expired
+    combos are silently skipped, so a stale client cannot force a price.
+    """
+    from app.models.models import Combo
+
+    if not combos:
+        return [], 0.0, False
+    now = datetime.now(timezone.utc)
+    lines: list = []
+    subtotal = 0.0
+    free = False
+    for cin in combos:
+        try:
+            cid = uuid.UUID(str(cin.combo_id))
+        except (ValueError, AttributeError, TypeError):
+            continue
+        combo = (await db.execute(
+            select(Combo).where(
+                Combo.id == cid,
+                Combo.is_deleted == False,  # noqa: E712
+                Combo.is_active == True,  # noqa: E712
+            )
+        )).scalar_one_or_none()
+        if not combo:
+            continue
+        if combo.starts_at and combo.starts_at > now:
+            continue
+        if combo.ends_at and combo.ends_at <= now:
+            continue
+        qty = max(1, int(cin.quantity or 1))
+        price = float(combo.combo_price)
+        subtotal += price * qty
+        if combo.free_delivery:
+            free = True
+        lines.append((combo.title_en, price, qty))
+    return lines, subtotal, free
+
+
 async def _advance_charge_amount(db: AsyncSession) -> float:
     """The admin-configured advance/prepaid charge (setting), default ৳120."""
     row = (await db.execute(
@@ -201,14 +243,20 @@ async def create_order(
     trusted_prices = await _validate_and_reserve_stock(db, payload.items)
 
     # ---- Server-authoritative money math (never trust client totals) ----
-    trusted_subtotal = float(sum(
+    product_subtotal = float(sum(
         trusted_prices[str(idx)] * item.quantity for idx, item in enumerate(payload.items)
     ))
-    trusted_discount = await _server_side_discount(db, payload.coupon_code, trusted_subtotal)
-    # Delivery charge depends on admin zone settings computed client-side; the
-    # attack surface (arbitrary grand total) is closed by deriving total from
-    # trusted subtotal/discount. Clamp delivery to a non-negative number.
-    trusted_delivery = max(0.0, float(payload.delivery_charge or 0))
+    # Combos are re-priced from the DB (never the client) and may grant free
+    # delivery. An order with no combos behaves exactly as before.
+    combo_lines, combo_subtotal, combo_free_delivery = await _resolve_combos(db, payload.combos)
+    trusted_subtotal = product_subtotal + combo_subtotal
+    # Coupons apply to regular products only — combos are already bundle-priced,
+    # so a % coupon does not stack on top of them.
+    trusted_discount = await _server_side_discount(db, payload.coupon_code, product_subtotal)
+    # Delivery charge is computed client-side from admin zones; the arbitrary-
+    # total attack is closed by deriving the total from trusted subtotal/discount.
+    # A free-delivery combo zeroes it; otherwise clamp to a non-negative number.
+    trusted_delivery = 0.0 if combo_free_delivery else max(0.0, float(payload.delivery_charge or 0))
     trusted_total = trusted_subtotal - trusted_discount + trusted_delivery
 
     # Advance / prepaid: if any ordered product is admin-flagged
@@ -262,6 +310,18 @@ async def create_order(
             subtotal=unit_price * item_data.quantity,
         )
         db.add(item)
+
+    # Combo lines — one order item each, priced from the DB (product_id NULL,
+    # name prefixed so the invoice/admin reads it as a bundle).
+    for title, price, qty in combo_lines:
+        db.add(OrderItem(
+            order_id=order.id,
+            product_id=None,
+            product_name=f"[Combo] {title}",
+            product_price=price,
+            quantity=qty,
+            subtotal=price * qty,
+        ))
 
     await db.flush()
 

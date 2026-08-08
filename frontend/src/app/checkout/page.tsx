@@ -16,7 +16,7 @@ import { trackEvent } from "@/components/analytics/GoogleAnalytics";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
 import { cn, formatPrice } from "@/lib/utils";
-import { ordersApi, productsApi, customerOtpApi, paymentsApi } from "@/lib/api";
+import { ordersApi, productsApi, customerOtpApi, paymentsApi, deliveryZonesApi, type DeliveryZone } from "@/lib/api";
 import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { usePaymentMethods } from "@/hooks/usePaymentMethods";
@@ -56,7 +56,7 @@ type FormData = z.infer<typeof schema>;
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { items, total, clearCart, setStockWarnings } = useCartStore();
+  const { items, combos, total, comboTotal, clearCart, setStockWarnings } = useCartStore();
   const { lang } = useLanguageStore();
   const { methods: paymentMethods } = usePaymentMethods();
   /*
@@ -132,6 +132,9 @@ export default function CheckoutPage() {
   const [otpResendIn, setOtpResendIn] = useState(0);
   const [copiedAcct, setCopiedAcct] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState("BD");
+  // Admin-defined delivery zones (optional). Empty → calcDeliveryCharge falls
+  // back to the legacy settings-based 3-tier charge, so checkout never breaks.
+  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
   // Set before clearCart() so the empty-cart redirect below can't hijack the
   // navigation to /order-success (a race customers hit on slower devices).
   const orderPlacedRef = useRef(false);
@@ -156,6 +159,14 @@ export default function CheckoutPage() {
   const { upazilaOptions } = useDistrictUpazila(selectedDistrict, selectedUpazila, (v) =>
     setValue("upazila", v)
   );
+
+  useEffect(() => {
+    let active = true;
+    deliveryZonesApi.list()
+      .then((r) => { if (active) setDeliveryZones(r.data.data ?? []); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     if (paymentOptions.length && !paymentOptions.some((p) => p.gateway === selectedGateway)) {
@@ -193,8 +204,8 @@ export default function CheckoutPage() {
   }, [otpResendIn]);
 
   useEffect(() => {
-    if (hydrated && items.length === 0 && !orderPlacedRef.current) router.replace("/products");
-  }, [hydrated, items.length, router]);
+    if (hydrated && items.length === 0 && combos.length === 0 && !orderPlacedRef.current) router.replace("/products");
+  }, [hydrated, items.length, combos.length, router]);
 
   useEffect(() => {
     const coupon = new URLSearchParams(window.location.search).get("coupon")?.trim();
@@ -217,12 +228,19 @@ export default function CheckoutPage() {
   }, [hydrated, items, setStockWarnings]);
 
   const subtotal = total();
+  // Combos are bundle-priced; the coupon (products-only, matching the backend)
+  // is validated against `subtotal`, and the combo subtotal is added on top.
+  const comboSub = comboTotal();
+  const comboFreeDelivery = combos.some((c) => c.free_delivery);
   const discount = appliedCoupon?.discountAmount ?? 0;
   const afterDiscount = subtotal - discount;
   const maxProductCharge = items.reduce((m, i) => Math.max(m, Number(i.delivery_charge) || 0), 0);
-  const deliveryCharge = calcDeliveryCharge(selectedDistrict || "Sylhet", afterDiscount, settings, maxProductCharge);
+  const deliveryCharge = comboFreeDelivery
+    ? 0
+    : calcDeliveryCharge(selectedDistrict || "Sylhet", afterDiscount, settings, maxProductCharge, { upazila: selectedUpazila, zones: deliveryZones });
   const advanceCharge = calcAdvanceCharge(items, settings);
-  const cartTotal = afterDiscount + deliveryCharge;
+  const displaySubtotal = subtotal + comboSub;
+  const cartTotal = afterDiscount + comboSub + deliveryCharge;
 
   const applyCoupon = async () => {
     if (!couponsEnabled) return;
@@ -304,6 +322,9 @@ export default function CheckoutPage() {
         quantity: i.quantity,
         subtotal: i.price * i.quantity,
       }));
+      // Combos are sent by id + quantity only; the server re-derives their price
+      // from the DB, so a stale client can never dictate a combo's cost.
+      const comboPayload = combos.map((c) => ({ combo_id: c.combo_id, quantity: c.quantity }));
 
       const orderRes = await ordersApi.create({
         customer_name: data.customer_name,
@@ -321,7 +342,8 @@ export default function CheckoutPage() {
         billing_address: data.billing_address?.trim() || undefined,
         notes: data.notes,
         items: orderItems,
-        subtotal,
+        combos: comboPayload,
+        subtotal: displaySubtotal,
         discount_amount: discount,
         coupon_code: appliedCoupon?.code,
         delivery_charge: deliveryCharge,
@@ -342,13 +364,21 @@ export default function CheckoutPage() {
           phone: data.customer_phone,
           customer_name: data.customer_name,
           payment_method: data.payment_gateway,
-          items: orderItems.map((i) => ({
-            name: i.product_name,
-            quantity: i.quantity,
-            price: i.product_price,
-            subtotal: i.subtotal,
-          })),
-          subtotal,
+          items: [
+            ...orderItems.map((i) => ({
+              name: i.product_name,
+              quantity: i.quantity,
+              price: i.product_price,
+              subtotal: i.subtotal,
+            })),
+            ...combos.map((c) => ({
+              name: `[Combo] ${c.title_en}`,
+              quantity: c.quantity,
+              price: c.price,
+              subtotal: c.price * c.quantity,
+            })),
+          ],
+          subtotal: displaySubtotal,
           delivery_charge: deliveryCharge,
           total: cartTotal,
           created_at: new Date().toISOString(),
@@ -399,7 +429,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (!hydrated || items.length === 0) {
+  if (!hydrated || (items.length === 0 && combos.length === 0)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-brand-200 border-t-brand-600 rounded-full animate-spin" />
@@ -757,6 +787,20 @@ export default function CheckoutPage() {
                       <p className="money text-sm font-semibold">{formatPrice(item.price * item.quantity)}</p>
                     </div>
                   ))}
+                  {combos.map((c) => (
+                    <div key={c.combo_id} className="flex gap-3">
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-brand-600 to-brand-800 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                        {c.image_url ? <Image src={c.image_url} alt="" width={112} height={112} quality={85} className="object-cover w-full h-full" /> : <ShoppingBag className="w-6 h-6 text-accent-300" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          <span className="text-accent-600 dark:text-accent-300">{lang === "bn" ? "কম্বো" : "Combo"}</span> · {lang === "bn" ? c.title_bn : c.title_en}
+                        </p>
+                        <p className="text-xs text-muted">{formatPrice(c.price)} × {c.quantity}</p>
+                      </div>
+                      <p className="money text-sm font-semibold">{formatPrice(c.price * c.quantity)}</p>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="mt-4 pt-4 border-t space-y-2 text-sm">
@@ -777,6 +821,7 @@ export default function CheckoutPage() {
                     </>
                   )}
                   <div className="flex justify-between"><span>{lang === "bn" ? "সাবটোটাল" : "Subtotal"}</span><span className="money">{formatPrice(subtotal)}</span></div>
+                  {comboSub > 0 && <div className="flex justify-between"><span>{lang === "bn" ? "কম্বো" : "Combos"}</span><span className="money">{formatPrice(comboSub)}</span></div>}
                   {discount > 0 && <div className="flex justify-between text-green-600"><span>{lang === "bn" ? "ছাড়" : "Discount"}</span><span className="money">−{formatPrice(discount)}</span></div>}
                   {/* Announced: the charge changes when the district changes,
                       and a screen-reader user gets no repaint to notice. */}

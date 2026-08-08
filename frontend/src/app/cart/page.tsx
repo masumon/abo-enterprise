@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Tag, AlertTriangle, ArrowLeft, Truck, CheckCircle2 } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, Tag, AlertTriangle, ArrowLeft, Truck, CheckCircle2, Package } from "lucide-react";
 import { useCartStore } from "@/store/cart";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
@@ -17,7 +17,7 @@ import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 
 export default function CartPage() {
-  const { items, updateQuantity, removeItem, total, stockWarnings, setStockWarnings } = useCartStore();
+  const { items, combos, updateQuantity, removeItem, updateComboQty, removeCombo, total, comboTotal, stockWarnings, setStockWarnings } = useCartStore();
   const { lang } = useLanguageStore();
   const t = useT();
   const router = useRouter();
@@ -43,9 +43,13 @@ export default function CartPage() {
   const { settings: deliverySettings } = usePublicSettings(["free_delivery_min_amount"]);
   const freeDeliveryMin = Number(getSettingValue(deliverySettings, "free_delivery_min_amount") || NaN);
 
+  // Coupons discount products only (matches the backend); the combo subtotal is
+  // added on top of the product figure the coupon was validated against.
   const cartSubtotal = total();
+  const comboSubtotal = comboTotal();
   const discount = appliedCoupon?.discountAmount ?? 0;
-  const cartTotal = cartSubtotal - discount;
+  const cartTotal = cartSubtotal - discount + comboSubtotal;
+  const hasContents = items.length > 0 || combos.length > 0;
 
   useEffect(() => {
     if (items.length === 0) {
@@ -95,14 +99,14 @@ export default function CartPage() {
       <PageHero
         pageKey="cart"
         title={lang === "bn" ? "শপিং কার্ট" : "Shopping Cart"}
-        subtitle={lang === "bn" ? `${items.length}টি পণ্য` : `${items.length} items`}
+        subtitle={lang === "bn" ? `${items.length + combos.length}টি পণ্য` : `${items.length + combos.length} items`}
         breadcrumbs={[{ label: lang === "bn" ? "কার্ট" : "Cart" }]}
         variant="light"
       />
 
       <section className="enterprise-section">
         <div className="container mx-auto px-4 max-w-5xl">
-          {!hydrated ? null : items.length === 0 ? (
+          {!hydrated ? null : !hasContents ? (
             <EmptyState
               icon={ShoppingBag}
               title={lang === "bn" ? "কার্ট খালি" : "Your cart is empty"}
@@ -177,6 +181,49 @@ export default function CartPage() {
                   </div>
                 ))}
 
+                {combos.map((c) => (
+                  <div key={c.combo_id} className="enterprise-card p-4 flex gap-4 border-accent-200/70 dark:border-accent-500/25">
+                    <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-gradient-to-br from-brand-600 to-brand-800 flex items-center justify-center flex-shrink-0">
+                      {c.image_url ? (
+                        <Image src={c.image_url} alt={lang === "bn" ? c.title_bn : c.title_en} fill className="object-cover" sizes="80px" />
+                      ) : (
+                        <Package className="w-8 h-8 text-accent-400" aria-hidden />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start gap-2">
+                        <h3 className="flex-1 min-w-0 font-semibold text-heading line-clamp-2">
+                          <span className="text-accent-600 dark:text-accent-300">{lang === "bn" ? "কম্বো" : "Combo"}</span> · {lang === "bn" ? c.title_bn : c.title_en}
+                        </h3>
+                        <p className="money font-bold text-heading flex-shrink-0 whitespace-nowrap">
+                          {formatPrice(c.price * c.quantity)}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted mt-0.5">
+                        <span className="money">{formatPrice(c.price)}</span>
+                        {" × "}
+                        {c.quantity}
+                        {c.free_delivery && <span className="ml-2 text-emerald-600 dark:text-emerald-400 font-medium">{lang === "bn" ? "ফ্রি ডেলিভারি" : "Free delivery"}</span>}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-3 mt-3">
+                        <div className="flex items-center border border-gray-200 dark:border-white/10 rounded-lg">
+                          <button type="button" onClick={() => updateComboQty(c.combo_id, c.quantity - 1)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-white/5" aria-label="Decrease">
+                            <Minus className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="w-8 text-center text-sm font-medium">{c.quantity}</span>
+                          <button type="button" onClick={() => updateComboQty(c.combo_id, c.quantity + 1)} className="w-8 h-8 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-white/5" aria-label="Increase">
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <button type="button" onClick={() => removeCombo(c.combo_id)} className="text-red-500 hover:text-red-600 text-sm flex items-center gap-1">
+                          <Trash2 className="w-3.5 h-3.5" />
+                          {lang === "bn" ? "সরান" : "Remove"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
                 <Link href="/products" className="inline-flex items-center gap-2 text-sm text-brand-600 hover:underline">
                   <ArrowLeft className="w-4 h-4" />
                   {lang === "bn" ? "কেনাকাটা চালিয়ে যান" : "Continue shopping"}
@@ -222,6 +269,7 @@ export default function CartPage() {
 
                 <div className="space-y-2 text-sm border-t border-gray-100 dark:border-white/10 pt-4">
                   <div className="flex justify-between"><span className="text-muted">{t("cart_subtotal")}</span><span className="money">{formatPrice(cartSubtotal)}</span></div>
+                  {comboSubtotal > 0 && <div className="flex justify-between"><span className="text-muted">{lang === "bn" ? "কম্বো" : "Combos"}</span><span className="money">{formatPrice(comboSubtotal)}</span></div>}
                   {discount > 0 && <div className="flex justify-between text-green-600"><span>Discount</span><span className="money">-{formatPrice(discount)}</span></div>}
                   <div className="flex justify-between"><span className="text-muted">{t("cart_delivery")}</span><span>{lang === "bn" ? "চেকআউটে" : "At checkout"}</span></div>
                   <div className="flex justify-between font-bold text-lg pt-2 border-t border-gray-100 dark:border-white/10">
