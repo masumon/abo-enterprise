@@ -398,6 +398,72 @@ export async function downloadCsv(path: string, filename: string): Promise<void>
   URL.revokeObjectURL(url);
 }
 
+// ── Bulk Product Import ──────────────────────────────────────────────────────
+export interface ImportPreviewRow {
+  row: number;
+  slug: string;
+  name: string;
+  sku: string;
+  category: string;
+  action: "create" | "update" | "skip";
+  errors: string[];
+  warnings: string[];
+}
+export interface ImportValidateResult {
+  headers: string[];
+  fields: string[];
+  auto_mapping: Record<string, string | null>;
+  mapping_used: Record<string, string | null>;
+  summary: { total: number; create: number; update: number; skip: number; errors: number; warnings: number };
+  rows: ImportPreviewRow[];
+}
+export interface ImportCommitResult {
+  job_id: string;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: { row: number; slug: string; errors: string[]; warnings: string[] }[];
+}
+export interface ImportHistoryItem {
+  id: string;
+  filename: string | null;
+  total_rows: number;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: number;
+  error_report: { row: number; slug: string; errors: string[]; warnings: string[] }[];
+  created_at: string | null;
+}
+
+export const productImportApi = {
+  downloadTemplate: (fmt: "csv" | "xlsx") =>
+    downloadCsv(`/api/v1/admin/bulk/import/products/template?fmt=${fmt}`, `product-import-template.${fmt}`),
+  downloadCategoryTree: () =>
+    downloadCsv("/api/v1/admin/bulk/import/products/category-tree", "category-tree.csv"),
+  validate: (file: File, mapping: Record<string, string | null> | null, onExisting: string, onNew: string) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    if (mapping) fd.append("mapping", JSON.stringify(mapping));
+    fd.append("on_existing", onExisting);
+    fd.append("on_new", onNew);
+    return api.post<ApiResponse<ImportValidateResult>>("/api/v1/admin/bulk/import/products/validate", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  commit: (file: File, mapping: Record<string, string | null> | null, onExisting: string, onNew: string) => {
+    const fd = new FormData();
+    fd.append("file", file);
+    if (mapping) fd.append("mapping", JSON.stringify(mapping));
+    fd.append("on_existing", onExisting);
+    fd.append("on_new", onNew);
+    return api.post<ApiResponse<ImportCommitResult>>("/api/v1/admin/bulk/import/products/commit", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  history: () => api.get<ApiResponse<ImportHistoryItem[]>>("/api/v1/admin/bulk/import/products/history"),
+};
+
 export async function downloadPublicOrderInvoice(orderNumber: string, phone: string): Promise<void> {
   const res = await fetch(
     `${API_BASE}/api/v1/invoices/public/order/${encodeURIComponent(orderNumber)}/pdf?phone=${encodeURIComponent(phone)}`

@@ -1,16 +1,21 @@
 import csv
 import io
+import uuid
 from datetime import datetime, timezone, timedelta
-from fastapi import APIRouter, Depends, UploadFile, File, Query, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, Form, Query, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, update
 from app.core.database import get_db
 from app.core.security import require_admin, require_role
-from app.models.models import Product, Order, LeadV2, BookingV2
-from app.schemas.schemas import BulkOrderStatusUpdate, ApiResponse
+from app.core import product_import as pi
+from app.core.taxonomy import load_categories, ancestors_of
+from app.models.models import Product, Order, LeadV2, BookingV2, Category, ProductImportJob
+from app.schemas.schemas import BulkOrderStatusUpdate, ApiResponse, ProductCreate
 
 router = APIRouter(prefix="/admin/bulk", tags=["bulk"])
+
+MAX_IMPORT_ROWS = 2000  # protect free-tier memory / a single request's work
 
 VALID_ORDER_STATUSES = {"pending", "confirmed", "processing", "shipped", "delivered", "cancelled"}
 MAX_EXPORT_ROWS = 2000  # Limit exports to protect Render free-tier memory
@@ -365,3 +370,267 @@ async def export_products_pdf(
         col_widths=[0.30, 0.14, 0.12, 0.12, 0.10, 0.11, 0.11],
     )
     return _pdf_response(pdf, "products.pdf")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BULK PRODUCT IMPORT — template, category tree, validate (dry-run), commit,
+# history. Reuses ProductCreate validation and the existing Product model; the
+# working single-product create/update endpoints and the storefront are
+# untouched. slug is the primary key (create/update/skip); SKU duplicates are
+# surfaced as warnings.
+# ══════════════════════════════════════════════════════════════════════════════
+
+_TEMPLATE_COLUMNS = list(pi.FIELD_SPEC.keys())
+_TEMPLATE_EXAMPLE = {
+    "slug": "sample-fast-charger",
+    "name_en": "Sample Fast Charger 65W",
+    "name_bn": "স্যাম্পল ফাস্ট চার্জার ৬৫W",
+    "category": "chargers",
+    "price": "1490",
+    "original_price": "1990",
+    "description_en": "65W GaN fast charger.",
+    "description_bn": "৬৫W GaN ফাস্ট চার্জার।",
+    "sku": "CHG-65W-001",
+    "brand": "ABO",
+    "stock_quantity": "25",
+    "is_active": "true",
+    "is_featured": "false",
+    "image_url": "https://res.cloudinary.com/demo/image/upload/charger.jpg",
+    "images": "https://res.cloudinary.com/demo/image/upload/charger-2.jpg | https://res.cloudinary.com/demo/image/upload/charger-3.jpg",
+    "tags": "charger, fast, 65w",
+}
+
+
+@router.get("/import/products/template", dependencies=[Depends(require_role("products.write"))])
+async def import_products_template(fmt: str = Query("csv", pattern="^(csv|xlsx)$")):
+    """Download a ready-to-fill import template with the canonical columns and
+    one example row. slug/name_en/name_bn/category/price are required for a NEW
+    product; an existing slug only needs the columns you want to change."""
+    example = [_TEMPLATE_EXAMPLE.get(c, "") for c in _TEMPLATE_COLUMNS]
+    if fmt == "xlsx":
+        try:
+            from openpyxl import Workbook
+        except ImportError:
+            raise HTTPException(status_code=400, detail="Excel export unavailable (openpyxl not installed). Use CSV.")
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Products"
+        ws.append(_TEMPLATE_COLUMNS)
+        ws.append(example)
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return StreamingResponse(
+            buf,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment; filename=product-import-template.xlsx"},
+        )
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(_TEMPLATE_COLUMNS)
+    writer.writerow(example)
+    output.seek(0)
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode("utf-8-sig")),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=product-import-template.csv"},
+    )
+
+
+@router.get("/import/products/category-tree", dependencies=[Depends(require_role("products.read"))])
+async def import_category_tree(db: AsyncSession = Depends(get_db)):
+    """Download the current category tree as CSV so the admin uses exact,
+    matchable category values in the import file (slug or full path)."""
+    cats = await load_categories(db, include_inactive=True)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["slug", "name_en", "name_bn", "path", "parent_slug"])
+    by_id = {c.id: c for c in cats}
+    def _path(c: Category) -> str:
+        chain = [a.name_en for a in ancestors_of(c, cats)] + [c.name_en]
+        return " > ".join(chain)
+    for c in sorted(cats, key=lambda x: _path(x).lower()):
+        parent = by_id.get(c.parent_id) if c.parent_id else None
+        writer.writerow([c.slug, c.name_en, c.name_bn or "", _path(c), parent.slug if parent else ""])
+    output.seek(0)
+    return StreamingResponse(
+        io.BytesIO(output.getvalue().encode("utf-8-sig")),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=category-tree.csv"},
+    )
+
+
+async def _run_import_pipeline(file: UploadFile, mapping_json: str | None, on_existing: str, on_new: str, db: AsyncSession):
+    """Shared parse + map + validate used by both validate (dry-run) and commit.
+    Returns (headers, auto_mapping, mapping_used, results)."""
+    content = await file.read()
+    try:
+        headers, rows = pi.parse_file(file.filename or "", content)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if not rows:
+        raise HTTPException(status_code=400, detail="The file has no data rows.")
+    if len(rows) > MAX_IMPORT_ROWS:
+        raise HTTPException(status_code=400, detail=f"Too many rows ({len(rows)}). Split into files of ≤{MAX_IMPORT_ROWS}.")
+
+    auto_mapping = pi.auto_map_headers(headers)
+    mapping_used = dict(auto_mapping)
+    if mapping_json:
+        import json
+        try:
+            override = json.loads(mapping_json)
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="mapping must be valid JSON")
+        if isinstance(override, dict):
+            for h, fld in override.items():
+                if h in mapping_used:
+                    mapping_used[h] = (fld or None)
+
+    cat_index = await pi.build_category_index(db)
+    # Existing products for match (case as stored).
+    existing = (await db.execute(
+        select(Product.slug, Product.sku).where(Product.is_deleted == False)  # noqa: E712
+    )).all()
+    existing_slugs = {r[0] for r in existing if r[0]}
+    existing_sku_to_slug = {r[1]: r[0] for r in existing if r[1]}
+
+    results = pi.validate_rows(
+        rows, mapping_used, cat_index, existing_slugs, existing_sku_to_slug,
+        on_existing=on_existing, on_new=on_new,
+    )
+    return headers, auto_mapping, mapping_used, results
+
+
+@router.post("/import/products/validate", response_model=ApiResponse, dependencies=[Depends(require_role("products.write"))])
+async def import_products_validate(
+    file: UploadFile = File(...),
+    mapping: str | None = Form(None),
+    on_existing: str = Form("update"),
+    on_new: str = Form("create"),
+    db: AsyncSession = Depends(get_db),
+):
+    """Dry-run: parse, auto-map columns, validate every row and match categories.
+    Writes NOTHING to the database — returns a preview + per-row errors so the
+    admin can fix the file before committing."""
+    headers, auto_mapping, mapping_used, results = await _run_import_pipeline(file, mapping, on_existing, on_new, db)
+    preview = [r.to_preview() for r in results]
+    summary = {
+        "total": len(results),
+        "create": sum(1 for r in results if r.action == "create" and not r.errors),
+        "update": sum(1 for r in results if r.action == "update" and not r.errors),
+        "skip": sum(1 for r in results if r.action == "skip" or r.errors),
+        "errors": sum(1 for r in results if r.errors),
+        "warnings": sum(1 for r in results if r.warnings),
+    }
+    return ApiResponse(
+        data={
+            "headers": headers,
+            "fields": _TEMPLATE_COLUMNS,
+            "auto_mapping": auto_mapping,
+            "mapping_used": mapping_used,
+            "summary": summary,
+            "rows": preview,
+        },
+        message="Validation complete (nothing saved yet)",
+    )
+
+
+@router.post("/import/products/commit", response_model=ApiResponse, dependencies=[Depends(require_role("products.write"))])
+async def import_products_commit(
+    file: UploadFile = File(...),
+    mapping: str | None = Form(None),
+    on_existing: str = Form("update"),
+    on_new: str = Form("create"),
+    _admin: str = Depends(require_role("products.write")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Apply the import: create new products and update existing ones (by slug),
+    skipping rows with errors. Re-validates the file server-side (the preview is
+    never trusted), records the run in Import History, and returns the result."""
+    _, _, _, results = await _run_import_pipeline(file, mapping, on_existing, on_new, db)
+
+    created = updated = skipped = 0
+    error_report: list[dict] = []
+
+    for r in results:
+        if r.errors or r.action == "skip":
+            skipped += 1
+            if r.errors or r.warnings:
+                error_report.append({"row": r.row_num, "slug": r.data.get("slug", ""), "errors": r.errors, "warnings": r.warnings})
+            continue
+        try:
+            data = dict(r.data)
+            if r.action == "create":
+                # Validate/normalise through the same schema the admin UI uses.
+                payload = ProductCreate(**{k: v for k, v in data.items() if k in ProductCreate.model_fields})
+                fields = payload.model_dump()
+                fields.pop("blog_ids", None)
+                product = Product(**fields)
+                if r.category_id is not None:
+                    product.category_id = r.category_id
+                db.add(product)
+                created += 1
+            else:  # update
+                existing = (await db.execute(
+                    select(Product).where(Product.slug == data["slug"], Product.is_deleted == False)  # noqa: E712
+                )).scalar_one_or_none()
+                if not existing:
+                    skipped += 1
+                    error_report.append({"row": r.row_num, "slug": data.get("slug", ""), "errors": ["product vanished before commit"], "warnings": []})
+                    continue
+                for k, v in data.items():
+                    if k == "slug":
+                        continue  # never rewrite the match key
+                    setattr(existing, k, v)
+                if r.category_id is not None:
+                    existing.category_id = r.category_id
+                updated += 1
+        except Exception as exc:  # noqa: BLE001 — one bad row must not abort the batch
+            skipped += 1
+            error_report.append({"row": r.row_num, "slug": r.data.get("slug", ""), "errors": [f"apply failed: {exc}"], "warnings": []})
+
+    job = ProductImportJob(
+        admin_id=uuid.UUID(_admin),
+        filename=file.filename,
+        total_rows=len(results),
+        created_count=created,
+        updated_count=updated,
+        skipped_count=skipped,
+        error_count=sum(1 for r in results if r.errors),
+        errors=error_report[:500],  # cap stored report
+    )
+    db.add(job)
+    await db.commit()
+
+    return ApiResponse(
+        data={
+            "job_id": str(job.id),
+            "created": created,
+            "updated": updated,
+            "skipped": skipped,
+            "errors": error_report,
+        },
+        message=f"Import complete: {created} created, {updated} updated, {skipped} skipped",
+    )
+
+
+@router.get("/import/products/history", response_model=ApiResponse, dependencies=[Depends(require_role("products.read"))])
+async def import_products_history(db: AsyncSession = Depends(get_db)):
+    """Recent bulk-import runs (newest first) for the Import History panel."""
+    jobs = (await db.execute(
+        select(ProductImportJob).order_by(ProductImportJob.created_at.desc()).limit(50)
+    )).scalars().all()
+    return ApiResponse(data=[
+        {
+            "id": str(j.id),
+            "filename": j.filename,
+            "total_rows": j.total_rows,
+            "created": j.created_count,
+            "updated": j.updated_count,
+            "skipped": j.skipped_count,
+            "errors": j.error_count,
+            "error_report": j.errors or [],
+            "created_at": j.created_at.isoformat() if j.created_at else None,
+        }
+        for j in jobs
+    ])

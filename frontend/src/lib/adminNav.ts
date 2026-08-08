@@ -24,6 +24,7 @@ import {
   FolderTree,
   LayoutTemplate,
   ExternalLink,
+  UploadCloud,
   type LucideIcon,
 } from "lucide-react";
 
@@ -108,7 +109,8 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     labelBn: "ক্যাটালগ",
     items: [
       { href: "/sumon/categories", icon: FolderTree, label: "Categories", labelBn: "ক্যাটাগরি", minRole: "admin" },
-      { href: "/sumon/products", icon: Package, label: "Products", labelBn: "পণ্য" },
+      { href: "/sumon/products", icon: Package, label: "Products", labelBn: "পণ্য", exact: true },
+      { href: "/sumon/products/import", icon: UploadCloud, label: "Bulk Import", labelBn: "বাল্ক ইমপোর্ট" },
       { href: "/sumon/combos", icon: Package, label: "Combo Packs", labelBn: "কম্বো প্যাক" },
       { href: "/sumon/services", icon: Wrench, label: "Services", labelBn: "সেবা" },
       { href: "/sumon/reviews", icon: Star, label: "Product Reviews", labelBn: "পণ্য রিভিউ" },
