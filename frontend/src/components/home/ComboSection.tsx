@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Package, Truck } from "lucide-react";
+import { Package, Truck, ShoppingCart } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
-import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { useCartStore } from "@/store/cart";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { formatPrice } from "@/lib/utils";
 
@@ -39,7 +39,8 @@ interface Combo {
 export default function ComboSection() {
   const { lang } = useLanguageStore();
   const bn = lang === "bn";
-  const { settings } = usePublicSettings(["whatsapp_number", "contact_phone"]);
+  const addCombo = useCartStore((s) => s.addCombo);
+  const openCart = useCartStore((s) => s.openCart);
   const [combos, setCombos] = useState<Combo[]>([]);
 
   useEffect(() => {
@@ -53,11 +54,17 @@ export default function ComboSection() {
 
   if (combos.length === 0) return null;
 
-  const waNumber = (
-    getSettingValue(settings, "whatsapp_number") ||
-    getSettingValue(settings, "contact_phone") ||
-    "8801825007977"
-  ).replace(/[^0-9]/g, "");
+  const handleAdd = (c: Combo) => {
+    addCombo({
+      combo_id: c.id,
+      title_en: c.title_en,
+      title_bn: c.title_bn,
+      price: c.combo_price,
+      image_url: c.image_url ?? null,
+      free_delivery: c.free_delivery,
+    });
+    openCart();
+  };
 
   return (
     <section className="py-5 lg:py-7">
@@ -80,10 +87,6 @@ export default function ComboSection() {
             const save = c.compare_at_price && c.compare_at_price > c.combo_price
               ? Math.round(c.compare_at_price - c.combo_price)
               : 0;
-            const msg = bn
-              ? `আমি "${title}" কম্বোটি অর্ডার করতে চাই (৳${Math.round(c.combo_price)})`
-              : `I'd like to order the "${title}" combo (৳${Math.round(c.combo_price)})`;
-            const waHref = `https://wa.me/${waNumber}?text=${encodeURIComponent(msg)}`;
             return (
               <div key={c.id} className="enterprise-card overflow-hidden flex flex-col group">
                 <div className="relative aspect-[4/3] overflow-hidden">
@@ -120,14 +123,14 @@ export default function ComboSection() {
                       <span className="money text-xs text-gray-400 line-through">{formatPrice(c.compare_at_price!)}</span>
                     )}
                   </div>
-                  <a
-                    href={waHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => handleAdd(c)}
                     className="mt-3 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl bg-accent-500 text-[#14182b] text-xs sm:text-sm font-bold hover:bg-accent-600 active:scale-95 transition-all"
                   >
-                    {bn ? "অর্ডার করুন" : "Order now"}
-                  </a>
+                    <ShoppingCart className="w-4 h-4" aria-hidden />
+                    {bn ? "কার্টে যোগ করুন" : "Add to cart"}
+                  </button>
                 </div>
               </div>
             );
