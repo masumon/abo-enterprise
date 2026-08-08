@@ -13,6 +13,8 @@ import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { cn } from "@/lib/utils";
 import ProductFilterSheet from "@/components/products/ProductFilterSheet";
+import VoiceSearchButton from "@/components/search/VoiceSearchButton";
+import ImageSearchButton from "@/components/search/ImageSearchButton";
 import EmptyState from "@/components/ui/EmptyState";
 import { useFeatureFlag } from "@/hooks/useFeatureFlag";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
@@ -323,20 +325,26 @@ export default function ProductsClient({
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder={lang === "bn" ? "পণ্য খুঁজুন..." : "Search products..."}
-              className="input pl-10 w-full"
+              className="input pl-10 pr-16 w-full"
             />
+            {/* Image (OCR) + voice search — fill the box in place */}
+            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center gap-2.5">
+              <ImageSearchButton lang={lang} onResult={(t) => setSearch(t)} />
+              <VoiceSearchButton lang={lang} onResult={(t) => setSearch(t)} />
+            </div>
           </div>
           <button
             type="button"
             onClick={() => setFiltersOpen(true)}
             aria-expanded={filtersOpen}
             aria-haspopup="dialog"
-            className="relative flex-shrink-0 min-h-[44px] px-3.5 rounded-xl border border-gray-200 dark:border-white/10 flex items-center gap-2 text-sm font-semibold text-heading"
+            aria-label={lang === "bn" ? "ফিল্টার" : "Filters"}
+            title={lang === "bn" ? "ফিল্টার" : "Filters"}
+            className="relative flex-shrink-0 w-11 h-11 rounded-xl border border-gray-200 dark:border-white/10 flex items-center justify-center text-heading"
           >
             <SlidersHorizontal className="w-4 h-4" aria-hidden />
-            <span className="hidden sm:inline">{lang === "bn" ? "ফিল্টার" : "Filters"}</span>
             {activeFilters.length > 0 && (
-              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-accent-500 text-[#14182b] text-[10px] font-bold flex items-center justify-center">
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-accent-500 text-[#14182b] text-[10px] font-bold flex items-center justify-center">
                 {activeFilters.length}
               </span>
             )}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Printer, Globe } from "lucide-react";
+import { Printer, Languages } from "lucide-react";
 
 interface Props {
   contentEn: string;
@@ -11,45 +11,49 @@ interface Props {
 }
 
 export default function BlogPostActions({ contentEn, contentBn, titleEn, titleBn }: Props) {
-  const [lang, setLang] = useState<"en" | "bn">("en");
   const hasBn = !!(contentBn?.trim());
+  // Bangla-first: an article with a Bangla version opens in Bangla; the reader
+  // can switch to English. English-only articles show English.
+  const [lang, setLang] = useState<"en" | "bn">(hasBn ? "bn" : "en");
 
   const handlePrint = () => window.print();
 
   const content = lang === "bn" && hasBn ? contentBn! : contentEn;
-  const title   = lang === "bn" && titleBn ? titleBn : titleEn;
+  const title = lang === "bn" && titleBn ? titleBn : titleEn;
 
   return (
     <>
-      {/* Action buttons — shown in article, hidden in print */}
-      <div className="flex items-center gap-2 flex-wrap print:hidden">
-        <button
-          onClick={handlePrint}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          <Printer className="w-3.5 h-3.5" />
-          Print
-        </button>
-
-        {hasBn && (
-          <button
-            onClick={() => setLang(l => l === "en" ? "bn" : "en")}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-600 border border-brand-200 bg-brand-50 rounded-lg hover:bg-brand-100 transition-colors"
-          >
-            <Globe className="w-3.5 h-3.5" />
-            {lang === "en" ? "বাংলায় পড়ুন" : "Read in English"}
-          </button>
-        )}
-      </div>
-
-      {/* Title — switches with language */}
-      <h1 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight mb-4 mt-4">
+      {/* Title first — switches with language */}
+      <h1
+        className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-heading leading-tight tracking-tight mb-4"
+        dir={lang === "bn" ? "auto" : "ltr"}
+      >
         {title}
       </h1>
 
-      {/* Content — switches with language */}
+      {/* Action bar — hidden in print */}
+      <div className="flex items-center gap-2 flex-wrap mb-6 print:hidden">
+        {hasBn && (
+          <button
+            type="button"
+            onClick={() => setLang((l) => (l === "en" ? "bn" : "en"))}
+            className="btn btn-brand btn-sm"
+          >
+            <Languages className="w-4 h-4" />
+            {lang === "en" ? "বাংলায় পড়ুন" : "Read in English"}
+          </button>
+        )}
+        <button type="button" onClick={handlePrint} className="btn btn-outline btn-sm">
+          <Printer className="w-4 h-4" />
+          {lang === "bn" ? "প্রিন্ট" : "Print"}
+        </button>
+      </div>
+
+      {/* Content — switches with language. The typography plugin isn't
+          installed, so styling stays token-based (theme-aware) rather than
+          relying on `prose`. */}
       <article
-        className="prose prose-gray max-w-none leading-relaxed whitespace-pre-line text-gray-700"
+        className="max-w-none whitespace-pre-line text-[15px] sm:text-base leading-[1.9] text-[var(--ink)]"
         dir={lang === "bn" ? "auto" : "ltr"}
       >
         {content}

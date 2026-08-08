@@ -166,7 +166,7 @@ export default async function BlogPostPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }}
       />
-      <main className="min-h-screen">
+      <main className="min-h-screen page-surface">
         {/* Hero */}
         {post.featured_image_url ? (
           <div className="relative w-full overflow-hidden bg-gray-100 dark:bg-[#141930] h-[min(480px,50vh)]">
@@ -184,11 +184,11 @@ export default async function BlogPostPage({
         )}
 
         <div className="max-w-3xl mx-auto px-4 py-10">
-          <BlogPostBreadcrumb category={post.category} title={post.title_en} />
+          <BlogPostBreadcrumb category={post.category} title={post.title_bn ?? post.title_en} />
 
           {/* Category */}
           {post.category && (
-            <span className="inline-block px-3 py-1 bg-brand-100 text-brand-700 text-xs font-semibold rounded-full mb-4 capitalize">
+            <span className="inline-block px-3 py-1 bg-brand-100 dark:bg-brand-500/15 text-brand-700 dark:text-brand-200 text-xs font-semibold rounded-full mb-4 capitalize">
               {post.category}
             </span>
           )}
