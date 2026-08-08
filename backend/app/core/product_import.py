@@ -22,7 +22,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.models import Category, Product
+from app.models.models import Category
 
 # ── Column spec ──────────────────────────────────────────────────────────────
 # type: str | int | float | bool | list ; required only for a *new* product.

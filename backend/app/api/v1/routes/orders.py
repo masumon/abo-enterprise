@@ -183,26 +183,36 @@ _SYLHET_DISTRICTS = {"Sylhet", "Habiganj", "Moulvibazar", "Sunamganj"}
 _DHAKA_TIER = {"Dhaka", "Gazipur", "Narayanganj"}
 
 
-async def _server_delivery_charge(
-    db: AsyncSession, district: str | None, upazila: str | None,
+async def _load_delivery_zones_safe(db: AsyncSession) -> list:
+    """Read active delivery zones BEFORE any order write, so a not-yet-migrated
+    delivery_zones table degrades to the legacy tier instead of failing the
+    whole order. Rolls back only here (no writes have happened yet), so the
+    stock reservation that follows is never affected."""
+    from app.models.models import DeliveryZone
+    try:
+        return list((await db.execute(
+            select(DeliveryZone).where(
+                DeliveryZone.is_deleted == False,  # noqa: E712
+                DeliveryZone.is_active == True,  # noqa: E712
+            ).order_by(DeliveryZone.sort_order.asc(), DeliveryZone.created_at.asc())
+        )).scalars().all())
+    except Exception:  # noqa: BLE001 — missing table / DB hiccup → legacy tier
+        await db.rollback()
+        return []
+
+
+def _delivery_from_zones_or_tier(
+    zones: list, settings_map: dict, district: str | None, upazila: str | None,
     subtotal_after_discount: float, max_product_charge: float,
 ) -> float:
-    """Re-derive the delivery charge from admin DeliveryZones, then the legacy
-    3-tier settings — the same rules the storefront's calcDeliveryCharge uses,
-    so the customer is billed exactly what they saw, but authoritatively."""
-    from app.models.models import DeliveryZone
-
+    """Pure delivery-charge rule (no DB): admin zones first, then the legacy
+    3-tier settings — mirrors the storefront's calcDeliveryCharge so the
+    customer is billed exactly what they saw, authoritatively."""
     dist = (district or "").strip()
     upz = (upazila or "").strip()
 
     # 1) Admin-defined zones — first active zone (by sort_order) that covers the
     # district and, when it lists upazilas, the customer's upazila.
-    zones = (await db.execute(
-        select(DeliveryZone).where(
-            DeliveryZone.is_deleted == False,  # noqa: E712
-            DeliveryZone.is_active == True,  # noqa: E712
-        ).order_by(DeliveryZone.sort_order.asc(), DeliveryZone.created_at.asc())
-    )).scalars().all()
     for z in zones:
         if dist not in (z.districts or []):
             continue
@@ -214,15 +224,9 @@ async def _server_delivery_charge(
         return max(float(z.charge or 0), max_product_charge)
 
     # 2) Legacy 3-tier from settings (defaults match the storefront).
-    rows = (await db.execute(select(Setting).where(Setting.key.in_([
-        "free_delivery_min_amount", "delivery_charge_sylhet",
-        "delivery_charge_dhaka", "delivery_charge_outside",
-    ])))).scalars().all()
-    s = {r.key: r.value for r in rows}
-
     def _num(key: str, default: float) -> float:
         try:
-            return float(s.get(key) or default)
+            return float(settings_map.get(key) or default)
         except (TypeError, ValueError):
             return default
 
@@ -300,6 +304,11 @@ async def create_order(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
+    # Read delivery zones up front — BEFORE any write — so a not-yet-migrated
+    # delivery_zones table can degrade to the legacy tier without poisoning the
+    # order-write transaction (see _load_delivery_zones_safe).
+    delivery_zones = await _load_delivery_zones_safe(db)
+
     await _anti_abuse_guard(db, payload)
     trusted_prices = await _validate_and_reserve_stock(db, payload.items)
 
@@ -328,8 +337,12 @@ async def create_order(
             max_product_charge = float((await db.execute(
                 select(func.max(Product.delivery_charge)).where(Product.id.in_(product_ids))
             )).scalar() or 0.0)
-        trusted_delivery = await _server_delivery_charge(
-            db, payload.district, payload.upazila,
+        _dsettings = {r.key: r.value for r in (await db.execute(select(Setting).where(Setting.key.in_([
+            "free_delivery_min_amount", "delivery_charge_sylhet",
+            "delivery_charge_dhaka", "delivery_charge_outside",
+        ])))).scalars().all()}
+        trusted_delivery = _delivery_from_zones_or_tier(
+            delivery_zones, _dsettings, payload.district, payload.upazila,
             product_subtotal - trusted_discount, max_product_charge,
         )
     else:
