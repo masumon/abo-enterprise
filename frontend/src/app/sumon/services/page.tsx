@@ -10,6 +10,8 @@ import {
 import { servicesAdminApi, categoriesApi, adminBlogApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
+import TranslateButton from "@/components/admin/TranslateButton";
+import { translateBnToEn } from "@/lib/translate";
 import LivePreview from "@/components/admin/LivePreview";
 import LinkChecklist, { type LinkOption } from "@/components/admin/LinkChecklist";
 import ServiceCard from "@/components/services/ServiceCard";
@@ -365,22 +367,40 @@ export default function AdminServicesPage() {
 
   const handleSave = async () => {
     if (!editing) return;
-    if (!editing.name_en?.trim()) { toast("error", "Name (EN) is required"); return; }
-    if (!editing.slug?.trim()) { toast("error", "Slug is required"); return; }
-    if (!editing.category_id && !editing.category) { toast("error", "Category is required"); return; }
-    if (!editing.pricing_type) { toast("error", "Pricing type is required"); return; }
-    if (editing.min_price != null && editing.max_price != null && editing.min_price > editing.max_price) {
-      toast("error", "Minimum price cannot be greater than maximum price"); return;
-    }
-    if (editing.base_price != null && editing.base_price < 0) { toast("error", "Base price cannot be negative"); return; }
-
+    // Bangla-first: fill empty English name/descriptions from Bangla siblings
+    // before validation, so the admin never types English by hand.
+    let ed = editing;
     setSaving(true);
     try {
+      const patch: Partial<Service> = {};
+      if (!ed.name_en?.trim() && ed.name_bn?.trim()) {
+        patch.name_en = await translateBnToEn(ed.name_bn);
+        if (isNew || !ed.slug?.trim()) patch.slug = slugify(patch.name_en);
+      }
+      if (!ed.short_description_en?.trim() && ed.short_description_bn?.trim()) patch.short_description_en = await translateBnToEn(ed.short_description_bn);
+      if (!ed.description_en?.trim() && ed.description_bn?.trim()) patch.description_en = await translateBnToEn(ed.description_bn);
+      if (!ed.long_description_en?.trim() && ed.long_description_bn?.trim()) patch.long_description_en = await translateBnToEn(ed.long_description_bn);
+      if (Object.keys(patch).length) { ed = { ...ed, ...patch }; setEditing(ed); }
+    } catch {
+      setSaving(false);
+      toast("error", "অটো-অনুবাদ ব্যর্থ — English নিজে লিখুন বা → English চাপুন");
+      return;
+    }
+    if (!ed.name_en?.trim()) { setSaving(false); toast("error", "Name (EN) is required (বাংলা লিখলে অটো-অনুবাদ হবে)"); return; }
+    if (!ed.slug?.trim()) { setSaving(false); toast("error", "Slug is required"); return; }
+    if (!ed.category_id && !ed.category) { setSaving(false); toast("error", "Category is required"); return; }
+    if (!ed.pricing_type) { setSaving(false); toast("error", "Pricing type is required"); return; }
+    if (ed.min_price != null && ed.max_price != null && ed.min_price > ed.max_price) {
+      setSaving(false); toast("error", "Minimum price cannot be greater than maximum price"); return;
+    }
+    if (ed.base_price != null && ed.base_price < 0) { setSaving(false); toast("error", "Base price cannot be negative"); return; }
+
+    try {
       if (isNew) {
-        await servicesAdminApi.create(editing);
+        await servicesAdminApi.create(ed);
         toast("success", "Service created");
       } else {
-        await servicesAdminApi.update(editing.id!, editing);
+        await servicesAdminApi.update(ed.id!, ed);
         toast("success", "Service updated");
       }
       closeEditor();
@@ -867,7 +887,10 @@ export default function AdminServicesPage() {
                 </div>
 
                 <div>
-                  <label className="form-label">Name (English) <span className="text-red-400">*</span></label>
+                  <label className="form-label flex items-center justify-between gap-2">
+                    <span>Name (English) <span className="text-red-400">*</span></span>
+                    <TranslateButton bn={editing.name_bn} onResult={(en) => handleNameChange(en)} />
+                  </label>
                   <input value={editing.name_en ?? ""} onChange={e => handleNameChange(e.target.value)} placeholder="Service name" className="input w-full" />
                 </div>
                 <div>
@@ -978,11 +1001,17 @@ export default function AdminServicesPage() {
                   </button>
                 </div>
                 <div>
-                  <label className="form-label">Short Description (EN)</label>
+                  <label className="form-label flex items-center justify-between gap-2">
+                    <span>Short Description (EN)</span>
+                    <TranslateButton bn={editing.short_description_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, short_description_en: en } : prev)} />
+                  </label>
                   <textarea value={editing.short_description_en ?? ""} onChange={f("short_description_en")} rows={2} placeholder="One-line summary…" className="input w-full resize-none text-sm" />
                 </div>
                 <div>
-                  <label className="form-label">Full Description (EN)</label>
+                  <label className="form-label flex items-center justify-between gap-2">
+                    <span>Full Description (EN)</span>
+                    <TranslateButton bn={editing.description_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, description_en: en } : prev)} />
+                  </label>
                   <textarea value={editing.description_en ?? ""} onChange={f("description_en")} rows={4} placeholder="Detailed description…" className="input w-full resize-y text-sm" />
                 </div>
                 <div>
@@ -994,7 +1023,10 @@ export default function AdminServicesPage() {
                   <textarea value={editing.description_bn ?? ""} onChange={f("description_bn")} rows={4} placeholder="বিস্তারিত বিবরণ…" className="input w-full resize-y text-sm" dir="auto" />
                 </div>
                 <div>
-                  <label className="form-label">Long Description (EN) <span className="text-gray-400 font-normal text-xs">(optional — detail page body)</span></label>
+                  <label className="form-label flex items-center justify-between gap-2">
+                    <span>Long Description (EN) <span className="text-gray-400 font-normal text-xs">(optional — detail page body)</span></span>
+                    <TranslateButton bn={editing.long_description_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, long_description_en: en } : prev)} />
+                  </label>
                   <textarea value={editing.long_description_en ?? ""} onChange={f("long_description_en")} rows={5} placeholder="In-depth service write-up shown on the service detail page…" className="input w-full resize-y text-sm" />
                 </div>
                 <div>

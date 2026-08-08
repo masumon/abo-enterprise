@@ -9,6 +9,7 @@ from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
 from app.core.search import build_search_condition
 from app.core.security import require_role, require_admin
+from app.core.translate import translate_text
 from app.core.blog_links import (
     set_products_for_blog,
     set_services_for_blog,
@@ -32,97 +33,11 @@ from app.schemas.schemas import (
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/blog", tags=["blog"])
 
-# The free gtx endpoint is a GET (URL length limited), so keep chunks small.
-_TRANSLATE_MAX_CHARS = 1500
-
 
 class TranslateRequest(BaseModel):
     text: str
     source: str = "bn"
     target: str = "en"
-
-
-def _translate(text: str, source: str, target: str) -> str:
-    """Server-side Bangla↔English translation.
-
-    Runs on the backend (no browser CORS / MyMemory length limits). Short text
-    goes in one request (best structure preservation); long text is translated
-    line-by-line so paragraph breaks survive. Google first, MyMemory as a
-    fallback. Raises on total failure so the caller never writes a failed
-    translation (or the source text) into the English field.
-    """
-    import httpx
-    from deep_translator import MyMemoryTranslator
-
-    def _google_free(chunk: str) -> str:
-        # Google Translate's free, key-less gtx endpoint (the one googletrans
-        # uses). Works from server IPs far more reliably than the scraping path.
-        r = httpx.get(
-            "https://translate.googleapis.com/translate_a/single",
-            params={"client": "gtx", "sl": source or "auto", "tl": target, "dt": "t", "q": chunk},
-            timeout=12,
-            headers={"User-Agent": "Mozilla/5.0"},
-        )
-        r.raise_for_status()
-        data = r.json()
-        return "".join(seg[0] for seg in data[0] if seg and seg[0])
-
-    def _mymemory(chunk: str) -> str:
-        # MyMemory rejects requests over ~500 chars, so split on sentence
-        # boundaries into <=480-char pieces (Google's fallback used to send the
-        # whole 4500-char chunk here and always failed on long text).
-        if len(chunk) <= 480:
-            return MyMemoryTranslator(source=source, target=target).translate(chunk)
-        pieces, buf = [], ""
-        for p in re.split(r"(?<=[।.!?])\s+", chunk):
-            if len(buf) + len(p) + 1 > 480:
-                if buf:
-                    pieces.append(buf)
-                buf = p[:480]
-            else:
-                buf = f"{buf} {p}".strip()
-        if buf:
-            pieces.append(buf)
-        return " ".join(MyMemoryTranslator(source=source, target=target).translate(x) for x in pieces if x.strip())
-
-    def _one(chunk: str) -> str:
-        try:
-            out = _google_free(chunk)
-            if out and out.strip():
-                return out
-            raise ValueError("empty result")
-        except Exception as exc:  # noqa: BLE001 — fall back to MyMemory
-            logger.warning("Google free translate failed (%s); trying MyMemory", exc)
-            return _mymemory(chunk)
-
-    text = text.strip()
-    if not text:
-        return ""
-    if len(text) <= _TRANSLATE_MAX_CHARS:
-        return _one(text)
-
-    # Long content: preserve line breaks, translate non-blank lines (chunking
-    # any single very long line on sentence boundaries).
-    out: list[str] = []
-    for line in text.split("\n"):
-        if not line.strip():
-            out.append("")
-            continue
-        if len(line) <= _TRANSLATE_MAX_CHARS:
-            out.append(_one(line))
-            continue
-        parts = re.split(r"(?<=[।.!?])\s+", line)
-        buf, chunks = "", []
-        for p in parts:
-            if len(buf) + len(p) + 1 > _TRANSLATE_MAX_CHARS:
-                chunks.append(buf)
-                buf = p
-            else:
-                buf = f"{buf} {p}".strip()
-        if buf:
-            chunks.append(buf)
-        out.append(" ".join(_one(c) for c in chunks))
-    return "\n".join(out)
 
 
 @router.post("/admin/translate", response_model=ApiResponse)
@@ -131,9 +46,11 @@ async def translate_blog_text(
     admin_id: str = Depends(require_role("blog.write")),
 ):
     """Translate blog text (admin only). Returns {translated}; 502 on failure so
-    the admin UI can prompt for a manual English entry instead of saving Bangla."""
+    the admin UI can prompt for a manual English entry instead of saving Bangla.
+
+    Kept for backward compatibility; the shared endpoint is /admin/translate."""
     try:
-        translated = _translate(payload.text, payload.source, payload.target)
+        translated = translate_text(payload.text, payload.source, payload.target)
     except Exception as exc:  # noqa: BLE001
         logger.warning("Blog translate failed: %s", exc)
         raise HTTPException(status_code=502, detail="Translation service unavailable")

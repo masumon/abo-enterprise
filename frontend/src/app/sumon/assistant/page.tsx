@@ -17,6 +17,8 @@ import {
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import StatusBadge from "@/components/admin/StatusBadge";
+import TranslateButton from "@/components/admin/TranslateButton";
+import { translateBnToEn } from "@/lib/translate";
 
 type Tab = "settings" | "conversations" | "logs" | "faq";
 
@@ -230,23 +232,31 @@ export default function AdminAssistantPage() {
   const saveFaq = async () => {
     if (!faqEditing) return;
     if (!faqEditing.key.trim()) { toast("error", "FAQ key is required"); return; }
-    if (!faqEditing.answer_en.trim()) { toast("error", "English answer is required"); return; }
+    // Bangla-first: fill an empty English answer from the Bangla one.
+    let fe = faqEditing;
+    if (!fe.answer_en.trim() && fe.answer_bn.trim()) {
+      setFaqSaving(true);
+      try { fe = { ...fe, answer_en: await translateBnToEn(fe.answer_bn) }; setFaqEditing(fe); }
+      catch { setFaqSaving(false); toast("error", "অটো-অনুবাদ ব্যর্থ — English answer নিজে লিখুন"); return; }
+      setFaqSaving(false);
+    }
+    if (!fe.answer_en.trim()) { toast("error", "English answer is required (বাংলা লিখলে অটো-অনুবাদ হবে)"); return; }
 
     setFaqSaving(true);
     try {
       if (faqIsNew) {
         await assistantAdminApi.createFaq({
-          key: faqEditing.key,
-          answer_en: faqEditing.answer_en,
-          answer_bn: faqEditing.answer_bn || undefined,
-          questions: faqEditing.questions || undefined,
+          key: fe.key,
+          answer_en: fe.answer_en,
+          answer_bn: fe.answer_bn || undefined,
+          questions: fe.questions || undefined,
         });
         toast("success", "FAQ entry created");
       } else {
-        await assistantAdminApi.updateFaq(faqEditing.key, {
-          answer_en: faqEditing.answer_en,
-          answer_bn: faqEditing.answer_bn,
-          questions: faqEditing.questions ?? "",
+        await assistantAdminApi.updateFaq(fe.key, {
+          answer_en: fe.answer_en,
+          answer_bn: fe.answer_bn,
+          questions: fe.questions ?? "",
         });
         toast("success", "FAQ entry updated");
       }
@@ -411,7 +421,10 @@ export default function AdminAssistantPage() {
                     <input type="tel" value={config.whatsapp_number} onChange={(e) => setConfig((c) => ({ ...c, whatsapp_number: e.target.value }))} placeholder="8801825007977" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Welcome Message (English)</label>
+                    <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                      Welcome Message (English)
+                      <TranslateButton bn={config.assistant_welcome_bn} onResult={(en) => setConfig((c) => ({ ...c, assistant_welcome_en: en }))} />
+                    </label>
                     <textarea value={config.assistant_welcome_en} onChange={(e) => setConfig((c) => ({ ...c, assistant_welcome_en: e.target.value }))} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100" />
                   </div>
                   <div>
@@ -693,7 +706,10 @@ export default function AdminAssistantPage() {
                     </div>
                   )}
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Answer (English)</label>
+                    <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 uppercase mb-1">
+                      Answer (English)
+                      <TranslateButton bn={faqEditing.answer_bn} onResult={(en) => setFaqEditing((f) => f && { ...f, answer_en: en })} />
+                    </label>
                     <textarea
                       value={faqEditing.answer_en}
                       onChange={(e) => setFaqEditing((f) => f && { ...f, answer_en: e.target.value })}

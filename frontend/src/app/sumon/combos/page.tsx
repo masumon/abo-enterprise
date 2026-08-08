@@ -5,7 +5,9 @@ import { Loader2, Plus, Pencil, Trash2, X, Package } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ImageUpload from "@/components/admin/ImageUpload";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import TranslateButton from "@/components/admin/TranslateButton";
 import { combosApi, productsApi, type Combo } from "@/lib/api";
+import { translateBnToEn } from "@/lib/translate";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import { formatPrice } from "@/lib/utils";
@@ -112,21 +114,35 @@ export default function AdminCombosPage() {
   const removeLine = (idx: number) => set("items", form.items.filter((_, i) => i !== idx));
 
   const save = async () => {
-    if (!form.title_en.trim() || !form.title_bn.trim()) { toast("error", "শিরোনাম (EN ও BN) দিন"); return; }
+    if (!form.title_en.trim() && !form.title_bn.trim()) { toast("error", "শিরোনাম দিন (বাংলা লিখলে অটো-অনুবাদ হবে)"); return; }
     if (!form.combo_price || Number(form.combo_price) <= 0) { toast("error", "কম্বো দাম দিন"); return; }
     if (form.items.length === 0) { toast("error", "অন্তত একটি পণ্য যোগ করুন"); return; }
     setSaving(true);
+    // Bangla-first: fill any empty English field from its Bangla sibling so the
+    // admin never has to type English by hand.
+    let f = form;
+    try {
+      const patch: Partial<Form> = {};
+      if (!f.title_en.trim() && f.title_bn.trim()) patch.title_en = await translateBnToEn(f.title_bn);
+      if (!f.description_en.trim() && f.description_bn.trim()) patch.description_en = await translateBnToEn(f.description_bn);
+      if (!f.badge_en.trim() && f.badge_bn.trim()) patch.badge_en = await translateBnToEn(f.badge_bn);
+      if (Object.keys(patch).length) { f = { ...f, ...patch }; setForm(f); }
+    } catch {
+      setSaving(false);
+      toast("error", "অটো-অনুবাদ ব্যর্থ — English নিজে লিখুন বা → English চাপুন");
+      return;
+    }
     const payload: Partial<Combo> = {
-      title_en: form.title_en.trim(), title_bn: form.title_bn.trim(),
-      description_en: form.description_en.trim() || null,
-      description_bn: form.description_bn.trim() || null,
-      image_url: form.image_url.trim() || null,
-      combo_price: Number(form.combo_price),
-      compare_at_price: form.compare_at_price ? Number(form.compare_at_price) : null,
-      badge_en: form.badge_en.trim() || null, badge_bn: form.badge_bn.trim() || null,
-      free_delivery: form.free_delivery, is_active: form.is_active,
-      sort_order: Number(form.sort_order) || 0,
-      items: form.items.map((i) => ({ product_id: i.product_id, quantity: Math.max(1, i.quantity) })),
+      title_en: f.title_en.trim(), title_bn: f.title_bn.trim(),
+      description_en: f.description_en.trim() || null,
+      description_bn: f.description_bn.trim() || null,
+      image_url: f.image_url.trim() || null,
+      combo_price: Number(f.combo_price),
+      compare_at_price: f.compare_at_price ? Number(f.compare_at_price) : null,
+      badge_en: f.badge_en.trim() || null, badge_bn: f.badge_bn.trim() || null,
+      free_delivery: f.free_delivery, is_active: f.is_active,
+      sort_order: Number(f.sort_order) || 0,
+      items: f.items.map((i) => ({ product_id: i.product_id, quantity: Math.max(1, i.quantity) })),
     };
     try {
       if (form.id) await combosApi.update(form.id, payload);
@@ -213,11 +229,17 @@ export default function AdminCombosPage() {
             </div>
             <div className="p-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="form-label">শিরোনাম (EN) *</label><input className="input" value={form.title_en} onChange={(e) => set("title_en", e.target.value)} /></div>
+                <div>
+                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">শিরোনাম (EN) *</label><TranslateButton bn={form.title_bn} onResult={(en) => set("title_en", en)} /></div>
+                  <input className="input mt-1" value={form.title_en} onChange={(e) => set("title_en", e.target.value)} />
+                </div>
                 <div><label className="form-label">শিরোনাম (বাংলা) *</label><input className="input" value={form.title_bn} onChange={(e) => set("title_bn", e.target.value)} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="form-label">বিবরণ (EN)</label><textarea className="input" rows={2} value={form.description_en} onChange={(e) => set("description_en", e.target.value)} /></div>
+                <div>
+                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">বিবরণ (EN)</label><TranslateButton bn={form.description_bn} onResult={(en) => set("description_en", en)} /></div>
+                  <textarea className="input mt-1" rows={2} value={form.description_en} onChange={(e) => set("description_en", e.target.value)} />
+                </div>
                 <div><label className="form-label">বিবরণ (বাংলা)</label><textarea className="input" rows={2} value={form.description_bn} onChange={(e) => set("description_bn", e.target.value)} /></div>
               </div>
               <ImageUpload value={form.image_url} onChange={(u) => set("image_url", u)} label="কম্বো ছবি" folder="combos" />
@@ -226,7 +248,10 @@ export default function AdminCombosPage() {
                 <div><label className="form-label">তুলনা দাম (৳)</label><input type="number" className="input" value={form.compare_at_price} onChange={(e) => set("compare_at_price", e.target.value)} placeholder="খালি = পণ্যের যোগফল" /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="form-label">ব্যাজ (EN)</label><input className="input" value={form.badge_en} onChange={(e) => set("badge_en", e.target.value)} placeholder="Save ৳500" /></div>
+                <div>
+                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">ব্যাজ (EN)</label><TranslateButton bn={form.badge_bn} onResult={(en) => set("badge_en", en)} /></div>
+                  <input className="input mt-1" value={form.badge_en} onChange={(e) => set("badge_en", e.target.value)} placeholder="Save ৳500" />
+                </div>
                 <div><label className="form-label">ব্যাজ (বাংলা)</label><input className="input" value={form.badge_bn} onChange={(e) => set("badge_bn", e.target.value)} placeholder="৳৫০০ সাশ্রয়" /></div>
               </div>
               <div className="flex flex-wrap items-center gap-4">

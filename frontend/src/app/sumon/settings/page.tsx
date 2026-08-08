@@ -5,6 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
 import JsonListEditor, { type JsonListField } from "@/components/admin/JsonListEditor";
+import TranslateButton from "@/components/admin/TranslateButton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 
 /** Friendly field-editors for the Trust Assets object-array settings.
@@ -47,7 +48,7 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
   client_logos_json: {
     fields: [
       { path: "name", label: "Name" }, { path: "abbr", label: "Abbreviation" }, { path: "image", label: "Logo", type: "image" },
-      { path: "desc_en", label: "Description (EN)", type: "textarea", hint: "shown when the logo is tapped" },
+      { path: "desc_en", label: "Description (EN)", type: "textarea", hint: "shown when the logo is tapped", translateFrom: "desc_bn" },
       { path: "desc_bn", label: "Description (BN)", type: "textarea" },
       { path: "href", label: "Case-study link", hint: "optional — e.g. /projects or https://…" },
     ],
@@ -68,7 +69,7 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
     fields: [
       { path: "customer_name", label: "Name" }, { path: "company", label: "Company" },
       { path: "rating", label: "Rating (1-5)", type: "number" },
-      { path: "review_en", label: "Review (EN)", type: "textarea" }, { path: "review_bn", label: "Review (BN)", type: "textarea" },
+      { path: "review_en", label: "Review (EN)", type: "textarea", translateFrom: "review_bn" }, { path: "review_bn", label: "Review (BN)", type: "textarea" },
       { path: "photo_url", label: "Photo", type: "image" },
     ],
     newItem: () => ({ customer_name: "", company: "", rating: 5, review_en: "", review_bn: "", photo_url: "" }),
@@ -99,7 +100,7 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
   site_registrations_json: {
     fields: [
       { path: "label_bn", label: "Label (BN)", placeholder: "ট্রেড লাইসেন্স" },
-      { path: "label_en", label: "Label (EN)", placeholder: "Trade License" },
+      { path: "label_en", label: "Label (EN)", placeholder: "Trade License", translateFrom: "label_bn" },
       { path: "value", label: "Number", placeholder: "TL-456789" },
     ],
     newItem: () => ({ label_bn: "", label_en: "", value: "" }),
@@ -113,7 +114,7 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
   // ── Demo catalog (optional; blank = built-in defaults) ──
   demo_products_json: {
     fields: [
-      { path: "slug", label: "Slug" }, { path: "name_en", label: "Name (EN)" }, { path: "name_bn", label: "Name (BN)" },
+      { path: "slug", label: "Slug" }, { path: "name_en", label: "Name (EN)", translateFrom: "name_bn" }, { path: "name_bn", label: "Name (BN)" },
       { path: "price", label: "Price (৳)", type: "number" }, { path: "category", label: "Category" },
       { path: "image_url", label: "Image", type: "image" },
     ],
@@ -121,7 +122,7 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
   },
   demo_services_json: {
     fields: [
-      { path: "slug", label: "Slug" }, { path: "name_en", label: "Name (EN)" }, { path: "name_bn", label: "Name (BN)" },
+      { path: "slug", label: "Slug" }, { path: "name_en", label: "Name (EN)", translateFrom: "name_bn" }, { path: "name_bn", label: "Name (BN)" },
       { path: "category", label: "Category" }, { path: "featured_image_url", label: "Image", type: "image" },
     ],
     newItem: () => ({ slug: "", name_en: "", name_bn: "", category: "", featured_image_url: "" }),
@@ -192,6 +193,9 @@ interface SettingField {
   /** The value the live site falls back to when this setting is empty. Shown
    * pre-filled so the admin sees what's actually live (not a blank field). */
   defaultValue?: string;
+  /** When set, this English field shows a "→ English" button translating the
+   * sibling Bangla setting with this key. */
+  translateFrom?: string;
 }
 
 interface Section {
@@ -216,7 +220,7 @@ const SECTIONS: Section[] = [
     note: "লোগো, ফ্যাভিকন, PWA আইকন ও OG ছবি এখন Image Manager-এ (ছবি ব্যবস্থাপনা) — সব ছবি এক জায়গায়।",
     fields: [
       { key: "site_name", label: "Company Name", placeholder: "ABO Enterprise", defaultValue: "ABO Enterprise" },
-      { key: "site_tagline_en", label: "Tagline (EN)", placeholder: "Simple Solutions", defaultValue: "Simple Solutions", hint: "Shown beside the logo (More menu header) when the site is in English" },
+      { key: "site_tagline_en", label: "Tagline (EN)", placeholder: "Simple Solutions", defaultValue: "Simple Solutions", hint: "Shown beside the logo (More menu header) when the site is in English", translateFrom: "site_tagline_bn" },
       { key: "site_tagline_bn", label: "Tagline (বাংলা)", placeholder: "সহজ সমাধান", defaultValue: "সহজ সমাধান" },
       { key: "site_url", label: "Site URL", type: "url", placeholder: "https://www.aboenterprise.com", hint: "Your live website address. Used for the 'View in Admin' & order-tracking links in emails. No trailing slash." },
     ],
@@ -229,10 +233,10 @@ const SECTIONS: Section[] = [
       { key: "contact_phone", label: "Phone", type: "tel", placeholder: "01825007977", defaultValue: "01825007977" },
       { key: "contact_email", label: "Email", type: "email", placeholder: "info@aboenterprise.com", defaultValue: "info@aboenterprise.com", hint: "Shown on the site (footer, contact, invoices). Editable here — no redeploy." },
       { key: "contact_address", label: "Address (বাংলা)", type: "textarea", placeholder: "হাজী বাহার উদ্দিন মার্কেট, আব্দুল্লাপুর, বৈরাগীবাজার-৩১৭০, বিয়ানীবাজার, সিলেট, বাংলাদেশ", hint: "সাইট বাংলায় থাকলে এই ঠিকানা দেখাবে" },
-      { key: "contact_address_en", label: "Address (English)", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh", hint: "Shown when the site is in English. Leave blank to reuse the Bangla address." },
-      { key: "contact_hours_en", label: "Business Hours (EN)", placeholder: "Sat–Thu, 9:00 AM – 9:00 PM", defaultValue: "Sat–Thu, 9:00 AM – 9:00 PM", hint: "Shown in the footer, homepage and contact page" },
+      { key: "contact_address_en", label: "Address (English)", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh", hint: "Shown when the site is in English. Leave blank to reuse the Bangla address.", translateFrom: "contact_address" },
+      { key: "contact_hours_en", label: "Business Hours (EN)", placeholder: "Sat–Thu, 9:00 AM – 9:00 PM", defaultValue: "Sat–Thu, 9:00 AM – 9:00 PM", hint: "Shown in the footer, homepage and contact page", translateFrom: "contact_hours_bn" },
       { key: "contact_hours_bn", label: "Business Hours (বাংলা)", placeholder: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা", defaultValue: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা" },
-      { key: "footer_about_en", label: "Footer About Text (EN)", type: "textarea", hint: "Short company description shown in the site footer", placeholder: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us.", defaultValue: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us." },
+      { key: "footer_about_en", label: "Footer About Text (EN)", type: "textarea", hint: "Short company description shown in the site footer", placeholder: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us.", defaultValue: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us.", translateFrom: "footer_about_bn" },
       { key: "footer_about_bn", label: "Footer About Text (বাংলা)", type: "textarea", placeholder: "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।", defaultValue: "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।" },
       { key: "footer_payment_image_url", label: "Payment Methods Image", upload: true, accept: "image", hint: "ফুটারের 'পেমেন্ট পদ্ধতি সমূহ' — সব পেমেন্ট লোগো একসাথে একটি চওড়া ছবি আপলোড করুন (যেমন SSLCommerz 'Pay With' স্ট্রিপ)। এটি বিল্ট-ইন আইকনের বদলে বসবে এবং মোবাইল/ট্যাব/ডেস্কটপে fit হবে। খালি রাখলে বিল্ট-ইন আইকন দেখাবে।" },
       { key: "google_maps_embed", label: "Google Maps Embed", type: "textarea", hint: "Share → Embed a map", placeholder: "Paste iframe or URL" },
@@ -304,7 +308,7 @@ const SECTIONS: Section[] = [
     icon: <ShoppingBag className="w-4 h-4" />,
     note: "কাউন্টডাউনের লেখা, আইকন ও আকার। ব্যানার ছবি → Content → Promo Slides। কোন পণ্যে ছাড় → Products-এ প্রতিটি পণ্যের ফ্ল্যাশ সেল ফিল্ড।",
     fields: [
-      { key: "flash_sale_title_en", label: "Label (English)", placeholder: "Today's Best Offer" },
+      { key: "flash_sale_title_en", label: "Label (English)", placeholder: "Today's Best Offer", translateFrom: "flash_sale_title_bn" },
       { key: "flash_sale_title_bn", label: "Label (বাংলা)", placeholder: "আজকের দুর্দান্ত অফার" },
       {
         key: "flash_sale_icon",
@@ -389,7 +393,7 @@ const SECTIONS: Section[] = [
     icon: <RefreshCw className="w-4 h-4" />,
     fields: [
       { key: "demo_fallback_enabled", label: "Enable Demo Mode", placeholder: "true", hint: "Show demo when API slow" },
-      { key: "demo_notice_en", label: "Demo Notice (EN)", type: "textarea", placeholder: "Slow connection — showing demo content..." },
+      { key: "demo_notice_en", label: "Demo Notice (EN)", type: "textarea", placeholder: "Slow connection — showing demo content...", translateFrom: "demo_notice_bn" },
       { key: "demo_notice_bn", label: "Demo Notice (বাংলা)", type: "textarea", placeholder: "ধীর নেটওয়ার্ক — ডেমো কন্টেন্ট দেখানো হচ্ছে..." },
       { key: "demo_products_json", label: "Demo Products (JSON)", type: "textarea", placeholder: '[{"slug":"...","name_en":"..."}]', hint: "Optional; leave blank for defaults" },
       { key: "demo_services_json", label: "Demo Services (JSON)", type: "textarea", placeholder: '[{"slug":"...","name_en":"..."}]', hint: "Optional; leave blank for defaults" },
@@ -452,8 +456,11 @@ function SectionCard({
       <div className="divide-y divide-gray-50 dark:divide-white/5">
         {section.fields.map((field) => (
           <div key={field.key} className="px-4 sm:px-6 py-4 hover:bg-gray-50/40 dark:hover:bg-white/[0.02] transition-colors">
-            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-              {field.label}
+            <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
+              <span>{field.label}</span>
+              {field.translateFrom ? (
+                <TranslateButton bn={values[field.translateFrom]} onResult={(en) => onChange(field.key, en)} />
+              ) : null}
             </label>
             {field.upload ? (
               <ImageUpload

@@ -1,7 +1,7 @@
 "use client";
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
-import { useCallback, useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef, type FormEvent } from "react";
 import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Copy, Download, FileText, Upload, Check, Ban, Star, StarOff, Languages } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,6 +10,8 @@ import Image from "next/image";
 import { productsApi, categoriesApi, adminApi, adminBlogApi, downloadCsv, downloadPdf } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
+import TranslateButton from "@/components/admin/TranslateButton";
+import { translateBnToEn } from "@/lib/translate";
 import LivePreview from "@/components/admin/LivePreview";
 import LinkChecklist, { type LinkOption } from "@/components/admin/LinkChecklist";
 import ProductCard from "@/components/features/ProductCard";
@@ -427,6 +429,22 @@ export default function AdminProductsPage() {
     }
   };
 
+  // Bangla-first submit: fill empty English name/description from Bangla before
+  // validation runs, so the admin never types English by hand. Translation
+  // failure is non-blocking — zod then flags the still-empty English field.
+  const submitWithTranslate = async (e: FormEvent) => {
+    e.preventDefault();
+    const nameBn = getValues("name_bn")?.trim();
+    if (!getValues("name_en")?.trim() && nameBn) {
+      try { setValue("name_en", await translateBnToEn(nameBn), { shouldValidate: true }); } catch { /* zod will flag it */ }
+    }
+    const descBn = getValues("description_bn")?.trim();
+    if (!getValues("description_en")?.trim() && descBn) {
+      try { setValue("description_en", await translateBnToEn(descBn), { shouldValidate: true }); } catch { /* optional field */ }
+    }
+    handleSubmit(onSubmit)();
+  };
+
   const handleDelete = async () => {
     if (!deleteId) return;
     try {
@@ -709,7 +727,7 @@ export default function AdminProductsPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+            <form onSubmit={submitWithTranslate} className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
               {/* Live website preview — the real ProductCard with current values */}
               <LivePreview>
                 <div className="p-1 pointer-events-none">
@@ -808,7 +826,10 @@ export default function AdminProductsPage() {
                   </button>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name (English)</label>
+                  <label className="flex items-center justify-between gap-2 text-sm font-medium text-gray-700 mb-1">
+                    Name (English)
+                    <TranslateButton bn={watch("name_bn")} onResult={(en) => setValue("name_en", en, { shouldValidate: true, shouldDirty: true })} />
+                  </label>
                   <input {...register("name_en")} className={cn("input", errors.name_en && "input-error")} placeholder="Phone Case" />
                   {errors.name_en && <p className="text-red-500 text-xs mt-1">{errors.name_en.message}</p>}
                 </div>
@@ -839,7 +860,10 @@ export default function AdminProductsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description (English)</label>
+                <label className="flex items-center justify-between gap-2 text-sm font-medium text-gray-700 mb-1">
+                  Description (English)
+                  <TranslateButton bn={watch("description_bn")} onResult={(en) => setValue("description_en", en, { shouldDirty: true })} />
+                </label>
                 <textarea {...register("description_en")} rows={2} className="input resize-none" placeholder="Product description..." />
               </div>
               <div>

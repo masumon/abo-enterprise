@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { categoriesAdminApi, adminBlogApi } from "@/lib/api";
+import TranslateButton from "@/components/admin/TranslateButton";
+import { translateBnToEn } from "@/lib/translate";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import type { Category, Subcategory } from "@/types";
@@ -190,8 +192,15 @@ export default function AdminCategoriesPage() {
   };
 
   const save = async () => {
-    const name = form.name_en.trim();
-    if (name.length < 2) { toast("error", "Name (English) is required"); return; }
+    let name = form.name_en.trim();
+    // Bangla-first: fill an empty English name from the Bangla one.
+    if (!name && form.name_bn.trim()) {
+      setBusy(true);
+      try { name = await translateBnToEn(form.name_bn); setForm((p) => ({ ...p, name_en: name })); }
+      catch { setBusy(false); toast("error", "অটো-অনুবাদ ব্যর্থ — Name (English) নিজে লিখুন"); return; }
+      setBusy(false);
+    }
+    if (name.length < 2) { toast("error", "Name is required (বাংলা লিখলে অটো-অনুবাদ হবে)"); return; }
     const slug = form.slug.trim() || slugify(name);
     setBusy(true);
     try {
@@ -570,7 +579,10 @@ export default function AdminCategoriesPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Name (English) *">
-              <input value={form.name_en} onChange={(e) => setForm((p) => ({ ...p, name_en: e.target.value, slug: p.slug || slugify(e.target.value) }))} className={INP_CLS} placeholder="Fast Chargers" />
+              <div className="flex items-center gap-2">
+                <input value={form.name_en} onChange={(e) => setForm((p) => ({ ...p, name_en: e.target.value, slug: p.slug || slugify(e.target.value) }))} className={INP_CLS} placeholder="Fast Chargers" />
+                <TranslateButton bn={form.name_bn} onResult={(en) => setForm((p) => ({ ...p, name_en: en, slug: p.slug || slugify(en) }))} className="btn btn-outline btn-sm gap-1 flex-shrink-0" label="EN" />
+              </div>
             </Field>
             <Field label="নাম (বাংলা)">
               <div className="flex items-center gap-2">

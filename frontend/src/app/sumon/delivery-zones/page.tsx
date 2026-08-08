@@ -4,7 +4,9 @@ import { useCallback, useEffect, useState } from "react";
 import { Loader2, Plus, Pencil, Trash2, X, Truck } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import TranslateButton from "@/components/admin/TranslateButton";
 import { deliveryZonesApi, type DeliveryZone } from "@/lib/api";
+import { translateBnToEn } from "@/lib/translate";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 
@@ -60,12 +62,17 @@ export default function AdminDeliveryZonesPage() {
   };
 
   const save = async () => {
-    if (!form.name_en.trim() || !form.name_bn.trim()) { toast("error", "জোনের নাম (EN ও BN) দিন"); return; }
+    if (!form.name_en.trim() && !form.name_bn.trim()) { toast("error", "জোনের নাম দিন (বাংলা লিখলে অটো-অনুবাদ হবে)"); return; }
     const districts = splitList(form.districts);
     if (districts.length === 0) { toast("error", "অন্তত একটি জেলা দিন"); return; }
     setSaving(true);
+    let f = form;
+    if (!f.name_en.trim() && f.name_bn.trim()) {
+      try { f = { ...f, name_en: await translateBnToEn(f.name_bn) }; setForm(f); }
+      catch { setSaving(false); toast("error", "অটো-অনুবাদ ব্যর্থ — English নিজে লিখুন"); return; }
+    }
     const payload: Partial<DeliveryZone> = {
-      name_en: form.name_en.trim(), name_bn: form.name_bn.trim(),
+      name_en: f.name_en.trim(), name_bn: f.name_bn.trim(),
       districts, upazilas: splitList(form.upazilas),
       charge: Number(form.charge) || 0,
       free_threshold: form.free_threshold ? Number(form.free_threshold) : null,
@@ -145,7 +152,10 @@ export default function AdminDeliveryZonesPage() {
             </div>
             <div className="p-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <div><label className="form-label">নাম (EN) *</label><input className="input" value={form.name_en} onChange={(e) => set("name_en", e.target.value)} placeholder="Sylhet local" /></div>
+                <div>
+                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">নাম (EN) *</label><TranslateButton bn={form.name_bn} onResult={(en) => set("name_en", en)} /></div>
+                  <input className="input mt-1" value={form.name_en} onChange={(e) => set("name_en", e.target.value)} placeholder="Sylhet local" />
+                </div>
                 <div><label className="form-label">নাম (বাংলা) *</label><input className="input" value={form.name_bn} onChange={(e) => set("name_bn", e.target.value)} placeholder="সিলেট লোকাল" /></div>
               </div>
               <div>
