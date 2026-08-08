@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Request
@@ -7,7 +8,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.models.models import BookingV2, LeadV2, Order, Product, Review, Service, Setting, NewsletterSubscriber
+from app.models.models import BookingV2, LeadV2, Order, Product, Review, Service, Setting, NewsletterSubscriber, SearchTerm
 from app.schemas.schemas import ApiResponse
 from app.core.http_cache import etag_json_response
 from app.core.rate_limit import rate_limit
@@ -198,3 +199,51 @@ async def get_feature_flags(request: Request, db: AsyncSession = Depends(get_db)
         {"success": True, "data": flags, "message": ""},
         max_age=60,
     )
+
+
+# ── Search analytics: popular terms ──────────────────────────────────────────
+class SearchLogIn(BaseModel):
+    term: str
+
+
+def _normalize_term(raw: str) -> str:
+    """Lowercase, collapse whitespace, cap length — keeps counts meaningful and
+    avoids storing junk. Returns '' for anything too short to be useful."""
+    t = re.sub(r"\s+", " ", (raw or "").strip().lower())[:60]
+    return t if len(t) >= 2 else ""
+
+
+@router.post("/search/log", response_model=ApiResponse, dependencies=[Depends(rate_limit("search_log", 60, 300))])
+async def log_search_term(payload: SearchLogIn, db: AsyncSession = Depends(get_db)):
+    """Record a search term (fire-and-forget from the client). Increments the
+    per-term counter that powers 'popular searches'. A missing table or any DB
+    hiccup is a silent no-op — search itself never depends on this."""
+    term = _normalize_term(payload.term)
+    if not term:
+        return ApiResponse(data=None, message="ignored")
+    try:
+        existing = (await db.execute(select(SearchTerm).where(SearchTerm.term == term))).scalar_one_or_none()
+        if existing:
+            existing.count = (existing.count or 0) + 1
+        else:
+            db.add(SearchTerm(term=term, count=1))
+        await db.commit()
+    except Exception:  # noqa: BLE001 — table not migrated / race → ignore
+        await db.rollback()
+    return ApiResponse(data=None, message="ok")
+
+
+@router.get("/search/popular", response_model=ApiResponse)
+async def popular_search_terms(request: Request, db: AsyncSession = Depends(get_db)) -> Response:
+    """Top search terms by count (for the empty-search suggestions). Empty list
+    when the table isn't present, so the storefront degrades gracefully."""
+    terms: list[str] = []
+    try:
+        rows = (await db.execute(
+            select(SearchTerm.term).order_by(SearchTerm.count.desc()).limit(8)
+        )).scalars().all()
+        terms = list(rows)
+    except Exception:  # noqa: BLE001
+        await db.rollback()
+        terms = []
+    return etag_json_response(request, {"success": True, "data": terms, "message": ""}, max_age=120)

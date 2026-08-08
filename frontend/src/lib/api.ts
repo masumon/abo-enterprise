@@ -930,6 +930,14 @@ export const translateApi = {
     api.post<ApiResponse<{ translated: string }>>("/api/v1/admin/translate", { text, source, target }),
 };
 
+/** Storefront search analytics — records a term and reads the popular list.
+ * Both are best-effort: failures never affect search itself. */
+export const searchApi = {
+  log: (term: string) =>
+    api.post<ApiResponse<null>>("/api/v1/public/search/log", { term }).catch(() => null),
+  popular: () => api.get<ApiResponse<string[]>>("/api/v1/public/search/popular"),
+};
+
 export const combosApi = {
   list: () => api.get<ApiResponse<Combo[]>>("/api/v1/combos"),
   adminList: () => api.get<ApiResponse<Combo[]>>("/api/v1/combos/admin/all"),

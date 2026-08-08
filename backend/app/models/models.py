@@ -974,3 +974,16 @@ class ProductImportJob(Base):
     # Per-row error report: [{"row": n, "errors": [...], "warnings": [...]}].
     errors: Mapped[list] = mapped_column(JSON, default=list)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class SearchTerm(Base):
+    """A normalized search query and how many times it's been searched — powers
+    the storefront's "popular searches" suggestions (manual_sql/033). Additive
+    analytics only; never read by the order/checkout path."""
+
+    __tablename__ = "search_terms"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    term: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
+    count: Mapped[int] = mapped_column(Integer, default=0, index=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

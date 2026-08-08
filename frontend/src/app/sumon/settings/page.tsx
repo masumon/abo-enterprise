@@ -127,6 +127,15 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
     ],
     newItem: () => ({ slug: "", name_en: "", name_bn: "", category: "", featured_image_url: "" }),
   },
+  // Curated links shown under "Suggestions" on the storefront search screen.
+  search_suggestions_json: {
+    fields: [
+      { path: "label_en", label: "Label (EN)", translateFrom: "label_bn" },
+      { path: "label_bn", label: "Label (বাংলা)" },
+      { path: "href", label: "Link", hint: "e.g. /products?category_slug=chargers or /projects" },
+    ],
+    newItem: () => ({ label_en: "", label_bn: "", href: "/" }),
+  },
 };
 import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Users, Trophy, Zap, Code, Mail } from "lucide-react";
 import { useToastStore } from "@/store/toast";
@@ -372,6 +381,15 @@ const SECTIONS: Section[] = [
       { key: "feature_infinite_scroll", label: "Infinite Scroll", type: "boolean", hint: "Product load-more" },
       { key: "feature_assistant_chat", label: "AI Chat Widget", type: "boolean" },
       { key: "feature_assistant_whatsapp", label: "Assistant WhatsApp", type: "boolean" },
+    ],
+  },
+  {
+    id: "search_config",
+    title: "Search Suggestions",
+    icon: <Globe className="w-4 h-4" />,
+    note: "সার্চ পেজে (খালি থাকলে) 'সাজেশন' অংশে দেখানো কাস্টম লিংক। খালি রাখলে ক্যাটাগরি থেকে স্বয়ংক্রিয় সাজেশন দেখাবে।",
+    fields: [
+      { key: "search_suggestions_json", label: "Suggestion Links", type: "textarea", hint: "Each: a label (EN/বাংলা) and a link shown under Suggestions on search" },
     ],
   },
 

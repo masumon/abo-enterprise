@@ -6,6 +6,8 @@ import Link from "next/link";
 import { useLanguageStore } from "@/store/language";
 import SearchField from "@/components/search/SearchField";
 import SearchDiscovery from "@/components/search/SearchDiscovery";
+import { addRecentSearch } from "@/lib/recentSearches";
+import { searchApi } from "@/lib/api";
 import { loadProducts, loadServices, peekCachedProducts, peekCachedServices } from "@/lib/catalogLoader";
 import type { Product, Service, BlogPost } from "@/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
@@ -181,6 +183,9 @@ function SearchResults() {
       setResults([]);
       return;
     }
+    // Remember locally + record for "popular" (both best-effort, non-blocking).
+    addRecentSearch(q);
+    searchApi.log(q);
     setLoading(true);
     setFromCache(false);
     setBlogLoading(true);
