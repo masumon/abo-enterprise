@@ -222,6 +222,13 @@ class OrderItemCreate(BaseModel):
     subtotal: float
 
 
+class ComboOrderIn(BaseModel):
+    """A combo line in an order. Only the id + quantity are trusted; the price
+    and free-delivery flag are re-derived from the DB server-side."""
+    combo_id: str
+    quantity: int = 1
+
+
 class OrderCreate(BaseModel):
     customer_name: str
     customer_phone: str
@@ -230,6 +237,9 @@ class OrderCreate(BaseModel):
     payment_method: str
     payment_number: str | None = None
     items: list[OrderItemCreate]
+    # Optional combo lines — additive; an order with none behaves exactly as
+    # before. Priced server-side, never from the client.
+    combos: list[ComboOrderIn] = []
     subtotal: float
     discount_amount: float = 0
     coupon_code: str | None = None
