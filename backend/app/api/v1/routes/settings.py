@@ -69,11 +69,11 @@ def _is_public_setting_key(key: str) -> bool:
     return any(key.startswith(prefix) for prefix in _PUBLIC_SETTING_PREFIXES)
 
 
-# These settings are explicitly owned by the CMS/Image Manager. They are
-# safe customer-facing values and are protected by the settings.write RBAC
-# permission, so a legacy `is_editable=false` flag must not make them silently
-# impossible to update. This is intentionally narrower than the public
-# allowlist so secrets or arbitrary settings cannot bypass is_editable.
+# These settings are explicitly owned by the CMS/Admin UI. They are safe
+# customer-facing values and are protected by settings.write RBAC, so a legacy
+# `is_editable=false` flag must not silently block an intentional admin update.
+# Keep this list narrow: secrets and arbitrary system settings must retain their
+# original is_editable protection.
 _CMS_MANAGED_EXACT_KEYS = {
     "logo_url",
     "favicon_url",
@@ -86,6 +86,12 @@ _CMS_MANAGED_EXACT_KEYS = {
     "site_customer_login_bg_url",
     "gallery_office_image_url",
     "about_story_image_url",
+    "facebook_url",
+    "instagram_url",
+    "twitter_url",
+    "linkedin_url",
+    "youtube_url",
+    "tiktok_url",
 }
 
 _CMS_MANAGED_PREFIXES = (
@@ -195,9 +201,8 @@ async def upsert_settings(
         )
         setting = result.scalar_one_or_none()
         if setting:
-            # CMS-owned image slots are intentionally editable by the admin
-            # module even if a legacy row was created with is_editable=false.
-            # Other non-editable settings retain the original protection.
+            # CMS-owned settings remain editable by the authorized admin even
+            # when a legacy row was created with is_editable=false.
             if not setting.is_editable and not _is_cms_managed_setting_key(item.key):
                 skipped.append(item.key)
                 continue
@@ -227,8 +232,6 @@ async def upsert_settings(
         f"{len(results)} settings saved; {len(skipped)} skipped (hidden, protected, or not editable)"
         if skipped else f"{len(results)} settings saved"
     )
-    # Keep the existing response data shape for frontend compatibility; the
-    # explicit message tells the admin when a hidden/non-editable field was not saved.
     return ApiResponse(success=True, data=results, message=message)
 
 
