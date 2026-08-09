@@ -183,11 +183,9 @@ async def upsert_settings(
         f"{len(results)} settings saved; {len(skipped)} skipped (hidden or not editable)"
         if skipped else f"{len(results)} settings saved"
     )
-    return ApiResponse(
-        success=True,
-        data={"saved": results, "skipped": skipped},
-        message=message,
-    )
+    # Keep the existing response data shape for frontend compatibility; the
+    # explicit message tells the admin when a hidden/non-editable field was not saved.
+    return ApiResponse(success=True, data=results, message=message)
 
 
 @router.get("/{key}", response_model=ApiResponse)
@@ -246,7 +244,7 @@ async def update_setting(
 
     return ApiResponse(
         success=True,
-        data={"key": setting.key, "value": setting.value},
+        data={"key": key, "value": setting.value},
         message=f"Setting '{key}' updated successfully"
     )
 
