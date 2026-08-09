@@ -12,6 +12,8 @@ from app.schemas.schemas import SettingOut, SettingUpdate, SettingCreate, ApiRes
 router = APIRouter(prefix="/settings", tags=["settings"])
 logger = logging.getLogger(__name__)
 
+# Only explicitly safe, customer-facing settings are exposed by the public
+# GET endpoint. Secrets are always filtered separately via is_secret.
 _PUBLIC_SETTING_EXACT_KEYS = {
     "google_maps_embed",
     "timezone",
@@ -26,6 +28,14 @@ _PUBLIC_SETTING_EXACT_KEYS = {
     "instagram_url",
     "linkedin_url",
     "youtube_url",
+    "twitter_url",
+    "tiktok_url",
+    "play_store_url",
+    "app_store_url",
+    "logo_url",
+    "favicon_url",
+    "app_icon_url",
+    "default_og_image_url",
 }
 
 _PUBLIC_SETTING_PREFIXES = (
@@ -33,6 +43,7 @@ _PUBLIC_SETTING_PREFIXES = (
     "seo_",
     "hero_",
     "about_",
+    "banner_",
     "footer_",
     "contact_",
     "social_",
@@ -121,7 +132,7 @@ async def get_all_settings(request: Request, db: AsyncSession = Depends(get_db))
             "email_provider": cfg.EMAIL_PROVIDER,
         }
         for k, v in effective_email.items():
-            if v and not settings_dict.get(k):  # DB value wins; only fill blanks
+            if v and not settings_dict.get(k):
                 settings_dict[k] = v
 
     if not is_admin:
@@ -162,7 +173,6 @@ async def upsert_settings(
                 setting.data_type = item.data_type
             if item.description is not None:
                 setting.description = item.description
-            # Ensure sensitive keys stay masked in API responses.
             if _is_secret_key(item.key):
                 setting.is_secret = True
         else:
@@ -183,8 +193,6 @@ async def upsert_settings(
         f"{len(results)} settings saved; {len(skipped)} skipped (hidden or not editable)"
         if skipped else f"{len(results)} settings saved"
     )
-    # Keep the existing response data shape for frontend compatibility; the
-    # explicit message tells the admin when a hidden/non-editable field was not saved.
     return ApiResponse(success=True, data=results, message=message)
 
 
@@ -206,7 +214,7 @@ async def get_setting(key: str, request: Request, db: AsyncSession = Depends(get
     if not is_admin and not _is_public_setting_key(setting.key):
         raise HTTPException(status_code=403, detail="Setting is not public")
 
-    return ApiResponse(success=True, data={"key": setting.key, "value": setting.value})
+    return ApiResponse(success=True, data={"key": key, "value": setting.value})
 
 
 @router.put("/{key}", response_model=ApiResponse)
