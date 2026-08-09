@@ -10,6 +10,7 @@ import {
   resolvePageBannerImage,
   type PageBannerKey,
 } from "@/lib/pageBanners";
+import { responsiveMediaUrl } from "@/lib/responsiveMediaUrl";
 
 interface BreadcrumbItem {
   label: string;
@@ -54,19 +55,11 @@ export default function PageHero({
   const isVideo = hasImage && isVideoUrl(resolvedImage);
   const isCenter = align === "center";
 
-  // The gradient overlay (kept separate for the video case, where a CSS
-  // background can't play the clip).
+  // Keep the image visible while preserving text contrast. The image is now a
+  // separate layer so Cloudinary can deliver mobile/tablet/desktop crops.
   const overlayGradient = isBrand
-    ? "linear-gradient(135deg, rgba(10,22,40,0.9) 0%, rgba(53,71,155,0.82) 48%, rgba(30,43,107,0.88) 100%)"
-    : "linear-gradient(180deg, rgba(248,250,255,0.93) 0%, rgba(236,242,255,0.9) 100%)";
-
-  const sectionStyle = hasImage && !isVideo
-    ? {
-        backgroundImage: `${overlayGradient}, url(${resolvedImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: isBrand ? "center" : "center top",
-      }
-    : undefined;
+    ? "linear-gradient(135deg, rgba(10,22,40,0.56) 0%, rgba(53,71,155,0.48) 48%, rgba(30,43,107,0.54) 100%)"
+    : "linear-gradient(180deg, rgba(248,250,255,0.78) 0%, rgba(236,242,255,0.72) 100%)";
 
   return (
     <section
@@ -74,7 +67,7 @@ export default function PageHero({
         "relative overflow-hidden px-4 -mt-[var(--navbar-offset)]",
         isBrand
           ? cn(
-              // Mobile is a compact strip (~72px); desktop keeps the tall hero.
+              // Mobile is a compact strip; desktop keeps the taller hero.
               "text-white py-6 md:py-20 pt-[calc(var(--navbar-offset)+1.25rem)] md:pt-[calc(var(--navbar-offset)+3.5rem)]",
               !hasImage && "gradient-brand"
             )
@@ -83,8 +76,29 @@ export default function PageHero({
               !hasImage && "bg-gradient-to-b from-brand-50 to-white dark:from-brand-900 dark:to-[#0a1020]"
             )
       )}
-      style={sectionStyle}
     >
+      {hasImage && !isVideo && (
+        <picture className="absolute inset-0 block" aria-hidden="true">
+          <source
+            media="(max-width: 767px)"
+            srcSet={responsiveMediaUrl(resolvedImage!, "page-banner", "mobile")}
+          />
+          <source
+            media="(max-width: 1199px)"
+            srcSet={responsiveMediaUrl(resolvedImage!, "page-banner", "tablet")}
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element -- responsive Cloudinary background layer */}
+          <img
+            src={responsiveMediaUrl(resolvedImage!, "page-banner", "desktop")}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="eager"
+            decoding="async"
+          />
+          <div className="absolute inset-0" style={{ background: overlayGradient }} />
+        </picture>
+      )}
+
       {isVideo && (
         <>
           <AutoVideo
@@ -95,6 +109,7 @@ export default function PageHero({
           <div className="absolute inset-0" style={{ background: overlayGradient }} aria-hidden />
         </>
       )}
+
       {isBrand && (
         <div className="absolute inset-0 pointer-events-none" aria-hidden>
           {/* Dot-grid + layered glows give the strip the homepage hero's depth. */}
