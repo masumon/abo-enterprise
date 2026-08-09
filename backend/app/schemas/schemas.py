@@ -311,6 +311,7 @@ class OrderOut(BaseModel):
     total: float
     courier_provider: str | None = None
     courier_tracking_id: str | None = None
+    courier_consignment_id: str | None = None
     company_name: str | None = None
     company_bin: str | None = None
     company_tin: str | None = None

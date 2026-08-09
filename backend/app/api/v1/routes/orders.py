@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.core.email import send_email, order_notification_html, customer_order_confirmation_html, customer_order_status_html
 from app.core.invoice import InvoiceService
 from app.core.site_url import resolve_site_url
+from app.core.steadfast import create_consignment, get_settings as steadfast_settings, SteadfastError
 from app.models.models import Order, OrderItem, Product, ActivityLog, Setting, Coupon
 from app.schemas.schemas import OrderCreate, OrderOut, OrderStatusUpdate, OrderCourierUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 
@@ -753,6 +754,19 @@ async def update_order_status(
         }
         background_tasks.add_task(send_email, order.customer_email, subject_map[order.order_status], html)
 
+    # Auto-send to Steadfast when an order is confirmed (if enabled in Settings).
+    # Failures never block the status update — they are logged only.
+    already_sent = order.courier_provider == "steadfast" and bool(order.courier_tracking_id)
+    if payload.status == "confirmed" and old_status != "confirmed" and not already_sent:
+        try:
+            cfg = await steadfast_settings(db)
+            if cfg["enabled"] and cfg["auto_send"]:
+                await _dispatch_steadfast(db, order, background_tasks, admin_id)
+        except SteadfastError as exc:
+            logger.warning("Auto Steadfast send skipped for %s: %s", order.order_number, exc)
+        except Exception:  # pragma: no cover - defensive
+            logger.exception("Unexpected error during auto Steadfast send for %s", order.order_number)
+
     return ApiResponse(data=OrderOut.model_validate(order), message="Order status updated")
 
 
@@ -814,3 +828,77 @@ async def update_order_courier(
         )
 
     return ApiResponse(data=OrderOut.model_validate(order), message="Courier info updated")
+
+
+async def _dispatch_steadfast(db, order, background_tasks, admin_id: str) -> dict:
+    """Create a Steadfast consignment, save the tracking code on the order,
+    lift it to 'shipped' and email the customer. Raises SteadfastError on
+    failure (nothing is saved). Shared by the manual button and auto-send."""
+    result = await create_consignment(db, order)
+    old_status = order.order_status
+    order.courier_provider = "steadfast"
+    order.courier_tracking_id = result["tracking_code"]
+    order.courier_consignment_id = result.get("consignment_id")
+    if order.order_status in ("pending", "confirmed", "processing"):
+        order.order_status = "shipped"
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin_id),
+        action="steadfast_send",
+        entity_type="order",
+        entity_id=order.id,
+        old_values={"order_status": old_status},
+        new_values={
+            "courier_provider": "steadfast",
+            "courier_tracking_id": result["tracking_code"],
+            "courier_consignment_id": result.get("consignment_id"),
+        },
+    ))
+    await db.commit()
+    await db.refresh(order)
+    if (
+        order.customer_email
+        and old_status != order.order_status
+        and order.order_status == "shipped"
+    ):
+        track_url = f"{await resolve_site_url(db)}/track?order={order.order_number}"
+        html = customer_order_status_html(
+            order.order_number, order.customer_name, "shipped",
+            total=float(order.total),
+            courier_provider=order.courier_provider,
+            tracking_id=order.courier_tracking_id,
+            track_url=track_url,
+        )
+        background_tasks.add_task(
+            send_email, order.customer_email,
+            f"Order Shipped #{order.order_number} — ABO Enterprise", html,
+        )
+    return result
+
+
+@router.post("/{order_id}/steadfast", response_model=ApiResponse)
+async def send_order_to_steadfast(
+    order_id: UUID,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    admin_id: str = Depends(require_role("orders.write")),
+):
+    """Manually push an order to Steadfast Courier and save its tracking code."""
+    result = await db.execute(
+        select(Order).options(selectinload(Order.items)).where(Order.id == order_id)
+    )
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.courier_provider == "steadfast" and order.courier_tracking_id:
+        raise HTTPException(
+            status_code=400,
+            detail=f"এই অর্ডার আগেই Steadfast-এ পাঠানো হয়েছে (tracking: {order.courier_tracking_id}).",
+        )
+    try:
+        data = await _dispatch_steadfast(db, order, background_tasks, admin_id)
+    except SteadfastError as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    return ApiResponse(
+        data=OrderOut.model_validate(order),
+        message=f"Steadfast-এ পাঠানো হয়েছে — tracking {data['tracking_code']}",
+    )

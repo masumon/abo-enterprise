@@ -137,7 +137,7 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
     newItem: () => ({ label_en: "", label_bn: "", href: "/" }),
   },
 };
-import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Users, Trophy, Zap, Code, Mail } from "lucide-react";
+import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Users, Trophy, Zap, Code, Mail, Truck } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import { parseGoogleMapsEmbedInput } from "@/lib/maps";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -156,6 +156,8 @@ const JSON_SETTING_KEYS = new Set([
 
 const BOOL_SETTING_KEYS = new Set([
   "maintenance_mode",
+  "steadfast_enabled",
+  "steadfast_auto_send",
   "feature_flash_sale",
   "feature_coupons",
   "feature_guest_checkout",
@@ -309,6 +311,58 @@ const SECTIONS: Section[] = [
       { key: "currency", label: "Currency", placeholder: "BDT" },
       { key: "min_order_amount", label: "Min Order (৳)", type: "number", placeholder: "200" },
       { key: "tax_percent", label: "Tax / VAT %", type: "number", placeholder: "0", hint: "Shown on invoices for reference — not yet applied to checkout totals (a deliberate, separate decision)." },
+    ],
+  },
+  {
+    id: "steadfast_courier",
+    title: "Steadfast Courier API",
+    icon: <Truck className="w-4 h-4" />,
+    note: "অর্ডার সরাসরি Steadfast কুরিয়ারে পাঠান। Key দুটি Steadfast প্যানেলের API পেজ থেকে নিন — এখানে দিলে গোপন থাকবে (আর ফেরত দেখানো হয় না)। ⚠️ কোথাও Key শেয়ার হয়ে গেলে Steadfast-এ 'Regenerate Key' চেপে নতুন Key নিন।",
+    fields: [
+      {
+        key: "steadfast_enabled",
+        label: "Steadfast চালু",
+        type: "boolean",
+        hint: "চালু থাকলে অর্ডার মডালে 'Send to Steadfast' বাটন কাজ করবে।",
+      },
+      {
+        key: "steadfast_auto_send",
+        label: "স্বয়ংক্রিয় পাঠানো (অর্ডার confirmed হলে)",
+        type: "boolean",
+        hint: "অর্ডার 'confirmed' করলেই নিজে থেকে Steadfast-এ consignment তৈরি হবে। বন্ধ রাখলে শুধু বাটন দিয়ে পাঠাতে হবে।",
+      },
+      {
+        key: "steadfast_api_key",
+        label: "API Key",
+        type: "password",
+        placeholder: "•••• •••• ••••",
+        hint: "Steadfast → Profile → API পেজের Api-Key। গোপনভাবে সংরক্ষিত হয়, আর দেখানো হয় না।",
+      },
+      {
+        key: "steadfast_secret_key",
+        label: "Secret Key",
+        type: "password",
+        placeholder: "•••• •••• ••••",
+        hint: "Steadfast API পেজের Secret-Key। গোপনভাবে সংরক্ষিত।",
+      },
+      {
+        key: "steadfast_delivery_type",
+        label: "ডেলিভারি টাইপ",
+        type: "select",
+        options: [
+          { value: "0", label: "Home Delivery (বাসায় ডেলিভারি)" },
+          { value: "1", label: "Point / Hub Pickup (হাব পিকআপ)" },
+        ],
+        hint: "সাধারণত Home Delivery।",
+      },
+      {
+        key: "steadfast_base_url",
+        label: "API Base URL",
+        type: "url",
+        placeholder: "https://portal.packzy.com/api/v1",
+        defaultValue: "https://portal.packzy.com/api/v1",
+        hint: "সাধারণত পরিবর্তনের দরকার নেই। খালি রাখলে ডিফল্ট ব্যবহার হবে।",
+      },
     ],
   },
   {

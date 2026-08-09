@@ -61,6 +61,7 @@ COLUMN_PATCHES: list[tuple[str, str, str]] = [
     ("orders", "coupon_code", "TEXT"),
     ("orders", "courier_provider", "TEXT"),
     ("orders", "courier_tracking_id", "TEXT"),
+    ("orders", "courier_consignment_id", "TEXT"),
 ]
 
 INDEX_PATCHES: list[str] = [
