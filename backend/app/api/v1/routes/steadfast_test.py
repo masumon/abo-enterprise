@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.steadfast_test_connection import test_connection
 from app.core.database import get_db
-from app.core.rbac import require_role
+from app.core.security import require_role
 
 router = APIRouter(prefix="/admin/steadfast", tags=["admin-steadfast"])
 
