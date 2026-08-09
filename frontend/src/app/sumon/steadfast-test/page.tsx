@@ -11,6 +11,7 @@ interface DiagnosticResult {
   code: string;
   http_status: number | null;
   message: string;
+  provider_message?: string | null;
   balance: number | null;
   elapsed_ms: number;
 }
@@ -79,6 +80,7 @@ export default function SteadfastTestPage() {
             <div className="min-w-0 flex-1">
               <p className={`font-bold ${result.ok ? "text-green-900" : "text-amber-900"}`}>{result.ok ? "Steadfast connection successful" : "Steadfast diagnostic result"}</p>
               <p className={`text-sm mt-1 ${result.ok ? "text-green-800" : "text-amber-800"}`}>{result.message}</p>
+              {result.provider_message && <p className="text-sm mt-2 rounded-lg bg-white/70 border border-black/5 p-3"><span className="font-semibold">Steadfast response:</span> {result.provider_message}</p>}
               <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
                 <div className="rounded-lg bg-white/70 border border-black/5 p-3"><dt className="text-xs text-gray-500">Code</dt><dd className="font-semibold mt-1">{result.code}</dd></div>
                 <div className="rounded-lg bg-white/70 border border-black/5 p-3"><dt className="text-xs text-gray-500">HTTP</dt><dd className="font-semibold mt-1">{result.http_status ?? "—"}</dd></div>
