@@ -34,10 +34,14 @@ function isCloudinaryImageUrl(value: string): boolean {
   return /^https?:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//i.test(value);
 }
 
+function hasResponsiveTransform(value: string): boolean {
+  return /\/image\/upload\/f_auto,q_auto,dpr_auto,c_fill,g_auto,w_\d+,h_\d+\//i.test(value);
+}
+
 /**
  * Returns a responsive Cloudinary delivery URL without changing the stored
- * original asset. Non-Cloudinary URLs are returned unchanged so legacy/manual
- * URLs keep working.
+ * original asset. Non-Cloudinary and already-transformed URLs are returned
+ * unchanged so legacy/manual URLs and composed delivery URLs keep working.
  */
 export function responsiveMediaUrl(
   value: string,
@@ -45,7 +49,7 @@ export function responsiveMediaUrl(
   viewport: "desktop" | "tablet" | "mobile"
 ): string {
   const url = value.trim();
-  if (!url || !isCloudinaryImageUrl(url)) return url;
+  if (!url || !isCloudinaryImageUrl(url) || hasResponsiveTransform(url)) return url;
 
   const { width, height } = PRESETS[preset][viewport];
   const transformation = `f_auto,q_auto,dpr_auto,c_fill,g_auto,w_${width},h_${height}`;
