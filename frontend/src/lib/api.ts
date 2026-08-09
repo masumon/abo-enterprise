@@ -179,6 +179,9 @@ export const ordersApi = {
   updateCourier: (id: string, data: { courier_provider?: string; courier_tracking_id?: string }) =>
     api.patch<ApiResponse<Order>>(`/api/v1/orders/${id}/courier`, data),
 
+  sendToSteadfast: (id: string) =>
+    api.post<ApiResponse<Order>>(`/api/v1/orders/${id}/steadfast`),
+
   resendEmail: (id: string) =>
     api.post<ApiResponse<null>>(`/api/v1/orders/${id}/resend-email`),
 

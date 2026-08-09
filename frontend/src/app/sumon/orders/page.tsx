@@ -241,6 +241,32 @@ export default function AdminOrdersPage() {
     }
   };
 
+  const [steadfastSending, setSteadfastSending] = useState(false);
+  const sendToSteadfast = async () => {
+    if (!detail) return;
+    setSteadfastSending(true);
+    try {
+      const res = await ordersApi.sendToSteadfast(detail.id);
+      const updated = res.data;
+      const tracking = updated?.courier_tracking_id ?? "";
+      toast("success", `Steadfast-এ পাঠানো হয়েছে — tracking ${tracking}`);
+      await load();
+      setDetail((prev) => prev ? {
+        ...prev,
+        courier_provider: "steadfast",
+        courier_tracking_id: tracking,
+        order_status: updated?.order_status ?? prev.order_status,
+      } : prev);
+      setCourierProvider("steadfast");
+      setCourierTracking(tracking);
+    } catch (e) {
+      const msg = e instanceof Error && e.message ? e.message : "Steadfast-এ পাঠানো যায়নি";
+      toast("error", msg);
+    } finally {
+      setSteadfastSending(false);
+    }
+  };
+
   const toggleSelect = (id: string) => {
     setSelected(prev => {
       const next = new Set(prev);
@@ -595,10 +621,28 @@ export default function AdminOrdersPage() {
                       <input value={courierTracking} onChange={(e) => setCourierTracking(e.target.value)} className="input text-sm mt-1" placeholder="Consignment ID" />
                     </div>
                   </div>
-                  <button type="button" onClick={saveCourier} disabled={courierSaving} className="btn btn-primary btn-sm gap-1">
-                    {courierSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                    Save Courier
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={saveCourier} disabled={courierSaving} className="btn btn-primary btn-sm gap-1">
+                      {courierSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                      Save Courier
+                    </button>
+                    {detail.courier_provider === "steadfast" && detail.courier_tracking_id ? (
+                      <span className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1.5 font-medium">
+                        ✓ Steadfast: {detail.courier_tracking_id}
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={sendToSteadfast}
+                        disabled={steadfastSending || ["cancelled", "delivered"].includes(detail.order_status)}
+                        className="btn btn-sm gap-1 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+                        title="Steadfast কুরিয়ারে consignment তৈরি করুন"
+                      >
+                        {steadfastSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                        Send to Steadfast
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {detail.notes && (
