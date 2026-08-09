@@ -11,20 +11,30 @@ async function loadCachedSettings(): Promise<Record<string, string> | null> {
   return getCachedApiResponse<Record<string, string>>(SETTINGS_CACHE_KEY);
 }
 
+/**
+ * Fetch public CMS settings with stale-while-revalidate behaviour.
+ *
+ * Online: always request the current server state so an admin CMS update
+ * (especially images/banners) is visible after a page refresh/navigation.
+ * Offline: use the last IndexedDB/memory cache.
+ *
+ * The previous implementation returned memoryCache before making a network
+ * request. Because the cache can live for 7 days, an admin image change could
+ * remain invisible on the public site until the cache expired.
+ */
 async function fetchSettings(): Promise<Record<string, string>> {
-  if (memoryCache) return memoryCache;
+  if (pending) return pending;
 
   const cached = await loadCachedSettings();
-  if (cached && Object.keys(cached).length > 0) {
-    memoryCache = cached;
-    if (isOffline()) return cached;
-  }
 
-  if (pending) return pending;
+  if (isOffline()) {
+    if (memoryCache && Object.keys(memoryCache).length > 0) return memoryCache;
+    return cached ?? {};
+  }
 
   pending = axios
     .get<{ data: Record<string, string> }>(`${getApiBaseUrl()}/api/v1/settings`, {
-      timeout: isOffline() ? 5000 : 60000,
+      timeout: 60000,
     })
     .then(async (r) => {
       memoryCache = r.data.data ?? {};
@@ -33,7 +43,11 @@ async function fetchSettings(): Promise<Record<string, string>> {
     })
     .catch(async (err) => {
       console.warn("public_settings_fetch_failed", err);
-      if (cached && Object.keys(cached).length > 0) return cached;
+      if (memoryCache && Object.keys(memoryCache).length > 0) return memoryCache;
+      if (cached && Object.keys(cached).length > 0) {
+        memoryCache = cached;
+        return cached;
+      }
       memoryCache = {};
       return memoryCache;
     })
@@ -44,7 +58,7 @@ async function fetchSettings(): Promise<Record<string, string>> {
   return pending;
 }
 
-/** Fetch public CMS settings (memory + IndexedDB cache). Safe for client components. */
+/** Fetch public CMS settings (stale cache + background revalidation). Safe for client components. */
 export function usePublicSettings(keys?: string[]) {
   const [settings, setSettings] = useState<Record<string, string>>(memoryCache ?? {});
   const [loading, setLoading] = useState(!memoryCache);
@@ -58,19 +72,25 @@ export function usePublicSettings(keys?: string[]) {
   useEffect(() => {
     let active = true;
 
+    // Show cached settings immediately for fast rendering/offline support.
+    // The cache is intentionally NOT authoritative while online.
     loadCachedSettings().then((cached) => {
       if (!active || !cached || Object.keys(cached).length === 0) return;
-      memoryCache = cached;
-      if (keys?.length) {
-        const subset: Record<string, string> = {};
-        for (const k of keys) subset[k] = cached[k] ?? "";
-        setSettings(subset);
-      } else {
-        setSettings(cached);
+      if (isOffline()) {
+        memoryCache = cached;
+        if (keys?.length) {
+          const subset: Record<string, string> = {};
+          for (const k of keys) subset[k] = cached[k] ?? "";
+          setSettings(subset);
+        } else {
+          setSettings(cached);
+        }
+        setLoading(false);
       }
-      setLoading(false);
     });
 
+    // Online this always revalidates against the API, replacing stale cached
+    // CMS values with the latest values saved by the admin.
     fetchSettings().then((data) => {
       if (!active) return;
       if (keys?.length) {
