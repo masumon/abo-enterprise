@@ -1,14 +1,12 @@
 import { getApiBaseUrl } from "@/lib/apiBase";
 
-/** Server-side public settings (cached). */
+/** Server-side public settings (short-lived cache). */
 export async function fetchPublicSettings(): Promise<Record<string, string>> {
   try {
     const res = await fetch(`${getApiBaseUrl()}/api/v1/settings`, {
-      // Cached for 5 min (Next data cache), so the backend is hit at most once
-      // per window and identical calls in one request are de-duped. The short
-      // timeout means even a momentarily slow backend can never hang page SSR
-      // for long — we fall back to code defaults ({}) and render immediately.
-      next: { revalidate: 300 },
+      // Keep a short cache to reduce Render Free-tier traffic while making
+      // admin CMS changes visible much sooner than the previous 5-minute window.
+      next: { revalidate: 60 },
       signal: AbortSignal.timeout(4000),
     });
     if (!res.ok) return {};
