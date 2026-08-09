@@ -63,6 +63,26 @@ def create_customer_token(phone: str) -> str:
     )
 
 
+# These routes historically used the coarse require_admin dependency even
+# though their UI/API contracts are role-aware. Keep the route implementations
+# unchanged while enforcing the intended least-privilege permission here.
+# All other require_admin callers remain admin-only.
+_LEGACY_ROUTE_PERMISSIONS = {
+    ("GET", "/admin/stats"): "analytics.read",
+    ("POST", "/admin/upload"): "media.write",
+    ("GET", "/admin/users"): "users.read",
+}
+
+
+def _legacy_route_permission(request: Request) -> str | None:
+    method = request.method.upper()
+    path = request.url.path.rstrip("/")
+    for (expected_method, suffix), permission in _LEGACY_ROUTE_PERMISSIONS.items():
+        if method == expected_method and path.endswith(suffix):
+            return permission
+    return None
+
+
 async def require_customer(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
 ) -> str:
@@ -104,8 +124,15 @@ async def require_admin(
     result = await db.execute(
         select(AdminUser).where(AdminUser.id == admin_uuid, AdminUser.is_active == True)  # noqa: E712
     )
-    if not result.scalar_one_or_none():
+    user = result.scalar_one_or_none()
+    if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Admin account inactive or not found")
+
+    permission = _legacy_route_permission(request)
+    if permission:
+        from app.core.rbac import check_role
+        check_role(user.role, permission)
+
     return admin_id
 
 
