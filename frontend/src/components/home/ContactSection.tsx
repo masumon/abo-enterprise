@@ -13,7 +13,7 @@ import { SocialMediaLinks } from "@/components/ui/SocialMediaLinks";
 
 export default function ContactSection() {
   const { lang } = useLanguageStore();
-  const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address", "contact_address_en", "contact_hours_en", "contact_hours_bn", "facebook_url", "whatsapp_number"]);
+  const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address", "contact_address_en", "contact_hours_en", "contact_hours_bn", "facebook_url", "whatsapp_number", "instagram_url", "twitter_url", "linkedin_url", "youtube_url", "tiktok_url"]);
   const mapsEmbed = resolveGoogleMapsEmbed(getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED));
   const phone = getSettingValue(settings, "contact_phone", "01825007977");
   const phoneDisplay = formatBdPhoneDisplay(phone);
@@ -65,6 +65,11 @@ export default function ContactSection() {
               <SocialMediaLinks
                 facebookUrl={getSettingValue(settings, "facebook_url", "https://www.facebook.com/abo.enterprise")}
                 whatsappNumber={getSettingValue(settings, "whatsapp_number", "8801825007977")}
+                instagramUrl={getSettingValue(settings, "instagram_url")}
+                twitterUrl={getSettingValue(settings, "twitter_url")}
+                linkedinUrl={getSettingValue(settings, "linkedin_url")}
+                youtubeUrl={getSettingValue(settings, "youtube_url")}
+                tiktokUrl={getSettingValue(settings, "tiktok_url")}
               />
             </div>
           </GlassCard>
