@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Upload, Loader2, X, ImageIcon, Check, Sparkles, FolderOpen } from "lucide-react";
-import { adminApi } from "@/lib/api";
+import api from "@/lib/api";
+import type { ApiResponse } from "@/types";
 import { apiErrorMessage } from "@/lib/apiError";
 import { compressImage } from "@/lib/imageCompress";
 import { isVideoUrl } from "@/lib/media";
@@ -94,7 +95,7 @@ export default function ImageUpload({
   const processFile = async (file: File) => {
     setError(null);
 
-    // Match the backend limits: 50MB for video, 30MB for images.
+    // Match the backend's public media endpoint limits conservatively.
     const isVid = file.type.startsWith("video/");
     const maxSize = (isVid ? 50 : 30) * 1024 * 1024;
     if (file.size > maxSize) {
@@ -105,7 +106,7 @@ export default function ImageUpload({
 
     const previewUrl = URL.createObjectURL(file);
     const { width, height } = await readImageDimensions(file, previewUrl);
-    // Large photos are fine — the server auto-resizes; only reject tiny images.
+    // Large photos are fine — the browser/server optimizes them; only reject tiny images.
     if (width !== null && height !== null && (width < 100 || height < 100)) {
       setError("Image must be at least 100×100 pixels");
       URL.revokeObjectURL(previewUrl);
@@ -129,7 +130,8 @@ export default function ImageUpload({
   };
 
   /** Step 2 — explicit confirm. Images are downscaled/compressed in the browser
-   *  first (so slow mobile uploads don't time out), then the server optimizes. */
+   *  first (so slow mobile uploads don't time out), then the canonical media
+   *  endpoint stores both the Cloudinary asset and its MediaAsset DB metadata. */
   const confirmUpload = async () => {
     if (!pending) return;
     setUploading(true);
@@ -138,9 +140,30 @@ export default function ImageUpload({
       const toUpload = pending.file.type.startsWith("image/")
         ? await compressImage(pending.file)
         : pending.file;
-      const r = await adminApi.uploadMedia(toUpload, folder);
+      const form = new FormData();
+      form.append("file", toUpload);
+      const r = await api.post<ApiResponse<{
+        id: string;
+        url: string;
+        public_id: string;
+        width: number | null;
+        height: number | null;
+        size: number;
+        format: string | null;
+      }>>(
+        "/api/v1/media/upload-with-metadata",
+        form,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+          params: { folder },
+          // Uploads can be slow on mobile and Render Free can cold-start.
+          timeout: 180000,
+          maxRetries: 0,
+        }
+      );
       const url = r.data.data?.url ?? "";
-      if (url) onChange(url);
+      if (!url) throw new Error("Upload completed without an asset URL");
+      onChange(url);
       setPending(null);
     } catch (e) {
       setError(apiErrorMessage(e, "Upload failed. Check file size and format, or paste a URL."));
