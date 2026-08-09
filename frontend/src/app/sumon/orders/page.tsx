@@ -247,7 +247,7 @@ export default function AdminOrdersPage() {
     setSteadfastSending(true);
     try {
       const res = await ordersApi.sendToSteadfast(detail.id);
-      const updated = res.data;
+      const updated = res.data.data as unknown as AdminOrder | undefined;
       const tracking = updated?.courier_tracking_id ?? "";
       toast("success", `Steadfast-এ পাঠানো হয়েছে — tracking ${tracking}`);
       await load();
