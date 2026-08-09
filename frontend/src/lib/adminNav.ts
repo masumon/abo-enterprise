@@ -22,6 +22,7 @@ import {
   Percent,
   FolderTree,
   LayoutTemplate,
+  Megaphone,
   ExternalLink,
   UploadCloud,
   type LucideIcon,
