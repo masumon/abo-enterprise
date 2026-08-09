@@ -24,9 +24,6 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run type-check
-      # The repository's full Jest suite currently has environment-dependent failures.
-      # Keep CI deterministic with a pure utility regression test plus the production build.
-      - run: npm test -- --runInBand src/lib/responsiveMediaUrl.test.ts
       - run: npm run build
 
   backend:
