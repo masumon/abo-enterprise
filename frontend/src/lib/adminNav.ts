@@ -17,12 +17,12 @@ import {
   Settings,
   Shield,
   Send,
-  Megaphone,
   Truck,
   UserPlus,
   Percent,
   FolderTree,
   LayoutTemplate,
+  Megaphone,
   ExternalLink,
   UploadCloud,
   type LucideIcon,
@@ -80,8 +80,8 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     labelBn: "বিক্রয়",
     items: [
       { href: "/sumon/orders", icon: ShoppingCart, label: "Orders", labelBn: "অর্ডার", badge: "orders" },
-      { href: "/sumon/invoices", icon: FileText, label: "Invoices", labelBn: "ইনভয়েস" },
-      { href: "/sumon/payments", icon: CreditCard, label: "Payments", labelBn: "পেমেন্ট" },
+      { href: "/sumon/invoices", icon: FileText, label: "Invoices", labelBn: "ইনভয়েস", minRole: "admin" },
+      { href: "/sumon/payments", icon: CreditCard, label: "Payments", labelBn: "পেমেন্ট", minRole: "admin" },
     ],
   },
   {
@@ -90,7 +90,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     labelBn: "মার্কেটিং",
     items: [
       { href: "/sumon/coupons", icon: Percent, label: "Coupons", labelBn: "কুপন", minRole: "admin" },
-      { href: "/sumon/newsletter", icon: Send, label: "Newsletter", labelBn: "নিউজলেটার" },
+      { href: "/sumon/newsletter", icon: Send, label: "Newsletter", labelBn: "নিউজলেটার", minRole: "admin" },
     ],
   },
   {
@@ -100,7 +100,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { href: "/sumon/bookings", icon: Briefcase, label: "Bookings", labelBn: "বুকিং", badge: "bookings" },
       { href: "/sumon/leads", icon: Users, label: "Leads", labelBn: "লিড", badge: "leads" },
-      { href: "/sumon/career", icon: UserPlus, label: "Career Applications", labelBn: "চাকরির আবেদন" },
+      { href: "/sumon/career", icon: UserPlus, label: "Career Applications", labelBn: "চাকরির আবেদন", minRole: "admin" },
     ],
   },
   {
@@ -110,7 +110,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { href: "/sumon/categories", icon: FolderTree, label: "Categories", labelBn: "ক্যাটাগরি", minRole: "admin" },
       { href: "/sumon/products", icon: Package, label: "Products", labelBn: "পণ্য", exact: true },
-      { href: "/sumon/products/import", icon: UploadCloud, label: "Bulk Import", labelBn: "বাল্ক ইমপোর্ট" },
+      { href: "/sumon/products/import", icon: UploadCloud, label: "Bulk Import", labelBn: "বাল্ক ইমপোর্ট", minRole: "admin" },
       { href: "/sumon/combos", icon: Package, label: "Combo Packs", labelBn: "কম্বো প্যাক" },
       { href: "/sumon/services", icon: Wrench, label: "Services", labelBn: "সেবা" },
       { href: "/sumon/reviews", icon: Star, label: "Product Reviews", labelBn: "পণ্য রিভিউ" },
@@ -127,7 +127,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/sumon/media", icon: Images, label: "Image Manager", labelBn: "ছবি ব্যবস্থাপনা" },
       { href: "/sumon/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি" },
       { href: "/sumon/blog", icon: BookOpen, label: "Blog", labelBn: "ব্লগ" },
-      { href: "/sumon/email-templates", icon: Mail, label: "Email Templates", labelBn: "ইমেইল" },
+      { href: "/sumon/email-templates", icon: Mail, label: "Email Templates", labelBn: "ইমেইল", minRole: "admin" },
     ],
   },
   {

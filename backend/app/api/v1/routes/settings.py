@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
-from app.core.security import decode_token, require_role
+from app.core.security import ADMIN_SESSION_COOKIE, decode_token, require_role
 from app.models.models import AdminUser, Setting, ActivityLog
 from app.schemas.schemas import SettingOut, SettingUpdate, SettingCreate, ApiResponse
 
@@ -59,11 +59,18 @@ def _is_public_setting_key(key: str) -> bool:
 
 
 async def _is_admin_request(request: Request, db: AsyncSession) -> bool:
-    auth = request.headers.get("authorization", "")
-    if not auth.lower().startswith("bearer "):
-        return False
+    """Best-effort admin detection for the intentionally public GET endpoint.
 
-    token = auth.split(" ", 1)[1].strip()
+    Mirror the canonical auth contract: Bearer token first, then the HttpOnly
+    admin session cookie. This endpoint must remain public because the storefront
+    consumes it, so invalid credentials simply result in the public-safe view.
+    """
+    auth = request.headers.get("authorization", "")
+    token = None
+    if auth.lower().startswith("bearer "):
+        token = auth.split(" ", 1)[1].strip() or None
+    if not token:
+        token = request.cookies.get(ADMIN_SESSION_COOKIE)
     if not token:
         return False
 
@@ -135,10 +142,12 @@ async def upsert_settings(
     admin_id: str = Depends(require_role("settings.write")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create or update multiple settings at once (admin only)"""
+    """Create or update multiple settings at once (admin only)."""
     results = []
+    skipped: list[str] = []
     for item in payload:
         if item.value == "***HIDDEN***":
+            skipped.append(item.key)
             continue
         result = await db.execute(
             select(Setting).where((Setting.key == item.key) & (Setting.is_deleted == False))
@@ -146,6 +155,7 @@ async def upsert_settings(
         setting = result.scalar_one_or_none()
         if setting:
             if not setting.is_editable:
+                skipped.append(item.key)
                 continue
             setting.value = item.value
             if item.data_type:
@@ -165,10 +175,17 @@ async def upsert_settings(
     db.add(ActivityLog(
         admin_id=UUID(admin_id), action="update",
         entity_type="setting", entity_id=None,
-        new_values={"keys": [r["key"] for r in results]},
+        new_values={"keys": [r["key"] for r in results], "skipped_keys": skipped},
     ))
     await db.commit()
-    return ApiResponse(success=True, data=results, message=f"{len(results)} settings saved")
+
+    message = (
+        f"{len(results)} settings saved; {len(skipped)} skipped (hidden or not editable)"
+        if skipped else f"{len(results)} settings saved"
+    )
+    # Keep the existing response data shape for frontend compatibility; the
+    # explicit message tells the admin when a hidden/non-editable field was not saved.
+    return ApiResponse(success=True, data=results, message=message)
 
 
 @router.get("/{key}", response_model=ApiResponse)
@@ -227,7 +244,7 @@ async def update_setting(
 
     return ApiResponse(
         success=True,
-        data={"key": setting.key, "value": setting.value},
+        data={"key": key, "value": setting.value},
         message=f"Setting '{key}' updated successfully"
     )
 
