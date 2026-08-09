@@ -69,6 +69,36 @@ def _is_public_setting_key(key: str) -> bool:
     return any(key.startswith(prefix) for prefix in _PUBLIC_SETTING_PREFIXES)
 
 
+# These settings are explicitly owned by the CMS/Image Manager. They are
+# safe customer-facing values and are protected by the settings.write RBAC
+# permission, so a legacy `is_editable=false` flag must not make them silently
+# impossible to update. This is intentionally narrower than the public
+# allowlist so secrets or arbitrary settings cannot bypass is_editable.
+_CMS_MANAGED_EXACT_KEYS = {
+    "logo_url",
+    "favicon_url",
+    "app_icon_url",
+    "default_og_image_url",
+    "hero_image_url",
+    "hero_mobile_image_url",
+    "hero_promo_media_url",
+    "site_login_bg_url",
+    "site_customer_login_bg_url",
+    "gallery_office_image_url",
+    "about_story_image_url",
+}
+
+_CMS_MANAGED_PREFIXES = (
+    "banner_",
+)
+
+
+def _is_cms_managed_setting_key(key: str) -> bool:
+    if key in _CMS_MANAGED_EXACT_KEYS:
+        return True
+    return any(key.startswith(prefix) for prefix in _CMS_MANAGED_PREFIXES)
+
+
 async def _is_admin_request(request: Request, db: AsyncSession) -> bool:
     """Best-effort admin detection for the intentionally public GET endpoint.
 
@@ -132,7 +162,7 @@ async def get_all_settings(request: Request, db: AsyncSession = Depends(get_db))
             "email_provider": cfg.EMAIL_PROVIDER,
         }
         for k, v in effective_email.items():
-            if v and not settings_dict.get(k):
+            if v and not settings_dict.get(k):  # DB value wins; only fill blanks
                 settings_dict[k] = v
 
     if not is_admin:
@@ -165,7 +195,10 @@ async def upsert_settings(
         )
         setting = result.scalar_one_or_none()
         if setting:
-            if not setting.is_editable:
+            # CMS-owned image slots are intentionally editable by the admin
+            # module even if a legacy row was created with is_editable=false.
+            # Other non-editable settings retain the original protection.
+            if not setting.is_editable and not _is_cms_managed_setting_key(item.key):
                 skipped.append(item.key)
                 continue
             setting.value = item.value
@@ -173,6 +206,7 @@ async def upsert_settings(
                 setting.data_type = item.data_type
             if item.description is not None:
                 setting.description = item.description
+            # Ensure sensitive keys stay masked in API responses.
             if _is_secret_key(item.key):
                 setting.is_secret = True
         else:
@@ -190,9 +224,11 @@ async def upsert_settings(
     await db.commit()
 
     message = (
-        f"{len(results)} settings saved; {len(skipped)} skipped (hidden or not editable)"
+        f"{len(results)} settings saved; {len(skipped)} skipped (hidden, protected, or not editable)"
         if skipped else f"{len(results)} settings saved"
     )
+    # Keep the existing response data shape for frontend compatibility; the
+    # explicit message tells the admin when a hidden/non-editable field was not saved.
     return ApiResponse(success=True, data=results, message=message)
 
 
@@ -214,7 +250,7 @@ async def get_setting(key: str, request: Request, db: AsyncSession = Depends(get
     if not is_admin and not _is_public_setting_key(setting.key):
         raise HTTPException(status_code=403, detail="Setting is not public")
 
-    return ApiResponse(success=True, data={"key": key, "value": setting.value})
+    return ApiResponse(success=True, data={"key": setting.key, "value": setting.value})
 
 
 @router.put("/{key}", response_model=ApiResponse)
