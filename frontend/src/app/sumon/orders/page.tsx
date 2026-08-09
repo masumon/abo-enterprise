@@ -24,6 +24,7 @@ interface AdminOrder {
   order_status: string; subtotal: number; delivery_charge: number; total: number;
   advance_amount?: number; advance_paid?: boolean;
   courier_provider?: string | null; courier_tracking_id?: string | null;
+  /** Institutional invoice identity (manual_sql/0009); all null on a personal order. */
   company_name?: string | null; company_bin?: string | null; company_tin?: string | null;
   po_number?: string | null; billing_address?: string | null;
   notes?: string; items: AdminOrderItem[]; created_at: string;
@@ -78,6 +79,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Deep link: /admin/orders?open=<order_id> opens that order's detail directly
   const openedFromUrl = useRef(false);
   useEffect(() => {
     if (openedFromUrl.current || typeof window === "undefined") return;
@@ -89,6 +91,7 @@ export default function AdminOrdersPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Debounce search input
   const handleSearchChange = (v: string) => {
     setSearchInput(v);
     if (searchTimer.current) clearTimeout(searchTimer.current);
@@ -107,7 +110,7 @@ export default function AdminOrdersPage() {
       if (detail?.id === id) setDetail(prev => prev ? { ...prev, order_status: status } : prev);
       toast("success", `Order status updated to ${status}`);
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Failed to update order status"));
+      toast("error", "Failed to update order status");
     } finally {
       setUpdatingId(null);
     }
@@ -208,7 +211,8 @@ export default function AdminOrdersPage() {
       setCourierProvider(data.courier_provider ?? "");
       setCourierTracking(data.courier_tracking_id ?? "");
     } catch (err: unknown) {
-      toast("error", `Failed to load order: ${apiErrorMessage(err, "Unknown error")}`);
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      toast("error", `Failed to load order: ${errorMsg}`);
     } finally {
       setDetailLoading(false);
     }
@@ -230,8 +234,8 @@ export default function AdminOrdersPage() {
         courier_tracking_id: courierTracking || null,
         order_status: courierTracking && ["confirmed", "processing"].includes(prev.order_status) ? "shipped" : prev.order_status,
       } : prev);
-    } catch (err) {
-      toast("error", apiErrorMessage(err, "Could not update courier"));
+    } catch {
+      toast("error", "Could not update courier");
     } finally {
       setCourierSaving(false);
     }
@@ -256,9 +260,8 @@ export default function AdminOrdersPage() {
       setCourierProvider("steadfast");
       setCourierTracking(tracking);
     } catch (e) {
-      // Axios' default Error.message is only "Request failed with status code 502".
-      // Always extract FastAPI's detail so the admin sees the actual courier failure.
-      toast("error", apiErrorMessage(e, "Steadfast-এ পাঠানো যায়নি"));
+      const msg = e instanceof Error && e.message ? e.message : "Steadfast-এ পাঠানো যায়নি";
+      toast("error", msg);
     } finally {
       setSteadfastSending(false);
     }
@@ -318,29 +321,50 @@ export default function AdminOrdersPage() {
             <option value={90}>90d</option>
             <option value={365}>1yr</option>
           </select>
-          <button onClick={handleCsvExport} disabled={csvLoading} className="admin-btn-secondary !py-2 gap-1.5" title={`Export last ${csvDays} days`}>
+          <button
+            onClick={handleCsvExport}
+            disabled={csvLoading}
+            className="admin-btn-secondary !py-2 gap-1.5"
+            title={`Export last ${csvDays} days`}
+          >
             {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             CSV
           </button>
-          <button onClick={handlePdfExport} disabled={exportPdfLoading} className="admin-btn-secondary !py-2 gap-1.5" title={`Export last ${csvDays} days as PDF`}>
+          <button
+            onClick={handlePdfExport}
+            disabled={exportPdfLoading}
+            className="admin-btn-secondary !py-2 gap-1.5"
+            title={`Export last ${csvDays} days as PDF`}
+          >
             {exportPdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             PDF
           </button>
         </div>
       </AdminToolbar>
 
+      {/* Bulk action bar */}
       {selected.size > 0 && (
         <div className="flex items-center gap-3 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">
           <span className="text-sm font-medium text-brand-800">{selected.size} selected</span>
-          <select value={bulkStatus} onChange={e => setBulkStatus(e.target.value)} className="input w-auto text-sm py-1">
+          <select
+            value={bulkStatus}
+            onChange={e => setBulkStatus(e.target.value)}
+            className="input w-auto text-sm py-1"
+          >
             <option value="">Set status…</option>
             {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
           </select>
-          <button onClick={handleBulkUpdate} disabled={!bulkStatus || bulkLoading} className="btn btn-primary btn-sm gap-1">
+          <button
+            onClick={handleBulkUpdate}
+            disabled={!bulkStatus || bulkLoading}
+            className="btn btn-primary btn-sm gap-1"
+          >
             {bulkLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ChevronRight className="w-3.5 h-3.5" />}
             Apply
           </button>
-          <button onClick={() => setSelected(new Set())} className="btn btn-ghost btn-sm ml-auto">Clear</button>
+          <button onClick={() => setSelected(new Set())} className="btn btn-ghost btn-sm ml-auto">
+            Clear
+          </button>
         </div>
       )}
 
@@ -353,62 +377,303 @@ export default function AdminOrdersPage() {
             <button onClick={load} className="btn btn-outline btn-sm">Retry / আবার চেষ্টা করুন</button>
           </div>
         ) : orders.length === 0 ? (
-          <AdminEmptyState icon={ShoppingCart} title="No orders found" description="Orders will appear here when customers checkout." />
+          <AdminEmptyState
+            icon={ShoppingCart}
+            title="No orders found"
+            description="Orders will appear here when customers checkout."
+          />
         ) : (
           <>
-            <div className="sm:hidden divide-y divide-gray-50">
-              {orders.map((o) => (
-                <button key={o.id} type="button" onClick={() => openDetail(o.id)} className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-gray-50/80">
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{o.customer_name}</p>
-                    <p className="text-xs text-gray-400">{o.order_number} · {new Date(o.created_at).toLocaleDateString("en-BD")}</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-semibold text-gray-900">{formatPrice(o.total)}</p>
-                    <StatusBadge status={o.order_status} />
-                  </div>
-                </button>
-              ))}
-            </div>
-            <div className="overflow-x-auto hidden sm:block">
-              <table className="table-premium min-w-[580px]">
-                <thead><tr><th className="px-4 py-3 w-8"><button onClick={toggleAll} className="text-gray-400 hover:text-brand-600">{allSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}</button></th><th>Order</th><th>Customer</th><th className="hidden sm:table-cell">Payment</th><th>Total</th><th className="hidden md:table-cell">Date</th><th>Status</th></tr></thead>
-                <tbody>
-                  {orders.map((o) => (
-                    <tr key={o.id} className={selected.has(o.id) ? "bg-brand-50/40" : ""}>
-                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}><button onClick={() => toggleSelect(o.id)} className="text-gray-400 hover:text-brand-600">{selected.has(o.id) ? <CheckSquare className="w-4 h-4 text-brand-600" /> : <Square className="w-4 h-4" />}</button></td>
-                      <td className="px-5 py-3 cursor-pointer" onClick={() => openDetail(o.id)}><p className="font-medium text-gray-900">{o.order_number}</p><p className="text-xs text-gray-400">{o.items?.length ?? 0} items</p></td>
-                      <td className="px-5 py-3 cursor-pointer" onClick={() => openDetail(o.id)}><p className="text-gray-900">{o.customer_name}</p><p className="text-xs text-gray-400">{o.customer_phone}</p></td>
-                      <td className="px-5 py-3 text-gray-600 capitalize hidden sm:table-cell">{o.payment_method}</td>
-                      <td className="px-5 py-3 font-semibold text-gray-900">{formatPrice(o.total)}</td>
-                      <td className="px-5 py-3 text-gray-500 whitespace-nowrap hidden md:table-cell">{new Date(o.created_at).toLocaleDateString("en-BD")}</td>
-                      <td className="px-5 py-3" onClick={e => e.stopPropagation()}><div className="relative"><select value={o.order_status} disabled={updatingId === o.id} onChange={(e) => updateStatus(o.id, e.target.value)} className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer">{STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}</select><ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" /></div></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          {/* Mobile card view — table stays untouched for sm+ screens */}
+          <div className="sm:hidden divide-y divide-gray-50">
+            {orders.map((o) => (
+              <button
+                key={o.id}
+                type="button"
+                onClick={() => openDetail(o.id)}
+                className="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-gray-50/80"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{o.customer_name}</p>
+                  <p className="text-xs text-gray-400">{o.order_number} · {new Date(o.created_at).toLocaleDateString("en-BD")}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-semibold text-gray-900">{formatPrice(o.total)}</p>
+                  <StatusBadge status={o.order_status} />
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="overflow-x-auto hidden sm:block">
+            <table className="table-premium min-w-[580px]">
+              <thead>
+                <tr>
+                  <th className="px-4 py-3 w-8">
+                    <button onClick={toggleAll} className="text-gray-400 hover:text-brand-600">
+                      {allSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                    </button>
+                  </th>
+                  <th>Order</th>
+                  <th>Customer</th>
+                  <th className="hidden sm:table-cell">Payment</th>
+                  <th>Total</th>
+                  <th className="hidden md:table-cell">Date</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((o) => (
+                  <tr key={o.id} className={selected.has(o.id) ? "bg-brand-50/40" : ""}>
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => toggleSelect(o.id)} className="text-gray-400 hover:text-brand-600">
+                        {selected.has(o.id) ? <CheckSquare className="w-4 h-4 text-brand-600" /> : <Square className="w-4 h-4" />}
+                      </button>
+                    </td>
+                    <td className="px-5 py-3 cursor-pointer" onClick={() => openDetail(o.id)}>
+                      <p className="font-medium text-gray-900">{o.order_number}</p>
+                      <p className="text-xs text-gray-400">{o.items?.length ?? 0} items</p>
+                    </td>
+                    <td className="px-5 py-3 cursor-pointer" onClick={() => openDetail(o.id)}>
+                      <p className="text-gray-900">{o.customer_name}</p>
+                      <p className="text-xs text-gray-400">{o.customer_phone}</p>
+                    </td>
+                    <td className="px-5 py-3 text-gray-600 capitalize hidden sm:table-cell">{o.payment_method}</td>
+                    <td className="px-5 py-3 font-semibold text-gray-900">{formatPrice(o.total)}</td>
+                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap hidden md:table-cell">
+                      {new Date(o.created_at).toLocaleDateString("en-BD")}
+                    </td>
+                    <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+                      <div className="relative">
+                        <select
+                          value={o.order_status}
+                          disabled={updatingId === o.id}
+                          onChange={(e) => updateStatus(o.id, e.target.value)}
+                          className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
+                        >
+                          {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
+                        </select>
+                        <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           </>
         )}
       </div>
 
-      {total > 20 && <div className="flex justify-center gap-2"><button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn btn-outline btn-sm">Previous</button><span className="px-4 py-2 text-sm text-gray-600">Page {page} of {Math.max(1, Math.ceil(total / 20))}</span><button disabled={page >= Math.ceil(total / 20)} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">Next</button></div>}
+      {total > 20 && (
+        <div className="flex justify-center gap-2">
+          <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn btn-outline btn-sm">Previous</button>
+          <span className="px-4 py-2 text-sm text-gray-600">Page {page} of {Math.max(1, Math.ceil(total / 20))}</span>
+          <button disabled={page >= Math.ceil(total / 20)} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">Next</button>
+        </div>
+      )}
 
+      {/* Order Detail Modal */}
       {(detail || detailLoading) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE} onClick={() => setDetail(null)} role="dialog" aria-modal="true" aria-label="Order details">
-          <div ref={detailRef} className="rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col animate-scale-in" style={ADMIN_MODAL_PANEL_STYLE} onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100"><h2 className="text-lg font-semibold text-gray-900">{detail ? `Order ${detail.order_number}` : "Loading..."}</h2><button onClick={() => setDetail(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button></div>
-            {detailLoading ? <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div> : detail ? (
-              <div className="overflow-y-auto p-6 space-y-5">
-                {/* Existing detail content continues below in the repository; this compact branch intentionally preserves the existing modal contract. */}
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={ADMIN_MODAL_BACKDROP_STYLE}
+          onClick={() => setDetail(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Order details"
+        >
+          <div
+            ref={detailRef}
+            className="rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col animate-scale-in"
+            style={ADMIN_MODAL_PANEL_STYLE}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {detail ? `Order ${detail.order_number}` : "Loading..."}
+              </h2>
+              <button onClick={() => setDetail(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+            </div>
+
+            {detailLoading ? (
+              <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
+            ) : detail ? (
+              <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <StatusBadge status={detail.order_status} />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadPdf(detail)}
+                      disabled={pdfLoading === detail.id}
+                      className="btn btn-outline btn-sm gap-1.5"
+                    >
+                      {pdfLoading === detail.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                      Invoice PDF
+                    </button>
+                    <select
+                      value={detail.order_status}
+                      disabled={updatingId === detail.id}
+                      onChange={(e) => updateStatus(detail.id, e.target.value)}
+                      className="input w-auto text-sm"
+                    >
+                      {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 text-sm">Customer Info</h3>
+                    <div className="flex gap-2">
+                      <a href={`tel:${detail.customer_phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>
+                      <a href={buildCustomerWhatsAppLink(detail.customer_phone, `Hello ${detail.customer_name}, your order ${detail.order_number} at ABO Enterprise (${formatPrice(detail.total)}) has been received. We will confirm shortly. Thank you!`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>
+                      {detail.customer_email && (
+                        <button
+                          type="button"
+                          onClick={() => setComposeEmail({ to: detail.customer_email!, subject: `Regarding your order ${detail.order_number}`, context: `Order ${detail.order_number}` })}
+                          title="Compose and send an email to the customer from no-reply@aboenterprise.com"
+                          className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium"
+                        >
+                          ✉ Email
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div><span className="text-gray-500">Name</span><p className="font-medium">{detail.customer_name}</p></div>
+                    <div><span className="text-gray-500">Phone</span><p className="font-medium">{detail.customer_phone}</p></div>
+                    {detail.customer_email && <div className="col-span-2"><span className="text-gray-500">Email</span><p className="font-medium">{detail.customer_email}</p></div>}
+                    <div className="col-span-2"><span className="text-gray-500">Address</span><p className="font-medium">{detail.delivery_address}</p></div>
+                    {/* X4 — an institutional order must be recognisable here,
+                        or the invoice goes out in the wrong name. */}
+                    {detail.company_name && <div className="col-span-2"><span className="text-gray-500">Company</span><p className="font-medium">{detail.company_name}</p></div>}
+                    {detail.company_bin && <div><span className="text-gray-500">BIN</span><p className="font-medium font-mono">{detail.company_bin}</p></div>}
+                    {detail.company_tin && <div><span className="text-gray-500">TIN</span><p className="font-medium font-mono">{detail.company_tin}</p></div>}
+                    {detail.po_number && <div className="col-span-2"><span className="text-gray-500">PO number</span><p className="font-medium font-mono">{detail.po_number}</p></div>}
+                    {detail.billing_address && <div className="col-span-2"><span className="text-gray-500">Billing address</span><p className="font-medium whitespace-pre-line">{detail.billing_address}</p></div>}
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-900 text-sm mb-3">Items</h3>
+                  <div className="space-y-2">
+                    {detail.items?.map((item, i) => {
+                      // Combo lines are stored with a "[Combo] " name prefix
+                      // (backend orders.py); surface them as a distinct bundle
+                      // row so staff never mistake one for a single product.
+                      const isCombo = item.product_name.startsWith("[Combo] ");
+                      const displayName = isCombo ? item.product_name.slice(8) : item.product_name;
+                      return (
+                        <div key={i} className={cn("flex items-center gap-3 py-2 border-b border-gray-50 last:border-0", isCombo && "-mx-2 px-2 rounded-lg bg-accent-50/60")}>
+                          <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0", isCombo ? "bg-accent-100" : "bg-brand-50")}>
+                            <Package className={cn("w-4 h-4", isCombo ? "text-accent-600" : "text-brand-400")} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">
+                              {isCombo && <span className="mr-1.5 align-middle inline-block px-1.5 py-0.5 rounded bg-accent-500 text-[#14182b] text-[10px] font-bold">COMBO</span>}
+                              {displayName}
+                            </p>
+                            <p className="text-xs text-gray-400">{formatPrice(item.product_price)} × {item.quantity}</p>
+                          </div>
+                          <p className="text-sm font-semibold text-gray-900">{formatPrice(item.subtotal)}</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+                  <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{formatPrice(detail.subtotal)}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">Delivery</span><span>{formatPrice(detail.delivery_charge)}</span></div>
+                  <div className="flex justify-between font-bold text-base pt-2 border-t border-gray-200">
+                    <span>Total</span><span className="text-accent-500">{formatPrice(detail.total)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-500 pt-1"><span>Payment</span><span className="capitalize">{detail.payment_method}</span></div>
+                  {(detail.advance_amount ?? 0) > 0 && (
+                    <div className={`mt-2 rounded-lg px-3 py-2 text-xs border flex items-center justify-between gap-2 ${detail.advance_paid ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
+                      <span>
+                        {detail.advance_paid
+                          ? `✓ Advance ${formatPrice(detail.advance_amount ?? 0)} received`
+                          : `Advance ${formatPrice(detail.advance_amount ?? 0)} pending`}
+                      </span>
+                      {!detail.advance_paid && (
+                        <button type="button" onClick={() => markAdvanceReceived(detail.id)} disabled={updatingId === detail.id} className="btn btn-brand btn-xs disabled:opacity-60 whitespace-nowrap">
+                          {updatingId === detail.id ? "…" : "Mark received"}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-brand-50 border border-brand-100 rounded-xl p-4 space-y-3">
+                  <h3 className="font-semibold text-gray-900 text-sm">Courier / Delivery</h3>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-gray-500">Provider</label>
+                      <select value={courierProvider} onChange={(e) => setCourierProvider(e.target.value)} className="input text-sm mt-1">
+                        <option value="">— Select —</option>
+                        {COURIERS.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-gray-500">Tracking ID</label>
+                      <input value={courierTracking} onChange={(e) => setCourierTracking(e.target.value)} className="input text-sm mt-1" placeholder="Consignment ID" />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button type="button" onClick={saveCourier} disabled={courierSaving} className="btn btn-primary btn-sm gap-1">
+                      {courierSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                      Save Courier
+                    </button>
+                    {detail.courier_provider === "steadfast" && detail.courier_tracking_id ? (
+                      <span className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1.5 font-medium">
+                        ✓ Steadfast: {detail.courier_tracking_id}
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={sendToSteadfast}
+                        disabled={steadfastSending || ["cancelled", "delivered"].includes(detail.order_status)}
+                        className="btn btn-sm gap-1 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+                        title="Steadfast কুরিয়ারে consignment তৈরি করুন"
+                      >
+                        {steadfastSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                        Send to Steadfast
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {detail.notes && (
+                  <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                    <p className="text-xs text-amber-700 font-medium mb-1">Notes</p>
+                    <p className="text-sm text-amber-900">{detail.notes}</p>
+                  </div>
+                )}
               </div>
             ) : null}
           </div>
         </div>
       )}
 
-      {confirmState && <ConfirmDialog title={confirmState.title} message={confirmState.message} onConfirm={confirmState.action} onCancel={() => setConfirmState(null)} />}
-      {composeEmail && <ComposeEmailModal {...composeEmail} onClose={() => setComposeEmail(null)} />}
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState?.title ?? ""}
+        message={confirmState?.message ?? ""}
+        confirmLabel="Update"
+        variant="warning"
+        onConfirm={() => confirmState?.action()}
+        onCancel={() => setConfirmState(null)}
+      />
+
+      <ComposeEmailModal
+        open={!!composeEmail}
+        onClose={() => setComposeEmail(null)}
+        to={composeEmail?.to ?? ""}
+        defaultSubject={composeEmail?.subject ?? ""}
+        contextLabel={composeEmail?.context}
+      />
     </div>
   );
 }
