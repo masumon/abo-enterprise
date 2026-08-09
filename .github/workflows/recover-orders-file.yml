@@ -1,4 +1,4 @@
-name: Recover orders page
+name: One-time courier patch
 
 on:
   push:
@@ -9,18 +9,34 @@ permissions:
   contents: write
 
 jobs:
-  recover:
-    if: ${{ !startsWith(github.event.head_commit.message, '[restore-orders]') }}
+  patch:
+    if: ${{ !startsWith(github.event.head_commit.message, '[patch-courier]') && !startsWith(github.event.head_commit.message, '[restore-orders]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Restore orders page from parent commit
+      - name: Improve Steadfast error visibility
+        shell: python
         run: |
-          git checkout 4ebe00795eb0e29753c6bcb8e4dcde62f8c44371 -- frontend/src/app/sumon/orders/page.tsx
+          from pathlib import Path
+          p = Path('frontend/src/app/sumon/orders/page.tsx')
+          s = p.read_text()
+          replacements = [
+              ('    } catch (err) {\n      toast("error", "Failed to update order status");\n    } finally {', '    } catch (err) {\n      toast("error", apiErrorMessage(err, "Failed to update order status"));\n    } finally {'),
+              ('    } catch (err: unknown) {\n      const errorMsg = err instanceof Error ? err.message : String(err);\n      toast("error", `Failed to load order: ${errorMsg}`);\n    } finally {', '    } catch (err: unknown) {\n      toast("error", `Failed to load order: ${apiErrorMessage(err, "Unknown error")}`);\n    } finally {'),
+              ('    } catch {\n      toast("error", "Could not update courier");\n    } finally {', '    } catch (err) {\n      toast("error", apiErrorMessage(err, "Could not update courier"));\n    } finally {'),
+              ('    } catch (e) {\n      const msg = e instanceof Error && e.message ? e.message : "Steadfast-এ পাঠানো যায়নি";\n      toast("error", msg);\n    } finally {', '    } catch (e) {\n      // Axios Error.message hides FastAPI detail behind "Request failed with status code 502".\n      toast("error", apiErrorMessage(e, "Steadfast-এ পাঠানো যায়নি"));\n    } finally {'),
+          ]
+          for old, new in replacements:
+              if old not in s and 'Steadfast-এ পাঠানো যায়নি' in new:
+                  raise SystemExit('Steadfast handler pattern not found')
+              s = s.replace(old, new, 1)
+          p.write_text(s)
+      - name: Commit patch
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add frontend/src/app/sumon/orders/page.tsx
-          git commit -m "[restore-orders] restore orders page before accidental rewrite"
+          git commit -m "[patch-courier] surface FastAPI courier errors in admin"
           git push origin HEAD:fix/complete-media-social-courier-20260810
