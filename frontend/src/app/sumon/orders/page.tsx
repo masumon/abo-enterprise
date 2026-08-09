@@ -110,7 +110,7 @@ export default function AdminOrdersPage() {
       if (detail?.id === id) setDetail(prev => prev ? { ...prev, order_status: status } : prev);
       toast("success", `Order status updated to ${status}`);
     } catch (err) {
-      toast("error", "Failed to update order status");
+      toast("error", apiErrorMessage(err, "Failed to update order status"));
     } finally {
       setUpdatingId(null);
     }
@@ -211,8 +211,7 @@ export default function AdminOrdersPage() {
       setCourierProvider(data.courier_provider ?? "");
       setCourierTracking(data.courier_tracking_id ?? "");
     } catch (err: unknown) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      toast("error", `Failed to load order: ${errorMsg}`);
+      toast("error", `Failed to load order: ${apiErrorMessage(err, "Unknown error")}`);
     } finally {
       setDetailLoading(false);
     }
@@ -234,8 +233,8 @@ export default function AdminOrdersPage() {
         courier_tracking_id: courierTracking || null,
         order_status: courierTracking && ["confirmed", "processing"].includes(prev.order_status) ? "shipped" : prev.order_status,
       } : prev);
-    } catch {
-      toast("error", "Could not update courier");
+    } catch (err) {
+      toast("error", apiErrorMessage(err, "Could not update courier"));
     } finally {
       setCourierSaving(false);
     }
@@ -260,8 +259,8 @@ export default function AdminOrdersPage() {
       setCourierProvider("steadfast");
       setCourierTracking(tracking);
     } catch (e) {
-      const msg = e instanceof Error && e.message ? e.message : "Steadfast-এ পাঠানো যায়নি";
-      toast("error", msg);
+      // Axios Error.message hides FastAPI detail behind "Request failed with status code 502".
+      toast("error", apiErrorMessage(e, "Steadfast-এ পাঠানো যায়নি"));
     } finally {
       setSteadfastSending(false);
     }

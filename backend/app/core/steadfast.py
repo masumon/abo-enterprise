@@ -136,8 +136,15 @@ async def create_consignment(db: AsyncSession, order) -> dict:
     consignment = (data or {}).get("consignment") or {}
     tracking = consignment.get("tracking_code")
     if resp.status_code not in (200, 201) or not tracking:
-        msg = (data or {}).get("message") or f"HTTP {resp.status_code}"
-        raise SteadfastError(f"Steadfast consignment তৈরি হয়নি: {msg}")
+        msg = (data or {}).get("message") or (data or {}).get("error")
+        if not msg:
+            try:
+                msg = (resp.text or "").strip()[:500]
+            except Exception:
+                msg = ""
+        if not msg:
+            msg = f"HTTP {resp.status_code}"
+        raise SteadfastError(f"Steadfast consignment তৈরি হয়নি (HTTP {resp.status_code}): {msg}")
 
     cid = consignment.get("consignment_id")
     return {
