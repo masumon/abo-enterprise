@@ -27,8 +27,8 @@ function ClientBadge({ client }: { client: CmsClientLogo }) {
   return (
     <span className="flex items-center gap-2">
       {client.image ? (
-        <span className="w-8 h-8 rounded-lg overflow-hidden relative flex-shrink-0">
-          <Image src={client.image} alt={client.name} fill className="object-cover" sizes="32px" />
+        <span className="w-8 h-8 rounded-lg overflow-hidden relative flex-shrink-0 bg-white dark:bg-white/5">
+          <Image src={client.image} alt={client.name} fill className="object-contain p-1" sizes="32px" />
         </span>
       ) : (
         <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white text-xs font-bold flex items-center justify-center">
@@ -119,8 +119,8 @@ export default function ClientLogos() {
           >
             <div className="flex items-start gap-3 mb-3">
               {active.image ? (
-                <div className="w-12 h-12 rounded-xl overflow-hidden relative flex-shrink-0">
-                  <Image src={active.image} alt={active.name} fill className="object-cover" sizes="48px" />
+                <div className="w-12 h-12 rounded-xl overflow-hidden relative flex-shrink-0 bg-white dark:bg-white/5">
+                  <Image src={active.image} alt={active.name} fill className="object-contain p-1" sizes="48px" />
                 </div>
               ) : (
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white text-sm font-bold flex items-center justify-center flex-shrink-0">
