@@ -66,6 +66,7 @@ export default function ImageUpload({
 }: ImageUploadProps) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingFile | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -135,11 +136,14 @@ export default function ImageUpload({
   const confirmUpload = async () => {
     if (!pending) return;
     setUploading(true);
+    setUploadProgress(0);
     setError(null);
     try {
       const toUpload = pending.file.type.startsWith("image/")
         ? await compressImage(pending.file)
         : pending.file;
+      setUploadProgress(5);
+
       const form = new FormData();
       form.append("file", toUpload);
       const r = await api.post<ApiResponse<{
@@ -158,16 +162,24 @@ export default function ImageUpload({
           params: { folder },
           // Uploads can be slow on mobile and Render Free can cold-start.
           timeout: 180000,
+          onUploadProgress: (event) => {
+            if (event.total) {
+              const fraction = Math.min(1, Math.max(0, event.loaded / event.total));
+              setUploadProgress(5 + Math.round(fraction * 95));
+            }
+          },
         }
       );
       const url = r.data.data?.url ?? "";
       if (!url) throw new Error("Upload completed without an asset URL");
+      setUploadProgress(100);
       onChange(url);
       setPending(null);
     } catch (e) {
       setError(apiErrorMessage(e, "Upload failed. Check file size and format, or paste a URL."));
     } finally {
       setUploading(false);
+      setUploadProgress(null);
       if (fileRef.current) fileRef.current.value = "";
     }
   };
@@ -175,6 +187,7 @@ export default function ImageUpload({
   const cancelPending = () => {
     setPending(null);
     setError(null);
+    setUploadProgress(null);
     if (fileRef.current) fileRef.current.value = "";
   };
 
@@ -219,7 +232,7 @@ export default function ImageUpload({
                   className="btn btn-brand btn-sm flex items-center gap-1.5"
                 >
                   {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                  {uploading ? "Uploading…" : "Upload / আপলোড করুন"}
+                  {uploading ? `Uploading… ${uploadProgress ?? 0}%` : "Upload / আপলোড করুন"}
                 </button>
                 <button
                   type="button"
@@ -230,6 +243,20 @@ export default function ImageUpload({
                   <X className="w-3.5 h-3.5" /> Cancel
                 </button>
               </div>
+              {uploading && uploadProgress !== null && (
+                <div className="mt-2.5" role="status" aria-live="polite">
+                  <div className="flex items-center justify-between text-[10px] text-brand-700 mb-1">
+                    <span>ছবি আপলোড হচ্ছে…</span>
+                    <span className="font-semibold tabular-nums">{uploadProgress}%</span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-brand-100" aria-hidden="true">
+                    <div
+                      className="h-full rounded-full bg-brand-600 transition-[width] duration-150 ease-out"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
