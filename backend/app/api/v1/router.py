@@ -31,6 +31,7 @@ from app.api.v1.routes import (
     combos,
     delivery_zones,
     translate,
+    steadfast_test,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -66,3 +67,4 @@ api_router.include_router(newsletter.router)
 api_router.include_router(combos.router)
 api_router.include_router(delivery_zones.router)
 api_router.include_router(translate.router)
+api_router.include_router(steadfast_test.router)
