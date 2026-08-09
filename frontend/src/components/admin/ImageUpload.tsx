@@ -158,7 +158,6 @@ export default function ImageUpload({
           params: { folder },
           // Uploads can be slow on mobile and Render Free can cold-start.
           timeout: 180000,
-          maxRetries: 0,
         }
       );
       const url = r.data.data?.url ?? "";
