@@ -1,4 +1,4 @@
-name: One-time courier patch
+name: One-time courier hardening
 
 on:
   push:
@@ -9,34 +9,29 @@ permissions:
   contents: write
 
 jobs:
-  patch:
-    if: ${{ !startsWith(github.event.head_commit.message, '[patch-courier]') && !startsWith(github.event.head_commit.message, '[restore-orders]') }}
+  harden:
+    if: ${{ !startsWith(github.event.head_commit.message, '[steadfast-hardening]') && !startsWith(github.event.head_commit.message, '[patch-courier]') && !startsWith(github.event.head_commit.message, '[restore-orders]') }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Improve Steadfast error visibility
+      - name: Harden Steadfast diagnostics
         shell: python
         run: |
           from pathlib import Path
-          p = Path('frontend/src/app/sumon/orders/page.tsx')
+          p = Path('backend/app/core/steadfast.py')
           s = p.read_text()
-          replacements = [
-              ('    } catch (err) {\n      toast("error", "Failed to update order status");\n    } finally {', '    } catch (err) {\n      toast("error", apiErrorMessage(err, "Failed to update order status"));\n    } finally {'),
-              ('    } catch (err: unknown) {\n      const errorMsg = err instanceof Error ? err.message : String(err);\n      toast("error", `Failed to load order: ${errorMsg}`);\n    } finally {', '    } catch (err: unknown) {\n      toast("error", `Failed to load order: ${apiErrorMessage(err, "Unknown error")}`);\n    } finally {'),
-              ('    } catch {\n      toast("error", "Could not update courier");\n    } finally {', '    } catch (err) {\n      toast("error", apiErrorMessage(err, "Could not update courier"));\n    } finally {'),
-              ('    } catch (e) {\n      const msg = e instanceof Error && e.message ? e.message : "Steadfast-এ পাঠানো যায়নি";\n      toast("error", msg);\n    } finally {', '    } catch (e) {\n      // Axios Error.message hides FastAPI detail behind "Request failed with status code 502".\n      toast("error", apiErrorMessage(e, "Steadfast-এ পাঠানো যায়নি"));\n    } finally {'),
-          ]
-          for old, new in replacements:
-              if old not in s and 'Steadfast-এ পাঠানো যায়নি' in new:
-                  raise SystemExit('Steadfast handler pattern not found')
-              s = s.replace(old, new, 1)
+          old = '''    try:\n        data = resp.json()\n    except ValueError:\n        data = {}\n\n    if resp.status_code in (401, 403):\n        raise SteadfastError("Steadfast API Key/Secret ভুল। Settings-এ নতুন করে দিন।")\n    consignment = (data or {}).get("consignment") or {}\n    tracking = consignment.get("tracking_code")\n    if resp.status_code not in (200, 201) or not tracking:\n        msg = (data or {}).get("message") or f"HTTP {resp.status_code}"\n        raise SteadfastError(f"Steadfast consignment তৈরি হয়নি: {msg}")\n'''
+          new = '''    try:\n        data = resp.json()\n    except ValueError:\n        data = {}\n\n    if resp.status_code in (401, 403):\n        raise SteadfastError("Steadfast API Key/Secret ভুল। Settings-এ নতুন করে দিন।")\n    consignment = (data or {}).get("consignment") or {}\n    tracking = consignment.get("tracking_code")\n    if resp.status_code not in (200, 201) or not tracking:\n        msg = (data or {}).get("message") or (data or {}).get("error")\n        if not msg:\n            try:\n                msg = (resp.text or "").strip()[:500]\n            except Exception:\n                msg = ""\n        if not msg:\n            msg = f"HTTP {resp.status_code}"\n        raise SteadfastError(f"Steadfast consignment তৈরি হয়নি (HTTP {resp.status_code}): {msg}")\n'''
+          if old not in s:
+              raise SystemExit('Steadfast response block not found')
+          s = s.replace(old, new, 1)
           p.write_text(s)
-      - name: Commit patch
+      - name: Commit hardening
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frontend/src/app/sumon/orders/page.tsx
-          git commit -m "[patch-courier] surface FastAPI courier errors in admin"
+          git add backend/app/core/steadfast.py
+          git commit -m "[steadfast-hardening] expose upstream courier diagnostics"
           git push origin HEAD:fix/complete-media-social-courier-20260810
