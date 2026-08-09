@@ -10,9 +10,15 @@ describe("responsiveMediaUrl", () => {
     expect(responsiveMediaUrl(cloudinary, "page-banner", "mobile")).toContain("/v1234/abo-enterprise/banner.jpg");
   });
 
-  it("leaves non-Cloudinary URLs untouched", () => {
+  it("leaves non-Cloudinary and empty values untouched", () => {
     const external = "https://example.com/banner.jpg";
     expect(responsiveMediaUrl(external, "page-banner", "mobile")).toBe(external);
+    expect(responsiveMediaUrl("", "page-banner", "mobile")).toBe("");
+  });
+
+  it("does not double-transform an already transformed delivery URL", () => {
+    const transformed = responsiveMediaUrl(cloudinary, "page-banner", "mobile");
+    expect(responsiveMediaUrl(transformed, "page-banner", "mobile")).toContain("f_auto,q_auto,dpr_auto,c_fill,g_auto,w_768,h_420");
   });
 
   it("exposes the agreed slot dimensions", () => {
