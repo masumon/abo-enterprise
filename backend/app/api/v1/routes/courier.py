@@ -23,11 +23,10 @@ from app.core.steadfast import SteadfastError, lookup_status
 from app.models.models import ActivityLog, Order
 from app.schemas.schemas import ApiResponse, OrderCourierUpdate, OrderOut
 
-router = APIRouter(prefix="/courier", tags=["courier"])
+router = APIRouter(tags=["courier"])
 
 
 def _map_provider_status(provider_status: str, current_order_status: str) -> str:
-    """Map authoritative provider states to local order states."""
     status = provider_status.strip().lower()
     if status == "delivered":
         return "delivered"
@@ -39,9 +38,7 @@ def _map_provider_status(provider_status: str, current_order_status: str) -> str
 
 
 async def _get_order(order_id: uuid.UUID, db: AsyncSession) -> Order:
-    order = (await db.execute(
-        select(Order).where(Order.id == order_id, Order.is_deleted == False)  # noqa: E712
-    )).scalar_one_or_none()
+    order = (await db.execute(select(Order).where(Order.id == order_id, Order.is_deleted == False))).scalar_one_or_none()  # noqa: E712
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     if order.courier_provider != "steadfast":
@@ -52,35 +49,23 @@ async def _get_order(order_id: uuid.UUID, db: AsyncSession) -> Order:
 
 
 async def _sync_order(order: Order, db: AsyncSession, admin_id: str) -> dict:
-    provider = await lookup_status(
-        db,
-        tracking_code=order.courier_tracking_id,
-        consignment_id=order.courier_consignment_id,
-        invoice=order.order_number,
-    )
+    provider = await lookup_status(db, tracking_code=order.courier_tracking_id, consignment_id=order.courier_consignment_id, invoice=order.order_number)
     old_status = order.order_status
     new_status = _map_provider_status(provider["delivery_status"], old_status)
     if new_status != old_status:
         order.order_status = new_status
         db.add(ActivityLog(
-            admin_id=uuid.UUID(admin_id),
-            action="courier_status_sync",
-            entity_type="order",
-            entity_id=order.id,
+            admin_id=uuid.UUID(admin_id), action="courier_status_sync", entity_type="order", entity_id=order.id,
             old_values={"order_status": old_status},
             new_values={"order_status": new_status, "courier_status": provider["delivery_status"]},
         ))
     await db.commit()
     await db.refresh(order)
     return {
-        "order_id": str(order.id),
-        "order_number": order.order_number,
-        "courier_provider": order.courier_provider,
-        "tracking_id": order.courier_tracking_id,
-        "consignment_id": order.courier_consignment_id,
-        "provider_status": provider["delivery_status"],
-        "order_status": order.order_status,
-        "changed": new_status != old_status,
+        "order_id": str(order.id), "order_number": order.order_number,
+        "courier_provider": order.courier_provider, "tracking_id": order.courier_tracking_id,
+        "consignment_id": order.courier_consignment_id, "provider_status": provider["delivery_status"],
+        "order_status": order.order_status, "changed": new_status != old_status,
     }
 
 
@@ -92,15 +77,8 @@ async def verified_courier_update(
     db: AsyncSession = Depends(get_db),
     admin_id: str = Depends(require_role("orders.write")),
 ):
-    """Safe replacement for the legacy courier metadata endpoint.
-
-    A Steadfast tracking ID is accepted only after Steadfast itself confirms it.
-    Other provider names may be stored as metadata, but they never transition
-    an order to `shipped` because no real provider integration exists for them.
-    """
-    order = (await db.execute(
-        select(Order).options(selectinload(Order.items)).where(Order.id == order_id)
-    )).scalar_one_or_none()
+    """Replace the legacy courier update behavior with provider verification."""
+    order = (await db.execute(select(Order).options(selectinload(Order.items)).where(Order.id == order_id))).scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
@@ -126,13 +104,10 @@ async def verified_courier_update(
     else:
         order.courier_provider = provider
         order.courier_tracking_id = tracking_id
-        # Do not promote a manually entered non-integrated courier to shipped.
+        # Non-integrated providers are metadata only; they never prove shipment.
 
     db.add(ActivityLog(
-        admin_id=uuid.UUID(admin_id),
-        action="courier_update",
-        entity_type="order",
-        entity_id=order.id,
+        admin_id=uuid.UUID(admin_id), action="courier_update", entity_type="order", entity_id=order.id,
         old_values={"order_status": old_status},
         new_values={
             "courier_provider": order.courier_provider,
@@ -146,35 +121,19 @@ async def verified_courier_update(
 
     if order.customer_email and old_status != order.order_status and order.order_status in {"shipped", "delivered", "cancelled"}:
         track_url = f"{await resolve_site_url(db)}/track?order={order.order_number}"
-        html = customer_order_status_html(
-            order.order_number,
-            order.customer_name,
-            order.order_status,
-            total=float(order.total),
-            courier_provider=order.courier_provider,
-            tracking_id=order.courier_tracking_id,
-            track_url=track_url,
-        )
-        background_tasks.add_task(
-            send_email,
-            order.customer_email,
-            f"Order {order.order_status.title()} #{order.order_number} — ABO Enterprise",
-            html,
-        )
+        html = customer_order_status_html(order.order_number, order.customer_name, order.order_status, total=float(order.total), courier_provider=order.courier_provider, tracking_id=order.courier_tracking_id, track_url=track_url)
+        background_tasks.add_task(send_email, order.customer_email, f"Order {order.order_status.title()} #{order.order_number} — ABO Enterprise", html)
 
-    message = "Courier information updated."
     if provider == "steadfast" and provider_status:
         message = f"Steadfast tracking verified ({provider_status}) and order synchronized."
     elif provider and provider != "steadfast" and tracking_id:
         message = "Courier metadata saved; order status was not changed because this provider has no verified API integration."
+    else:
+        message = "Courier information updated."
     return ApiResponse(data=OrderOut.model_validate(order), message=message)
 
 
-@router.post(
-    "/orders/{order_id}/steadfast/sync",
-    response_model=ApiResponse,
-    dependencies=[Depends(rate_limit("courier_status_sync", 30, 300))],
-)
+@router.post("/courier/orders/{order_id}/steadfast/sync", response_model=ApiResponse, dependencies=[Depends(rate_limit("courier_status_sync", 30, 300))])
 async def sync_steadfast_order(
     order_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
@@ -188,14 +147,12 @@ async def sync_steadfast_order(
     return ApiResponse(data=data, message="Steadfast status synchronized from the provider")
 
 
-@router.get("/track", response_model=ApiResponse)
+@router.get("/courier/track", response_model=ApiResponse)
 async def live_courier_tracking(
     order: str = Query(..., min_length=6, max_length=50),
     db: AsyncSession = Depends(get_db),
 ):
-    row = (await db.execute(
-        select(Order).where(Order.order_number == order, Order.is_deleted == False)  # noqa: E712
-    )).scalar_one_or_none()
+    row = (await db.execute(select(Order).where(Order.order_number == order, Order.is_deleted == False))).scalar_one_or_none()  # noqa: E712
     if not row:
         raise HTTPException(status_code=404, detail="Order not found")
     if row.courier_provider != "steadfast" or not row.courier_tracking_id:
@@ -204,9 +161,4 @@ async def live_courier_tracking(
         provider = await lookup_status(db, tracking_code=row.courier_tracking_id)
     except SteadfastError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
-    return ApiResponse(data={
-        "available": True,
-        "provider": "steadfast",
-        "tracking_id": row.courier_tracking_id,
-        "status": provider["delivery_status"],
-    })
+    return ApiResponse(data={"available": True, "provider": "steadfast", "tracking_id": row.courier_tracking_id, "status": provider["delivery_status"]})
