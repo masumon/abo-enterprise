@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
 
 import pytest
-from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
@@ -93,6 +92,7 @@ def test_assistant_action_log_orm_delete_is_blocked_at_operation_boundary():
         action="test_action",
         status="success",
         details={},
+        is_deleted=False,
     )
     session = SimpleNamespace(deleted={log})
 
@@ -116,6 +116,7 @@ async def test_direct_assistant_log_route_invocation_cannot_bypass_retention():
         action="test_action",
         status="success",
         details={},
+        is_deleted=False,
     )
 
     class RetentionGuardedSession:
@@ -186,7 +187,7 @@ async def test_assistant_log_list_route_remains_read_only():
         )
     )
 
-    response = await list_assistant_logs(_admin="admin", db=db)
+    response = await list_assistant_logs(page=1, per_page=20, session_id=None, _admin="admin", db=db)
 
     assert response.meta.total == 1
     assert len(response.data) == 1
