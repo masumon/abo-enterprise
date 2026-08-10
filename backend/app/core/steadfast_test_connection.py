@@ -1,10 +1,11 @@
-"""Safe Steadfast credential/connectivity check.
+"""Safe Steadfast credential/connectivity diagnostics.
 
-This module never creates a consignment. It only calls the authenticated
-balance endpoint and returns sanitized diagnostics.
+This endpoint never creates a consignment. Outbound diagnostics are sanitized:
+credential values are never logged or returned.
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import time
 
@@ -17,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 def _provider_message(data: object) -> str | None:
-    """Return only a short, non-secret provider diagnostic message."""
     if not isinstance(data, dict):
         return None
     for key in ("message", "error", "detail"):
@@ -25,6 +25,33 @@ def _provider_message(data: object) -> str | None:
         if isinstance(value, str) and value.strip():
             return value.strip()[:300]
     return None
+
+
+def _credential_metadata(api_key: str, secret_key: str) -> dict:
+    return {
+        "api_key_present": bool(api_key),
+        "api_key_length": len(api_key),
+        "api_key_sha256_16": hashlib.sha256(api_key.encode()).hexdigest()[:16] if api_key else None,
+        "secret_key_present": bool(secret_key),
+        "secret_key_length": len(secret_key),
+        "secret_key_sha256_16": hashlib.sha256(secret_key.encode()).hexdigest()[:16] if secret_key else None,
+    }
+
+
+def _response_metadata(response: httpx.Response, data: object) -> dict:
+    metadata = {
+        "http_status": response.status_code,
+        "content_type": response.headers.get("content-type"),
+        "body_length": len(response.content),
+    }
+    if isinstance(data, dict):
+        metadata["response_keys"] = sorted(str(k) for k in data.keys())[:50]
+        provider_message = _provider_message(data)
+        if provider_message:
+            metadata["provider_message"] = provider_message
+    else:
+        metadata["body_sha256_16"] = hashlib.sha256(response.content).hexdigest()[:16]
+    return metadata
 
 
 def _result(*, ok: bool, code: str, http_status: int | None, message: str, balance: float | None, elapsed_ms: int, provider_message: str | None = None) -> dict:
@@ -53,21 +80,37 @@ async def test_connection(db: AsyncSession) -> dict:
         "Secret-Key": cfg["secret_key"],
         "Content-Type": "application/json",
     }
+    logger.info(
+        "STEADFAST_OUTBOUND_REQUEST method=GET url=%s headers_present=%s credentials=%s",
+        url,
+        {"Api-Key": True, "Secret-Key": True, "Content-Type": True},
+        _credential_metadata(cfg["api_key"], cfg["secret_key"]),
+    )
     started = time.perf_counter()
     try:
         async with httpx.AsyncClient(timeout=20.0) as client:
             response = await client.get(url, headers=headers)
     except httpx.HTTPError as exc:
-        logger.warning("Steadfast connection test failed: %s", exc)
+        logger.warning(
+            "STEADFAST_OUTBOUND_NETWORK_ERROR method=GET url=%s error=%s",
+            url,
+            type(exc).__name__,
+        )
         return _result(ok=False, code="NETWORK_ERROR", http_status=None, message="Steadfast server could not be reached.", balance=None, elapsed_ms=round((time.perf_counter() - started) * 1000))
 
     elapsed_ms = round((time.perf_counter() - started) * 1000)
     try:
         data = response.json()
     except ValueError:
-        data = {}
-    provider_message = _provider_message(data)
+        data = None
 
+    diagnostics = _response_metadata(response, data)
+    logger.info(
+        "STEADFAST_PROVIDER_RESPONSE endpoint=get_balance diagnostics=%s",
+        diagnostics,
+    )
+
+    provider_message = _provider_message(data)
     if response.status_code in (401, 403):
         return _result(ok=False, code="AUTH_FAILED", http_status=response.status_code, message="Steadfast rejected the API credentials.", balance=None, elapsed_ms=elapsed_ms, provider_message=provider_message)
 
