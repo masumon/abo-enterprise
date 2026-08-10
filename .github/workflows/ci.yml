@@ -31,6 +31,12 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    env:
+      # Tests import application settings but must never connect to production.
+      # These are non-production values used only for CI configuration validation
+      # and tests that mock database access.
+      SECRET_KEY: r5-ci-test-only-not-production
+      DATABASE_URL: sqlite+aiosqlite:///./r5-ci-test.db
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
