@@ -27,9 +27,11 @@ async def list_payment_methods(
     admin_id: str = Depends(require_role("payments.read")),
     db: AsyncSession = Depends(get_db),
 ):
-    """List all payment methods"""
+    """List payment methods that have not been archived."""
     result = await db.execute(
-        select(PaymentMethod).order_by(PaymentMethod.sort_order)
+        select(PaymentMethod)
+        .where(PaymentMethod.is_deleted == False)  # noqa: E712
+        .order_by(PaymentMethod.sort_order)
     )
     methods = result.scalars().all()
 
@@ -45,9 +47,12 @@ async def get_payment_method(
     admin_id: str = Depends(require_role("payments.read")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get payment method details"""
+    """Get an active payment method record."""
     result = await db.execute(
-        select(PaymentMethod).where(PaymentMethod.id == method_id)
+        select(PaymentMethod).where(
+            PaymentMethod.id == method_id,
+            PaymentMethod.is_deleted == False,  # noqa: E712
+        )
     )
     method = result.scalar_one_or_none()
 
@@ -66,7 +71,7 @@ async def create_payment_method(
     admin_id: str = Depends(require_role("payments.write")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create payment method"""
+    """Create payment method."""
     method = PaymentMethod(**payload.model_dump())
     db.add(method)
     await db.flush()
@@ -91,9 +96,12 @@ async def update_payment_method(
     admin_id: str = Depends(require_role("payments.write")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update payment method (partial updates supported)"""
+    """Update payment method (partial updates supported)."""
     result = await db.execute(
-        select(PaymentMethod).where(PaymentMethod.id == method_id)
+        select(PaymentMethod).where(
+            PaymentMethod.id == method_id,
+            PaymentMethod.is_deleted == False,  # noqa: E712
+        )
     )
     method = result.scalar_one_or_none()
 
@@ -127,23 +135,28 @@ async def delete_payment_method(
     admin_id: str = Depends(require_role("payments.write")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Delete payment method"""
+    """Disable a payment method without deleting its historical configuration."""
     result = await db.execute(
-        select(PaymentMethod).where(PaymentMethod.id == method_id)
+        select(PaymentMethod).where(
+            PaymentMethod.id == method_id,
+            PaymentMethod.is_deleted == False,  # noqa: E712
+        )
     )
     method = result.scalar_one_or_none()
 
     if not method:
         raise HTTPException(status_code=404, detail="Payment method not found")
 
+    method.is_active = False
     db.add(ActivityLog(
-        admin_id=uuid.UUID(admin_id), action="delete",
+        admin_id=uuid.UUID(admin_id), action="deactivate",
         entity_type="payment_method", entity_id=method.id,
+        new_values={"is_active": False, "reason": "admin_archive"},
     ))
-    await db.delete(method)
     await db.commit()
+    await db.refresh(method)
 
-    return ApiResponse(message="Payment method deleted successfully")
+    return ApiResponse(message="Payment method disabled; historical configuration preserved")
 
 
 # ==================== PUBLIC PAYMENT METHODS ====================
@@ -152,10 +165,13 @@ async def delete_payment_method(
 async def list_active_payment_methods(
     db: AsyncSession = Depends(get_db),
 ):
-    """List active payment methods (public)"""
+    """List active, non-archived payment methods (public)."""
     result = await db.execute(
         select(PaymentMethod)
-        .where(PaymentMethod.is_active == True)
+        .where(
+            PaymentMethod.is_active == True,  # noqa: E712
+            PaymentMethod.is_deleted == False,  # noqa: E712
+        )
         .order_by(PaymentMethod.sort_order)
     )
     methods = result.scalars().all()
