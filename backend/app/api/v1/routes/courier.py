@@ -23,16 +23,8 @@ from app.schemas.schemas import ApiResponse
 router = APIRouter(prefix="/courier", tags=["courier"])
 
 
-_TERMINAL_PROVIDER_STATUSES = {"delivered", "cancelled"}
-
-
 def _map_provider_status(provider_status: str, current_order_status: str) -> str:
-    """Map only authoritative provider states to local order states.
-
-    Non-terminal Steadfast states prove that the shipment exists but do not
-    prove delivery. Once a courier shipment exists, those states therefore map
-    to `shipped` unless the local order is already terminal.
-    """
+    """Map authoritative provider states to local order states."""
     status = provider_status.strip().lower()
     if status == "delivered":
         return "delivered"
@@ -44,7 +36,9 @@ def _map_provider_status(provider_status: str, current_order_status: str) -> str
 
 
 async def _get_order(order_id: uuid.UUID, db: AsyncSession) -> Order:
-    order = (await db.execute(select(Order).where(Order.id == order_id, Order.is_deleted == False))).scalar_one_or_none()  # noqa: E712
+    order = (await db.execute(
+        select(Order).where(Order.id == order_id, Order.is_deleted == False)  # noqa: E712
+    )).scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     if order.courier_provider != "steadfast":
@@ -54,7 +48,7 @@ async def _get_order(order_id: uuid.UUID, db: AsyncSession) -> Order:
     return order
 
 
-async def _sync_order(order: Order, db: AsyncSession, admin_id: str | None = None) -> dict:
+async def _sync_order(order: Order, db: AsyncSession, admin_id: str) -> dict:
     provider = await lookup_status(
         db,
         tracking_code=order.courier_tracking_id,
@@ -65,31 +59,17 @@ async def _sync_order(order: Order, db: AsyncSession, admin_id: str | None = Non
     new_status = _map_provider_status(provider["delivery_status"], old_status)
     if new_status != old_status:
         order.order_status = new_status
-        if admin_id:
-            db.add(ActivityLog(
-                admin_id=uuid.UUID(admin_id),
-                action="courier_status_sync",
-                entity_type="order",
-                entity_id=order.id,
-                old_values={"order_status": old_status},
-                new_values={
-                    "order_status": new_status,
-                    "courier_status": provider["delivery_status"],
-                },
-            ))
-        else:
-            # Automated/public sync has no admin actor; retain an auditable event
-            # without inventing an administrator identity.
-            db.add(ActivityLog(
-                action="courier_status_sync",
-                entity_type="order",
-                entity_id=order.id,
-                old_values={"order_status": old_status},
-                new_values={
-                    "order_status": new_status,
-                    "courier_status": provider["delivery_status"],
-                },
-            ))
+        db.add(ActivityLog(
+            admin_id=uuid.UUID(admin_id),
+            action="courier_status_sync",
+            entity_type="order",
+            entity_id=order.id,
+            old_values={"order_status": old_status},
+            new_values={
+                "order_status": new_status,
+                "courier_status": provider["delivery_status"],
+            },
+        ))
     await db.commit()
     await db.refresh(order)
     return {
@@ -128,12 +108,7 @@ async def live_courier_tracking(
     order: str = Query(..., min_length=6, max_length=50),
     db: AsyncSession = Depends(get_db),
 ):
-    """Public live courier status for a known ABO order number.
-
-    The endpoint returns only courier status metadata; it does not expose the
-    provider response body or credentials. The existing order tracking endpoint
-    remains the source for order/payment details.
-    """
+    """Public live courier status for a known ABO order number."""
     row = (await db.execute(
         select(Order).where(Order.order_number == order, Order.is_deleted == False)  # noqa: E712
     )).scalar_one_or_none()
