@@ -105,6 +105,20 @@ def _is_cms_managed_setting_key(key: str) -> bool:
     return any(key.startswith(prefix) for prefix in _CMS_MANAGED_PREFIXES)
 
 
+# These are admin-managed integration credentials. They are intentionally kept
+# separate from CMS-managed customer-facing settings so only the two required
+# courier secrets bypass a legacy is_editable=false flag. The endpoint remains
+# protected by settings.write RBAC, and _is_secret_key() keeps their values masked.
+_ADMIN_EDITABLE_SETTING_EXACT_KEYS = {
+    "steadfast_api_key",
+    "steadfast_secret_key",
+}
+
+
+def _is_admin_editable_setting_key(key: str) -> bool:
+    return key in _ADMIN_EDITABLE_SETTING_EXACT_KEYS
+
+
 async def _is_admin_request(request: Request, db: AsyncSession) -> bool:
     """Best-effort admin detection for the intentionally public GET endpoint.
 
@@ -201,9 +215,14 @@ async def upsert_settings(
         )
         setting = result.scalar_one_or_none()
         if setting:
-            # CMS-owned settings remain editable by the authorized admin even
-            # when a legacy row was created with is_editable=false.
-            if not setting.is_editable and not _is_cms_managed_setting_key(item.key):
+            # CMS-owned settings and explicitly admin-managed integration
+            # credentials remain editable by the authorized admin even when a
+            # legacy row was created with is_editable=false.
+            if (
+                not setting.is_editable
+                and not _is_cms_managed_setting_key(item.key)
+                and not _is_admin_editable_setting_key(item.key)
+            ):
                 skipped.append(item.key)
                 continue
             setting.value = item.value
@@ -253,7 +272,7 @@ async def get_setting(key: str, request: Request, db: AsyncSession = Depends(get
     if not is_admin and not _is_public_setting_key(setting.key):
         raise HTTPException(status_code=403, detail="Setting is not public")
 
-    return ApiResponse(success=True, data={"key": setting.key, "value": setting.value})
+    return ApiResponse(success=True, data={"key": key, "value": setting.value})
 
 
 @router.put("/{key}", response_model=ApiResponse)
