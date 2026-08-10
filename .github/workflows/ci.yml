@@ -33,10 +33,10 @@ jobs:
         working-directory: backend
     env:
       # Tests import application settings but must never connect to production.
-      # These are non-production values used only for CI configuration validation
-      # and tests that mock database access.
+      # These non-production credentials are used only to construct the SQLAlchemy
+      # engine; R5 tests mock database access and do not open a connection.
       SECRET_KEY: r5-ci-test-only-not-production
-      DATABASE_URL: sqlite+aiosqlite:///./r5-ci-test.db
+      DATABASE_URL: postgresql+asyncpg://ci:ci@127.0.0.1:5432/ci
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
