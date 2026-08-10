@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 def _provider_message(data: object) -> str | None:
-    """Return only a short, non-secret provider diagnostic message."""
     if not isinstance(data, dict):
         return None
     for key in ("message", "error", "detail"):
@@ -74,9 +73,17 @@ async def test_connection(db: AsyncSession) -> dict:
     if response.status_code == 200:
         raw_balance = (data or {}).get("current_balance") if isinstance(data, dict) else None
         try:
-            balance = float(raw_balance) if raw_balance is not None else None
+            balance = float(raw_balance)
         except (TypeError, ValueError):
-            balance = None
+            return _result(
+                ok=False,
+                code="MALFORMED_RESPONSE",
+                http_status=response.status_code,
+                message="Steadfast returned HTTP 200 but the balance response was malformed.",
+                balance=None,
+                elapsed_ms=elapsed_ms,
+                provider_message=provider_message,
+            )
         return _result(ok=True, code="CONNECTED", http_status=response.status_code, message="Steadfast authentication and API connection are working.", balance=balance, elapsed_ms=elapsed_ms, provider_message=provider_message)
 
     return _result(ok=False, code="API_ERROR", http_status=response.status_code, message="Steadfast returned an unexpected response.", balance=None, elapsed_ms=elapsed_ms, provider_message=provider_message)
