@@ -100,7 +100,12 @@ def _normalize_phone(raw: str | None) -> str:
 
 async def get_settings(db: AsyncSession) -> dict:
     rows = (
-        await db.execute(select(Setting).where(Setting.key.in_(CONFIG_KEYS)))
+        await db.execute(
+            select(Setting).where(
+                Setting.key.in_(CONFIG_KEYS),
+                Setting.is_deleted == False,  # noqa: E712
+            )
+        )
     ).scalars().all()
     cfg = {r.key: r.value for r in rows}
     return {
