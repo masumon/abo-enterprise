@@ -7,7 +7,7 @@ from starlette.requests import Request
 
 from app.api.v1.routes.admin_settings import delete_payment_method
 from app.api.v1.routes.email_templates import delete_email_template
-from app.main import protect_assistant_audit_logs
+from app.core.admin_safety import protect_assistant_audit_logs
 
 
 class _Result:
