@@ -1,16 +1,8 @@
-"""Steadfast Courier (portal.packzy.com) integration.
+"""Steadfast Courier integration.
 
-All credentials and toggles live in the ``settings`` table so the admin can
-change them from the panel without a redeploy — nothing here is hard-coded.
-Secret keys are stored via the settings API, which masks them in responses
-(``is_secret``); this module reads their raw values straight from the DB.
-
-Steadfast API reference (V1):
-    Base URL : https://portal.packzy.com/api/v1
-    Auth     : headers  Api-Key, Secret-Key, Content-Type: application/json
-    Create   : POST /create_order
-    Status   : GET  /status_by_cid/{id} | /status_by_invoice/{invoice}
-                    | /status_by_trackingcode/{code}
+Credentials are stored in the admin settings table and are never exposed to
+clients. This module owns the provider HTTP contract: create, status lookup and
+balance checks. It never fabricates a shipment or tracking code.
 """
 from __future__ import annotations
 
@@ -26,8 +18,6 @@ from app.models.models import Setting
 logger = logging.getLogger(__name__)
 
 DEFAULT_BASE_URL = "https://portal.packzy.com/api/v1"
-
-# Setting keys used by this integration (all admin-editable).
 CONFIG_KEYS = [
     "steadfast_enabled",
     "steadfast_auto_send",
@@ -39,7 +29,7 @@ CONFIG_KEYS = [
 
 
 class SteadfastError(Exception):
-    """Raised for any config or API failure; message is admin-friendly."""
+    """Raised for any provider/configuration failure."""
 
 
 def _truthy(value: str | None) -> bool:
@@ -47,8 +37,6 @@ def _truthy(value: str | None) -> bool:
 
 
 def _normalize_phone(raw: str | None) -> str:
-    """Steadfast requires an 11-digit BD number. Strip separators and the
-    +880 / 880 country prefix where present."""
     digits = re.sub(r"\D", "", raw or "")
     if len(digits) == 13 and digits.startswith("880"):
         digits = digits[2:]
@@ -58,9 +46,7 @@ def _normalize_phone(raw: str | None) -> str:
 
 
 async def get_settings(db: AsyncSession) -> dict:
-    rows = (
-        await db.execute(select(Setting).where(Setting.key.in_(CONFIG_KEYS)))
-    ).scalars().all()
+    rows = (await db.execute(select(Setting).where(Setting.key.in_(CONFIG_KEYS)))).scalars().all()
     cfg = {r.key: r.value for r in rows}
     return {
         "enabled": _truthy(cfg.get("steadfast_enabled")),
@@ -73,16 +59,98 @@ async def get_settings(db: AsyncSession) -> dict:
 
 
 def compute_cod_amount(order) -> float:
-    """Smart COD: already-paid orders collect nothing; otherwise collect the
-    full order total (delivery included, since ``total`` already contains it)."""
+    """Return the amount Steadfast should collect from the recipient."""
     if (order.payment_status or "").lower() in ("paid", "completed"):
         return 0.0
     return float(order.total or 0)
 
 
+def _headers(cfg: dict) -> dict[str, str]:
+    return {
+        "Api-Key": cfg["api_key"],
+        "Secret-Key": cfg["secret_key"],
+        "Content-Type": "application/json",
+    }
+
+
+async def _request_json(
+    cfg: dict,
+    method: str,
+    path: str,
+    *,
+    json: dict | None = None,
+    timeout: float = 20.0,
+) -> tuple[httpx.Response, dict]:
+    url = f"{cfg['base_url']}/{path.lstrip('/')}"
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.request(method, url, json=json, headers=_headers(cfg))
+    except httpx.HTTPError as exc:
+        logger.warning("Steadfast %s request failed: %s", path, exc)
+        raise SteadfastError("Steadfast সার্ভারে পৌঁছানো যায়নি। ইন্টারনেট/URL যাচাই করুন।") from exc
+
+    try:
+        data = response.json()
+    except ValueError:
+        data = {}
+    if not isinstance(data, dict):
+        data = {}
+    return response, data
+
+
+def _provider_error(response: httpx.Response, data: dict, fallback: str) -> str:
+    if response.status_code in (401, 403):
+        return "Steadfast API Key/Secret ভুল। Settings-এ নতুন করে দিন।"
+    message = data.get("message") or data.get("error") or data.get("detail")
+    if isinstance(message, str) and message.strip():
+        return message.strip()[:500]
+    return fallback
+
+
+async def lookup_status(
+    db: AsyncSession,
+    *,
+    tracking_code: str | None = None,
+    consignment_id: str | None = None,
+    invoice: str | None = None,
+) -> dict:
+    """Fetch a real provider status by one of Steadfast's supported identifiers."""
+    cfg = await get_settings(db)
+    if not cfg["api_key"] or not cfg["secret_key"]:
+        raise SteadfastError("Steadfast API Key / Secret Key সেট করা নেই।")
+
+    if tracking_code:
+        path = f"status_by_trackingcode/{tracking_code.strip()}"
+    elif consignment_id:
+        path = f"status_by_cid/{consignment_id.strip()}"
+    elif invoice:
+        path = f"status_by_invoice/{invoice.strip()}"
+    else:
+        raise SteadfastError("Steadfast tracking-এর জন্য একটি বৈধ identifier প্রয়োজন।")
+
+    response, data = await _request_json(cfg, "GET", path)
+    if response.status_code == 404:
+        raise SteadfastError("Steadfast-এ shipment পাওয়া যায়নি।")
+    if response.status_code in (401, 403):
+        raise SteadfastError(_provider_error(response, data, "Steadfast authentication failed."))
+    if response.status_code != 200:
+        raise SteadfastError(_provider_error(response, data, f"Steadfast status lookup failed (HTTP {response.status_code})."))
+
+    delivery_status = data.get("delivery_status")
+    if not isinstance(delivery_status, str) or not delivery_status.strip():
+        raise SteadfastError("Steadfast status response malformed: delivery_status missing.")
+
+    return {
+        "delivery_status": delivery_status.strip().lower(),
+        "tracking_code": data.get("tracking_code"),
+        "consignment_id": data.get("consignment_id"),
+        "invoice": data.get("invoice"),
+        "raw": data,
+    }
+
+
 async def create_consignment(db: AsyncSession, order) -> dict:
-    """Create a Steadfast consignment for an order. Returns
-    ``{consignment_id, tracking_code, status}`` or raises SteadfastError."""
+    """Create a real Steadfast consignment and return provider identifiers."""
     cfg = await get_settings(db)
     if not cfg["enabled"]:
         raise SteadfastError("Steadfast ইন্টিগ্রেশন বন্ধ আছে। Settings থেকে চালু করুন।")
@@ -91,12 +159,34 @@ async def create_consignment(db: AsyncSession, order) -> dict:
 
     phone = _normalize_phone(order.customer_phone)
     if len(phone) != 11:
-        raise SteadfastError(
-            f"গ্রাহকের ফোন ১১ সংখ্যার হতে হবে (পেয়েছি: '{order.customer_phone}')।"
-        )
+        raise SteadfastError(f"গ্রাহকের ফোন ১১ সংখ্যার হতে হবে (পেয়েছি: '{order.customer_phone}')।")
     address = (order.delivery_address or "").strip()
     if not address:
         raise SteadfastError("অর্ডারে ডেলিভারি ঠিকানা নেই — Steadfast-এ পাঠানো যাবে না।")
+
+    # Recovery/idempotency guard: if a previous request timed out after the
+    # provider accepted it, never blindly create a second consignment for the
+    # same unique invoice. If the provider can identify the existing shipment,
+    # return its identifiers; otherwise fail safely and require reconciliation.
+    try:
+        existing = await lookup_status(db, invoice=order.order_number)
+        existing_tracking = existing.get("tracking_code")
+        existing_cid = existing.get("consignment_id")
+        if existing_tracking:
+            return {
+                "consignment_id": str(existing_cid) if existing_cid is not None else None,
+                "tracking_code": str(existing_tracking),
+                "status": existing.get("delivery_status"),
+                "recovered": True,
+            }
+        raise SteadfastError(
+            "এই invoice-এর shipment Steadfast-এ আগে থেকেই আছে, কিন্তু tracking code পাওয়া যায়নি। "
+            "Duplicate shipment তৈরি না করে আগে Steadfast portal-এ যাচাই করুন।"
+        )
+    except SteadfastError as exc:
+        # A normal 404 means the invoice does not exist and creation is safe.
+        if "shipment পাওয়া যায়নি" not in str(exc):
+            raise
 
     payload = {
         "invoice": order.order_number,
@@ -111,46 +201,23 @@ async def create_consignment(db: AsyncSession, order) -> dict:
     try:
         payload["delivery_type"] = int(cfg["delivery_type"])
     except (TypeError, ValueError):
-        pass
+        payload["delivery_type"] = 0
 
-    headers = {
-        "Api-Key": cfg["api_key"],
-        "Secret-Key": cfg["secret_key"],
-        "Content-Type": "application/json",
-    }
-    url = f"{cfg['base_url']}/create_order"
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(url, json=payload, headers=headers)
-    except httpx.HTTPError as exc:
-        logger.warning("Steadfast request failed: %s", exc)
-        raise SteadfastError("Steadfast সার্ভারে পৌঁছানো যায়নি। ইন্টারনেট/URL যাচাই করুন।")
-
-    try:
-        data = resp.json()
-    except ValueError:
-        data = {}
-
-    if resp.status_code in (401, 403):
-        raise SteadfastError("Steadfast API Key/Secret ভুল। Settings-এ নতুন করে দিন।")
-    consignment = (data or {}).get("consignment") or {}
+    response, data = await _request_json(cfg, "POST", "create_order", json=payload, timeout=30.0)
+    consignment = data.get("consignment") if isinstance(data.get("consignment"), dict) else {}
     tracking = consignment.get("tracking_code")
-    if resp.status_code not in (200, 201) or not tracking:
-        msg = (data or {}).get("message") or (data or {}).get("error")
-        if not msg:
-            try:
-                msg = (resp.text or "").strip()[:500]
-            except Exception:
-                msg = ""
-        if not msg:
-            msg = f"HTTP {resp.status_code}"
-        raise SteadfastError(f"Steadfast consignment তৈরি হয়নি (HTTP {resp.status_code}): {msg}")
+    if response.status_code not in (200, 201) or not tracking:
+        raise SteadfastError(
+            f"Steadfast consignment তৈরি হয়নি (HTTP {response.status_code}): "
+            f"{_provider_error(response, data, 'Provider response malformed or unsuccessful.')}"
+        )
 
     cid = consignment.get("consignment_id")
     return {
         "consignment_id": str(cid) if cid is not None else None,
-        "tracking_code": tracking,
+        "tracking_code": str(tracking),
         "status": consignment.get("status"),
+        "recovered": False,
     }
 
 
@@ -159,17 +226,11 @@ async def check_balance(db: AsyncSession) -> float:
     cfg = await get_settings(db)
     if not cfg["api_key"] or not cfg["secret_key"]:
         raise SteadfastError("Steadfast API Key / Secret Key সেট করা নেই।")
-    headers = {
-        "Api-Key": cfg["api_key"],
-        "Secret-Key": cfg["secret_key"],
-        "Content-Type": "application/json",
-    }
+    response, data = await _request_json(cfg, "GET", "get_balance")
+    if response.status_code != 200:
+        raise SteadfastError(_provider_error(response, data, f"Steadfast balance lookup failed (HTTP {response.status_code})."))
+    raw_balance = data.get("current_balance")
     try:
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            resp = await client.get(f"{cfg['base_url']}/get_balance", headers=headers)
-        data = resp.json()
-    except (httpx.HTTPError, ValueError):
-        raise SteadfastError("ব্যালেন্স আনা যায়নি।")
-    if resp.status_code in (401, 403):
-        raise SteadfastError("Steadfast API Key/Secret ভুল।")
-    return float((data or {}).get("current_balance") or 0)
+        return float(raw_balance)
+    except (TypeError, ValueError) as exc:
+        raise SteadfastError("Steadfast balance response malformed: current_balance missing.") from exc
