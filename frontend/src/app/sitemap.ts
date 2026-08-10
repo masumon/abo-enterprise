@@ -50,11 +50,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     const [servicesRes, blogRes, productsRes, categoriesRes] = await Promise.all([
-      // per_page is capped at 100 server-side (routes/services.py). 50 silently
-      // truncated the catalog — the demo seeder alone emits three variants per
-      // taxonomy leaf, so services were dropping out of the sitemap unnoticed.
+      // Services and products accept up to 100 per page.
       fetch(`${apiBase}/api/v1/services?per_page=100`, { next: { revalidate: 3600 } }),
-      fetch(`${apiBase}/api/v1/blog?per_page=100`, { next: { revalidate: 3600 } }),
+      // Blog's public endpoint caps per_page at 50; keep this request within
+      // the contract and paginate below so no sitemap entries are lost.
+      fetch(`${apiBase}/api/v1/blog?per_page=50`, { next: { revalidate: 3600 } }),
       fetch(`${apiBase}/api/v1/products?per_page=100`, { next: { revalidate: 3600 } }),
       fetch(`${apiBase}/api/v1/categories?applies_to=service`, { next: { revalidate: 3600 } }),
     ]);
@@ -114,8 +114,23 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     }
 
     if (blogRes.ok) {
-      const { data } = await blogRes.json();
-      for (const p of (data ?? []) as { slug: string; updated_at: string }[]) {
+      type BlogRow = { slug: string; updated_at: string };
+      const first = await blogRes.json();
+      const rows: BlogRow[] = [...((first.data ?? []) as BlogRow[])];
+      const totalPages = Math.min(Number(first.meta?.total_pages ?? 1) || 1, 20);
+      if (totalPages > 1) {
+        const pages = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, i) =>
+            fetch(`${apiBase}/api/v1/blog?per_page=50&page=${i + 2}`, {
+              next: { revalidate: 3600 },
+            })
+              .then((r) => (r.ok ? r.json() : null))
+              .catch(() => null)
+          )
+        );
+        for (const p of pages) rows.push(...((p?.data ?? []) as BlogRow[]));
+      }
+      for (const p of rows) {
         dynamicRoutes.push({
           url: `${BASE}/blog/${p.slug}`,
           lastModified: new Date(p.updated_at),
