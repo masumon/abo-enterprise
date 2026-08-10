@@ -1,12 +1,11 @@
 """Steadfast Courier (portal.packzy.com) integration.
 
 Credentials are loaded from the database settings table. Diagnostic logging is
-strictly sanitized: credential values are never written to logs.
+strictly sanitized: credential values and customer PII are never written to logs.
 """
 from __future__ import annotations
 
 import hashlib
-import json
 import logging
 import re
 
@@ -49,6 +48,24 @@ def _credential_metadata(api_key: str, secret_key: str) -> dict:
         "secret_key_present": bool(secret_key),
         "secret_key_length": len(secret_key),
         "secret_key_sha256_16": _fingerprint(secret_key) if secret_key else None,
+    }
+
+
+def _request_metadata(payload: dict) -> dict:
+    """Describe the actual provider payload without logging customer PII."""
+    phone = str(payload.get("recipient_phone") or "")
+    address = str(payload.get("recipient_address") or "")
+    recipient_name = str(payload.get("recipient_name") or "")
+    note = str(payload.get("note") or "")
+    return {
+        "payload_keys": sorted(payload.keys()),
+        "invoice": payload.get("invoice"),
+        "recipient_name_length": len(recipient_name),
+        "recipient_phone_last4": phone[-4:] if phone else None,
+        "recipient_address_length": len(address),
+        "cod_amount": payload.get("cod_amount"),
+        "delivery_type": payload.get("delivery_type"),
+        "note_present": bool(note),
     }
 
 
@@ -144,7 +161,7 @@ async def create_consignment(db: AsyncSession, order) -> dict:
         url,
         {"Api-Key": True, "Secret-Key": True, "Content-Type": True},
         _credential_metadata(cfg["api_key"], cfg["secret_key"]),
-        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
+        _request_metadata(payload),
     )
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
