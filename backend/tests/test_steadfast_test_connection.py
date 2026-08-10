@@ -1,6 +1,6 @@
 import pytest
 
-from app.core.steadfast_test_connection import test_connection
+from app.core.steadfast_test_connection import test_connection as run_test_connection
 
 
 class DummyDB:
@@ -13,7 +13,7 @@ async def test_disabled(monkeypatch):
         return {"enabled": False, "api_key": "", "secret_key": "", "base_url": "https://example.test/api/v1"}
 
     monkeypatch.setattr("app.core.steadfast_test_connection.get_settings", fake_settings)
-    result = await test_connection(DummyDB())
+    result = await run_test_connection(DummyDB())
     assert result["code"] == "DISABLED"
     assert result["ok"] is False
 
@@ -24,7 +24,7 @@ async def test_missing_credentials(monkeypatch):
         return {"enabled": True, "api_key": "", "secret_key": "", "base_url": "https://example.test/api/v1"}
 
     monkeypatch.setattr("app.core.steadfast_test_connection.get_settings", fake_settings)
-    result = await test_connection(DummyDB())
+    result = await run_test_connection(DummyDB())
     assert result["code"] == "MISSING_CREDENTIALS"
 
 
@@ -51,7 +51,7 @@ async def test_auth_failed(monkeypatch):
 
     monkeypatch.setattr("app.core.steadfast_test_connection.get_settings", fake_settings)
     monkeypatch.setattr("app.core.steadfast_test_connection.httpx.AsyncClient", lambda **kwargs: Client())
-    result = await test_connection(DummyDB())
+    result = await run_test_connection(DummyDB())
     assert result["code"] == "AUTH_FAILED"
     assert result["http_status"] == 401
     assert "unauthorized" not in result["message"]
@@ -80,7 +80,7 @@ async def test_connected(monkeypatch):
 
     monkeypatch.setattr("app.core.steadfast_test_connection.get_settings", fake_settings)
     monkeypatch.setattr("app.core.steadfast_test_connection.httpx.AsyncClient", lambda **kwargs: Client())
-    result = await test_connection(DummyDB())
+    result = await run_test_connection(DummyDB())
     assert result["ok"] is True
     assert result["code"] == "CONNECTED"
     assert result["balance"] == 123.45
@@ -109,6 +109,6 @@ async def test_http_200_with_malformed_balance_is_not_success(monkeypatch):
 
     monkeypatch.setattr("app.core.steadfast_test_connection.get_settings", fake_settings)
     monkeypatch.setattr("app.core.steadfast_test_connection.httpx.AsyncClient", lambda **kwargs: Client())
-    result = await test_connection(DummyDB())
+    result = await run_test_connection(DummyDB())
     assert result["ok"] is False
     assert result["code"] == "MALFORMED_RESPONSE"
