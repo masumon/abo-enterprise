@@ -89,7 +89,9 @@ def _legacy_route_permission(request: Request) -> str | None:
             return permission
 
     # Assistant detail/update/delete endpoints contain resource identifiers.
-    # Keep the mapping explicit and least-privilege without changing route code.
+    # Normalize the API version prefix so the route mapping is independent of
+    # the mounted /api/v1 prefix while remaining explicit and least-privilege.
+    route_path = path[path.find("/assistant/") :] if "/assistant/" in path else path
     dynamic_prefixes = (
         ("GET", "/assistant/admin/conversations/", "ops.read"),
         ("DELETE", "/assistant/admin/conversations/", "ops.write"),
@@ -98,7 +100,7 @@ def _legacy_route_permission(request: Request) -> str | None:
         ("DELETE", "/assistant/admin/faq/", "ops.write"),
     )
     for expected_method, prefix, permission in dynamic_prefixes:
-        if method == expected_method and path.startswith(prefix):
+        if method == expected_method and route_path.startswith(prefix):
             return permission
     return None
 
