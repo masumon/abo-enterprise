@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 from uuid import uuid4
@@ -159,8 +160,8 @@ async def test_assistant_log_list_route_remains_read_only():
         status="success",
         details={},
         admin_id=None,
-        created_at=None,
-        updated_at=None,
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc),
         is_deleted=False,
     )
 
