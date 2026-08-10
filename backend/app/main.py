@@ -115,6 +115,22 @@ async def enforce_maintenance_mode(request: Request, call_next):
 
 
 @app.middleware("http")
+async def protect_assistant_audit_logs(request: Request, call_next):
+    """Audit logs are retained records; never permit destructive deletion."""
+    path = request.url.path.rstrip("/")
+    if request.method.upper() == "DELETE" and "/assistant/admin/logs/" in path:
+        return JSONResponse(
+            status_code=409,
+            content={
+                "success": False,
+                "message": "Assistant automation logs are retained for audit history and cannot be deleted.",
+                "error_code": "AUDIT_LOG_RETENTION",
+            },
+        )
+    return await call_next(request)
+
+
+@app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
