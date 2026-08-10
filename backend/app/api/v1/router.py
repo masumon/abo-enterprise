@@ -39,6 +39,9 @@ api_router = APIRouter(prefix="/api/v1")
 
 api_router.include_router(auth.router)
 api_router.include_router(products.router)
+# Courier routes are registered before the legacy orders courier endpoint so the
+# verified implementation handles PATCH /orders/{id}/courier in the live API.
+api_router.include_router(courier.router)
 api_router.include_router(orders.router)
 api_router.include_router(bookings.router)
 api_router.include_router(bookings_v2.router)
@@ -69,4 +72,3 @@ api_router.include_router(combos.router)
 api_router.include_router(delivery_zones.router)
 api_router.include_router(translate.router)
 api_router.include_router(steadfast_test.router)
-api_router.include_router(courier.router)
