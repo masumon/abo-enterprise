@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   ShoppingCart, Briefcase, Users, Package,
   Clock, TrendingUp, RefreshCw, DollarSign, Sparkles, BarChart3,
+  CreditCard, AlertTriangle,
 } from "lucide-react";
 import { adminApi } from "@/lib/api";
 import api from "@/lib/api";
@@ -37,9 +38,23 @@ interface AnalyticsOverview {
   top_services: Array<{ service_id: string; name: string; name_bn: string; count: number; revenue: number }>;
 }
 
+interface OpsErrors {
+  failed_payments: Array<{ order_number: string; customer: string; total: number; at: string }>;
+  failed_emails: Array<{ at: string; [key: string]: unknown }>;
+}
+
+interface InventorySummary {
+  products: number;
+  low_stock: number;
+  out_of_stock: number;
+  units: number;
+}
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [analytics, setAnalytics] = useState<AnalyticsOverview | null>(null);
+  const [ops, setOps] = useState<OpsErrors | null>(null);
+  const [inventory, setInventory] = useState<InventorySummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
@@ -50,12 +65,16 @@ export default function AdminDashboard() {
   const fetchStats = useCallback(async (silent = false) => {
     if (!silent) setLoading(true); else setRefreshing(true);
     try {
-      const [statsRes, analyticsRes] = await Promise.all([
+      const [statsRes, analyticsRes, opsRes, inventoryRes] = await Promise.all([
         adminApi.stats(),
         api.get("/api/v1/admin/analytics/overview?days=30").catch(() => null),
+        api.get("/api/v1/admin/ops/errors").catch(() => null),
+        api.get("/api/v1/admin/inventory/summary").catch(() => null),
       ]);
       setStats(statsRes.data.data as Stats);
       setAnalytics((analyticsRes?.data?.data ?? null) as AnalyticsOverview | null);
+      setOps((opsRes?.data?.data ?? null) as OpsErrors | null);
+      setInventory((inventoryRes?.data?.data ?? null) as InventorySummary | null);
       setError(false);
     } catch {
       setError(true);
@@ -84,6 +103,9 @@ export default function AdminDashboard() {
   const revenueTotal = analytics?.revenue.total ?? null;
   const revenueTrend = analytics?.trends.revenue_pct ?? null;
   const conversionRate = analytics?.conversion_rate ?? null;
+  const failedPayments = ops?.failed_payments?.length ?? 0;
+  const lowStock = inventory?.low_stock ?? 0;
+  const outOfStock = inventory?.out_of_stock ?? 0;
 
   return (
     <div className="space-y-6">
@@ -112,10 +134,12 @@ export default function AdminDashboard() {
 
       <section>
         <div className="flex items-center gap-2 mb-3"><Clock className="w-4 h-4 text-gray-400" /><h2 className="text-sm font-semibold text-gray-700">{bn ? "এখন মনোযোগ দরকার" : "Needs attention"}</h2></div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <Link href="/sumon/orders" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "অপেক্ষমান অর্ডার" : "Pending orders"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.pending_orders ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "অর্ডার দেখুন →" : "Review orders →"}</p></Link>
           <Link href="/sumon/bookings" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "অপেক্ষমান বুকিং" : "Pending bookings"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.pending_bookings ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "বুকিং দেখুন →" : "Review bookings →"}</p></Link>
           <Link href="/sumon/leads" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "নতুন লিড" : "New leads"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.new_leads ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "লিড দেখুন →" : "Follow up leads →"}</p></Link>
+          <Link href="/sumon/payments" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5" />{bn ? "ব্যর্থ পেমেন্ট" : "Failed payments"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : failedPayments}</p><p className="text-xs text-brand-600 mt-1">{bn ? "পেমেন্ট দেখুন →" : "Review payments →"}</p></Link>
+          <Link href="/sumon/inventory" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500 flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{bn ? "কম স্টক" : "Low stock"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : lowStock}</p><p className="text-xs text-brand-600 mt-1">{outOfStock > 0 ? (bn ? `${outOfStock}টি স্টক শেষ` : `${outOfStock} out of stock`) : (bn ? "ইনভেন্টরি দেখুন →" : "Review inventory →")}</p></Link>
         </div>
       </section>
 
@@ -141,7 +165,7 @@ export default function AdminDashboard() {
             <div><p className="text-xs text-gray-500">{bn ? "লিড → জয় রূপান্তর" : "Lead → won conversion"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{conversionRate == null ? "—" : `${conversionRate}%`}</p></div>
             <div><p className="text-xs text-gray-500">{bn ? "৩০ দিনে লিড" : "Leads in 30d"}</p><p className="text-lg font-semibold text-gray-900 mt-1">{analytics?.counts.leads ?? "—"}</p></div>
             <div><p className="text-xs text-gray-500">{bn ? "৩০ দিনে বুকিং" : "Bookings in 30d"}</p><p className="text-lg font-semibold text-gray-900 mt-1">{analytics?.counts.bookings ?? "—"}</p></div>
-            <Link href="/sumon/analytics" className="block text-xs text-brand-600 hover:underline font-medium pt-1">{bn ? "বিস্তারিত অ্যানালিটিক্স →" : "Open analytics →"}</Link>
+            <Link href="/sumon/analytics" className="block text-xs text-brand-600 hover:underline font-medium pt-1">{bn ? "বিস্তারিত অ্যানালিটিক্স →" : "Open analytics →"} </Link>
           </div>
         </div>
       </div>
