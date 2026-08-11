@@ -1,14 +1,18 @@
 /** @deprecated Import from @/lib/maps instead */
 export { DEFAULT_MAPS_EMBED } from "@/lib/maps";
 
-/** Fallback stats shown when /public/stats is unreachable. Kept modest and
- * plausible for a Sylhet-based business — inflated numbers hurt trust more
- * than they help. Real numbers replace these whenever the API responds. */
+/**
+ * Optional fallback values for homepage statistics.
+ *
+ * Zero means there is no trustworthy fallback source. The UI renders an
+ * unavailable state rather than presenting a fabricated business number.
+ * Real values are supplied by /public/stats when available.
+ */
 export const MARKETING_STATS = {
-  clients: 200,
-  projects: 80,
-  products: 8,
-  years: 8,
-  orders: 120,
-  services: 9,
+  clients: 0,
+  projects: 0,
+  products: 0,
+  years: 0,
+  orders: 0,
+  services: 0,
 } as const;
