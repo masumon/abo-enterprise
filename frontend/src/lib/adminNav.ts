@@ -48,6 +48,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     { href: "/sumon/bookings", icon: Briefcase, label: "Bookings", labelBn: "বুকিং", badge: "bookings" },
   ]},
   { id: "customers-crm", label: "Customers & CRM", labelBn: "গ্রাহক ও CRM", items: [
+    { href: "/sumon/customers", icon: Users, label: "Customers", labelBn: "গ্রাহক", minRole: "admin" },
     { href: "/sumon/leads", icon: Users, label: "Leads", labelBn: "লিড", badge: "leads" },
     { href: "/sumon/career", icon: UserPlus, label: "Career Applications", labelBn: "চাকরির আবেদন", minRole: "admin" },
   ]},
