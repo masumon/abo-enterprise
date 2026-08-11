@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 import logging
 from app.core.config import settings
 from app.core.monitoring import init_sentry
+from app.core.admin_safety import protect_assistant_audit_logs
 
 # Best-effort — no-op unless SENTRY_DSN is configured.
 init_sentry()
@@ -112,6 +113,9 @@ async def enforce_maintenance_mode(request: Request, call_next):
             # site down — fail open (serve normally) and log it.
             logger.exception("Maintenance-mode check failed; serving normally")
     return await call_next(request)
+
+
+app.middleware("http")(protect_assistant_audit_logs)
 
 
 @app.middleware("http")

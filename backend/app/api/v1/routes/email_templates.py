@@ -25,9 +25,12 @@ async def list_email_templates(
     db: AsyncSession = Depends(get_db),
     _: str = Depends(require_role("email_templates.read")),
 ):
-    total = (await db.execute(select(func.count(EmailTemplate.id)))).scalar_one()
+    total = (await db.execute(
+        select(func.count(EmailTemplate.id)).where(EmailTemplate.is_deleted == False)  # noqa: E712
+    )).scalar_one()
     result = await db.execute(
         select(EmailTemplate)
+        .where(EmailTemplate.is_deleted == False)  # noqa: E712
         .order_by(EmailTemplate.template_name.asc())
         .offset((page - 1) * per_page)
         .limit(per_page)
@@ -45,7 +48,12 @@ async def get_email_template(
     db: AsyncSession = Depends(get_db),
     _: str = Depends(require_role("email_templates.read")),
 ):
-    result = await db.execute(select(EmailTemplate).where(EmailTemplate.id == template_id))
+    result = await db.execute(
+        select(EmailTemplate).where(
+            EmailTemplate.id == template_id,
+            EmailTemplate.is_deleted == False,  # noqa: E712
+        )
+    )
     template = result.scalar_one_or_none()
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
@@ -59,7 +67,10 @@ async def create_email_template(
     admin_id: str = Depends(require_role("email_templates.write")),
 ):
     existing = await db.execute(
-        select(EmailTemplate).where(EmailTemplate.template_name == payload.template_name)
+        select(EmailTemplate).where(
+            EmailTemplate.template_name == payload.template_name,
+            EmailTemplate.is_deleted == False,  # noqa: E712
+        )
     )
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Template name already exists")
@@ -92,7 +103,12 @@ async def update_email_template(
     db: AsyncSession = Depends(get_db),
     admin_id: str = Depends(require_role("email_templates.write")),
 ):
-    result = await db.execute(select(EmailTemplate).where(EmailTemplate.id == template_id))
+    result = await db.execute(
+        select(EmailTemplate).where(
+            EmailTemplate.id == template_id,
+            EmailTemplate.is_deleted == False,  # noqa: E712
+        )
+    )
     template = result.scalar_one_or_none()
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
@@ -122,20 +138,28 @@ async def delete_email_template(
     db: AsyncSession = Depends(get_db),
     admin_id: str = Depends(require_role("email_templates.write")),
 ):
-    result = await db.execute(select(EmailTemplate).where(EmailTemplate.id == template_id))
+    """Disable a template without destroying its content or audit history."""
+    result = await db.execute(
+        select(EmailTemplate).where(
+            EmailTemplate.id == template_id,
+            EmailTemplate.is_deleted == False,  # noqa: E712
+        )
+    )
     template = result.scalar_one_or_none()
     if not template:
         raise HTTPException(status_code=404, detail="Template not found")
 
-    await db.delete(template)
+    template.is_active = False
 
     log = ActivityLog(
         admin_id=UUID(admin_id),
-        action="delete",
+        action="deactivate",
         entity_type="email_template",
         entity_id=template_id,
+        new_values={"is_active": False, "reason": "admin_archive"},
     )
     db.add(log)
     await db.commit()
+    await db.refresh(template)
 
-    return ApiResponse(message="Template deleted")
+    return ApiResponse(message="Template disabled; content and configuration preserved")

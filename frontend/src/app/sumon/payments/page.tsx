@@ -168,17 +168,17 @@ export default function AdminPaymentsPage() {
 
   const handleDelete = (id: string) => {
     setConfirmState({
-      title: "Delete this payment method?",
-      message: "This action cannot be undone. Any associated transactions will remain in history.",
+      title: "Disable this payment method?",
+      message: "This will disable the payment method for checkout. Existing payment and transaction history will be preserved.",
       action: async () => {
         setConfirmState(null);
         setDeletingId(id);
         try {
           await paymentMethodsAdminApi.delete(id);
-          toast("success", "Payment method deleted");
+          toast("success", "Payment method disabled");
           await load();
         } catch {
-          toast("error", "Failed to delete");
+          toast("error", "Failed to disable payment method");
         } finally {
           setDeletingId(null);
         }
@@ -438,12 +438,12 @@ export default function AdminPaymentsPage() {
                         <button
                           onClick={() => handleDelete(m.id)}
                           disabled={deletingId === m.id}
-                          aria-label={`Delete ${label} gateway`}
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                          aria-label={`Disable ${label} gateway`}
+                          className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
                         >
                           {deletingId === m.id
                             ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            : <Trash2 className="w-3.5 h-3.5" />
+                            : <ToggleLeft className="w-3.5 h-3.5" />
                           }
                         </button>
                         <button
@@ -640,8 +640,8 @@ export default function AdminPaymentsPage() {
         open={!!confirmState}
         title={confirmState?.title ?? ""}
         message={confirmState?.message ?? ""}
-        confirmLabel="Delete"
-        variant="danger"
+        confirmLabel="Disable"
+        variant="warning"
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}
       />

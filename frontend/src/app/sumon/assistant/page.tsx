@@ -86,7 +86,6 @@ export default function AdminAssistantPage() {
   const [logsLoading, setLogsLoading] = useState(false);
   const [logsPage, setLogsPage] = useState(1);
   const [logsTotal, setLogsTotal] = useState(0);
-  const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
 
   // FAQ
   const [faqList, setFaqList] = useState<AssistantFaqEntry[]>([]);
@@ -180,40 +179,20 @@ export default function AdminAssistantPage() {
 
   const deleteConversation = (id: string) => {
     setConfirmState({
-      title: "Delete this conversation?",
-      message: "All messages in this conversation will be permanently removed.",
+      title: "Archive this conversation?",
+      message: "This conversation will be hidden from the active conversation list. Its history will be preserved.",
       action: async () => {
         setConfirmState(null);
         setDeletingConvId(id);
         try {
           await assistantAdminApi.deleteConversation(id);
-          toast("success", "Conversation deleted");
+          toast("success", "Conversation archived");
           if (convDetail?.conversation.id === id) setConvDetail(null);
           await loadConversations();
         } catch {
-          toast("error", "Failed to delete conversation");
+          toast("error", "Failed to archive conversation");
         } finally {
           setDeletingConvId(null);
-        }
-      },
-    });
-  };
-
-  const deleteLog = (id: string) => {
-    setConfirmState({
-      title: "Delete this automation log?",
-      message: "This log entry will be permanently removed.",
-      action: async () => {
-        setConfirmState(null);
-        setDeletingLogId(id);
-        try {
-          await assistantAdminApi.deleteLog(id);
-          toast("success", "Log deleted");
-          await loadLogs();
-        } catch {
-          toast("error", "Failed to delete log");
-        } finally {
-          setDeletingLogId(null);
         }
       },
     });
@@ -493,9 +472,9 @@ export default function AdminAssistantPage() {
                             <button
                               onClick={() => deleteConversation(c.id)}
                               disabled={deletingConvId === c.id}
-                              aria-label="Delete conversation"
+                              aria-label="Archive conversation"
                               className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"
-                              title="Delete"
+                              title="Archive"
                             >
                               {deletingConvId === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                             </button>
@@ -573,7 +552,7 @@ export default function AdminAssistantPage() {
                       <th className="text-left px-4 py-3">Status</th>
                       <th className="text-left px-4 py-3">Session</th>
                       <th className="text-left px-4 py-3">Time</th>
-                      <th className="text-right px-4 py-3">Actions</th>
+                      <th className="text-right px-4 py-3">Retention</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -584,15 +563,7 @@ export default function AdminAssistantPage() {
                         <td className="px-4 py-3"><StatusBadge status={log.status} /></td>
                         <td className="px-4 py-3 font-mono text-xs">{log.session_id?.slice(0, 10) || "—"}</td>
                         <td className="px-4 py-3 text-xs text-gray-500">{new Date(log.created_at).toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right">
-                          <button
-                            onClick={() => deleteLog(log.id)}
-                            disabled={deletingLogId === log.id}
-                            className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"
-                          >
-                            {deletingLogId === log.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                          </button>
-                        </td>
+                        <td className="px-4 py-3 text-right text-xs font-medium text-emerald-600">Retained</td>
                       </tr>
                     ))}
                   </tbody>
@@ -763,8 +734,8 @@ export default function AdminAssistantPage() {
         open={!!confirmState}
         title={confirmState?.title ?? ""}
         message={confirmState?.message ?? ""}
-        confirmLabel="Delete"
-        variant="danger"
+        confirmLabel={confirmState?.title.startsWith("Archive") ? "Archive" : "Delete"}
+        variant={confirmState?.title.startsWith("Archive") ? "warning" : "danger"}
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}
       />

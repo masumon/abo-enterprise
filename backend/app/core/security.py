@@ -71,6 +71,13 @@ _LEGACY_ROUTE_PERMISSIONS = {
     ("GET", "/admin/stats"): "analytics.read",
     ("POST", "/admin/upload"): "media.write",
     ("GET", "/admin/users"): "users.read",
+    ("GET", "/combos/admin/all"): "products.read",
+    ("GET", "/assistant/admin/config"): "ops.read",
+    ("PUT", "/assistant/admin/config"): "ops.write",
+    ("GET", "/assistant/admin/conversations"): "ops.read",
+    ("GET", "/assistant/admin/logs"): "ops.read",
+    ("GET", "/assistant/admin/faq"): "ops.read",
+    ("POST", "/assistant/admin/faq"): "ops.write",
 }
 
 
@@ -79,6 +86,21 @@ def _legacy_route_permission(request: Request) -> str | None:
     path = request.url.path.rstrip("/")
     for (expected_method, suffix), permission in _LEGACY_ROUTE_PERMISSIONS.items():
         if method == expected_method and path.endswith(suffix):
+            return permission
+
+    # Assistant detail/update/delete endpoints contain resource identifiers.
+    # Normalize the API version prefix so the route mapping is independent of
+    # the mounted /api/v1 prefix while remaining explicit and least-privilege.
+    route_path = path[path.find("/assistant/") :] if "/assistant/" in path else path
+    dynamic_prefixes = (
+        ("GET", "/assistant/admin/conversations/", "ops.read"),
+        ("DELETE", "/assistant/admin/conversations/", "ops.write"),
+        ("DELETE", "/assistant/admin/logs/", "ops.write"),
+        ("PUT", "/assistant/admin/faq/", "ops.write"),
+        ("DELETE", "/assistant/admin/faq/", "ops.write"),
+    )
+    for expected_method, prefix, permission in dynamic_prefixes:
+        if method == expected_method and route_path.startswith(prefix):
             return permission
     return None
 

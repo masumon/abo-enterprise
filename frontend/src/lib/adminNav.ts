@@ -141,7 +141,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/sumon/steadfast-test", icon: Shield, label: "Steadfast Test", labelBn: "Steadfast টেস্ট", minRole: "admin" },
       { href: "/sumon/users", icon: Users, label: "Users", labelBn: "ইউজার", minRole: "admin" },
       { href: "/sumon/audit", icon: Shield, label: "Audit Logs", labelBn: "অডিট", minRole: "admin" },
-      { href: "/sumon/assistant", icon: Bot, label: "AI Assistant", labelBn: "AI সহকারী", minRole: "editor" },
+      { href: "/sumon/assistant", icon: Bot, label: "AI Assistant", labelBn: "AI সহকারী", minRole: "admin" },
     ],
   },
 ];

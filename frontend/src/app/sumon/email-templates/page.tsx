@@ -124,17 +124,17 @@ export default function AdminEmailTemplatesPage() {
 
   const handleDelete = (id: string, name: string) => {
     setConfirmState({
-      title: `Delete template "${name}"?`,
-      message: "This action cannot be undone. Emails using this template will stop working.",
+      title: `Deactivate template "${name}"?`,
+      message: "This will deactivate the template. Its content and history will be preserved.",
       action: async () => {
         setConfirmState(null);
         setDeletingId(id);
         try {
           await emailTemplatesAdminApi.delete(id);
           setTemplates((prev) => prev.filter((t) => t.id !== id));
-          toast("success", "Template deleted");
+          toast("success", "Template deactivated");
         } catch {
-          toast("error", "Delete failed");
+          toast("error", "Deactivation failed");
         } finally {
           setDeletingId(null);
         }
@@ -350,7 +350,7 @@ export default function AdminEmailTemplatesPage() {
         open={!!confirmState}
         title={confirmState?.title ?? ""}
         message={confirmState?.message ?? ""}
-        confirmLabel="Delete"
+        confirmLabel="Deactivate"
         variant="danger"
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}
