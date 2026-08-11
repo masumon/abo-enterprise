@@ -52,6 +52,24 @@ def test_exception_message_is_summarized_not_full_traceback():
     assert len(msg) <= 300
 
 
+def test_operational_buffers_are_bounded():
+    """Ephemeral diagnostics must remain bounded and never grow without limit."""
+    ops_events.recent_errors.clear()
+    ops_events.failed_emails.clear()
+    ops_events.failed_logins.clear()
+
+    for i in range(ops_events.recent_errors.maxlen + 50):
+        ops_events.recent_errors.append({"message": f"error-{i}"})
+    for i in range(ops_events.failed_emails.maxlen + 50):
+        ops_events.failed_emails.append({"at": i})
+    for i in range(ops_events.failed_logins.maxlen + 50):
+        ops_events.failed_logins.append({"at": i})
+
+    assert len(ops_events.recent_errors) == ops_events.recent_errors.maxlen
+    assert len(ops_events.failed_emails) == ops_events.failed_emails.maxlen
+    assert len(ops_events.failed_logins) == ops_events.failed_logins.maxlen
+
+
 def test_failed_email_and_login_are_masked():
     ops_events.record_failed_email("customer@example.com", "Order confirmation", "smtp down")
     e = ops_events.failed_emails[0]
