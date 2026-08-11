@@ -139,8 +139,8 @@ async def test_direct_assistant_log_route_invocation_cannot_bypass_retention():
     with pytest.raises(AssistantActionLogRetentionError, match="AUDIT_LOG_RETENTION"):
         await delete_assistant_log(log.id, _admin="admin", db=db)
 
-    assert log in db.deleted
-    db.commit.assert_awaited_once()
+    assert log not in db.deleted
+    db.commit.assert_not_awaited()
     assert log.is_deleted is False
 
 
