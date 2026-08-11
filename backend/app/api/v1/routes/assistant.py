@@ -42,6 +42,7 @@ from app.assistant.feature_flags import (
 from app.assistant.session_security import (
     verify_assistant_session_token,
 )
+from app.core.admin_safety import AssistantActionLogRetentionError
 
 
 async def _get_settings_map(db: AsyncSession, keys: tuple[str, ...]) -> dict[str, str]:
@@ -331,15 +332,8 @@ async def delete_assistant_log(
     _admin: str = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    """Admin — delete an action log entry."""
-    result = await db.execute(select(AssistantActionLog).where(AssistantActionLog.id == log_id))
-    log = result.scalar_one_or_none()
-    if not log:
-        raise HTTPException(status_code=404, detail="Log not found")
-
-    await db.delete(log)
-    await db.commit()
-    return ApiResponse(message="Log deleted")
+    """Admin — assistant action logs are retained audit records and cannot be deleted."""
+    raise AssistantActionLogRetentionError("AUDIT_LOG_RETENTION")
 
 
 def _faq_from_flat(flat: dict) -> list[dict]:
