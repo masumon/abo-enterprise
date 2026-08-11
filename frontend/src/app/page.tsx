@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
+import { redirect } from "next/navigation";
 import Hero from "@/components/home/Hero";
 import FlashSaleSection from "@/components/home/FlashSaleSection";
 import CategoryCards from "@/components/home/CategoryCards";
@@ -13,6 +14,7 @@ import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, getBrandFullTitle } from "
 import { jsonLdString } from "@/lib/metadata";
 import { fetchPublicSettings, settingValue } from "@/lib/serverSettings";
 import { isVideoUrl } from "@/lib/media";
+import { getLegacyHomeLaneTarget } from "@/lib/legacyHomeLane";
 
 const DEFAULT_PHONE = "+8801825007977";
 const DEFAULT_STREET_ADDRESS = "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170";
@@ -117,7 +119,15 @@ function SectionSkeleton() {
   return <div className="py-16 motion-safe:animate-pulse bg-gray-50/50 dark:bg-[#1c2242]/60" aria-hidden />;
 }
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams?: { lane?: string | string[] };
+}) {
+  const legacyLane = Array.isArray(searchParams?.lane) ? searchParams?.lane[0] : searchParams?.lane;
+  const legacyTarget = getLegacyHomeLaneTarget(legacyLane);
+  if (legacyTarget) redirect(legacyTarget);
+
   const settings = await fetchPublicSettings();
   // The hero banner is a CSS background inside a client component, so the
   // browser would only discover it after hydration. Preloading it here (server
