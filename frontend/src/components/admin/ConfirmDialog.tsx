@@ -6,7 +6,8 @@ import { AlertTriangle, Trash2, X } from "lucide-react";
 interface Props {
   open: boolean;
   title: string;
-  message: string;
+  message?: string;
+  description?: string;
   confirmLabel?: string;
   variant?: "danger" | "warning" | "info";
   onConfirm: () => void;
@@ -17,6 +18,7 @@ export default function ConfirmDialog({
   open,
   title,
   message,
+  description,
   confirmLabel = "Confirm",
   variant = "danger",
   onConfirm,
@@ -45,8 +47,6 @@ export default function ConfirmDialog({
         return;
       }
       if (e.key !== "Tab") return;
-      // Trap Tab inside the dialog while it's open — screen-reader users
-      // shouldn't be able to tab into the layout behind the overlay.
       const list = focusables();
       if (list.length === 0) return;
       const first = list[0];
@@ -92,7 +92,7 @@ export default function ConfirmDialog({
           </div>
           <div className="flex-1 min-w-0">
             <h3 id="confirm-title" className="text-base font-semibold text-gray-900 mb-1 text-balance">{title}</h3>
-            <p className="text-sm text-gray-500 leading-relaxed">{message}</p>
+            <p className="text-sm text-gray-500 leading-relaxed">{message ?? description ?? ""}</p>
           </div>
           <button
             onClick={onCancel}
