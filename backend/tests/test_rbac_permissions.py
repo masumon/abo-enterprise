@@ -20,8 +20,6 @@ class TestAdminRole:
             assert has_permission("admin", perm) is True
 
     def test_has_p1_added_governance_permissions(self):
-        # These were the RBAC gap closed in this audit pass — admin-only
-        # domains that used to be enforced by nothing but require_admin.
         for perm in (
             "blog.write", "media.write", "reviews.write", "career.write",
             "invoices.write", "email_templates.write", "ops.write", "payments.write",
@@ -31,6 +29,9 @@ class TestAdminRole:
     def test_has_users_management(self):
         for perm in ("users.read", "users.write", "users.delete"):
             assert has_permission("admin", perm) is True
+
+    def test_has_customer_index_read_permission(self):
+        assert has_permission("admin", "customers.read") is True
 
 
 class TestEditorRole:
@@ -43,19 +44,16 @@ class TestEditorRole:
         assert has_permission("editor", "products.delete") is False
 
     def test_cannot_touch_admin_only_governance_domains(self):
-        # career/invoices/email_templates/ops/payments are deliberately kept
-        # admin-only (HR/financial/system-sensitive) per the audit's
-        # judgment call — editor was never granted these.
         for perm in ("career.write", "invoices.write", "email_templates.write", "ops.write", "payments.write"):
             assert has_permission("editor", perm) is False
+
+    def test_cannot_read_customer_index(self):
+        assert has_permission("editor", "customers.read") is False
 
 
 class TestViewerRole:
     def test_is_read_only_across_the_board(self):
-        """The Users admin page tells operators 'viewer = read-only'
-        (frontend/src/app/admin/users/page.tsx). This test is the backend
-        guarantee behind that claim: no *.write / *.delete permission
-        exists anywhere in the viewer role."""
+        """The Users admin page tells operators 'viewer = read-only'."""
         for perm in ROLE_PERMISSIONS["viewer"]:
             assert not perm.endswith(".write"), f"viewer unexpectedly has write permission: {perm}"
             assert not perm.endswith(".delete"), f"viewer unexpectedly has delete permission: {perm}"
@@ -67,6 +65,9 @@ class TestViewerRole:
     def test_cannot_write_anything(self):
         for perm in ("orders.write", "products.write", "blog.write", "settings.write", "leads.write"):
             assert has_permission("viewer", perm) is False
+
+    def test_cannot_read_customer_index(self):
+        assert has_permission("viewer", "customers.read") is False
 
 
 class TestUnknownRole:

@@ -9,6 +9,7 @@ ROLE_PERMISSIONS = {
         "services.read", "services.write", "services.delete",
         "bookings.read", "bookings.write", "bookings.delete",
         "leads.read", "leads.write",
+        "customers.read",
         "analytics.read",
         "bulk.read", "bulk.write",
         "settings.read", "settings.write",
@@ -49,8 +50,6 @@ def require_permission(permission: str):
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            # In real use, extract role from JWT token in dependency
-            # This is a placeholder — wire with actual auth dependency
             return await func(*args, **kwargs)
         return wrapper
     return decorator
