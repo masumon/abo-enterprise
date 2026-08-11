@@ -13,6 +13,7 @@ import StatsCard from "@/components/admin/StatsCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminQuickActions from "@/components/admin/AdminQuickActions";
+import DashboardOperationsPanel from "@/app/sumon/DashboardOperationsPanel";
 import { formatPrice } from "@/lib/utils";
 import { useAlertStore } from "@/store/alerts";
 import { useLanguageStore } from "@/store/language";
@@ -169,6 +170,8 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
+
+      <DashboardOperationsPanel />
 
       <div className="admin-card">
         <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-gray-100"><h2 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base"><TrendingUp className="w-4 h-4 text-gray-400" />{bn ? "সাম্প্রতিক লিড" : "Recent Leads"}</h2><Link href="/sumon/leads" className="text-xs text-brand-600 hover:underline font-medium">{bn ? "সব দেখুন" : "View all"} →</Link></div>
