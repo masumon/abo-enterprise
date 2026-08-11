@@ -55,7 +55,7 @@ export default function AnimatedCounter({
 
   return (
     <span ref={ref} className={cn("tabular-nums", className)}>
-      {prefix}{value.toLocaleString()}{suffix}
+      {end <= 0 ? "—" : `${prefix}${value.toLocaleString()}${suffix}`}
     </span>
   );
 }

@@ -1,4 +1,4 @@
-"""Offline tests for the Operations module event buffers and route wiring."""
+"""Offline tests for the Operations module event buffers and persistent telemetry."""
 from __future__ import annotations
 
 import logging
@@ -12,7 +12,7 @@ from app.core import ops_events
 
 def test_error_capture_handler():
     ops_events.install_error_capture()
-    ops_events.install_error_capture()  # idempotent — no duplicate handlers
+    ops_events.install_error_capture()
     root = logging.getLogger()
     handlers = [h for h in root.handlers if isinstance(h, ops_events.RecentErrorsHandler)]
     assert len(handlers) == 1
@@ -22,7 +22,6 @@ def test_error_capture_handler():
     assert len(ops_events.recent_errors) == before + 1
     assert ops_events.recent_errors[0]["message"].startswith("boom-x")
     assert ops_events.recent_errors[0]["count"] == 1
-    # INFO must not be captured
     logging.getLogger("test.ops").info("quiet")
     assert len(ops_events.recent_errors) == before + 1
 
@@ -33,7 +32,6 @@ def test_identical_errors_are_deduplicated_with_count():
     log = logging.getLogger("test.ops.dedup")
     for _ in range(5):
         log.error("repeated failure")
-    # One entry, count 5 — not five separate rows flooding the panel
     matching = [e for e in ops_events.recent_errors if e["message"] == "repeated failure"]
     assert len(matching) == 1
     assert matching[0]["count"] == 5
@@ -48,8 +46,26 @@ def test_exception_message_is_summarized_not_full_traceback():
         logging.getLogger("test.ops.exc").error("db call failed", exc_info=True)
     msg = ops_events.recent_errors[0]["message"]
     assert "ConnectionRefusedError" in msg
-    assert "Traceback" not in msg  # the multi-line dump must NOT be stored
+    assert "Traceback" not in msg
     assert len(msg) <= 300
+
+
+def test_operational_buffers_are_bounded():
+    """Ephemeral diagnostics must remain bounded and never grow without limit."""
+    ops_events.recent_errors.clear()
+    ops_events.failed_emails.clear()
+    ops_events.failed_logins.clear()
+
+    for i in range(ops_events.recent_errors.maxlen + 50):
+        ops_events.recent_errors.append({"message": f"error-{i}"})
+    for i in range(ops_events.failed_emails.maxlen + 50):
+        ops_events.failed_emails.append({"at": i})
+    for i in range(ops_events.failed_logins.maxlen + 50):
+        ops_events.failed_logins.append({"at": i})
+
+    assert len(ops_events.recent_errors) == ops_events.recent_errors.maxlen
+    assert len(ops_events.failed_emails) == ops_events.failed_emails.maxlen
+    assert len(ops_events.failed_logins) == ops_events.failed_logins.maxlen
 
 
 def test_failed_email_and_login_are_masked():
@@ -62,6 +78,45 @@ def test_failed_email_and_login_are_masked():
     l = ops_events.failed_logins[0]
     assert l["ip"] == "1.2.3.4"
     assert "admin@example.com" not in l["email"]
+
+
+def test_operational_events_emit_persistent_telemetry_when_available(monkeypatch):
+    """Important operational events must have a restart-safe telemetry path."""
+    captured: list[tuple[str, str]] = []
+
+    monkeypatch.setattr("app.core.monitoring.sentry_enabled", lambda: True)
+
+    import sentry_sdk
+
+    monkeypatch.setattr(
+        sentry_sdk,
+        "capture_message",
+        lambda message, level="error": captured.append((message, level)),
+    )
+
+    ops_events.record_failed_email("customer@example.com", "Order email", "provider timeout")
+    ops_events.record_failed_login("1.2.3.4", "admin@example.com")
+
+    assert any(level == "error" and "Order email" in message for message, level in captured)
+    assert any(level == "warning" and message == "Admin login failed" for message, level in captured)
+    assert all("customer@example.com" not in message for message, _ in captured)
+    assert all("admin@example.com" not in message for message, _ in captured)
+
+
+def test_persistent_telemetry_failure_never_breaks_event_recording(monkeypatch):
+    monkeypatch.setattr("app.core.monitoring.sentry_enabled", lambda: True)
+
+    import sentry_sdk
+
+    def fail_capture(*_args, **_kwargs):
+        raise RuntimeError("telemetry unavailable")
+
+    monkeypatch.setattr(sentry_sdk, "capture_message", fail_capture)
+    ops_events.failed_emails.clear()
+    ops_events.record_failed_email("customer@example.com", "Order email", "provider timeout")
+
+    assert len(ops_events.failed_emails) == 1
+    assert ops_events.failed_emails[0]["subject"] == "Order email"
 
 
 def test_ops_routes_registered():

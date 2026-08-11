@@ -33,7 +33,12 @@ def _time_ago(dt: datetime) -> str:
 
 @router.get("/stats", response_model=ApiResponse)
 async def get_public_stats(db: AsyncSession = Depends(get_db)):
-    """Public aggregate stats for homepage trust indicators."""
+    """Public aggregate stats for homepage trust indicators.
+
+    Only metrics with trustworthy sources are returned. Customer/project
+    counts are intentionally unavailable because the current data model does
+    not provide a canonical customer or project count.
+    """
     total_orders = (await db.execute(
         select(func.count(Order.id)).where(Order.is_deleted == False)  # noqa: E712
     )).scalar() or 0
@@ -52,10 +57,6 @@ async def get_public_stats(db: AsyncSession = Depends(get_db)):
         )
     )).scalar() or 0
 
-    total_leads = (await db.execute(
-        select(func.count(LeadV2.id)).where(LeadV2.is_deleted == False)  # noqa: E712
-    )).scalar() or 0
-
     total_reviews = (await db.execute(
         select(func.count(Review.id)).where(Review.is_active == True)  # noqa: E712
     )).scalar() or 0
@@ -67,7 +68,7 @@ async def get_public_stats(db: AsyncSession = Depends(get_db)):
     first_order = (await db.execute(
         select(func.min(Order.created_at)).where(Order.is_deleted == False)  # noqa: E712
     )).scalar()
-    years = 5
+    years = None
     if first_order:
         if first_order.tzinfo is None:
             first_order = first_order.replace(tzinfo=timezone.utc)
@@ -77,8 +78,8 @@ async def get_public_stats(db: AsyncSession = Depends(get_db)):
         "orders": total_orders,
         "products": total_products,
         "services": total_services,
-        "clients": max(total_leads + total_orders, total_reviews, 500),
-        "projects": max(total_leads, 50),
+        "clients": None,
+        "projects": None,
         "years": years,
         "reviews": total_reviews,
         "average_rating": round(float(avg_rating), 1) if avg_rating is not None else None,

@@ -1,9 +1,9 @@
-"""In-process operational event buffers for the admin Operations panel.
+"""Operational diagnostics with bounded local buffers and persistent telemetry.
 
-Free-tier design: no new tables, no external services. Ring buffers hold
-the most recent events (lost on restart — Sentry covers persistence when
-SENTRY_DSN is set). Single-worker deployment (see rate_limit.py), so one
-process sees all traffic.
+The in-process buffers provide fast recent-event visibility for the Admin
+Operations panel. Important operational events are also sent to Sentry when
+persistent telemetry is configured, so process restarts do not make the
+in-memory buffers the only source of operational history.
 """
 from __future__ import annotations
 
@@ -25,27 +25,65 @@ def started_at() -> float:
     return _STARTED_AT
 
 
+def _capture_persistent_event(
+    message: str,
+    *,
+    level: str = "error",
+    event_type: str,
+    metadata: dict[str, Any] | None = None,
+) -> None:
+    """Best-effort persistent telemetry; never break the business operation."""
+    try:
+        from app.core.monitoring import sentry_enabled
+
+        if not sentry_enabled():
+            return
+        import sentry_sdk
+
+        with sentry_sdk.push_scope() as scope:
+            scope.set_tag("ops_event", event_type)
+            if metadata:
+                for key, value in metadata.items():
+                    scope.set_extra(key, value)
+            sentry_sdk.capture_message(message[:300], level=level)
+    except Exception:  # noqa: BLE001 — telemetry must never break business code
+        pass
+
+
 def record_failed_email(to: str, subject: str, error: str) -> None:
-    failed_emails.appendleft({
+    masked_to = (to[:3] + "…" + to.split("@")[-1]) if "@" in to else to[:6]
+    safe_subject = subject[:120]
+    safe_error = error[:300]
+    failed_emails.append({
         "at": time.time(),
-        # mask the recipient — ops readers don't need full addresses
-        "to": (to[:3] + "…" + to.split("@")[-1]) if "@" in to else to[:6],
-        "subject": subject[:120],
-        "error": error[:300],
+        "to": masked_to,
+        "subject": safe_subject,
+        "error": safe_error,
     })
+    _capture_persistent_event(
+        f"Email delivery failed: {safe_subject}",
+        event_type="failed_email",
+        metadata={"recipient": masked_to, "error": safe_error},
+    )
 
 
 def record_failed_login(ip: str, email: str) -> None:
-    failed_logins.appendleft({
+    masked_email = (email[:3] + "…@" + email.split("@")[-1]) if "@" in email else email[:6]
+    failed_logins.append({
         "at": time.time(),
         "ip": ip,
-        "email": (email[:3] + "…@" + email.split("@")[-1]) if "@" in email else email[:6],
+        "email": masked_email,
     })
+    _capture_persistent_event(
+        "Admin login failed",
+        level="warning",
+        event_type="failed_login",
+        metadata={"email": masked_email},
+    )
 
 
 def _clean_message(record: logging.LogRecord) -> str:
-    """Human-scannable one-liner: the log message + exception type/first line,
-    NOT the full multi-line traceback (that flooded the ops panel)."""
+    """Human-scannable one-liner without a full multi-line traceback."""
     msg = record.getMessage()
     if record.exc_info and record.exc_info[1] is not None:
         exc = record.exc_info[1]
@@ -57,14 +95,11 @@ def _clean_message(record: logging.LogRecord) -> str:
 
 
 class RecentErrorsHandler(logging.Handler):
-    """Captures ERROR+ records app-wide into the ring buffer, collapsing
-    identical repeats into a single entry with a count."""
+    """Capture ERROR+ records locally while persistent telemetry handles history."""
 
     def emit(self, record: logging.LogRecord) -> None:  # noqa: D102
         try:
             message = _clean_message(record)
-            # De-duplicate: if the same logger+message is already buffered,
-            # bump its count and timestamp instead of adding a new row.
             for entry in recent_errors:
                 if entry["logger"] == record.name and entry["message"] == message:
                     entry["count"] += 1
