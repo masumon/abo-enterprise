@@ -36,21 +36,36 @@ def _generate_booking_number() -> str:
     return f"BK-{year}-{''.join(random.choices(string.digits, k=6))}"
 
 
-def _calc_delivery_charge(district_hint: str, subtotal: float, settings_map: dict[str, str]) -> float:
+def _required_setting_amount(settings_map: dict[str, str], key: str, *aliases: str) -> float:
+    for candidate in (key, *aliases):
+        raw = settings_map.get(candidate)
+        if raw is not None and raw.strip():
+            try:
+                return float(raw)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid numeric setting: {candidate}") from exc
+    raise ValueError(f"Required setting is not configured: {key}")
+
+
+def _calc_delivery_charge(
+    district_hint: str,
+    subtotal: float,
+    *,
+    free_min: float,
+    sylhet_charge: float,
+    dhaka_charge: float,
+    outside_charge: float,
+) -> float:
     hint = district_hint.lower()
     is_sylhet = "sylhet" in hint or "সিলেট" in district_hint
-    free_min = float(settings_map.get("free_delivery_min_amount") or settings_map.get("free_delivery_min") or 2000)
-    # Free delivery is a Sylhet-only promise above the threshold.
+    # Free delivery is a Sylhet-only promise above the admin-configured threshold.
     if is_sylhet and subtotal >= free_min:
         return 0.0
-    sylhet = float(settings_map.get("delivery_charge_sylhet") or 60)
-    dhaka = float(settings_map.get("delivery_charge_dhaka") or 120)
-    outside = float(settings_map.get("delivery_charge_outside") or 130)
     if is_sylhet:
-        return sylhet
+        return sylhet_charge
     if any(d in hint for d in ("dhaka", "gazipur", "narayanganj", "ঢাকা")):
-        return dhaka
-    return outside
+        return dhaka_charge
+    return outside_charge
 
 
 class AutomationEngine:
@@ -161,6 +176,16 @@ class AutomationEngine:
         )
         settings_map = {s.key: s.value for s in settings_result.scalars().all()}
 
+        try:
+            free_delivery_min = _required_setting_amount(
+                settings_map, "free_delivery_min_amount", "free_delivery_min"
+            )
+            delivery_charge_sylhet = _required_setting_amount(settings_map, "delivery_charge_sylhet")
+            delivery_charge_dhaka = _required_setting_amount(settings_map, "delivery_charge_dhaka")
+            delivery_charge_outside = _required_setting_amount(settings_map, "delivery_charge_outside")
+        except ValueError as exc:
+            return {"error": str(exc)}
+
         order_items: list[OrderItem] = []
         subtotal = 0.0
 
@@ -191,16 +216,29 @@ class AutomationEngine:
             subtotal += line_subtotal
             order_items.append((product, qty, line_subtotal))
 
-        delivery_charge = _calc_delivery_charge(delivery_address, subtotal, settings_map)
+        delivery_charge = _calc_delivery_charge(
+            delivery_address,
+            subtotal,
+            free_min=free_delivery_min,
+            sylhet_charge=delivery_charge_sylhet,
+            dhaka_charge=delivery_charge_dhaka,
+            outside_charge=delivery_charge_outside,
+        )
         # A product's own delivery override wins when higher (single shipment) —
         # matches the website checkout (max of per-product overrides vs zone).
         overrides = [float(p.delivery_charge) for p, _, _ in order_items if getattr(p, "delivery_charge", None) is not None]
-        if overrides and subtotal < float(settings_map.get("free_delivery_min_amount") or settings_map.get("free_delivery_min") or 2000):
+        if overrides and subtotal < free_delivery_min:
             delivery_charge = max(delivery_charge, max(overrides))
         # Advance / prepaid — if any product is admin-flagged, an advance must be
         # collected before confirmation (order stays pending until advance_paid).
         needs_advance = any(getattr(p, "requires_advance", False) for p, _, _ in order_items)
-        advance_amount = float(settings_map.get("advance_delivery_charge") or 120) if needs_advance else 0.0
+        if needs_advance:
+            try:
+                advance_amount = _required_setting_amount(settings_map, "advance_delivery_charge")
+            except ValueError as exc:
+                return {"error": str(exc)}
+        else:
+            advance_amount = 0.0
         # Apply the coupon discount server-side (same rules as the website) so a
         # coupon the customer applied in chat actually reduces the total.
         discount_amount = 0.0
