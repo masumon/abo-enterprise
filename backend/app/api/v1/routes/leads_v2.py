@@ -109,6 +109,17 @@ async def create_lead(
     await db.commit()
     await db.refresh(lead)
 
+    from app.core.notifications import create_notification
+    await create_notification(
+        db,
+        type="new_lead",
+        severity="info",
+        title=f"New lead {lead.lead_number}",
+        body=f"{lead.name} — {lead.lead_type} (score {score})",
+        link=f"/sumon/leads?lead={lead.id}",
+        meta={"lead_id": str(lead.id), "score": score},
+    )
+
     budget_display = payload.budget_range or (
         f"৳{payload.budget_min:,.0f}–৳{payload.budget_max:,.0f}"
         if payload.budget_min and payload.budget_max

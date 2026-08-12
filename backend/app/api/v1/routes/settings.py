@@ -62,6 +62,7 @@ _PUBLIC_SETTING_PREFIXES = (
     "product_",
     "service_",
     "review_",
+    "legal_",
 )
 
 
@@ -114,6 +115,7 @@ def _is_cms_managed_setting_key(key: str) -> bool:
 _ADMIN_EDITABLE_SETTING_EXACT_KEYS = {
     "steadfast_api_key",
     "steadfast_secret_key",
+    "steadfast_webhook_token",
 }
 
 

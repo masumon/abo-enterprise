@@ -4,6 +4,7 @@ import type { PageRecord } from "@/lib/api";
 import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { jsonLdString } from "@/lib/metadata";
+import BlogPostActions from "@/app/blog/[slug]/BlogPostActions";
 
 const API_BASE = getApiBaseUrl();
 
@@ -77,10 +78,12 @@ export default async function CmsPage({
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
       <main className="min-h-screen page-surface">
         <div className="max-w-3xl mx-auto px-4 py-12">
-          <h1 className="text-2xl sm:text-3xl font-bold text-heading mb-6">{page.title_en}</h1>
-          <div className="prose prose-sm sm:prose-base max-w-none whitespace-pre-line text-[var(--ink)]">
-            {page.content_en}
-          </div>
+          <BlogPostActions
+            titleEn={page.title_en}
+            titleBn={page.title_bn}
+            contentEn={page.content_en}
+            contentBn={page.content_bn}
+          />
         </div>
       </main>
     </>

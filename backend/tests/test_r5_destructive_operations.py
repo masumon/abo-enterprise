@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy.orm import Session
 from starlette.requests import Request
 
-from app.api.v1.routes.admin_settings import delete_payment_method
+from app.api.v1.routes.payment_methods import delete_payment_method
 from app.api.v1.routes.assistant import delete_assistant_log, list_assistant_logs, router
 from app.api.v1.routes.email_templates import delete_email_template
 from app.core.admin_safety import (

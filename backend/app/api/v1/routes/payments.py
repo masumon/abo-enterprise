@@ -74,6 +74,22 @@ async def _upsert_sslcommerz_transaction(
     await db.commit()
 
 
+async def _mark_booking_paid(db: AsyncSession, booking_id) -> BookingV2 | None:
+    """Shared success handler for a completed booking payment, regardless of
+    gateway — mirrors the order-side InvoiceService.mark_order_invoice_paid."""
+    result = await db.execute(select(BookingV2).where(BookingV2.id == booking_id))
+    booking = result.scalar_one_or_none()
+    if booking and booking.payment_status not in ("paid", "completed"):
+        if booking.advance_amount and not booking.advance_paid:
+            booking.advance_paid = True
+        else:
+            booking.payment_status = "paid"
+        if booking.status == "pending":
+            booking.status = "confirmed"
+        await db.commit()
+    return booking
+
+
 def _verify_bkash_webhook(body: bytes, signature: str) -> bool:
     """HMAC-SHA256 verification using BKASH_APP_SECRET as key."""
     if not settings.BKASH_APP_SECRET:
@@ -154,22 +170,23 @@ async def verify_bkash_payment(
         transaction.raw_response = verify_result.get("raw_data", {})
         await db.commit()
 
-        if transaction.status == "Completed":
-            order_result = await db.execute(
-                select(Order).where(Order.id == transaction.order_id)
-            )
+        order = None
+        booking = None
+        if transaction.order_id:
+            order_result = await db.execute(select(Order).where(Order.id == transaction.order_id))
             order = order_result.scalar_one_or_none()
-            if order:
+            if transaction.status == "Completed" and order:
                 order.payment_status = "completed"
                 if order.order_status == "pending":
                     order.order_status = "confirmed"
                 await InvoiceService(db).mark_order_invoice_paid(order.id)
                 await db.commit()
-
-        order_result = await db.execute(
-            select(Order).where(Order.id == transaction.order_id)
-        )
-        order = order_result.scalar_one_or_none()
+        elif transaction.booking_id:
+            if transaction.status == "Completed":
+                booking = await _mark_booking_paid(db, transaction.booking_id)
+            else:
+                booking_result = await db.execute(select(BookingV2).where(BookingV2.id == transaction.booking_id))
+                booking = booking_result.scalar_one_or_none()
 
         return {
             "success": transaction.status == "Completed",
@@ -177,13 +194,143 @@ async def verify_bkash_payment(
             "transaction_id": str(transaction.id),
             "status": transaction.status,
             "order_number": order.order_number if order else None,
-            "customer_phone": order.customer_phone if order else None,
+            "booking_number": booking.booking_number if booking else None,
+            "customer_phone": (order or booking).customer_phone if (order or booking) else None,
         }
     except HTTPException:
         raise
     except Exception as e:
         logger.error("bkash verify error: %s", e, exc_info=e)
         raise HTTPException(status_code=400, detail="Payment verification failed")
+
+
+@router.post("/bkash/initiate-booking", response_model=PaymentResponseModel)
+async def initiate_bkash_booking_payment(
+    request: BookingPaymentInitiateRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """bKash checkout for a service booking — mirrors initiate_sslcommerz_booking_payment.
+
+    Amount is server-derived the same way: outstanding advance if one is due,
+    otherwise the settled/quoted price. Never taken from the client.
+    """
+    from app.api.v1.routes.bookings_v2 import _phone_matches
+
+    booking = (await db.execute(
+        select(BookingV2).where(
+            BookingV2.id == request.booking_id,
+            BookingV2.is_deleted == False,  # noqa: E712
+        )
+    )).scalar_one_or_none()
+    if not booking or not _phone_matches(booking.customer_phone, request.phone):
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if booking.payment_status in ("paid", "completed"):
+        raise HTTPException(status_code=409, detail="This booking is already paid")
+
+    advance_due = float(booking.advance_amount or 0) if not booking.advance_paid else 0.0
+    amount = advance_due or float(booking.final_price or booking.quoted_price or 0)
+    if amount <= 0:
+        raise HTTPException(
+            status_code=409,
+            detail="This booking has no amount to pay yet. We'll confirm the price with you first.",
+        )
+
+    try:
+        payment_link = await get_bkash_gateway().create_payment_link(
+            amount=Decimal(str(amount)),
+            invoice_id=booking.booking_number,
+            customer_phone=booking.customer_phone,
+            customer_name=booking.customer_name,
+        )
+        if not payment_link:
+            raise HTTPException(status_code=400, detail="Failed to create payment link")
+
+        transaction = BkashTransaction(
+            booking_id=booking.id,
+            bkash_transaction_id=payment_link.get("payment_id", ""),
+            payment_id=payment_link.get("payment_id"),
+            amount=Decimal(str(amount)),
+            status="Initiated",
+        )
+        db.add(transaction)
+        await db.commit()
+        await db.refresh(transaction)
+
+        return {
+            "success": True,
+            "payment_url": payment_link.get("bkash_url"),
+            "payment_gateway": "bkash",
+            "transaction_id": str(transaction.id),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("bkash booking initiate error: %s", e, exc_info=e)
+        raise HTTPException(status_code=400, detail="Payment initiation failed")
+
+
+@router.post("/nagad/initiate-booking", response_model=PaymentResponseModel)
+async def initiate_nagad_booking_payment(
+    request: BookingPaymentInitiateRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    """Nagad checkout for a service booking — mirrors initiate_sslcommerz_booking_payment."""
+    from app.api.v1.routes.bookings_v2 import _phone_matches
+
+    booking = (await db.execute(
+        select(BookingV2).where(
+            BookingV2.id == request.booking_id,
+            BookingV2.is_deleted == False,  # noqa: E712
+        )
+    )).scalar_one_or_none()
+    if not booking or not _phone_matches(booking.customer_phone, request.phone):
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if booking.payment_status in ("paid", "completed"):
+        raise HTTPException(status_code=409, detail="This booking is already paid")
+
+    advance_due = float(booking.advance_amount or 0) if not booking.advance_paid else 0.0
+    amount = advance_due or float(booking.final_price or booking.quoted_price or 0)
+    if amount <= 0:
+        raise HTTPException(
+            status_code=409,
+            detail="This booking has no amount to pay yet. We'll confirm the price with you first.",
+        )
+
+    try:
+        payment_link = await get_nagad_gateway().create_payment_link(
+            amount=Decimal(str(amount)),
+            invoice_id=booking.booking_number,
+            customer_phone=booking.customer_phone,
+            customer_name=booking.customer_name,
+        )
+        if not payment_link:
+            raise HTTPException(status_code=400, detail="Failed to create payment link")
+
+        transaction = NagadTransaction(
+            booking_id=booking.id,
+            nagad_reference_id=payment_link.get("session_id", ""),
+            merchant_order_id=booking.booking_number,
+            amount=Decimal(str(amount)),
+            merchant_number=settings.NAGAD_MERCHANT_NUMBER,
+            status="Initiated",
+        )
+        db.add(transaction)
+        await db.commit()
+        await db.refresh(transaction)
+
+        return {
+            "success": True,
+            "payment_url": payment_link.get("payment_url"),
+            "payment_gateway": "nagad",
+            "transaction_id": str(transaction.id),
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("nagad booking initiate error: %s", e, exc_info=e)
+        raise HTTPException(status_code=400, detail="Payment initiation failed")
 
 
 @router.post("/nagad/initiate", response_model=PaymentResponseModel)
@@ -258,22 +405,23 @@ async def verify_nagad_payment(
         transaction.raw_response = verify_result.get("raw_data", {})
         await db.commit()
 
-        if is_completed:
-            order_result = await db.execute(
-                select(Order).where(Order.id == transaction.order_id)
-            )
+        order = None
+        booking = None
+        if transaction.order_id:
+            order_result = await db.execute(select(Order).where(Order.id == transaction.order_id))
             order = order_result.scalar_one_or_none()
-            if order:
+            if is_completed and order:
                 order.payment_status = "completed"
                 if order.order_status == "pending":
                     order.order_status = "confirmed"
                 await InvoiceService(db).mark_order_invoice_paid(order.id)
                 await db.commit()
-
-        order_result = await db.execute(
-            select(Order).where(Order.id == transaction.order_id)
-        )
-        order = order_result.scalar_one_or_none()
+        elif transaction.booking_id:
+            if is_completed:
+                booking = await _mark_booking_paid(db, transaction.booking_id)
+            else:
+                booking_result = await db.execute(select(BookingV2).where(BookingV2.id == transaction.booking_id))
+                booking = booking_result.scalar_one_or_none()
 
         return {
             "success": is_completed,
@@ -281,7 +429,8 @@ async def verify_nagad_payment(
             "transaction_id": str(transaction.id),
             "status": transaction.status,
             "order_number": order.order_number if order else None,
-            "customer_phone": order.customer_phone if order else None,
+            "booking_number": booking.booking_number if booking else None,
+            "customer_phone": (order or booking).customer_phone if (order or booking) else None,
         }
     except HTTPException:
         raise
@@ -529,16 +678,7 @@ async def sslcommerz_webhook(
                 await InvoiceService(db).mark_order_invoice_paid(order.id)
                 await db.commit()
         elif is_valid and transaction.booking_id:
-            booking_result = await db.execute(select(BookingV2).where(BookingV2.id == transaction.booking_id))
-            booking = booking_result.scalar_one_or_none()
-            if booking and booking.payment_status not in ("paid", "completed"):
-                if booking.advance_amount and not booking.advance_paid:
-                    booking.advance_paid = True
-                else:
-                    booking.payment_status = "paid"
-                if booking.status == "pending":
-                    booking.status = "confirmed"
-                await db.commit()
+            await _mark_booking_paid(db, transaction.booking_id)
 
         return {"success": True}
     except HTTPException:

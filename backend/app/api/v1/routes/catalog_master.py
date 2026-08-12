@@ -56,7 +56,7 @@ async def list_brands(search: str | None = Query(None), include_inactive: bool =
     brands = (await db.execute(select(Brand).where(and_(*conditions)).order_by(Brand.sort_order.asc(), Brand.name_en.asc()).offset((page - 1) * per_page).limit(per_page))).scalars().all()
     data = []
     for brand in brands:
-        count = (await db.execute(select(func.count(Product.id)).where(Product.is_deleted == False, or_(Product.brand.ilike(brand.slug), Product.brand.ilike(brand.name_en), Product.brand.ilike(brand.name_bn or "__none__"))))).scalar_one()  # noqa: E712
+        count = (await db.execute(select(func.count(Product.id)).where(Product.is_deleted == False, Product.brand_id == brand.id))).scalar_one()  # noqa: E712
         data.append(_brand_data(brand, count))
     return PaginatedResponse(data=data, meta=PaginatedMeta(page=page, per_page=per_page, total=total, total_pages=max(1, -(-total // per_page))))
 
@@ -94,7 +94,7 @@ async def link_product_to_brand(brand_id: UUID, payload: BrandProductLink, db: A
     brand = (await db.execute(select(Brand).where(Brand.id == brand_id, Brand.is_deleted == False, Brand.is_active == True))).scalar_one_or_none()  # noqa: E712
     product = (await db.execute(select(Product).where(Product.id == payload.product_id, Product.is_deleted == False))).scalar_one_or_none()  # noqa: E712
     if not brand or not product: raise HTTPException(status_code=404, detail="Brand or product not found")
-    old_brand = product.brand; product.brand = brand.name_en
+    old_brand = product.brand; product.brand = brand.name_en; product.brand_id = brand.id
     db.add(ActivityLog(admin_id=UUID(admin_id), action="update", entity_type="product", entity_id=product.id, old_values={"brand": old_brand}, new_values={"brand": brand.name_en, "brand_master_id": str(brand.id)}))
     await db.commit()
     return ApiResponse(data={"product_id": str(product.id), "brand": brand.name_en}, message="Product linked to brand")

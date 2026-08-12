@@ -43,17 +43,17 @@ describe("Homepage", () => {
   // returns {}) when there's no backend to reach, so no network mock is
   // needed here.
   it("renders the hero section", async () => {
-    render(await HomePage());
+    render(await HomePage({}));
     expect(screen.getByText("Hero Section")).toBeInTheDocument();
   });
 
   it("renders the hero section container", async () => {
-    const { container } = render(await HomePage());
+    const { container } = render(await HomePage({}));
     expect(container.querySelector("section")).toBeTruthy();
   });
 
   it("does not fabricate business contact data when runtime settings are unavailable", async () => {
-    const { container } = render(await HomePage());
+    const { container } = render(await HomePage({}));
     const jsonLd = Array.from(container.querySelectorAll('script[type="application/ld+json"]'))
       .map((script) => script.textContent ?? "")
       .join("\n");

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Download, Loader2, BarChart3 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { reportsApi, downloadCsv, type ReportType } from "@/lib/api";
@@ -32,7 +33,11 @@ function formatCell(value: unknown): string {
 
 export default function AdminReportsPage() {
   const toast = useToastStore((s) => s.push);
-  const [report, setReport] = useState<ReportType>("sales");
+  const searchParams = useSearchParams();
+  const [report, setReport] = useState<ReportType>(() => {
+    const requested = searchParams.get("report");
+    return REPORT_TABS.some((t) => t.value === requested) ? (requested as ReportType) : "sales";
+  });
   const [startDate, setStartDate] = useState(() => toDateInput(new Date(Date.now() - 30 * 86400000)));
   const [endDate, setEndDate] = useState(() => toDateInput(new Date()));
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);

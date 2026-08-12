@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, ExternalLink, Search, X, ChevronDown } from "lucide-react";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { useAlertStore } from "@/store/alerts";
 import { useLanguageStore } from "@/store/language";
 import BrandLogo from "@/components/ui/BrandLogo";
+import { adminApi } from "@/lib/api";
 import {
   ADMIN_EXTERNAL_LINKS,
   ADMIN_NAV_GROUPS,
@@ -51,11 +52,28 @@ export default function AdminSidebar({
   const filterText = query.trim().toLowerCase();
 
   const role = (adminRole as AdminRole | undefined);
+
+  // Real backend permission set for this role (app.core.rbac.ROLE_PERMISSIONS,
+  // served by GET /admin/roles-permissions) — the actual source of truth,
+  // checked for nav items that carry a `permission`. Falls back to minRole
+  // for items not yet mapped, or if this hasn't loaded yet.
+  const [permissions, setPermissions] = useState<string[] | undefined>(undefined);
+  useEffect(() => {
+    let active = true;
+    adminApi.getRolesPermissions()
+      .then((r) => {
+        if (!active || !role) return;
+        setPermissions(r.data.data?.permissions?.[role]);
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [role]);
+
   const filteredGroups = useMemo(() => {
     // First hide items the current role can't use, then apply the search text.
     const rolescoped = ADMIN_NAV_GROUPS.map((group) => ({
       ...group,
-      items: group.items.filter((item) => canSeeNavItem(item, role)),
+      items: group.items.filter((item) => canSeeNavItem(item, role, permissions)),
     })).filter((g) => g.items.length > 0);
     if (!filterText) return rolescoped;
     return rolescoped
@@ -68,7 +86,7 @@ export default function AdminSidebar({
         ),
       }))
       .filter((g) => g.items.length > 0);
-  }, [filterText, role]);
+  }, [filterText, role, permissions]);
 
   const renderNavItem = (item: AdminNavItem) => {
     const active = !item.external && isActive(item.href, item.exact);

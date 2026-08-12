@@ -61,7 +61,7 @@ export default function AuthSplitLayout({ children, title, subtitle, badge }: Au
           </p>
           <ul className="space-y-3 text-sm text-white/70">
             {[
-              lang === "bn" ? "৫০০+ সন্তুষ্ট গ্রাহক" : "500+ happy clients",
+              lang === "bn" ? "২০১৭ সাল থেকে প্রতিষ্ঠিত" : "Trading since 2017",
               lang === "bn" ? "পণ্য, সেবা ও সফটওয়্যার" : "Products, services & software",
               lang === "bn" ? "২৪/৭ WhatsApp সাপোর্ট" : "24/7 WhatsApp support",
             ].map((item) => (

@@ -765,6 +765,9 @@ export const adminApi = {
   deactivateUser: (id: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/admin/users/${id}`),
 
+  getRolesPermissions: () =>
+    api.get<ApiResponse<{ roles: string[]; permissions: Record<string, string[]> }>>("/api/v1/admin/roles-permissions"),
+
   listPaymentTransactions: (params?: { gateway?: string; status?: string; page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<{
       id: string;
@@ -791,6 +794,13 @@ export const adminApi = {
       notes: string | null;
       created_at: string;
     }>>("/api/v1/admin/payment-reconciliation", { params: { page } }),
+
+  runPaymentReconciliation: (reconciliation_date?: string) =>
+    api.post<ApiResponse<Array<{ payment_gateway: string; reconciliation_status: string; total_transactions: number }>>>(
+      "/api/v1/admin/payment-reconciliation/run",
+      null,
+      { params: reconciliation_date ? { reconciliation_date } : undefined }
+    ),
 
   listAuditLogs: (params: { page?: number; per_page?: number; action?: string; entity_type?: string; search?: string } = {}) =>
     api.get<PaginatedResponse<{ id: string; action: string; entity_type: string; entity_id: string | null; created_at: string; admin_email?: string }>>("/api/v1/admin/audit-logs", { params }),

@@ -5,12 +5,15 @@ import { MessageCircle } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import LegalPageLayout, { type LegalSection } from "@/components/layout/LegalPageLayout";
 import PageHero from "@/components/ui/PageHero";
+import { useLegalPageOverride } from "@/hooks/useLegalPageOverride";
 
 const LAST_UPDATED = "2026-07-25";
 
 export default function RefundPage() {
   const { lang } = useLanguageStore();
   const isBn = lang === "bn";
+  const pageTitle = isBn ? "রিফান্ড নীতি" : "Refund Policy";
+  const overrideSections = useLegalPageOverride("refund", pageTitle, isBn);
 
   const sections: LegalSection[] = [
     {
@@ -118,12 +121,12 @@ export default function RefundPage() {
       <PageHero
         pageKey="refund"
         variant="light"
-        title={isBn ? "রিফান্ড নীতি" : "Refund Policy"}
+        title={pageTitle}
         breadcrumbs={[{ label: isBn ? "রিফান্ড" : "Refund" }]}
       />
       <LegalPageLayout
-        title={isBn ? "রিফান্ড নীতি" : "Refund Policy"}
-        sections={sections}
+        title={pageTitle}
+        sections={overrideSections ?? sections}
         showTitle={false}
         lastUpdated={LAST_UPDATED}
       />

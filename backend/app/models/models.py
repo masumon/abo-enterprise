@@ -46,6 +46,11 @@ class Product(Base):
     sku: Mapped[str | None] = mapped_column(String(100), index=True)
     barcode: Mapped[str | None] = mapped_column(String(100))
     brand: Mapped[str | None] = mapped_column(String(100))
+    # FK counterpart of the legacy `brand` text column (alembic 0033); a DB
+    # trigger keeps this synced from `brand` on insert/update.
+    brand_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("brands.id", ondelete="SET NULL"), index=True
+    )
     sub_category: Mapped[str | None] = mapped_column(String(100))
     # Unified taxonomy FKs (additive; `category`/`sub_category` strings kept as cache).
     category_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -134,6 +139,11 @@ class Order(Base):
     courier_tracking_id: Mapped[str | None] = mapped_column(String(100))
     # Steadfast consignment id, saved when an order is pushed to the courier.
     courier_consignment_id: Mapped[str | None] = mapped_column(String(50))
+    # Real delivery status reported by the courier's webhook (Steadfast:
+    # pending/delivered/partial_delivered/cancelled/hold/in_review/unknown/
+    # *_approval_pending). NULL until the first callback arrives.
+    courier_status: Mapped[str | None] = mapped_column(String(50))
+    courier_status_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Institutional invoice identity (manual_sql/0009). All NULL on a personal
     # order, which is exactly how every existing row behaves.
     company_name: Mapped[str | None] = mapped_column(String(255))

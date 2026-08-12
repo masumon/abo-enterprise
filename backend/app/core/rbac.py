@@ -1,5 +1,4 @@
 from fastapi import HTTPException, status
-from functools import wraps
 
 ROLE_PERMISSIONS = {
     "super_admin": ["*"],
@@ -21,6 +20,7 @@ ROLE_PERMISSIONS = {
         "career.read", "career.write",
         "invoices.read", "invoices.write",
         "email_templates.read", "email_templates.write",
+        "email.send",
         "ops.read", "ops.write",
         "payments.read", "payments.write",
         "audit_logs.read",
@@ -46,16 +46,6 @@ ROLE_PERMISSIONS = {
 def has_permission(role: str, permission: str) -> bool:
     perms = ROLE_PERMISSIONS.get(role, [])
     return "*" in perms or permission in perms
-
-
-def require_permission(permission: str):
-    """Decorator for route-level permission check"""
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            return await func(*args, **kwargs)
-        return wrapper
-    return decorator
 
 
 def check_role(user_role: str, required_permission: str):

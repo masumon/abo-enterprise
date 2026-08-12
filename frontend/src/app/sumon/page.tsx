@@ -101,8 +101,8 @@ export default function AdminDashboard() {
   const h = new Date().getHours();
   const greetBn = h < 12 ? "সুপ্রভাত" : h < 17 ? "শুভ অপরাহ্ন" : "শুভ সন্ধ্যা";
   const greetEn = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-  const revenueTotal = analytics?.revenue.total ?? null;
-  const revenueTrend = analytics?.trends.revenue_pct ?? null;
+  const revenueTotal = analytics?.revenue?.total ?? null;
+  const revenueTrend = analytics?.trends?.revenue_pct ?? null;
   const conversionRate = analytics?.conversion_rate ?? null;
   const failedPayments = ops?.failed_payments?.length ?? null;
   const lowStock = inventory?.low_stock ?? null;
@@ -164,8 +164,8 @@ export default function AdminDashboard() {
           <div className="px-4 sm:px-5 py-4 border-b border-gray-100"><h2 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base"><BarChart3 className="w-4 h-4 text-gray-400" />{bn ? "ব্যবসার পালস" : "Business pulse"}</h2></div>
           <div className="p-4 sm:p-5 space-y-4">
             <div><p className="text-xs text-gray-500">{bn ? "লিড → জয় রূপান্তর" : "Lead → won conversion"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{conversionRate == null ? "—" : `${conversionRate}%`}</p></div>
-            <div><p className="text-xs text-gray-500">{bn ? "৩০ দিনে লিড" : "Leads in 30d"}</p><p className="text-lg font-semibold text-gray-900 mt-1">{analytics?.counts.leads ?? "—"}</p></div>
-            <div><p className="text-xs text-gray-500">{bn ? "৩০ দিনে বুকিং" : "Bookings in 30d"}</p><p className="text-lg font-semibold text-gray-900 mt-1">{analytics?.counts.bookings ?? "—"}</p></div>
+            <div><p className="text-xs text-gray-500">{bn ? "৩০ দিনে লিড" : "Leads in 30d"}</p><p className="text-lg font-semibold text-gray-900 mt-1">{analytics?.counts?.leads ?? "—"}</p></div>
+            <div><p className="text-xs text-gray-500">{bn ? "৩০ দিনে বুকিং" : "Bookings in 30d"}</p><p className="text-lg font-semibold text-gray-900 mt-1">{analytics?.counts?.bookings ?? "—"}</p></div>
             <Link href="/sumon/analytics" className="block text-xs text-brand-600 hover:underline font-medium pt-1">{bn ? "বিস্তারিত অ্যানালিটিক্স →" : "Open analytics →"} </Link>
           </div>
         </div>
