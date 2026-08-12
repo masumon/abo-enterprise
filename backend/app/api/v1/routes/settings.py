@@ -215,9 +215,6 @@ async def upsert_settings(
         )
         setting = result.scalar_one_or_none()
         if setting:
-            # CMS-owned settings and explicitly admin-managed integration
-            # credentials remain editable by the authorized admin even when a
-            # legacy row was created with is_editable=false.
             if (
                 not setting.is_editable
                 and not _is_cms_managed_setting_key(item.key)
@@ -230,7 +227,6 @@ async def upsert_settings(
                 setting.data_type = item.data_type
             if item.description is not None:
                 setting.description = item.description
-            # Ensure sensitive keys stay masked in API responses.
             if _is_secret_key(item.key):
                 setting.is_secret = True
         else:
@@ -291,7 +287,15 @@ async def update_setting(
     if not setting:
         raise HTTPException(status_code=404, detail="Setting not found")
 
-    if not setting.is_editable:
+    # Keep the single-key update path consistent with the CMS/upsert runtime
+    # binding contract. Customer-facing CMS settings and the explicitly allowed
+    # admin-managed integration credentials may be edited by an authorized
+    # settings.write operator even when legacy rows carry is_editable=false.
+    if (
+        not setting.is_editable
+        and not _is_cms_managed_setting_key(key)
+        and not _is_admin_editable_setting_key(key)
+    ):
         raise HTTPException(status_code=403, detail="This setting is not editable")
 
     old_value = setting.value
