@@ -39,6 +39,14 @@ interface StatsData {
   projects: number;
 }
 
+export function getFreeDeliveryLabel(lang: "bn" | "en", rawAmount: string): string | null {
+  const amount = rawAmount.trim();
+  if (!amount) return null;
+  return lang === "bn"
+    ? `সিলেটে ফ্রি ডেলিভারি ৳${amount}+`
+    : `Free Sylhet delivery ৳${amount}+`;
+}
+
 export default function Hero() {
   const { lang } = useLanguageStore();
   const t = useT();
@@ -61,6 +69,7 @@ export default function Hero() {
     : getSettingValue(settings, "hero_subtitle_en") || t("hero_sub");
   const heroCtaText = getSettingValue(settings, "hero_cta_text");
   const heroCtaUrl = getSettingValue(settings, "hero_cta_url", "/products");
+  const freeDeliveryLabel = getFreeDeliveryLabel(lang, getSettingValue(settings, "free_delivery_min_amount"));
   const hstyle = parseHeroTextStyle(getSettingValue(settings, HERO_TEXT_STYLE_KEY));
 
   useEffect(() => {
@@ -96,16 +105,16 @@ export default function Hero() {
               {heroTitleOverride
                 ? (lang === "bn"
                     ? "Sylhet's store, service desk and software team."
-                    : "সিলেটের দোকান, সেবা ও সফটওয়্যার টিম")
+                    : "সিলেটের দোকান, service desk and software team.")
                 : (lang === "bn"
                     ? "Sylhet's store, service desk and software team."
-                    : "সিলেটের দোকান, সেবা ও সফটওয়্যার টিম")}
+                    : "সিলেটের দোকান, service desk and software team.")}
             </span>
           </h1>
           <p>
             {lang === "bn"
-              ? "সারাদেশে নগদে ডেলিভারি · ২০১৭ সাল থেকে"
-              : "Cash on delivery across Bangladesh · Since 2017"}
+              ? "সারাদেশে নগদে ডেলিভারি"
+              : "Cash on delivery across Bangladesh"}
           </p>
         </div>
 
@@ -168,9 +177,11 @@ export default function Hero() {
                     <Zap className="w-3.5 h-3.5 text-yellow-300" aria-hidden />
                     {t("hero_badge")}
                   </div>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-600/80 backdrop-blur-sm text-white border border-green-300/40 shadow-sm">
-                    🚚 {lang === "bn" ? `সিলেটে ফ্রি ডেলিভারি ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+` : `Free Sylhet delivery ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+`}
-                  </span>
+                  {freeDeliveryLabel && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-600/80 backdrop-blur-sm text-white border border-green-300/40 shadow-sm">
+                      🚚 {freeDeliveryLabel}
+                    </span>
+                  )}
                 </div>
 
                 <h1
