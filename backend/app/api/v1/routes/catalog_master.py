@@ -100,6 +100,7 @@ async def link_product_to_brand(brand_id: UUID, payload: BrandProductLink, db: A
     return ApiResponse(data={"product_id": str(product.id), "brand": brand.name_en}, message="Product linked to brand")
 
 @router.get("/inventory/summary", response_model=ApiResponse)
+@router.get("/admin/inventory/summary", response_model=ApiResponse)
 async def inventory_summary(db: AsyncSession = Depends(get_db), _admin: str = Depends(require_role("products.read"))):
     total = (await db.execute(select(func.count(Product.id)).where(Product.is_deleted == False))).scalar_one()  # noqa: E712
     low = (await db.execute(select(func.count(Product.id)).where(Product.is_deleted == False, Product.stock_quantity <= Product.low_stock_threshold))).scalar_one()  # noqa: E712

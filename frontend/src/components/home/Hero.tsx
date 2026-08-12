@@ -9,7 +9,6 @@ import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import { publicApi } from "@/lib/api";
 import { ABO_ACRONYM, getBrandName, getBrandTagline } from "@/lib/tokens";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
-import { MARKETING_STATS } from "@/lib/siteDefaults";
 import { resolveHomeBannerImage } from "@/lib/pageBanners";
 import { isVideoUrl } from "@/lib/media";
 import AutoVideo from "@/components/ui/AutoVideo";
@@ -40,27 +39,12 @@ interface StatsData {
   projects: number;
 }
 
-const FALLBACK_STATS: StatsData = {
-  orders: MARKETING_STATS.orders,
-  services: MARKETING_STATS.services,
-  clients: MARKETING_STATS.clients,
-  projects: MARKETING_STATS.projects,
-};
-const FALLBACK_ACTIVITY: ActivityItem[] = [
-  { icon: "🛒", text_en: "New order received", text_bn: "নতুন অর্ডার", time: "—" },
-  { icon: "📅", text_en: "Booking confirmed", text_bn: "বুকিং নিশ্চিত", time: "—" },
-];
-
-function displayStat(actual: number, floor: number): number {
-  return actual > 0 ? actual : floor;
-}
-
 export default function Hero() {
   const { lang } = useLanguageStore();
   const t = useT();
   const { settings } = usePublicSettings(["hero_image_url", "hero_mobile_image_url", "hero_promo_media_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "free_delivery_min_amount", HERO_TEXT_STYLE_KEY]);
-  const [stats, setStats] = useState<StatsData>(FALLBACK_STATS);
-  const [activity, setActivity] = useState<ActivityItem[]>(FALLBACK_ACTIVITY);
+  const [stats, setStats] = useState<StatsData | null>(null);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
 
   const heroImage = resolveHomeBannerImage(settings);
   const heroIsVideo = isVideoUrl(heroImage);
@@ -83,10 +67,10 @@ export default function Hero() {
     publicApi.stats().then((r) => {
       const d = r.data.data;
       if (d) setStats({
-        orders: displayStat(d.orders ?? 0, MARKETING_STATS.orders),
-        services: displayStat(d.services ?? 0, MARKETING_STATS.services),
-        clients: displayStat(d.clients ?? 0, MARKETING_STATS.clients),
-        projects: displayStat(d.projects ?? 0, MARKETING_STATS.projects),
+        orders: d.orders ?? 0,
+        services: d.services ?? 0,
+        clients: d.clients ?? 0,
+        projects: d.projects ?? 0,
       });
     }).catch(() => {});
     publicApi.activity().then((r) => {
@@ -270,15 +254,15 @@ export default function Hero() {
 
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     {[
-                      { label: lang === "bn" ? "অর্ডার" : "Orders", end: stats.orders, suffix: "+", icon: "📦" },
-                      { label: lang === "bn" ? "সেবা" : "Services", end: stats.services, suffix: "+", icon: "⚙️" },
-                      { label: lang === "bn" ? "গ্রাহক" : "Clients", end: stats.clients, suffix: "+", icon: "👥" },
-                      { label: lang === "bn" ? "প্রজেক্ট" : "Projects", end: stats.projects, suffix: "+", icon: "🚀" },
+                      { label: lang === "bn" ? "অর্ডার" : "Orders", end: stats?.orders, suffix: "+", icon: "📦" },
+                      { label: lang === "bn" ? "সেবা" : "Services", end: stats?.services, suffix: "+", icon: "⚙️" },
+                      { label: lang === "bn" ? "গ্রাহক" : "Clients", end: stats?.clients, suffix: "+", icon: "👥" },
+                      { label: lang === "bn" ? "প্রজেক্ট" : "Projects", end: stats?.projects, suffix: "+", icon: "🚀" },
                     ].map((item) => (
                       <div key={item.label} className="glass-panel rounded-xl p-3.5 animate-scale-in">
                         <span className="text-xl" aria-hidden>{item.icon}</span>
                         <p className="text-white font-bold text-lg mt-1">
-                          <AnimatedCounter end={item.end} suffix={item.suffix} />
+                          {item.end === undefined ? "—" : <AnimatedCounter end={item.end} suffix={item.suffix} />}
                         </p>
                         <p className="text-white/60 text-xs">{item.label}</p>
                       </div>
@@ -289,7 +273,7 @@ export default function Hero() {
                     <p className="text-white/50 text-xs font-medium uppercase tracking-wider">
                       {lang === "bn" ? "সাম্প্রতিক কার্যক্রম" : "Recent Activity"}
                     </p>
-                    {activity.map((item, i) => (
+                    {activity.length ? activity.map((item, i) => (
                       <div key={i} className="flex items-center gap-3 py-2 border-b border-white/10 last:border-0">
                         <span aria-hidden>{item.icon}</span>
                         <span className="text-xs flex-1 text-white/80">
@@ -297,7 +281,11 @@ export default function Hero() {
                         </span>
                         <span className="text-white/40 text-[10px]">{item.time}</span>
                       </div>
-                    ))}
+                    )) : (
+                      <p className="text-white/50 text-xs py-2">
+                        {lang === "bn" ? "সাম্প্রতিক কার্যক্রমের ডেটা নেই" : "No recent activity data"}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

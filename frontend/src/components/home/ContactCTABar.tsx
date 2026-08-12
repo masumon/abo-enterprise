@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Phone, Facebook, MessageCircle, Youtube, Instagram } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
@@ -33,16 +33,29 @@ export default function ContactCTABar() {
     { href: getSettingValue(settings, "instagram_url"), icon: Instagram, label: "Instagram", bg: "bg-gradient-to-br from-[#f09433] via-[#e6683c] to-[#bc1888] hover:opacity-90" },
   ].filter((l) => l.href);
 
-  // Mobile-only RTL ticker. A moving phone number/social icons are harder to
-  // tap than static ones, so a touch pauses the scroll instead of fighting it —
-  // it resumes on its own a couple seconds after the finger lifts.
   const [paused, setPaused] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduceMotion(mq.matches);
+    update();
+    mq.addEventListener?.("change", update);
+    return () => mq.removeEventListener?.("change", update);
+  }, []);
+
+  useEffect(() => () => {
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+  }, []);
+
   const handleTouchStart = () => {
     if (resumeTimer.current) clearTimeout(resumeTimer.current);
     setPaused(true);
   };
   const handleTouchEnd = () => {
+    if (reduceMotion) return;
     resumeTimer.current = setTimeout(() => setPaused(false), 2000);
   };
 
@@ -86,13 +99,10 @@ export default function ContactCTABar() {
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-brand-50 via-white to-amber-50/70 dark:from-[var(--surface)] dark:via-[var(--surface)] dark:to-[var(--surface)] border-y border-[var(--line)] py-8">
-      {/* Soft brand/gold glow — decorative, tuned for a light surface so the bar
-          reads as part of the page, not a dark island. */}
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-brand-400/40 to-transparent" aria-hidden />
       <div className="absolute -top-10 -left-10 w-44 h-44 rounded-full bg-brand-400/15 blur-3xl pointer-events-none" aria-hidden />
       <div className="absolute -bottom-12 right-0 w-52 h-52 rounded-full bg-amber-400/15 blur-3xl pointer-events-none" aria-hidden />
       <div className="container mx-auto px-4 relative">
-        {/* Desktop / tablet — static layout, unchanged. */}
         <div className="hidden sm:flex items-center justify-between gap-5">
           <div className="flex items-center gap-3.5">
             <div className="flex w-12 h-12 rounded-full bg-gradient-to-br from-[#f4dfa0] via-[#d4af37] to-[#a3801f] ring-1 ring-white/50 shadow-lg shadow-amber-500/25 items-center justify-center flex-shrink-0">
@@ -131,8 +141,6 @@ export default function ContactCTABar() {
           )}
         </div>
 
-        {/* Mobile — right-to-left ticker; a touch pauses it so tapping the
-            phone number or an icon never has to chase a moving target. */}
         <div
           className="marquee-viewport sm:hidden"
           onTouchStart={handleTouchStart}
@@ -143,7 +151,7 @@ export default function ContactCTABar() {
             className="marquee-track"
             style={{
               ["--marquee-duration" as string]: "18s",
-              animationPlayState: paused ? "paused" : undefined,
+              animationPlayState: paused || reduceMotion ? "paused" : undefined,
             }}
           >
             {contactBlock}
