@@ -37,4 +37,15 @@ describe("ProductCategoryTabs", () => {
     fireEvent.keyDown(computerTab, { key: "Home" });
     expect(onCategoryChange).toHaveBeenCalledWith("all");
   });
+
+  it("syncs the selected tab when the parent changes activeCategory", () => {
+    const { rerender } = render(<ProductCategoryTabs activeCategory="all" />);
+
+    expect(screen.getByRole("tab", { name: "All" })).toHaveAttribute("aria-selected", "true");
+
+    rerender(<ProductCategoryTabs activeCategory="electronics" />);
+
+    expect(screen.getByRole("tab", { name: "Electronics" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "All" })).toHaveAttribute("aria-selected", "false");
+  });
 });
