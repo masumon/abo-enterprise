@@ -1,11 +1,15 @@
 """customer_master — canonical customer identity/profile table.
 
-This migration is intentionally schema-only. Existing orders, bookings and
-leads remain untouched; production data backfill/reconciliation must be
-reviewed and executed separately.
+The repository already uses revision ``0026`` for the existing blog-post-links
+migration. The customer migration therefore uses the next available revision
+in the active chain instead of colliding with that completed migration.
 
-Revision ID: 0026
-Revises: 0025
+This migration is intentionally schema-only. Existing orders, bookings and
+leads remain untouched; production data backfill/reconciliation is executed
+separately through the reviewed manual SQL script.
+
+Revision ID: 0034
+Revises: 0033
 Create Date: 2026-08-12
 """
 
@@ -13,8 +17,8 @@ from typing import Sequence
 
 from alembic import op
 
-revision: str = "0026"
-down_revision: str | None = "0025"
+revision: str = "0034"
+down_revision: str | None = "0033"
 branch_labels: Sequence[str] | None = None
 depends_on: Sequence[str] | None = None
 
@@ -38,8 +42,8 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # This is intentionally non-destructive by default: downgrading this
-    # migration must not silently destroy customer-master records.
+    # This is intentionally non-destructive: downgrading must not silently
+    # destroy customer-master records.
     raise RuntimeError(
         "Customer master downgrade is intentionally blocked to prevent data loss. "
         "Archive/export and explicit approval are required before dropping customers."
