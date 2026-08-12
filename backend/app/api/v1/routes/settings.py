@@ -37,6 +37,7 @@ _PUBLIC_SETTING_EXACT_KEYS = {
     "favicon_url",
     "app_icon_url",
     "default_og_image_url",
+    "facebook_pixel_id",
 }
 
 _PUBLIC_SETTING_PREFIXES = (

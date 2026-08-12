@@ -67,7 +67,7 @@ function buildOrganizationJsonLd(settings: Record<string, string>) {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "ABO Enterprise",
+    name: settingValue(settings, "site_name", "ABO Enterprise"),
     url: SITE_URL,
     logo,
     description: getBrandFullTitle("en"),
@@ -104,7 +104,7 @@ function buildLocalBusinessJsonLd(settings: Record<string, string>) {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "@id": `${SITE_URL}/#localbusiness`,
-    name: "ABO Enterprise",
+    name: settingValue(settings, "site_name", "ABO Enterprise"),
     image,
     url: SITE_URL,
     ...(phone ? { telephone: phone } : {}),
@@ -121,20 +121,22 @@ function buildLocalBusinessJsonLd(settings: Record<string, string>) {
   };
 }
 
-const websiteJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  name: "ABO Enterprise",
-  url: SITE_URL,
-  potentialAction: {
-    "@type": "SearchAction",
-    target: {
-      "@type": "EntryPoint",
-      urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
+function buildWebsiteJsonLd(settings: Record<string, string>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: settingValue(settings, "site_name", "ABO Enterprise"),
+    url: SITE_URL,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE_URL}/search?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
     },
-    "query-input": "required name=search_term_string",
-  },
-};
+  };
+}
 
 function SectionSkeleton() {
   return <div className="py-16 motion-safe:animate-pulse bg-gray-50/50 dark:bg-[#1c2242]/60" aria-hidden />;
@@ -167,7 +169,7 @@ export default async function HomePage({
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: jsonLdString(websiteJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdString(buildWebsiteJsonLd(settings)) }}
       />
       <script
         type="application/ld+json"
