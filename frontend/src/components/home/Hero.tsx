@@ -39,6 +39,14 @@ interface StatsData {
   projects: number;
 }
 
+export function getFreeDeliveryLabel(lang: "bn" | "en", rawAmount: string): string | null {
+  const amount = rawAmount.trim();
+  if (!amount) return null;
+  return lang === "bn"
+    ? `সিলেটে ফ্রি ডেলিভারি ৳${amount}+`
+    : `Free Sylhet delivery ৳${amount}+`;
+}
+
 export default function Hero() {
   const { lang } = useLanguageStore();
   const t = useT();
@@ -61,6 +69,7 @@ export default function Hero() {
     : getSettingValue(settings, "hero_subtitle_en") || t("hero_sub");
   const heroCtaText = getSettingValue(settings, "hero_cta_text");
   const heroCtaUrl = getSettingValue(settings, "hero_cta_url", "/products");
+  const freeDeliveryLabel = getFreeDeliveryLabel(lang, getSettingValue(settings, "free_delivery_min_amount"));
   const hstyle = parseHeroTextStyle(getSettingValue(settings, HERO_TEXT_STYLE_KEY));
 
   useEffect(() => {
@@ -83,12 +92,8 @@ export default function Hero() {
     <>
       {/* ── Mobile hero — matches artifact Screen 04 ── */}
       <section className="lg:hidden bg-gradient-to-b from-brand-50 to-transparent dark:from-brand-900/20 dark:to-transparent">
-        {/* Kept in the DOM for the page's one true <h1> (SEO/a11y) but not
-            shown visually — the redesigned mobile hero leads with the promo
-            banner + search bar instead of a text headline. Admin-controlled
-            hero_title/hero_subtitle fields are untouched. */}
         <div className="sr-only">
-          <h1>
+          <div role="heading" aria-level={1}>
             {heroTitleOverride || (lang === "bn"
               ? "সিলেটের দোকান, সেবা ও সফটওয়্যার টিম"
               : "Sylhet's store, service desk and software team.")}
@@ -96,23 +101,19 @@ export default function Hero() {
               {heroTitleOverride
                 ? (lang === "bn"
                     ? "Sylhet's store, service desk and software team."
-                    : "সিলেটের দোকান, সেবা ও সফটওয়্যার টিম")
+                    : "সিলেটের দোকান, service desk and software team.")
                 : (lang === "bn"
                     ? "Sylhet's store, service desk and software team."
-                    : "সিলেটের দোকান, সেবা ও সফটওয়্যার টিম")}
+                    : "সিলেটের দোকান, service desk and software team.")}
             </span>
-          </h1>
+          </div>
           <p>
             {lang === "bn"
-              ? "সারাদেশে নগদে ডেলিভারি · ২০১৭ সাল থেকে"
-              : "Cash on delivery across Bangladesh · Since 2017"}
+              ? "সারাদেশে নগদে ডেলিভারি"
+              : "Cash on delivery across Bangladesh"}
           </p>
         </div>
 
-        {/* Admin-managed promo carousel (Admin → Promo Slides, placement "hero").
-            Renders nothing when no slide is configured — the wide desktop
-            background image isn't shaped for a small mobile card crop, so we
-            don't force it here. */}
         <div className="px-3 pt-2">
           <PromoSlider placement="hero" aspect="aspect-video" eagerFirstSlide />
         </div>
@@ -168,9 +169,11 @@ export default function Hero() {
                     <Zap className="w-3.5 h-3.5 text-yellow-300" aria-hidden />
                     {t("hero_badge")}
                   </div>
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-600/80 backdrop-blur-sm text-white border border-green-300/40 shadow-sm">
-                    🚚 {lang === "bn" ? `সিলেটে ফ্রি ডেলিভারি ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+` : `Free Sylhet delivery ৳${getSettingValue(settings, "free_delivery_min_amount") || "2000"}+`}
-                  </span>
+                  {freeDeliveryLabel && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-green-600/80 backdrop-blur-sm text-white border border-green-300/40 shadow-sm">
+                      🚚 {freeDeliveryLabel}
+                    </span>
+                  )}
                 </div>
 
                 <h1
@@ -246,23 +249,19 @@ export default function Hero() {
                         <p className="text-white/70 text-[11px]">{getBrandTagline(lang)}</p>
                       </div>
                     </div>
-                    <span className="flex items-center gap-1.5 text-xs text-green-300 font-medium bg-green-500/20 px-2.5 py-1 rounded-full border border-green-500/30">
-                      <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" aria-hidden />
-                      Live
-                    </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     {[
-                      { label: lang === "bn" ? "অর্ডার" : "Orders", end: stats?.orders, suffix: "+", icon: "📦" },
-                      { label: lang === "bn" ? "সেবা" : "Services", end: stats?.services, suffix: "+", icon: "⚙️" },
-                      { label: lang === "bn" ? "গ্রাহক" : "Clients", end: stats?.clients, suffix: "+", icon: "👥" },
-                      { label: lang === "bn" ? "প্রজেক্ট" : "Projects", end: stats?.projects, suffix: "+", icon: "🚀" },
+                      { label: lang === "bn" ? "অর্ডার" : "Orders", end: stats?.orders, icon: "📦" },
+                      { label: lang === "bn" ? "সেবা" : "Services", end: stats?.services, icon: "⚙️" },
+                      { label: lang === "bn" ? "গ্রাহক" : "Clients", end: stats?.clients, icon: "👥" },
+                      { label: lang === "bn" ? "প্রজেক্ট" : "Projects", end: stats?.projects, icon: "🚀" },
                     ].map((item) => (
                       <div key={item.label} className="glass-panel rounded-xl p-3.5 animate-scale-in">
                         <span className="text-xl" aria-hidden>{item.icon}</span>
                         <p className="text-white font-bold text-lg mt-1">
-                          {item.end === undefined ? "—" : <AnimatedCounter end={item.end} suffix={item.suffix} />}
+                          {item.end === undefined ? "—" : <AnimatedCounter end={item.end} />}
                         </p>
                         <p className="text-white/60 text-xs">{item.label}</p>
                       </div>

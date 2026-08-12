@@ -13,8 +13,7 @@ import { useToastStore } from "@/store/toast";
 import GlassCard from "@/components/ui/GlassCard";
 import Reveal from "@/components/ui/Reveal";
 import { cn } from "@/lib/utils";
-import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phone";
-import { formatBdPhoneDisplay, toBdTelHref, toBdWhatsappHref } from "@/lib/phone";
+import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN, formatBdPhoneDisplay, toBdTelHref, toBdWhatsappHref } from "@/lib/phone";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { DEFAULT_MAPS_EMBED } from "@/lib/siteDefaults";
 import { resolveGoogleMapsEmbed, resolveGoogleMapsLink, resolveAddress } from "@/lib/maps";
@@ -28,11 +27,11 @@ export default function ContactPage() {
   const toast = useToastStore((s) => s.push);
   const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address", "contact_address_en", "contact_hours_en", "contact_hours_bn", "whatsapp_number"]);
   const mapsEmbed = resolveGoogleMapsEmbed(getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED));
-  const phone = getSettingValue(settings, "contact_phone", "01825007977");
+  const phone = getSettingValue(settings, "contact_phone");
   const phoneDisplay = formatBdPhoneDisplay(phone);
   const phoneHref = toBdTelHref(phone);
-  const whatsappHref = toBdWhatsappHref(getSettingValue(settings, "whatsapp_number", phone));
-  const email = getSettingValue(settings, "contact_email", "info@aboenterprise.com");
+  const whatsappHref = toBdWhatsappHref(getSettingValue(settings, "whatsapp_number") || phone);
+  const email = getSettingValue(settings, "contact_email");
   const address = resolveAddress(settings, lang);
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
 
@@ -49,159 +48,52 @@ export default function ContactPage() {
   const [reference, setReference] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-  });
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) });
 
   const onSubmit = async (data: FormData) => {
-    setLoading(true);
-    setSubmitError(null);
-    setQueued(false);
+    setLoading(true); setSubmitError(null); setQueued(false);
     try {
-      const response = await serviceLeadsApi.create({
-        lead_type: toLeadV2Type("general"),
-        name: data.name,
-        phone: data.phone,
-        email: data.email || undefined,
-        project_description: data.project_description,
-      });
-      const wasQueued = isQueuedResponse(response);
-      setQueued(wasQueued);
+      const response = await serviceLeadsApi.create({ lead_type: toLeadV2Type("general"), name: data.name, phone: data.phone, email: data.email || undefined, project_description: data.project_description });
+      const wasQueued = isQueuedResponse(response); setQueued(wasQueued);
       const created = response.data?.data as { lead_number?: string } | null;
-      setReference(!wasQueued ? created?.lead_number ?? null : null);
-      setSubmitted(true);
-      toast(
-        "success",
-        wasQueued
-          ? lang === "bn"
-            ? "বার্তাটি অফলাইনে কিউ হয়েছে"
-            : "Message queued offline"
-          : lang === "bn"
-            ? "বার্তা পাঠানো হয়েছে"
-            : "Message sent successfully"
-      );
-    } catch {
-      setSubmitError(t("error_generic"));
-      toast("error", t("error_generic"));
-    } finally {
-      setLoading(false);
-    }
+      setReference(!wasQueued ? created?.lead_number ?? null : null); setSubmitted(true);
+      toast("success", wasQueued ? (lang === "bn" ? "বার্তাটি অফলাইনে কিউ হয়েছে" : "Message queued offline") : (lang === "bn" ? "বার্তা পাঠানো হয়েছে" : "Message sent successfully"));
+    } catch { setSubmitError(t("error_generic")); toast("error", t("error_generic")); }
+    finally { setLoading(false); }
   };
 
   const contactInfo = [
-    { icon: Phone, label: lang === "bn" ? "ফোন / WhatsApp" : "Phone / WhatsApp", value: phoneDisplay, href: phoneHref },
-    { icon: Mail, label: lang === "bn" ? "ইমেইল" : "Email", value: email, href: `mailto:${email}` },
-    { icon: MapPin, label: lang === "bn" ? "ঠিকানা" : "Location", value: address, href: mapsLink },
-    { icon: MessageSquare, label: "WhatsApp", value: lang === "bn" ? "সরাসরি চ্যাট করুন" : "Chat with us directly", href: whatsappHref },
-  ];
+    phoneDisplay && phoneHref ? { icon: Phone, label: lang === "bn" ? "ফোন / WhatsApp" : "Phone / WhatsApp", value: phoneDisplay, href: phoneHref } : null,
+    email ? { icon: Mail, label: lang === "bn" ? "ইমেইল" : "Email", value: email, href: `mailto:${email}` } : null,
+    address ? { icon: MapPin, label: lang === "bn" ? "ঠিকানা" : "Location", value: address, href: mapsLink } : null,
+    whatsappHref ? { icon: MessageSquare, label: "WhatsApp", value: lang === "bn" ? "সরাসরি চ্যাট করুন" : "Chat with us directly", href: whatsappHref } : null,
+  ].filter(Boolean) as Array<{ icon: typeof Phone; label: string; value: string; href: string | null }>;
 
   return (
     <main className="min-h-screen">
-      <PageHero
-        pageKey="contact"
-        title={t("contact_title")}
-        subtitle={t("contact_sub")}
-        breadcrumbs={[
-          { label: lang === "bn" ? "হোম" : "Home", href: "/" },
-          { label: lang === "bn" ? "যোগাযোগ" : "Contact" },
-        ]}
-      />
-
+      <PageHero pageKey="contact" title={t("contact_title")} subtitle={t("contact_sub")} breadcrumbs={[{ label: lang === "bn" ? "হোম" : "Home", href: "/" }, { label: lang === "bn" ? "যোগাযোগ" : "Contact" }]} />
       <div className="max-w-6xl mx-auto px-4 py-12">
         <div className="grid lg:grid-cols-5 gap-8">
           <div className="lg:col-span-2 space-y-4">
             <h2 className="text-xl font-bold text-heading mb-4">{t("contact_get_in_touch")}</h2>
             {contactInfo.map(({ icon: Icon, label, value, href }, i) => (
-              <Reveal key={label} as="div" delay={i * 60}>
-              <GlassCard className="p-4 flex gap-4">
-                <div className="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Icon className="w-5 h-5 text-brand-600" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted font-medium">{label}</p>
-                  <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer"
-                    className="text-sm font-medium text-brand-600 hover:underline">{value}</a>
-                </div>
-              </GlassCard>
-              </Reveal>
+              <Reveal key={label} as="div" delay={i * 60}><GlassCard className="p-4 flex gap-4"><div className="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center flex-shrink-0"><Icon className="w-5 h-5 text-brand-600" /></div><div><p className="text-xs text-muted font-medium">{label}</p>{href ? <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="text-sm font-medium text-brand-600 hover:underline">{value}</a> : <span className="text-sm font-medium text-brand-600">{value}</span>}</div></GlassCard></Reveal>
             ))}
-            <GlassCard className="p-4 flex gap-3">
-              <Clock className="w-5 h-5 text-brand-600 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-heading">{t("contact_hours")}</p>
-                <p className="text-sm text-muted mt-1">
-                  {getSettingValue(settings, lang === "bn" ? "contact_hours_bn" : "contact_hours_en", t("contact_hours_val"))}
-                </p>
-              </div>
-            </GlassCard>
-            <GlassCard className="overflow-hidden p-0">
-              <MapEmbed
-                embedSrc={mapsEmbed}
-                address={address}
-                title="ABO Enterprise Location"
-                minHeight="14rem"
-              />
-            </GlassCard>
+            <GlassCard className="p-4 flex gap-3"><Clock className="w-5 h-5 text-brand-600 flex-shrink-0" /><div><p className="text-sm font-medium text-heading">{t("contact_hours")}</p><p className="text-sm text-muted mt-1">{getSettingValue(settings, lang === "bn" ? "contact_hours_bn" : "contact_hours_en") || (lang === "bn" ? "সময় নির্ধারণ করা নেই" : "Hours are not configured")}</p></div></GlassCard>
+            <GlassCard className="overflow-hidden p-0"><MapEmbed embedSrc={mapsEmbed} address={address} title="ABO Enterprise Location" minHeight="14rem" /></GlassCard>
           </div>
 
           <GlassCard className="lg:col-span-3 p-6 md:p-8">
-            {submitted ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <CheckCircle className="w-14 h-14 text-green-500 mb-4" />
-                <h3 className="text-xl font-bold text-heading mb-2">
-                  {queued ? (lang === "bn" ? "বার্তা কিউ হয়েছে!" : "Message Queued!") : lang === "bn" ? "বার্তা পাঠানো হয়েছে!" : "Message Sent!"}
-                </h3>
-                <p className="text-muted">
-                  {queued
-                    ? lang === "bn"
-                      ? "ইন্টারনেট ফিরলে এটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।"
-                      : "It will sync automatically when your connection returns."
-                    : lang === "bn"
-                      ? "২৪ ঘণ্টার মধ্যে যোগাযোগ করা হবে।"
-                      : "We will get back to you within 24 hours."}
-                </p>
-                {!queued && reference && <ReferenceBadge reference={reference} />}
-              </div>
-            ) : (
-              <>
-                <h2 className="text-xl font-bold text-heading mb-6">{t("contact_send_message")}</h2>
-                {submitError && <p role="alert" className="mb-4 alert-error">{submitError}</p>}
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="contact-name" className="form-label">{t("contact_name")} *</label>
-                      <input id="contact-name" {...register("name")} className={cn("input", errors.name && "input-error")}
-                        aria-invalid={errors.name ? true : undefined}
-                        aria-describedby={errors.name ? "contact-name-error" : undefined} />
-                      {errors.name && <p id="contact-name-error" className="text-red-500 text-xs mt-1">{errors.name.message}</p>}
-                    </div>
-                    <div>
-                      <label htmlFor="contact-phone" className="form-label">{t("contact_phone")} *</label>
-                      <input id="contact-phone" {...register("phone")} type="tel" className={cn("input", errors.phone && "input-error")} placeholder="01XXXXXXXXX"
-                        aria-invalid={errors.phone ? true : undefined}
-                        aria-describedby={errors.phone ? "contact-phone-error" : undefined} />
-                      {errors.phone && <p id="contact-phone-error" className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}
-                    </div>
-                  </div>
-                  <div>
-                    <label htmlFor="contact-email" className="form-label">{t("contact_email")}</label>
-                    <input id="contact-email" {...register("email")} type="email" className="input" />
-                  </div>
-                  <div>
-                    <label htmlFor="contact-message" className="form-label">{t("contact_message")} *</label>
-                    <textarea id="contact-message" {...register("project_description")} rows={5} className={cn("input resize-none", errors.project_description && "input-error")}
-                      aria-invalid={errors.project_description ? true : undefined}
-                      aria-describedby={errors.project_description ? "contact-message-error" : undefined} />
-                    {errors.project_description && <p id="contact-message-error" className="text-red-500 text-xs mt-1">{errors.project_description.message}</p>}
-                  </div>
-                  <button type="submit" disabled={loading} className="btn btn-brand btn-md w-full btn-ripple">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    {loading ? t("loading") : t("contact_send")}
-                  </button>
-                </form>
-              </>
-            )}
+            {submitted ? <div className="flex flex-col items-center justify-center py-12 text-center"><CheckCircle className="w-14 h-14 text-green-500 mb-4" /><h3 className="text-xl font-bold text-heading mb-2">{queued ? (lang === "bn" ? "বার্তা কিউ হয়েছে!" : "Message Queued!") : lang === "bn" ? "বার্তা পাঠানো হয়েছে!" : "Message Sent!"}</h3><p className="text-muted">{queued ? (lang === "bn" ? "ইন্টারনেট ফিরলে এটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।" : "It will sync automatically when your connection returns.") : lang === "bn" ? "২৪ ঘণ্টার মধ্যে যোগাযোগ করা হবে।" : "We will get back to you within 24 hours."}</p>{!queued && reference && <ReferenceBadge reference={reference} />}</div> : <>
+              <h2 className="text-xl font-bold text-heading mb-6">{t("contact_send_message")}</h2>
+              {submitError && <p role="alert" className="mb-4 alert-error">{submitError}</p>}
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid sm:grid-cols-2 gap-4"><div><label htmlFor="contact-name" className="form-label">{t("contact_name")} *</label><input id="contact-name" {...register("name")} className={cn("input", errors.name && "input-error")} aria-invalid={errors.name ? true : undefined} aria-describedby={errors.name ? "contact-name-error" : undefined} />{errors.name && <p id="contact-name-error" className="text-red-500 text-xs mt-1">{errors.name.message}</p>}</div><div><label htmlFor="contact-phone" className="form-label">{t("contact_phone")} *</label><input id="contact-phone" {...register("phone")} type="tel" className={cn("input", errors.phone && "input-error")} placeholder="01XXXXXXXXX" aria-invalid={errors.phone ? true : undefined} aria-describedby={errors.phone ? "contact-phone-error" : undefined} />{errors.phone && <p id="contact-phone-error" className="text-red-500 text-xs mt-1">{errors.phone.message}</p>}</div></div>
+                <div><label htmlFor="contact-email" className="form-label">{t("contact_email")}</label><input id="contact-email" {...register("email")} type="email" className="input" /></div>
+                <div><label htmlFor="contact-message" className="form-label">{t("contact_message")} *</label><textarea id="contact-message" {...register("project_description")} rows={5} className={cn("input resize-none", errors.project_description && "input-error")} aria-invalid={errors.project_description ? true : undefined} aria-describedby={errors.project_description ? "contact-message-error" : undefined} />{errors.project_description && <p id="contact-message-error" className="text-red-500 text-xs mt-1">{errors.project_description.message}</p>}</div>
+                <button type="submit" disabled={loading} className="btn btn-brand btn-md w-full btn-ripple">{loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}{loading ? t("loading") : t("contact_send")}</button>
+              </form>
+            </>}
           </GlassCard>
         </div>
       </div>

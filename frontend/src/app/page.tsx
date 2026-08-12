@@ -10,23 +10,33 @@ import ComboSection from "@/components/home/ComboSection";
 import WhyChooseUsCards from "@/components/home/WhyChooseUsCards";
 import ReviewStatsCard from "@/components/home/ReviewStatsCard";
 import Reveal from "@/components/ui/Reveal";
-import { SITE_URL, SOCIAL_PROFILES, DEFAULT_OG_IMAGE, getBrandFullTitle } from "@/lib/tokens";
+import { SITE_URL, DEFAULT_OG_IMAGE, getBrandFullTitle } from "@/lib/tokens";
 import { jsonLdString } from "@/lib/metadata";
 import { fetchPublicSettings, settingValue } from "@/lib/serverSettings";
 import { isVideoUrl } from "@/lib/media";
 import { getLegacyHomeLaneTarget } from "@/lib/legacyHomeLane";
 
-const DEFAULT_PHONE = "+8801825007977";
-const DEFAULT_STREET_ADDRESS = "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170";
-
 /** contact_phone is stored as a local 01XXXXXXXXX number (admin-facing);
- * JSON-LD needs E.164. Falls back to the known-good default if unset or
- * already in an unexpected shape. */
-function toE164Bd(raw: string): string {
+ * JSON-LD needs E.164. Invalid/unset runtime data is omitted rather than
+ * replaced with a hard-coded business contact. */
+function toE164Bd(raw: string): string | null {
   const digits = raw.replace(/[^\d]/g, "");
   if (digits.length === 11 && digits.startsWith("01")) return `+88${digits}`;
   if (digits.length === 13 && digits.startsWith("8801")) return `+${digits}`;
-  return DEFAULT_PHONE;
+  return null;
+}
+
+function getSocialProfiles(settings: Record<string, string>): string[] {
+  return [
+    "facebook_url",
+    "instagram_url",
+    "linkedin_url",
+    "youtube_url",
+    "twitter_url",
+    "tiktok_url",
+  ]
+    .map((key) => settingValue(settings, key))
+    .filter(Boolean);
 }
 
 const ServicesOverview = dynamic(() => import("@/components/home/ServicesOverview"), { loading: () => <SectionSkeleton /> });
@@ -49,49 +59,64 @@ export const metadata: Metadata = {
 };
 
 function buildOrganizationJsonLd(settings: Record<string, string>) {
-  const phone = toE164Bd(settingValue(settings, "contact_phone", DEFAULT_PHONE));
+  const phone = toE164Bd(settingValue(settings, "contact_phone"));
+  const streetAddress = settingValue(settings, "contact_address");
+  const logo = settingValue(settings, "logo_url", settingValue(settings, "default_og_image_url", DEFAULT_OG_IMAGE));
+  const sameAs = getSocialProfiles(settings);
+
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "ABO Enterprise",
     url: SITE_URL,
-    logo: DEFAULT_OG_IMAGE,
+    logo,
     description: getBrandFullTitle("en"),
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: "Sylhet",
-      addressCountry: "BD",
-    },
-    contactPoint: {
-      "@type": "ContactPoint",
-      telephone: phone,
-      contactType: "customer service",
-      availableLanguage: ["Bengali", "English"],
-    },
-    sameAs: [...SOCIAL_PROFILES],
+    ...(streetAddress
+      ? {
+          address: {
+            "@type": "PostalAddress",
+            streetAddress,
+            addressCountry: "BD",
+          },
+        }
+      : {}),
+    ...(phone
+      ? {
+          contactPoint: {
+            "@type": "ContactPoint",
+            telephone: phone,
+            contactType: "customer service",
+            availableLanguage: ["Bengali", "English"],
+          },
+        }
+      : {}),
+    sameAs,
   };
 }
 
-// Local-pack / Maps visibility for the Sylhet storefront
 function buildLocalBusinessJsonLd(settings: Record<string, string>) {
-  const phone = toE164Bd(settingValue(settings, "contact_phone", DEFAULT_PHONE));
-  const streetAddress = settingValue(settings, "contact_address", DEFAULT_STREET_ADDRESS);
-  const openingHours = settingValue(settings, "contact_hours_en", "").trim();
+  const phone = toE164Bd(settingValue(settings, "contact_phone"));
+  const streetAddress = settingValue(settings, "contact_address");
+  const openingHours = settingValue(settings, "contact_hours_en");
+  const image = settingValue(settings, "default_og_image_url", settingValue(settings, "logo_url", DEFAULT_OG_IMAGE));
+
   return {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
     "@id": `${SITE_URL}/#localbusiness`,
     name: "ABO Enterprise",
-    image: DEFAULT_OG_IMAGE,
+    image,
     url: SITE_URL,
-    telephone: phone,
-    priceRange: "৳৳",
-    address: {
-      "@type": "PostalAddress",
-      streetAddress,
-      addressRegion: "Sylhet",
-      addressCountry: "BD",
-    },
+    ...(phone ? { telephone: phone } : {}),
+    ...(streetAddress
+      ? {
+          address: {
+            "@type": "PostalAddress",
+            streetAddress,
+            addressCountry: "BD",
+          },
+        }
+      : {}),
     ...(openingHours ? { openingHours } : {}),
   };
 }

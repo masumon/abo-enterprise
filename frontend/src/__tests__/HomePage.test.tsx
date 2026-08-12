@@ -51,4 +51,15 @@ describe("Homepage", () => {
     const { container } = render(await HomePage());
     expect(container.querySelector("section")).toBeTruthy();
   });
+
+  it("does not fabricate business contact data when runtime settings are unavailable", async () => {
+    const { container } = render(await HomePage());
+    const jsonLd = Array.from(container.querySelectorAll('script[type="application/ld+json"]'))
+      .map((script) => script.textContent ?? "")
+      .join("\n");
+
+    expect(jsonLd).not.toContain("+8801825007977");
+    expect(jsonLd).not.toContain("Hazi Bahar Uddin Market");
+    expect(jsonLd).not.toContain("www.facebook.com/abo.enterprise");
+  });
 });

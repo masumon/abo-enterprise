@@ -3,7 +3,7 @@ from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -23,6 +23,13 @@ class CustomerUpdate(BaseModel):
     email: str | None = Field(default=None, max_length=255)
     company: str | None = Field(default=None, max_length=255)
     address: str | None = Field(default=None, max_length=5000)
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("name cannot be blank")
+        return value
 
 
 def _customer_activity_subqueries():

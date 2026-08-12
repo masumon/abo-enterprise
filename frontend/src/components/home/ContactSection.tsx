@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, type LucideIcon } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import GlassCard from "@/components/ui/GlassCard";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
@@ -14,16 +14,22 @@ import { SocialMediaLinks } from "@/components/ui/SocialMediaLinks";
 export default function ContactSection() {
   const { lang } = useLanguageStore();
   const { settings } = usePublicSettings(["google_maps_embed", "contact_phone", "contact_email", "contact_address", "contact_address_en", "contact_hours_en", "contact_hours_bn", "facebook_url", "whatsapp_number", "instagram_url", "twitter_url", "linkedin_url", "youtube_url", "tiktok_url"]);
-  const mapsEmbed = resolveGoogleMapsEmbed(getSettingValue(settings, "google_maps_embed", DEFAULT_MAPS_EMBED));
-  const phone = getSettingValue(settings, "contact_phone", "01825007977");
+  const mapsEmbed = resolveGoogleMapsEmbed(getSettingValue(settings, "google_maps_embed"), DEFAULT_MAPS_EMBED);
+  const phone = getSettingValue(settings, "contact_phone");
   const phoneDisplay = formatBdPhoneDisplay(phone);
   const phoneHref = toBdTelHref(phone);
-  const email = getSettingValue(settings, "contact_email", "info@aboenterprise.com");
+  const email = getSettingValue(settings, "contact_email");
   const address = resolveAddress(settings, lang);
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
   const hours = lang === "bn"
-    ? getSettingValue(settings, "contact_hours_bn", "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা")
-    : getSettingValue(settings, "contact_hours_en", "Sat–Thu, 9:00 AM – 9:00 PM");
+    ? getSettingValue(settings, "contact_hours_bn")
+    : getSettingValue(settings, "contact_hours_en");
+
+  const infoItems: Array<{ icon: LucideIcon; label: string; href: string | null }> = [
+    ...(phoneDisplay ? [{ icon: Phone, label: phoneDisplay, href: phoneHref }] : []),
+    ...(email ? [{ icon: Mail, label: email, href: `mailto:${email}` }] : []),
+    ...(hours ? [{ icon: Clock, label: hours, href: null }] : []),
+  ];
 
   return (
     <section id="contact" className="py-5 lg:py-7 bg-white dark:bg-[var(--surface)]">
@@ -43,15 +49,20 @@ export default function ContactSection() {
               {lang === "bn" ? "আমাদের তথ্য" : "Our Information"}
             </h3>
             <div className="space-y-3">
-              {[
-                { icon: MapPin, label: address, href: mapsLink },
-                { icon: Phone, label: phoneDisplay, href: phoneHref },
-                { icon: Mail, label: email, href: `mailto:${email}` },
-                { icon: Clock, label: hours, href: null },
-              ].map(({ icon: Icon, label, href }) => (
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 bg-accent-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-4 h-4 text-accent-500" aria-hidden />
+                </div>
+                {mapsLink ? (
+                  <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="text-sm text-gray-600 hover:text-brand-600 transition-colors pt-2">{address}</a>
+                ) : (
+                  <span className="text-sm text-gray-600 pt-2">{address}</span>
+                )}
+              </div>
+              {infoItems.map(({ icon: Icon, label, href }) => (
                 <div key={label} className="flex items-start gap-3">
                   <div className="w-9 h-9 bg-accent-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-4 h-4 text-accent-500" />
+                    <Icon className="w-4 h-4 text-accent-500" aria-hidden />
                   </div>
                   {href ? (
                     <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="text-sm text-gray-600 hover:text-brand-600 transition-colors pt-2">{label}</a>
@@ -63,8 +74,8 @@ export default function ContactSection() {
             </div>
             <div className="pt-2">
               <SocialMediaLinks
-                facebookUrl={getSettingValue(settings, "facebook_url", "https://www.facebook.com/abo.enterprise")}
-                whatsappNumber={getSettingValue(settings, "whatsapp_number", "8801825007977")}
+                facebookUrl={getSettingValue(settings, "facebook_url")}
+                whatsappNumber={getSettingValue(settings, "whatsapp_number")}
                 instagramUrl={getSettingValue(settings, "instagram_url")}
                 twitterUrl={getSettingValue(settings, "twitter_url")}
                 linkedinUrl={getSettingValue(settings, "linkedin_url")}
