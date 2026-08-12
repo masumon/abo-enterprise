@@ -18,16 +18,16 @@ export default function ContactCTABar() {
     "instagram_url",
   ]);
 
-  const phone = getSettingValue(settings, "contact_phone", "01825007977");
+  const phone = getSettingValue(settings, "contact_phone");
   const phoneDisplay = formatBdPhoneDisplay(phone);
   const phoneHref = toBdTelHref(phone);
-  const whatsappNumber = getSettingValue(settings, "whatsapp_number", phone);
+  const whatsappNumber = getSettingValue(settings, "whatsapp_number");
   const hours = lang === "bn"
-    ? getSettingValue(settings, "contact_hours_bn", "সকাল ৮টা - রাত ১২টা | ২৪/৭ সাপোর্ট")
-    : getSettingValue(settings, "contact_hours_en", "8:00 AM - 12:00 AM | 24/7 Support");
+    ? getSettingValue(settings, "contact_hours_bn")
+    : getSettingValue(settings, "contact_hours_en");
 
   const links = [
-    { href: getSettingValue(settings, "facebook_url", "https://www.facebook.com/abo.enterprise"), icon: Facebook, label: "Facebook", bg: "bg-[#1877F2] hover:bg-[#1568d9]" },
+    { href: getSettingValue(settings, "facebook_url"), icon: Facebook, label: "Facebook", bg: "bg-[#1877F2] hover:bg-[#1568d9]" },
     { href: toBdWhatsappHref(whatsappNumber), icon: MessageCircle, label: "WhatsApp", bg: "bg-[#25D366] hover:bg-[#20bd5a]" },
     { href: getSettingValue(settings, "youtube_url"), icon: Youtube, label: "YouTube", bg: "bg-[#FF0000] hover:bg-[#e60000]" },
     { href: getSettingValue(settings, "instagram_url"), icon: Instagram, label: "Instagram", bg: "bg-gradient-to-br from-[#f09433] via-[#e6683c] to-[#bc1888] hover:opacity-90" },
@@ -61,23 +61,25 @@ export default function ContactCTABar() {
 
   const contactBlock = (
     <div className="flex items-center gap-6 flex-shrink-0 pr-6">
-      <div className="flex items-center gap-2.5">
-        <span className="flex w-8 h-8 rounded-full bg-gradient-to-br from-[#f4dfa0] via-[#d4af37] to-[#a3801f] ring-1 ring-white/50 shadow-sm shadow-amber-500/20 items-center justify-center flex-shrink-0">
-          <Phone className="w-4 h-4 text-black/80" aria-hidden />
-        </span>
-        <div>
-          <p className="text-[9px] font-bold tracking-[0.12em] uppercase bg-gradient-to-r from-brand-600 via-fuchsia-600 to-amber-600 bg-clip-text text-transparent leading-tight">
-            {lang === "bn" ? "যেকোনো প্রশ্নে আমাদের সাথে যোগাযোগ করুন" : "Reach out to us for any question"}
-          </p>
-          {phoneHref ? (
-            <a href={phoneHref} className="text-heading text-lg font-extrabold tracking-tight hover:text-brand-600 transition-colors">
-              {phoneDisplay}
-            </a>
-          ) : (
-            <span className="text-heading text-lg font-extrabold tracking-tight">{phoneDisplay}</span>
-          )}
+      {phoneDisplay && (
+        <div className="flex items-center gap-2.5">
+          <span className="flex w-8 h-8 rounded-full bg-gradient-to-br from-[#f4dfa0] via-[#d4af37] to-[#a3801f] ring-1 ring-white/50 shadow-sm shadow-amber-500/20 items-center justify-center flex-shrink-0">
+            <Phone className="w-4 h-4 text-black/80" aria-hidden />
+          </span>
+          <div>
+            <p className="text-[9px] font-bold tracking-[0.12em] uppercase bg-gradient-to-r from-brand-600 via-fuchsia-600 to-amber-600 bg-clip-text text-transparent leading-tight">
+              {lang === "bn" ? "যেকোনো প্রশ্নে আমাদের সাথে যোগাযোগ করুন" : "Reach out to us for any question"}
+            </p>
+            {phoneHref ? (
+              <a href={phoneHref} className="text-heading text-lg font-extrabold tracking-tight hover:text-brand-600 transition-colors">
+                {phoneDisplay}
+              </a>
+            ) : (
+              <span className="text-heading text-lg font-extrabold tracking-tight">{phoneDisplay}</span>
+            )}
+          </div>
         </div>
-      </div>
+      )}
       {links.length > 0 && (
         <div className="flex items-center gap-3">
           {links.map(({ href, icon: Icon, label, bg }) => (
@@ -112,14 +114,18 @@ export default function ContactCTABar() {
               <p className="text-[10px] sm:text-xs font-bold tracking-[0.15em] uppercase bg-gradient-to-r from-brand-600 via-fuchsia-600 to-amber-600 bg-clip-text text-transparent">
                 {lang === "bn" ? "যেকোনো প্রশ্নে আমাদের সাথে যোগাযোগ করুন" : "Reach out to us for any question"}
               </p>
-              {phoneHref ? (
-                <a href={phoneHref} className="text-heading text-2xl font-extrabold tracking-tight hover:text-brand-600 transition-colors">
-                  {phoneDisplay}
-                </a>
+              {phoneDisplay ? (
+                phoneHref ? (
+                  <a href={phoneHref} className="text-heading text-2xl font-extrabold tracking-tight hover:text-brand-600 transition-colors">
+                    {phoneDisplay}
+                  </a>
+                ) : (
+                  <span className="text-heading text-2xl font-extrabold tracking-tight">{phoneDisplay}</span>
+                )
               ) : (
-                <span className="text-heading text-2xl font-extrabold tracking-tight">{phoneDisplay}</span>
+                <p className="text-[var(--ink-muted)] text-sm">{lang === "bn" ? "ফোন নম্বর সেট করা নেই" : "Phone number is not configured"}</p>
               )}
-              <p className="text-[var(--ink-muted)] text-xs mt-0.5">{hours}</p>
+              {hours && <p className="text-[var(--ink-muted)] text-xs mt-0.5">{hours}</p>}
             </div>
           </div>
 
