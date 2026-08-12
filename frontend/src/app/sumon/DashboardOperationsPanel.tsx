@@ -107,7 +107,7 @@ export default function DashboardOperationsPanel() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="admin-card lg:col-span-2">
           <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><Clock className="w-4 h-4 text-gray-400" />{bn ? "Needs attention" : "Needs attention"}</h3>
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><Clock className="w-4 h-4 text-gray-400" />{bn ? "মনোযোগ প্রয়োজন" : "Needs attention"}</h3>
             <Link href="/sumon/analytics" className="text-xs text-brand-600 hover:underline">{bn ? "বিস্তারিত →" : "Details →"}</Link>
           </div>
           <div className="divide-y divide-gray-50">
