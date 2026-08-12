@@ -32,6 +32,7 @@ export default function AutoScrollRow<T>({
   className,
 }: AutoScrollRowProps<T>) {
   const [reduceMotion, setReduceMotion] = useState(false);
+  const [focusPaused, setFocusPaused] = useState(false);
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
@@ -53,11 +54,13 @@ export default function AutoScrollRow<T>({
       freeMode={{ enabled: true, momentum: false }}
       speed={speed}
       autoplay={
-        reduceMotion
+        reduceMotion || focusPaused
           ? false
           : { delay: 1, disableOnInteraction: false, reverseDirection: true, pauseOnMouseEnter: true }
       }
       allowTouchMove
+      onFocusCapture={() => setFocusPaused(true)}
+      onBlurCapture={() => setFocusPaused(false)}
       className={className}
     >
       {items.map((item, i) => (
