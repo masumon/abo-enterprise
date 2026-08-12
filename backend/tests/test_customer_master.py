@@ -2,7 +2,10 @@
 
 from pathlib import Path
 
-from app.api.v1.routes.customers import _customer_activity_subqueries, _serialize_customer
+import pytest
+from pydantic import ValidationError
+
+from app.api.v1.routes.customers import CustomerUpdate, _customer_activity_subqueries, _serialize_customer
 from app.models.customer import Customer
 
 
@@ -55,6 +58,11 @@ def test_customer_activity_queries_cover_orders_bookings_leads_and_values():
     queries = _customer_activity_subqueries()
     assert len(queries) == 8
     assert all(query is not None for query in queries)
+
+
+def test_customer_update_rejects_blank_name():
+    with pytest.raises(ValidationError):
+        CustomerUpdate(name="   ")
 
 
 def test_manual_customer_sql_is_idempotent_and_non_destructive():
