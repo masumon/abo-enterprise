@@ -8,12 +8,6 @@ import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { toBdWhatsappHref } from "@/lib/phone";
 import GlassCard from "@/components/ui/GlassCard";
 
-// The four promise tiles under the software listing. Each one navigates:
-// Live Demo / Easy Integration point at the listings this section is about,
-// Free Consultation is the contact form, and 24/7 Support opens WhatsApp —
-// a real, always-on channel rather than a page. Each also carries a tint so
-// the row reads as a set of premium, tappable cards. `href` may be an internal
-// route or an external URL; `external` marks the WhatsApp one for a new tab.
 const FEATURES = [
   { Icon: PlayCircle, label: { en: "Live Demo", bn: "লাইভ ডেমো" }, href: "/projects", external: false, tint: "from-brand-500/15 to-brand-500/5", iconColor: "text-brand-600 dark:text-brand-300" },
   { Icon: Headphones, label: { en: "Free Consultation", bn: "ফ্রি কনসালটেশন" }, href: "/contact", external: false, tint: "from-accent-500/15 to-accent-500/5", iconColor: "text-accent-600 dark:text-accent-300" },
@@ -32,7 +26,6 @@ export default function Portfolio() {
   return (
     <section id="software" className="py-5 lg:py-7 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
-        {/* Section Header */}
         <div className="flex items-end justify-between gap-4 mb-6 sm:mb-8 lg:mb-10">
           <div>
             <span className="inline-block text-[10px] sm:text-xs font-bold tracking-[0.15em] uppercase bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent mb-1">
@@ -48,7 +41,6 @@ export default function Portfolio() {
           </Link>
         </div>
 
-        {/* Software Cards Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4 mb-8 sm:mb-10">
           {projects.slice(0, 4).map((p) => (
             <Link key={p.slug} href={`/projects/${p.slug}`}>
@@ -65,9 +57,6 @@ export default function Portfolio() {
                       />
                     </div>
                   ) : (
-                    /* No real screenshot yet → on-brand navy→gold panel instead
-                       of a mismatched stock image (same treatment as the service
-                       cards, so the whole site reads as one system). */
                     <div className="absolute inset-0 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 flex items-center justify-center overflow-hidden">
                       <span aria-hidden className="absolute -top-8 -right-8 w-40 h-40 rounded-full bg-accent-500/15 blur-2xl" />
                       <span aria-hidden className="absolute -bottom-5 -left-3 text-white/[0.06] font-black text-[6.5rem] leading-none select-none">
@@ -91,16 +80,11 @@ export default function Portfolio() {
           ))}
         </div>
 
-        {/* Software Features Row — four tappable promise cards on a continuous
-            auto-scroll marquee (pauses on hover; falls back to a manual scroll
-            when the viewer prefers reduced motion). Tiles are duplicated so the
-            loop is seamless; the copies are hidden from a11y. 24/7 Support opens
-            WhatsApp only when an admin-configured number exists. */}
         <div className="bg-gradient-to-r from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/10 rounded-2xl p-4 sm:p-6">
           <div className="marquee-viewport">
             <div className="marquee-track gap-3 sm:gap-4 py-0.5" style={{ ["--marquee-duration" as string]: "22s" }}>
               {[...FEATURES, ...FEATURES].map((feature, idx) => {
-                const href = feature.href === "__whatsapp__" ? whatsappHref : feature.href;
+                const href = feature.external ? whatsappHref : feature.href;
                 const dup = idx >= FEATURES.length;
                 const FeatureIcon = feature.Icon;
                 const inner = (
@@ -114,12 +98,8 @@ export default function Portfolio() {
                   </>
                 );
                 const className = "group flex-shrink-0 w-[8.5rem] sm:w-[11rem] flex flex-col items-center text-center rounded-2xl px-3 py-4 sm:py-5 bg-white/70 dark:bg-white/5 border border-[var(--line)] shadow-sm hover:shadow-lg hover:shadow-brand-500/10 hover:-translate-y-1 hover:border-brand-200 transition-all touch-manipulation";
-                if (feature.external && !href) {
-                  return (
-                    <div key={idx} aria-hidden={dup} className={className}>
-                      {inner}
-                    </div>
-                  );
+                if (!href) {
+                  return <div key={idx} aria-hidden={dup} className={className}>{inner}</div>;
                 }
                 return feature.external ? (
                   <a key={idx} href={href} target="_blank" rel="noopener noreferrer" aria-hidden={dup} tabIndex={dup ? -1 : 0} className={className}>
