@@ -10,6 +10,7 @@ import { formatPrice } from "@/lib/utils";
 interface AnalyticsOverview {
   revenue: { total: number; orders: number; bookings: number };
   counts: { orders: number; bookings: number; leads: number; leads_won: number };
+  payments: { paid: number; pending: number; failed: number };
   top_services: Array<{ service_id: string; name: string; name_bn: string; count: number; revenue: number }>;
 }
 
@@ -112,6 +113,18 @@ export default function DashboardOperationsPanel() {
           <p className="text-xs text-gray-500">{bn ? "ইমেইল সমস্যা" : "Email failures"}</p>
           <p className="text-xl font-bold text-gray-900 mt-1">{failedEmails ?? "—"}</p>
           <Link href="/sumon/analytics" className="text-xs text-brand-600 hover:underline">{bn ? "অপারেশন দেখুন →" : "Open operations →"}</Link>
+        </div>
+        <div className="admin-card p-4">
+          <p className="text-xs text-gray-500">{bn ? "অর্ডার পেমেন্ট · ৭ দিন" : "Order payments · 7d"}</p>
+          {last7d ? (
+            <p className="text-sm font-semibold text-gray-900 mt-1 flex items-center gap-2 flex-wrap">
+              <span className="text-emerald-600">{last7d.payments.paid} {bn ? "পরিশোধিত" : "paid"}</span>
+              <span className="text-amber-600">{last7d.payments.pending} {bn ? "বাকি" : "pending"}</span>
+              {last7d.payments.failed > 0 && <span className="text-red-600">{last7d.payments.failed} {bn ? "ব্যর্থ" : "failed"}</span>}
+            </p>
+          ) : (
+            <p className="text-xl font-bold text-gray-900 mt-1">—</p>
+          )}
         </div>
       </div>
 

@@ -435,6 +435,24 @@ async def notification_center(
         items.append({"severity": "info", "kind": "pending_bookings", "at": now.isoformat(),
                       "text": f"{pending_bookings} booking(s) awaiting confirmation"})
 
+    # Steadfast is push-only (consignment creation) with no status webhook/
+    # poll syncing delivery state back — there is no "failed delivery" field
+    # to query. The best real signal available: an order handed to the
+    # courier that has sat in "shipped" without progressing to delivered/
+    # cancelled for longer than the local Sylhet delivery SLA.
+    courier_stalled_since = now - timedelta(days=5)
+    courier_stalled = (await db.execute(
+        select(func.count(Order.id)).where(
+            Order.order_status == "shipped",
+            Order.courier_consignment_id.isnot(None),
+            Order.updated_at < courier_stalled_since,
+            Order.is_deleted == False,  # noqa: E712
+        )
+    )).scalar_one()
+    if courier_stalled:
+        items.append({"severity": "warning", "kind": "courier_stalled", "at": now.isoformat(),
+                      "text": f"{courier_stalled} order(s) shipped 5+ days ago still not marked delivered"})
+
     low_stock = (await db.execute(
         select(func.count(Product.id)).where(
             Product.is_active == True, Product.is_deleted == False,  # noqa: E712
