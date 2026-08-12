@@ -104,9 +104,9 @@ export default function AdminDashboard() {
   const revenueTotal = analytics?.revenue.total ?? null;
   const revenueTrend = analytics?.trends.revenue_pct ?? null;
   const conversionRate = analytics?.conversion_rate ?? null;
-  const failedPayments = ops?.failed_payments?.length ?? 0;
-  const lowStock = inventory?.low_stock ?? 0;
-  const outOfStock = inventory?.out_of_stock ?? 0;
+  const failedPayments = ops?.failed_payments?.length ?? null;
+  const lowStock = inventory?.low_stock ?? null;
+  const outOfStock = inventory?.out_of_stock ?? null;
 
   return (
     <div className="space-y-6">
@@ -139,8 +139,8 @@ export default function AdminDashboard() {
           <Link href="/sumon/orders" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "অপেক্ষমান অর্ডার" : "Pending orders"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.pending_orders ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "অর্ডার দেখুন →" : "Review orders →"}</p></Link>
           <Link href="/sumon/bookings" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "অপেক্ষমান বুকিং" : "Pending bookings"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.pending_bookings ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "বুকিং দেখুন →" : "Review bookings →"}</p></Link>
           <Link href="/sumon/leads" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "নতুন লিড" : "New leads"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.new_leads ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "লিড দেখুন →" : "Follow up leads →"}</p></Link>
-          <Link href="/sumon/payments" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5" />{bn ? "ব্যর্থ পেমেন্ট" : "Failed payments"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : failedPayments}</p><p className="text-xs text-brand-600 mt-1">{bn ? "পেমেন্ট দেখুন →" : "Review payments →"}</p></Link>
-          <Link href="/sumon/inventory" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500 flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{bn ? "কম স্টক" : "Low stock"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : lowStock}</p><p className="text-xs text-brand-600 mt-1">{outOfStock > 0 ? (bn ? `${outOfStock}টি স্টক শেষ` : `${outOfStock} out of stock`) : (bn ? "ইনভেন্টরি দেখুন →" : "Review inventory →")}</p></Link>
+          <Link href="/sumon/payments" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5" />{bn ? "ব্যর্থ পেমেন্ট" : "Failed payments"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : failedPayments === null ? "—" : failedPayments}</p><p className="text-xs text-brand-600 mt-1">{bn ? "পেমেন্ট দেখুন →" : "Review payments →"}</p></Link>
+          <Link href="/sumon/inventory" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500 flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{bn ? "কম স্টক" : "Low stock"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : lowStock === null ? "—" : lowStock}</p><p className="text-xs text-brand-600 mt-1">{outOfStock !== null && outOfStock > 0 ? (bn ? `${outOfStock}টি স্টক শেষ` : `${outOfStock} out of stock`) : (bn ? "ইনভেন্টরি দেখুন →" : "Review inventory →")}</p></Link>
         </div>
       </section>
 
