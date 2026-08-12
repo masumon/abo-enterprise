@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.core.email import send_email, booking_notification_html, customer_booking_confirmation_html
 from app.core.invoice import InvoiceService
 from app.models.models import Booking, BookingV2
-from app.schemas.schemas import BookingCreate, BookingOut, ApiResponse, PaginatedResponse, PaginatedMeta
+from app.schemas.schemas import BookingCreate, BookingOut, BookingStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 from app.core.rate_limit import rate_limit
 import logging
 
@@ -133,7 +133,7 @@ async def get_booking(
 @router.patch("/{booking_id}/status", response_model=ApiResponse)
 async def update_booking_status(
     booking_id: UUID,
-    payload: object,
+    payload: BookingStatusUpdate,
     db: AsyncSession = Depends(get_db),
     _admin: str = Depends(require_admin),
 ):
