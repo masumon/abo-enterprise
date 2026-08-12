@@ -76,6 +76,7 @@ function buildOrganizationJsonLd(settings: Record<string, string>) {
 function buildLocalBusinessJsonLd(settings: Record<string, string>) {
   const phone = toE164Bd(settingValue(settings, "contact_phone", DEFAULT_PHONE));
   const streetAddress = settingValue(settings, "contact_address", DEFAULT_STREET_ADDRESS);
+  const openingHours = settingValue(settings, "contact_hours_en", "").trim();
   return {
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
@@ -91,12 +92,7 @@ function buildLocalBusinessJsonLd(settings: Record<string, string>) {
       addressRegion: "Sylhet",
       addressCountry: "BD",
     },
-    openingHoursSpecification: {
-      "@type": "OpeningHoursSpecification",
-      dayOfWeek: ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday"],
-      opens: "09:00",
-      closes: "21:00",
-    },
+    ...(openingHours ? { openingHours } : {}),
   };
 }
 
