@@ -108,7 +108,10 @@ async def reconcile_gateway_day(
     record.failed_count = len(failed)
     record.pending_count = pending_count
     record.discrepancies = discrepancies
-    record.reconciliation_status = "discrepancy" if discrepancies else "matched"
+    # The payment_reconciliation table's DB-level CHECK constraint
+    # (reconciliation_status_idx, migrations/007) only allows pending/
+    # in_progress/completed/failed — not "matched"/"discrepancy".
+    record.reconciliation_status = "failed" if discrepancies else "completed"
     record.processed_by = admin_id
     if not existing:
         db.add(record)

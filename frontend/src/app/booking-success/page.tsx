@@ -70,12 +70,20 @@ function BookingSuccessContent() {
 
   const canDownload = Boolean(bookingId && phone);
 
-  const handlePayNow = async () => {
+  const PAY_GATEWAYS = [
+    { id: "bkash" as const, label: "bKash", icon: "📱", initiate: bookingPaymentsApi.initiateBkash },
+    { id: "nagad" as const, label: "Nagad", icon: "📲", initiate: bookingPaymentsApi.initiateNagad },
+    { id: "sslcommerz" as const, label: lang === "bn" ? "কার্ড / অন্যান্য" : "Card / Other", icon: "💳", initiate: bookingPaymentsApi.initiate },
+  ];
+  const [payingGateway, setPayingGateway] = useState<string | null>(null);
+
+  const handlePayNow = async (gateway: (typeof PAY_GATEWAYS)[number]) => {
     if (!bookingId || !phone) return;
     setPayLoading(true);
+    setPayingGateway(gateway.id);
     setPayError(null);
     try {
-      const r = await bookingPaymentsApi.initiate(bookingId, phone);
+      const r = await gateway.initiate(bookingId, phone);
       const url = r.data?.data?.payment_url;
       if (url) {
         window.location.href = url;
@@ -86,6 +94,7 @@ function BookingSuccessContent() {
       setPayError(apiErrorMessage(e, lang === "bn" ? "পেমেন্ট শুরু করা যায়নি।" : "Couldn't start the payment."));
     } finally {
       setPayLoading(false);
+      setPayingGateway(null);
     }
   };
 
@@ -203,15 +212,28 @@ function BookingSuccessContent() {
           <div className="space-y-3">
             {canDownload && payResult !== "success" && (
               <>
-                <button
-                  type="button"
-                  onClick={handlePayNow}
-                  disabled={payLoading}
-                  className="btn btn-brand btn-md w-full flex items-center justify-center gap-2"
-                >
-                  {payLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}
-                  {lang === "bn" ? "এখনই পেমেন্ট করুন" : "Pay Now"}
-                </button>
+                <p className="text-sm font-medium text-heading flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  {lang === "bn" ? "পেমেন্ট পদ্ধতি বেছে নিন" : "Choose a payment method"}
+                </p>
+                <div className="grid grid-cols-3 gap-2">
+                  {PAY_GATEWAYS.map((gw) => (
+                    <button
+                      key={gw.id}
+                      type="button"
+                      onClick={() => handlePayNow(gw)}
+                      disabled={payLoading}
+                      className="btn btn-outline btn-md flex flex-col items-center justify-center gap-1 py-3 disabled:opacity-50"
+                    >
+                      {payLoading && payingGateway === gw.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <span className="text-lg leading-none">{gw.icon}</span>
+                      )}
+                      <span className="text-xs font-medium">{gw.label}</span>
+                    </button>
+                  ))}
+                </div>
                 {payError && <p className="text-sm text-red-500 dark:text-red-400">{payError}</p>}
               </>
             )}
