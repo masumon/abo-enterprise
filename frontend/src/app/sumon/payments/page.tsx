@@ -153,7 +153,7 @@ export default function AdminPaymentsPage() {
     setRunningRecon(true);
     try {
       const r = await adminApi.runPaymentReconciliation();
-      const discrepant = r.data.data?.filter((row) => row.reconciliation_status === "discrepancy").length ?? 0;
+      const discrepant = r.data.data?.filter((row) => row.reconciliation_status === "failed").length ?? 0;
       toast(discrepant > 0 ? "error" : "success", discrepant > 0 ? `Reconciled — ${discrepant} gateway(s) have discrepancies` : "Reconciled — everything matched");
       await loadReconciliation();
     } catch (e) {

@@ -138,6 +138,7 @@ export interface Order {
   upazila?: string;
   courier_provider?: string | null;
   courier_tracking_id?: string | null;
+  courier_status?: string | null;
   delivery_charge: number;
   total: number;
   /** Institutional invoice identity (manual_sql/0009). All null on a personal order. */

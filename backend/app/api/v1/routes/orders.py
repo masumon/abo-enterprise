@@ -582,6 +582,8 @@ async def list_orders(
     order_status: str | None = Query(None),
     search: str | None = Query(None),
     days: int | None = Query(None, ge=1, le=365, description="Only orders from the last N days"),
+    has_courier: bool | None = Query(None, description="Only orders that have been handed to a courier"),
+    courier_status: str | None = Query(None, description="Filter by the courier's last reported status"),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -590,6 +592,10 @@ async def list_orders(
     conditions = [Order.is_deleted == False]  # noqa: E712
     if order_status:
         conditions.append(Order.order_status == order_status)
+    if has_courier:
+        conditions.append(Order.courier_consignment_id.isnot(None))
+    if courier_status:
+        conditions.append(Order.courier_status == courier_status)
     if days:
         from datetime import timedelta
         conditions.append(Order.created_at >= datetime.now(timezone.utc) - timedelta(days=days))

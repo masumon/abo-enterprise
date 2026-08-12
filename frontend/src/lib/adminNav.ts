@@ -85,6 +85,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     { href: "/sumon/delivery", icon: Truck, label: "Checkout & Delivery", labelBn: "চেকআউট ও ডেলিভারি", minRole: "admin", permission: "settings.write" },
     { href: "/sumon/delivery-zones", icon: Truck, label: "Delivery Zones", labelBn: "ডেলিভারি জোন", minRole: "admin", permission: "settings.read" },
     { href: "/sumon/settings#steadfast_courier", icon: Shield, label: "Courier (Steadfast)", labelBn: "কুরিয়ার (Steadfast)", minRole: "admin", permission: "settings.read" },
+    { href: "/sumon/tracking", icon: Truck, label: "Tracking", labelBn: "ট্র্যাকিং", permission: "orders.read" },
     { href: "/sumon/steadfast-test", icon: Shield, label: "Steadfast Test", labelBn: "Steadfast টেস্ট", minRole: "admin", permission: "settings.read" },
   ]},
   { id: "finance-reports", label: "Finance & Reports", labelBn: "অর্থ ও রিপোর্ট", items: [

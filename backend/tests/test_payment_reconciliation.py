@@ -60,7 +60,7 @@ async def test_reconcile_flags_transaction_whose_order_was_never_marked_paid():
     assert record.successful_count == 2
     assert record.failed_count == 0
     assert record.total_amount == 1250
-    assert record.reconciliation_status == "discrepancy"
+    assert record.reconciliation_status == "failed"
     assert len(record.discrepancies) == 1
     assert record.discrepancies[0]["type"] == "order_not_marked_paid"
     assert record.discrepancies[0]["transaction_id"] == str(txn_mismatched.id)
@@ -83,7 +83,7 @@ async def test_reconcile_with_no_transactions_is_clean_and_matched():
     record = await reconcile_gateway_day(db, "nagad", datetime.now(timezone.utc).date())
 
     assert record.total_transactions == 0
-    assert record.reconciliation_status == "matched"
+    assert record.reconciliation_status == "completed"
     assert record.discrepancies == []
 
 
@@ -92,3 +92,37 @@ async def test_reconcile_unknown_gateway_rejected():
     db = SimpleNamespace(execute=AsyncMock())
     with pytest.raises(ValueError):
         await reconcile_gateway_day(db, "unknown_gateway", datetime.now(timezone.utc).date())
+
+
+# The DB has a CHECK constraint (reconciliation_status_idx, migrations/007)
+# restricting this column to exactly these four values. A previous version
+# of reconcile_gateway_day wrote "matched"/"discrepancy" instead, which
+# passed every mocked unit test above but broke in production with a real
+# Postgres CheckViolationError — this test pins the contract so that
+# specific regression can't silently come back.
+_ALLOWED_DB_STATUSES = {"pending", "in_progress", "completed", "failed"}
+
+
+@pytest.mark.asyncio
+async def test_reconcile_status_always_satisfies_the_db_check_constraint():
+    for discrepancies_present in (True, False):
+        if discrepancies_present:
+            txn = SimpleNamespace(
+                id=uuid4(), amount=100, status="Completed",
+                order_id=uuid4(), booking_id=None, created_at=datetime.now(timezone.utc),
+            )
+            db = SimpleNamespace(
+                execute=AsyncMock(side_effect=[
+                    _ScalarsResult([txn]),
+                    _OneResult(None),  # order missing -> forces a discrepancy
+                    _OneResult(None),
+                ]),
+                add=Mock(), commit=AsyncMock(), refresh=AsyncMock(),
+            )
+        else:
+            db = SimpleNamespace(
+                execute=AsyncMock(side_effect=[_ScalarsResult([]), _OneResult(None)]),
+                add=Mock(), commit=AsyncMock(), refresh=AsyncMock(),
+            )
+        record = await reconcile_gateway_day(db, "sslcommerz", datetime.now(timezone.utc).date())
+        assert record.reconciliation_status in _ALLOWED_DB_STATUSES

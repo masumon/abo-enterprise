@@ -147,7 +147,7 @@ export const ordersApi = {
     api.post<ApiResponse<Order>>("/api/v1/orders", data),
 
   // order_status matches backend query param name
-  list: (params?: { order_status?: string; search?: string; days?: number; page?: number }) =>
+  list: (params?: { order_status?: string; search?: string; days?: number; page?: number; has_courier?: boolean; courier_status?: string; per_page?: number }) =>
     api.get<PaginatedResponse<Order>>("/api/v1/orders", { params }),
 
   get: (id: string) =>
@@ -272,6 +272,18 @@ export const bookingPaymentsApi = {
   initiate: (booking_id: string, phone: string) =>
     api.post<ApiResponse<{ payment_url?: string }>>(
       "/api/v1/payments/sslcommerz/initiate-booking",
+      { booking_id, phone }
+    ),
+
+  initiateBkash: (booking_id: string, phone: string) =>
+    api.post<ApiResponse<{ payment_url?: string }>>(
+      "/api/v1/payments/bkash/initiate-booking",
+      { booking_id, phone }
+    ),
+
+  initiateNagad: (booking_id: string, phone: string) =>
+    api.post<ApiResponse<{ payment_url?: string }>>(
+      "/api/v1/payments/nagad/initiate-booking",
       { booking_id, phone }
     ),
 };
