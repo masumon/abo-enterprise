@@ -17,7 +17,7 @@ from app.core.rate_limit import rate_limit
 from app.core.sslcommerz import get_sslcommerz_gateway
 from app.core.site_url import resolve_site_url
 from app.core.invoice import InvoiceService
-from app.models.models import BkashTransaction, BookingV2, NagadTransaction, Order
+from app.models.models import BkashTransaction, BookingV2, NagadTransaction, Order, SslcommerzTransaction
 from app.schemas.schemas import (
     BookingPaymentInitiateRequest,
     PaymentInitiateRequest,
@@ -29,6 +29,36 @@ from app.schemas.schemas import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/payments", tags=["payments"])
+
+
+async def _upsert_sslcommerz_transaction(
+    db: AsyncSession,
+    *,
+    tran_id: str,
+    amount: Decimal,
+    order_id=None,
+    booking_id=None,
+) -> None:
+    """Record a fresh payment session, reusing the row on a customer retry
+    (SSLCommerz reuses the same tran_id — order_number/booking_number — on
+    every initiate call, so a second attempt after a failed/abandoned first
+    one must update rather than violate the tran_id unique constraint)."""
+    existing = (await db.execute(
+        select(SslcommerzTransaction).where(SslcommerzTransaction.tran_id == tran_id)
+    )).scalar_one_or_none()
+    if existing:
+        existing.amount = amount
+        existing.status = "Initiated"
+        existing.webhook_received = False
+    else:
+        db.add(SslcommerzTransaction(
+            order_id=order_id,
+            booking_id=booking_id,
+            tran_id=tran_id,
+            amount=amount,
+            status="Initiated",
+        ))
+    await db.commit()
 
 
 def _verify_bkash_webhook(body: bytes, signature: str) -> bool:
@@ -278,6 +308,10 @@ async def initiate_sslcommerz_payment(
         if not session:
             raise HTTPException(status_code=400, detail="SSLCommerz not configured or session failed")
 
+        await _upsert_sslcommerz_transaction(
+            db, tran_id=order.order_number, amount=Decimal(order.total), order_id=order.id,
+        )
+
         return {
             "success": True,
             "payment_url": session.get("payment_url"),
@@ -352,6 +386,10 @@ async def initiate_sslcommerz_booking_payment(
     if not session:
         raise HTTPException(status_code=400, detail="SSLCommerz not configured or session failed")
 
+    await _upsert_sslcommerz_transaction(
+        db, tran_id=booking.booking_number, amount=Decimal(str(amount)), booking_id=booking.id,
+    )
+
     return {
         "success": True,
         "payment_url": session.get("payment_url"),
@@ -423,6 +461,71 @@ async def nagad_webhook(
         raise
     except Exception as e:
         logger.error("nagad webhook error: %s", e, exc_info=e)
+        return {"success": False, "error": str(e)}
+
+
+@router.post("/webhook/sslcommerz")
+async def sslcommerz_webhook(
+    http_request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """SSLCommerz IPN. Sent server-to-server as application/x-www-form-urlencoded;
+    validated via the store-password-signed hash (verify_key/verify_sign), the
+    same trust model already used for the bKash/Nagad webhooks above."""
+    form = await http_request.form()
+    post_data = {k: str(v) for k, v in form.items()}
+
+    if not get_sslcommerz_gateway().verify_ipn(post_data):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid IPN signature")
+
+    try:
+        tran_id = post_data.get("tran_id", "")
+        gateway_status = post_data.get("status", "").upper()
+        is_valid = gateway_status in ("VALID", "VALIDATED")
+
+        result = await db.execute(
+            select(SslcommerzTransaction).where(SslcommerzTransaction.tran_id == tran_id)
+        )
+        transaction = result.scalar_one_or_none()
+        if not transaction:
+            logger.warning("sslcommerz webhook: unknown tran_id %s", tran_id)
+            return {"success": False, "error": "transaction not found"}
+
+        transaction.status = "Completed" if is_valid else "Failed"
+        transaction.val_id = post_data.get("val_id") or transaction.val_id
+        transaction.bank_tran_id = post_data.get("bank_tran_id") or transaction.bank_tran_id
+        transaction.card_type = post_data.get("card_type") or transaction.card_type
+        transaction.webhook_received = True
+        transaction.webhook_timestamp = datetime.now(timezone.utc)
+        transaction.raw_response = post_data
+        await db.commit()
+
+        if is_valid and transaction.order_id:
+            order_result = await db.execute(select(Order).where(Order.id == transaction.order_id))
+            order = order_result.scalar_one_or_none()
+            if order and order.payment_status != "completed":
+                order.payment_status = "completed"
+                if order.order_status == "pending":
+                    order.order_status = "confirmed"
+                await InvoiceService(db).mark_order_invoice_paid(order.id)
+                await db.commit()
+        elif is_valid and transaction.booking_id:
+            booking_result = await db.execute(select(BookingV2).where(BookingV2.id == transaction.booking_id))
+            booking = booking_result.scalar_one_or_none()
+            if booking and booking.payment_status not in ("paid", "completed"):
+                if booking.advance_amount and not booking.advance_paid:
+                    booking.advance_paid = True
+                else:
+                    booking.payment_status = "paid"
+                if booking.status == "pending":
+                    booking.status = "confirmed"
+                await db.commit()
+
+        return {"success": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("sslcommerz webhook error: %s", e, exc_info=e)
         return {"success": False, "error": str(e)}
 
 

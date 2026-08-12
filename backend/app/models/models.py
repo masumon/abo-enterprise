@@ -547,6 +547,28 @@ class NagadTransaction(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class SslcommerzTransaction(Base):
+    __tablename__ = "sslcommerz_transactions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("orders.id"))
+    booking_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("bookings_v2.id"))
+    tran_id: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    val_id: Mapped[str | None] = mapped_column(String(100))
+    bank_tran_id: Mapped[str | None] = mapped_column(String(100))
+    card_type: Mapped[str | None] = mapped_column(String(50))
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), default="BDT")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    status_message: Mapped[str | None] = mapped_column(Text)
+    webhook_received: Mapped[bool] = mapped_column(Boolean, default=False)
+    webhook_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    raw_response: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class PaymentReconciliation(Base):
     __tablename__ = "payment_reconciliation"
 

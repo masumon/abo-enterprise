@@ -1,14 +1,17 @@
-"""Pure crypto coverage for the bKash/Nagad payment-webhook signature
-checks (payments.py, core/nagad.py) — no live database or network call
-involved. These gate whether an inbound "payment succeeded" webhook is
-trusted, so a broken comparison here is a real-money bug.
+"""Pure crypto coverage for the bKash/Nagad/SSLCommerz payment-webhook
+signature checks (payments.py, core/nagad.py, core/sslcommerz.py) — no
+live database or network call involved. These gate whether an inbound
+"payment succeeded" webhook is trusted, so a broken comparison here is a
+real-money bug.
 """
 import hashlib
 import hmac
+from urllib.parse import urlencode
 
 from app.api.v1.routes.payments import _verify_bkash_webhook
 from app.core.config import settings
 from app.core.nagad import NagadGateway
+from app.core.sslcommerz import SSLCommerzGateway
 
 
 class TestBkashWebhookSignature:
@@ -67,3 +70,44 @@ class TestNagadWebhookSignature:
     def test_missing_signature_rejects(self):
         gw = self._gateway("merchant-key-123")
         assert gw.verify_webhook_signature("payload", "") is False
+
+
+class TestSSLCommerzWebhookSignature:
+    def _gateway(self, store_id: str = "store1", store_password: str = "pw-secret") -> SSLCommerzGateway:
+        gw = SSLCommerzGateway.__new__(SSLCommerzGateway)  # skip __init__'s settings read
+        gw.store_id = store_id
+        gw.store_password = store_password
+        return gw
+
+    def _signed_ipn(self, gw: SSLCommerzGateway, **fields: str) -> dict:
+        verify_key = ",".join(fields.keys())
+        data = {**fields, "store_passwd": gw.store_password}
+        sign_str = urlencode(sorted(data.items()))
+        verify_sign = hashlib.md5(sign_str.encode()).hexdigest()
+        return {**fields, "verify_key": verify_key, "verify_sign": verify_sign}
+
+    def test_valid_signature_accepted(self):
+        gw = self._gateway()
+        post_data = self._signed_ipn(gw, tran_id="ORD-1", status="VALID", amount="500.00")
+        assert gw.verify_ipn(post_data) is True
+
+    def test_tampered_field_rejected(self):
+        gw = self._gateway()
+        post_data = self._signed_ipn(gw, tran_id="ORD-1", status="VALID", amount="500.00")
+        post_data["status"] = "FAILED"  # tampered after signing
+        assert gw.verify_ipn(post_data) is False
+
+    def test_wrong_store_password_rejected(self):
+        signer = self._gateway(store_password="real-secret")
+        post_data = self._signed_ipn(signer, tran_id="ORD-1", status="VALID")
+        verifier = self._gateway(store_password="wrong-secret")
+        assert verifier.verify_ipn(post_data) is False
+
+    def test_missing_verify_fields_rejected(self):
+        gw = self._gateway()
+        assert gw.verify_ipn({"tran_id": "ORD-1", "status": "VALID"}) is False
+
+    def test_not_configured_rejects(self):
+        gw = self._gateway(store_id="", store_password="")
+        post_data = self._signed_ipn(gw, tran_id="ORD-1", status="VALID")
+        assert gw.verify_ipn(post_data) is False
