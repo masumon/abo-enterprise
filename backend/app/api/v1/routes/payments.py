@@ -31,6 +31,19 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/payments", tags=["payments"])
 
 
+async def _notify_payment_failed(db: AsyncSession, *, gateway: str, reference: str, amount) -> None:
+    from app.core.notifications import create_notification
+    await create_notification(
+        db, commit=False,
+        type="payment_failed",
+        severity="error",
+        title=f"{gateway.title()} payment failed",
+        body=f"Reference {reference} — amount {amount}",
+        link="/sumon/payments",
+        meta={"gateway": gateway, "reference": reference},
+    )
+
+
 async def _upsert_sslcommerz_transaction(
     db: AsyncSession,
     *,
@@ -421,6 +434,8 @@ async def bkash_webhook(
             transaction.status = payload.status
             transaction.webhook_received = True
             transaction.webhook_timestamp = datetime.now(timezone.utc)
+            if payload.status.lower() == "failed":
+                await _notify_payment_failed(db, gateway="bkash", reference=payload.transaction_id, amount=transaction.amount)
             await db.commit()
 
         return {"success": True}
@@ -454,6 +469,8 @@ async def nagad_webhook(
             transaction.status = payload.status
             transaction.webhook_received = True
             transaction.webhook_timestamp = datetime.now(timezone.utc)
+            if payload.status.lower() == "failed":
+                await _notify_payment_failed(db, gateway="nagad", reference=payload.transaction_id, amount=transaction.amount)
             await db.commit()
 
         return {"success": True}
@@ -498,6 +515,8 @@ async def sslcommerz_webhook(
         transaction.webhook_received = True
         transaction.webhook_timestamp = datetime.now(timezone.utc)
         transaction.raw_response = post_data
+        if not is_valid:
+            await _notify_payment_failed(db, gateway="sslcommerz", reference=tran_id, amount=transaction.amount)
         await db.commit()
 
         if is_valid and transaction.order_id:

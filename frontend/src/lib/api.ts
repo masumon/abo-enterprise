@@ -758,6 +758,12 @@ export const adminApi = {
   auditLogFilterOptions: () =>
     api.get<ApiResponse<{ actions: string[]; entity_types: string[] }>>("/api/v1/admin/audit-logs/meta"),
 
+  listSystemEvents: (params: { page?: number; per_page?: number; event_type?: string; severity?: string; search?: string } = {}) =>
+    api.get<PaginatedResponse<{ id: string; event_type: string; severity: string; source: string; message: string; meta: Record<string, unknown>; created_at: string }>>("/api/v1/admin/ops/events", { params }),
+
+  systemEventFilterOptions: () =>
+    api.get<ApiResponse<{ event_types: string[]; severities: string[] }>>("/api/v1/admin/ops/events/meta"),
+
   listMedia: (params: { folder?: string; search?: string; page?: number; per_page?: number } = {}) =>
     api.get<PaginatedResponse<MediaAssetRecord>>("/api/v1/media/assets", { params }),
 
@@ -772,6 +778,37 @@ export const adminApi = {
 
   saveSettings: (items: { key: string; value: string; data_type?: string }[]) =>
     api.post<ApiResponse<{ key: string; value: string }[]>>("/api/v1/settings/upsert", items),
+};
+
+export interface NotificationRecord {
+  id: string;
+  type: string;
+  severity: "error" | "warning" | "info";
+  title: string;
+  body: string | null;
+  link: string | null;
+  meta: Record<string, unknown>;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string;
+  broadcast: boolean;
+}
+
+export const notificationsApi = {
+  list: (params: { page?: number; per_page?: number; unread_only?: boolean; type?: string } = {}) =>
+    api.get<PaginatedResponse<NotificationRecord>>("/api/v1/admin/notifications", { params }),
+
+  unreadCount: () =>
+    api.get<ApiResponse<{ count: number }>>("/api/v1/admin/notifications/unread-count"),
+
+  markRead: (id: string) =>
+    api.post<ApiResponse<null>>(`/api/v1/admin/notifications/${id}/read`),
+
+  markAllRead: () =>
+    api.post<ApiResponse<{ updated: number }>>("/api/v1/admin/notifications/read-all"),
+
+  dismiss: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/admin/notifications/${id}`),
 };
 
 export interface EmailTemplateRecord {

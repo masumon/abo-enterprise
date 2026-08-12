@@ -135,6 +135,22 @@ async def adjust_inventory(product_id: UUID, payload: InventoryAdjust, db: Async
     product.stock_quantity = after
     db.add(InventoryMovement(product_id=product.id, movement_type=payload.movement_type, quantity_delta=payload.delta, quantity_before=before, quantity_after=after, reference_type="admin_adjustment", reference_id=product.id, reason=payload.reason, note=payload.note, admin_id=UUID(admin_id)))
     db.add(ActivityLog(admin_id=UUID(admin_id), action="update", entity_type="inventory", entity_id=product.id, old_values={"stock_quantity": before}, new_values={"stock_quantity": after, "movement_type": payload.movement_type}))
+
+    threshold = product.low_stock_threshold or 5
+    # Only notify on the crossing, not on every adjustment while already low.
+    if before > threshold and after <= threshold:
+        from app.core.notifications import create_notification
+        kind = "out_of_stock" if after <= 0 else "low_stock"
+        await create_notification(
+            db, commit=False,
+            type=kind,
+            severity="warning" if after > 0 else "error",
+            title=f"{product.name_en} is {'out of stock' if after <= 0 else 'low on stock'}",
+            body=f"Stock dropped to {after} (threshold {threshold}) after an admin adjustment.",
+            link=f"/sumon/inventory?product={product.id}",
+            meta={"product_id": str(product.id), "stock_quantity": after, "threshold": threshold},
+        )
+
     await db.commit(); await db.refresh(product)
     return ApiResponse(data={"product_id": str(product.id), "stock_quantity": after}, message="Stock adjusted")
 

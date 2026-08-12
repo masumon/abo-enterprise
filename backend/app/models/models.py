@@ -616,6 +616,46 @@ class ActivityLog(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class Notification(Base):
+    """Persistent, per-admin (or broadcast when target_admin_id is NULL)
+    actionable alert — read/unread, dismissible. Distinct from ActivityLog
+    (records what an admin did) and SystemEvent (technical/system telemetry):
+    this is what an admin needs to *see and act on*."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    severity: Mapped[str] = mapped_column(String(20), nullable=False, default="info")
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    body: Mapped[str | None] = mapped_column(Text)
+    # NULL = broadcast to every admin; set = targeted at one admin account.
+    target_admin_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("admin_users.id"), index=True)
+    link: Mapped[str | None] = mapped_column(String(500))
+    meta: Mapped[dict] = mapped_column(JSON, default=dict)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class SystemEvent(Base):
+    """Persistent technical/operational event log — the durable counterpart
+    to the in-process ring buffers in app.core.ops_events (recent_errors,
+    failed_emails, failed_logins), which are lost on every restart/deploy."""
+
+    __tablename__ = "system_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    event_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    severity: Mapped[str] = mapped_column(String(20), nullable=False, default="error", index=True)
+    source: Mapped[str] = mapped_column(String(100), nullable=False, default="app")
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    meta: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class EmailTemplate(Base):
     __tablename__ = "email_templates"
 
