@@ -81,7 +81,7 @@ api.interceptors.response.use(
 );
 
 async function queueOfflineCreate<T>(
-  type: "booking" | "lead" | "service_booking" | "service_lead",
+  type: "lead" | "service_booking" | "service_lead",
   data: Record<string, unknown>
 ): Promise<AxiosResponse<ApiResponse<T | null> & { queued: true }>> {
   await offlineSync.addPendingAction(type, "create", data);
@@ -193,10 +193,8 @@ export const ordersApi = {
 };
 
 export const bookingsApi = {
-  create: (data: Booking) =>
-    isOffline()
-      ? queueOfflineCreate<Booking>("booking", data as unknown as Record<string, unknown>)
-      : api.post<ApiResponse<Booking>>("/api/v1/bookings", data),
+  // The legacy bookings table is read-only (see backend bookings.py) — there
+  // is no create route here. New bookings always go through serviceBookingsApi.
 
   // Public tracking by booking number (BK-… v2, or ABO-B-… legacy v1).
   track: (bookingNumber: string) =>

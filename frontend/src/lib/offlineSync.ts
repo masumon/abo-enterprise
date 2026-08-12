@@ -3,7 +3,7 @@ import { getNetworkQuality } from "@/lib/networkStatus";
 
 interface PendingAction {
   id: string;
-  type: "booking" | "lead" | "order" | "service_booking" | "service_lead";
+  type: "lead" | "order" | "service_booking" | "service_lead";
   action: "create" | "update" | "delete";
   data: Record<string, any>;
   timestamp: number;
@@ -104,7 +104,7 @@ class OfflineDataSync {
   }
 
   async addPendingAction(
-    type: "booking" | "lead" | "order" | "service_booking" | "service_lead",
+    type: "lead" | "order" | "service_booking" | "service_lead",
     action: "create" | "update" | "delete",
     data: Record<string, any>
   ): Promise<string> {
@@ -275,7 +275,6 @@ class OfflineDataSync {
 
   private async syncAction(action: PendingAction): Promise<void> {
     const endpoints: Record<string, string> = {
-      booking: "/api/v1/bookings",
       lead: "/api/v1/leads",
       order: "/api/v1/orders",
       service_booking: "/api/v1/service-bookings",

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X, CheckCircle, Send, Loader2 } from "lucide-react";
-import { bookingsApi, isQueuedResponse } from "@/lib/api";
+import { serviceBookingsApi, isQueuedResponse } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { BD_PHONE_REGEX, BD_PHONE_ERROR_EN, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { cn } from "@/lib/utils";
@@ -17,9 +17,10 @@ interface Props {
 
 /**
  * Booking request for a product an admin marked "Also bookable" (e.g. a device
- * that needs installation/setup). Creates a real v1 booking via the same
- * `bookingsApi` the Printing/Legal pages use — so the request is tracked in
- * Admin → Bookings. No cart, checkout or payment code is involved.
+ * that needs installation/setup). Creates a service booking (v2, service_name
+ * only — no catalog Service behind it) via `serviceBookingsApi`, the same path
+ * the Printing/Legal pages use, so the request is tracked in Admin → Bookings.
+ * No cart, checkout or payment code is involved.
  */
 export default function ProductBookingModal({ product, open, onClose }: Props) {
   const { lang } = useLanguageStore();
@@ -49,9 +50,8 @@ export default function ProductBookingModal({ product, open, onClose }: Props) {
     }
     setSubmitting(true);
     try {
-      const res = await bookingsApi.create({
-        service_type: "product_service",
-        service_subtype: product.slug,
+      const res = await serviceBookingsApi.create({
+        service_name: `${bn ? "পণ্য সেবা" : "Product service"}: ${productName}`,
         customer_name: name.trim(),
         customer_phone: phone.trim(),
         details:
