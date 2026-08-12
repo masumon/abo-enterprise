@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
 from app.core.security import ADMIN_SESSION_COOKIE, decode_token, require_role
+from app.core.rbac import has_permission
 from app.models.models import AdminUser, Setting, ActivityLog
 from app.schemas.schemas import SettingOut, SettingUpdate, SettingCreate, ApiResponse
 
@@ -36,6 +37,7 @@ _PUBLIC_SETTING_EXACT_KEYS = {
     "favicon_url",
     "app_icon_url",
     "default_og_image_url",
+    "facebook_pixel_id",
 }
 
 _PUBLIC_SETTING_PREFIXES = (
@@ -120,11 +122,13 @@ def _is_admin_editable_setting_key(key: str) -> bool:
 
 
 async def _is_admin_request(request: Request, db: AsyncSession) -> bool:
-    """Best-effort admin detection for the intentionally public GET endpoint.
+    """Best-effort settings.read detection for the intentionally public GET endpoint.
 
     Mirror the canonical auth contract: Bearer token first, then the HttpOnly
     admin session cookie. This endpoint must remain public because the storefront
-    consumes it, so invalid credentials simply result in the public-safe view.
+    consumes it, so invalid/insufficiently-privileged credentials simply result
+    in the public-safe view rather than a 401/403 — any authenticated admin
+    without settings.read (e.g. viewer, editor) is treated as a public caller.
     """
     auth = request.headers.get("authorization", "")
     token = None
@@ -147,7 +151,8 @@ async def _is_admin_request(request: Request, db: AsyncSession) -> bool:
     result = await db.execute(
         select(AdminUser).where(AdminUser.id == admin_uuid, AdminUser.is_active == True)  # noqa: E712
     )
-    return result.scalar_one_or_none() is not None
+    admin = result.scalar_one_or_none()
+    return admin is not None and has_permission(admin.role, "settings.read")
 
 
 @router.get("", response_model=ApiResponse)

@@ -6,11 +6,14 @@ import pytest
 from pydantic import ValidationError
 
 from app.api.v1.routes.customers import CustomerUpdate, _customer_activity_subqueries, _serialize_customer
+from app.core.customer_master import _alternate_phone_forms
 from app.models.customer import Customer
+from app.models.models import Order, BookingV2, LeadV2
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 MANUAL_SQL = PROJECT_ROOT / "manual_sql" / "20260812_batch02_customer_master.sql"
+FK_MANUAL_SQL = PROJECT_ROOT / "backend" / "manual_sql" / "0036_transaction_customer_fk.sql"
 
 
 def test_customer_master_schema_preserves_canonical_identity_fields():
@@ -74,3 +77,34 @@ def test_manual_customer_sql_is_idempotent_and_non_destructive():
     assert "TRUNCATE" not in sql
     assert "DELETE FROM" not in sql
     assert "UPDATE CUSTOMERS" not in sql
+
+
+def test_orders_bookings_leads_have_nullable_customer_fk():
+    """The customer master previously had no structural link back to the
+    tables it summarizes (phone-string matching only). Verify the new FK
+    columns exist, are nullable (existing rows aren't backfilled), and
+    actually reference customers.id."""
+    for model in (Order, BookingV2, LeadV2):
+        column = model.__table__.columns["customer_id"]
+        assert column.nullable is True
+        fk_targets = {fk.column.table.name for fk in column.foreign_keys}
+        assert fk_targets == {"customers"}
+
+
+def test_alternate_phone_forms_covers_local_and_international():
+    assert set(_alternate_phone_forms("01712345678")) == {"01712345678", "+8801712345678"}
+    assert set(_alternate_phone_forms("+8801712345678")) == {"+8801712345678", "01712345678"}
+    assert set(_alternate_phone_forms("8801712345678")) == {"8801712345678", "01712345678"}
+    # A non-BD international number has no local-form equivalent — just itself.
+    assert _alternate_phone_forms("+971501234567") == ["+971501234567"]
+
+
+def test_manual_customer_fk_sql_is_additive_and_non_destructive():
+    sql = FK_MANUAL_SQL.read_text(encoding="utf-8").upper()
+
+    assert "ADD COLUMN IF NOT EXISTS CUSTOMER_ID" in sql
+    assert "DROP TABLE" not in sql
+    assert "DROP COLUMN" not in sql
+    assert "TRUNCATE" not in sql
+    assert "DELETE FROM" not in sql
+    assert "UPDATE " not in sql

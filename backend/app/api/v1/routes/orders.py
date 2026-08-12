@@ -13,6 +13,7 @@ from app.core.security import require_admin, require_customer, require_role
 from app.core.config import settings
 from app.core.email import send_email, order_notification_html, customer_order_confirmation_html, customer_order_status_html
 from app.core.invoice import InvoiceService
+from app.core.customer_master import get_or_create_customer
 from app.core.site_url import resolve_site_url
 from app.core.steadfast import create_consignment, get_settings as steadfast_settings, SteadfastError
 from app.models.models import Order, OrderItem, Product, ActivityLog, Setting, Coupon
@@ -388,6 +389,17 @@ async def create_order(
     )
     db.add(order)
     await db.flush()
+
+    customer = await get_or_create_customer(
+        db,
+        phone=order.customer_phone,
+        name=order.customer_name,
+        email=order.customer_email,
+        company=order.company_name,
+        address=order.delivery_address,
+    )
+    if customer:
+        order.customer_id = customer.id
 
     for idx, item_data in enumerate(payload.items):
         unit_price = trusted_prices[str(idx)]

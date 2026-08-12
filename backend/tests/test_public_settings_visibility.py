@@ -1,4 +1,4 @@
-from app.api.v1.routes.settings import _is_cms_managed_setting_key, _is_public_setting_key
+from app.api.v1.routes.settings import _is_cms_managed_setting_key, _is_public_setting_key, _is_secret_key
 
 
 def test_public_cms_image_settings_are_exposed():
@@ -37,6 +37,15 @@ def test_cms_image_settings_can_bypass_legacy_non_editable_flag():
     assert _is_cms_managed_setting_key("hero_image_url")
     assert not _is_cms_managed_setting_key("smtp_password")
     assert not _is_cms_managed_setting_key("arbitrary_setting")
+
+
+def test_facebook_pixel_id_is_public():
+    # The admin settings UI and FacebookPixel.tsx both wire this field up, but
+    # it was missing from the allowlist so real visitors never received it —
+    # the pixel silently never fired. It is not a secret: a pixel ID is meant
+    # to be embedded in every page's client-side script.
+    assert _is_public_setting_key("facebook_pixel_id")
+    assert not _is_secret_key("facebook_pixel_id")
 
 
 def test_sensitive_settings_remain_private():

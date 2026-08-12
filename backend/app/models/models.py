@@ -21,6 +21,10 @@ class Product(Base):
     description_bn: Mapped[str | None] = mapped_column(Text)
     price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     original_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    # Optional per-unit cost basis, admin-entered. NULL = not yet known; the
+    # Profit report excludes such lines from its total rather than assuming 0,
+    # and discloses how many were excluded — never fabricates a cost.
+    cost_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
     # Optional per-product delivery override (NULL = use zone charge) and an
     # admin on/off flag that forces an advance payment before confirmation.
     delivery_charge: Mapped[float | None] = mapped_column(Numeric(10, 2))
@@ -108,6 +112,10 @@ class Order(Base):
     customer_name: Mapped[str] = mapped_column(String(255), nullable=False)
     customer_phone: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     customer_email: Mapped[str | None] = mapped_column(String(255))
+    # Canonical customer-master link, resolved by phone at order creation
+    # (app.core.customer_master.get_or_create_customer). Nullable: orders
+    # created before this column existed are never backfilled automatically.
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("customers.id"), index=True)
     delivery_address: Mapped[str] = mapped_column(Text, nullable=False)
     payment_method: Mapped[str] = mapped_column(String(20), nullable=False)
     payment_number: Mapped[str | None] = mapped_column(String(50))
@@ -374,6 +382,9 @@ class BookingV2(Base):
     customer_phone: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     customer_email: Mapped[str | None] = mapped_column(String(255))
     customer_company: Mapped[str | None] = mapped_column(String(255))
+    # Canonical customer-master link, resolved by phone at booking creation
+    # (app.core.customer_master.get_or_create_customer).
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("customers.id"), index=True)
     # Normalized service location (alembic 0012). Previously concatenated into
     # `details`, which made it unqueryable.
     district: Mapped[str | None] = mapped_column(String(100), index=True)
@@ -420,6 +431,9 @@ class LeadV2(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str | None] = mapped_column(String(255))
     phone: Mapped[str] = mapped_column(String(20), nullable=False)
+    # Canonical customer-master link, resolved by phone at lead creation
+    # (app.core.customer_master.get_or_create_customer).
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("customers.id"), index=True)
     company: Mapped[str | None] = mapped_column(String(255))
     job_title: Mapped[str | None] = mapped_column(String(255))
     company_size: Mapped[str | None] = mapped_column(String(50))
@@ -547,6 +561,28 @@ class NagadTransaction(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class SslcommerzTransaction(Base):
+    __tablename__ = "sslcommerz_transactions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("orders.id"))
+    booking_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("bookings_v2.id"))
+    tran_id: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    val_id: Mapped[str | None] = mapped_column(String(100))
+    bank_tran_id: Mapped[str | None] = mapped_column(String(100))
+    card_type: Mapped[str | None] = mapped_column(String(50))
+    amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    currency: Mapped[str] = mapped_column(String(3), default="BDT")
+    status: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    status_message: Mapped[str | None] = mapped_column(Text)
+    webhook_received: Mapped[bool] = mapped_column(Boolean, default=False)
+    webhook_timestamp: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    raw_response: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class PaymentReconciliation(Base):
     __tablename__ = "payment_reconciliation"
 
@@ -584,6 +620,46 @@ class ActivityLog(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class Notification(Base):
+    """Persistent, per-admin (or broadcast when target_admin_id is NULL)
+    actionable alert — read/unread, dismissible. Distinct from ActivityLog
+    (records what an admin did) and SystemEvent (technical/system telemetry):
+    this is what an admin needs to *see and act on*."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    severity: Mapped[str] = mapped_column(String(20), nullable=False, default="info")
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    body: Mapped[str | None] = mapped_column(Text)
+    # NULL = broadcast to every admin; set = targeted at one admin account.
+    target_admin_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("admin_users.id"), index=True)
+    link: Mapped[str | None] = mapped_column(String(500))
+    meta: Mapped[dict] = mapped_column(JSON, default=dict)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class SystemEvent(Base):
+    """Persistent technical/operational event log — the durable counterpart
+    to the in-process ring buffers in app.core.ops_events (recent_errors,
+    failed_emails, failed_logins), which are lost on every restart/deploy."""
+
+    __tablename__ = "system_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    event_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    severity: Mapped[str] = mapped_column(String(20), nullable=False, default="error", index=True)
+    source: Mapped[str] = mapped_column(String(100), nullable=False, default="app")
+    message: Mapped[str] = mapped_column(Text, nullable=False)
+    meta: Mapped[dict] = mapped_column(JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class EmailTemplate(Base):
     __tablename__ = "email_templates"
 
@@ -618,6 +694,33 @@ class BlogPost(Base):
     status: Mapped[str] = mapped_column(String(20), default="draft", index=True)
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    seo_title: Mapped[str | None] = mapped_column(String(255))
+    seo_description: Mapped[str | None] = mapped_column(Text)
+    seo_keywords: Mapped[str | None] = mapped_column(String(500))
+    canonical_url: Mapped[str | None] = mapped_column(String(500))
+    og_image: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class Page(Base):
+    """Generic CMS page — independent of Blog/Product/Service, for one-off
+    content (e.g. a standalone landing/legal/info page) that needs its own
+    URL, SEO fields and draft/publish workflow without being any of those
+    specific content types. Same shape as BlogPost by design, minus the
+    blog-specific fields (category, author, excerpt, product/service links)."""
+
+    __tablename__ = "pages"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    title_en: Mapped[str] = mapped_column(String(500), nullable=False)
+    title_bn: Mapped[str | None] = mapped_column(String(500))
+    content_en: Mapped[str] = mapped_column(Text, nullable=False)
+    content_bn: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="draft", index=True)
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     seo_title: Mapped[str | None] = mapped_column(String(255))
     seo_description: Mapped[str | None] = mapped_column(Text)

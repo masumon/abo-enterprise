@@ -24,7 +24,7 @@ export default function Portfolio() {
   const t = (o: { en: string; bn: string }) => (lang === "bn" ? o.bn : o.en);
 
   return (
-    <section id="software" className="py-5 lg:py-7 bg-white dark:bg-[var(--surface)]">
+    <section className="py-5 lg:py-7 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
         <div className="flex items-end justify-between gap-4 mb-6 sm:mb-8 lg:mb-10">
           <div>

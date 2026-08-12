@@ -81,7 +81,7 @@ api.interceptors.response.use(
 );
 
 async function queueOfflineCreate<T>(
-  type: "booking" | "lead" | "service_booking" | "service_lead",
+  type: "lead" | "service_booking" | "service_lead",
   data: Record<string, unknown>
 ): Promise<AxiosResponse<ApiResponse<T | null> & { queued: true }>> {
   await offlineSync.addPendingAction(type, "create", data);
@@ -193,10 +193,8 @@ export const ordersApi = {
 };
 
 export const bookingsApi = {
-  create: (data: Booking) =>
-    isOffline()
-      ? queueOfflineCreate<Booking>("booking", data as unknown as Record<string, unknown>)
-      : api.post<ApiResponse<Booking>>("/api/v1/bookings", data),
+  // The legacy bookings table is read-only (see backend bookings.py) — there
+  // is no create route here. New bookings always go through serviceBookingsApi.
 
   // Public tracking by booking number (BK-… v2, or ABO-B-… legacy v1).
   track: (bookingNumber: string) =>
@@ -585,6 +583,46 @@ export const adminBlogApi = {
     api.get<ApiResponse<{ blog_ids: string[] }>>(`/api/v1/blog/admin/links/service/${serviceId}`),
 };
 
+export interface PageRecord {
+  id: string;
+  slug: string;
+  title_en: string;
+  title_bn: string | null;
+  content_en: string;
+  content_bn: string | null;
+  status: "draft" | "published";
+  published_at: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_keywords: string | null;
+  canonical_url: string | null;
+  og_image: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const pagesApi = {
+  get: (slug: string) =>
+    api.get<ApiResponse<PageRecord>>(`/api/v1/pages/${encodeURIComponent(slug)}`),
+};
+
+export const adminPagesApi = {
+  list: (params?: { status?: string; search?: string; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<PageRecord>>("/api/v1/pages/admin/all", { params }),
+
+  get: (id: string) =>
+    api.get<ApiResponse<PageRecord>>(`/api/v1/pages/admin/${id}`),
+
+  create: (data: Partial<PageRecord>) =>
+    api.post<ApiResponse<PageRecord>>("/api/v1/pages/admin", data),
+
+  update: (id: string, data: Partial<PageRecord>) =>
+    api.put<ApiResponse<PageRecord>>(`/api/v1/pages/admin/${id}`, data),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/pages/admin/${id}`),
+};
+
 export const servicesAdminApi = {
   list: (params?: { page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<Service>>("/api/v1/services/admin/services", { params }),
@@ -760,6 +798,12 @@ export const adminApi = {
   auditLogFilterOptions: () =>
     api.get<ApiResponse<{ actions: string[]; entity_types: string[] }>>("/api/v1/admin/audit-logs/meta"),
 
+  listSystemEvents: (params: { page?: number; per_page?: number; event_type?: string; severity?: string; search?: string } = {}) =>
+    api.get<PaginatedResponse<{ id: string; event_type: string; severity: string; source: string; message: string; meta: Record<string, unknown>; created_at: string }>>("/api/v1/admin/ops/events", { params }),
+
+  systemEventFilterOptions: () =>
+    api.get<ApiResponse<{ event_types: string[]; severities: string[] }>>("/api/v1/admin/ops/events/meta"),
+
   listMedia: (params: { folder?: string; search?: string; page?: number; per_page?: number } = {}) =>
     api.get<PaginatedResponse<MediaAssetRecord>>("/api/v1/media/assets", { params }),
 
@@ -774,6 +818,52 @@ export const adminApi = {
 
   saveSettings: (items: { key: string; value: string; data_type?: string }[]) =>
     api.post<ApiResponse<{ key: string; value: string }[]>>("/api/v1/settings/upsert", items),
+};
+
+export interface NotificationRecord {
+  id: string;
+  type: string;
+  severity: "error" | "warning" | "info";
+  title: string;
+  body: string | null;
+  link: string | null;
+  meta: Record<string, unknown>;
+  is_read: boolean;
+  read_at: string | null;
+  created_at: string;
+  broadcast: boolean;
+}
+
+export type ReportType = "sales" | "revenue" | "products" | "services" | "customers" | "payments" | "courier" | "profit" | "reconciliation";
+
+export const reportsApi = {
+  get: (report: ReportType, params: { start_date?: string; end_date?: string } = {}) =>
+    api.get<ApiResponse<{ report: string; start_date: string; end_date: string; rows: Record<string, unknown>[] }>>(`/api/v1/admin/reports/${report}`, { params }),
+
+  exportPath: (report: ReportType, params: { start_date?: string; end_date?: string } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.start_date) qs.set("start_date", params.start_date);
+    if (params.end_date) qs.set("end_date", params.end_date);
+    const query = qs.toString();
+    return `/api/v1/admin/reports/${report}/export${query ? `?${query}` : ""}`;
+  },
+};
+
+export const notificationsApi = {
+  list: (params: { page?: number; per_page?: number; unread_only?: boolean; type?: string } = {}) =>
+    api.get<PaginatedResponse<NotificationRecord>>("/api/v1/admin/notifications", { params }),
+
+  unreadCount: () =>
+    api.get<ApiResponse<{ count: number }>>("/api/v1/admin/notifications/unread-count"),
+
+  markRead: (id: string) =>
+    api.post<ApiResponse<null>>(`/api/v1/admin/notifications/${id}/read`),
+
+  markAllRead: () =>
+    api.post<ApiResponse<{ updated: number }>>("/api/v1/admin/notifications/read-all"),
+
+  dismiss: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/admin/notifications/${id}`),
 };
 
 export interface EmailTemplateRecord {

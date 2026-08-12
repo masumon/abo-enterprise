@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ShoppingCart, Briefcase, Package, Users, Wrench, FileText, Star, BookOpen, FolderKanban,
   Images, CreditCard, Bot, Mail, BarChart2, Settings, Shield, Send, Truck, UserPlus, Percent, FolderTree,
-  LayoutTemplate, Megaphone, ExternalLink, UploadCloud, Tags, type LucideIcon,
+  LayoutTemplate, Megaphone, ExternalLink, UploadCloud, Tags, Bell, History, ScrollText, type LucideIcon,
 } from "lucide-react";
 
 export type AdminRole = "super_admin" | "admin" | "editor" | "viewer";
@@ -63,6 +63,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     { href: "/sumon/media", icon: Images, label: "Image Manager", labelBn: "ছবি ব্যবস্থাপনা" },
     { href: "/sumon/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি" },
     { href: "/sumon/blog", icon: BookOpen, label: "Blog", labelBn: "ব্লগ" },
+    { href: "/sumon/pages", icon: FileText, label: "Pages", labelBn: "পেজ" },
     { href: "/sumon/email-templates", icon: Mail, label: "Email Templates", labelBn: "ইমেইল", minRole: "admin" },
   ]},
   { id: "shipping-delivery", label: "Shipping & Delivery", labelBn: "শিপিং ও ডেলিভারি", items: [
@@ -72,10 +73,13 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   ]},
   { id: "analytics-operations", label: "Analytics & Operations", labelBn: "অ্যানালিটিক্স ও অপারেশনস", items: [
     { href: "/sumon/analytics", icon: BarChart2, label: "Analytics", labelBn: "অ্যানালিটিক্স" },
+    { href: "/sumon/reports", icon: ScrollText, label: "Reports", labelBn: "রিপোর্ট" },
   ]},
   { id: "system-security", label: "System & Security", labelBn: "সিস্টেম ও নিরাপত্তা", items: [
     { href: "/sumon/settings", icon: Settings, label: "Settings", labelBn: "সেটিংস", minRole: "admin" },
     { href: "/sumon/users", icon: Users, label: "Users", labelBn: "ইউজার", minRole: "admin" },
+    { href: "/sumon/notifications", icon: Bell, label: "Notifications", labelBn: "নোটিফিকেশন" },
+    { href: "/sumon/events", icon: History, label: "System Events", labelBn: "সিস্টেম ইভেন্ট", minRole: "admin" },
     { href: "/sumon/audit", icon: Shield, label: "Audit Logs", labelBn: "অডিট", minRole: "admin" },
     { href: "/sumon/assistant", icon: Bot, label: "AI Assistant", labelBn: "AI সহকারী", minRole: "admin" },
   ]},

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useLanguageStore } from "@/store/language";
 import { Shield, Truck, Lock, RotateCcw, Award, Headphones, type LucideIcon } from "lucide-react";
 import GlassCard from "@/components/ui/GlassCard";
@@ -77,6 +78,16 @@ export default function WhyChooseUsCards() {
   const { settings } = usePublicSettings([SITE_WHY_CHOOSE_KEY]);
   const reasons = getWhyChooseReasons(settings, FALLBACK);
 
+  const [reduceMotion, setReduceMotion] = useState(false);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduceMotion(mq.matches);
+    update();
+    mq.addEventListener?.("change", update);
+    return () => mq.removeEventListener?.("change", update);
+  }, []);
+
   return (
     <section className="py-5 lg:py-7 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
@@ -104,7 +115,7 @@ export default function WhyChooseUsCards() {
           slidesPerView={2}
           spaceBetween={12}
           loop
-          autoplay={{ delay: 2600, disableOnInteraction: false, pauseOnMouseEnter: true }}
+          autoplay={reduceMotion ? false : { delay: 2600, disableOnInteraction: false, pauseOnMouseEnter: true }}
           speed={900}
           grabCursor
           breakpoints={{

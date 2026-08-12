@@ -21,6 +21,7 @@ from app.core.sms import send_sms
 from app.core.capabilities import get_capabilities
 from app.core import scheduling
 from app.core.invoice import InvoiceService
+from app.core.customer_master import get_or_create_customer
 from app.core.booking_form import (
     BookingFormValidationError,
     summarize_form_data,
@@ -147,6 +148,16 @@ async def _create_unlinked_booking(payload, background_tasks: BackgroundTasks, d
         service_name=payload.service_name.strip(),
         **fields,
     )
+    customer = await get_or_create_customer(
+        db,
+        phone=booking.customer_phone,
+        name=booking.customer_name,
+        email=booking.customer_email,
+        company=booking.customer_company,
+    )
+    if customer:
+        booking.customer_id = customer.id
+
     db.add(booking)
     await db.commit()
     await db.refresh(booking)
@@ -390,6 +401,16 @@ async def create_booking(
         service_name=service.name_en,
         **booking_fields,
     )
+
+    customer = await get_or_create_customer(
+        db,
+        phone=booking.customer_phone,
+        name=booking.customer_name,
+        email=booking.customer_email,
+        company=booking.customer_company,
+    )
+    if customer:
+        booking.customer_id = customer.id
 
     db.add(booking)
     await db.commit()

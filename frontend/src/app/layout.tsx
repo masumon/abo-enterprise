@@ -40,6 +40,7 @@ export async function generateMetadata(): Promise<Metadata> {
     DEFAULT_OG_IMAGE;
   const favicon = settingValue(settings, "favicon_url");
   const appIcon = settingValue(settings, "app_icon_url") || settingValue(settings, "logo_url");
+  const siteName = settingValue(settings, "site_name", "ABO Enterprise");
 
   return {
     title: {
@@ -62,7 +63,7 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     authors: [{ name: "Mumain Ahmed (Sumon)", url: "https://mumain.dev" }],
     creator: "Mumain Ahmed (Sumon) | Mumain.dev",
-    publisher: "ABO Enterprise",
+    publisher: siteName,
     metadataBase: new URL(SITE_URL),
     // Customer PWA manifest. Declared as a metadata FIELD (not the app/manifest.ts
     // file convention) so the admin layout can override it with metadata.manifest
@@ -83,14 +84,14 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       locale: "bn_BD",
       alternateLocale: "en_US",
-      siteName: "ABO Enterprise",
+      siteName,
       title: getBrandFullTitle("bn"),
       description: "মোবাইল এক্সেসরিজ থেকে AI সমাধান — সহজ সমাধান, সব এক জায়গায়।",
       images: [{ url: ogImage, width: 1200, height: 630, alt: "ABO Enterprise" }],
     },
     twitter: {
       card: "summary_large_image",
-      title: "ABO Enterprise",
+      title: siteName,
       description: getBrandFullTitle("en"),
       images: [ogImage],
     },
@@ -113,7 +114,7 @@ export async function generateMetadata(): Promise<Metadata> {
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
-      title: "ABO Enterprise",
+      title: siteName,
       // iOS PWA launch screens — brand background + optimized round logo,
       // generated per device size (iOS shows white otherwise).
       startupImage: [

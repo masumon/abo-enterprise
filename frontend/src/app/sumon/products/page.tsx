@@ -46,6 +46,7 @@ const schema = z.object({
   description_bn: z.string().optional(),
   price: z.coerce.number().min(1, "Required"),
   original_price: z.coerce.number().min(0).optional(),
+  cost_price: z.coerce.number().min(0).optional(),
   category: z.string().min(1, "Required"),
   category_id: z.string().optional(),
   subcategory_id: z.string().optional(),
@@ -317,6 +318,7 @@ export default function AdminProductsPage() {
       description_bn: p.description_bn ?? "",
       price: p.price,
       original_price: p.original_price ?? undefined,
+      cost_price: p.cost_price ?? undefined,
       category: p.category,
       category_id: p.category_id ?? "",
       subcategory_id: p.subcategory_id ?? "",
@@ -846,6 +848,11 @@ export default function AdminProductsPage() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Original Price (৳)</label>
                   <input {...register("original_price")} type="number" className="input" placeholder="399 (optional)" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Cost Price (৳)</label>
+                  <input {...register("cost_price")} type="number" className="input" placeholder="Internal — used only for the Profit report" />
+                  <p className="text-xs text-gray-400 mt-1">Not shown to customers. Powers Reports → Profit.</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>

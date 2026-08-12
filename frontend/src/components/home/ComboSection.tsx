@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Package, Truck, ShoppingCart, X, ChevronRight } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useCartStore } from "@/store/cart";
@@ -103,8 +104,13 @@ export default function ComboSection() {
                 >
                   <div className="relative aspect-[4/3] overflow-hidden">
                     {c.image_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={c.image_url} alt={title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <Image
+                        src={c.image_url}
+                        alt={title}
+                        fill
+                        sizes="(max-width: 1024px) 50vw, 25vw"
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
                     ) : (
                       <div className="absolute inset-0 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 flex items-center justify-center overflow-hidden">
                         <span aria-hidden className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-accent-500/15 blur-2xl" />
@@ -168,29 +174,74 @@ function ComboDetailModal({ combo, bn, onClose, onAdd }: { combo: Combo; bn: boo
   const compare = combo.compare_at_price && combo.compare_at_price > combo.combo_price ? combo.compare_at_price : (itemsTotal > combo.combo_price ? itemsTotal : 0);
   const save = compare ? Math.round(compare - combo.combo_price) : 0;
 
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+
+  // Close on Escape + trap focus + lock body scroll while the sheet is open,
+  // matching the ClientLogos detail sheet's a11y behaviour.
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (focusable.length === 0) {
+        e.preventDefault();
+        closeButtonRef.current?.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+    requestAnimationFrame(() => closeButtonRef.current?.focus());
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+      requestAnimationFrame(() => previouslyFocusedRef.current?.focus());
+    };
   }, [onClose]);
 
   return (
     <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4" onClick={onClose} role="dialog" aria-modal="true" aria-label={title}>
       <div
+        ref={dialogRef}
         className="w-full sm:max-w-lg max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#141930] shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="relative aspect-[16/10] overflow-hidden rounded-t-2xl">
           {combo.image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={combo.image_url} alt={title} className="absolute inset-0 w-full h-full object-cover" />
+            <Image
+              src={combo.image_url}
+              alt={title}
+              fill
+              sizes="(max-width: 640px) 100vw, 512px"
+              className="object-cover"
+            />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 flex items-center justify-center">
               <Package className="w-10 h-10 text-accent-400" aria-hidden />
             </div>
           )}
-          <button type="button" onClick={onClose} aria-label={bn ? "বন্ধ করুন" : "Close"} className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60">
+          <button ref={closeButtonRef} type="button" onClick={onClose} aria-label={bn ? "বন্ধ করুন" : "Close"} className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60">
             <X className="w-5 h-5" />
           </button>
           {combo.free_delivery && (
@@ -214,10 +265,9 @@ function ComboDetailModal({ combo, bn, onClose, onAdd }: { combo: Combo; bn: boo
               {combo.items.map((it) => {
                 const row = (
                   <>
-                    <div className="w-12 h-12 rounded-lg bg-brand-50 dark:bg-white/5 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                    <div className="relative w-12 h-12 rounded-lg bg-brand-50 dark:bg-white/5 overflow-hidden flex-shrink-0 flex items-center justify-center">
                       {it.image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={it.image_url} alt="" className="w-full h-full object-cover" />
+                        <Image src={it.image_url} alt="" fill sizes="48px" className="object-cover" />
                       ) : (
                         <Package className="w-5 h-5 text-brand-300" aria-hidden />
                       )}

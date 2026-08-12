@@ -20,7 +20,7 @@ jest.mock("axios", () => {
   };
 });
 
-import api, { productsApi, bookingsApi, leadsApi, adminApi } from "@/lib/api";
+import api, { productsApi, serviceBookingsApi, leadsApi, adminApi } from "@/lib/api";
 
 const mockAxiosInstance = global.__mockAxiosInstance as {
   get: jest.Mock;
@@ -41,7 +41,7 @@ describe("API client", () => {
     expect(mockAxiosInstance.get).toHaveBeenCalledWith("/api/v1/products", { params: undefined });
   });
 
-  it("bookingsApi.create posts booking payload", async () => {
+  it("serviceBookingsApi.create posts booking payload to the v2 endpoint", async () => {
     const bookingData = {
       service_id: "1",
       customer_name: "John Doe",
@@ -52,9 +52,9 @@ describe("API client", () => {
       data: { data: { id: "booking-1", booking_number: "BK-2024-001" } },
     });
 
-    const response = await bookingsApi.create(bookingData as never);
+    const response = await serviceBookingsApi.create(bookingData);
     expect(response.status).toBe(201);
-    expect(mockAxiosInstance.post).toHaveBeenCalledWith("/api/v1/bookings", bookingData);
+    expect(mockAxiosInstance.post).toHaveBeenCalledWith("/api/v1/service-bookings", bookingData);
   });
 
   it("leadsApi.create posts lead payload", async () => {

@@ -53,6 +53,21 @@ async def get_analytics_overview(
             LeadV2.status == "won",
             LeadV2.is_deleted == False,  # noqa: E712
         ))
+        orders_paid = await db.scalar(select(func.count(Order.id)).where(
+            *in_window(Order.created_at),
+            Order.payment_status == "completed",
+            Order.is_deleted == False,  # noqa: E712
+        ))
+        orders_pending = await db.scalar(select(func.count(Order.id)).where(
+            *in_window(Order.created_at),
+            Order.payment_status == "pending",
+            Order.is_deleted == False,  # noqa: E712
+        ))
+        orders_failed = await db.scalar(select(func.count(Order.id)).where(
+            *in_window(Order.created_at),
+            Order.payment_status == "failed",
+            Order.is_deleted == False,  # noqa: E712
+        ))
         return {
             "order_rev": float(order_rev or 0),
             "booking_rev": float(booking_rev or 0),
@@ -60,6 +75,9 @@ async def get_analytics_overview(
             "bookings": bookings or 0,
             "leads": leads or 0,
             "won": won or 0,
+            "orders_paid": orders_paid or 0,
+            "orders_pending": orders_pending or 0,
+            "orders_failed": orders_failed or 0,
         }
 
     cur = await window_stats(since, None)
@@ -102,6 +120,11 @@ async def get_analytics_overview(
                 "bookings": cur["bookings"],
                 "leads": cur["leads"],
                 "leads_won": cur["won"],
+            },
+            "payments": {
+                "paid": cur["orders_paid"],
+                "pending": cur["orders_pending"],
+                "failed": cur["orders_failed"],
             },
             "conversion_rate": conversion_rate,
             # vs the immediately preceding window of the same length

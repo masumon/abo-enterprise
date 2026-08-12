@@ -14,6 +14,7 @@ import { useT } from "@/lib/i18n/useT";
 import SearchSuggestions from "@/components/search/SearchSuggestions";
 import MegaMenu from "@/components/layout/MegaMenu";
 import BrandLogo from "@/components/ui/BrandLogo";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { getBrandFullTitle, getBrandName, getBrandTagline } from "@/lib/tokens";
 import { cn } from "@/lib/utils";
 import { useTaxonomy } from "@/hooks/useTaxonomy";
@@ -35,6 +36,8 @@ export default function Navbar() {
 
   const { itemCount } = useCartStore();
   const { lang, toggle } = useLanguageStore();
+  const { settings: siteSettings } = usePublicSettings(["site_name"]);
+  const brandName = getSettingValue(siteSettings, "site_name", getBrandName(lang));
   const { theme, toggle: toggleTheme } = useThemeStore();
   const customerSession = useCustomerStore((s) => s.session);
   const isSignedIn = Boolean(customerSession?.token);
@@ -72,7 +75,7 @@ export default function Navbar() {
         aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
       >
         {/* Bigger brand logo (admin-configurable via CMS logo URL). */}
-        <Link href="/" className="flex-none flex items-center" aria-label={getBrandName(lang)}>
+        <Link href="/" className="flex-none flex items-center" aria-label={brandName}>
           <BrandLogo size="lg" href={false} priority />
         </Link>
 
@@ -168,7 +171,7 @@ export default function Navbar() {
             <BrandLogo size="md" href={false} priority />
             <span className="min-w-0">
               <span className="font-bold text-xl tracking-tight block text-brand-800 dark:text-white truncate">
-                {getBrandName(lang)}
+                {brandName}
               </span>
               <p className="text-xs font-medium text-brand-600/90 dark:text-brand-200/80 truncate max-w-[15rem] leading-snug">
                 {getBrandTagline(lang)}

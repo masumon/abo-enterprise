@@ -15,6 +15,8 @@ export interface Product {
   description_bn?: string;
   price: number;
   original_price?: number;
+  /** Admin-entered unit cost, used only by the Reports → Profit view. Never shown to customers. */
+  cost_price?: number;
   category: ProductCategory;
   category_id?: string | null;
   subcategory_id?: string | null;

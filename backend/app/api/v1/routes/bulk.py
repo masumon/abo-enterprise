@@ -197,7 +197,7 @@ async def export_products(
 @router.post("/import/products", response_model=ApiResponse)
 async def import_products(
     file: UploadFile = File(...),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("products.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Bulk import/update products from CSV (admin only)"""

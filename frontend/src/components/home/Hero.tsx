@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Calendar, ShoppingBag, ArrowRight, Zap } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
@@ -9,6 +10,7 @@ import AnimatedCounter from "@/components/ui/AnimatedCounter";
 import { publicApi } from "@/lib/api";
 import { ABO_ACRONYM, getBrandName, getBrandTagline } from "@/lib/tokens";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { usePublicStats } from "@/hooks/usePublicStats";
 import { resolveHomeBannerImage } from "@/lib/pageBanners";
 import { isVideoUrl } from "@/lib/media";
 import AutoVideo from "@/components/ui/AutoVideo";
@@ -32,13 +34,6 @@ interface ActivityItem {
   time: string;
 }
 
-interface StatsData {
-  orders: number;
-  services: number;
-  clients: number;
-  projects: number;
-}
-
 export function getFreeDeliveryLabel(lang: "bn" | "en", rawAmount: string): string | null {
   const amount = rawAmount.trim();
   if (!amount) return null;
@@ -51,7 +46,7 @@ export default function Hero() {
   const { lang } = useLanguageStore();
   const t = useT();
   const { settings } = usePublicSettings(["hero_image_url", "hero_mobile_image_url", "hero_promo_media_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "free_delivery_min_amount", HERO_TEXT_STYLE_KEY]);
-  const [stats, setStats] = useState<StatsData | null>(null);
+  const { stats } = usePublicStats();
   const [activity, setActivity] = useState<ActivityItem[]>([]);
 
   const heroImage = resolveHomeBannerImage(settings);
@@ -73,15 +68,6 @@ export default function Hero() {
   const hstyle = parseHeroTextStyle(getSettingValue(settings, HERO_TEXT_STYLE_KEY));
 
   useEffect(() => {
-    publicApi.stats().then((r) => {
-      const d = r.data.data;
-      if (d) setStats({
-        orders: d.orders ?? 0,
-        services: d.services ?? 0,
-        clients: d.clients ?? 0,
-        projects: d.projects ?? 0,
-      });
-    }).catch(() => {});
     publicApi.activity().then((r) => {
       const items = r.data.data;
       if (items?.length) setActivity(items);
@@ -229,12 +215,15 @@ export default function Hero() {
                         {heroPromoIsVideo ? (
                           <AutoVideo src={heroPromoMedia} className="w-full aspect-video object-cover block" tapToPlay aria-hidden />
                         ) : (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={heroPromoMedia}
-                            alt={heroTitleOverride || (lang === "bn" ? "প্রোমোশনাল ব্যানার" : "Promotional banner")}
-                            className="w-full aspect-video object-cover block"
-                          />
+                          <div className="relative w-full aspect-video">
+                            <Image
+                              src={heroPromoMedia}
+                              alt={heroTitleOverride || (lang === "bn" ? "প্রোমোশনাল ব্যানার" : "Promotional banner")}
+                              fill
+                              sizes="(max-width: 768px) 100vw, 448px"
+                              className="object-cover"
+                            />
+                          </div>
                         )}
                       </div>
                     ) : null

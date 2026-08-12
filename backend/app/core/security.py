@@ -71,6 +71,8 @@ _LEGACY_ROUTE_PERMISSIONS = {
     ("GET", "/admin/stats"): "analytics.read",
     ("POST", "/admin/upload"): "media.write",
     ("GET", "/admin/users"): "users.read",
+    ("GET", "/admin/audit-logs"): "audit_logs.read",
+    ("GET", "/admin/audit-logs/meta"): "audit_logs.read",
     ("GET", "/combos/admin/all"): "products.read",
     ("GET", "/assistant/admin/config"): "ops.read",
     ("PUT", "/assistant/admin/config"): "ops.write",

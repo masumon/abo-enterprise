@@ -7,6 +7,7 @@ in-memory buffers the only source of operational history.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from collections import deque
@@ -50,6 +51,38 @@ def _capture_persistent_event(
         pass
 
 
+async def _write_system_event(event_type: str, severity: str, message: str, metadata: dict[str, Any] | None) -> None:
+    try:
+        from app.core.database import AsyncSessionLocal
+        from app.models.models import SystemEvent
+
+        async with AsyncSessionLocal() as db:
+            db.add(SystemEvent(
+                event_type=event_type,
+                severity=severity,
+                source="ops_events",
+                message=message[:2000],
+                meta=metadata or {},
+            ))
+            await db.commit()
+    except Exception:  # noqa: BLE001 — persistence must never break business code
+        pass
+
+
+def _persist_system_event(event_type: str, severity: str, message: str, metadata: dict[str, Any] | None = None) -> None:
+    """Fire-and-forget durable counterpart to the in-memory ring buffers —
+    survives process restarts, unlike recent_errors/failed_emails/failed_logins.
+    Only schedules the write when a loop is actually running (always true
+    inside a FastAPI request/background task, which is where every call site
+    below fires from); otherwise this is a silent no-op, matching the
+    existing best-effort Sentry capture above."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return
+    loop.create_task(_write_system_event(event_type, severity, message, metadata))
+
+
 def record_failed_email(to: str, subject: str, error: str) -> None:
     masked_to = (to[:3] + "…" + to.split("@")[-1]) if "@" in to else to[:6]
     safe_subject = subject[:120]
@@ -65,6 +98,10 @@ def record_failed_email(to: str, subject: str, error: str) -> None:
         event_type="failed_email",
         metadata={"recipient": masked_to, "error": safe_error},
     )
+    _persist_system_event(
+        "failed_email", "error", f"Email delivery failed: {safe_subject} → {masked_to}",
+        {"recipient": masked_to, "subject": safe_subject, "error": safe_error},
+    )
 
 
 def record_failed_login(ip: str, email: str) -> None:
@@ -79,6 +116,10 @@ def record_failed_login(ip: str, email: str) -> None:
         level="warning",
         event_type="failed_login",
         metadata={"email": masked_email},
+    )
+    _persist_system_event(
+        "failed_login", "warning", f"Admin login failed from {ip} ({masked_email})",
+        {"ip": ip, "email": masked_email},
     )
 
 
@@ -112,6 +153,15 @@ class RecentErrorsHandler(logging.Handler):
                 "message": message,
                 "count": 1,
             })
+            # Only persist the first occurrence of a given (logger, message)
+            # pair — a repeated/looping error shouldn't write a system_events
+            # row on every single occurrence.
+            _persist_system_event(
+                "runtime_error",
+                "error" if record.levelno >= logging.ERROR else "warning",
+                message,
+                {"logger": record.name, "level": record.levelname},
+            )
         except Exception:  # noqa: BLE001 — a logging handler must never raise
             pass
 

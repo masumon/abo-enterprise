@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users } from "lucide-react";
+import { ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users, AlertTriangle } from "lucide-react";
 import { getAdminPageTitle } from "@/lib/adminNav";
 import AdminInstallButton from "@/components/admin/AdminInstallButton";
 import { useAlertStore } from "@/store/alerts";
 import { useLanguageStore } from "@/store/language";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { notificationsApi, type NotificationRecord } from "@/lib/api";
 
 interface Props {
   adminName: string;
@@ -27,13 +28,42 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [persistentNotifs, setPersistentNotifs] = useState<NotificationRecord[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const loadNotifications = () => {
+    notificationsApi.unreadCount().then((r) => setUnreadCount(r.data.data?.count ?? 0)).catch(() => {});
+    notificationsApi.list({ unread_only: true, per_page: 5 }).then((r) => setPersistentNotifs(r.data.data ?? [])).catch(() => {});
+  };
+
+  useEffect(() => {
+    loadNotifications();
+    const timer = setInterval(() => {
+      if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+      loadNotifications();
+    }, 30_000);
+    return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time poll setup
+  }, []);
+
+  const markNotificationRead = (id: string) => {
+    notificationsApi.markRead(id).catch(() => {});
+    setPersistentNotifs((prev) => prev.filter((n) => n.id !== id));
+    setUnreadCount((c) => Math.max(0, c - 1));
+  };
+
+  const markAllNotificationsRead = () => {
+    notificationsApi.markAllRead().catch(() => {});
+    setPersistentNotifs([]);
+    setUnreadCount(0);
+  };
 
   const notifItems = [
     { key: "orders", icon: ShoppingCart, label: lang === "bn" ? "অপেক্ষমান অর্ডার" : "Pending orders", count: pendingOrders, href: "/sumon/orders" },
     { key: "bookings", icon: Briefcase, label: lang === "bn" ? "অপেক্ষমান বুকিং" : "Pending bookings", count: pendingBookings, href: "/sumon/bookings" },
     { key: "leads", icon: Users, label: lang === "bn" ? "নতুন লিড" : "New leads", count: newLeads, href: "/sumon/leads" },
   ].filter((i) => i.count > 0 && !dismissed.has(i.key));
-  const visibleTotal = notifItems.reduce((s, i) => s + i.count, 0);
+  const visibleTotal = notifItems.reduce((s, i) => s + i.count, 0) + unreadCount;
   const dismiss = (key: string) => setDismissed((prev) => new Set(prev).add(key));
 
   const handleRefresh = async () => {
@@ -125,18 +155,42 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
                     <span className="text-sm font-bold text-gray-900 dark:text-gray-100">
                       {lang === "bn" ? "নোটিফিকেশন" : "Notifications"}
                     </span>
-                    {notifItems.length > 0 && (
-                      <button type="button" onClick={() => setDismissed(new Set(["orders", "bookings", "leads"]))} className="text-xs text-brand-600 hover:underline">
+                    {(notifItems.length > 0 || persistentNotifs.length > 0) && (
+                      <button
+                        type="button"
+                        onClick={() => { setDismissed(new Set(["orders", "bookings", "leads"])); markAllNotificationsRead(); }}
+                        className="text-xs text-brand-600 hover:underline"
+                      >
                         {lang === "bn" ? "সব ক্লিয়ার" : "Clear all"}
                       </button>
                     )}
                   </div>
-                  {notifItems.length === 0 ? (
+                  {notifItems.length === 0 && persistentNotifs.length === 0 ? (
                     <div className="px-4 py-6 text-center text-sm text-gray-400">
                       {lang === "bn" ? "নতুন কিছু নেই ✅" : "You're all caught up ✅"}
                     </div>
                   ) : (
                     <ul className="max-h-80 overflow-y-auto divide-y divide-gray-50 dark:divide-white/5">
+                      {persistentNotifs.map((n) => (
+                        <li key={n.id} className="flex items-center gap-2 px-3 py-2.5 hover:bg-gray-50/60 dark:hover:bg-white/[0.03]">
+                          <Link
+                            href={n.link || "/sumon/notifications"}
+                            onClick={() => { setNotifOpen(false); markNotificationRead(n.id); }}
+                            className="flex items-center gap-2.5 flex-1 min-w-0"
+                          >
+                            <span className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${n.severity === "error" ? "bg-red-50 text-red-600" : n.severity === "warning" ? "bg-amber-50 text-amber-700" : "bg-brand-50 text-brand-600"}`}>
+                              <AlertTriangle className="w-4 h-4" />
+                            </span>
+                            <span className="min-w-0">
+                              <span className="block text-sm text-gray-800 dark:text-gray-100 truncate">{n.title}</span>
+                              {n.body && <span className="block text-xs text-gray-400 truncate">{n.body}</span>}
+                            </span>
+                          </Link>
+                          <button type="button" onClick={() => markNotificationRead(n.id)} className="w-7 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 flex items-center justify-center text-gray-400 flex-shrink-0" aria-label={lang === "bn" ? "পড়া হয়েছে চিহ্নিত করুন" : "Mark as read"}>
+                            <X className="w-4 h-4" />
+                          </button>
+                        </li>
+                      ))}
                       {notifItems.map((item) => {
                         const Icon = item.icon;
                         return (
@@ -157,6 +211,15 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
                         );
                       })}
                     </ul>
+                  )}
+                  {persistentNotifs.length > 0 && (
+                    <Link
+                      href="/sumon/notifications"
+                      onClick={() => setNotifOpen(false)}
+                      className="block px-4 py-2.5 text-center text-xs font-semibold text-brand-600 hover:bg-gray-50/60 dark:hover:bg-white/[0.03] border-t border-gray-100 dark:border-white/10"
+                    >
+                      {lang === "bn" ? "সব দেখুন →" : "View all →"}
+                    </Link>
                   )}
                 </div>
               </>

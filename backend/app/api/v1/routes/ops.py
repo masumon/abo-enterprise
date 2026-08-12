@@ -1,9 +1,9 @@
 """Admin Operations endpoints — System Health, Error Center, Security
-Overview, Backup export/restore, Notification feed.
+Overview, Backup export/restore, Notification feed, persistent Event Store.
 
-Free-tier, zero-schema-change design: live checks + in-process ring
-buffers (app.core.ops_events) + existing tables (ActivityLog,
-AssistantActionLog, Order, AdminUser, MediaAsset, Setting).
+Live checks + in-process ring buffers (app.core.ops_events) for the fast
+recent view, plus the system_events table for durable, searchable history
+across restarts (see the Persistent Event Store section below).
 """
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Body, Depends, Query
 from fastapi.responses import Response
-from sqlalchemy import func, select, text
+from sqlalchemy import and_, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -30,7 +30,9 @@ from app.models.models import (
     Product,
     Service,
     Setting,
+    SystemEvent,
 )
+from app.schemas.schemas import ApiResponse, PaginatedMeta, PaginatedResponse
 
 router = APIRouter(prefix="/admin/ops", tags=["ops"])
 
@@ -246,8 +248,71 @@ async def error_center(
         "assistant_errors": [
             {"action": r.action, "status": r.status, "at": r.created_at.isoformat()} for r in assistant_errors
         ],
-        "note": "Runtime errors are held in memory since the last restart. Set SENTRY_DSN for persistent history.",
+        "note": "This view is the fast in-memory snapshot since the last restart. "
+                "See GET /admin/ops/events for the full persistent, searchable history.",
     }}
+
+
+# ─── Persistent Event Store ─────────────────────────────────────────────────
+# Durable counterpart to the in-memory buffers above (recent_errors/
+# failed_emails/failed_logins) — survives restarts/deploys. Written by
+# app.core.ops_events._persist_system_event on failed email/login/runtime
+# error, and available for any other module to write to directly.
+
+@router.get("/events", response_model=PaginatedResponse)
+async def list_system_events(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(30, ge=1, le=100),
+    event_type: str | None = Query(None),
+    severity: str | None = Query(None),
+    search: str | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_role("ops.read")),
+):
+    conditions = [SystemEvent.is_deleted == False]  # noqa: E712
+    if event_type:
+        conditions.append(SystemEvent.event_type == event_type)
+    if severity:
+        conditions.append(SystemEvent.severity == severity)
+    if search:
+        conditions.append(SystemEvent.message.ilike(f"%{search}%"))
+
+    total = (await db.execute(select(func.count(SystemEvent.id)).where(and_(*conditions)))).scalar_one()
+    rows = (await db.execute(
+        select(SystemEvent).where(and_(*conditions))
+        .order_by(SystemEvent.created_at.desc())
+        .offset((page - 1) * per_page).limit(per_page)
+    )).scalars().all()
+
+    return PaginatedResponse(
+        data=[
+            {
+                "id": str(e.id),
+                "event_type": e.event_type,
+                "severity": e.severity,
+                "source": e.source,
+                "message": e.message,
+                "meta": e.meta,
+                "created_at": e.created_at.isoformat(),
+            }
+            for e in rows
+        ],
+        meta=PaginatedMeta(page=page, per_page=per_page, total=total, total_pages=max(1, -(-total // per_page))),
+    )
+
+
+@router.get("/events/meta", response_model=ApiResponse)
+async def system_event_filter_options(
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_role("ops.read")),
+):
+    event_types = (await db.execute(
+        select(SystemEvent.event_type).where(SystemEvent.is_deleted == False).distinct()  # noqa: E712
+    )).scalars().all()
+    return ApiResponse(success=True, data={
+        "event_types": sorted(event_types),
+        "severities": ["error", "warning", "info"],
+    })
 
 
 # ─── Security Overview ───────────────────────────────────────────────────────
@@ -434,6 +499,24 @@ async def notification_center(
     if pending_bookings:
         items.append({"severity": "info", "kind": "pending_bookings", "at": now.isoformat(),
                       "text": f"{pending_bookings} booking(s) awaiting confirmation"})
+
+    # Steadfast is push-only (consignment creation) with no status webhook/
+    # poll syncing delivery state back — there is no "failed delivery" field
+    # to query. The best real signal available: an order handed to the
+    # courier that has sat in "shipped" without progressing to delivered/
+    # cancelled for longer than the local Sylhet delivery SLA.
+    courier_stalled_since = now - timedelta(days=5)
+    courier_stalled = (await db.execute(
+        select(func.count(Order.id)).where(
+            Order.order_status == "shipped",
+            Order.courier_consignment_id.isnot(None),
+            Order.updated_at < courier_stalled_since,
+            Order.is_deleted == False,  # noqa: E712
+        )
+    )).scalar_one()
+    if courier_stalled:
+        items.append({"severity": "warning", "kind": "courier_stalled", "at": now.isoformat(),
+                      "text": f"{courier_stalled} order(s) shipped 5+ days ago still not marked delivered"})
 
     low_stock = (await db.execute(
         select(func.count(Product.id)).where(
