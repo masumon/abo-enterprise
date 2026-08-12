@@ -92,12 +92,8 @@ export default function Hero() {
     <>
       {/* ── Mobile hero — matches artifact Screen 04 ── */}
       <section className="lg:hidden bg-gradient-to-b from-brand-50 to-transparent dark:from-brand-900/20 dark:to-transparent">
-        {/* Kept in the DOM for the page's one true <h1> (SEO/a11y) but not
-            shown visually — the redesigned mobile hero leads with the promo
-            banner + search bar instead of a text headline. Admin-controlled
-            hero_title/hero_subtitle fields are untouched. */}
         <div className="sr-only">
-          <h1>
+          <div role="heading" aria-level={1}>
             {heroTitleOverride || (lang === "bn"
               ? "সিলেটের দোকান, সেবা ও সফটওয়্যার টিম"
               : "Sylhet's store, service desk and software team.")}
@@ -110,7 +106,7 @@ export default function Hero() {
                     ? "Sylhet's store, service desk and software team."
                     : "সিলেটের দোকান, service desk and software team.")}
             </span>
-          </h1>
+          </div>
           <p>
             {lang === "bn"
               ? "সারাদেশে নগদে ডেলিভারি"
@@ -118,10 +114,6 @@ export default function Hero() {
           </p>
         </div>
 
-        {/* Admin-managed promo carousel (Admin → Promo Slides, placement "hero").
-            Renders nothing when no slide is configured — the wide desktop
-            background image isn't shaped for a small mobile card crop, so we
-            don't force it here. */}
         <div className="px-3 pt-2">
           <PromoSlider placement="hero" aspect="aspect-video" eagerFirstSlide />
         </div>
@@ -257,23 +249,19 @@ export default function Hero() {
                         <p className="text-white/70 text-[11px]">{getBrandTagline(lang)}</p>
                       </div>
                     </div>
-                    <span className="flex items-center gap-1.5 text-xs text-green-300 font-medium bg-green-500/20 px-2.5 py-1 rounded-full border border-green-500/30">
-                      <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" aria-hidden />
-                      Live
-                    </span>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     {[
-                      { label: lang === "bn" ? "অর্ডার" : "Orders", end: stats?.orders, suffix: "+", icon: "📦" },
-                      { label: lang === "bn" ? "সেবা" : "Services", end: stats?.services, suffix: "+", icon: "⚙️" },
-                      { label: lang === "bn" ? "গ্রাহক" : "Clients", end: stats?.clients, suffix: "+", icon: "👥" },
-                      { label: lang === "bn" ? "প্রজেক্ট" : "Projects", end: stats?.projects, suffix: "+", icon: "🚀" },
+                      { label: lang === "bn" ? "অর্ডার" : "Orders", end: stats?.orders, icon: "📦" },
+                      { label: lang === "bn" ? "সেবা" : "Services", end: stats?.services, icon: "⚙️" },
+                      { label: lang === "bn" ? "গ্রাহক" : "Clients", end: stats?.clients, icon: "👥" },
+                      { label: lang === "bn" ? "প্রজেক্ট" : "Projects", end: stats?.projects, icon: "🚀" },
                     ].map((item) => (
                       <div key={item.label} className="glass-panel rounded-xl p-3.5 animate-scale-in">
                         <span className="text-xl" aria-hidden>{item.icon}</span>
                         <p className="text-white font-bold text-lg mt-1">
-                          {item.end === undefined ? "—" : <AnimatedCounter end={item.end} suffix={item.suffix} />}
+                          {item.end === undefined ? "—" : <AnimatedCounter end={item.end} />}
                         </p>
                         <p className="text-white/60 text-xs">{item.label}</p>
                       </div>
