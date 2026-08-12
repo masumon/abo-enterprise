@@ -108,6 +108,10 @@ class Order(Base):
     customer_name: Mapped[str] = mapped_column(String(255), nullable=False)
     customer_phone: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     customer_email: Mapped[str | None] = mapped_column(String(255))
+    # Canonical customer-master link, resolved by phone at order creation
+    # (app.core.customer_master.get_or_create_customer). Nullable: orders
+    # created before this column existed are never backfilled automatically.
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("customers.id"), index=True)
     delivery_address: Mapped[str] = mapped_column(Text, nullable=False)
     payment_method: Mapped[str] = mapped_column(String(20), nullable=False)
     payment_number: Mapped[str | None] = mapped_column(String(50))
@@ -374,6 +378,9 @@ class BookingV2(Base):
     customer_phone: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     customer_email: Mapped[str | None] = mapped_column(String(255))
     customer_company: Mapped[str | None] = mapped_column(String(255))
+    # Canonical customer-master link, resolved by phone at booking creation
+    # (app.core.customer_master.get_or_create_customer).
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("customers.id"), index=True)
     # Normalized service location (alembic 0012). Previously concatenated into
     # `details`, which made it unqueryable.
     district: Mapped[str | None] = mapped_column(String(100), index=True)
@@ -420,6 +427,9 @@ class LeadV2(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str | None] = mapped_column(String(255))
     phone: Mapped[str] = mapped_column(String(20), nullable=False)
+    # Canonical customer-master link, resolved by phone at lead creation
+    # (app.core.customer_master.get_or_create_customer).
+    customer_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("customers.id"), index=True)
     company: Mapped[str | None] = mapped_column(String(255))
     job_title: Mapped[str | None] = mapped_column(String(255))
     company_size: Mapped[str | None] = mapped_column(String(50))

@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.core.email import send_email, lead_notification_html, customer_lead_confirmation_html
 from app.models.models import LeadV2, ActivityLog, AdminUser
 from app.core.rate_limit import rate_limit
+from app.core.customer_master import get_or_create_customer
 from app.schemas.schemas import (
     LeadV2Out,
     LeadV2Create,
@@ -87,6 +88,16 @@ async def create_lead(
         lead_number=lead_number,
         **payload.model_dump(),
     )
+
+    customer = await get_or_create_customer(
+        db,
+        phone=lead.phone,
+        name=lead.name,
+        email=lead.email,
+        company=lead.company,
+    )
+    if customer:
+        lead.customer_id = customer.id
 
     db.add(lead)
     await db.commit()
