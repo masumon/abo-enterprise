@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { X, ArrowRight } from "lucide-react";
@@ -45,17 +45,49 @@ export default function ClientLogos() {
   const { settings } = usePublicSettings([CLIENT_LOGOS_KEY]);
   const clients = getClientLogos(settings, FALLBACK);
   const [active, setActive] = useState<CmsClientLogo | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
 
-  // Close on Escape + lock body scroll while the sheet is open.
+  // Close on Escape + trap focus + lock body scroll while the sheet is open.
   useEffect(() => {
     if (!active) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setActive(null);
+    previouslyFocusedRef.current = document.activeElement as HTMLElement | null;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        setActive(null);
+        return;
+      }
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (focusable.length === 0) {
+        e.preventDefault();
+        closeButtonRef.current?.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    requestAnimationFrame(() => closeButtonRef.current?.focus());
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
+      requestAnimationFrame(() => previouslyFocusedRef.current?.focus());
     };
   }, [active]);
 
@@ -69,7 +101,6 @@ export default function ClientLogos() {
   return (
     <section id="brands" className="py-5 lg:py-7 bg-gradient-to-b from-white to-gray-50 dark:from-[var(--surface)] dark:to-white/5">
       <div className="container mx-auto px-4">
-        {/* Section Header */}
         <div className="flex items-baseline justify-between gap-4 mb-8 lg:mb-12">
           <div>
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-heading">
@@ -81,7 +112,6 @@ export default function ClientLogos() {
           </div>
         </div>
 
-        {/* Logos row — right-to-left auto-scroll, pauses on hover/interaction. */}
         <AutoScrollRow
           items={clients}
           keyExtractor={(client, i) => `${client.name}-${i}`}
@@ -111,9 +141,10 @@ export default function ClientLogos() {
           onClick={() => setActive(null)}
           role="dialog"
           aria-modal="true"
-          aria-label={active.name}
+          aria-labelledby="client-details-title"
         >
           <div
+            ref={dialogRef}
             className="w-full sm:max-w-md bg-white dark:bg-[#0f1a2e] rounded-t-2xl sm:rounded-2xl border border-gray-100 dark:border-white/10 shadow-2xl p-5 sm:p-6 motion-safe:animate-[slideUp_0.2s_ease-out]"
             onClick={(e) => e.stopPropagation()}
           >
@@ -127,14 +158,15 @@ export default function ClientLogos() {
                   {active.abbr}
                 </div>
               )}
-              <h3 className="text-lg font-bold text-heading flex-1 pt-0.5">{active.name}</h3>
+              <h3 id="client-details-title" className="text-lg font-bold text-heading flex-1 pt-0.5">{active.name}</h3>
               <button
+                ref={closeButtonRef}
                 type="button"
                 onClick={() => setActive(null)}
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                 aria-label={lang === "bn" ? "বন্ধ করুন" : "Close"}
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
 
@@ -150,7 +182,7 @@ export default function ClientLogos() {
                 className="inline-flex items-center gap-1.5 mt-4 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-gradient-to-br from-brand-500 to-brand-700 hover:shadow-lg hover:-translate-y-0.5 transition-all"
               >
                 {lang === "bn" ? "কেস স্টাডি" : "Case study"}
-                <ArrowRight className="w-4 h-4" />
+                <ArrowRight className="w-4 h-4" aria-hidden="true" />
               </Link>
             )}
           </div>
