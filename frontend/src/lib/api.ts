@@ -794,6 +794,21 @@ export interface NotificationRecord {
   broadcast: boolean;
 }
 
+export type ReportType = "sales" | "revenue" | "products" | "services" | "customers" | "payments" | "courier" | "profit" | "reconciliation";
+
+export const reportsApi = {
+  get: (report: ReportType, params: { start_date?: string; end_date?: string } = {}) =>
+    api.get<ApiResponse<{ report: string; start_date: string; end_date: string; rows: Record<string, unknown>[] }>>(`/api/v1/admin/reports/${report}`, { params }),
+
+  exportPath: (report: ReportType, params: { start_date?: string; end_date?: string } = {}) => {
+    const qs = new URLSearchParams();
+    if (params.start_date) qs.set("start_date", params.start_date);
+    if (params.end_date) qs.set("end_date", params.end_date);
+    const query = qs.toString();
+    return `/api/v1/admin/reports/${report}/export${query ? `?${query}` : ""}`;
+  },
+};
+
 export const notificationsApi = {
   list: (params: { page?: number; per_page?: number; unread_only?: boolean; type?: string } = {}) =>
     api.get<PaginatedResponse<NotificationRecord>>("/api/v1/admin/notifications", { params }),

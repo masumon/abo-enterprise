@@ -49,6 +49,7 @@ class ProductBase(BaseModel):
     description_bn: str | None = None
     price: float
     original_price: float | None = None
+    cost_price: float | None = None
     category: str
     badge: str | None = None
     image_url: str | None = None
@@ -97,6 +98,7 @@ class ProductUpdate(BaseModel):
     description_bn: str | None = None
     price: float | None = None
     original_price: float | None = None
+    cost_price: float | None = None
     category: str | None = None
     category_id: uuid.UUID | None = None
     subcategory_id: uuid.UUID | None = None

@@ -1,7 +1,7 @@
 import {
   LayoutDashboard, ShoppingCart, Briefcase, Package, Users, Wrench, FileText, Star, BookOpen, FolderKanban,
   Images, CreditCard, Bot, Mail, BarChart2, Settings, Shield, Send, Truck, UserPlus, Percent, FolderTree,
-  LayoutTemplate, Megaphone, ExternalLink, UploadCloud, Tags, Bell, History, type LucideIcon,
+  LayoutTemplate, Megaphone, ExternalLink, UploadCloud, Tags, Bell, History, ScrollText, type LucideIcon,
 } from "lucide-react";
 
 export type AdminRole = "super_admin" | "admin" | "editor" | "viewer";
@@ -72,6 +72,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   ]},
   { id: "analytics-operations", label: "Analytics & Operations", labelBn: "অ্যানালিটিক্স ও অপারেশনস", items: [
     { href: "/sumon/analytics", icon: BarChart2, label: "Analytics", labelBn: "অ্যানালিটিক্স" },
+    { href: "/sumon/reports", icon: ScrollText, label: "Reports", labelBn: "রিপোর্ট" },
   ]},
   { id: "system-security", label: "System & Security", labelBn: "সিস্টেম ও নিরাপত্তা", items: [
     { href: "/sumon/settings", icon: Settings, label: "Settings", labelBn: "সেটিংস", minRole: "admin" },

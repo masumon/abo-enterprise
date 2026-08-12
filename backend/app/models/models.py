@@ -21,6 +21,10 @@ class Product(Base):
     description_bn: Mapped[str | None] = mapped_column(Text)
     price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     original_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    # Optional per-unit cost basis, admin-entered. NULL = not yet known; the
+    # Profit report excludes such lines from its total rather than assuming 0,
+    # and discloses how many were excluded — never fabricates a cost.
+    cost_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
     # Optional per-product delivery override (NULL = use zone charge) and an
     # admin on/off flag that forces an advance payment before confirmation.
     delivery_charge: Mapped[float | None] = mapped_column(Numeric(10, 2))
