@@ -22,7 +22,7 @@ CREATE INDEX IF NOT EXISTS ix_customers_is_deleted ON customers(is_deleted);
 WITH source_rows AS (
     SELECT
         TRIM(o.customer_phone) AS phone,
-        o.customer_name AS name,
+        NULLIF(TRIM(o.customer_name), '') AS name,
         o.customer_email AS email,
         o.company_name AS company,
         o.delivery_address AS address,
@@ -30,12 +30,13 @@ WITH source_rows AS (
     FROM orders o
     WHERE o.is_deleted = FALSE
       AND NULLIF(TRIM(o.customer_phone), '') IS NOT NULL
+      AND NULLIF(TRIM(o.customer_name), '') IS NOT NULL
 
     UNION ALL
 
     SELECT
         TRIM(b.customer_phone) AS phone,
-        b.customer_name AS name,
+        NULLIF(TRIM(b.customer_name), '') AS name,
         b.customer_email AS email,
         b.customer_company AS company,
         NULL::TEXT AS address,
@@ -43,12 +44,13 @@ WITH source_rows AS (
     FROM bookings_v2 b
     WHERE b.is_deleted = FALSE
       AND NULLIF(TRIM(b.customer_phone), '') IS NOT NULL
+      AND NULLIF(TRIM(b.customer_name), '') IS NOT NULL
 
     UNION ALL
 
     SELECT
         TRIM(l.phone) AS phone,
-        l.name AS name,
+        NULLIF(TRIM(l.name), '') AS name,
         l.email AS email,
         l.company AS company,
         NULL::TEXT AS address,
@@ -56,6 +58,7 @@ WITH source_rows AS (
     FROM leads_v2 l
     WHERE l.is_deleted = FALSE
       AND NULLIF(TRIM(l.phone), '') IS NOT NULL
+      AND NULLIF(TRIM(l.name), '') IS NOT NULL
 ), ranked AS (
     SELECT
         phone,
