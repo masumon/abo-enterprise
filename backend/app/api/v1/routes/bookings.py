@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
-from app.core.security import require_admin
+from app.core.security import require_role
 from app.core.config import settings
 from app.core.email import send_email, booking_notification_html, customer_booking_confirmation_html
 from app.core.invoice import InvoiceService
@@ -36,7 +36,7 @@ async def list_bookings(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("bookings.read")),
 ):
     conditions = [Booking.is_deleted == False]  # noqa: E712
     if service_type:
@@ -121,7 +121,7 @@ async def track_booking_public(
 async def get_booking(
     booking_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("bookings.read")),
 ):
     result = await db.execute(select(Booking).where(Booking.id == booking_id))
     booking = result.scalar_one_or_none()
@@ -135,7 +135,7 @@ async def update_booking_status(
     booking_id: UUID,
     payload: BookingStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("bookings.read")),
 ):
     """Reject legacy mutations; BookingV2 is the canonical write path."""
     raise HTTPException(

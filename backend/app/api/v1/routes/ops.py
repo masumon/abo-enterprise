@@ -234,13 +234,44 @@ async def error_center(
         .order_by(AssistantActionLog.created_at.desc()).limit(20)
     )).all()
 
-    return {"success": True, "data": {
-        "runtime_errors": [
+    # The in-memory buffers reset on every restart/deploy. When empty, fall
+    # back to the persistent system_events table so the dashboard doesn't
+    # silently go blank right after a redeploy.
+    runtime_errors = list(recent_errors)[:50]
+    if not runtime_errors:
+        rows = (await db.execute(
+            select(SystemEvent).where(SystemEvent.event_type == "runtime_error", SystemEvent.is_deleted == False)  # noqa: E712
+            .order_by(SystemEvent.created_at.desc()).limit(50)
+        )).scalars().all()
+        runtime_errors = [
+            {"at": r.created_at.isoformat(), "logger": (r.meta or {}).get("logger", r.source),
+             "level": (r.meta or {}).get("level", r.severity), "message": r.message, "count": 1}
+            for r in rows
+        ]
+    else:
+        runtime_errors = [
             {"at": _iso(e["at"]), "logger": e["logger"], "level": e["level"],
              "message": e["message"], "count": e.get("count", 1)}
-            for e in list(recent_errors)[:50]
-        ],
-        "failed_emails": [{**e, "at": _iso(e["at"])} for e in list(failed_emails)[:20]],
+            for e in runtime_errors
+        ]
+
+    failed_email_rows = list(failed_emails)[:20]
+    if not failed_email_rows:
+        rows = (await db.execute(
+            select(SystemEvent).where(SystemEvent.event_type == "failed_email", SystemEvent.is_deleted == False)  # noqa: E712
+            .order_by(SystemEvent.created_at.desc()).limit(20)
+        )).scalars().all()
+        failed_emails_out = [
+            {"at": r.created_at.isoformat(), "to": (r.meta or {}).get("recipient", ""),
+             "subject": (r.meta or {}).get("subject", ""), "error": (r.meta or {}).get("error", "")}
+            for r in rows
+        ]
+    else:
+        failed_emails_out = [{**e, "at": _iso(e["at"])} for e in failed_email_rows]
+
+    return {"success": True, "data": {
+        "runtime_errors": runtime_errors,
+        "failed_emails": failed_emails_out,
         "failed_payments": [
             {"order_number": r.order_number, "customer": r.customer_name, "total": float(r.total or 0),
              "at": r.created_at.isoformat()} for r in failed_orders
@@ -248,8 +279,9 @@ async def error_center(
         "assistant_errors": [
             {"action": r.action, "status": r.status, "at": r.created_at.isoformat()} for r in assistant_errors
         ],
-        "note": "This view is the fast in-memory snapshot since the last restart. "
-                "See GET /admin/ops/events for the full persistent, searchable history.",
+        "note": "Fast in-memory snapshot since the last restart, falling back to the "
+                "persistent system_events table when a buffer is empty (e.g. right after "
+                "a deploy). See GET /admin/ops/events for the full searchable history.",
     }}
 
 
@@ -468,16 +500,50 @@ async def notification_center(
     now = datetime.now(timezone.utc)
     since24h = now - timedelta(hours=24)
 
-    for e in list(recent_errors)[:5]:
-        n = e.get("count", 1)
-        suffix = f" (×{n})" if n > 1 else ""
-        items.append({"severity": "error", "kind": "runtime_error", "at": _iso(e["at"]), "text": e["message"][:160] + suffix})
-    for e in list(failed_emails)[:5]:
-        items.append({"severity": "error", "kind": "failed_email", "at": _iso(e["at"]),
-                      "text": f"Email failed: {e['subject'][:60]} → {e['to']}"})
-    for e in list(failed_logins)[:5]:
-        items.append({"severity": "warning", "kind": "failed_login", "at": _iso(e["at"]),
-                      "text": f"Failed admin login from {e['ip']} ({e['email']})"})
+    recent_error_items = list(recent_errors)[:5]
+    if recent_error_items:
+        for e in recent_error_items:
+            n = e.get("count", 1)
+            suffix = f" (×{n})" if n > 1 else ""
+            items.append({"severity": "error", "kind": "runtime_error", "at": _iso(e["at"]), "text": e["message"][:160] + suffix})
+    else:
+        # Buffer reset by a restart/deploy — fall back to the persistent record.
+        rows = (await db.execute(
+            select(SystemEvent).where(SystemEvent.event_type == "runtime_error", SystemEvent.is_deleted == False)  # noqa: E712
+            .order_by(SystemEvent.created_at.desc()).limit(5)
+        )).scalars().all()
+        for r in rows:
+            items.append({"severity": "error", "kind": "runtime_error", "at": r.created_at.isoformat(), "text": r.message[:160]})
+
+    failed_email_items = list(failed_emails)[:5]
+    if failed_email_items:
+        for e in failed_email_items:
+            items.append({"severity": "error", "kind": "failed_email", "at": _iso(e["at"]),
+                          "text": f"Email failed: {e['subject'][:60]} → {e['to']}"})
+    else:
+        rows = (await db.execute(
+            select(SystemEvent).where(SystemEvent.event_type == "failed_email", SystemEvent.is_deleted == False)  # noqa: E712
+            .order_by(SystemEvent.created_at.desc()).limit(5)
+        )).scalars().all()
+        for r in rows:
+            meta = r.meta or {}
+            items.append({"severity": "error", "kind": "failed_email", "at": r.created_at.isoformat(),
+                          "text": f"Email failed: {meta.get('subject', '')[:60]} → {meta.get('recipient', '')}"})
+
+    failed_login_items = list(failed_logins)[:5]
+    if failed_login_items:
+        for e in failed_login_items:
+            items.append({"severity": "warning", "kind": "failed_login", "at": _iso(e["at"]),
+                          "text": f"Failed admin login from {e['ip']} ({e['email']})"})
+    else:
+        rows = (await db.execute(
+            select(SystemEvent).where(SystemEvent.event_type == "failed_login", SystemEvent.is_deleted == False)  # noqa: E712
+            .order_by(SystemEvent.created_at.desc()).limit(5)
+        )).scalars().all()
+        for r in rows:
+            meta = r.meta or {}
+            items.append({"severity": "warning", "kind": "failed_login", "at": r.created_at.isoformat(),
+                          "text": f"Failed admin login from {meta.get('ip', '')} ({meta.get('email', '')})"})
 
     failed_pay = (await db.execute(
         select(func.count(Order.id)).where(Order.payment_status == "failed", Order.created_at >= since24h, Order.is_deleted == False)  # noqa: E712
@@ -500,23 +566,36 @@ async def notification_center(
         items.append({"severity": "info", "kind": "pending_bookings", "at": now.isoformat(),
                       "text": f"{pending_bookings} booking(s) awaiting confirmation"})
 
-    # Steadfast is push-only (consignment creation) with no status webhook/
-    # poll syncing delivery state back — there is no "failed delivery" field
-    # to query. The best real signal available: an order handed to the
-    # courier that has sat in "shipped" without progressing to delivered/
-    # cancelled for longer than the local Sylhet delivery SLA.
+    # Real signal from Steadfast's delivery-status webhook (orders/steadfast/
+    # webhook): a courier-reported exception state, not a guess.
+    courier_exception_statuses = ("hold", "in_review", "unknown", "cancelled_approval_pending", "unknown_approval_pending")
+    courier_exceptions = (await db.execute(
+        select(func.count(Order.id)).where(
+            Order.courier_status.in_(courier_exception_statuses),
+            Order.is_deleted == False,  # noqa: E712
+        )
+    )).scalar_one()
+    if courier_exceptions:
+        items.append({"severity": "warning", "kind": "courier_exception", "at": now.isoformat(),
+                      "text": f"{courier_exceptions} order(s) flagged by the courier (hold/review/unknown)"})
+
+    # Fallback heuristic for orders the webhook hasn't reported on yet (e.g.
+    # webhook not configured, or the callback hasn't arrived): an order
+    # handed to the courier that has sat in "shipped" past the local
+    # delivery SLA with no courier_status update at all.
     courier_stalled_since = now - timedelta(days=5)
     courier_stalled = (await db.execute(
         select(func.count(Order.id)).where(
             Order.order_status == "shipped",
             Order.courier_consignment_id.isnot(None),
+            Order.courier_status.is_(None),
             Order.updated_at < courier_stalled_since,
             Order.is_deleted == False,  # noqa: E712
         )
     )).scalar_one()
     if courier_stalled:
         items.append({"severity": "warning", "kind": "courier_stalled", "at": now.isoformat(),
-                      "text": f"{courier_stalled} order(s) shipped 5+ days ago still not marked delivered"})
+                      "text": f"{courier_stalled} order(s) shipped 5+ days ago with no courier status update"})
 
     low_stock = (await db.execute(
         select(func.count(Product.id)).where(

@@ -314,6 +314,7 @@ class OrderOut(BaseModel):
     courier_provider: str | None = None
     courier_tracking_id: str | None = None
     courier_consignment_id: str | None = None
+    courier_status: str | None = None
     company_name: str | None = None
     company_bin: str | None = None
     company_tin: str | None = None
@@ -1123,8 +1124,9 @@ class PaymentResponseModel(BaseModel):
     status: Optional[str] = None
     message: Optional[str] = None
     order_number: Optional[str] = None
+    booking_number: Optional[str] = None
     customer_phone: Optional[str] = None
-    
+
     class Config:
         from_attributes = True
 

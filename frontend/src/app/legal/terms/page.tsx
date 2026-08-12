@@ -4,12 +4,15 @@ import { useLanguageStore } from "@/store/language";
 import LegalPageLayout, { type LegalSection } from "@/components/layout/LegalPageLayout";
 import PageHero from "@/components/ui/PageHero";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { useLegalPageOverride } from "@/hooks/useLegalPageOverride";
 
 const LAST_UPDATED = "2026-07-25";
 
 export default function TermsPage() {
   const { lang } = useLanguageStore();
   const isBn = lang === "bn";
+  const pageTitle = isBn ? "সেবার শর্তাবলী" : "Terms of Service";
+  const overrideSections = useLegalPageOverride("terms", pageTitle, isBn);
   const { settings } = usePublicSettings(["contact_email", "contact_phone", "contact_address"]);
   const email = getSettingValue(settings, "contact_email", "info@aboenterprise.com");
   const phone = getSettingValue(settings, "contact_phone", "+880 1825 007977");
@@ -154,12 +157,12 @@ export default function TermsPage() {
       <PageHero
         pageKey="terms"
         variant="light"
-        title={isBn ? "সেবার শর্তাবলী" : "Terms of Service"}
+        title={pageTitle}
         breadcrumbs={[{ label: isBn ? "শর্তাবলী" : "Terms" }]}
       />
       <LegalPageLayout
-        title={isBn ? "সেবার শর্তাবলী" : "Terms of Service"}
-        sections={sections}
+        title={pageTitle}
+        sections={overrideSections ?? sections}
         showTitle={false}
         lastUpdated={LAST_UPDATED}
       />

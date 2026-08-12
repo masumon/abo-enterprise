@@ -4,7 +4,7 @@ import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/admin
 import { useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import AdminTitle from "@/components/admin/AdminTitle";
-import { Loader2, Users, ChevronDown, X, Search, Download, Trash2 } from "lucide-react";
+import { Loader2, Users, ChevronDown, X, Search, Download, Trash2, Archive } from "lucide-react";
 import { leadsApi, serviceLeadsAdminApi, downloadCsv, downloadPdf } from "@/lib/api";
 import type { Lead, LeadV2 } from "@/types";
 import { buildCustomerWhatsAppLink } from "@/lib/utils";
@@ -255,22 +255,27 @@ export default function AdminLeadsPage() {
       <div className="flex gap-1 border-b border-gray-200">
         <button
           onClick={() => setTab("v1")}
-          className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "v1" ? "border-brand-500 text-brand-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "v1" ? "border-amber-500 text-amber-700" : "border-transparent text-gray-500 hover:text-gray-700"}`}
           title="Legacy archive — no current form on the site creates new entries here; see Service Leads for live intake"
         >
-          Simple Leads <span className="text-gray-400 font-normal">(Legacy)</span>
+          <Archive className="w-3.5 h-3.5" />
+          Simple Leads <span className="text-gray-400 font-normal">(Legacy archive)</span>
         </button>
         <button
           onClick={() => setTab("v2")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "v2" ? "border-brand-500 text-brand-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
         >
-          Service Leads
+          Service Leads <span className="text-gray-400 font-normal">(Live)</span>
         </button>
       </div>
 
       {/* V1 Table */}
       {tab === "v1" && (
         <div className="admin-card overflow-hidden">
+          <div className="px-4 sm:px-5 py-2.5 bg-amber-50 border-b border-amber-100 flex items-center gap-2 text-xs text-amber-800">
+            <Archive className="w-3.5 h-3.5 shrink-0" />
+            <span>Legacy archive — no current form on the site creates new leads here. New inquiries arrive under <strong>Service Leads</strong>.</span>
+          </div>
           {loading ? (
             <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
           ) : leads.length === 0 ? (

@@ -7,7 +7,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, update
 from app.core.database import get_db
-from app.core.security import require_admin, require_role
+from app.core.security import require_role
 from app.core import product_import as pi
 from app.core.taxonomy import load_categories, ancestors_of
 from app.models.models import Product, Order, LeadV2, BookingV2, Category, ProductImportJob
@@ -58,7 +58,7 @@ async def bulk_update_order_status(
 @router.get("/export/orders")
 async def export_orders(
     days: int = Query(30, ge=1, le=365),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("orders.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Export orders to CSV (admin only)"""
@@ -95,7 +95,7 @@ async def export_orders(
 
 @router.get("/export/leads")
 async def export_leads(
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("leads.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Export service leads (v2) to CSV (admin only)"""
@@ -127,7 +127,7 @@ async def export_leads(
 
 @router.get("/export/bookings")
 async def export_bookings(
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("bookings.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Export service bookings (v2) to CSV (admin only)"""
@@ -163,7 +163,7 @@ async def export_bookings(
 
 @router.get("/export/products")
 async def export_products(
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("products.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Export products to CSV (admin only)"""
@@ -262,7 +262,7 @@ def _dt(d) -> str:
 @router.get("/export/orders/pdf")
 async def export_orders_pdf(
     days: int = Query(30, ge=1, le=365),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("orders.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Export orders as a PDF report (admin only) — same data as the CSV."""
@@ -294,7 +294,7 @@ async def export_orders_pdf(
 
 @router.get("/export/leads/pdf")
 async def export_leads_pdf(
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("leads.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Export service leads as a PDF report (admin only)."""
@@ -320,7 +320,7 @@ async def export_leads_pdf(
 
 @router.get("/export/bookings/pdf")
 async def export_bookings_pdf(
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("bookings.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Export service bookings as a PDF report (admin only)."""
@@ -347,7 +347,7 @@ async def export_bookings_pdf(
 
 @router.get("/export/products/pdf")
 async def export_products_pdf(
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("products.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Export products as a PDF report (admin only)."""

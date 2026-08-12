@@ -10,6 +10,54 @@ from app.models.models import BookingV2, LeadV2, Order, OrderItem, Service
 
 router = APIRouter(prefix="/admin/analytics", tags=["analytics"])
 
+# Bangladesh Standard Time is a fixed UTC+6 offset with no DST, so this is
+# safe to hard-code rather than pulling in a timezone database dependency.
+BD_UTC_OFFSET = timedelta(hours=6)
+
+
+@router.get("/today")
+async def get_analytics_today(
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_admin),
+):
+    """Calendar-day figures in Bangladesh local time — distinct from
+    /overview?days=1, which is a rolling 24h window, not "today"."""
+    local_now = datetime.now(timezone.utc) + BD_UTC_OFFSET
+    local_midnight = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start_utc = local_midnight - BD_UTC_OFFSET
+
+    order_rev = await db.scalar(select(func.sum(Order.total)).where(
+        Order.created_at >= today_start_utc,
+        or_(Order.payment_status == "completed", Order.order_status == "delivered"),
+        Order.is_deleted == False,  # noqa: E712
+    ))
+    booking_rev = await db.scalar(select(
+        func.sum(func.coalesce(BookingV2.final_price, BookingV2.quoted_price))
+    ).where(
+        BookingV2.created_at >= today_start_utc,
+        BookingV2.payment_status.in_(("paid", "completed")),
+        BookingV2.is_deleted == False,  # noqa: E712
+    ))
+    orders = await db.scalar(select(func.count(Order.id)).where(
+        Order.created_at >= today_start_utc, Order.is_deleted == False,  # noqa: E712
+    ))
+    bookings = await db.scalar(select(func.count(BookingV2.id)).where(
+        BookingV2.created_at >= today_start_utc, BookingV2.is_deleted == False,  # noqa: E712
+    ))
+
+    return {
+        "success": True,
+        "data": {
+            "date_local": local_midnight.date().isoformat(),
+            "revenue": {
+                "orders": float(order_rev or 0),
+                "bookings": float(booking_rev or 0),
+                "total": float(order_rev or 0) + float(booking_rev or 0),
+            },
+            "counts": {"orders": orders or 0, "bookings": bookings or 0},
+        },
+    }
+
 
 @router.get("/overview")
 async def get_analytics_overview(

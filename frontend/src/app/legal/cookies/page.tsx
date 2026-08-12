@@ -5,12 +5,15 @@ import { useLanguageStore } from "@/store/language";
 import LegalPageLayout, { type LegalSection } from "@/components/layout/LegalPageLayout";
 import PageHero from "@/components/ui/PageHero";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { useLegalPageOverride } from "@/hooks/useLegalPageOverride";
 
 const LAST_UPDATED = "2026-07-25";
 
 export default function CookiesPage() {
   const { lang } = useLanguageStore();
   const isBn = lang === "bn";
+  const pageTitle = isBn ? "কুকি নীতি" : "Cookies Policy";
+  const overrideSections = useLegalPageOverride("cookies", pageTitle, isBn);
   const { settings } = usePublicSettings(["contact_email", "contact_phone"]);
   const email = getSettingValue(settings, "contact_email", "info@aboenterprise.com");
   const phone = getSettingValue(settings, "contact_phone", "+880 1825 007977");
@@ -110,12 +113,12 @@ export default function CookiesPage() {
       <PageHero
         pageKey="cookies"
         variant="light"
-        title={isBn ? "কুকি নীতি" : "Cookies Policy"}
+        title={pageTitle}
         breadcrumbs={[{ label: isBn ? "কুকি" : "Cookies" }]}
       />
       <LegalPageLayout
-        title={isBn ? "কুকি নীতি" : "Cookies Policy"}
-        sections={sections}
+        title={pageTitle}
+        sections={overrideSections ?? sections}
         showTitle={false}
         lastUpdated={LAST_UPDATED}
       />

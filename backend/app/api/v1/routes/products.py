@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
 from app.core.http_cache import etag_json_response
-from app.core.security import require_admin, require_role
+from app.core.security import require_role
 from app.core.taxonomy import descendant_ids_for_slug
 from app.models.models import Product, ActivityLog
 from app.schemas.schemas import ProductCreate, ProductUpdate, ProductOut, ApiResponse, PaginatedResponse, PaginatedMeta
@@ -116,7 +116,7 @@ async def admin_list_products(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    _admin: dict = Depends(require_admin),
+    _admin: dict = Depends(require_role("products.read")),
 ):
     conditions = [Product.is_deleted == False]  # noqa: E712
     if category:

@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -290,7 +291,7 @@ async def get_asset(
         raise HTTPException(status_code=400, detail="Invalid asset ID")
 
     result = await db.execute(
-        select(MediaAsset).where(MediaAsset.id == asset_uuid)
+        select(MediaAsset).where(MediaAsset.id == asset_uuid, MediaAsset.is_deleted == False)  # noqa: E712
     )
     asset = result.scalar_one_or_none()
 
@@ -334,7 +335,7 @@ async def update_asset(
         raise HTTPException(status_code=400, detail="Invalid asset ID")
 
     result = await db.execute(
-        select(MediaAsset).where(MediaAsset.id == asset_uuid)
+        select(MediaAsset).where(MediaAsset.id == asset_uuid, MediaAsset.is_deleted == False)  # noqa: E712
     )
     asset = result.scalar_one_or_none()
 
@@ -372,12 +373,21 @@ async def delete_asset(
         raise HTTPException(status_code=400, detail="Invalid asset ID")
 
     result = await db.execute(
-        select(MediaAsset).where(MediaAsset.id == asset_uuid)
+        select(MediaAsset).where(MediaAsset.id == asset_uuid, MediaAsset.is_deleted == False)  # noqa: E712
     )
     asset = result.scalar_one_or_none()
 
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
+
+    if asset.cloudinary_public_id:
+        resource_type = "video" if (asset.mime_type or "").startswith("video/") else "image"
+        try:
+            cloudinary.uploader.destroy(asset.cloudinary_public_id, resource_type=resource_type)
+        except Exception as exc:  # noqa: BLE001 — DB soft-delete must still proceed
+            logging.getLogger(__name__).warning(
+                "Cloudinary destroy failed for %s: %s", asset.cloudinary_public_id, exc
+            )
 
     asset.is_deleted = True
     db.add(ActivityLog(

@@ -14,6 +14,11 @@ interface AnalyticsOverview {
   top_services: Array<{ service_id: string; name: string; name_bn: string; count: number; revenue: number }>;
 }
 
+interface AnalyticsToday {
+  revenue: { total: number; orders: number; bookings: number };
+  counts: { orders: number; bookings: number };
+}
+
 interface OpsErrors {
   failed_payments: Array<{ order_number: string; customer: string; total: number; at: string }>;
   failed_emails: Array<{ at: string; [key: string]: unknown }>;
@@ -53,30 +58,36 @@ interface CustomerMetrics {
 export default function DashboardOperationsPanel() {
   const { lang } = useLanguageStore();
   const bn = lang === "bn";
+  const [today, setToday] = useState<AnalyticsToday | null>(null);
   const [last24h, setLast24h] = useState<AnalyticsOverview | null>(null);
   const [last7d, setLast7d] = useState<AnalyticsOverview | null>(null);
   const [ops, setOps] = useState<OpsErrors | null>(null);
   const [notifications, setNotifications] = useState<OpsNotifications | null>(null);
   const [health, setHealth] = useState<HealthData | null>(null);
   const [customerMetrics, setCustomerMetrics] = useState<CustomerMetrics | null>(null);
+  const [unreadCount, setUnreadCount] = useState<number | null>(null);
 
   useEffect(() => {
     let active = true;
     Promise.all([
+      api.get("/api/v1/admin/analytics/today").catch(() => null),
       api.get("/api/v1/admin/analytics/overview?days=1").catch(() => null),
       api.get("/api/v1/admin/analytics/overview?days=7").catch(() => null),
       api.get("/api/v1/admin/ops/errors").catch(() => null),
       api.get("/api/v1/admin/ops/notifications").catch(() => null),
       api.get("/api/v1/admin/ops/health").catch(() => null),
       api.get("/api/v1/admin/customer-metrics?days=30").catch(() => null),
-    ]).then(([dayRes, weekRes, opsRes, notificationRes, healthRes, customerRes]) => {
+      api.get("/api/v1/admin/notifications/unread-count").catch(() => null),
+    ]).then(([todayRes, dayRes, weekRes, opsRes, notificationRes, healthRes, customerRes, unreadRes]) => {
       if (!active) return;
+      setToday((todayRes?.data?.data ?? null) as AnalyticsToday | null);
       setLast24h((dayRes?.data?.data ?? null) as AnalyticsOverview | null);
       setLast7d((weekRes?.data?.data ?? null) as AnalyticsOverview | null);
       setOps((opsRes?.data?.data ?? null) as OpsErrors | null);
       setNotifications((notificationRes?.data?.data ?? null) as OpsNotifications | null);
       setHealth((healthRes?.data?.data ?? null) as HealthData | null);
       setCustomerMetrics((customerRes?.data?.data ?? null) as CustomerMetrics | null);
+      setUnreadCount((unreadRes?.data?.data?.count ?? null) as number | null);
     });
     return () => { active = false; };
   }, []);
@@ -95,14 +106,19 @@ export default function DashboardOperationsPanel() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <div className="admin-card p-4">
+          <p className="text-xs text-gray-500">{bn ? "আজকের বিক্রি" : "Today's Sales"}</p>
+          <p className="text-xl font-bold text-gray-900 mt-1">{today?.revenue ? formatPrice(today.revenue.total) : "—"}</p>
+          <p className="text-xs text-gray-400 mt-1">{today?.counts ? `${today.counts.orders} ${bn ? "অর্ডার" : "orders"} · ${today.counts.bookings} ${bn ? "বুকিং" : "bookings"}` : ""}</p>
+        </div>
+        <div className="admin-card p-4">
           <p className="text-xs text-gray-500">{bn ? "গত ২৪ ঘণ্টার রেভিনিউ" : "Revenue · last 24h"}</p>
-          <p className="text-xl font-bold text-gray-900 mt-1">{last24h ? formatPrice(last24h.revenue.total) : "—"}</p>
-          <p className="text-xs text-gray-400 mt-1">{last24h ? `${last24h.counts.orders} ${bn ? "অর্ডার" : "orders"} · ${last24h.counts.bookings} ${bn ? "বুকিং" : "bookings"}` : ""}</p>
+          <p className="text-xl font-bold text-gray-900 mt-1">{last24h?.revenue ? formatPrice(last24h.revenue.total) : "—"}</p>
+          <p className="text-xs text-gray-400 mt-1">{last24h?.counts ? `${last24h.counts.orders} ${bn ? "অর্ডার" : "orders"} · ${last24h.counts.bookings} ${bn ? "বুকিং" : "bookings"}` : ""}</p>
         </div>
         <div className="admin-card p-4">
           <p className="text-xs text-gray-500">{bn ? "গত ৭ দিনের রেভিনিউ" : "Revenue · last 7d"}</p>
-          <p className="text-xl font-bold text-gray-900 mt-1">{last7d ? formatPrice(last7d.revenue.total) : "—"}</p>
-          <p className="text-xs text-gray-400 mt-1">{last7d ? `${last7d.counts.orders} ${bn ? "অর্ডার" : "orders"} · ${last7d.counts.bookings} ${bn ? "বুকিং" : "bookings"}` : ""}</p>
+          <p className="text-xl font-bold text-gray-900 mt-1">{last7d?.revenue ? formatPrice(last7d.revenue.total) : "—"}</p>
+          <p className="text-xs text-gray-400 mt-1">{last7d?.counts ? `${last7d.counts.orders} ${bn ? "অর্ডার" : "orders"} · ${last7d.counts.bookings} ${bn ? "বুকিং" : "bookings"}` : ""}</p>
         </div>
         <div className="admin-card p-4">
           <p className="text-xs text-gray-500">{bn ? "পেমেন্ট সমস্যা" : "Payment failures"}</p>
@@ -115,8 +131,13 @@ export default function DashboardOperationsPanel() {
           <Link href="/sumon/analytics" className="text-xs text-brand-600 hover:underline">{bn ? "অপারেশন দেখুন →" : "Open operations →"}</Link>
         </div>
         <div className="admin-card p-4">
+          <p className="text-xs text-gray-500">{bn ? "অপঠিত নোটিফিকেশন" : "Unread notifications"}</p>
+          <p className="text-xl font-bold text-gray-900 mt-1">{unreadCount ?? "—"}</p>
+          <Link href="/sumon/notifications" className="text-xs text-brand-600 hover:underline">{bn ? "সব দেখুন →" : "View all →"}</Link>
+        </div>
+        <div className="admin-card p-4">
           <p className="text-xs text-gray-500">{bn ? "অর্ডার পেমেন্ট · ৭ দিন" : "Order payments · 7d"}</p>
-          {last7d ? (
+          {last7d?.payments ? (
             <p className="text-sm font-semibold text-gray-900 mt-1 flex items-center gap-2 flex-wrap">
               <span className="text-emerald-600">{last7d.payments.paid} {bn ? "পরিশোধিত" : "paid"}</span>
               <span className="text-amber-600">{last7d.payments.pending} {bn ? "বাকি" : "pending"}</span>
@@ -141,7 +162,7 @@ export default function DashboardOperationsPanel() {
         </div>
         <div className="admin-card p-4">
           <p className="text-xs text-gray-500">{bn ? "শীর্ষ পণ্য · ৩০ দিন" : "Top products · 30d"}</p>
-          {customerMetrics === null ? (
+          {!customerMetrics?.top_products ? (
             <p className="text-sm text-amber-600 mt-2">{bn ? "পণ্যের ডেটা পাওয়া যায়নি" : "Product data is unavailable"}</p>
           ) : customerMetrics.top_products.length === 0 ? (
             <p className="text-sm text-gray-400 mt-2">{bn ? "ডেটা নেই" : "No product data"}</p>
@@ -202,10 +223,10 @@ export default function DashboardOperationsPanel() {
         </div>
         <div className="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
           <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">{bn ? "সামগ্রিক" : "Overall"}</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? `${health.healthy}/${health.total}` : "—"}</p></div>
-          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">API</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks.api?.ok ? "OK" : "Fail") : "—"}</p></div>
-          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">DB</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks.database?.ok ? "OK" : "Fail") : "—"}</p></div>
-          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">{bn ? "ইমেইল" : "Email"}</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks.smtp?.ok ? "OK" : "Fail") : "—"}</p></div>
-          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">GA4</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks.ga4?.ok ? "OK" : "Fail") : "—"}</p></div>
+          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">API</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.api?.ok ? "OK" : "Fail") : "—"}</p></div>
+          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">DB</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.database?.ok ? "OK" : "Fail") : "—"}</p></div>
+          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">{bn ? "ইমেইল" : "Email"}</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.smtp?.ok ? "OK" : "Fail") : "—"}</p></div>
+          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">GA4</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.ga4?.ok ? "OK" : "Fail") : "—"}</p></div>
           <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">{bn ? "ব্যর্থ চেক" : "Failed checks"}</p><p className="text-lg font-bold text-gray-900 mt-1">{healthFailed ?? "—"}</p></div>
         </div>
       </div>

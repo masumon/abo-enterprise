@@ -346,6 +346,13 @@ const SECTIONS: Section[] = [
         hint: "Steadfast API পেজের Secret-Key। গোপনভাবে সংরক্ষিত।",
       },
       {
+        key: "steadfast_webhook_token",
+        label: "Webhook Auth Token",
+        type: "password",
+        placeholder: "•••• •••• ••••",
+        hint: "একটি নিজের তৈরি গোপন টোকেন দিন, তারপর Steadfast প্যানেলে গিয়ে Callback Url = [আপনার API ডোমেইন]/api/v1/orders/steadfast/webhook এবং Auth Token (Bearer) = এই একই টোকেন বসান। এটা করলে ডেলিভারি স্ট্যাটাস (delivered/hold/cancelled ইত্যাদি) স্বয়ংক্রিয়ভাবে অর্ডারে আপডেট হবে।",
+      },
+      {
         key: "steadfast_delivery_type",
         label: "ডেলিভারি টাইপ",
         type: "select",
@@ -492,7 +499,7 @@ function SectionCard({
   const isSaved = savedId === section.id;
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+    <div id={section.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow overflow-hidden scroll-mt-24">
       <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-white/10 bg-gradient-to-r from-brand-50 to-transparent dark:from-brand-900/20 gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
           <span className="text-brand-600">{section.icon}</span>

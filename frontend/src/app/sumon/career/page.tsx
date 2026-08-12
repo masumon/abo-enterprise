@@ -78,11 +78,11 @@ export default function CareerAdminPage() {
     }
   };
 
-  const handleUpdateStatus = async (id: string, newStatus: string) => {
+  const handleUpdateStatus = async (id: string, newStatus: string, notes?: string) => {
     setUpdating(id);
     try {
-      await careerAdminApi.updateStatus(id, newStatus);
-      toast("success", "Status updated");
+      await careerAdminApi.updateStatus(id, newStatus, notes);
+      toast("success", notes !== undefined ? "Notes saved" : "Status updated");
       setSelectedApp(null);
       await load();
     } catch (err) {
@@ -320,7 +320,7 @@ export default function CareerAdminPage() {
                     defaultValue={selectedApp.notes}
                     onBlur={(e) => {
                       if (e.target.value !== (selectedApp.notes || "")) {
-                        handleUpdateStatus(selectedApp.id, selectedApp.status).then(() => {
+                        handleUpdateStatus(selectedApp.id, selectedApp.status, e.target.value).then(() => {
                           if (selectedApp) {
                             handleViewDetail(selectedApp.id);
                           }

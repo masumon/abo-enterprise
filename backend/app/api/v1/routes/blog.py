@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
 from app.core.search import build_search_condition
-from app.core.security import require_role, require_admin
+from app.core.security import require_role
 from app.core.translate import translate_text
 from app.core.blog_links import (
     set_products_for_blog,
@@ -155,7 +155,7 @@ async def get_post_products(slug: str, db: AsyncSession = Depends(get_db)):
 @router.get("/admin/links/product/{product_id}", response_model=ApiResponse)
 async def get_product_blog_links(
     product_id: uuid.UUID,
-    _admin: dict = Depends(require_admin),
+    _admin: dict = Depends(require_role("blog.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Blog post ids a product is linked to — powers the ticks in the product form."""
@@ -165,7 +165,7 @@ async def get_product_blog_links(
 @router.get("/admin/links/service/{service_id}", response_model=ApiResponse)
 async def get_service_blog_links(
     service_id: uuid.UUID,
-    _admin: dict = Depends(require_admin),
+    _admin: dict = Depends(require_role("blog.read")),
     db: AsyncSession = Depends(get_db),
 ):
     """Blog post ids a service is linked to — powers the ticks in the service form."""

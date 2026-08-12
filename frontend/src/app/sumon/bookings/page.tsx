@@ -1,12 +1,11 @@
 "use client";
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import AdminTitle from "@/components/admin/AdminTitle";
-import { Loader2, Briefcase, ChevronDown, X, Search, Download, Trash2 } from "lucide-react";
-import { bookingsApi, serviceBookingsAdminApi, downloadCsv, downloadPdf } from "@/lib/api";
-import type { Booking, BookingV2 } from "@/types";
+import { Loader2, Briefcase, ChevronDown, X, Download, Trash2 } from "lucide-react";
+import { serviceBookingsAdminApi, downloadCsv, downloadPdf } from "@/lib/api";
+import type { BookingV2 } from "@/types";
 import { buildCustomerWhatsAppLink } from "@/lib/utils";
 import { BD_DISTRICTS } from "@/hooks/useDistrictUpazila";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -19,39 +18,12 @@ const ComposeEmailModal = dynamic(() => import("@/components/admin/ComposeEmailM
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 
-const STATUSES_V1 = ["pending", "contacted", "in_progress", "completed", "cancelled"];
 const STATUSES_V2 = ["pending", "confirmed", "in_progress", "completed", "cancelled", "on_hold"];
 // "pending" is the value every new booking starts at — omitting it made the
 // payment filter match nothing at all.
 const PAYMENT_STATUSES = ["pending", "unpaid", "partial", "paid", "refunded"];
-const SERVICE_TYPES = ["printing", "legal", "web_development", "ai_solutions", "automation", "software"];
-
-interface AdminBooking extends Booking {
-  booking_number: string;
-  created_at: string;
-}
 
 export default function AdminBookingsPage() {
-  // Legacy v1 rows now live in bookings_v2 (alembic 0015); the switcher is gone.
-  const [tab] = useState<"v1" | "v2">("v2");
-
-  // V1 state
-  const [bookings, setBookings] = useState<AdminBooking[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [typeFilter, setTypeFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
-  const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
-  const [detail, setDetail] = useState<AdminBooking | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [csvLoading, setCsvLoading] = useState(false);
-  const [exportPdfLoading, setExportPdfLoading] = useState(false);
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // V2 state
   const [bookingsV2, setBookingsV2] = useState<BookingV2[]>([]);
   const [loadingV2, setLoadingV2] = useState(false);
   const [statusFilterV2, setStatusFilterV2] = useState("");
@@ -71,23 +43,11 @@ export default function AdminBookingsPage() {
   const toast = useToastStore((s) => s.push);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
-  const detailRef = useFocusTrap(!!detail || detailLoading, () => setDetail(null));
+  const [csvLoading, setCsvLoading] = useState(false);
+  const [exportPdfLoading, setExportPdfLoading] = useState(false);
   const detailV2Ref = useFocusTrap(!!detailV2, () => setDetailV2(null));
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const r = await bookingsApi.list({ service_type: typeFilter || undefined, status: statusFilter || undefined, search: search || undefined, page });
-      setBookings((r.data.data ?? []) as unknown as AdminBooking[]);
-      setTotal(r.data.meta?.total ?? 0);
-    } catch (err) {
-      toast("error", "Failed to load bookings");
-    } finally {
-      setLoading(false);
-    }
-  }, [typeFilter, statusFilter, search, page, toast]);
-
-  const loadV2 = useCallback(async () => {
+  const loadV2 = async () => {
     setLoadingV2(true);
     try {
       const r = await serviceBookingsAdminApi.list({ status: statusFilterV2 || undefined, payment_status: paymentFilterV2 || undefined, district: districtFilterV2 || undefined, page: pageV2 });
@@ -98,15 +58,9 @@ export default function AdminBookingsPage() {
     } finally {
       setLoadingV2(false);
     }
-  }, [statusFilterV2, paymentFilterV2, districtFilterV2, pageV2, toast]);
-
-  useEffect(() => { if (tab === "v2") loadV2(); }, [loadV2, tab]);
-
-  const handleSearchChange = (v: string) => {
-    setSearchInput(v);
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => { setSearch(v); setPage(1); }, 400);
   };
+
+  useEffect(() => { loadV2(); }, [statusFilterV2, paymentFilterV2, districtFilterV2, pageV2]);
 
   const handleCsvExport = async () => {
     setCsvLoading(true);
@@ -130,29 +84,14 @@ export default function AdminBookingsPage() {
     }
   };
 
-  const handleDownloadPdf = async (id: string, bookingNumber: string, version: "v1" | "v2") => {
+  const handleDownloadPdf = async (id: string, bookingNumber: string) => {
     setPdfLoading(id);
     try {
-      const path =
-        version === "v2"
-          ? `/api/v1/invoices/admin/bookings-v2/${id}/pdf`
-          : `/api/v1/invoices/admin/bookings-v1/${id}/pdf`;
-      await downloadPdf(path, `receipt-${bookingNumber}.pdf`);
+      await downloadPdf(`/api/v1/invoices/admin/bookings-v2/${id}/pdf`, `receipt-${bookingNumber}.pdf`);
     } catch {
       toast("error", "PDF download failed");
     } finally {
       setPdfLoading(null);
-    }
-  };
-
-  const updateStatus = async (id: string, status: string) => {
-    setUpdatingId(id);
-    try {
-      await bookingsApi.updateStatus(id, status);
-      await load();
-      if (detail?.id === id) setDetail(prev => prev ? { ...prev, status: status as AdminBooking["status"] } : prev);
-    } finally {
-      setUpdatingId(null);
     }
   };
 
@@ -226,241 +165,143 @@ export default function AdminBookingsPage() {
     }
   };
 
-  const openDetail = async (id: string) => {
-    setDetailLoading(true);
-    try {
-      const r = await bookingsApi.get(id);
-      setDetail(r.data.data as unknown as AdminBooking);
-    } finally {
-      setDetailLoading(false);
-    }
-  };
-
   return (
     <div className="space-y-6 max-w-6xl">
       <AdminPageHeader
         title="Bookings"
         titleBn="বুকিং ব্যবস্থাপনা"
-        description={`${tab === "v1" ? total : totalV2} total bookings — service intake, status management, receipts, and fulfillment tracking`}
-        descriptionBn={`${tab === "v1" ? total : totalV2}টি বুকিং — service intake, status management, receipt এবং fulfillment tracking`}
+        description={`${totalV2} total bookings — service intake, status management, receipts, and fulfillment tracking`}
+        descriptionBn={`${totalV2}টি বুকিং — service intake, status management, receipt এবং fulfillment tracking`}
         actions={
           <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-3 py-2 text-brand-700">
             <Briefcase className="w-4 h-4" />
-            <span className="text-sm font-semibold">{tab === "v1" ? total : totalV2} bookings</span>
+            <span className="text-sm font-semibold">{totalV2} bookings</span>
           </div>
         }
       />
 
-      {tab === "v1" ? (
-        <AdminToolbar
-          searchValue={searchInput}
-          onSearchChange={handleSearchChange}
-          searchPlaceholder="Search name, phone, booking#…"
+      <AdminToolbar>
+        <select value={statusFilterV2} onChange={(e) => { setStatusFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
+          <option value="">All Status</option>
+          {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+        </select>
+        <select value={paymentFilterV2} onChange={(e) => { setPaymentFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
+          <option value="">All Payment</option>
+          {PAYMENT_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+        </select>
+        <select value={districtFilterV2} onChange={(e) => { setDistrictFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
+          <option value="">All Districts</option>
+          {BD_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
+        </select>
+        <button
+          onClick={handleCsvExport}
+          disabled={csvLoading}
+          className="admin-btn-secondary !py-2 gap-1.5"
+          title="Export all bookings to CSV"
         >
-          <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="admin-input w-auto text-sm">
-            <option value="">All Services</option>
-            {SERVICE_TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
-          </select>
-          <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="admin-input w-auto text-sm">
-            <option value="">All Status</option>
-            {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-          </select>
-          <button
-            onClick={handleCsvExport}
-            disabled={csvLoading}
-            className="admin-btn-secondary !py-2 gap-1.5"
-            title="Export all bookings to CSV"
-          >
-            {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            CSV
-          </button>
-          <button
-            onClick={handlePdfExport}
-            disabled={exportPdfLoading}
-            className="admin-btn-secondary !py-2 gap-1.5"
-            title="Export all bookings as PDF"
-          >
-            {exportPdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            PDF
-          </button>
-        </AdminToolbar>
-      ) : (
-        <AdminToolbar>
-          <select value={statusFilterV2} onChange={(e) => { setStatusFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
-            <option value="">All Status</option>
-            {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-          </select>
-          <select value={paymentFilterV2} onChange={(e) => { setPaymentFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
-            <option value="">All Payment</option>
-            {PAYMENT_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-          </select>
-          <select value={districtFilterV2} onChange={(e) => { setDistrictFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
-            <option value="">All Districts</option>
-            {BD_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-        </AdminToolbar>
-      )}
+          {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          CSV
+        </button>
+        <button
+          onClick={handlePdfExport}
+          disabled={exportPdfLoading}
+          className="admin-btn-secondary !py-2 gap-1.5"
+          title="Export all bookings as PDF"
+        >
+          {exportPdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          PDF
+        </button>
+      </AdminToolbar>
 
-      {/* One booking list. The old "Simple Bookings" tab is gone: alembic 0015
-          copied every legacy row into bookings_v2 under its original booking
-          number, so showing both would list each booking twice. The v1 code
-          below stays reachable only via setTab, which nothing now calls, and
-          is kept for a release in case a legacy row needs inspecting. */}
-      {/* V1 Table */}
-      {tab === "v1" && (
-        <div className="admin-card overflow-hidden">
-          {loading ? (
-            <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
-          ) : bookings.length === 0 ? (
-            <div className="p-12 text-center">
-              <Briefcase className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-400 font-medium">No bookings found</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="table-premium min-w-[500px]">
-                <thead>
-                  <tr>
-                    <th>Booking</th>
-                    <th>Customer</th>
-                    <th className="hidden sm:table-cell">Service</th>
-                    <th className="hidden md:table-cell">Date</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bookings.map((b) => (
-                    <tr key={b.id} className="cursor-pointer" onClick={() => openDetail(b.id!)}>
-                      <td className="px-5 py-3">
-                        <p className="font-medium text-gray-900">{b.booking_number}</p>
-                        {b.service_subtype && <p className="text-xs text-gray-400">{b.service_subtype.replace(/_/g, " ")}</p>}
-                      </td>
-                      <td className="px-5 py-3">
-                        <p className="text-gray-900">{b.customer_name}</p>
-                        <p className="text-xs text-gray-400">{b.customer_phone}</p>
-                      </td>
-                      <td className="px-5 py-3 text-gray-600 capitalize hidden sm:table-cell">{b.service_type.replace(/_/g, " ")}</td>
-                      <td className="px-5 py-3 text-gray-500 whitespace-nowrap hidden md:table-cell">
-                        {new Date(b.created_at).toLocaleDateString("en-BD")}
-                      </td>
-                      <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+      {/* Bookings table. Legacy v1 rows were merged into bookings_v2 by
+          alembic 0015 under their original booking numbers, so this table
+          is the single, complete view. */}
+      <div className="admin-card overflow-hidden">
+        {loadingV2 ? (
+          <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
+        ) : bookingsV2.length === 0 ? (
+          <div className="p-12 text-center">
+            <Briefcase className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-400 font-medium">No service bookings found</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="table-premium min-w-[620px]">
+              <thead>
+                <tr>
+                  <th>Booking</th>
+                  <th>Customer</th>
+                  <th className="hidden sm:table-cell">Service</th>
+                  <th className="hidden md:table-cell">Pricing</th>
+                  <th className="hidden sm:table-cell">Payment</th>
+                  <th>Status</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {bookingsV2.map((b) => (
+                  <tr key={b.id} className="cursor-pointer" onClick={() => setDetailV2(b)}>
+                    <td className="px-5 py-3">
+                      <p className="font-medium text-gray-900">{b.booking_number}</p>
+                      <p className="text-xs text-gray-400">{new Date(b.created_at).toLocaleDateString("en-BD")}</p>
+                    </td>
+                    <td className="px-5 py-3">
+                      <p className="text-gray-900">{b.customer_name}</p>
+                      <p className="text-xs text-gray-400">{b.customer_phone}</p>
+                    </td>
+                    <td className="px-5 py-3 hidden sm:table-cell">
+                      <p className="text-gray-800">{b.service_name}</p>
+                      {b.service_tier && <p className="text-xs text-gray-400">{b.service_tier}</p>}
+                    </td>
+                    <td className="px-5 py-3 text-gray-600 hidden md:table-cell">
+                      <p className="capitalize text-xs">{b.pricing_type}</p>
+                      <p className="font-medium text-gray-900">
+                        {b.final_price != null ? `৳${b.final_price.toLocaleString()}` : b.quoted_price != null ? `৳${b.quoted_price.toLocaleString()}` : "—"}
+                      </p>
+                    </td>
+                    <td className="px-5 py-3 hidden sm:table-cell">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        b.payment_status === "paid" ? "bg-green-100 text-green-700" :
+                        b.payment_status === "partial" ? "bg-yellow-100 text-yellow-700" :
+                        b.payment_status === "refunded" ? "bg-purple-100 text-purple-700" :
+                        "bg-gray-100 text-gray-600"
+                      }`}>
+                        {b.payment_status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center gap-2">
                         <div className="relative">
                           <select
-                            value={b.status ?? "pending"}
-                            disabled={updatingId === b.id}
-                            onChange={(e) => updateStatus(b.id!, e.target.value)}
+                            value={b.status}
+                            disabled={updatingIdV2 === b.id}
+                            onChange={(e) => updateStatusV2(b.id, e.target.value)}
                             className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
                           >
-                            {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                            {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
                           </select>
                           <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                         </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* V2 Table */}
-      {tab === "v2" && (
-        <div className="admin-card overflow-hidden">
-          {loadingV2 ? (
-            <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
-          ) : bookingsV2.length === 0 ? (
-            <div className="p-12 text-center">
-              <Briefcase className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-400 font-medium">No service bookings found</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="table-premium min-w-[620px]">
-                <thead>
-                  <tr>
-                    <th>Booking</th>
-                    <th>Customer</th>
-                    <th className="hidden sm:table-cell">Service</th>
-                    <th className="hidden md:table-cell">Pricing</th>
-                    <th className="hidden sm:table-cell">Payment</th>
-                    <th>Status</th>
-                    <th />
+                        <button
+                          onClick={() => handleDeleteV2(b.id, b.booking_number)}
+                          disabled={updatingIdV2 === b.id}
+                          title="Delete booking"
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {bookingsV2.map((b) => (
-                    <tr key={b.id} className="cursor-pointer" onClick={() => setDetailV2(b)}>
-                      <td className="px-5 py-3">
-                        <p className="font-medium text-gray-900">{b.booking_number}</p>
-                        <p className="text-xs text-gray-400">{new Date(b.created_at).toLocaleDateString("en-BD")}</p>
-                      </td>
-                      <td className="px-5 py-3">
-                        <p className="text-gray-900">{b.customer_name}</p>
-                        <p className="text-xs text-gray-400">{b.customer_phone}</p>
-                      </td>
-                      <td className="px-5 py-3 hidden sm:table-cell">
-                        <p className="text-gray-800">{b.service_name}</p>
-                        {b.service_tier && <p className="text-xs text-gray-400">{b.service_tier}</p>}
-                      </td>
-                      <td className="px-5 py-3 text-gray-600 hidden md:table-cell">
-                        <p className="capitalize text-xs">{b.pricing_type}</p>
-                        <p className="font-medium text-gray-900">
-                          {b.final_price != null ? `৳${b.final_price.toLocaleString()}` : b.quoted_price != null ? `৳${b.quoted_price.toLocaleString()}` : "—"}
-                        </p>
-                      </td>
-                      <td className="px-5 py-3 hidden sm:table-cell">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          b.payment_status === "paid" ? "bg-green-100 text-green-700" :
-                          b.payment_status === "partial" ? "bg-yellow-100 text-yellow-700" :
-                          b.payment_status === "refunded" ? "bg-purple-100 text-purple-700" :
-                          "bg-gray-100 text-gray-600"
-                        }`}>
-                          {b.payment_status}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
-                        <div className="flex items-center gap-2">
-                          <div className="relative">
-                            <select
-                              value={b.status}
-                              disabled={updatingIdV2 === b.id}
-                              onChange={(e) => updateStatusV2(b.id, e.target.value)}
-                              className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
-                            >
-                              {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-                            </select>
-                            <ChevronDown className="w-3 h-3 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                          </div>
-                          <button
-                            onClick={() => handleDeleteV2(b.id, b.booking_number)}
-                            disabled={updatingIdV2 === b.id}
-                            title="Delete booking"
-                            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Pagination */}
-      {tab === "v1" && total > 20 && (
-        <div className="flex justify-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-          <span className="px-4 py-2 text-sm text-gray-600">Page {page}</span>
-          <button disabled={bookings.length < 20} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">Next</button>
-        </div>
-      )}
-      {tab === "v2" && totalV2 > 20 && (
+      {totalV2 > 20 && (
         <div className="flex justify-center gap-2">
           <button disabled={pageV2 === 1} onClick={() => setPageV2(p => p - 1)} className="btn btn-outline btn-sm">Previous</button>
           <span className="px-4 py-2 text-sm text-gray-600">Page {pageV2}</span>
@@ -468,97 +309,7 @@ export default function AdminBookingsPage() {
         </div>
       )}
 
-      {/* V1 Booking Detail Modal */}
-      {(detail || detailLoading) && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          style={ADMIN_MODAL_BACKDROP_STYLE}
-          onClick={() => setDetail(null)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Booking details"
-        >
-          <div
-            ref={detailRef}
-            className="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in"
-            style={ADMIN_MODAL_PANEL_STYLE}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {detail ? `Booking ${detail.booking_number}` : "Loading..."}
-              </h2>
-              <button onClick={() => setDetail(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
-            </div>
-
-            {detailLoading ? (
-              <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
-            ) : detail ? (
-              <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <StatusBadge status={detail.status ?? "pending"} />
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleDownloadPdf(detail.id!, detail.booking_number, "v1")}
-                      disabled={pdfLoading === detail.id}
-                      className="btn btn-outline btn-sm gap-1.5"
-                    >
-                      {pdfLoading === detail.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                      Receipt PDF
-                    </button>
-                    <select
-                      value={detail.status ?? "pending"}
-                      disabled={updatingId === detail.id}
-                      onChange={(e) => updateStatus(detail.id!, e.target.value)}
-                      className="input w-auto text-sm"
-                    >
-                      {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-                    </select>
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                  <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-                    <h3 className="font-semibold text-gray-900 text-sm">Customer Info</h3>
-                    <div className="flex gap-2">
-                      {detail.customer_phone && <a href={`tel:${detail.customer_phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>}
-                      {detail.customer_phone && <a href={buildCustomerWhatsAppLink(detail.customer_phone, `Hello ${detail.customer_name}, regarding your booking ${detail.booking_number} at ABO Enterprise. How can we help you?`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>}
-                      {detail.customer_email && <button type="button" onClick={() => setComposeEmail({ to: detail.customer_email!, subject: `Regarding your booking ${detail.booking_number}`, context: `Booking ${detail.booking_number}` })} title="Compose and send an email to the customer from no-reply@aboenterprise.com" className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</button>}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div><p className="text-gray-500 text-xs">Name</p><p className="font-medium">{detail.customer_name}</p></div>
-                    <div><p className="text-gray-500 text-xs">Phone</p><p className="font-medium">{detail.customer_phone}</p></div>
-                    {detail.customer_email && (
-                      <div className="col-span-2"><p className="text-gray-500 text-xs">Email</p><p className="font-medium">{detail.customer_email}</p></div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                  <h3 className="font-semibold text-gray-900 text-sm mb-3">Service Info</h3>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div><p className="text-gray-500 text-xs">Service Type</p><p className="font-medium capitalize">{detail.service_type.replace(/_/g, " ")}</p></div>
-                    {detail.service_subtype && (
-                      <div><p className="text-gray-500 text-xs">Sub-type</p><p className="font-medium capitalize">{detail.service_subtype.replace(/_/g, " ")}</p></div>
-                    )}
-                    <div><p className="text-gray-500 text-xs">Date</p><p className="font-medium">{new Date(detail.created_at).toLocaleDateString("en-BD")}</p></div>
-                  </div>
-                  {detail.details && (
-                    <div className="pt-2 border-t border-gray-200">
-                      <p className="text-gray-500 text-xs mb-1">Details</p>
-                      <p className="text-sm text-gray-800 whitespace-pre-wrap">{detail.details}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      )}
-
-      {/* V2 Booking Detail Modal */}
+      {/* Booking Detail Modal */}
       {detailV2 && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
@@ -584,7 +335,7 @@ export default function AdminBookingsPage() {
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => handleDownloadPdf(detailV2.id, detailV2.booking_number, "v2")}
+                    onClick={() => handleDownloadPdf(detailV2.id, detailV2.booking_number)}
                     disabled={pdfLoading === detailV2.id}
                     className="btn btn-outline btn-sm gap-1.5"
                   >
@@ -626,7 +377,7 @@ export default function AdminBookingsPage() {
               </div>
 
               <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-900 text-sm mb-3">Service & Pricing</h3>
+                <h3 className="font-semibold text-gray-900 text-sm mb-3">Service &amp; Pricing</h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div><p className="text-gray-500 text-xs">Service</p><p className="font-medium">{detailV2.service_name}</p></div>
                   {detailV2.service_tier && <div><p className="text-gray-500 text-xs">Tier</p><p className="font-medium">{detailV2.service_tier}</p></div>}

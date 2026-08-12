@@ -1,6 +1,6 @@
 import httpx
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 from decimal import Decimal
 from app.core.config import settings
@@ -35,11 +35,24 @@ class BkashGateway:
                 response.raise_for_status()
                 data = response.json()
                 self.token = data.get("id_token")
+                # bKash tokens are valid for expires_in seconds (1 hour per
+                # their docs); refresh 60s early so a call never starts on a
+                # token that expires mid-request.
+                try:
+                    expires_in = int(data.get("expires_in") or 3600)
+                except (TypeError, ValueError):
+                    expires_in = 3600
+                self.token_expires_at = datetime.now() + timedelta(seconds=max(expires_in - 60, 60))
                 logger.info("bKash authentication successful")
                 return True
         except Exception as e:
             logger.error(f"bKash authentication failed: {e}")
+            self.token = None
+            self.token_expires_at = None
             return False
+
+    def _token_valid(self) -> bool:
+        return bool(self.token) and self.token_expires_at is not None and datetime.now() < self.token_expires_at
 
     async def create_payment_link(
         self,
@@ -49,7 +62,7 @@ class BkashGateway:
         customer_name: str,
     ) -> Optional[dict]:
         """Create bKash payment link"""
-        if not self.token:
+        if not self._token_valid():
             await self.authenticate()
 
         try:
@@ -85,7 +98,7 @@ class BkashGateway:
 
     async def verify_payment(self, payment_id: str) -> Optional[dict]:
         """Verify bKash payment"""
-        if not self.token:
+        if not self._token_valid():
             await self.authenticate()
 
         try:
@@ -118,7 +131,7 @@ class BkashGateway:
 
     async def refund_payment(self, transaction_id: str, amount: Decimal) -> Optional[dict]:
         """Refund bKash payment"""
-        if not self.token:
+        if not self._token_valid():
             await self.authenticate()
 
         try:

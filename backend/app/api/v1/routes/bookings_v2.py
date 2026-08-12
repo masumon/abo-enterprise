@@ -162,6 +162,17 @@ async def _create_unlinked_booking(payload, background_tasks: BackgroundTasks, d
     await db.commit()
     await db.refresh(booking)
 
+    from app.core.notifications import create_notification
+    await create_notification(
+        db,
+        type="new_booking",
+        severity="info",
+        title=f"New booking {booking.booking_number}",
+        body=f"{booking.customer_name} — {booking.service_name}",
+        link=f"/sumon/bookings?booking={booking.id}",
+        meta={"booking_id": str(booking.id)},
+    )
+
     from app.core.email_config import resolve_notify_email
 
     notify_to = await resolve_notify_email(db)
@@ -415,6 +426,17 @@ async def create_booking(
     db.add(booking)
     await db.commit()
     await db.refresh(booking)
+
+    from app.core.notifications import create_notification
+    await create_notification(
+        db,
+        type="new_booking",
+        severity="info",
+        title=f"New booking {booking.booking_number}",
+        body=f"{booking.customer_name} — {service.name_en}",
+        link=f"/sumon/bookings?booking={booking.id}",
+        meta={"booking_id": str(booking.id)},
+    )
 
     from app.core.email_config import resolve_notify_email
     _notify_to = await resolve_notify_email(db)

@@ -23,7 +23,7 @@ interface AdminOrder {
   customer_email?: string; delivery_address: string; payment_method: string; payment_status?: string;
   order_status: string; subtotal: number; delivery_charge: number; total: number;
   advance_amount?: number; advance_paid?: boolean;
-  courier_provider?: string | null; courier_tracking_id?: string | null;
+  courier_provider?: string | null; courier_tracking_id?: string | null; courier_status?: string | null;
   /** Institutional invoice identity (manual_sql/0009); all null on a personal order. */
   company_name?: string | null; company_bin?: string | null; company_tin?: string | null;
   po_number?: string | null; billing_address?: string | null;
@@ -628,6 +628,7 @@ export default function AdminOrdersPage() {
                     {detail.courier_provider === "steadfast" && detail.courier_tracking_id ? (
                       <span className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1.5 font-medium">
                         ✓ Steadfast: {detail.courier_tracking_id}
+                        {detail.courier_status ? ` · ${detail.courier_status.replace(/_/g, " ")}` : ""}
                       </span>
                     ) : (
                       <button

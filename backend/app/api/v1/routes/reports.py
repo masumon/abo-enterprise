@@ -170,13 +170,18 @@ async def _report_payments(db: AsyncSession, start: datetime, end: datetime) -> 
 async def _report_courier(db: AsyncSession, start: datetime, end: datetime) -> list[dict[str, Any]]:
     shipped = (await db.execute(select(func.count(Order.id)).where(Order.created_at >= start, Order.created_at < end, Order.courier_consignment_id.isnot(None), Order.is_deleted == False))).scalar_one()  # noqa: E712
     delivered = (await db.execute(select(func.count(Order.id)).where(Order.created_at >= start, Order.created_at < end, Order.courier_consignment_id.isnot(None), Order.order_status == "delivered", Order.is_deleted == False))).scalar_one()  # noqa: E712
+    exceptions = (await db.execute(select(func.count(Order.id)).where(
+        Order.created_at >= start, Order.created_at < end,
+        Order.courier_status.in_(("hold", "in_review", "unknown", "cancelled_approval_pending", "unknown_approval_pending")),
+        Order.is_deleted == False,  # noqa: E712
+    ))).scalar_one()
     stalled = (await db.execute(select(func.count(Order.id)).where(
-        Order.order_status == "shipped", Order.courier_consignment_id.isnot(None),
+        Order.order_status == "shipped", Order.courier_consignment_id.isnot(None), Order.courier_status.is_(None),
         Order.updated_at < datetime.now(timezone.utc) - timedelta(days=5), Order.is_deleted == False,  # noqa: E712
     ))).scalar_one()
-    return [{"handed_to_courier": shipped, "delivered": delivered, "stalled_5d_plus": stalled,
-             "note": "Steadfast is push-only in this integration — no delivery-status webhook/poll syncs back, "
-                     "so 'stalled' is a proxy (shipped 5+ days without reaching delivered), not a real exception feed."}]
+    return [{"handed_to_courier": shipped, "delivered": delivered, "courier_flagged_exceptions": exceptions, "stalled_no_status_5d_plus": stalled,
+             "note": "delivered/courier_flagged_exceptions come from Steadfast's delivery-status webhook "
+                     "(orders/steadfast/webhook); 'stalled' only counts orders the webhook hasn't reported on yet."}]
 
 
 async def _report_profit(db: AsyncSession, start: datetime, end: datetime) -> list[dict[str, Any]]:

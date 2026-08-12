@@ -3,13 +3,13 @@ import uuid
 from uuid import UUID
 from datetime import datetime, timezone
 from urllib.parse import quote
-from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, Query, BackgroundTasks, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.rate_limit import rate_limit
-from app.core.security import require_admin, require_customer, require_role
+from app.core.security import require_customer, require_role
 from app.core.config import settings
 from app.core.email import send_email, order_notification_html, customer_order_confirmation_html, customer_order_status_html
 from app.core.invoice import InvoiceService
@@ -495,6 +495,17 @@ async def create_order(
         await db.rollback()
         logger.exception("Auto invoice for order %s failed", order.order_number)
 
+    from app.core.notifications import create_notification
+    await create_notification(
+        db,
+        type="new_order",
+        severity="info",
+        title=f"New order #{order.order_number}",
+        body=f"{order.customer_name} — Tk {float(order.total):,.0f}",
+        link=f"/sumon/orders/{order.id}",
+        meta={"order_id": str(order.id), "total": float(order.total)},
+    )
+
     return ApiResponse(
         data={
             "order_id": str(order.id),
@@ -574,7 +585,7 @@ async def list_orders(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("orders.read")),
 ):
     conditions = [Order.is_deleted == False]  # noqa: E712
     if order_status:
@@ -609,7 +620,7 @@ async def list_orders(
 async def get_order(
     order_id: UUID,
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_admin),
+    _admin: str = Depends(require_role("orders.read")),
 ):
     result = await db.execute(
         select(Order).options(selectinload(Order.items)).where(Order.id == order_id)
@@ -914,3 +925,65 @@ async def send_order_to_steadfast(
         data=OrderOut.model_validate(order),
         message=f"Steadfast-এ পাঠানো হয়েছে — tracking {data['tracking_code']}",
     )
+
+
+@router.post("/steadfast/webhook")
+async def steadfast_status_webhook(
+    http_request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """Steadfast's delivery-status callback ("Callback Url" + "Auth Token
+    (Bearer)" configured in their merchant portal). Body fields per their
+    integration docs: consignment_id, invoice, status, cod_amount, updated_at.
+
+    Auth: a Bearer token the admin generates in Settings and pastes into the
+    Steadfast portal alongside this endpoint's URL — the same shared-secret
+    pattern used for every other gateway webhook in this codebase, since
+    Steadfast's callback carries no request signature to verify instead.
+    """
+    from app.core.steadfast import DELIVERED_STATUSES, FAILED_STATUSES
+
+    cfg = await steadfast_settings(db)
+    configured_token = cfg.get("webhook_token") or ""
+    if not configured_token:
+        # No token configured yet — refuse rather than accept unauthenticated writes.
+        raise HTTPException(status_code=503, detail="Steadfast webhook token not configured")
+
+    auth_header = http_request.headers.get("Authorization", "")
+    presented = auth_header[7:] if auth_header.lower().startswith("bearer ") else auth_header
+    if not secrets.compare_digest(presented, configured_token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid webhook token")
+
+    try:
+        payload = await http_request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON body")
+
+    consignment_id = str(payload.get("consignment_id") or "").strip()
+    invoice = str(payload.get("invoice") or "").strip()
+    courier_status = str(payload.get("status") or "").strip().lower()
+    if not courier_status or (not consignment_id and not invoice):
+        raise HTTPException(status_code=400, detail="Missing consignment_id/invoice or status")
+
+    conditions = []
+    if consignment_id:
+        conditions.append(Order.courier_consignment_id == consignment_id)
+    if invoice:
+        conditions.append(Order.order_number == invoice)
+    result = await db.execute(select(Order).where(or_(*conditions)))
+    order = result.scalars().first()
+    if not order:
+        logger.warning("STEADFAST_WEBHOOK order not found consignment_id=%s invoice=%s", consignment_id, invoice)
+        return ApiResponse(success=True, message="Order not found (ignored)")
+
+    order.courier_status = courier_status
+    order.courier_status_updated_at = datetime.now(timezone.utc)
+    # Only ever moves the order status forward on a courier-confirmed outcome;
+    # never overrides a manual admin decision like a refund/cancellation, and
+    # never regresses an order that's already delivered.
+    if courier_status in DELIVERED_STATUSES and order.order_status not in ("delivered", "cancelled"):
+        order.order_status = "delivered"
+    elif courier_status in FAILED_STATUSES and order.order_status not in ("delivered", "cancelled"):
+        order.order_status = "cancelled"
+    await db.commit()
+    return ApiResponse(success=True, message="ok")

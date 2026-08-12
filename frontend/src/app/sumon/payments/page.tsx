@@ -2,12 +2,14 @@
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import AdminTitle from "@/components/admin/AdminTitle";
 import {
   Loader2, Plus, Pencil, Trash2, X, ToggleLeft, ToggleRight,
-  CreditCard, Check, AlertCircle, Receipt,
+  CreditCard, Check, AlertCircle, Receipt, RefreshCw,
 } from "lucide-react";
 import { paymentMethodsAdminApi, adminApi, type PaymentMethodRecord } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { cn } from "@/lib/utils";
@@ -60,7 +62,11 @@ const EMPTY_FORM: Partial<PaymentMethodRecord> = {
 };
 
 export default function AdminPaymentsPage() {
-  const [tab, setTab] = useState<"gateways" | "transactions" | "reconciliation">("gateways");
+  const searchParams = useSearchParams();
+  const [tab, setTab] = useState<"gateways" | "transactions" | "reconciliation">(() => {
+    const requested = searchParams.get("tab");
+    return requested === "transactions" || requested === "reconciliation" ? requested : "gateways";
+  });
   const [methods, setMethods] = useState<PaymentMethodRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [transactions, setTransactions] = useState<{
@@ -141,6 +147,21 @@ export default function AdminPaymentsPage() {
   }, [reconPage, toast]);
 
   useEffect(() => { if (tab === "reconciliation") loadReconciliation(); }, [loadReconciliation, tab]);
+
+  const [runningRecon, setRunningRecon] = useState(false);
+  const runReconciliation = async () => {
+    setRunningRecon(true);
+    try {
+      const r = await adminApi.runPaymentReconciliation();
+      const discrepant = r.data.data?.filter((row) => row.reconciliation_status === "discrepancy").length ?? 0;
+      toast(discrepant > 0 ? "error" : "success", discrepant > 0 ? `Reconciled — ${discrepant} gateway(s) have discrepancies` : "Reconciled — everything matched");
+      await loadReconciliation();
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Reconciliation run failed"));
+    } finally {
+      setRunningRecon(false);
+    }
+  };
 
   const openNew = (gateway?: string) => {
     setEditing({ ...EMPTY_FORM, payment_gateway: gateway ?? "" });
@@ -244,6 +265,12 @@ export default function AdminPaymentsPage() {
         {tab === "gateways" && (
           <button onClick={() => openNew()} className="btn btn-primary btn-sm gap-1.5">
             <Plus className="w-4 h-4" /> Add Gateway
+          </button>
+        )}
+        {tab === "reconciliation" && (
+          <button onClick={runReconciliation} disabled={runningRecon} className="btn btn-primary btn-sm gap-1.5">
+            {runningRecon ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Run Reconciliation (yesterday)
           </button>
         )}
       </div>

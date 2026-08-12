@@ -25,7 +25,18 @@ CONFIG_KEYS = [
     "steadfast_secret_key",
     "steadfast_base_url",
     "steadfast_delivery_type",
+    "steadfast_webhook_token",
 ]
+
+# Courier statuses Steadfast's webhook/status API can report (per their
+# Laravel/PHP SDK docs — official API reference has no public HTML page).
+DELIVERED_STATUSES = {"delivered", "partial_delivered"}
+FAILED_STATUSES = {"cancelled"}
+ALL_KNOWN_STATUSES = {
+    "pending", "delivered_approval_pending", "partial_delivered_approval_pending",
+    "cancelled_approval_pending", "unknown_approval_pending", "delivered",
+    "partial_delivered", "cancelled", "hold", "in_review", "unknown",
+}
 
 
 class SteadfastError(Exception):
@@ -115,6 +126,7 @@ async def get_settings(db: AsyncSession) -> dict:
         "secret_key": (cfg.get("steadfast_secret_key") or "").strip(),
         "base_url": (cfg.get("steadfast_base_url") or DEFAULT_BASE_URL).strip().rstrip("/"),
         "delivery_type": (cfg.get("steadfast_delivery_type") or "0").strip(),
+        "webhook_token": (cfg.get("steadfast_webhook_token") or "").strip(),
     }
 
 

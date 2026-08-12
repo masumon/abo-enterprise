@@ -5,12 +5,15 @@ import { useLanguageStore } from "@/store/language";
 import LegalPageLayout, { type LegalSection } from "@/components/layout/LegalPageLayout";
 import PageHero from "@/components/ui/PageHero";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { useLegalPageOverride } from "@/hooks/useLegalPageOverride";
 
 const LAST_UPDATED = "2026-07-25";
 
 export default function PrivacyPage() {
   const { lang } = useLanguageStore();
   const isBn = lang === "bn";
+  const pageTitle = isBn ? "গোপনীয়তা নীতি" : "Privacy Policy";
+  const overrideSections = useLegalPageOverride("privacy", pageTitle, isBn);
   const { settings } = usePublicSettings(["contact_email", "contact_phone", "contact_address"]);
   const email = getSettingValue(settings, "contact_email", "info@aboenterprise.com");
   const phone = getSettingValue(settings, "contact_phone", "+880 1825 007977");
@@ -124,12 +127,12 @@ export default function PrivacyPage() {
       <PageHero
         pageKey="privacy"
         variant="light"
-        title={isBn ? "গোপনীয়তা নীতি" : "Privacy Policy"}
+        title={pageTitle}
         breadcrumbs={[{ label: isBn ? "গোপনীয়তা" : "Privacy" }]}
       />
       <LegalPageLayout
-        title={isBn ? "গোপনীয়তা নীতি" : "Privacy Policy"}
-        sections={sections}
+        title={pageTitle}
+        sections={overrideSections ?? sections}
         showTitle={false}
         lastUpdated={LAST_UPDATED}
       />

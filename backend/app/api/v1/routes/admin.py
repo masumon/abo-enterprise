@@ -230,6 +230,30 @@ async def list_admin_users(
     )
 
 
+@router.get("/roles-permissions", response_model=ApiResponse)
+async def get_roles_permissions(
+    _: dict = Depends(require_admin),
+):
+    """Read-only view of the role -> permission matrix actually enforced by
+    require_role()/check_role() (app.core.rbac.ROLE_PERMISSIONS). Editing the
+    matrix itself still requires a backend code change; this only makes the
+    current, real matrix visible in the admin panel instead of only in code.
+
+    Deliberately open to every authenticated admin regardless of role (not
+    gated by users.read): the admin sidebar fetches this for every role to
+    decide its own nav visibility (see adminNav.ts's `permission` field), so
+    gating it behind a permission only admin/super_admin hold would silently
+    break that sync for viewer/editor — the exact roles most likely to drift
+    from minRole otherwise. The content itself isn't sensitive: it's the
+    rule table (which role can do what), not any user's own data."""
+    from app.core.rbac import ROLE_PERMISSIONS
+
+    return ApiResponse(data={
+        "roles": ["super_admin", "admin", "editor", "viewer"],
+        "permissions": ROLE_PERMISSIONS,
+    })
+
+
 @router.post("/users", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)
 async def create_admin_user(
     payload: AdminUserCreate,
@@ -454,6 +478,54 @@ async def list_payment_reconciliation(
     )
 
 
+@router.post("/payment-reconciliation/run", response_model=ApiResponse)
+async def run_payment_reconciliation(
+    reconciliation_date: str | None = Query(None, description="YYYY-MM-DD, defaults to yesterday (UTC)"),
+    db: AsyncSession = Depends(get_db),
+    admin_id: str = Depends(require_role("payments.write")),
+):
+    """Tally each gateway's transactions for a day and cross-check them
+    against the linked Order/BookingV2 payment status, writing one
+    PaymentReconciliation row per gateway. Defaults to yesterday since
+    today's transactions are still arriving."""
+    from datetime import datetime, timedelta, timezone
+
+    from app.core.reconciliation import reconcile_all_gateways
+
+    if reconciliation_date:
+        try:
+            day = datetime.strptime(reconciliation_date, "%Y-%m-%d").date()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="reconciliation_date must be YYYY-MM-DD")
+    else:
+        day = (datetime.now(timezone.utc) - timedelta(days=1)).date()
+
+    records = await reconcile_all_gateways(db, day, admin_id=UUID(admin_id))
+    db.add(ActivityLog(
+        admin_id=UUID(admin_id), action="reconcile", entity_type="payment_reconciliation",
+        new_values={"date": day.isoformat(), "gateways": [r.payment_gateway for r in records]},
+    ))
+    await db.commit()
+
+    return ApiResponse(
+        data=[
+            {
+                "id": str(r.id),
+                "payment_gateway": r.payment_gateway,
+                "reconciliation_date": r.reconciliation_date.isoformat(),
+                "total_transactions": r.total_transactions,
+                "successful_count": r.successful_count,
+                "failed_count": r.failed_count,
+                "pending_count": r.pending_count,
+                "reconciliation_status": r.reconciliation_status,
+                "discrepancies": r.discrepancies,
+            }
+            for r in records
+        ],
+        message=f"Reconciled {day.isoformat()} across {len(records)} gateway(s)",
+    )
+
+
 @router.get("/audit-logs", response_model=PaginatedResponse)
 async def list_audit_logs(
     page: int = Query(1, ge=1),
@@ -566,7 +638,7 @@ async def admin_send_email(
     payload: AdminEmailSend,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-    admin_id: str = Depends(require_admin),
+    admin_id: str = Depends(require_role("email.send")),
 ):
     """Send a manual, admin-composed email to a customer.
 

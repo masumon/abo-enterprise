@@ -8,7 +8,7 @@ from app.api.v1.routes import (
     admin,
     settings,
     services,
-    admin_settings,
+    payment_methods,
     bookings_v2,
     leads_v2,
     invoices,
@@ -57,7 +57,7 @@ api_router.include_router(analytics.router)
 api_router.include_router(ops.router)
 api_router.include_router(bulk.router)
 api_router.include_router(admin.router)
-api_router.include_router(admin_settings.router)
+api_router.include_router(payment_methods.router)
 api_router.include_router(reviews.router)
 api_router.include_router(blog.router)
 api_router.include_router(public.router)
