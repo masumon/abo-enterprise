@@ -3,6 +3,13 @@ import { getSettingValue } from "@/hooks/usePublicSettings";
 import { generateWhatsAppOrderMessage } from "@/lib/utils";
 import type { DeliveryZone } from "@/lib/api";
 
+function getNumericSetting(settings: Record<string, string>, key: string): number | null {
+  const raw = getSettingValue(settings, key).trim();
+  if (!raw) return null;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : null;
+}
+
 export function calcDeliveryCharge(
   district: string,
   subtotalAfterDiscount: number,
@@ -11,7 +18,7 @@ export function calcDeliveryCharge(
   maxProductCharge = 0,
   /** Admin-defined zones (public list) + the customer's upazila. */
   opts?: { upazila?: string; zones?: DeliveryZone[] }
-): number {
+): number | null {
   // 1) Admin-defined delivery zones take precedence. The first active zone whose
   // districts include this district — and, when the zone lists upazilas, whose
   // upazilas include the customer's — decides the charge. free_threshold > 0
@@ -25,22 +32,23 @@ export function calcDeliveryCharge(
     return Math.max(z.charge || 0, maxProductCharge || 0);
   }
 
-  // 2) Fallback — legacy settings-based 3-tier (unchanged). Free delivery is a
-  // Sylhet-only promise above the threshold; outside Sylhet always pays.
+  // 2) Legacy settings-based 3-tier fallback. All business amounts must come
+  // from the Admin settings; if configuration is incomplete, return null so
+  // checkout can block instead of silently inventing or undercharging a fee.
   const isSylhet = isSylhetArea(district);
-  const freeMin = parseFloat(getSettingValue(settings, "free_delivery_min_amount") || "2000");
-  if (isSylhet && subtotalAfterDiscount >= freeMin) return 0;
+  const freeMin = getNumericSetting(settings, "free_delivery_min_amount");
+  const sylhetCharge = getNumericSetting(settings, "delivery_charge_sylhet");
+  const dhakaCharge = getNumericSetting(settings, "delivery_charge_dhaka");
+  const outsideCharge = getNumericSetting(settings, "delivery_charge_outside");
+  if (freeMin === null || sylhetCharge === null || dhakaCharge === null || outsideCharge === null) return null;
 
-  const sylhetCharge = parseFloat(getSettingValue(settings, "delivery_charge_sylhet") || "60");
-  const dhakaCharge = parseFloat(getSettingValue(settings, "delivery_charge_dhaka") || "120");
-  const outsideCharge = parseFloat(getSettingValue(settings, "delivery_charge_outside") || "130");
+  if (isSylhet && subtotalAfterDiscount >= freeMin) return 0;
 
   let zone: number;
   if (isSylhet) zone = sylhetCharge;
   else if (district === "Dhaka" || district === "Gazipur" || district === "Narayanganj") zone = dhakaCharge;
   else zone = outsideCharge;
 
-  // A product's own delivery charge takes precedence when higher (one shipment).
   return Math.max(zone, maxProductCharge || 0);
 }
 
@@ -48,10 +56,10 @@ export function calcDeliveryCharge(
 export function calcAdvanceCharge(
   items: { requires_advance?: boolean }[],
   settings: Record<string, string>
-): number {
+): number | null {
   const needs = items.some((i) => i.requires_advance);
   if (!needs) return 0;
-  return parseFloat(getSettingValue(settings, "advance_delivery_charge") || "120");
+  return getNumericSetting(settings, "advance_delivery_charge");
 }
 
 export type ConfirmChannel = "whatsapp" | "email" | "both" | "none";
@@ -65,8 +73,7 @@ export function getConfirmChannel(settings: Record<string, string>): ConfirmChan
 export function getWhatsAppNumber(settings: Record<string, string>): string {
   const raw =
     getSettingValue(settings, "whatsapp_number") ||
-    getSettingValue(settings, "contact_phone") ||
-    "8801825007977";
+    getSettingValue(settings, "contact_phone");
   return raw.replace(/\D/g, "");
 }
 
@@ -99,18 +106,20 @@ export function buildOrderConfirmActions(params: {
 
   if (channel === "whatsapp" || channel === "both") {
     const wa = getWhatsAppNumber(params.settings);
-    result.openWhatsApp = `https://wa.me/${wa}?text=${msg}`;
+    if (wa) result.openWhatsApp = `https://wa.me/${wa}?text=${msg}`;
   }
 
   if ((channel === "email" || channel === "both") && params.customerEmail) {
-    const businessEmail = getSettingValue(params.settings, "contact_email") || "info@aboenterprise.com";
-    const subject = encodeURIComponent(
-      `Order ${params.orderNumber ?? ""} — ABO Enterprise`.trim()
-    );
-    const body = encodeURIComponent(
-      `Order: ${params.orderNumber ?? "—"}\nName: ${params.customerName}\nPhone: ${params.customerPhone}\nTotal: ৳${params.total}\nPayment: ${params.paymentLabel}${params.trxId ? `\nTrxID: ${params.trxId}` : ""}`
-    );
-    result.mailto = `mailto:${businessEmail}?subject=${subject}&body=${body}`;
+    const businessEmail = getSettingValue(params.settings, "contact_email").trim();
+    if (businessEmail) {
+      const subject = encodeURIComponent(
+        `Order ${params.orderNumber ?? ""} — ABO Enterprise`.trim()
+      );
+      const body = encodeURIComponent(
+        `Order: ${params.orderNumber ?? "—"}\nName: ${params.customerName}\nPhone: ${params.customerPhone}\nTotal: ৳${params.total}\nPayment: ${params.paymentLabel}${params.trxId ? `\nTrxID: ${params.trxId}` : ""}`
+      );
+      result.mailto = `mailto:${businessEmail}?subject=${subject}&body=${body}`;
+    }
   }
 
   return result;
