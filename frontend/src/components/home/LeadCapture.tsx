@@ -105,7 +105,7 @@ export default function LeadCapture() {
   };
 
   return (
-    <section id="consultation" className="py-5 lg:py-7 bg-gradient-to-br from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/10">
+    <section className="py-5 lg:py-7 bg-gradient-to-br from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/10">
       <div className="container mx-auto px-4">
         <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
           {/* Left side - Form */}

@@ -18,7 +18,11 @@ const FEATURES = [
     icon: Zap,
     label: { en: "Flash Sale", bn: "ফ্ল্যাশ সেল" },
     color: "text-accent-600",
-    href: "#flash-sale",
+    // FlashSaleSection renders nothing (no #flash-sale anchor at all) whenever
+    // the feature flag is off, the sale window has ended, or there are zero
+    // qualifying products — link straight to the always-available product
+    // list instead of an anchor that can silently be a dead link.
+    href: "/products?flash_sale=true",
   },
   {
     id: "tracking",

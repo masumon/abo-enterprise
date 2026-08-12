@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useLanguageStore } from "@/store/language";
 import { Star, Package, MessageCircle, ShoppingCart } from "lucide-react";
-import { publicApi } from "@/lib/api";
+import { usePublicStats } from "@/hooks/usePublicStats";
 
 interface ReviewStatsCardProps {
   /** Optional overrides — when omitted, real figures are fetched from
@@ -21,33 +20,9 @@ export default function ReviewStatsCard({
   totalProducts: totalProductsProp,
 }: ReviewStatsCardProps) {
   const { lang } = useLanguageStore();
-  const [fetched, setFetched] = useState<{
-    average_rating: number | null;
-    reviews: number;
-    orders: number;
-    products: number;
-  } | null>(null);
-
-  useEffect(() => {
-    if (
-      averageRatingProp !== undefined &&
-      totalReviewsProp !== undefined &&
-      totalOrdersProp !== undefined &&
-      totalProductsProp !== undefined
-    ) {
-      return; // Fully overridden by caller — no fetch needed.
-    }
-    publicApi.stats().then((r) => {
-      const d = r.data.data;
-      if (!d) return;
-      setFetched({
-        average_rating: d.average_rating,
-        reviews: d.reviews,
-        orders: d.orders,
-        products: d.products,
-      });
-    }).catch(() => {});
-  }, [averageRatingProp, totalReviewsProp, totalOrdersProp, totalProductsProp]);
+  // Shared with Hero (and deduped against its concurrent request) via
+  // usePublicStats() — prop overrides below still take precedence per field.
+  const { stats: fetched } = usePublicStats();
 
   const averageRating = averageRatingProp ?? fetched?.average_rating ?? null;
   const totalReviews = totalReviewsProp ?? fetched?.reviews ?? 0;

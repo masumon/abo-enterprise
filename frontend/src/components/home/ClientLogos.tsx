@@ -99,7 +99,7 @@ export default function ClientLogos() {
     "flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 transition-all";
 
   return (
-    <section id="brands" className="py-5 lg:py-7 bg-gradient-to-b from-white to-gray-50 dark:from-[var(--surface)] dark:to-white/5">
+    <section className="py-5 lg:py-7 bg-gradient-to-b from-white to-gray-50 dark:from-[var(--surface)] dark:to-white/5">
       <div className="container mx-auto px-4">
         <div className="flex items-baseline justify-between gap-4 mb-8 lg:mb-12">
           <div>
@@ -163,7 +163,7 @@ export default function ClientLogos() {
                 ref={closeButtonRef}
                 type="button"
                 onClick={() => setActive(null)}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+                className="w-11 h-11 rounded-lg flex items-center justify-center text-muted hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
                 aria-label={lang === "bn" ? "বন্ধ করুন" : "Close"}
               >
                 <X className="w-4 h-4" aria-hidden="true" />
