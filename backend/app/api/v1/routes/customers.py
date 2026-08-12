@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, ConfigDict, Field
@@ -8,8 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import require_role
-from app.models.models import BookingV2, LeadV2, Order
 from app.models.customer import Customer
+from app.models.models import BookingV2, LeadV2, Order
 from app.schemas.schemas import PaginatedMeta, PaginatedResponse
 
 router = APIRouter(prefix="/admin", tags=["customers"])
@@ -76,27 +77,36 @@ def _customer_activity_subqueries():
     return order_count, booking_count, lead_count, order_value, booking_value, last_order, last_booking, last_lead
 
 
-def _serialize_customer(row: Any) -> dict:
+def _serialize_customer(
+    customer: Customer,
+    *,
+    order_count: int = 0,
+    booking_count: int = 0,
+    lead_count: int = 0,
+    order_value: float = 0,
+    booking_value: float = 0,
+    last_activity: Any = None,
+) -> dict:
     return {
-        "id": str(row.id),
-        "phone": row.phone,
-        "name": row.name,
-        "email": row.email,
-        "company": row.company,
-        "address": row.address,
-        "status": "deleted" if row.is_deleted else "active",
-        "created_at": row.created_at.isoformat() if row.created_at else None,
-        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
-        "order_count": int(row.order_count or 0),
-        "booking_count": int(row.booking_count or 0),
-        "lead_count": int(row.lead_count or 0),
-        "order_value": float(row.order_value or 0),
-        "booking_value": float(row.booking_value or 0),
-        "last_activity": row.last_activity.isoformat() if row.last_activity else None,
+        "id": str(customer.id),
+        "phone": customer.phone,
+        "name": customer.name,
+        "email": customer.email,
+        "company": customer.company,
+        "address": customer.address,
+        "status": "deleted" if customer.is_deleted else "active",
+        "created_at": customer.created_at.isoformat() if customer.created_at else None,
+        "updated_at": customer.updated_at.isoformat() if customer.updated_at else None,
+        "order_count": int(order_count or 0),
+        "booking_count": int(booking_count or 0),
+        "lead_count": int(lead_count or 0),
+        "order_value": float(order_value or 0),
+        "booking_value": float(booking_value or 0),
+        "last_activity": last_activity.isoformat() if last_activity else None,
     }
 
 
-async def _customer_with_activity(db: AsyncSession, customer_id):
+async def _customer_with_activity(db: AsyncSession, customer_id: UUID):
     (
         order_count,
         booking_count,
@@ -119,8 +129,7 @@ async def _customer_with_activity(db: AsyncSession, customer_id):
             last_activity.label("last_activity"),
         ).where(Customer.id == customer_id)
     )
-    row = result.first()
-    return row
+    return result.first()
 
 
 @router.get("/customers", response_model=PaginatedResponse)
@@ -132,11 +141,7 @@ async def list_customers(
     db: AsyncSession = Depends(get_db),
     _: str = Depends(require_role("customers.read")),
 ):
-    """List canonical customers while deriving transaction history by phone.
-
-    Phone remains the cross-module identity key for legacy transaction tables;
-    the durable profile itself now comes from the canonical ``customers`` table.
-    """
+    """List canonical customers while deriving transaction history by phone."""
     (
         order_count,
         booking_count,
@@ -180,26 +185,18 @@ async def list_customers(
         .limit(per_page)
     )
 
-    rows = result.all()
-    data = []
-    for customer, *metrics in rows:
-        data.append(
-            _serialize_customer(
-                type(
-                    "CustomerRow",
-                    (),
-                    {
-                        **customer.__dict__,
-                        "order_count": metrics[0],
-                        "booking_count": metrics[1],
-                        "lead_count": metrics[2],
-                        "order_value": metrics[3],
-                        "booking_value": metrics[4],
-                        "last_activity": metrics[5],
-                    },
-                )()
-            )
+    data = [
+        _serialize_customer(
+            customer,
+            order_count=order_count_value,
+            booking_count=booking_count_value,
+            lead_count=lead_count_value,
+            order_value=order_value_value,
+            booking_value=booking_value_value,
+            last_activity=last_activity_value,
         )
+        for customer, order_count_value, booking_count_value, lead_count_value, order_value_value, booking_value_value, last_activity_value in result.all()
+    ]
 
     return PaginatedResponse(
         data=data,
@@ -214,36 +211,30 @@ async def list_customers(
 
 @router.get("/customers/{customer_id}")
 async def get_customer(
-    customer_id: str,
+    customer_id: UUID,
     db: AsyncSession = Depends(get_db),
     _: str = Depends(require_role("customers.read")),
 ):
     row = await _customer_with_activity(db, customer_id)
     if not row:
         raise HTTPException(status_code=404, detail="Customer not found")
-    customer, *metrics = row
+    customer, order_count, booking_count, lead_count, order_value, booking_value, last_activity = row
     return {
         "data": _serialize_customer(
-            type(
-                "CustomerRow",
-                (),
-                {
-                    **customer.__dict__,
-                    "order_count": metrics[0],
-                    "booking_count": metrics[1],
-                    "lead_count": metrics[2],
-                    "order_value": metrics[3],
-                    "booking_value": metrics[4],
-                    "last_activity": metrics[5],
-                },
-            )()
+            customer,
+            order_count=order_count,
+            booking_count=booking_count,
+            lead_count=lead_count,
+            order_value=order_value,
+            booking_value=booking_value,
+            last_activity=last_activity,
         )
     }
 
 
 @router.get("/customers/{customer_id}/history")
 async def get_customer_history(
-    customer_id: str,
+    customer_id: UUID,
     db: AsyncSession = Depends(get_db),
     _: str = Depends(require_role("customers.read")),
 ):
@@ -277,25 +268,20 @@ async def get_customer_history(
         )
     ).scalars().all()
 
+    last_activity = max(
+        (x.created_at for x in (*orders, *bookings, *leads) if x.created_at),
+        default=None,
+    )
     return {
         "data": {
             "customer": _serialize_customer(
-                type(
-                    "CustomerRow",
-                    (),
-                    {
-                        **customer.__dict__,
-                        "order_count": len(orders),
-                        "booking_count": len(bookings),
-                        "lead_count": len(leads),
-                        "order_value": sum(float(o.total or 0) for o in orders),
-                        "booking_value": sum(float(b.final_price or b.quoted_price or 0) for b in bookings),
-                        "last_activity": max(
-                            [x.created_at for x in (*orders, *bookings, *leads) if x.created_at],
-                            default=None,
-                        ),
-                    },
-                )()
+                customer,
+                order_count=len(orders),
+                booking_count=len(bookings),
+                lead_count=len(leads),
+                order_value=sum(float(o.total or 0) for o in orders),
+                booking_value=sum(float(b.final_price or b.quoted_price or 0) for b in bookings),
+                last_activity=last_activity,
             ),
             "orders": [
                 {
@@ -334,7 +320,7 @@ async def get_customer_history(
 
 @router.patch("/customers/{customer_id}")
 async def update_customer(
-    customer_id: str,
+    customer_id: UUID,
     payload: CustomerUpdate,
     db: AsyncSession = Depends(get_db),
     _: str = Depends(require_role("customers.write")),
@@ -349,7 +335,7 @@ async def update_customer(
     changes = payload.model_dump(exclude_unset=True)
     for key, value in changes.items():
         setattr(customer, key, value.strip() if isinstance(value, str) else value)
-    customer.updated_at = datetime.now(customer.updated_at.tzinfo) if customer.updated_at else datetime.utcnow()
+    customer.updated_at = datetime.now(timezone.utc)
 
     await db.commit()
     await db.refresh(customer)
