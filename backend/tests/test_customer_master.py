@@ -1,7 +1,13 @@
 """Canonical customer master model and serialization contract tests."""
 
+from pathlib import Path
+
 from app.api.v1.routes.customers import _customer_activity_subqueries, _serialize_customer
 from app.models.customer import Customer
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+MANUAL_SQL = PROJECT_ROOT / "manual_sql" / "20260812_batch02_customer_master.sql"
 
 
 def test_customer_master_schema_preserves_canonical_identity_fields():
@@ -49,3 +55,14 @@ def test_customer_activity_queries_cover_orders_bookings_leads_and_values():
     queries = _customer_activity_subqueries()
     assert len(queries) == 8
     assert all(query is not None for query in queries)
+
+
+def test_manual_customer_sql_is_idempotent_and_non_destructive():
+    sql = MANUAL_SQL.read_text(encoding="utf-8").upper()
+
+    assert "CREATE TABLE IF NOT EXISTS CUSTOMERS" in sql
+    assert "ON CONFLICT (PHONE) DO NOTHING" in sql
+    assert "DROP TABLE" not in sql
+    assert "TRUNCATE" not in sql
+    assert "DELETE FROM" not in sql
+    assert "UPDATE CUSTOMERS" not in sql
