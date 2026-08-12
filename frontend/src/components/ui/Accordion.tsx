@@ -38,10 +38,12 @@ export default function Accordion({ items, allowMultiple = false, className }: A
     <div className={cn("space-y-3", className)}>
       {items.map((item) => {
         const isOpen = open.has(item.id);
+        const triggerId = `${item.id}-trigger`;
         const panelId = `${item.id}-panel`;
         return (
           <div key={item.id} className="enterprise-card overflow-hidden">
             <button
+              id={triggerId}
               type="button"
               onClick={() => toggle(item.id)}
               className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left font-semibold text-heading hover:text-brand-600 dark:hover:text-brand-300 transition-colors"
@@ -57,7 +59,7 @@ export default function Accordion({ items, allowMultiple = false, className }: A
             <div
               id={panelId}
               role="region"
-              aria-labelledby={item.id}
+              aria-labelledby={triggerId}
               className={cn(
                 "grid transition-all duration-300 ease-out",
                 isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
