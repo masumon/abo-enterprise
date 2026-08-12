@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.http_cache import etag_json_response
-from app.core.security import require_admin, require_role
+from app.core.security import require_role
 from app.models.models import DeliveryZone, ActivityLog
 from app.schemas.schemas import ApiResponse
 
@@ -56,7 +56,7 @@ class ZoneIn(BaseModel):
     is_active: bool = True
 
 
-@router.get("/admin/all", response_model=ApiResponse, dependencies=[Depends(require_admin)])
+@router.get("/admin/all", response_model=ApiResponse, dependencies=[Depends(require_role("settings.read"))])
 async def admin_list_zones(db: AsyncSession = Depends(get_db)):
     rows = (await db.execute(
         select(DeliveryZone).where(DeliveryZone.is_deleted == False)  # noqa: E712

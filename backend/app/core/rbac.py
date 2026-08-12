@@ -22,6 +22,7 @@ ROLE_PERMISSIONS = {
         "email_templates.read", "email_templates.write",
         "ops.read", "ops.write",
         "payments.read", "payments.write",
+        "audit_logs.read",
     ],
     "editor": [
         "orders.read", "products.read", "products.write",

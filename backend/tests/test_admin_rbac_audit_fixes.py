@@ -37,5 +37,9 @@ def test_legacy_route_overrides_are_least_privilege():
     assert not has_permission("editor", "users.read")
 
 
-def test_unmapped_admin_route_stays_admin_only():
-    assert _legacy_route_permission(_request("GET", "/api/v1/admin/audit-logs")) is None
+def test_audit_logs_require_audit_logs_read_permission():
+    assert _legacy_route_permission(_request("GET", "/api/v1/admin/audit-logs")) == "audit_logs.read"
+    assert _legacy_route_permission(_request("GET", "/api/v1/admin/audit-logs/meta")) == "audit_logs.read"
+    assert has_permission("admin", "audit_logs.read")
+    assert not has_permission("viewer", "audit_logs.read")
+    assert not has_permission("editor", "audit_logs.read")
