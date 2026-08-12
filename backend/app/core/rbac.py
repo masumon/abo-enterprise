@@ -15,6 +15,7 @@ ROLE_PERMISSIONS = {
         "settings.read", "settings.write",
         "users.read", "users.write", "users.delete",
         "blog.read", "blog.write",
+        "pages.read", "pages.write",
         "media.read", "media.write",
         "reviews.read", "reviews.write",
         "career.read", "career.write",
@@ -30,13 +31,14 @@ ROLE_PERMISSIONS = {
         "bookings.read", "bookings.write",
         "leads.read", "analytics.read",
         "blog.read", "blog.write",
+        "pages.read", "pages.write",
         "media.read", "media.write",
         "reviews.read", "reviews.write",
     ],
     "viewer": [
         "orders.read", "products.read", "services.read",
         "bookings.read", "leads.read", "analytics.read",
-        "blog.read", "media.read", "reviews.read",
+        "blog.read", "pages.read", "media.read", "reviews.read",
     ],
 }
 

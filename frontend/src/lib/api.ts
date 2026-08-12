@@ -583,6 +583,46 @@ export const adminBlogApi = {
     api.get<ApiResponse<{ blog_ids: string[] }>>(`/api/v1/blog/admin/links/service/${serviceId}`),
 };
 
+export interface PageRecord {
+  id: string;
+  slug: string;
+  title_en: string;
+  title_bn: string | null;
+  content_en: string;
+  content_bn: string | null;
+  status: "draft" | "published";
+  published_at: string | null;
+  seo_title: string | null;
+  seo_description: string | null;
+  seo_keywords: string | null;
+  canonical_url: string | null;
+  og_image: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export const pagesApi = {
+  get: (slug: string) =>
+    api.get<ApiResponse<PageRecord>>(`/api/v1/pages/${encodeURIComponent(slug)}`),
+};
+
+export const adminPagesApi = {
+  list: (params?: { status?: string; search?: string; page?: number; per_page?: number }) =>
+    api.get<PaginatedResponse<PageRecord>>("/api/v1/pages/admin/all", { params }),
+
+  get: (id: string) =>
+    api.get<ApiResponse<PageRecord>>(`/api/v1/pages/admin/${id}`),
+
+  create: (data: Partial<PageRecord>) =>
+    api.post<ApiResponse<PageRecord>>("/api/v1/pages/admin", data),
+
+  update: (id: string, data: Partial<PageRecord>) =>
+    api.put<ApiResponse<PageRecord>>(`/api/v1/pages/admin/${id}`, data),
+
+  delete: (id: string) =>
+    api.delete<ApiResponse<null>>(`/api/v1/pages/admin/${id}`),
+};
+
 export const servicesAdminApi = {
   list: (params?: { page?: number; per_page?: number }) =>
     api.get<PaginatedResponse<Service>>("/api/v1/services/admin/services", { params }),

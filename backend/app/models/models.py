@@ -705,6 +705,33 @@ class BlogPost(Base):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class Page(Base):
+    """Generic CMS page — independent of Blog/Product/Service, for one-off
+    content (e.g. a standalone landing/legal/info page) that needs its own
+    URL, SEO fields and draft/publish workflow without being any of those
+    specific content types. Same shape as BlogPost by design, minus the
+    blog-specific fields (category, author, excerpt, product/service links)."""
+
+    __tablename__ = "pages"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    title_en: Mapped[str] = mapped_column(String(500), nullable=False)
+    title_bn: Mapped[str | None] = mapped_column(String(500))
+    content_en: Mapped[str] = mapped_column(Text, nullable=False)
+    content_bn: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="draft", index=True)
+    published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    seo_title: Mapped[str | None] = mapped_column(String(255))
+    seo_description: Mapped[str | None] = mapped_column(Text)
+    seo_keywords: Mapped[str | None] = mapped_column(String(500))
+    canonical_url: Mapped[str | None] = mapped_column(String(500))
+    og_image: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
 class BlogPostLink(Base):
     """Many-to-many link between a blog post and a product OR a service.
 

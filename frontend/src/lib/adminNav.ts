@@ -63,6 +63,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     { href: "/sumon/media", icon: Images, label: "Image Manager", labelBn: "ছবি ব্যবস্থাপনা" },
     { href: "/sumon/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি" },
     { href: "/sumon/blog", icon: BookOpen, label: "Blog", labelBn: "ব্লগ" },
+    { href: "/sumon/pages", icon: FileText, label: "Pages", labelBn: "পেজ" },
     { href: "/sumon/email-templates", icon: Mail, label: "Email Templates", labelBn: "ইমেইল", minRole: "admin" },
   ]},
   { id: "shipping-delivery", label: "Shipping & Delivery", labelBn: "শিপিং ও ডেলিভারি", items: [

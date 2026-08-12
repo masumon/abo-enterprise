@@ -1254,6 +1254,49 @@ class BlogPostOut(BlogPostBase):
     model_config = {"from_attributes": True}
 
 
+# ---- Generic CMS Page ----
+
+class PageBase(BaseModel):
+    slug: str
+    title_en: str
+    title_bn: str | None = None
+    content_en: str
+    content_bn: str | None = None
+    status: str = "draft"
+    published_at: datetime | None = None
+    seo_title: str | None = None
+    seo_description: str | None = None
+    seo_keywords: str | None = None
+    canonical_url: str | None = None
+    og_image: str | None = None
+
+
+class PageCreate(PageBase):
+    pass
+
+
+class PageUpdate(BaseModel):
+    title_en: str | None = None
+    title_bn: str | None = None
+    content_en: str | None = None
+    content_bn: str | None = None
+    status: str | None = None
+    published_at: datetime | None = None
+    seo_title: str | None = None
+    seo_description: str | None = None
+    seo_keywords: str | None = None
+    canonical_url: str | None = None
+    og_image: str | None = None
+
+
+class PageOut(PageBase):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 # ---- Assistant ----
 
 class AssistantChatRequest(BaseModel):
