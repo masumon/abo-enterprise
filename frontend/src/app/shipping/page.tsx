@@ -6,8 +6,8 @@ import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import Accordion from "@/components/ui/Accordion";
 import { FAQ_ITEMS } from "@/lib/data/faq";
-import { usePublicSettings } from "@/hooks/usePublicSettings";
-import { getSettingValue } from "@/hooks/usePublicSettings";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { toBdWhatsappHref } from "@/lib/phone";
 
 const COVERAGE_TIMES = [
   { key: "sylhet", region: { en: "Sylhet City", bn: "সিলেট শহর" }, time: { en: "Same day", bn: "একই দিন" } },
@@ -15,20 +15,10 @@ const COVERAGE_TIMES = [
   { key: "outside", region: { en: "Nationwide", bn: "সারাদেশ" }, time: { en: "2-3 days", bn: "২-৩ দিন" } },
 ] as const;
 
-/**
- * GAP-09 — the charges shown here were previously a hardcoded constant while
- * checkout computed them from zone settings via calcDeliveryCharge. Today the
- * two may agree; any change to a zone, a surcharge or a promotion would make
- * them disagree silently, and the customer would discover it at checkout after
- * choosing products on the published figure.
- *
- * Both now read the same settings keys, so divergence is structurally
- * impossible. Keys match calcDeliveryCharge in lib/checkoutHelpers.ts.
- */
-const CHARGE_KEYS: Record<string, { setting: string; fallback: string }> = {
-  sylhet: { setting: "delivery_charge_sylhet", fallback: "60" },
-  dhaka: { setting: "delivery_charge_dhaka", fallback: "120" },
-  outside: { setting: "delivery_charge_outside", fallback: "130" },
+const CHARGE_KEYS: Record<string, string> = {
+  sylhet: "delivery_charge_sylhet",
+  dhaka: "delivery_charge_dhaka",
+  outside: "delivery_charge_outside",
 };
 
 export default function ShippingPage() {
@@ -36,11 +26,15 @@ export default function ShippingPage() {
   const t = (o: { en: string; bn: string }) => (lang === "bn" ? o.bn : o.en);
   const { settings } = usePublicSettings();
 
-  const freeMin = getSettingValue(settings, "free_delivery_min_amount") || "2000";
+  const freeMin = getSettingValue(settings, "free_delivery_min_amount");
+  const whatsappHref = toBdWhatsappHref(
+    getSettingValue(settings, "whatsapp_number") || getSettingValue(settings, "contact_phone")
+  );
   const chargeFor = (key: string) => {
-    const spec = CHARGE_KEYS[key];
-    const value = getSettingValue(settings, spec.setting) || spec.fallback;
+    const value = getSettingValue(settings, CHARGE_KEYS[key]);
+    if (!value) return lang === "bn" ? "সেট করা নেই" : "Not configured";
     if (key === "sylhet") {
+      if (!freeMin) return lang === "bn" ? `৳${value}` : `৳${value}`;
       return lang === "bn"
         ? `৳${freeMin}+ অর্ডারে ফ্রি · নইলে ৳${value}`
         : `Free over ৳${freeMin} · otherwise ৳${value}`;
@@ -130,9 +124,11 @@ export default function ShippingPage() {
             <p className="text-sm text-muted mb-4">{t({ en: "Questions about your delivery?", bn: "ডেলিভারি নিয়ে প্রশ্ন?" })}</p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link href="/track" className="btn btn-brand btn-sm">{t({ en: "Track Order", bn: "অর্ডার ট্র্যাক" })}</Link>
-              <a href="https://wa.me/8801825007977" target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
-                <MessageCircle className="w-4 h-4" /> WhatsApp
-              </a>
+              {whatsappHref && (
+                <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm">
+                  <MessageCircle className="w-4 h-4" /> WhatsApp
+                </a>
+              )}
             </div>
           </div>
         </div>
