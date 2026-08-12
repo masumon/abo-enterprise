@@ -41,6 +41,14 @@ interface HealthData {
   total: number;
 }
 
+interface CustomerMetrics {
+  period_days: number;
+  new_customers: number;
+  returning_customers: number;
+  active_customers: number;
+  top_products: Array<{ product: string; orders: number; revenue: number }>;
+}
+
 export default function DashboardOperationsPanel() {
   const { lang } = useLanguageStore();
   const bn = lang === "bn";
@@ -49,6 +57,7 @@ export default function DashboardOperationsPanel() {
   const [ops, setOps] = useState<OpsErrors | null>(null);
   const [notifications, setNotifications] = useState<OpsNotifications | null>(null);
   const [health, setHealth] = useState<HealthData | null>(null);
+  const [customerMetrics, setCustomerMetrics] = useState<CustomerMetrics | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -58,13 +67,15 @@ export default function DashboardOperationsPanel() {
       api.get("/api/v1/admin/ops/errors").catch(() => null),
       api.get("/api/v1/admin/ops/notifications").catch(() => null),
       api.get("/api/v1/admin/ops/health").catch(() => null),
-    ]).then(([dayRes, weekRes, opsRes, notificationRes, healthRes]) => {
+      api.get("/api/v1/admin/customer-metrics?days=30").catch(() => null),
+    ]).then(([dayRes, weekRes, opsRes, notificationRes, healthRes, customerRes]) => {
       if (!active) return;
       setLast24h((dayRes?.data?.data ?? null) as AnalyticsOverview | null);
       setLast7d((weekRes?.data?.data ?? null) as AnalyticsOverview | null);
       setOps((opsRes?.data?.data ?? null) as OpsErrors | null);
       setNotifications((notificationRes?.data?.data ?? null) as OpsNotifications | null);
       setHealth((healthRes?.data?.data ?? null) as HealthData | null);
+      setCustomerMetrics((customerRes?.data?.data ?? null) as CustomerMetrics | null);
     });
     return () => { active = false; };
   }, []);
@@ -101,6 +112,36 @@ export default function DashboardOperationsPanel() {
           <p className="text-xs text-gray-500">{bn ? "ইমেইল সমস্যা" : "Email failures"}</p>
           <p className="text-xl font-bold text-gray-900 mt-1">{failedEmails ?? "—"}</p>
           <Link href="/sumon/analytics" className="text-xs text-brand-600 hover:underline">{bn ? "অপারেশন দেখুন →" : "Open operations →"}</Link>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="admin-card p-4">
+          <p className="text-xs text-gray-500">{bn ? "নতুন গ্রাহক · ৩০ দিন" : "New customers · 30d"}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{customerMetrics ? customerMetrics.new_customers : "—"}</p>
+          <p className="text-xs text-gray-400 mt-1">{customerMetrics ? `${customerMetrics.active_customers} ${bn ? "সক্রিয় গ্রাহক" : "active customers"}` : ""}</p>
+        </div>
+        <div className="admin-card p-4">
+          <p className="text-xs text-gray-500">{bn ? "ফিরতি গ্রাহক · ৩০ দিন" : "Returning customers · 30d"}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{customerMetrics ? customerMetrics.returning_customers : "—"}</p>
+          <Link href="/sumon/customers" className="text-xs text-brand-600 hover:underline">{bn ? "গ্রাহক দেখুন →" : "View customers →"}</Link>
+        </div>
+        <div className="admin-card p-4">
+          <p className="text-xs text-gray-500">{bn ? "শীর্ষ পণ্য · ৩০ দিন" : "Top products · 30d"}</p>
+          {customerMetrics === null ? (
+            <p className="text-sm text-amber-600 mt-2">{bn ? "পণ্যের ডেটা পাওয়া যায়নি" : "Product data is unavailable"}</p>
+          ) : customerMetrics.top_products.length === 0 ? (
+            <p className="text-sm text-gray-400 mt-2">{bn ? "ডেটা নেই" : "No product data"}</p>
+          ) : (
+            <div className="mt-2 space-y-1">
+              {customerMetrics.top_products.slice(0, 3).map((product) => (
+                <div key={product.product} className="flex items-center justify-between gap-2">
+                  <span className="text-sm text-gray-700 truncate">{product.product}</span>
+                  <span className="text-xs font-semibold text-gray-900 shrink-0">{formatPrice(product.revenue)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

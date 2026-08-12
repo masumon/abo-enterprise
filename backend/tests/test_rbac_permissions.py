@@ -32,6 +32,7 @@ class TestAdminRole:
 
     def test_has_customer_index_read_permission(self):
         assert has_permission("admin", "customers.read") is True
+        assert has_permission("admin", "customers.write") is True
 
 
 class TestEditorRole:

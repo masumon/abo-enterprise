@@ -9,7 +9,7 @@ ROLE_PERMISSIONS = {
         "services.read", "services.write", "services.delete",
         "bookings.read", "bookings.write", "bookings.delete",
         "leads.read", "leads.write",
-        "customers.read",
+        "customers.read", "customers.write",
         "analytics.read",
         "bulk.read", "bulk.write",
         "settings.read", "settings.write",
