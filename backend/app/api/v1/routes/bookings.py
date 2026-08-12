@@ -9,7 +9,7 @@ from app.core.config import settings
 from app.core.email import send_email, booking_notification_html, customer_booking_confirmation_html
 from app.core.invoice import InvoiceService
 from app.models.models import Booking, BookingV2
-from app.schemas.schemas import BookingCreate, BookingOut, BookingStatusUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
+from app.schemas.schemas import BookingCreate, BookingOut, ApiResponse, PaginatedResponse, PaginatedMeta
 from app.core.rate_limit import rate_limit
 import logging
 
@@ -19,7 +19,7 @@ router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 # The legacy `bookings` table is now READ-ONLY. Its intake was merged into
 # bookings_v2 by alembic 0015 and every form posts there; what remains here is
-# archive access (admin list/detail/status) plus /track, which must keep
+# archive access (admin list/detail) plus /track, which must keep
 # resolving the ABO-B-… numbers already printed on customer receipts.
 
 
@@ -133,15 +133,12 @@ async def get_booking(
 @router.patch("/{booking_id}/status", response_model=ApiResponse)
 async def update_booking_status(
     booking_id: UUID,
-    payload: BookingStatusUpdate,
+    payload: object,
     db: AsyncSession = Depends(get_db),
     _admin: str = Depends(require_admin),
 ):
-    result = await db.execute(select(Booking).where(Booking.id == booking_id))
-    booking = result.scalar_one_or_none()
-    if not booking:
-        raise HTTPException(status_code=404, detail="Booking not found")
-    booking.status = payload.status
-    await db.commit()
-    await db.refresh(booking)
-    return ApiResponse(data=BookingOut.model_validate(booking), message="Status updated")
+    """Reject legacy mutations; BookingV2 is the canonical write path."""
+    raise HTTPException(
+        status_code=409,
+        detail="Legacy bookings are read-only; update the canonical service booking instead.",
+    )
