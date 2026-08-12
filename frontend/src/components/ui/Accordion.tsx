@@ -38,6 +38,7 @@ export default function Accordion({ items, allowMultiple = false, className }: A
     <div className={cn("space-y-3", className)}>
       {items.map((item) => {
         const isOpen = open.has(item.id);
+        const panelId = `${item.id}-panel`;
         return (
           <div key={item.id} className="enterprise-card overflow-hidden">
             <button
@@ -45,13 +46,18 @@ export default function Accordion({ items, allowMultiple = false, className }: A
               onClick={() => toggle(item.id)}
               className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left font-semibold text-heading hover:text-brand-600 dark:hover:text-brand-300 transition-colors"
               aria-expanded={isOpen}
+              aria-controls={panelId}
             >
               <span>{item.question}</span>
               <ChevronDown
                 className={cn("w-5 h-5 text-muted flex-shrink-0 transition-transform duration-200", isOpen && "rotate-180")}
+                aria-hidden="true"
               />
             </button>
             <div
+              id={panelId}
+              role="region"
+              aria-labelledby={item.id}
               className={cn(
                 "grid transition-all duration-300 ease-out",
                 isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
