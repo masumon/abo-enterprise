@@ -25,9 +25,8 @@ export default function Portfolio() {
   const { lang } = useLanguageStore();
   const { projects } = useShowcaseContent();
   const { settings } = usePublicSettings(["whatsapp_number", "contact_phone"]);
-  const whatsappHref = toBdWhatsappHref(
-    getSettingValue(settings, "whatsapp_number", getSettingValue(settings, "contact_phone", "01825007977"))
-  );
+  const whatsappNumber = getSettingValue(settings, "whatsapp_number") || getSettingValue(settings, "contact_phone");
+  const whatsappHref = toBdWhatsappHref(whatsappNumber);
   const t = (o: { en: string; bn: string }) => (lang === "bn" ? o.bn : o.en);
 
   return (
@@ -96,7 +95,7 @@ export default function Portfolio() {
             auto-scroll marquee (pauses on hover; falls back to a manual scroll
             when the viewer prefers reduced motion). Tiles are duplicated so the
             loop is seamless; the copies are hidden from a11y. 24/7 Support opens
-            WhatsApp. */}
+            WhatsApp only when an admin-configured number exists. */}
         <div className="bg-gradient-to-r from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/10 rounded-2xl p-4 sm:p-6">
           <div className="marquee-viewport">
             <div className="marquee-track gap-3 sm:gap-4 py-0.5" style={{ ["--marquee-duration" as string]: "22s" }}>
@@ -115,6 +114,13 @@ export default function Portfolio() {
                   </>
                 );
                 const className = "group flex-shrink-0 w-[8.5rem] sm:w-[11rem] flex flex-col items-center text-center rounded-2xl px-3 py-4 sm:py-5 bg-white/70 dark:bg-white/5 border border-[var(--line)] shadow-sm hover:shadow-lg hover:shadow-brand-500/10 hover:-translate-y-1 hover:border-brand-200 transition-all touch-manipulation";
+                if (feature.external && !href) {
+                  return (
+                    <div key={idx} aria-hidden={dup} className={className}>
+                      {inner}
+                    </div>
+                  );
+                }
                 return feature.external ? (
                   <a key={idx} href={href} target="_blank" rel="noopener noreferrer" aria-hidden={dup} tabIndex={dup ? -1 : 0} className={className}>
                     {inner}
