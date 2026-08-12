@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { Star, BadgeCheck } from "lucide-react";
 import { reviewsApi } from "@/lib/api";
@@ -10,7 +9,6 @@ import { useLanguageStore } from "@/store/language";
 import { cacheApiResponse, getCachedApiResponse } from "@/lib/apiCache";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import GlassCard from "@/components/ui/GlassCard";
-import { resolveReviewPhoto } from "@/lib/demoImages";
 
 const FEATURED_REVIEWS_CACHE_KEY = "reviews:featured";
 
@@ -48,10 +46,6 @@ export default function CustomerReviews() {
       .finally(() => setLoading(false));
   }, []);
 
-  const avg = reviews.length
-    ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length).toFixed(1)
-    : "5.0";
-
   return (
     <section className="py-5 lg:py-7 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
@@ -73,28 +67,31 @@ export default function CustomerReviews() {
         ) : (
           <div className="marquee-viewport" style={{ "--marquee-duration": "44s" } as React.CSSProperties}>
             <div className="marquee-track gap-5 px-2 py-1">
-            {[...reviews, ...reviews].map((r, i) => (
-              <GlassCard key={`${r.id}-${i}`} hover className="p-5 w-72 sm:w-80 flex-shrink-0" aria-hidden={i >= reviews.length}>
-                <div className="flex items-center gap-1 mb-3">
-                  {Array.from({ length: r.rating }).map((_, i) => (
-                    <Star key={i} className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-                  ))}
-                  {r.is_verified && <BadgeCheck className="w-4 h-4 text-green-500 ml-auto" />}
-                </div>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-4">
-                  &ldquo;{lang === "bn" && r.review_bn ? r.review_bn : r.review_en}&rdquo;
-                </p>
-                <div className="flex items-center gap-3 mt-auto">
-                  <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                    <Image src={resolveReviewPhoto(r.photo_url)} alt={r.customer_name} width={36} height={36} className="object-cover" />
+              {[...reviews, ...reviews].map((r, i) => (
+                <GlassCard key={`${r.id}-${i}`} hover className="p-5 w-72 sm:w-80 flex-shrink-0" aria-hidden={i >= reviews.length}>
+                  <div className="flex items-center gap-1 mb-3">
+                    {Array.from({ length: r.rating }).map((_, i) => (
+                      <Star key={i} className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" aria-hidden />
+                    ))}
+                    {r.is_verified && <BadgeCheck className="w-4 h-4 text-green-500 ml-auto" aria-label="Verified review" />}
                   </div>
-                  <div>
-                    <p className="font-semibold text-sm">{r.customer_name}</p>
-                    {r.company && <p className="text-xs text-gray-500">{r.company}</p>}
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4 line-clamp-4">
+                    &ldquo;{lang === "bn" && r.review_bn ? r.review_bn : r.review_en}&rdquo;
+                  </p>
+                  <div className="flex items-center gap-3 mt-auto">
+                    <div
+                      className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden flex-shrink-0 font-semibold text-brand-700"
+                      aria-hidden="true"
+                    >
+                      {r.customer_name.trim().slice(0, 2)}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">{r.customer_name}</p>
+                      {r.company && <p className="text-xs text-gray-500">{r.company}</p>}
+                    </div>
                   </div>
-                </div>
-              </GlassCard>
-            ))}
+                </GlassCard>
+              ))}
             </div>
           </div>
         )}

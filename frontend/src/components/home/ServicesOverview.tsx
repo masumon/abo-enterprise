@@ -3,13 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ImageOff } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import GlassCard from "@/components/ui/GlassCard";
 import { servicesApi } from "@/lib/api";
 import type { Service } from "@/types";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
-import { resolveServiceImage } from "@/lib/demoImages";
 import Reveal from "@/components/ui/Reveal";
 
 function serviceHref(slug: string): string {
@@ -78,25 +77,31 @@ export default function ServicesOverview() {
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            {services.map((service, i) => {
+            {services.map((service) => {
               const name = lang === "bn" && service.name_bn ? service.name_bn : service.name_en;
               const desc =
                 (lang === "bn" ? service.short_description_bn : null) ||
                 service.short_description_en ||
                 service.description_en;
-              const imageSrc = resolveServiceImage(service.featured_image_url, service.slug);
+              const imageSrc = service.featured_image_url?.trim() || null;
               return (
                 <div key={service.id ?? service.slug} className="h-full">
                   <Link href={serviceHref(service.slug)} className="group block h-full">
                     <GlassCard hover className="overflow-hidden h-full flex flex-col rounded-2xl sm:rounded-3xl group-hover:shadow-xl group-hover:shadow-brand-500/10 group-hover:-translate-y-1.5 transition-all duration-300">
                       <div className="relative h-32 sm:h-44 bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                        <Image
-                          src={imageSrc}
-                          alt={name}
-                          fill
-                          className="object-cover group-hover:scale-110 transition-transform duration-500"
-                          sizes="(max-width:640px) 50vw, (max-width:1024px) 50vw, 25vw"
-                        />
+                        {imageSrc ? (
+                          <Image
+                            src={imageSrc}
+                            alt={name}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                            sizes="(max-width:640px) 50vw, (max-width:1024px) 50vw, 25vw"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center text-gray-400 dark:text-gray-500" aria-label={lang === "bn" ? "ছবি উপলভ্য নয়" : "Image unavailable"}>
+                            <ImageOff className="w-10 h-10" aria-hidden />
+                          </div>
+                        )}
                         {/* Subtle scrim so a chip/title over any image stays legible. */}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden />
                         {service.category && (
