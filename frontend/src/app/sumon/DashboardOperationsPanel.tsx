@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Activity, AlertTriangle, BarChart3, CheckCircle2, Clock, MailWarning, XCircle } from "lucide-react";
+import { Activity, AlertTriangle, BarChart3, CheckCircle2, Clock, XCircle } from "lucide-react";
 import api from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { formatPrice } from "@/lib/utils";
@@ -111,11 +111,13 @@ export default function DashboardOperationsPanel() {
             <Link href="/sumon/analytics" className="text-xs text-brand-600 hover:underline">{bn ? "বিস্তারিত →" : "Details →"}</Link>
           </div>
           <div className="divide-y divide-gray-50">
-            {attentionItems.length === 0 ? (
+            {notifications === null ? (
+              <p className="px-5 py-8 text-center text-sm text-amber-600">{bn ? "অপারেশনাল সতর্কতার তথ্য পাওয়া যায়নি" : "Operational alert data is unavailable"}</p>
+            ) : attentionItems.length === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-gray-400">{bn ? "বর্তমানে কোনো অপারেশনাল সতর্কতা নেই" : "No current operational alerts"}</p>
             ) : attentionItems.map((item, index) => (
               <div key={`${item.kind}-${item.at}-${index}`} className="px-4 sm:px-5 py-3 flex items-start gap-3">
-                {item.severity === "error" ? <XCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" /> : item.severity === "warning" ? <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" /> : <CheckCircle2 className="w-4 h-4 text-brand-500 mt-0.5 shrink-0" />}
+                {item.severity === "error" ? <XCircle className="w-4 h-4 text-red-500 mt-0.5 shrink-0" aria-hidden="true" /> : item.severity === "warning" ? <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" aria-hidden="true" /> : <CheckCircle2 className="w-4 h-4 text-brand-500 mt-0.5 shrink-0" aria-hidden="true" />}
                 <p className="text-sm text-gray-700 min-w-0">{item.text}</p>
               </div>
             ))}
@@ -124,10 +126,12 @@ export default function DashboardOperationsPanel() {
 
         <div className="admin-card">
           <div className="px-4 sm:px-5 py-4 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><BarChart3 className="w-4 h-4 text-gray-400" />{bn ? "শীর্ষ সার্ভিস (৭ দিন)" : "Top services · 7d"}</h3>
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><BarChart3 className="w-4 h-4 text-gray-400" aria-hidden="true" />{bn ? "শীর্ষ সার্ভিস (৭ দিন)" : "Top services · 7d"}</h3>
           </div>
           <div className="divide-y divide-gray-50">
-            {last7d?.top_services?.length ? last7d.top_services.map((service) => (
+            {last7d === null ? (
+              <p className="px-5 py-8 text-center text-sm text-amber-600">{bn ? "সার্ভিস ডেটা পাওয়া যায়নি" : "Service data is unavailable"}</p>
+            ) : last7d.top_services?.length ? last7d.top_services.map((service) => (
               <div key={service.service_id} className="px-4 sm:px-5 py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0"><p className="text-sm font-medium text-gray-800 truncate">{bn ? service.name_bn || service.name : service.name}</p><p className="text-xs text-gray-400">{service.count} {bn ? "বুকিং" : "bookings"}</p></div>
                 <span className="text-sm font-semibold text-gray-900 shrink-0">{formatPrice(service.revenue)}</span>
@@ -139,7 +143,7 @@ export default function DashboardOperationsPanel() {
 
       <div className="admin-card">
         <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><Activity className="w-4 h-4 text-gray-400" />{bn ? "সিস্টেম হেলথ" : "System health"}</h3>
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><Activity className="w-4 h-4 text-gray-400" aria-hidden="true" />{bn ? "সিস্টেম হেলথ" : "System health"}</h3>
           <Link href="/sumon/analytics" className="text-xs text-brand-600 hover:underline">{bn ? "মনিটরিং →" : "Monitoring →"}</Link>
         </div>
         <div className="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
