@@ -30,6 +30,10 @@ export default function ProductCategoryTabs({
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
 
+  useEffect(() => {
+    setActive(activeCategory);
+  }, [activeCategory]);
+
   const handleCategoryChange = (categoryId: string) => {
     setActive(categoryId);
     onCategoryChange?.(categoryId);
