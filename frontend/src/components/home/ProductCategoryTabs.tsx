@@ -35,6 +35,22 @@ export default function ProductCategoryTabs({
     onCategoryChange?.(categoryId);
   };
 
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex = index;
+    if (event.key === "ArrowRight") nextIndex = (index + 1) % CATEGORY_FILTERS.length;
+    else if (event.key === "ArrowLeft") nextIndex = (index - 1 + CATEGORY_FILTERS.length) % CATEGORY_FILTERS.length;
+    else if (event.key === "Home") nextIndex = 0;
+    else if (event.key === "End") nextIndex = CATEGORY_FILTERS.length - 1;
+    else return;
+
+    event.preventDefault();
+    const nextId = CATEGORY_FILTERS[nextIndex].id;
+    handleCategoryChange(nextId);
+    requestAnimationFrame(() => {
+      document.getElementById(`category-tab-${nextId}`)?.focus();
+    });
+  };
+
   const scrollTabs = (direction: "left" | "right") => {
     const container = document.getElementById("category-tabs-container");
     if (container) {
@@ -65,7 +81,6 @@ export default function ProductCategoryTabs({
   return (
     <div className="relative py-4 sm:py-6 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-2 sm:px-4">
-        {/* Scroll Left Button */}
         {canScrollLeft && (
           <button
             type="button"
@@ -77,7 +92,6 @@ export default function ProductCategoryTabs({
           </button>
         )}
 
-        {/* Category Tabs */}
         <div
           id="category-tabs-container"
           role="tablist"
@@ -85,15 +99,17 @@ export default function ProductCategoryTabs({
           className="flex gap-2 overflow-x-auto scrollbar-hide px-8 sm:px-0 md:px-0"
           onScroll={handleScroll}
         >
-          {CATEGORY_FILTERS.map(({ id, label }) => (
+          {CATEGORY_FILTERS.map(({ id, label }, index) => (
             <button
               key={id}
+              id={`category-tab-${id}`}
               type="button"
               role="tab"
               aria-selected={active === id}
               aria-controls="featured-products"
               tabIndex={active === id ? 0 : -1}
               onClick={() => handleCategoryChange(id)}
+              onKeyDown={(event) => handleTabKeyDown(event, index)}
               className={`px-4 py-2.5 rounded-full whitespace-nowrap font-semibold text-sm transition-all flex-shrink-0 ${
                 active === id
                   ? "bg-brand-600 text-white"
@@ -105,7 +121,6 @@ export default function ProductCategoryTabs({
           ))}
         </div>
 
-        {/* Scroll Right Button */}
         {canScrollRight && (
           <button
             type="button"
