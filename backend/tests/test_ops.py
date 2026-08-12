@@ -69,6 +69,13 @@ def test_operational_buffers_are_bounded():
 
 
 def test_failed_email_and_login_are_masked():
+    # These are shared, module-level deques (not reset between tests by
+    # pytest itself) — clear first so [0] is provably this test's own
+    # entry, not a leftover from test_operational_buffers_are_bounded
+    # (which intentionally fills them past maxlen to test the bound).
+    ops_events.failed_emails.clear()
+    ops_events.failed_logins.clear()
+
     ops_events.record_failed_email("customer@example.com", "Order confirmation", "smtp down")
     e = ops_events.failed_emails[0]
     assert "customer@example.com" not in e["to"]
