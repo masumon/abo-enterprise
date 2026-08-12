@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, type LucideIcon } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import GlassCard from "@/components/ui/GlassCard";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
@@ -25,11 +25,11 @@ export default function ContactSection() {
     ? getSettingValue(settings, "contact_hours_bn")
     : getSettingValue(settings, "contact_hours_en");
 
-  const infoItems = [
-    phoneDisplay ? { icon: Phone, label: phoneDisplay, href: phoneHref } : null,
-    email ? { icon: Mail, label: email, href: `mailto:${email}` } : null,
-    hours ? { icon: Clock, label: hours, href: null } : null,
-  ].filter(Boolean) as Array<{ icon: typeof Phone; label: string; href: string | null }>;
+  const infoItems: Array<{ icon: LucideIcon; label: string; href: string | null }> = [
+    ...(phoneDisplay ? [{ icon: Phone, label: phoneDisplay, href: phoneHref }] : []),
+    ...(email ? [{ icon: Mail, label: email, href: `mailto:${email}` }] : []),
+    ...(hours ? [{ icon: Clock, label: hours, href: null }] : []),
+  ];
 
   return (
     <section id="contact" className="py-5 lg:py-7 bg-white dark:bg-[var(--surface)]">
