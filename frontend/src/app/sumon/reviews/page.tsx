@@ -3,7 +3,7 @@ import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/admin
 
 import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
-import AdminTitle from "@/components/admin/AdminTitle";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Loader2, Star, CheckCircle, XCircle, Trash2, Shield, ShieldCheck, Pencil, X, MessageSquare, Plus, Search } from "lucide-react";
 import api, { reviewsApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -212,36 +212,37 @@ export default function AdminReviewsPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <AdminTitle en="Product Reviews" bn="পণ্য রিভিউ" />
-          <p className="text-gray-500 text-sm mt-1">{total} total reviews · homepage testimonials are edited separately in Settings</p>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search reviews…"
-              aria-label="Search reviews"
-              className="input pl-8 text-sm w-full sm:w-48"
-            />
-          </div>
-          <select
-            value={ratingFilter}
-            onChange={(e) => setRatingFilter(e.target.value)}
-            aria-label="Filter by rating"
-            className="input text-sm w-auto"
-          >
-            <option value="">All Ratings</option>
-            {[5,4,3,2,1].map(n => <option key={n} value={n}>{n} Star{n !== 1 ? "s" : ""}</option>)}
-          </select>
-          <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Add Review
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Product Reviews"
+        titleBn="পণ্য রিভিউ"
+        description={`${total} total reviews · homepage testimonials are edited separately in Settings`}
+        actions={
+          <>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search reviews…"
+                aria-label="Search reviews"
+                className="input pl-8 text-sm w-full sm:w-48"
+              />
+            </div>
+            <select
+              value={ratingFilter}
+              onChange={(e) => setRatingFilter(e.target.value)}
+              aria-label="Filter by rating"
+              className="input text-sm w-auto"
+            >
+              <option value="">All Ratings</option>
+              {[5,4,3,2,1].map(n => <option key={n} value={n}>{n} Star{n !== 1 ? "s" : ""}</option>)}
+            </select>
+            <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Add Review
+            </button>
+          </>
+        }
+      />
 
       <div className="admin-card overflow-hidden">
         {loading ? (

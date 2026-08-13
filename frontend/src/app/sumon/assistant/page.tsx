@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import AdminTitle from "@/components/admin/AdminTitle";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import {
-  Bot, Loader2, Save, RefreshCw, Check, Trash2, Plus, Pencil, X,
+  Loader2, Save, RefreshCw, Check, Trash2, Plus, Pencil, X,
   MessageSquare, Zap, BookOpen, Settings2, Eye, Search, Link2, Database,
 } from "lucide-react";
 import {
@@ -277,17 +277,11 @@ export default function AdminAssistantPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Bot className="w-7 h-7 text-brand-600" />
-            <AdminTitle en="AI Assistant" bn="AI সহকারী" />
-          </div>
-          <p className="text-gray-500 text-sm mt-1">
-            Manage automation assistant, WhatsApp integration, conversations and knowledge base
-          </p>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="AI Assistant"
+        titleBn="AI সহকারী"
+        description="Manage automation assistant, WhatsApp integration, conversations and knowledge base"
+      />
 
       <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-1">
         {tabs.map(({ id, label, icon: Icon }) => (

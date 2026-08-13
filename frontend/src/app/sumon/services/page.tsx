@@ -2,7 +2,7 @@
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback } from "react";
-import AdminTitle from "@/components/admin/AdminTitle";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import {
   Loader2, Briefcase, Plus, Pencil, Trash2, X,
   ToggleLeft, ToggleRight, Star, StarOff, Check, Ban, ChevronDown, ChevronUp, Languages,
@@ -619,15 +619,16 @@ export default function AdminServicesPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <AdminTitle en="Services" bn="সেবা" />
-          <p className="text-gray-500 text-sm mt-1">{total} total services</p>
-        </div>
-        <button onClick={openNew} className="btn btn-primary btn-sm gap-1.5">
-          <Plus className="w-4 h-4" /> New Service
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Services"
+        titleBn="সেবা"
+        description={`${total} total services`}
+        actions={
+          <button onClick={openNew} className="btn btn-primary btn-sm gap-1.5">
+            <Plus className="w-4 h-4" /> New Service
+          </button>
+        }
+      />
 
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">

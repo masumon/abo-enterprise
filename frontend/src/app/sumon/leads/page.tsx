@@ -256,16 +256,16 @@ export default function AdminLeadsPage() {
         <button
           onClick={() => setTab("v1")}
           className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "v1" ? "border-amber-500 text-amber-700" : "border-transparent text-gray-500 hover:text-gray-700"}`}
-          title="Legacy archive — no current form on the site creates new entries here; see Service Leads for live intake"
+          title="Older inquiries — no form on the site creates new entries here anymore; see New Leads for current activity"
         >
           <Archive className="w-3.5 h-3.5" />
-          Simple Leads <span className="text-gray-400 font-normal">(Legacy archive)</span>
+          Older Inquiries <span className="text-gray-400 font-normal">(archived, view only)</span>
         </button>
         <button
           onClick={() => setTab("v2")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "v2" ? "border-brand-500 text-brand-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
         >
-          Service Leads <span className="text-gray-400 font-normal">(Live)</span>
+          New Leads <span className="text-gray-400 font-normal">(active)</span>
         </button>
       </div>
 
@@ -274,7 +274,7 @@ export default function AdminLeadsPage() {
         <div className="admin-card overflow-hidden">
           <div className="px-4 sm:px-5 py-2.5 bg-amber-50 border-b border-amber-100 flex items-center gap-2 text-xs text-amber-800">
             <Archive className="w-3.5 h-3.5 shrink-0" />
-            <span>Legacy archive — no current form on the site creates new leads here. New inquiries arrive under <strong>Service Leads</strong>.</span>
+            <span>These are older inquiries — no form on the site creates new entries here anymore. New inquiries arrive under <strong>New Leads</strong>.</span>
           </div>
           {loading ? (
             <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>

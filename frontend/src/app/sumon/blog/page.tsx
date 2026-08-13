@@ -2,7 +2,7 @@
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import AdminTitle from "@/components/admin/AdminTitle";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 import { Loader2, BookOpen, Plus, Pencil, Trash2, X, Star, Eye, EyeOff, ChevronDown, ChevronUp, ExternalLink, Globe, Copy } from "lucide-react";
 import { adminBlogApi, productsApi, servicesAdminApi } from "@/lib/api";
@@ -327,16 +327,17 @@ export default function AdminBlogPage() {
 
   return (
     <div className="space-y-6 max-w-6xl">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <AdminTitle en="Blog" bn="ব্লগ" />
-          <p className="text-gray-500 text-sm mt-1">{total} total posts</p>
-        </div>
-        <button onClick={openNew} className="btn btn-primary btn-sm gap-1.5">
-          <Plus className="w-4 h-4" />
-          New Post
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Blog"
+        titleBn="ব্লগ"
+        description={`${total} total posts`}
+        actions={
+          <button onClick={openNew} className="btn btn-primary btn-sm gap-1.5">
+            <Plus className="w-4 h-4" />
+            New Post
+          </button>
+        }
+      />
 
       <AdminToolbar
         searchValue={searchInput}
