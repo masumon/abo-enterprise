@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import api, { downloadCsv, downloadPdf } from "@/lib/api";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useToastStore } from "@/store/toast";
@@ -202,6 +203,11 @@ export default function AnalyticsPage() {
       {tab === "operations" && <OperationsPanel />}
 
       {tab === "business" && (<>
+      <div className="flex justify-end">
+        <Link href="/sumon/reports?report=revenue" className="text-xs font-medium text-brand-600 hover:underline">
+          {bn ? "সম্পূর্ণ রিপোর্ট দেখুন (Reports) →" : "View the full, exact-numbers report in Reports →"}
+        </Link>
+      </div>
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[

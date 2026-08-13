@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
-import { Loader2, Mail, Plus, Pencil, Trash2, X, CheckCircle, XCircle, Eye, Code } from "lucide-react";
+import { Loader2, Mail, Plus, Pencil, Ban, X, CheckCircle, XCircle, Eye, Code } from "lucide-react";
 import { emailTemplatesAdminApi, type EmailTemplateRecord } from "@/lib/api";
 import TranslateButton from "@/components/admin/TranslateButton";
 import { translateBnToEn } from "@/lib/translate";
@@ -204,9 +204,11 @@ export default function AdminEmailTemplatesPage() {
                         <button
                           onClick={() => handleDelete(t.id, t.template_name)}
                           disabled={deletingId === t.id}
-                          className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-40"
+                          aria-label={`Deactivate ${t.template_name} template`}
+                          title="Deactivate (keeps the template and its history)"
+                          className="p-1.5 text-gray-400 hover:text-amber-600 rounded-lg hover:bg-amber-50 disabled:opacity-40"
                         >
-                          {deletingId === t.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          {deletingId === t.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
                         </button>
                       </div>
                     </td>

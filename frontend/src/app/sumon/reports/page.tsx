@@ -82,8 +82,8 @@ export default function AdminReportsPage() {
       <AdminPageHeader
         title="Reports"
         titleBn="রিপোর্ট"
-        description="Sales, revenue, products, services, customers, payments, courier, profit and reconciliation — filterable by date range, exportable as CSV"
-        descriptionBn="বিক্রয়, রেভিনিউ, পণ্য, সেবা, গ্রাহক, পেমেন্ট, কুরিয়ার, লাভ এবং রিকনসিলিয়েশন — তারিখ পরিসর অনুযায়ী ফিল্টার এবং CSV এক্সপোর্ট করা যায়"
+        description="Sales, revenue, products, services, customers, payments, courier, profit and reconciliation — filterable by date range, exportable as CSV. This is the canonical place to check exact numbers."
+        descriptionBn="বিক্রয়, রেভিনিউ, পণ্য, সেবা, গ্রাহক, পেমেন্ট, কুরিয়ার, লাভ এবং রিকনসিলিয়েশন — তারিখ পরিসর অনুযায়ী ফিল্টার এবং CSV এক্সপোর্ট করা যায়। সঠিক সংখ্যা যাচাইয়ের জন্য এটিই মূল জায়গা।"
         actions={
           <button type="button" onClick={handleExport} disabled={exporting || dataRows.length === 0} className="btn btn-brand btn-sm gap-1.5">
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}

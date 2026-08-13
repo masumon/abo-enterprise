@@ -3,9 +3,10 @@ import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/admin
 
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import AdminTitle from "@/components/admin/AdminTitle";
 import {
-  Loader2, Plus, Pencil, Trash2, X, ToggleLeft, ToggleRight,
+  Loader2, Plus, Pencil, Trash2, X, ToggleLeft, ToggleRight, Archive,
   CreditCard, Check, AlertCircle, Receipt, RefreshCw,
 } from "lucide-react";
 import { paymentMethodsAdminApi, adminApi, type PaymentMethodRecord } from "@/lib/api";
@@ -189,8 +190,8 @@ export default function AdminPaymentsPage() {
 
   const handleDelete = (id: string) => {
     setConfirmState({
-      title: "Disable this payment method?",
-      message: "This will disable the payment method for checkout. Existing payment and transaction history will be preserved.",
+      title: "Remove this payment method from the list?",
+      message: "It will no longer be offered at checkout. Existing payment and transaction history will be preserved — this is different from the on/off switch, which just turns it on or off without removing it.",
       action: async () => {
         setConfirmState(null);
         setDeletingId(id);
@@ -261,6 +262,11 @@ export default function AdminPaymentsPage() {
                 ? "View bKash & Nagad transactions"
                 : "Daily payment reconciliation summary"}
           </p>
+          {tab === "reconciliation" && (
+            <Link href="/sumon/reports?report=reconciliation" className="text-xs font-medium text-brand-600 hover:underline">
+              View the full reconciliation report in Reports →
+            </Link>
+          )}
         </div>
         {tab === "gateways" && (
           <button onClick={() => openNew()} className="btn btn-primary btn-sm gap-1.5">
@@ -465,18 +471,20 @@ export default function AdminPaymentsPage() {
                         <button
                           onClick={() => handleDelete(m.id)}
                           disabled={deletingId === m.id}
-                          aria-label={`Disable ${label} gateway`}
+                          aria-label={`Remove ${label} gateway from the list`}
+                          title="Remove from list (history is kept)"
                           className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
                         >
                           {deletingId === m.id
                             ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            : <ToggleLeft className="w-3.5 h-3.5" />
+                            : <Archive className="w-3.5 h-3.5" />
                           }
                         </button>
                         <button
                           onClick={() => handleToggle(m)}
                           disabled={togglingId === m.id}
-                          aria-label={m.is_active ? `Disable ${label} gateway` : `Enable ${label} gateway`}
+                          aria-label={m.is_active ? `Turn off ${label} gateway` : `Turn on ${label} gateway`}
+                          title={m.is_active ? "On — customers can use this at checkout" : "Off — hidden from checkout"}
                           className="ml-1 text-gray-400 hover:text-brand-600 transition-colors"
                         >
                           {togglingId === m.id

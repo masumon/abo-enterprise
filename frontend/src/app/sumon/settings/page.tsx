@@ -7,6 +7,7 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import JsonListEditor, { type JsonListField } from "@/components/admin/JsonListEditor";
 import TranslateButton from "@/components/admin/TranslateButton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 /** Friendly field-editors for the Trust Assets object-array settings.
  * Unknown keys are preserved by JsonListEditor, so existing data is safe. */
@@ -216,6 +217,9 @@ interface Section {
   fields: SettingField[];
   /** Info line rendered under the section header (e.g. Image Manager pointer). */
   note?: string;
+  /** Optional link to a diagnostic/test page for this section (e.g. Steadfast connection test). */
+  testHref?: string;
+  testLabel?: string;
 }
 
 const SECTIONS: Section[] = [
@@ -318,6 +322,8 @@ const SECTIONS: Section[] = [
     title: "Steadfast Courier API",
     icon: <Truck className="w-4 h-4" />,
     note: "অর্ডার সরাসরি Steadfast কুরিয়ারে পাঠান। Key দুটি Steadfast প্যানেলের API পেজ থেকে নিন — এখানে দিলে গোপন থাকবে (আর ফেরত দেখানো হয় না)। ⚠️ কোথাও Key শেয়ার হয়ে গেলে Steadfast-এ 'Regenerate Key' চেপে নতুন Key নিন।",
+    testHref: "/sumon/steadfast-test",
+    testLabel: "Key সেভ করার পর সংযোগ পরীক্ষা করুন →",
     fields: [
       {
         key: "steadfast_enabled",
@@ -532,6 +538,13 @@ function SectionCard({
           </Link>
         </div>
       )}
+      {section.testHref && (
+        <div className="px-6 py-2.5 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/10 text-xs">
+          <Link href={section.testHref} className="font-semibold text-brand-700 dark:text-brand-400 underline hover:no-underline">
+            {section.testLabel ?? "Test connection →"}
+          </Link>
+        </div>
+      )}
       <div className="divide-y divide-gray-50 dark:divide-white/5">
         {section.fields.map((field) => (
           <div key={field.key} className="px-4 sm:px-6 py-4 hover:bg-gray-50/40 dark:hover:bg-white/[0.02] transition-colors">
@@ -618,6 +631,7 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [confirmMaintenance, setConfirmMaintenance] = useState<{ sectionId: string | "__all__" } | null>(null);
   const toast = useToastStore((s) => s.push);
 
   const load = useCallback(async () => {
@@ -675,6 +689,11 @@ export default function AdminSettingsPage() {
   };
 
   const handleSaveAll = async () => {
+    if (values.maintenance_mode === "true") { setConfirmMaintenance({ sectionId: "__all__" }); return; }
+    await proceedSaveAll();
+  };
+
+  const proceedSaveAll = async () => {
     setSaving("__all__");
     let anyFailed = false;
     for (const section of SECTIONS) {
@@ -699,6 +718,14 @@ export default function AdminSettingsPage() {
   };
 
   const handleSave = async (sectionId: string) => {
+    if (sectionId === "system_config" && values.maintenance_mode === "true") {
+      setConfirmMaintenance({ sectionId });
+      return;
+    }
+    await proceedSave(sectionId);
+  };
+
+  const proceedSave = async (sectionId: string) => {
     const section = SECTIONS.find((s) => s.id === sectionId);
     if (!section) return;
     const urlErr = validateUrls(section);
@@ -792,14 +819,29 @@ export default function AdminSettingsPage() {
       )}
 
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
-        <h3 className="font-semibold text-amber-800 mb-2">Environment Variables</h3>
+        <h3 className="font-semibold text-amber-800 mb-2">Hosting-Level Settings</h3>
         <p className="text-sm text-amber-700">
-          Core secrets like <code className="bg-amber-100 px-1 rounded">SECRET_KEY</code> and{" "}
-          <code className="bg-amber-100 px-1 rounded">DATABASE_URL</code> are managed via Render
-          environment variables. Email/SMTP can now be set here (Email &amp; SMTP section) — those
-          values override the env defaults, and the SMTP password is stored masked.
+          A few core security keys are managed directly on the hosting provider, not here — your
+          developer handles those. Email/SMTP can be set here instead (Email &amp; SMTP section)
+          — those values override the hosting defaults, and the SMTP password is stored masked.
         </p>
       </div>
+
+      <ConfirmDialog
+        open={!!confirmMaintenance}
+        title="Turn on Maintenance Mode?"
+        message="This takes the live website offline for every visitor until you turn it off again. Only proceed if you mean to do this now."
+        confirmLabel="Save & enable"
+        variant="warning"
+        onConfirm={() => {
+          const target = confirmMaintenance;
+          setConfirmMaintenance(null);
+          if (!target) return;
+          if (target.sectionId === "__all__") void proceedSaveAll();
+          else void proceedSave(target.sectionId);
+        }}
+        onCancel={() => setConfirmMaintenance(null)}
+      />
     </div>
   );
 }

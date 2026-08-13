@@ -70,7 +70,7 @@ export default function AdminCombosPage() {
       const c = await combosApi.adminList();
       setCombos(c.data.data ?? []);
     } catch (e) {
-      toast("error", apiErrorMessage(e, "কম্বো লোড করা যায়নি — SQL মাইগ্রেশন রান করা হয়েছে কি?"));
+      toast("error", apiErrorMessage(e, "কম্বো লোড করা যায়নি — একটু পরে আবার চেষ্টা করুন, সমস্যা থাকলে ডেভেলপারকে জানান।"));
     } finally {
       setLoading(false);
     }

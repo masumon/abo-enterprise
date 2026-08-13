@@ -2,16 +2,19 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
-import { Package, Plus, Search, Archive, RefreshCw, ArrowDown, ArrowUp, History, Tags } from "lucide-react";
+import { Package, Plus, Search, Archive, RefreshCw, ArrowDown, ArrowUp, History, Tags, Loader2 } from "lucide-react";
 import { brandsApi, inventoryApi, type Brand, type InventoryItem, type InventoryMovement } from "@/lib/brandsInventoryApi";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 import StatusBadge from "@/components/admin/StatusBadge";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { apiErrorMessage } from "@/lib/apiError";
+import { useToastStore } from "@/store/toast";
 
 type Tab = "inventory" | "brands";
 
 export default function AdminInventoryPage() {
+  const toast = useToastStore((s) => s.push);
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<Tab>(searchParams.get("tab") === "brands" ? "brands" : "inventory");
   const [summary, setSummary] = useState({ products: 0, low_stock: 0, out_of_stock: 0, units: 0 });
@@ -36,6 +39,8 @@ export default function AdminInventoryPage() {
       const [s, r] = await Promise.all([inventoryApi.summary(), inventoryApi.list({ search: search || undefined, per_page: 100 })]);
       setSummary(s.data.data);
       setItems(r.data.data);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to load inventory"));
     } finally { setLoading(false); }
   };
 
@@ -44,6 +49,8 @@ export default function AdminInventoryPage() {
     try {
       const r = await brandsApi.list({ search: search || undefined, include_inactive: true, per_page: 100 });
       setBrands(r.data.data);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to load brands"));
     } finally { setLoading(false); }
   };
 
@@ -55,8 +62,12 @@ export default function AdminInventoryPage() {
 
   const openMovements = async (item: InventoryItem) => {
     setSelected(item);
-    const r = await inventoryApi.movements(item.id);
-    setMovements(r.data.data);
+    try {
+      const r = await inventoryApi.movements(item.id);
+      setMovements(r.data.data);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to load stock history"));
+    }
   };
 
   const submitAdjustment = async () => {
@@ -69,6 +80,9 @@ export default function AdminInventoryPage() {
       await loadInventory();
       const fresh = items.find((p) => p.id === selected.id);
       await openMovements(fresh ? { ...fresh, stock_quantity: fresh.stock_quantity + amount } : selected);
+      toast("success", "Stock adjustment saved");
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to save stock adjustment"));
     } finally { setAdjusting(false); }
   };
 
@@ -83,13 +97,23 @@ export default function AdminInventoryPage() {
 
   const saveBrand = async () => {
     const payload = { ...brandForm, name_bn: brandForm.name_bn || null, description_en: brandForm.description_en || null, description_bn: brandForm.description_bn || null, logo_url: brandForm.logo_url || null, website_url: brandForm.website_url || null };
-    if (editingBrand) await brandsApi.update(editingBrand.id, payload); else await brandsApi.create(payload);
-    setBrandModal(false); await loadBrands();
+    try {
+      if (editingBrand) await brandsApi.update(editingBrand.id, payload); else await brandsApi.create(payload);
+      setBrandModal(false); await loadBrands();
+      toast("success", editingBrand ? "Brand updated" : "Brand created");
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to save brand"));
+    }
   };
 
   const confirmArchive = async () => {
     if (!archiveBrand) return;
-    await brandsApi.archive(archiveBrand.id); setArchiveBrand(null); await loadBrands();
+    try {
+      await brandsApi.archive(archiveBrand.id); setArchiveBrand(null); await loadBrands();
+      toast("success", "Brand archived");
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to archive brand"));
+    }
   };
 
   return (
@@ -116,6 +140,7 @@ export default function AdminInventoryPage() {
             <table className="w-full text-sm"><thead><tr className="border-b border-border text-left"><th className="p-3">Product</th><th className="p-3">SKU</th><th className="p-3">Brand</th><th className="p-3">Stock</th><th className="p-3">Threshold</th><th className="p-3">Action</th></tr></thead>
               <tbody>{items.map((p) => <tr key={p.id} className="border-b border-border/60"><td className="p-3"><div className="font-medium">{p.name_en}</div><div className="text-xs text-muted">{p.name_bn}</div></td><td className="p-3">{p.sku || "—"}</td><td className="p-3">{p.brand || "—"}</td><td className="p-3"><span className="font-semibold">{p.stock_quantity}</span></td><td className="p-3">{p.low_stock_threshold}</td><td className="p-3"><button className="inline-flex items-center gap-1 px-2 py-1 rounded border border-border" onClick={() => openMovements(p)}><History className="w-3.5 h-3.5" /> History</button></td></tr>)}</tbody>
             </table>
+            {loading && <div className="p-8 flex items-center justify-center gap-2 text-muted"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>}
             {!items.length && !loading && <div className="p-8 text-center text-muted">No inventory records found.</div>}
           </div>
 
@@ -134,6 +159,7 @@ export default function AdminInventoryPage() {
         <>
           <div className="flex items-center justify-between"><AdminToolbar><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" /><input className="pl-9 pr-3 py-2 rounded-lg border border-border bg-surface" placeholder="Search brands" value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && loadBrands()} /></div></AdminToolbar><button className="inline-flex items-center gap-2 rounded-lg bg-brand text-white px-3 py-2" onClick={() => openBrand()}><Plus className="w-4 h-4" /> Add brand</button></div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{brands.map((b) => <div key={b.id} className="rounded-xl border border-border p-4 space-y-3"><div className="flex items-start justify-between"><div className="flex items-center gap-3">{b.logo_url ? <img src={b.logo_url} alt="" className="w-10 h-10 rounded-lg object-contain border border-border" /> : <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center"><Tags className="w-5 h-5 text-muted" /></div>}<div><div className="font-semibold">{b.name_en}</div><div className="text-xs text-muted">{b.name_bn || b.slug}</div></div></div><StatusBadge status={b.is_active ? "active" : "inactive"} /></div><div className="text-sm text-muted">Slug: {b.slug} · Products: {b.product_count}</div><div className="flex gap-2"><button className="px-2 py-1 rounded border border-border" onClick={() => openBrand(b)}>Edit</button><button className="px-2 py-1 rounded border border-border text-red-600" onClick={() => setArchiveBrand(b)}><Archive className="w-3.5 h-3.5 inline mr-1" />Archive</button></div></div>)}</div>
+          {loading && <div className="p-8 flex items-center justify-center gap-2 text-muted"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>}
           {!brands.length && !loading && <div className="p-8 text-center text-muted">No brands found.</div>}
         </>
       )}

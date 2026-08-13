@@ -8,6 +8,7 @@ import Link from "next/link";
 import { FileText, Loader2, Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { adminPagesApi, type PageRecord } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
@@ -96,8 +97,13 @@ export default function AdminPagesPage() {
     }
   };
 
-  const handleDelete = async (p: PageRecord) => {
-    if (!confirm(`Delete "${p.title_en}"? This can't be undone from the admin UI.`)) return;
+  const [deleteTarget, setDeleteTarget] = useState<PageRecord | null>(null);
+  const handleDelete = (p: PageRecord) => setDeleteTarget(p);
+
+  const performDelete = async () => {
+    const p = deleteTarget;
+    if (!p) return;
+    setDeleteTarget(null);
     try {
       await adminPagesApi.delete(p.id);
       toast("success", "Page deleted");
@@ -251,6 +257,16 @@ export default function AdminPagesPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={deleteTarget ? `Delete "${deleteTarget.title_en}"?` : ""}
+        message="This can't be undone from the admin UI."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => void performDelete()}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

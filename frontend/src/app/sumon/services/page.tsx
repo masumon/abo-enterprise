@@ -466,6 +466,18 @@ export default function AdminServicesPage() {
     }
   };
 
+  const confirmBulkUpdate = (patch: Partial<Service>, verb: string, pastTenseLabel: string, question: string) => {
+    const count = selected.size;
+    setConfirmState({
+      title: question,
+      message: `This will ${verb} ${count} service${count === 1 ? "" : "s"}, which changes what customers see on the live site.`,
+      action: () => {
+        setConfirmState(null);
+        runBulkUpdate(patch, pastTenseLabel);
+      },
+    });
+  };
+
   const handleBulkDelete = () => {
     const count = selected.size;
     setConfirmState({
@@ -646,16 +658,16 @@ export default function AdminServicesPage() {
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">
           <span className="text-sm font-medium text-brand-800">{selected.size} selected</span>
-          <button onClick={() => runBulkUpdate({ is_active: true }, "activated")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+          <button onClick={() => confirmBulkUpdate({ is_active: true }, "activate", "activated", "Activate selected services?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
             <Check className="w-3.5 h-3.5" /> Activate
           </button>
-          <button onClick={() => runBulkUpdate({ is_active: false }, "deactivated")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+          <button onClick={() => confirmBulkUpdate({ is_active: false }, "deactivate", "deactivated", "Deactivate selected services?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
             <Ban className="w-3.5 h-3.5" /> Deactivate
           </button>
-          <button onClick={() => runBulkUpdate({ is_featured: true }, "featured")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+          <button onClick={() => confirmBulkUpdate({ is_featured: true }, "feature", "featured", "Feature selected services?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
             <Star className="w-3.5 h-3.5" /> Feature
           </button>
-          <button onClick={() => runBulkUpdate({ is_featured: false }, "unfeatured")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+          <button onClick={() => confirmBulkUpdate({ is_featured: false }, "unfeature", "unfeatured", "Unfeature selected services?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
             <StarOff className="w-3.5 h-3.5" /> Unfeature
           </button>
           <button onClick={handleBulkDelete} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1 text-red-600 hover:bg-red-50">

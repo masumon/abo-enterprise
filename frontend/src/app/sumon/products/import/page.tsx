@@ -8,6 +8,7 @@ import {
   SkipForward, Filter, type LucideIcon,
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import {
   productImportApi,
@@ -43,6 +44,7 @@ export default function AdminProductImportPage() {
   const [history, setHistory] = useState<ImportHistoryItem[]>([]);
   const [dl, setDl] = useState<string | null>(null);
   const [errorsOnly, setErrorsOnly] = useState(false);
+  const [confirmCommitOpen, setConfirmCommitOpen] = useState(false);
 
   const step = result ? 4 : committing ? 3 : preview ? 2 : 1;
 
@@ -90,6 +92,12 @@ export default function AdminProductImportPage() {
       toast("error", "ইমপোর্ট করার মতো কোনো সঠিক সারি নেই");
       return;
     }
+    setConfirmCommitOpen(true);
+  };
+
+  const performCommit = async () => {
+    setConfirmCommitOpen(false);
+    if (!file || !preview) return;
     setCommitting(true);
     try {
       const r = await productImportApi.commit(file, mapping, onExisting, onNew);
@@ -385,6 +393,16 @@ export default function AdminProductImportPage() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmCommitOpen}
+        title="Import products now?"
+        message={S ? `${S.create} new product(s) will be created and ${S.update} existing product(s) will be updated. This cannot be undone automatically.` : undefined}
+        confirmLabel="Import"
+        variant="warning"
+        onConfirm={performCommit}
+        onCancel={() => setConfirmCommitOpen(false)}
+      />
     </div>
   );
 }

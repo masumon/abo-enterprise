@@ -1,7 +1,8 @@
 import {
   LayoutDashboard, ShoppingCart, Briefcase, Package, Users, Wrench, FileText, Star, BookOpen, FolderKanban,
   Images, CreditCard, Bot, Mail, BarChart2, Settings, Shield, Send, Truck, UserPlus, Percent, FolderTree,
-  LayoutTemplate, Megaphone, ExternalLink, UploadCloud, Tags, Bell, History, ScrollText, ShieldCheck, type LucideIcon,
+  LayoutTemplate, Megaphone, ExternalLink, UploadCloud, Tags, Bell, History, ScrollText, ShieldCheck, Boxes,
+  GalleryHorizontal, type LucideIcon,
 } from "lucide-react";
 
 export type AdminRole = "super_admin" | "admin" | "editor" | "viewer";
@@ -51,7 +52,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   { id: "catalog", label: "Catalog", labelBn: "ক্যাটালগ", items: [
     { href: "/sumon/categories", icon: FolderTree, label: "Categories", labelBn: "ক্যাটাগরি", minRole: "admin", permission: "products.read" },
     { href: "/sumon/products", icon: Package, label: "Products", labelBn: "পণ্য", exact: true, permission: "products.read" },
-    { href: "/sumon/inventory", icon: Package, label: "Inventory", labelBn: "ইনভেন্টরি", minRole: "admin", permission: "products.read" },
+    { href: "/sumon/inventory", icon: Boxes, label: "Inventory", labelBn: "ইনভেন্টরি", minRole: "admin", permission: "products.read" },
     { href: "/sumon/inventory?tab=brands", icon: Tags, label: "Brands", labelBn: "ব্র্যান্ড", minRole: "admin", permission: "products.read" },
     { href: "/sumon/products/import", icon: UploadCloud, label: "Bulk Import", labelBn: "বাল্ক ইমপোর্ট", minRole: "admin", permission: "products.write" },
     { href: "/sumon/combos", icon: Package, label: "Combo Packs", labelBn: "কম্বো প্যাক", permission: "products.read" },
@@ -73,7 +74,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   { id: "content-brand", label: "Content & Brand", labelBn: "কনটেন্ট ও ব্র্যান্ড", items: [
     { href: "/sumon/homepage", icon: LayoutTemplate, label: "Homepage Content", labelBn: "হোমপেজ কনটেন্ট" },
     { href: "/sumon/announcements", icon: Megaphone, label: "Homepage Announcement Bar", labelBn: "ঘোষণা বার" },
-    { href: "/sumon/promo-slides", icon: Images, label: "Homepage Banners & Slider", labelBn: "হোমপেজ ব্যানার ও স্লাইড", permission: "settings.read" },
+    { href: "/sumon/promo-slides", icon: GalleryHorizontal, label: "Homepage Banners & Slider", labelBn: "হোমপেজ ব্যানার ও স্লাইড", permission: "settings.read" },
     { href: "/sumon/media", icon: Images, label: "Image Manager", labelBn: "ছবি ব্যবস্থাপনা", permission: "media.read" },
     { href: "/sumon/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি" },
     { href: "/sumon/blog", icon: BookOpen, label: "Blog", labelBn: "ব্লগ", permission: "blog.read" },
@@ -86,7 +87,6 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     { href: "/sumon/delivery-zones", icon: Truck, label: "Delivery Zones", labelBn: "ডেলিভারি জোন", minRole: "admin", permission: "settings.read" },
     { href: "/sumon/settings#steadfast_courier", icon: Shield, label: "Courier (Steadfast)", labelBn: "কুরিয়ার (Steadfast)", minRole: "admin", permission: "settings.read" },
     { href: "/sumon/tracking", icon: Truck, label: "Tracking", labelBn: "ট্র্যাকিং", permission: "orders.read" },
-    { href: "/sumon/steadfast-test", icon: Shield, label: "Steadfast Test", labelBn: "Steadfast টেস্ট", minRole: "admin", permission: "settings.read" },
   ]},
   { id: "finance-reports", label: "Finance & Reports", labelBn: "অর্থ ও রিপোর্ট", items: [
     { href: "/sumon/reports?report=revenue", icon: BarChart2, label: "Revenue", labelBn: "রেভিনিউ", minRole: "admin", permission: "analytics.read" },
@@ -99,7 +99,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   ]},
   { id: "system-security", label: "System & Security", labelBn: "সিস্টেম ও নিরাপত্তা", items: [
     { href: "/sumon/settings", icon: Settings, label: "Settings", labelBn: "সেটিংস", minRole: "admin" },
-    { href: "/sumon/settings#marketing_config", icon: Settings, label: "SEO", labelBn: "SEO", minRole: "admin" },
+    { href: "/sumon/settings#marketing_config", icon: Settings, label: "Marketing & SEO", labelBn: "মার্কেটিং ও SEO", minRole: "admin" },
     { href: "/sumon/users", icon: Users, label: "Users", labelBn: "ইউজার", minRole: "admin", permission: "users.read" },
     { href: "/sumon/roles-permissions", icon: ShieldCheck, label: "Roles & Permissions", labelBn: "ভূমিকা ও অনুমতি", minRole: "admin", permission: "users.read" },
     { href: "/sumon/notifications", icon: Bell, label: "Notifications", labelBn: "নোটিফিকেশন" },

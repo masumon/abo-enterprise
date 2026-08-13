@@ -81,7 +81,7 @@ export default function AdminAnnouncementsPage() {
     adminApi
       .getSettings()
       .then((r) => setItems(getAnnouncements(r.data.data ?? {}, FALLBACK)))
-      .catch(() => setItems([]))
+      .catch((err) => { setItems([]); toast("error", apiErrorMessage(err, "Failed to load announcements")); })
       .finally(() => setLoading(false));
   }, []);
 
