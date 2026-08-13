@@ -7,6 +7,7 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import JsonListEditor, { type JsonListField } from "@/components/admin/JsonListEditor";
 import TranslateButton from "@/components/admin/TranslateButton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 /** Friendly field-editors for the Trust Assets object-array settings.
  * Unknown keys are preserved by JsonListEditor, so existing data is safe. */
@@ -216,6 +217,9 @@ interface Section {
   fields: SettingField[];
   /** Info line rendered under the section header (e.g. Image Manager pointer). */
   note?: string;
+  /** Optional link to a diagnostic/test page for this section (e.g. Steadfast connection test). */
+  testHref?: string;
+  testLabel?: string;
 }
 
 const SECTIONS: Section[] = [
@@ -318,6 +322,8 @@ const SECTIONS: Section[] = [
     title: "Steadfast Courier API",
     icon: <Truck className="w-4 h-4" />,
     note: "অর্ডার সরাসরি Steadfast কুরিয়ারে পাঠান। Key দুটি Steadfast প্যানেলের API পেজ থেকে নিন — এখানে দিলে গোপন থাকবে (আর ফেরত দেখানো হয় না)। ⚠️ কোথাও Key শেয়ার হয়ে গেলে Steadfast-এ 'Regenerate Key' চেপে নতুন Key নিন।",
+    testHref: "/sumon/steadfast-test",
+    testLabel: "Key সেভ করার পর সংযোগ পরীক্ষা করুন →",
     fields: [
       {
         key: "steadfast_enabled",
@@ -480,6 +486,27 @@ const SECTIONS: Section[] = [
   },
 ];
 
+/** Groups the 14 flat SECTIONS into tabs so an admin doesn't have to scroll
+ * past unrelated settings to find one. Purely presentational — which
+ * SECTIONS render for the active tab — the load/save logic below is
+ * untouched and still operates on the full flat SECTIONS list. */
+const SECTION_GROUPS: { id: string; label: string; labelBn: string; sectionIds: string[] }[] = [
+  { id: "branding", label: "Branding & Contact", labelBn: "ব্র্যান্ডিং ও যোগাযোগ",
+    sectionIds: ["brand_core", "company_info", "trust_media", "additional_assets", "social_links"] },
+  { id: "store", label: "Store & Checkout", labelBn: "দোকান ও চেকআউট",
+    sectionIds: ["ecommerce_config", "steadfast_courier", "flash_sale_config"] },
+  { id: "email", label: "Email", labelBn: "ইমেইল",
+    sectionIds: ["email_smtp"] },
+  { id: "marketing", label: "Marketing & Search", labelBn: "মার্কেটিং ও সার্চ",
+    sectionIds: ["marketing_config", "search_config"] },
+  { id: "system", label: "System", labelBn: "সিস্টেম",
+    sectionIds: ["site_features", "system_config", "demo_config"] },
+];
+
+function groupForSection(sectionId: string): string {
+  return SECTION_GROUPS.find((g) => g.sectionIds.includes(sectionId))?.id ?? SECTION_GROUPS[0].id;
+}
+
 function SectionCard({
   section,
   values,
@@ -529,6 +556,13 @@ function SectionCard({
           <span>{section.note}</span>
           <Link href="/sumon/media" className="font-semibold underline hover:no-underline">
             Image Manager খুলুন →
+          </Link>
+        </div>
+      )}
+      {section.testHref && (
+        <div className="px-6 py-2.5 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/10 text-xs">
+          <Link href={section.testHref} className="font-semibold text-brand-700 dark:text-brand-400 underline hover:no-underline">
+            {section.testLabel ?? "Test connection →"}
           </Link>
         </div>
       )}
@@ -618,7 +652,33 @@ export default function AdminSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
+  const [confirmMaintenance, setConfirmMaintenance] = useState<{ sectionId: string | "__all__" } | null>(null);
+  const [activeGroup, setActiveGroup] = useState<string>(SECTION_GROUPS[0].id);
   const toast = useToastStore((s) => s.push);
+
+  // Keep the active tab in sync with the URL hash, so sidebar links like
+  // /sumon/settings#steadfast_courier (and #marketing_config for "Marketing
+  // & SEO") land on the right tab instead of a hidden one.
+  useEffect(() => {
+    const syncFromHash = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (hash) setActiveGroup(groupForSection(hash));
+    };
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, []);
+
+  // Sections only exist in the DOM once loaded (and once their tab is
+  // active), so the browser's own "scroll to #hash on page load" can't find
+  // the target in time. Do it ourselves once loading finishes.
+  useEffect(() => {
+    if (loading) return;
+    const hash = window.location.hash.replace("#", "");
+    if (!hash) return;
+    const el = document.getElementById(hash);
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [loading]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -675,6 +735,11 @@ export default function AdminSettingsPage() {
   };
 
   const handleSaveAll = async () => {
+    if (values.maintenance_mode === "true") { setConfirmMaintenance({ sectionId: "__all__" }); return; }
+    await proceedSaveAll();
+  };
+
+  const proceedSaveAll = async () => {
     setSaving("__all__");
     let anyFailed = false;
     for (const section of SECTIONS) {
@@ -699,6 +764,14 @@ export default function AdminSettingsPage() {
   };
 
   const handleSave = async (sectionId: string) => {
+    if (sectionId === "system_config" && values.maintenance_mode === "true") {
+      setConfirmMaintenance({ sectionId });
+      return;
+    }
+    await proceedSave(sectionId);
+  };
+
+  const proceedSave = async (sectionId: string) => {
     const section = SECTIONS.find((s) => s.id === sectionId);
     if (!section) return;
     const urlErr = validateUrls(section);
@@ -763,7 +836,23 @@ export default function AdminSettingsPage() {
         </div>
       ) : (
         <div className="space-y-6 max-w-3xl">
-          {SECTIONS.map((section) => (
+          <div className="flex gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-fit flex-wrap" role="tablist">
+            {SECTION_GROUPS.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                role="tab"
+                aria-selected={activeGroup === g.id}
+                onClick={() => setActiveGroup(g.id)}
+                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeGroup === g.id ? "bg-white dark:bg-gray-800 text-brand-700 dark:text-brand-400 shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+                }`}
+              >
+                {g.label}
+              </button>
+            ))}
+          </div>
+          {SECTIONS.filter((section) => groupForSection(section.id) === activeGroup).map((section) => (
             <SectionCard
               key={section.id}
               section={section}
@@ -792,14 +881,29 @@ export default function AdminSettingsPage() {
       )}
 
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
-        <h3 className="font-semibold text-amber-800 mb-2">Environment Variables</h3>
+        <h3 className="font-semibold text-amber-800 mb-2">Hosting-Level Settings</h3>
         <p className="text-sm text-amber-700">
-          Core secrets like <code className="bg-amber-100 px-1 rounded">SECRET_KEY</code> and{" "}
-          <code className="bg-amber-100 px-1 rounded">DATABASE_URL</code> are managed via Render
-          environment variables. Email/SMTP can now be set here (Email &amp; SMTP section) — those
-          values override the env defaults, and the SMTP password is stored masked.
+          A few core security keys are managed directly on the hosting provider, not here — your
+          developer handles those. Email/SMTP can be set here instead (Email &amp; SMTP section)
+          — those values override the hosting defaults, and the SMTP password is stored masked.
         </p>
       </div>
+
+      <ConfirmDialog
+        open={!!confirmMaintenance}
+        title="Turn on Maintenance Mode?"
+        message="This takes the live website offline for every visitor until you turn it off again. Only proceed if you mean to do this now."
+        confirmLabel="Save & enable"
+        variant="warning"
+        onConfirm={() => {
+          const target = confirmMaintenance;
+          setConfirmMaintenance(null);
+          if (!target) return;
+          if (target.sectionId === "__all__") void proceedSaveAll();
+          else void proceedSave(target.sectionId);
+        }}
+        onCancel={() => setConfirmMaintenance(null)}
+      />
     </div>
   );
 }

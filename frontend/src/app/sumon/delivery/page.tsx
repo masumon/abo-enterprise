@@ -40,7 +40,7 @@ export default function AdminDeliveryPage() {
         const s = r.data.data ?? {};
         setValues(Object.fromEntries(FIELDS.map((f) => [f.key, s[f.key] ?? ""])));
       })
-      .catch(() => {})
+      .catch((err) => toast("error", apiErrorMessage(err, "Failed to load delivery settings")))
       .finally(() => setLoading(false));
   }, []);
 

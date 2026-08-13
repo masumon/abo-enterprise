@@ -2,10 +2,10 @@
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useCallback, useEffect, useState } from "react";
-import AdminTitle from "@/components/admin/AdminTitle";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
-import { Loader2, Users, Shield, Plus, Pencil, X, Search } from "lucide-react";
+import { Loader2, Shield, Plus, Pencil, X, Search } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import TwoFactorCard from "@/components/admin/TwoFactorCard";
@@ -127,30 +127,28 @@ export default function AdminUsersPage() {
   return (
     <div className="space-y-6 max-w-5xl">
       <TwoFactorCard />
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <Users className="w-6 h-6 text-brand-600" />
-          <div>
-            <AdminTitle en="Users" bn="ইউজার" />
-            <p className="text-gray-500 text-sm">{users.length} admin accounts</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search users…"
-              className="input pl-8 text-sm w-full sm:w-52"
-              aria-label="Search users"
-            />
-          </div>
-          <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Add User
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Users"
+        titleBn="ইউজার"
+        description={`${users.length} admin accounts`}
+        actions={
+          <>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search users…"
+                className="input pl-8 text-sm w-full sm:w-52"
+                aria-label="Search users"
+              />
+            </div>
+            <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Add User
+            </button>
+          </>
+        }
+      />
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>
@@ -313,6 +311,9 @@ export default function AdminUsersPage() {
                   {form.role === "admin" && "Full access except user management"}
                   {form.role === "editor" && "Can manage blog, products, services only"}
                   {form.role === "viewer" && "Read-only access to all sections"}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">
+                  A higher &ldquo;Super Admin&rdquo; role also exists but isn&apos;t assignable from this page — see Roles &amp; Permissions for what every role can do.
                 </p>
               </div>
               <div>

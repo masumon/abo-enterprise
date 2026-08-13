@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { Loader2, ScrollText, ExternalLink, RotateCcw, Save } from "lucide-react";
@@ -20,6 +21,7 @@ export default function LegalPagesAdmin() {
   const [allSettings, setAllSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const [en, setEn] = useState("");
   const [bn, setBn] = useState("");
 
@@ -145,7 +147,7 @@ export default function LegalPagesAdmin() {
             </button>
             {isCustomized && (
               <button
-                onClick={() => { setEn(""); setBn(""); save("", ""); }}
+                onClick={() => setConfirmReset(true)}
                 disabled={saving}
                 className="btn btn-outline btn-sm gap-1.5"
               >
@@ -156,6 +158,16 @@ export default function LegalPagesAdmin() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={confirmReset}
+        title="ডিফল্ট লেখায় ফিরে যাবেন?"
+        message="আপনার লেখা মুছে যাবে এবং ওয়েবসাইটের ডিফল্ট লেখা দেখানো হবে। এটি ফিরিয়ে নেওয়া যাবে না।"
+        confirmLabel="ডিফল্টে ফিরে যান"
+        variant="warning"
+        onConfirm={() => { setEn(""); setBn(""); save("", ""); setConfirmReset(false); }}
+        onCancel={() => setConfirmReset(false)}
+      />
     </div>
   );
 }

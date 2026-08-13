@@ -95,15 +95,26 @@ export default function AdminBookingsPage() {
     }
   };
 
+  const RISKY_STATUSES = ["cancelled", "on_hold"];
+  const [confirmStatus, setConfirmStatus] = useState<{ id: string; status: string } | null>(null);
+
   const updateStatusV2 = async (id: string, status: string) => {
     setUpdatingIdV2(id);
     try {
       await serviceBookingsAdminApi.updateStatus(id, status);
       await loadV2();
       if (detailV2?.id === id) setDetailV2(prev => prev ? { ...prev, status } : prev);
+      toast("success", `Booking status updated to ${status.replace(/_/g, " ")}`);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "Failed to update booking status"));
     } finally {
       setUpdatingIdV2(null);
     }
+  };
+
+  const requestStatusChange = (id: string, status: string) => {
+    if (RISKY_STATUSES.includes(status)) setConfirmStatus({ id, status });
+    else void updateStatusV2(id, status);
   };
 
   const handleDeleteV2 = (id: string, bookingNumber: string) => {
@@ -226,14 +237,14 @@ export default function AdminBookingsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-premium min-w-[620px]">
+            <table className="table-premium table-responsive min-w-[620px]">
               <thead>
                 <tr>
                   <th>Booking</th>
                   <th>Customer</th>
-                  <th className="hidden sm:table-cell">Service</th>
-                  <th className="hidden md:table-cell">Pricing</th>
-                  <th className="hidden sm:table-cell">Payment</th>
+                  <th>Service</th>
+                  <th>Pricing</th>
+                  <th>Payment</th>
                   <th>Status</th>
                   <th />
                 </tr>
@@ -241,25 +252,25 @@ export default function AdminBookingsPage() {
               <tbody>
                 {bookingsV2.map((b) => (
                   <tr key={b.id} className="cursor-pointer" onClick={() => setDetailV2(b)}>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3" data-label="Booking">
                       <p className="font-medium text-gray-900">{b.booking_number}</p>
                       <p className="text-xs text-gray-400">{new Date(b.created_at).toLocaleDateString("en-BD")}</p>
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3" data-label="Customer">
                       <p className="text-gray-900">{b.customer_name}</p>
                       <p className="text-xs text-gray-400">{b.customer_phone}</p>
                     </td>
-                    <td className="px-5 py-3 hidden sm:table-cell">
+                    <td className="px-5 py-3" data-label="Service">
                       <p className="text-gray-800">{b.service_name}</p>
                       {b.service_tier && <p className="text-xs text-gray-400">{b.service_tier}</p>}
                     </td>
-                    <td className="px-5 py-3 text-gray-600 hidden md:table-cell">
+                    <td className="px-5 py-3 text-gray-600" data-label="Pricing">
                       <p className="capitalize text-xs">{b.pricing_type}</p>
                       <p className="font-medium text-gray-900">
                         {b.final_price != null ? `৳${b.final_price.toLocaleString()}` : b.quoted_price != null ? `৳${b.quoted_price.toLocaleString()}` : "—"}
                       </p>
                     </td>
-                    <td className="px-5 py-3 hidden sm:table-cell">
+                    <td className="px-5 py-3" data-label="Payment">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                         b.payment_status === "paid" ? "bg-green-100 text-green-700" :
                         b.payment_status === "partial" ? "bg-yellow-100 text-yellow-700" :
@@ -269,13 +280,13 @@ export default function AdminBookingsPage() {
                         {b.payment_status}
                       </span>
                     </td>
-                    <td className="px-5 py-3" onClick={e => e.stopPropagation()}>
+                    <td className="px-5 py-3" onClick={e => e.stopPropagation()} data-label="Status">
                       <div className="flex items-center gap-2">
                         <div className="relative">
                           <select
                             value={b.status}
                             disabled={updatingIdV2 === b.id}
-                            onChange={(e) => updateStatusV2(b.id, e.target.value)}
+                            onChange={(e) => requestStatusChange(b.id, e.target.value)}
                             className="appearance-none pl-2 pr-7 py-1 text-xs rounded-lg border border-gray-200 bg-white focus:outline-none focus:border-brand-500 cursor-pointer"
                           >
                             {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
@@ -345,7 +356,7 @@ export default function AdminBookingsPage() {
                   <select
                     value={detailV2.status}
                     disabled={updatingIdV2 === detailV2.id}
-                    onChange={(e) => updateStatusV2(detailV2.id, e.target.value)}
+                    onChange={(e) => requestStatusChange(detailV2.id, e.target.value)}
                     className="input w-auto text-sm"
                   >
                     {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
@@ -628,6 +639,16 @@ export default function AdminBookingsPage() {
         variant="danger"
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}
+      />
+
+      <ConfirmDialog
+        open={!!confirmStatus}
+        title={confirmStatus ? `Mark this booking as "${confirmStatus.status.replace(/_/g, " ")}"?` : ""}
+        message="The customer may be notified of this change. Make sure this is intentional before continuing."
+        confirmLabel="Confirm"
+        variant="warning"
+        onConfirm={() => { if (confirmStatus) void updateStatusV2(confirmStatus.id, confirmStatus.status); setConfirmStatus(null); }}
+        onCancel={() => setConfirmStatus(null)}
       />
 
       <ComposeEmailModal

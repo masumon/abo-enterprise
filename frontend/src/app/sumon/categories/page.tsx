@@ -25,6 +25,7 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import LivePreview from "@/components/admin/LivePreview";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { cn } from "@/lib/utils";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
 function slugify(v: string): string {
   return v.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -241,8 +242,13 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  const remove = async (node: Node) => {
-    if (!confirm(`"${getNodeLabel(node)}" এবং এর নিচের সব শাখা মুছে যাবে। নিশ্চিত?`)) return;
+  const [deleteTarget, setDeleteTarget] = useState<Node | null>(null);
+  const remove = (node: Node) => setDeleteTarget(node);
+
+  const performRemove = async () => {
+    const node = deleteTarget;
+    if (!node) return;
+    setDeleteTarget(null);
     try {
       await categoriesAdminApi.delete(node.id);
       toast("success", "মুছে ফেলা হয়েছে");
@@ -710,6 +716,15 @@ export default function AdminCategoriesPage() {
         </div>
       </aside>
 
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={deleteTarget ? `"${getNodeLabel(deleteTarget)}" মুছে ফেলবেন?` : ""}
+        message="এটি এবং এর নিচের সব সাব-ক্যাটাগরি মুছে যাবে। এই কাজটি ফিরিয়ে নেওয়া যাবে না।"
+        confirmLabel="মুছে ফেলুন"
+        variant="danger"
+        onConfirm={() => void performRemove()}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

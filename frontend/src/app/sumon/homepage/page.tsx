@@ -95,7 +95,7 @@ export default function AdminHomepageContentPage() {
         setValues(Object.fromEntries(ALL_KEYS.map((k) => [k, s[k] ?? ""])));
         setHstyle(parseHeroTextStyle(s[HERO_TEXT_STYLE_KEY]));
       })
-      .catch(() => {})
+      .catch((err) => toast("error", apiErrorMessage(err, "Failed to load homepage content")))
       .finally(() => setLoading(false));
   }, []);
 

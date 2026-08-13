@@ -21,6 +21,7 @@ import LivePreview from "@/components/admin/LivePreview";
 import AutoVideo from "@/components/ui/AutoVideo";
 import { isVideoUrl } from "@/lib/media";
 import { useToastStore } from "@/store/toast";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import {
   DEFAULT_SHOWCASE_PROJECTS,
   DEFAULT_SOFTWARE_SERVICE_CARDS,
@@ -84,6 +85,13 @@ export default function AdminShowcasePage() {
   const [tab, setTab] = useState<Tab>("projects");
   const [projects, setProjects] = useState<ShowcaseProject[]>([]);
   const [services, setServices] = useState<SoftwareServiceCard[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<{ kind: "project" | "service"; index: number } | null>(null);
+  const performDelete = () => {
+    if (!deleteTarget) return;
+    if (deleteTarget.kind === "project") setProjects((p) => p.filter((_, i) => i !== deleteTarget.index));
+    else setServices((s) => s.filter((_, i) => i !== deleteTarget.index));
+    setDeleteTarget(null);
+  };
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -211,7 +219,7 @@ export default function AdminShowcasePage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setProjects((p) => p.filter((_, i) => i !== index))}
+                    onClick={() => setDeleteTarget({ kind: "project", index })}
                     className="p-1.5 rounded-lg text-red-500 hover:bg-red-50"
                     aria-label="Delete project"
                   >
@@ -338,7 +346,7 @@ export default function AdminShowcasePage() {
             <div key={service.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <p className="font-semibold text-sm">{service.title.en || "New Service"}</p>
-                <button type="button" onClick={() => setServices((s) => s.filter((_, i) => i !== index))} className="text-red-500 p-1.5 hover:bg-red-50 rounded-lg">
+                <button type="button" onClick={() => setDeleteTarget({ kind: "service", index })} className="text-red-500 p-1.5 hover:bg-red-50 rounded-lg" aria-label="Delete service">
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
@@ -400,6 +408,16 @@ export default function AdminShowcasePage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={deleteTarget?.kind === "project" ? "Delete this project?" : "Delete this service card?"}
+        message="It will disappear from the live site the next time you save."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={performDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

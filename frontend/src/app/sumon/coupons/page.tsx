@@ -141,7 +141,7 @@ export default function AdminCouponsPage() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-premium min-w-[560px]">
+            <table className="table-premium table-responsive min-w-[560px]">
               <thead>
                 <tr>
                   <th>Code</th>
@@ -154,7 +154,7 @@ export default function AdminCouponsPage() {
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2" data-label="Code">
                       <input
                         value={r.code}
                         onChange={(e) => updateRow(i, { code: e.target.value.toUpperCase() })}
@@ -162,7 +162,7 @@ export default function AdminCouponsPage() {
                         placeholder="ABO10"
                       />
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2" data-label="Discount %">
                       <input
                         type="number"
                         value={r.discount_percent}
@@ -172,7 +172,7 @@ export default function AdminCouponsPage() {
                         className="admin-input text-sm w-full"
                       />
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2" data-label="Min Subtotal (৳)">
                       <input
                         type="number"
                         value={r.min_subtotal}
@@ -181,7 +181,7 @@ export default function AdminCouponsPage() {
                         className="admin-input text-sm w-full"
                       />
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-4 py-2" data-label="Active">
                       <label className="inline-flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"

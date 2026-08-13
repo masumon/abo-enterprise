@@ -152,7 +152,7 @@ export default function NewsletterAdminPage() {
                 <div className="flex items-center gap-2 ml-4">
                   <button
                     onClick={() => handleCopyEmail(sub.email)}
-                    className="p-1.5 rounded hover:bg-gray-200 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="p-1.5 rounded hover:bg-gray-200 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     title="Copy email"
                   >
                     {copiedEmail === sub.email ? (
@@ -163,7 +163,7 @@ export default function NewsletterAdminPage() {
                   </button>
                   <button
                     onClick={() => setRemoveTarget(sub)}
-                    className="p-1.5 rounded hover:bg-red-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="p-1.5 rounded hover:bg-red-100 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
                     title="Remove subscriber"
                   >
                     <Trash2 className="w-4 h-4 text-red-600" />

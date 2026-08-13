@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus, Trash2, ArrowUp, ArrowDown, Save, Loader2, Languages } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import HomepageSectionNav from "@/components/admin/HomepageSectionNav";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { adminApi, adminBlogApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
@@ -81,13 +82,19 @@ export default function AdminAnnouncementsPage() {
     adminApi
       .getSettings()
       .then((r) => setItems(getAnnouncements(r.data.data ?? {}, FALLBACK)))
-      .catch(() => setItems([]))
+      .catch((err) => { setItems([]); toast("error", apiErrorMessage(err, "Failed to load announcements")); })
       .finally(() => setLoading(false));
   }, []);
 
   const update = (i: number, patch: Partial<CmsAnnouncement>) =>
     setItems((list) => list.map((it, idx) => (idx === i ? { ...it, ...patch } : it)));
+  const [deleteIndex, setDeleteIndex] = useState<number | null>(null);
   const remove = (i: number) => setItems((list) => list.filter((_, idx) => idx !== i));
+  const performRemove = () => {
+    if (deleteIndex === null) return;
+    remove(deleteIndex);
+    setDeleteIndex(null);
+  };
   const move = (i: number, dir: -1 | 1) =>
     setItems((list) => {
       const j = i + dir;
@@ -177,7 +184,7 @@ export default function AdminAnnouncementsPage() {
                 <div className="flex items-center gap-1">
                   <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="w-8 h-8 rounded-lg hover:bg-brand-50 dark:hover:bg-white/10 flex items-center justify-center disabled:opacity-30" aria-label="Move up"><ArrowUp className="w-4 h-4" /></button>
                   <button type="button" onClick={() => move(i, 1)} disabled={i === items.length - 1} className="w-8 h-8 rounded-lg hover:bg-brand-50 dark:hover:bg-white/10 flex items-center justify-center disabled:opacity-30" aria-label="Move down"><ArrowDown className="w-4 h-4" /></button>
-                  <button type="button" onClick={() => remove(i)} className="w-8 h-8 rounded-lg hover:bg-red-50 text-red-500 flex items-center justify-center" aria-label="Delete"><Trash2 className="w-4 h-4" /></button>
+                  <button type="button" onClick={() => setDeleteIndex(i)} className="w-8 h-8 rounded-lg hover:bg-red-50 text-red-500 flex items-center justify-center" aria-label="Delete"><Trash2 className="w-4 h-4" /></button>
                 </div>
               </div>
             </div>
@@ -189,6 +196,16 @@ export default function AdminAnnouncementsPage() {
           </button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={deleteIndex !== null}
+        title="Delete this announcement?"
+        message="It will stop showing on the site immediately after you save."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={performRemove}
+        onCancel={() => setDeleteIndex(null)}
+      />
     </div>
   );
 }

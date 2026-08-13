@@ -77,10 +77,10 @@ export default function AdminSystemEventsPage() {
   return (
     <div className="space-y-6 max-w-5xl">
       <AdminPageHeader
-        title="System Events"
-        titleBn="সিস্টেম ইভেন্ট"
-        description={`${total} total — persistent log of failed logins, failed emails, and runtime errors (survives restarts)`}
-        descriptionBn={`${total}টি — ব্যর্থ লগইন, ব্যর্থ ইমেইল এবং রানটাইম এরর-এর স্থায়ী লগ`}
+        title="System Events (technical problems)"
+        titleBn="সিস্টেম ইভেন্ট (কারিগরি সমস্যা)"
+        description={`${total} total — failed logins, failed emails, and runtime errors. This is about what went wrong technically, not what a staff member did (see Audit Logs for that).`}
+        descriptionBn={`${total}টি — ব্যর্থ লগইন, ব্যর্থ ইমেইল এবং রানটাইম এরর। এটি কারিগরি সমস্যার লগ, স্টাফ কী করেছে তার নয় (সেটার জন্য Audit Logs দেখুন)।`}
         actions={
           <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-3 py-2 text-brand-700">
             <History className="w-4 h-4" />
@@ -121,7 +121,7 @@ export default function AdminSystemEventsPage() {
       ) : (
         <div className="admin-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="table-premium min-w-[600px]">
+            <table className="table-premium table-responsive min-w-[600px]">
               <thead>
                 <tr>
                   <th>Time</th>
@@ -134,20 +134,20 @@ export default function AdminSystemEventsPage() {
               <tbody>
                 {events.map((e) => (
                   <tr key={e.id}>
-                    <td className="text-gray-500 text-xs whitespace-nowrap">
+                    <td className="text-gray-500 text-xs whitespace-nowrap" data-label="Time">
                       {new Date(e.created_at).toLocaleString("en-BD", {
                         year: "numeric", month: "short", day: "numeric",
                         hour: "2-digit", minute: "2-digit",
                       })}
                     </td>
-                    <td>
+                    <td data-label="Severity">
                       <span className={`badge text-xs font-semibold ${SEVERITY_STYLE[e.severity] ?? SEVERITY_STYLE.info}`}>
                         {e.severity}
                       </span>
                     </td>
-                    <td className="text-gray-700">{e.event_type.replace(/_/g, " ")}</td>
-                    <td className="text-xs text-gray-500">{e.source}</td>
-                    <td className="text-sm text-gray-700 max-w-md truncate" title={e.message}>{e.message}</td>
+                    <td className="text-gray-700" data-label="Type">{e.event_type.replace(/_/g, " ")}</td>
+                    <td className="text-xs text-gray-500" data-label="Source">{e.source}</td>
+                    <td className="text-sm text-gray-700 max-w-md truncate" data-label="Message" title={e.message}>{e.message}</td>
                   </tr>
                 ))}
               </tbody>

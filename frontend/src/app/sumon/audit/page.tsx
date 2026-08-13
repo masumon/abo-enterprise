@@ -90,10 +90,10 @@ export default function AdminAuditPage() {
   return (
     <div className="space-y-6 max-w-5xl">
       <AdminPageHeader
-        title="Audit Logs"
-        titleBn="অডিট লগ"
-        description={`${total} total entries — review activity, entity changes, and admin actions`}
-        descriptionBn={`${total}টি এন্ট্রি — activity, entity change এবং admin action পর্যালোচনা করুন`}
+        title="Audit Logs (staff activity)"
+        titleBn="অডিট লগ (স্টাফ কার্যকলাপ)"
+        description={`${total} total entries — who (which admin) did what (created, changed, deleted, logged in) and when. This is about staff actions, not technical errors (see System Events for that).`}
+        descriptionBn={`${total}টি এন্ট্রি — কোন অ্যাডমিন কী করেছে (তৈরি, পরিবর্তন, মুছে ফেলা, লগইন) এবং কখন। এটি স্টাফ কার্যকলাপের লগ, কারিগরি সমস্যার নয় (সেটার জন্য System Events দেখুন)।`}
         actions={
           <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-3 py-2 text-brand-700">
             <ScrollText className="w-4 h-4" />
@@ -132,32 +132,32 @@ export default function AdminAuditPage() {
       ) : (
         <div className="admin-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="table-premium min-w-[500px]">
+            <table className="table-premium table-responsive min-w-[500px]">
               <thead>
                 <tr>
                   <th>Time</th>
                   <th>Action</th>
                   <th>Entity</th>
                   <th>Record ID</th>
-                  <th className="hidden md:table-cell">Admin</th>
+                  <th>Admin</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((log) => (
                   <tr key={log.id}>
-                    <td className="text-gray-500 text-xs whitespace-nowrap">
+                    <td className="text-gray-500 text-xs whitespace-nowrap" data-label="Time">
                       {new Date(log.created_at).toLocaleString("en-BD", {
                         year: "numeric", month: "short", day: "numeric",
                         hour: "2-digit", minute: "2-digit",
                       })}
                     </td>
-                    <td>
+                    <td data-label="Action">
                       <span className={`badge text-xs font-semibold ${actionBadgeClass(log.action)}`}>
                         {log.action}
                       </span>
                     </td>
-                    <td className="text-gray-700 capitalize">{log.entity_type.replace(/_/g, " ")}</td>
-                    <td>
+                    <td className="text-gray-700 capitalize" data-label="Entity">{log.entity_type.replace(/_/g, " ")}</td>
+                    <td data-label="Record ID">
                       {log.entity_id ? (
                         <span
                           className="text-xs text-gray-400 font-mono cursor-default"
@@ -167,7 +167,7 @@ export default function AdminAuditPage() {
                         </span>
                       ) : "—"}
                     </td>
-                    <td className="text-xs text-gray-500 hidden md:table-cell">{log.admin_email ?? "—"}</td>
+                    <td className="text-xs text-gray-500" data-label="Admin">{log.admin_email ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>

@@ -283,7 +283,7 @@ export default function AdminInvoicesPage() {
                   ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />
                   : <AlertCircle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" />}
                 <span className={c.ok ? "text-gray-600" : "text-red-700 font-medium"}>
-                  <span className="font-mono">{c.check}</span>: {c.detail}
+                  <span className="font-medium">{c.check.replace(/_/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase())}</span>: {c.detail}
                 </span>
               </li>
             ))}
@@ -303,13 +303,13 @@ export default function AdminInvoicesPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm table-responsive">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/60">
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Invoice</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Customer</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Total</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Date</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
                 </tr>
               </thead>
@@ -320,21 +320,21 @@ export default function AdminInvoicesPage() {
                     className="hover:bg-gray-50/50 cursor-pointer transition-colors"
                     onClick={() => setDetail(inv)}
                   >
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3" data-label="Invoice">
                       <p className="font-medium text-gray-900">{inv.invoice_number}</p>
                       {inv.payment_method && (
                         <p className="text-xs text-gray-400 capitalize">{inv.payment_method.replace(/_/g, " ")}</p>
                       )}
                     </td>
-                    <td className="px-5 py-3 hidden sm:table-cell">
+                    <td className="px-5 py-3" data-label="Customer">
                       <p className="text-gray-900">{inv.customer_name}</p>
                       <p className="text-xs text-gray-400">{inv.customer_email ?? inv.customer_phone ?? "—"}</p>
                     </td>
-                    <td className="px-5 py-3 font-semibold text-gray-900">{formatPrice(inv.total)}</td>
-                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs hidden md:table-cell">
+                    <td className="px-5 py-3 font-semibold text-gray-900" data-label="Total">{formatPrice(inv.total)}</td>
+                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs" data-label="Date">
                       {new Date(inv.created_at).toLocaleDateString("en-BD")}
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3" data-label="Status">
                       <StatusBadge status={inv.payment_status} />
                     </td>
                   </tr>

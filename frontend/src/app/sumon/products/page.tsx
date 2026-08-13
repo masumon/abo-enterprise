@@ -7,6 +7,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
+import Link from "next/link";
 import { productsApi, categoriesApi, adminApi, adminBlogApi, downloadCsv, downloadPdf } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -856,7 +857,28 @@ export default function AdminProductsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
-                  <input {...register("stock_quantity")} type="number" className="input" placeholder="0" />
+                  {editing ? (
+                    <>
+                      <input
+                        type="number"
+                        value={editing.stock_quantity ?? 0}
+                        disabled
+                        className="input bg-gray-50 text-gray-500 cursor-not-allowed"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        Stock is changed from{" "}
+                        <Link href="/sumon/inventory" className="text-brand-600 hover:underline">
+                          Inventory → Stock Adjustment
+                        </Link>{" "}
+                        so every change keeps a reason and a history record.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <input {...register("stock_quantity")} type="number" className="input" placeholder="0" />
+                      <p className="text-xs text-gray-400 mt-1">Starting stock for this new product. Later changes are made from Inventory.</p>
+                    </>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Badge</label>

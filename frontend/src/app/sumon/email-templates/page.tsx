@@ -2,12 +2,13 @@
 
 import { useEffect, useState, useCallback } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
-import { Loader2, Mail, Plus, Pencil, Trash2, X, CheckCircle, XCircle, Eye, Code } from "lucide-react";
+import { Loader2, Mail, Plus, Pencil, Ban, X, CheckCircle, XCircle, Eye, Code } from "lucide-react";
 import { emailTemplatesAdminApi, type EmailTemplateRecord } from "@/lib/api";
 import TranslateButton from "@/components/admin/TranslateButton";
 import { translateBnToEn } from "@/lib/translate";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import AdminEmptyState from "@/components/admin/AdminEmptyState";
 
 const EMPTY: Omit<EmailTemplateRecord, "id" | "created_at" | "updated_at"> = {
   template_name: "",
@@ -170,15 +171,15 @@ export default function AdminEmailTemplatesPage() {
         {loading ? (
           <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
         ) : templates.length === 0 ? (
-          <div className="p-12 text-center text-gray-400">No email templates yet</div>
+          <AdminEmptyState icon={Mail} title="No email templates yet" description="Create your first template to customize the emails customers receive." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-premium min-w-[560px]">
+            <table className="table-premium table-responsive min-w-[560px]">
               <thead>
                 <tr>
                   <th>Template</th>
                   <th>Subject (EN)</th>
-                  <th className="hidden sm:table-cell">Variables</th>
+                  <th>Variables</th>
                   <th>Status</th>
                   <th />
                 </tr>
@@ -186,10 +187,10 @@ export default function AdminEmailTemplatesPage() {
               <tbody>
                 {templates.map((t) => (
                   <tr key={t.id} onClick={() => openEdit(t)} className="cursor-pointer hover:bg-brand-50/40 transition-colors">
-                    <td className="font-mono text-sm">{t.template_name}</td>
-                    <td className="text-gray-700 max-w-xs truncate">{t.subject_en}</td>
-                    <td className="text-xs text-gray-400 hidden sm:table-cell">{(t.variables ?? []).join(", ") || "—"}</td>
-                    <td onClick={(e) => e.stopPropagation()}>
+                    <td className="font-mono text-sm" data-label="Template">{t.template_name}</td>
+                    <td className="text-gray-700 max-w-xs truncate" data-label="Subject (EN)">{t.subject_en}</td>
+                    <td className="text-xs text-gray-400" data-label="Variables">{(t.variables ?? []).join(", ") || "—"}</td>
+                    <td data-label="Status" onClick={(e) => e.stopPropagation()}>
                       <button onClick={() => toggleActive(t)} title={t.is_active ? "Deactivate" : "Activate"}>
                         {t.is_active
                           ? <CheckCircle className="w-5 h-5 text-green-500" />
@@ -204,9 +205,11 @@ export default function AdminEmailTemplatesPage() {
                         <button
                           onClick={() => handleDelete(t.id, t.template_name)}
                           disabled={deletingId === t.id}
-                          className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 disabled:opacity-40"
+                          aria-label={`Deactivate ${t.template_name} template`}
+                          title="Deactivate (keeps the template and its history)"
+                          className="p-1.5 text-gray-400 hover:text-amber-600 rounded-lg hover:bg-amber-50 disabled:opacity-40"
                         >
-                          {deletingId === t.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          {deletingId === t.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
                         </button>
                       </div>
                     </td>

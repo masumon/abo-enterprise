@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell, CheckCheck, Loader2, X } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { notificationsApi, type NotificationRecord } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
@@ -49,7 +50,12 @@ export default function AdminNotificationsPage() {
     }
   };
 
-  const dismiss = async (id: string) => {
+  const [dismissTarget, setDismissTarget] = useState<string | null>(null);
+
+  const performDismiss = async () => {
+    const id = dismissTarget;
+    if (!id) return;
+    setDismissTarget(null);
     try {
       await notificationsApi.dismiss(id);
       setItems((prev) => prev.filter((n) => n.id !== id));
@@ -136,7 +142,7 @@ export default function AdminNotificationsPage() {
                     <CheckCheck className="w-3.5 h-3.5" />
                   </button>
                 )}
-                <button type="button" onClick={() => dismiss(n.id)} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400" aria-label="Dismiss">
+                <button type="button" onClick={() => setDismissTarget(n.id)} className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400" aria-label="Dismiss">
                   <X className="w-4 h-4" />
                 </button>
               </div>
@@ -152,6 +158,16 @@ export default function AdminNotificationsPage() {
           <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">Next</button>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!dismissTarget}
+        title="Dismiss this notification?"
+        message="It will be removed from this list. This can't be undone."
+        confirmLabel="Dismiss"
+        variant="warning"
+        onConfirm={() => void performDismiss()}
+        onCancel={() => setDismissTarget(null)}
+      />
     </div>
   );
 }

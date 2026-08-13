@@ -8,6 +8,7 @@ import Link from "next/link";
 import { FileText, Loader2, Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { adminPagesApi, type PageRecord } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
@@ -96,8 +97,13 @@ export default function AdminPagesPage() {
     }
   };
 
-  const handleDelete = async (p: PageRecord) => {
-    if (!confirm(`Delete "${p.title_en}"? This can't be undone from the admin UI.`)) return;
+  const [deleteTarget, setDeleteTarget] = useState<PageRecord | null>(null);
+  const handleDelete = (p: PageRecord) => setDeleteTarget(p);
+
+  const performDelete = async () => {
+    const p = deleteTarget;
+    if (!p) return;
+    setDeleteTarget(null);
     try {
       await adminPagesApi.delete(p.id);
       toast("success", "Page deleted");
@@ -141,7 +147,7 @@ export default function AdminPagesPage() {
       ) : (
         <div className="admin-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="table-premium min-w-[600px]">
+            <table className="table-premium table-responsive min-w-[600px]">
               <thead>
                 <tr>
                   <th>Title</th>
@@ -154,15 +160,15 @@ export default function AdminPagesPage() {
               <tbody>
                 {pages.map((p) => (
                   <tr key={p.id}>
-                    <td className="font-medium text-gray-800">{p.title_en}</td>
-                    <td className="text-xs text-gray-500 font-mono">/{p.slug}</td>
-                    <td>
+                    <td className="font-medium text-gray-800" data-label="Title">{p.title_en}</td>
+                    <td className="text-xs text-gray-500 font-mono" data-label="Slug">/{p.slug}</td>
+                    <td data-label="Status">
                       <span className={cn("badge text-xs font-semibold", p.status === "published" ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-600")}>
                         {p.status}
                       </span>
                     </td>
-                    <td className="text-xs text-gray-500">{new Date(p.updated_at).toLocaleDateString("en-BD")}</td>
-                    <td className="text-right">
+                    <td className="text-xs text-gray-500" data-label="Updated">{new Date(p.updated_at).toLocaleDateString("en-BD")}</td>
+                    <td className="text-right" data-label="Actions">
                       <div className="flex items-center justify-end gap-1">
                         {p.status === "published" && (
                           <Link href={`/${p.slug}`} target="_blank" className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400" aria-label="View live">
@@ -251,6 +257,16 @@ export default function AdminPagesPage() {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title={deleteTarget ? `Delete "${deleteTarget.title_en}"?` : ""}
+        message="This can't be undone from the admin UI."
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={() => void performDelete()}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
