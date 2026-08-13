@@ -440,7 +440,7 @@ export default function AdminAssistantPage() {
               <p className="text-center text-gray-500 py-16 text-sm">No conversations yet</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm table-responsive">
                   <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                     <tr>
                       <th className="text-left px-4 py-3">Session</th>
@@ -454,15 +454,15 @@ export default function AdminAssistantPage() {
                   <tbody className="divide-y divide-gray-50">
                     {conversations.map((c) => (
                       <tr key={c.id} className="hover:bg-gray-50/50">
-                        <td className="px-4 py-3 font-mono text-xs">{c.session_id.slice(0, 12)}…</td>
-                        <td className="px-4 py-3">
+                        <td className="px-4 py-3 font-mono text-xs" data-label="Session">{c.session_id.slice(0, 12)}…</td>
+                        <td className="px-4 py-3" data-label="Customer">
                           <div>{c.customer_name || "—"}</div>
                           <div className="text-xs text-gray-400">{c.customer_phone || ""}</div>
                         </td>
-                        <td className="px-4 py-3">{c.last_intent ? <StatusBadge status={c.last_intent} /> : "—"}</td>
-                        <td className="px-4 py-3">{c.message_count}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{new Date(c.updated_at).toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-4 py-3" data-label="Intent">{c.last_intent ? <StatusBadge status={c.last_intent} /> : "—"}</td>
+                        <td className="px-4 py-3" data-label="Messages">{c.message_count}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500" data-label="Updated">{new Date(c.updated_at).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right" data-label="Actions">
                           <div className="flex items-center justify-end gap-1">
                             <button onClick={() => viewConversation(c.id)} className="p-1.5 rounded-lg hover:bg-brand-50 text-brand-600" title="View">
                               <span className="sr-only">View conversation</span>
@@ -543,7 +543,7 @@ export default function AdminAssistantPage() {
               <p className="text-center text-gray-500 py-16 text-sm">No automation logs yet</p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-sm table-responsive">
                   <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                     <tr>
                       <th className="text-left px-4 py-3">Action</th>
@@ -557,12 +557,12 @@ export default function AdminAssistantPage() {
                   <tbody className="divide-y divide-gray-50">
                     {logs.map((log) => (
                       <tr key={log.id} className="hover:bg-gray-50/50">
-                        <td className="px-4 py-3 font-medium">{log.action}</td>
-                        <td className="px-4 py-3">{log.intent || "—"}</td>
-                        <td className="px-4 py-3"><StatusBadge status={log.status} /></td>
-                        <td className="px-4 py-3 font-mono text-xs">{log.session_id?.slice(0, 10) || "—"}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500">{new Date(log.created_at).toLocaleString()}</td>
-                        <td className="px-4 py-3 text-right text-xs font-medium text-emerald-600">Retained</td>
+                        <td className="px-4 py-3 font-medium" data-label="Action">{log.action}</td>
+                        <td className="px-4 py-3" data-label="Intent">{log.intent || "—"}</td>
+                        <td className="px-4 py-3" data-label="Status"><StatusBadge status={log.status} /></td>
+                        <td className="px-4 py-3 font-mono text-xs" data-label="Session">{log.session_id?.slice(0, 10) || "—"}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500" data-label="Time">{new Date(log.created_at).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right text-xs font-medium text-emerald-600" data-label="Retention">Retained</td>
                       </tr>
                     ))}
                   </tbody>

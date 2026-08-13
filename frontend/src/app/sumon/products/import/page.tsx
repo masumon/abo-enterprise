@@ -288,7 +288,7 @@ export default function AdminProductImportPage() {
 
           {/* Preview table */}
           <div className="overflow-x-auto -mx-1">
-            <table className="w-full text-sm min-w-[640px]">
+            <table className="w-full text-sm min-w-[640px] table-responsive">
               <thead>
                 <tr className="text-left text-[11px] uppercase text-gray-400 border-b border-[var(--line)]">
                   <th className="py-2 px-2">সারি</th>
@@ -306,13 +306,13 @@ export default function AdminProductImportPage() {
                     "border-b border-gray-50 dark:border-white/5 align-top",
                     r.errors.length > 0 ? "bg-red-50/60 dark:bg-red-900/10" : r.warnings.length > 0 ? "bg-amber-50/40 dark:bg-amber-900/10" : ""
                   )}>
-                    <td className="py-2 px-2 text-muted">{r.row}</td>
-                    <td className="py-2 px-2"><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${ACTION_BADGE[r.action]}`}>{r.action}</span></td>
-                    <td className="py-2 px-2 font-mono text-xs">{r.slug || "—"}</td>
-                    <td className="py-2 px-2">{r.name || "—"}</td>
-                    <td className="py-2 px-2 text-xs">{r.category || "—"}</td>
-                    <td className="py-2 px-2 font-mono text-xs">{r.sku || "—"}</td>
-                    <td className="py-2 px-2 text-xs">
+                    <td className="py-2 px-2 text-muted" data-label="সারি">{r.row}</td>
+                    <td className="py-2 px-2" data-label="অ্যাকশন"><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${ACTION_BADGE[r.action]}`}>{r.action}</span></td>
+                    <td className="py-2 px-2 font-mono text-xs" data-label="Slug">{r.slug || "—"}</td>
+                    <td className="py-2 px-2" data-label="নাম">{r.name || "—"}</td>
+                    <td className="py-2 px-2 text-xs" data-label="ক্যাটাগরি">{r.category || "—"}</td>
+                    <td className="py-2 px-2 font-mono text-xs" data-label="SKU">{r.sku || "—"}</td>
+                    <td className="py-2 px-2 text-xs" data-label="সমস্যা">
                       {r.errors.map((e, i) => <p key={`e${i}`} className="text-red-600 flex items-start gap-1"><XCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />{e}</p>)}
                       {r.warnings.map((w, i) => <p key={`w${i}`} className="text-amber-600 flex items-start gap-1"><AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />{w}</p>)}
                       {r.errors.length === 0 && r.warnings.length === 0 && <span className="text-emerald-500">✓</span>}
@@ -369,7 +369,7 @@ export default function AdminProductImportPage() {
           <p className="text-sm text-muted">এখনো কোনো ইমপোর্ট হয়নি। (হিস্টরি দেখাতে ডেটাবেসে <code className="text-xs">032_product_import_jobs.sql</code> রান করা থাকতে হবে।)</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[560px]">
+            <table className="w-full text-sm min-w-[560px] table-responsive">
               <thead>
                 <tr className="text-left text-[11px] uppercase text-gray-400 border-b border-[var(--line)]">
                   <th className="py-2 px-2">তারিখ</th><th className="py-2 px-2">ফাইল</th>
@@ -380,12 +380,12 @@ export default function AdminProductImportPage() {
               <tbody>
                 {history.map((j) => (
                   <tr key={j.id} className="border-b border-gray-50 dark:border-white/5">
-                    <td className="py-2 px-2 text-xs text-muted">{j.created_at ? new Date(j.created_at).toLocaleString() : "—"}</td>
-                    <td className="py-2 px-2 text-xs truncate max-w-[160px]" title={j.filename ?? ""}>{j.filename || "—"}</td>
-                    <td className="py-2 px-2 text-emerald-600 font-semibold">{j.created}</td>
-                    <td className="py-2 px-2 text-brand-600 font-semibold">{j.updated}</td>
-                    <td className="py-2 px-2 text-muted">{j.skipped}</td>
-                    <td className="py-2 px-2 text-red-600">{j.errors}</td>
+                    <td className="py-2 px-2 text-xs text-muted" data-label="তারিখ">{j.created_at ? new Date(j.created_at).toLocaleString() : "—"}</td>
+                    <td className="py-2 px-2 text-xs truncate max-w-[160px]" data-label="ফাইল" title={j.filename ?? ""}>{j.filename || "—"}</td>
+                    <td className="py-2 px-2 text-emerald-600 font-semibold" data-label="তৈরি">{j.created}</td>
+                    <td className="py-2 px-2 text-brand-600 font-semibold" data-label="আপডেট">{j.updated}</td>
+                    <td className="py-2 px-2 text-muted" data-label="বাদ">{j.skipped}</td>
+                    <td className="py-2 px-2 text-red-600" data-label="এরর">{j.errors}</td>
                   </tr>
                 ))}
               </tbody>
