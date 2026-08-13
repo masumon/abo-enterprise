@@ -616,6 +616,37 @@
   .table-premium td { @apply px-5 py-4 border-b border-gray-100/70 align-top; }
   .table-premium tbody tr { @apply hover:bg-brand-50/30 transition-colors duration-150; }
 
+  /* ── Responsive table → stacked cards on phones ──
+     Opt-in via `.table-responsive` alongside `.table-premium`. Each <td> that
+     should show a label on mobile needs `data-label="Column Name"`; cells with
+     no data-label (e.g. an actions column) render without one. Tables that are
+     genuinely matrix-shaped (many columns compared side by side, e.g. a
+     permissions grid) should keep horizontal scroll instead — don't apply this
+     class to those. */
+  @media (max-width: 640px) {
+    .table-responsive thead { display: none; }
+    .table-responsive, .table-responsive tbody, .table-responsive tr, .table-responsive td {
+      display: block;
+      width: 100%;
+    }
+    .table-responsive tbody tr {
+      @apply rounded-xl border border-gray-100 mb-3;
+    }
+    .table-responsive td {
+      @apply flex items-center justify-between gap-3 px-3 py-2 border-b-0;
+      border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+      text-align: right;
+    }
+    .table-responsive td:last-child { border-bottom: 0; }
+    .table-responsive td[data-label]::before {
+      content: attr(data-label);
+      @apply text-xs font-semibold text-gray-400 uppercase tracking-wide;
+      text-align: left;
+      margin-right: auto;
+      padding-right: 0.75rem;
+    }
+  }
+
   /* ── Shadow card (admin) ── */
   .admin-card {
     @apply bg-white rounded-2xl border border-gray-100/90 overflow-hidden;

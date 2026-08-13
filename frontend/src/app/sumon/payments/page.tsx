@@ -307,7 +307,7 @@ export default function AdminPaymentsPage() {
             <p className="p-8 text-center text-gray-500">No reconciliation records yet</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="table-premium min-w-[600px]">
+              <table className="table-premium table-responsive min-w-[600px]">
                 <thead>
                   <tr>
                     <th>Date</th>
@@ -320,15 +320,15 @@ export default function AdminPaymentsPage() {
                 <tbody>
                   {reconRecords.map((r) => (
                     <tr key={r.id}>
-                      <td className="text-sm text-gray-600">{new Date(r.reconciliation_date).toLocaleDateString("en-BD")}</td>
-                      <td className="capitalize">{r.payment_gateway}</td>
-                      <td className="text-sm">
+                      <td className="text-sm text-gray-600" data-label="Date">{new Date(r.reconciliation_date).toLocaleDateString("en-BD")}</td>
+                      <td className="capitalize" data-label="Gateway">{r.payment_gateway}</td>
+                      <td className="text-sm" data-label="Transactions">
                         <span className="text-green-600">{r.successful_count} ok</span>
                         {r.failed_count > 0 && <span className="text-red-500 ml-2">{r.failed_count} fail</span>}
                         {r.pending_count > 0 && <span className="text-amber-600 ml-2">{r.pending_count} pending</span>}
                       </td>
-                      <td className="font-medium">৳{r.total_amount.toLocaleString()}</td>
-                      <td>
+                      <td className="font-medium" data-label="Amount">৳{r.total_amount.toLocaleString()}</td>
+                      <td data-label="Status">
                         <span className="badge text-xs capitalize">{r.reconciliation_status}</span>
                       </td>
                     </tr>
@@ -365,26 +365,26 @@ export default function AdminPaymentsPage() {
             <div className="p-12 text-center text-gray-400">No transactions found</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="table-premium min-w-[520px]">
+              <table className="table-premium table-responsive min-w-[520px]">
                 <thead>
                   <tr>
                     <th>Gateway</th>
-                    <th className="hidden sm:table-cell">Reference</th>
-                    <th className="hidden md:table-cell">Order</th>
+                    <th>Reference</th>
+                    <th>Order</th>
                     <th>Amount</th>
                     <th>Status</th>
-                    <th className="hidden sm:table-cell">Date</th>
+                    <th>Date</th>
                   </tr>
                 </thead>
                 <tbody>
                   {transactions.map((t) => (
                     <tr key={`${t.gateway}-${t.id}`}>
-                      <td className="capitalize font-medium">{t.gateway}</td>
-                      <td className="font-mono text-xs text-gray-600 hidden sm:table-cell">{t.reference_id}</td>
-                      <td className="text-xs text-gray-500 hidden md:table-cell">{t.order_id ? t.order_id.slice(0, 8) + "…" : "—"}</td>
-                      <td className="font-semibold">৳{t.amount.toLocaleString()}</td>
-                      <td><span className="badge bg-gray-100 text-gray-700 capitalize">{t.status}</span></td>
-                      <td className="text-xs text-gray-500 hidden sm:table-cell">{new Date(t.created_at).toLocaleString("en-BD")}</td>
+                      <td className="capitalize font-medium" data-label="Gateway">{t.gateway}</td>
+                      <td className="font-mono text-xs text-gray-600" data-label="Reference">{t.reference_id}</td>
+                      <td className="text-xs text-gray-500" data-label="Order">{t.order_id ? t.order_id.slice(0, 8) + "…" : "—"}</td>
+                      <td className="font-semibold" data-label="Amount">৳{t.amount.toLocaleString()}</td>
+                      <td data-label="Status"><span className="badge bg-gray-100 text-gray-700 capitalize">{t.status}</span></td>
+                      <td className="text-xs text-gray-500" data-label="Date">{new Date(t.created_at).toLocaleString("en-BD")}</td>
                     </tr>
                   ))}
                 </tbody>

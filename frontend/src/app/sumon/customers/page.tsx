@@ -137,18 +137,18 @@ export default function CustomersPage() {
           <div className="p-12 text-center text-gray-400"><Users className="w-8 h-8 mx-auto mb-2 opacity-50" /><p>{bn ? "কোনো গ্রাহক পাওয়া যায়নি" : "No customer records found"}</p></div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-premium min-w-[1040px]">
+            <table className="table-premium table-responsive min-w-[1040px]">
               <thead><tr>
                 <th>{bn ? "গ্রাহক" : "Customer"}</th><th>{bn ? "যোগাযোগ" : "Contact"}</th><th>{bn ? "অর্ডার" : "Orders"}</th><th>{bn ? "বুকিং" : "Bookings"}</th><th>{bn ? "লিড" : "Leads"}</th><th>{bn ? "অর্ডার মূল্য" : "Order value"}</th><th>{bn ? "বুকিং মূল্য" : "Booking value"}</th><th>{bn ? "সর্বশেষ" : "Last activity"}</th><th>{bn ? "অ্যাকশন" : "Action"}</th>
               </tr></thead>
               <tbody>{rows.map((row) => (
                 <tr key={row.id}>
-                  <td><button type="button" onClick={() => void openCustomer(row)} className="text-left"><div className="font-medium text-gray-900 hover:underline">{row.name || "—"}</div>{row.company && <div className="text-xs text-gray-400">{row.company}</div>}</button></td>
-                  <td><div className="text-sm text-gray-700">{row.phone}</div><div className="text-xs text-gray-400">{row.email || "—"}</div></td>
-                  <td>{row.order_count}</td><td>{row.booking_count}</td><td>{row.lead_count}</td>
-                  <td className="font-medium">{formatPrice(row.order_value)}</td><td className="font-medium">{formatPrice(row.booking_value)}</td>
-                  <td className="text-xs text-gray-500">{row.last_activity ? new Date(row.last_activity).toLocaleString("en-BD") : "—"}</td>
-                  <td><button type="button" onClick={() => void openCustomer(row)} className="admin-btn-secondary px-3 py-2 inline-flex items-center gap-2"><History className="w-4 h-4" />{bn ? "দেখুন" : "View"}</button></td>
+                  <td data-label={bn ? "গ্রাহক" : "Customer"}><button type="button" onClick={() => void openCustomer(row)} className="text-left"><div className="font-medium text-gray-900 hover:underline">{row.name || "—"}</div>{row.company && <div className="text-xs text-gray-400">{row.company}</div>}</button></td>
+                  <td data-label={bn ? "যোগাযোগ" : "Contact"}><div className="text-sm text-gray-700">{row.phone}</div><div className="text-xs text-gray-400">{row.email || "—"}</div></td>
+                  <td data-label={bn ? "অর্ডার" : "Orders"}>{row.order_count}</td><td data-label={bn ? "বুকিং" : "Bookings"}>{row.booking_count}</td><td data-label={bn ? "লিড" : "Leads"}>{row.lead_count}</td>
+                  <td className="font-medium" data-label={bn ? "অর্ডার মূল্য" : "Order value"}>{formatPrice(row.order_value)}</td><td className="font-medium" data-label={bn ? "বুকিং মূল্য" : "Booking value"}>{formatPrice(row.booking_value)}</td>
+                  <td className="text-xs text-gray-500" data-label={bn ? "সর্বশেষ" : "Last activity"}>{row.last_activity ? new Date(row.last_activity).toLocaleString("en-BD") : "—"}</td>
+                  <td data-label={bn ? "অ্যাকশন" : "Action"}><button type="button" onClick={() => void openCustomer(row)} className="admin-btn-secondary px-3 py-2 inline-flex items-center gap-2"><History className="w-4 h-4" />{bn ? "দেখুন" : "View"}</button></td>
                 </tr>
               ))}</tbody>
             </table>

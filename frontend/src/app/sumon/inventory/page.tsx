@@ -8,6 +8,7 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 import StatusBadge from "@/components/admin/StatusBadge";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import AdminEmptyState from "@/components/admin/AdminEmptyState";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 
@@ -137,11 +138,13 @@ export default function AdminInventoryPage() {
             <button className="p-2 rounded-lg border border-border" onClick={loadInventory} aria-label="Refresh"><RefreshCw className="w-4 h-4" /></button>
           </AdminToolbar>
           <div className="rounded-xl border border-border overflow-x-auto">
-            <table className="w-full text-sm"><thead><tr className="border-b border-border text-left"><th className="p-3">Product</th><th className="p-3">SKU</th><th className="p-3">Brand</th><th className="p-3">Stock</th><th className="p-3">Threshold</th><th className="p-3">Action</th></tr></thead>
-              <tbody>{items.map((p) => <tr key={p.id} className="border-b border-border/60"><td className="p-3"><div className="font-medium">{p.name_en}</div><div className="text-xs text-muted">{p.name_bn}</div></td><td className="p-3">{p.sku || "—"}</td><td className="p-3">{p.brand || "—"}</td><td className="p-3"><span className="font-semibold">{p.stock_quantity}</span></td><td className="p-3">{p.low_stock_threshold}</td><td className="p-3"><button className="inline-flex items-center gap-1 px-2 py-1 rounded border border-border" onClick={() => openMovements(p)}><History className="w-3.5 h-3.5" /> History</button></td></tr>)}</tbody>
+            <table className="w-full text-sm table-responsive"><thead><tr className="border-b border-border text-left"><th className="p-3">Product</th><th className="p-3">SKU</th><th className="p-3">Brand</th><th className="p-3">Stock</th><th className="p-3">Threshold</th><th className="p-3">Action</th></tr></thead>
+              <tbody>{items.map((p) => <tr key={p.id} className="border-b border-border/60"><td className="p-3" data-label="Product"><div className="font-medium">{p.name_en}</div><div className="text-xs text-muted">{p.name_bn}</div></td><td className="p-3" data-label="SKU">{p.sku || "—"}</td><td className="p-3" data-label="Brand">{p.brand || "—"}</td><td className="p-3" data-label="Stock"><span className="font-semibold">{p.stock_quantity}</span></td><td className="p-3" data-label="Threshold">{p.low_stock_threshold}</td><td className="p-3" data-label="Action"><button className="inline-flex items-center gap-1 px-2 py-1 rounded border border-border" onClick={() => openMovements(p)}><History className="w-3.5 h-3.5" /> History</button></td></tr>)}</tbody>
             </table>
             {loading && <div className="p-8 flex items-center justify-center gap-2 text-muted"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>}
-            {!items.length && !loading && <div className="p-8 text-center text-muted">No inventory records found.</div>}
+            {!items.length && !loading && (
+              <div className="p-4"><AdminEmptyState icon={Package} title="No inventory records found" description="Add products first — stock levels appear here automatically." /></div>
+            )}
           </div>
 
           {selected && <div className="rounded-xl border border-border p-4 space-y-4">
@@ -160,7 +163,9 @@ export default function AdminInventoryPage() {
           <div className="flex items-center justify-between"><AdminToolbar><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" /><input className="pl-9 pr-3 py-2 rounded-lg border border-border bg-surface" placeholder="Search brands" value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && loadBrands()} /></div></AdminToolbar><button className="inline-flex items-center gap-2 rounded-lg bg-brand text-white px-3 py-2" onClick={() => openBrand()}><Plus className="w-4 h-4" /> Add brand</button></div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{brands.map((b) => <div key={b.id} className="rounded-xl border border-border p-4 space-y-3"><div className="flex items-start justify-between"><div className="flex items-center gap-3">{b.logo_url ? <img src={b.logo_url} alt="" className="w-10 h-10 rounded-lg object-contain border border-border" /> : <div className="w-10 h-10 rounded-lg bg-surface flex items-center justify-center"><Tags className="w-5 h-5 text-muted" /></div>}<div><div className="font-semibold">{b.name_en}</div><div className="text-xs text-muted">{b.name_bn || b.slug}</div></div></div><StatusBadge status={b.is_active ? "active" : "inactive"} /></div><div className="text-sm text-muted">Slug: {b.slug} · Products: {b.product_count}</div><div className="flex gap-2"><button className="px-2 py-1 rounded border border-border" onClick={() => openBrand(b)}>Edit</button><button className="px-2 py-1 rounded border border-border text-red-600" onClick={() => setArchiveBrand(b)}><Archive className="w-3.5 h-3.5 inline mr-1" />Archive</button></div></div>)}</div>
           {loading && <div className="p-8 flex items-center justify-center gap-2 text-muted"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>}
-          {!brands.length && !loading && <div className="p-8 text-center text-muted">No brands found.</div>}
+          {!brands.length && !loading && (
+            <AdminEmptyState icon={Tags} title="No brands found" description="Add your first brand to start organizing products by manufacturer." action={<button className="btn btn-brand btn-sm" onClick={() => openBrand()}>Add brand</button>} />
+          )}
         </>
       )}
 

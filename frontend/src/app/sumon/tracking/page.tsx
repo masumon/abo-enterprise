@@ -96,39 +96,39 @@ export default function AdminTrackingPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-premium min-w-[560px]">
+            <table className="table-premium table-responsive min-w-[560px]">
               <thead>
                 <tr>
                   <th>Order</th>
                   <th>Customer</th>
                   <th>Tracking ID</th>
                   <th>Courier Status</th>
-                  <th className="hidden sm:table-cell">Updated</th>
+                  <th>Updated</th>
                 </tr>
               </thead>
               <tbody>
                 {orders.map((o) => (
                   <tr key={o.id}>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3" data-label="Order">
                       <Link href={`/sumon/orders?open=${o.id}`} className="font-medium text-brand-600 hover:underline">
                         {o.order_number}
                       </Link>
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3" data-label="Customer">
                       <p className="text-gray-900">{o.customer_name}</p>
                       <p className="text-xs text-gray-400">{o.customer_phone}</p>
                     </td>
-                    <td className="px-5 py-3 text-gray-600">{o.courier_tracking_id || "—"}</td>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3 text-gray-600" data-label="Tracking ID">{o.courier_tracking_id || "—"}</td>
+                    <td className="px-5 py-3" data-label="Courier Status">
                       {o.courier_status ? (
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium capitalize ${STATUS_STYLE[o.courier_status] ?? "bg-gray-100 text-gray-600"}`}>
                           {o.courier_status.replace(/_/g, " ")}
                         </span>
                       ) : (
-                        <span className="text-xs text-gray-400">No status yet</span>
+                        <span className="text-xs text-gray-400" title="The courier hasn't sent an update yet — this is normal right after handoff, not a problem.">No status yet</span>
                       )}
                     </td>
-                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap hidden sm:table-cell">
+                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap" data-label="Updated">
                       {o.updated_at ? new Date(o.updated_at).toLocaleDateString("en-BD") : "—"}
                     </td>
                   </tr>

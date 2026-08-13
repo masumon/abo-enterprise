@@ -260,17 +260,17 @@ export default function AdminReviewsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[640px]">
+            <table className="w-full text-sm min-w-[640px] table-responsive">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/60">
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer</th>
                   <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Rating</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden sm:table-cell">Review</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Source</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider hidden md:table-cell">Date</th>
-                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Active</th>
-                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Featured</th>
-                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Verified</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Review</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Source</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider" title="Shown on the website when on">Active</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider" title="Shown in the featured reviews section on the homepage when on">Featured</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider" title="Shows a verified badge to customers when on">Verified</th>
                   <th className="px-5 py-3" />
                 </tr>
               </thead>
@@ -279,7 +279,7 @@ export default function AdminReviewsPage() {
                   const busy = busyId === r.id;
                   return (
                     <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3" data-label="Customer">
                         <div className="flex items-center gap-2.5">
                           {r.photo_url ? (
                             <Image src={r.photo_url} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
@@ -301,11 +301,11 @@ export default function AdminReviewsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3" data-label="Rating">
                         <div className="flex items-center gap-0.5">{stars(r.rating)}</div>
                         <p className="text-xs text-gray-400 mt-0.5">{r.rating}/5</p>
                       </td>
-                      <td className="px-5 py-3 max-w-xs hidden sm:table-cell">
+                      <td className="px-5 py-3 max-w-xs" data-label="Review">
                         <p className="text-sm text-gray-700 line-clamp-2">{r.review_en}</p>
                         {r.review_bn && <p className="text-xs text-gray-400 truncate mt-0.5">{r.review_bn}</p>}
                         {r.admin_reply && (
@@ -315,21 +315,22 @@ export default function AdminReviewsPage() {
                           </p>
                         )}
                       </td>
-                      <td className="px-5 py-3 hidden md:table-cell">
+                      <td className="px-5 py-3" data-label="Source">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 capitalize">
                           {r.source}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs hidden md:table-cell">
+                      <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs" data-label="Date">
                         {new Date(r.created_at).toLocaleDateString("en-BD")}
                       </td>
-                      <td className="px-5 py-3 text-center">
+                      <td className="px-5 py-3 text-center" data-label="Active (shown on site)">
                         <button
                           onClick={() => patch(r, { is_active: !r.is_active })}
                           disabled={busy}
                           role="switch"
                           aria-checked={r.is_active}
                           aria-label={r.is_active ? "Hide review" : "Show review"}
+                          title={r.is_active ? "Shown on the website — click to hide" : "Hidden from the website — click to show"}
                           className="disabled:opacity-40 transition-colors"
                         >
                           {r.is_active
@@ -338,25 +339,27 @@ export default function AdminReviewsPage() {
                           }
                         </button>
                       </td>
-                      <td className="px-5 py-3 text-center">
+                      <td className="px-5 py-3 text-center" data-label="Featured (on homepage)">
                         <button
                           onClick={() => patch(r, { is_featured: !r.is_featured })}
                           disabled={busy}
                           role="switch"
                           aria-checked={r.is_featured}
                           aria-label={r.is_featured ? "Remove from featured" : "Mark as featured"}
+                          title={r.is_featured ? "Shown in the homepage featured section — click to remove" : "Click to feature on the homepage"}
                           className="disabled:opacity-40 transition-colors"
                         >
                           <Star className={`w-5 h-5 mx-auto ${r.is_featured ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />
                         </button>
                       </td>
-                      <td className="px-5 py-3 text-center">
+                      <td className="px-5 py-3 text-center" data-label="Verified badge">
                         <button
                           onClick={() => patch(r, { is_verified: !r.is_verified })}
                           disabled={busy}
                           role="switch"
                           aria-checked={r.is_verified}
                           aria-label={r.is_verified ? "Remove verification" : "Mark as verified"}
+                          title={r.is_verified ? "Shows a verified badge to customers — click to remove" : "Click to show a verified badge to customers"}
                           className="disabled:opacity-40 transition-colors"
                         >
                           {r.is_verified
@@ -365,7 +368,7 @@ export default function AdminReviewsPage() {
                           }
                         </button>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3" data-label="Actions">
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => openEdit(r)}

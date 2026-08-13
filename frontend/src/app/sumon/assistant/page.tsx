@@ -317,11 +317,10 @@ export default function AdminAssistantPage() {
             </div>
             <div className="p-6 grid sm:grid-cols-2 gap-3">
               {INTEGRATIONS.map((item) => (
-                <div key={item.table} className="flex gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <div key={item.label} className="flex gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
                   <Database className="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm font-medium text-gray-800">{item.label}</p>
-                    <p className="text-xs font-mono text-gray-400">{item.table}</p>
                     <p className="text-xs text-gray-500 mt-0.5">{item.desc}</p>
                   </div>
                 </div>

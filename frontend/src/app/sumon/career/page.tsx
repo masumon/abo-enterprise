@@ -163,37 +163,37 @@ export default function CareerAdminPage() {
         <>
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[480px]">
+            <table className="w-full text-sm min-w-[480px] table-responsive">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold text-gray-700">Name</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700 hidden sm:table-cell">Position</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700 hidden md:table-cell">Phone</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Position</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Phone</th>
                   <th className="px-4 py-3 text-left font-semibold text-gray-700">Status</th>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-700 hidden md:table-cell">Applied</th>
+                  <th className="px-4 py-3 text-left font-semibold text-gray-700">Applied</th>
                   <th className="px-4 py-3 text-right font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {apps.map((app) => (
                   <tr key={app.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3" data-label="Name">
                       <div>
                         <p className="font-medium text-gray-900">{app.name}</p>
                         {app.email && <p className="text-xs text-gray-500">{app.email}</p>}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-gray-600 hidden sm:table-cell">{app.position}</td>
-                    <td className="px-4 py-3 text-gray-600 hidden md:table-cell">{app.phone}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-gray-600" data-label="Position">{app.position}</td>
+                    <td className="px-4 py-3 text-gray-600" data-label="Phone">{app.phone}</td>
+                    <td className="px-4 py-3" data-label="Status">
                       <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${STATUS_COLORS[app.status] || "bg-gray-50 text-gray-700 border-gray-200"}`}>
                         {app.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-gray-500 hidden md:table-cell">
+                    <td className="px-4 py-3 text-xs text-gray-500" data-label="Applied">
                       {new Date(app.created_at).toLocaleDateString()}
                     </td>
-                    <td className="px-4 py-3 text-right space-x-2">
+                    <td className="px-4 py-3 text-right space-x-2" data-label="Actions">
                       <button
                         onClick={() => handleViewDetail(app.id)}
                         className="inline-flex items-center gap-1 px-2 py-1 rounded bg-blue-50 text-blue-600 hover:bg-blue-100 text-xs font-medium"

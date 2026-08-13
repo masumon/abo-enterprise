@@ -40,7 +40,7 @@ function getErrorInfo(e: unknown): { type: ErrorType; msg: string } {
   if (err.code === "ECONNABORTED" || err.message?.includes("timeout")) {
     return {
       type: "timeout",
-      msg: "Server respond করতে দেরি হচ্ছে। Render cold start-এ ৬০ সেকেন্ড পর্যন্ত লাগতে পারে।",
+      msg: "সার্ভার সাড়া দিতে দেরি হচ্ছে — কিছুক্ষণ ব্যবহার না হলে সার্ভার ঘুমিয়ে যায়, জাগতে ৬০ সেকেন্ড পর্যন্ত লাগতে পারে। একটু পরে আবার চেষ্টা করুন।",
     };
   }
 

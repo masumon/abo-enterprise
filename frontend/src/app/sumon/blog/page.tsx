@@ -367,13 +367,13 @@ export default function AdminBlogPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-premium min-w-[640px]">
+            <table className="table-premium table-responsive min-w-[640px]">
               <thead>
                 <tr>
                   <th>Title</th>
-                  <th className="hidden sm:table-cell">Category</th>
-                  <th className="hidden md:table-cell">Author</th>
-                  <th className="hidden md:table-cell">Date</th>
+                  <th>Category</th>
+                  <th>Author</th>
+                  <th>Date</th>
                   <th>Status</th>
                   <th className="text-right pr-5">Actions</th>
                 </tr>
@@ -381,7 +381,7 @@ export default function AdminBlogPage() {
               <tbody>
                 {posts.map((p) => (
                   <tr key={p.id} onClick={() => openEdit(p)} className="cursor-pointer hover:bg-brand-50/40 transition-colors">
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-3" data-label="Title">
                       <div className="flex items-center gap-2">
                         {p.is_featured && <Star className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
                         <div>
@@ -390,17 +390,17 @@ export default function AdminBlogPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-gray-600 capitalize hidden sm:table-cell">{p.category ?? "—"}</td>
-                    <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{p.author_name}</td>
-                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap hidden md:table-cell">
+                    <td className="px-5 py-3 text-gray-600 capitalize" data-label="Category">{p.category ?? "—"}</td>
+                    <td className="px-5 py-3 text-gray-600" data-label="Author">{p.author_name}</td>
+                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap" data-label="Date">
                       {p.published_at
                         ? new Date(p.published_at).toLocaleDateString("en-BD")
                         : p.created_at
                           ? new Date(p.created_at).toLocaleDateString("en-BD")
                           : "—"}
                     </td>
-                    <td className="px-5 py-3"><StatusBadge status={p.status} /></td>
-                    <td className="px-5 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-5 py-3" data-label="Status"><StatusBadge status={p.status} /></td>
+                    <td className="px-5 py-3 text-right" data-label="Actions" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         {p.status === "draft" && (
                           <button
