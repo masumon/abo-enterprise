@@ -493,8 +493,11 @@ export default function AdminMediaPage() {
         <p className="mt-1.5 text-gray-500">
           টিম, ক্লায়েন্ট ও রিভিউ ছবি (বর্ণনা সহ) এখন{" "}
           <Link href="/sumon/settings" className="text-brand-600 font-medium hover:underline">Settings → Trust Assets</Link>-এ,
-          আর প্রজেক্ট ও সফটওয়্যার কার্ড{" "}
-          <Link href="/sumon/showcase" className="text-brand-600 font-medium hover:underline">Showcase</Link>-এ একসাথে সম্পাদনা হয়।
+          প্রজেক্ট ও সফটওয়্যার কার্ড{" "}
+          <Link href="/sumon/showcase" className="text-brand-600 font-medium hover:underline">Showcase</Link>-এ, আর হোমপেজের
+          ব্যানার/স্লাইডার ছবি{" "}
+          <Link href="/sumon/promo-slides" className="text-brand-600 font-medium hover:underline">Homepage Banners &amp; Slider</Link>-এ
+          একসাথে সম্পাদনা হয়।
         </p>
       </div>
 

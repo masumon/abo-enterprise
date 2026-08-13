@@ -314,9 +314,16 @@ export default function CareerAdminPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-2">Notes</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase mb-2 flex items-center justify-between">
+                    <span>Notes</span>
+                    {updating === selectedApp.id && (
+                      <span className="text-brand-500 normal-case font-normal flex items-center gap-1">
+                        <Loader2 className="w-3 h-3 animate-spin" /> Saving…
+                      </span>
+                    )}
+                  </label>
                   <textarea
-                    placeholder="Add internal notes..."
+                    placeholder="Add internal notes... (saved automatically when you click away)"
                     defaultValue={selectedApp.notes}
                     onBlur={(e) => {
                       if (e.target.value !== (selectedApp.notes || "")) {

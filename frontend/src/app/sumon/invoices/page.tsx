@@ -283,7 +283,7 @@ export default function AdminInvoicesPage() {
                   ? <CheckCircle2 className="w-3.5 h-3.5 text-green-500 mt-0.5 flex-shrink-0" />
                   : <AlertCircle className="w-3.5 h-3.5 text-red-500 mt-0.5 flex-shrink-0" />}
                 <span className={c.ok ? "text-gray-600" : "text-red-700 font-medium"}>
-                  <span className="font-mono">{c.check}</span>: {c.detail}
+                  <span className="font-medium">{c.check.replace(/_/g, " ").replace(/\b\w/g, (ch) => ch.toUpperCase())}</span>: {c.detail}
                 </span>
               </li>
             ))}
