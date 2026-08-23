@@ -2,7 +2,6 @@ import { getSettingValue } from "@/hooks/usePublicSettings";
 
 export const ABOUT_TEAM_KEY = "about_team_json";
 export const CLIENT_LOGOS_KEY = "client_logos_json";
-export const DEMO_REVIEWS_KEY = "demo_reviews_json";
 export const ABOUT_STORY_IMAGE_KEY = "about_story_image_url";
 // Homepage section overrides — the `site_` prefix is publicly readable via
 // GET /api/v1/settings, so no backend change is needed for these keys.
