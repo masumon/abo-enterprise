@@ -17,7 +17,6 @@ install_error_capture()
 from app.core.exceptions import ABOException
 from app.core.security import require_admin
 from app.core.bootstrap import bootstrap_admin
-from app.core.content_bootstrap import bootstrap_content
 from app.api.v1.router import api_router
 
 logger = logging.getLogger(__name__)
@@ -36,7 +35,6 @@ async def _init_db_and_bootstrap() -> None:
         return
 
     await bootstrap_admin()
-    await bootstrap_content()
 
     from app.core.maintenance import prune_old_activity_logs
     await prune_old_activity_logs()

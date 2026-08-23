@@ -1,7 +1,7 @@
 """dedupe_services — retire the 5 bootstrap-duplicate services (soft delete).
 
-Historically services were seeded from two places: ``content_bootstrap.py``
-(6 services, on first boot of an empty DB) and migration
+Historically services were seeded from two places: a removed startup content
+bootstrapper (6 services, on first boot of an empty DB) and migration
 ``004_services_system.sql`` (12 curated services). Deployments that ran both
 ended up with near-identical pairs (e.g. "Printing Services" + "Printing
 Service", two "Mobile App Development" rows). The bootstrap slugs

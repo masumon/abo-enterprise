@@ -66,37 +66,6 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
       </div>
     ),
   },
-  demo_reviews_json: {
-    fields: [
-      { path: "customer_name", label: "Name" }, { path: "company", label: "Company" },
-      { path: "rating", label: "Rating (1-5)", type: "number" },
-      { path: "review_en", label: "Review (EN)", type: "textarea", translateFrom: "review_bn" }, { path: "review_bn", label: "Review (BN)", type: "textarea" },
-      { path: "photo_url", label: "Photo", type: "image" },
-    ],
-    newItem: () => ({ customer_name: "", company: "", rating: 5, review_en: "", review_bn: "", photo_url: "" }),
-    previewRow: (item) => (
-      <div className="enterprise-card p-4 max-w-xs mx-auto">
-        <div className="flex items-center gap-0.5 mb-2 text-yellow-400">
-          {Array.from({ length: Math.min(5, Math.max(1, Number(item.rating) || 5)) }).map((_, i) => (
-            <span key={i}>★</span>
-          ))}
-        </div>
-        <p className="text-sm text-gray-600 dark:text-gray-300 mb-3 line-clamp-4">&ldquo;{s(item, "review_bn") || s(item, "review_en") || "রিভিউ লেখা"}&rdquo;</p>
-        <div className="flex items-center gap-2">
-          <div className="w-9 h-9 rounded-full bg-brand-100 overflow-hidden flex items-center justify-center text-brand-700 font-bold text-sm">
-            {s(item, "photo_url") ? (
-              // eslint-disable-next-line @next/next/no-img-element -- live admin preview
-              <img src={s(item, "photo_url")} alt="" className="w-full h-full object-cover" />
-            ) : ((s(item, "customer_name") || "?").charAt(0))}
-          </div>
-          <div>
-            <p className="font-semibold text-sm">{s(item, "customer_name") || "নাম"}</p>
-            {s(item, "company") && <p className="text-xs text-gray-500">{s(item, "company")}</p>}
-          </div>
-        </div>
-      </div>
-    ),
-  },
   // ── Company registrations shown in the footer ──
   site_registrations_json: {
     fields: [
@@ -111,22 +80,6 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
         <span className="text-[12.5px] font-semibold text-white tabular-nums">{s(item, "value") || "—"}</span>
       </div>
     ),
-  },
-  // ── Demo catalog (optional; blank = built-in defaults) ──
-  demo_products_json: {
-    fields: [
-      { path: "slug", label: "Slug" }, { path: "name_en", label: "Name (EN)", translateFrom: "name_bn" }, { path: "name_bn", label: "Name (BN)" },
-      { path: "price", label: "Price (৳)", type: "number" }, { path: "category", label: "Category" },
-      { path: "image_url", label: "Image", type: "image" },
-    ],
-    newItem: () => ({ slug: "", name_en: "", name_bn: "", price: 0, category: "", image_url: "" }),
-  },
-  demo_services_json: {
-    fields: [
-      { path: "slug", label: "Slug" }, { path: "name_en", label: "Name (EN)", translateFrom: "name_bn" }, { path: "name_bn", label: "Name (BN)" },
-      { path: "category", label: "Category" }, { path: "featured_image_url", label: "Image", type: "image" },
-    ],
-    newItem: () => ({ slug: "", name_en: "", name_bn: "", category: "", featured_image_url: "" }),
   },
   // Curated links shown under "Suggestions" on the storefront search screen.
   search_suggestions_json: {
@@ -150,9 +103,6 @@ const HIDDEN_PLACEHOLDER = "***HIDDEN***";
 const JSON_SETTING_KEYS = new Set([
   "about_team_json",
   "client_logos_json",
-  "demo_reviews_json",
-  "demo_products_json",
-  "demo_services_json",
 ]);
 
 const BOOL_SETTING_KEYS = new Set([
@@ -289,7 +239,6 @@ const SECTIONS: Section[] = [
     fields: [
       { key: "about_team_json", label: "Team Members", type: "textarea", hint: "Add each team member — name, role, photo & short bio" },
       { key: "client_logos_json", label: "Client Logos", type: "textarea", hint: "Add each client logo — name, photo, and an optional description + case-study link (shown on tap)" },
-      { key: "demo_reviews_json", label: "Testimonials", type: "textarea", hint: "Add each customer review — name, review text, photo & star rating" },
     ],
   },
   {
@@ -470,18 +419,6 @@ const SECTIONS: Section[] = [
     fields: [
       { key: "timezone", label: "Timezone", placeholder: "Asia/Dhaka" },
       { key: "maintenance_mode", label: "Maintenance Mode", type: "text" as const, placeholder: "false", hint: "true to disable site" },
-    ],
-  },
-  {
-    id: "demo_config",
-    title: "Demo & Offline Fallback",
-    icon: <RefreshCw className="w-4 h-4" />,
-    fields: [
-      { key: "demo_fallback_enabled", label: "Enable Demo Mode", placeholder: "true", hint: "Show demo when API slow" },
-      { key: "demo_notice_en", label: "Demo Notice (EN)", type: "textarea", placeholder: "Slow connection — showing demo content...", translateFrom: "demo_notice_bn" },
-      { key: "demo_notice_bn", label: "Demo Notice (বাংলা)", type: "textarea", placeholder: "ধীর নেটওয়ার্ক — ডেমো কন্টেন্ট দেখানো হচ্ছে..." },
-      { key: "demo_products_json", label: "Demo Products (JSON)", type: "textarea", placeholder: '[{"slug":"...","name_en":"..."}]', hint: "Optional; leave blank for defaults" },
-      { key: "demo_services_json", label: "Demo Services (JSON)", type: "textarea", placeholder: '[{"slug":"...","name_en":"..."}]', hint: "Optional; leave blank for defaults" },
     ],
   },
 ];
