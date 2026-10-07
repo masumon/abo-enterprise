@@ -34,6 +34,11 @@ interface ActivityItem {
   time: string;
 }
 
+// The activity feed is public: never show full order/booking references.
+export function maskPublicRefs(text: string): string {
+  return text.replace(/ABO-[A-Za-z0-9-]+/g, "ABO-••••");
+}
+
 export function getFreeDeliveryLabel(lang: "bn" | "en", rawAmount: string): string | null {
   const amount = rawAmount.trim();
   if (!amount) return null;
@@ -141,6 +146,17 @@ export default function Hero() {
             />
           </>
         )}
+        {/* Readability scrim: keeps the headline legible over busy photos */}
+        <div
+          className="absolute left-0 w-[65%] bottom-0 top-[var(--navbar-offset)] pointer-events-none"
+          style={{
+            background: "linear-gradient(90deg, rgba(20,24,43,0.80) 0%, rgba(20,24,43,0.55) 55%, rgba(20,24,43,0) 100%)",
+            // fade in below the navbar so the dark nav text stays readable
+            WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 90px)",
+            maskImage: "linear-gradient(to bottom, transparent 0, #000 90px)",
+          }}
+          aria-hidden
+        />
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-20 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-float" />
           <div className="absolute bottom-0 left-0 w-72 h-72 bg-accent-500/10 rounded-full blur-3xl" />
@@ -240,41 +256,46 @@ export default function Hero() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    {[
+                  {(() => {
+                    // Only show tiles that have a real, non-zero number — "—"/0 tiles look unfinished.
+                    const tiles = [
                       { label: lang === "bn" ? "অর্ডার" : "Orders", end: stats?.orders, icon: "📦" },
                       { label: lang === "bn" ? "সেবা" : "Services", end: stats?.services, icon: "⚙️" },
                       { label: lang === "bn" ? "গ্রাহক" : "Clients", end: stats?.clients, icon: "👥" },
                       { label: lang === "bn" ? "প্রজেক্ট" : "Projects", end: stats?.projects, icon: "🚀" },
-                    ].map((item) => (
-                      <div key={item.label} className="glass-panel rounded-xl p-3.5 animate-scale-in">
-                        <span className="text-xl" aria-hidden>{item.icon}</span>
-                        <p className="text-white font-bold text-lg mt-1">
-                          {item.end === undefined ? "—" : <AnimatedCounter end={item.end} />}
-                        </p>
-                        <p className="text-white/60 text-xs">{item.label}</p>
+                    ].filter((item) => typeof item.end === "number" && item.end > 0);
+                    if (!tiles.length) return null;
+                    return (
+                      <div className="grid grid-cols-2 gap-3 mb-4">
+                        {tiles.map((item) => (
+                          <div key={item.label} className="glass-panel rounded-xl p-3.5 animate-scale-in">
+                            <span className="text-xl" aria-hidden>{item.icon}</span>
+                            <p className="text-white font-bold text-lg mt-1">
+                              <AnimatedCounter end={item.end as number} />
+                            </p>
+                            <p className="text-white/70 text-xs">{item.label}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    );
+                  })()}
 
-                  <div className="space-y-2">
-                    <p className="text-white/50 text-xs font-medium uppercase tracking-wider">
-                      {lang === "bn" ? "সাম্প্রতিক কার্যক্রম" : "Recent Activity"}
-                    </p>
-                    {activity.length ? activity.map((item, i) => (
-                      <div key={i} className="flex items-center gap-3 py-2 border-b border-white/10 last:border-0">
-                        <span aria-hidden>{item.icon}</span>
-                        <span className="text-xs flex-1 text-white/80">
-                          {lang === "bn" ? item.text_bn : item.text_en}
-                        </span>
-                        <span className="text-white/40 text-[10px]">{item.time}</span>
-                      </div>
-                    )) : (
-                      <p className="text-white/50 text-xs py-2">
-                        {lang === "bn" ? "সাম্প্রতিক কার্যক্রমের ডেটা নেই" : "No recent activity data"}
+                  {activity.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-white/70 text-xs font-medium uppercase tracking-wider">
+                        {lang === "bn" ? "সাম্প্রতিক কার্যক্রম" : "Recent Activity"}
                       </p>
-                    )}
-                  </div>
+                      {activity.map((item, i) => (
+                        <div key={i} className="flex items-center gap-3 py-2 border-b border-white/10 last:border-0">
+                          <span aria-hidden>{item.icon}</span>
+                          <span className="text-xs flex-1 text-white/85">
+                            {maskPublicRefs(lang === "bn" ? item.text_bn : item.text_en)}
+                          </span>
+                          <span className="text-white/60 text-[10px]">{item.time}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

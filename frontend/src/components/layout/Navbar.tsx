@@ -159,7 +159,7 @@ export default function Navbar() {
             "dark:shadow-[0_4px_24px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.05)]",
             "transition-all duration-500",
             isScrolled && [
-              "bg-white/84 dark:bg-[#0b1f3a]/92",
+              "bg-white/95 dark:bg-[#0b1f3a]/90",
               "shadow-[0_8px_32px_rgba(30,43,107,0.16),0_2px_8px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,0.92)]",
               "dark:shadow-[0_8px_40px_rgba(0,0,0,0.52),0_0_0_1px_rgba(59,130,246,0.10),inset_0_1px_0_rgba(255,255,255,0.07)]",
             ],

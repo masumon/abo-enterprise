@@ -88,6 +88,10 @@ export default function FeaturedProducts() {
     }
   }, [products, activeCategory]);
 
+  // Nothing to feature yet: hide the whole block instead of showing an
+  // empty shelf. It reappears on its own once products exist.
+  if (!loading && !error && products.length === 0) return null;
+
   return (
     <section id="featured-products" className="py-4 lg:py-6 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-3 lg:px-4">
