@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ElementType } from "react";
+import { useEffect, useState, type ElementType } from "react";
 import Link from "next/link";
 import { Facebook, MessageCircle, Mail, MapPin, Phone, Loader2, Instagram, Linkedin, Youtube, ChevronDown, CheckCircle2, BadgeCheck, Clock, Lock } from "lucide-react";
 import { VisaMark, MastercardMark, BkashMark, NagadMark, RocketMark, CardMark, PlayStoreMark, AppStoreMark } from "@/components/icons/PaymentIcons";
@@ -43,6 +43,15 @@ function normalizePhoneDigits(phone: string) { const digits = phone.replace(/\D/
 function formatPhoneDisplay(phone: string) { const digits = normalizePhoneDigits(phone); const local = digits.slice(3); if (local.length >= 10) return `+880 ${local.slice(0, 4)} ${local.slice(4)}`; return phone; }
 
 export default function Footer() {
+  // Desktop shows the link groups expanded in columns; mobile keeps the accordion.
+  const [wide, setWide] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setWide(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
   const { lang } = useLanguageStore(); const bn = lang === "bn"; const toast = useToastStore((s) => s.push); const [email, setEmail] = useState(""); const [submitting, setSubmitting] = useState(false); const newsletterEnabled = useFeatureFlag("feature_newsletter");
   const { methods } = usePaymentMethods();
   const { settings } = usePublicSettings(["whatsapp_number", "contact_phone", "contact_email", "contact_address", "contact_address_en", "contact_hours_en", "contact_hours_bn", "footer_about_en", "footer_about_bn", "facebook_url", "instagram_url", "linkedin_url", "youtube_url", "tiktok_url", "play_store_url", "app_store_url", "trade_license", "footer_payment_image_url", "site_name", SITE_TRUST_BADGES_KEY, SITE_REGISTRATIONS_KEY]);
@@ -79,27 +88,27 @@ export default function Footer() {
   return (
     <footer className="site-footer relative text-white overflow-hidden bg-gradient-to-b from-brand-700 via-brand-800 to-brand-900">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#d4af37]/40 to-transparent" aria-hidden /><div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[36rem] h-40 rounded-full bg-brand-500/10 blur-3xl pointer-events-none" aria-hidden />
-      <div className="relative z-10 mx-auto max-w-3xl px-4 py-6 md:py-10"><BrandLogo size="lg" href={false} variant="light" />{aboutText && <p className="text-[13px] text-white/75 mt-3 mb-5 leading-relaxed tracking-[0.01em]">{aboutText}</p>}
+      <div className="relative z-10 mx-auto max-w-3xl lg:max-w-6xl px-4 py-6 md:py-10"><BrandLogo size="lg" href={false} variant="light" />{aboutText && <p className="text-[13px] text-white/75 mt-3 mb-5 leading-relaxed tracking-[0.01em]">{aboutText}</p>}
 
-        <div className="grid grid-cols-4 gap-2 mb-5">
+        <div className="grid grid-cols-4 gap-2 mb-5 lg:max-w-xl">
           {phoneConfigured && <a href={`tel:+${phoneDigits}`} className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors"><span className="w-8 h-8 rounded-xl bg-brand-500/15 text-brand-300 flex items-center justify-center"><Phone className="w-3.5 h-3.5" aria-hidden /></span><span className="text-[10px] font-bold text-white text-center leading-tight">{bn ? "কল করুন" : "Call"}</span></a>}
           {whatsappDigits && <a href={`https://wa.me/${whatsappDigits}`} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors"><span className="w-8 h-8 rounded-xl bg-green-500/15 text-green-400 flex items-center justify-center"><MessageCircle className="w-3.5 h-3.5" aria-hidden /></span><span className="text-[10px] font-bold text-white text-center leading-tight">WhatsApp</span></a>}
           {emailConfigured && <a href={`mailto:${emailAddr}`} className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors"><span className="w-8 h-8 rounded-xl bg-brand-500/15 text-brand-300 flex items-center justify-center"><Mail className="w-3.5 h-3.5" aria-hidden /></span><span className="text-[10px] font-bold text-white text-center leading-tight">{bn ? "ইমেইল" : "Email"}</span></a>}
           {mapsLink && <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1.5 rounded-2xl bg-white/[0.06] py-3 px-1 hover:bg-white/10 transition-colors"><span className="w-8 h-8 rounded-xl bg-accent-500/15 text-accent-300 flex items-center justify-center"><MapPin className="w-3.5 h-3.5" aria-hidden /></span><span className="text-[10px] font-bold text-white text-center leading-tight">{bn ? "ম্যাপ" : "Map"}</span></a>}
         </div>
 
-        {(hours || address) && <div className="rounded-2xl bg-white/[0.06] p-4 mb-5 space-y-3">
+        {(hours || address) && <div className="rounded-2xl bg-white/[0.06] p-4 mb-5 space-y-3 lg:max-w-xl">
           {hours && <div className="flex items-start gap-3"><span className="w-7 h-7 rounded-lg bg-accent-500/15 text-accent-300 flex items-center justify-center flex-shrink-0"><Clock className="w-3.5 h-3.5" aria-hidden /></span><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wide text-white/70">{bn ? "কার্যসময়" : "Business Hours"}</p><p className="text-xs font-semibold text-white mt-0.5">{hours}</p></div></div>}
           {address && <div className="flex items-start gap-3"><span className="w-7 h-7 rounded-lg bg-accent-500/15 text-accent-300 flex items-center justify-center flex-shrink-0"><MapPin className="w-3.5 h-3.5" aria-hidden /></span><div className="min-w-0"><p className="text-[10px] font-bold uppercase tracking-wide text-white/70">{bn ? "প্রধান কার্যালয়" : "Head Office"}</p>{mapsLink ? <a href={mapsLink} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-white/80 hover:text-white mt-0.5 block">{address}</a> : <span className="text-xs font-semibold text-white/80 mt-0.5 block">{address}</span>}</div></div>}
         </div>}
 
         {socialLinks.length > 0 && <div className="flex gap-2 flex-wrap mb-5">{socialLinks.map(({ href, icon: Icon, label, className }) => <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className={`w-9 h-9 rounded-xl flex items-center justify-center text-white hover:scale-105 transition-transform ${className}`}><Icon className="w-4 h-4" aria-hidden /></a>)}</div>}
 
-        <div className="border-t border-white/10">{NAV_GROUPS.map((group) => <details key={group.id} className="group border-b border-white/10"><summary className="flex items-center justify-between py-3.5 px-0.5 text-sm font-bold text-white cursor-pointer list-none [&::-webkit-details-marker]:hidden">{bn ? group.title.bn : group.title.en}<ChevronDown className="w-4 h-4 text-white/75 transition-transform group-open:rotate-180 group-open:text-green-400" aria-hidden /></summary><ul className="pb-3 px-0.5 space-y-0.5">{group.links.map((link, i) => <li key={`${link.href}-${i}`}><Link href={link.href} className="flex items-center gap-2 py-1.5 px-1 rounded-lg text-[13px] text-white/85 hover:text-white hover:bg-white/[0.05] transition-colors"><span className="w-1 h-1 rounded-full bg-white/40" />{bn ? link.label.bn : link.label.en}</Link></li>)}</ul></details>)}</div>
+        <div className="border-t border-white/10 lg:grid lg:grid-cols-3 lg:gap-x-10 lg:pt-4">{NAV_GROUPS.map((group) => <details key={group.id} open={wide} className="group border-b border-white/10 lg:border-b-0"><summary className="flex items-center justify-between py-3.5 px-0.5 text-sm font-bold text-white cursor-pointer list-none [&::-webkit-details-marker]:hidden lg:cursor-default lg:pointer-events-none">{bn ? group.title.bn : group.title.en}<ChevronDown className="w-4 h-4 text-white/75 transition-transform group-open:rotate-180 group-open:text-green-400 lg:hidden" aria-hidden /></summary><ul className="pb-3 px-0.5 space-y-0.5">{group.links.map((link, i) => <li key={`${link.href}-${i}`}><Link href={link.href} className="flex items-center gap-2 py-1.5 px-1 rounded-lg text-[13px] text-white/85 hover:text-white hover:bg-white/[0.05] transition-colors"><span className="w-1 h-1 rounded-full bg-white/40" />{bn ? link.label.bn : link.label.en}</Link></li>)}</ul></details>)}</div>
 
         {trustBadges.length > 0 && <div className="pt-5"><div className="flex items-center gap-2 mb-3"><span className="w-1.5 h-1.5 rounded-full bg-accent-400" /><h2 className="text-sm font-extrabold text-white">{bn ? "আমাদের উপর আস্থা রাখুন" : "Trust Us"}</h2></div><div className="grid grid-cols-2 gap-2">{trustBadges.map((badge, i) => <div key={i} className={`rounded-xl p-3 flex flex-col gap-2 ${TRUST_TILE_STYLES[i % TRUST_TILE_STYLES.length]}`}><span className="w-6 h-6 rounded-lg bg-white/55 flex items-center justify-center"><CheckCircle2 className="w-3.5 h-3.5" aria-hidden /></span><span className="text-[10px] font-extrabold leading-tight">{bn ? badge.bn || badge.en : badge.en || badge.bn}</span></div>)}</div></div>}
 
-        <div className="pt-4"><h2 className="text-[10px] font-extrabold uppercase tracking-wide text-white/75 mb-2">{bn ? "পেমেন্ট পদ্ধতি সমূহ" : "Payment Methods"}</h2>{paymentImage ? <img src={paymentImage} alt={bn ? "গৃহীত পেমেন্ট পদ্ধতি সমূহ" : "Accepted payment methods"} loading="lazy" className="w-full h-auto max-w-full rounded-xl bg-white p-2 shadow-sm object-contain" /> : <div className="flex items-center gap-1.5 flex-wrap">{payKeys.map((key) => { const brand = PAY_BRAND[key]; if (!brand) return null; return <div key={key} className="rounded-lg bg-white p-1.5 shadow-sm" title={brand.label}><brand.Mark className="h-4 w-auto max-w-full" /></div>; })}</div>}</div>
+        <div className="pt-4 lg:max-w-2xl"><h2 className="text-[10px] font-extrabold uppercase tracking-wide text-white/75 mb-2">{bn ? "পেমেন্ট পদ্ধতি সমূহ" : "Payment Methods"}</h2>{paymentImage ? <img src={paymentImage} alt={bn ? "গৃহীত পেমেন্ট পদ্ধতি সমূহ" : "Accepted payment methods"} loading="lazy" className="w-full h-auto max-w-full rounded-xl bg-white p-2 shadow-sm object-contain" /> : <div className="flex items-center gap-1.5 flex-wrap">{payKeys.map((key) => { const brand = PAY_BRAND[key]; if (!brand) return null; return <div key={key} className="rounded-lg bg-white p-1.5 shadow-sm" title={brand.label}><brand.Mark className="h-4 w-auto max-w-full" /></div>; })}</div>}</div>
 
         {registrations.length > 0 && <div className="pt-4"><h2 className="text-[10px] font-extrabold uppercase tracking-wide text-white/75 mb-2">{bn ? "ব্যবসায়িক তথ্য" : "Business Registrations"}</h2><div className="flex items-center gap-1.5 flex-wrap">{registrations.map((r, i) => <div key={i} className="flex items-center gap-1.5 rounded-lg bg-white/[0.06] px-2.5 py-1.5"><BadgeCheck className="w-3 h-3 text-brand-300 flex-shrink-0" aria-hidden /><div className="min-w-0"><p className="text-[9.5px] text-white/70 leading-none">{bn ? r.label_bn || r.label_en : r.label_en || r.label_bn}</p><p className="text-[11px] font-bold text-white/90 truncate mt-0.5">{r.value}</p></div></div>)}</div></div>}
 

@@ -77,15 +77,15 @@ export default function CookieConsent() {
       aria-label={lang === "bn" ? "কুকি সম্মতি" : "Cookie consent"}
       className="fixed bottom-mobile-float lg:bottom-6 left-4 right-4 lg:left-auto lg:right-24 lg:max-w-md z-40 animate-slide-up"
     >
-      <div className="enterprise-card p-4 sm:p-5 flex gap-3 items-start">
-        <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center flex-shrink-0">
+      <div className="enterprise-card p-3 sm:p-4 flex gap-3 items-start">
+        <div className="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/30 hidden sm:flex items-center justify-center flex-shrink-0">
           <Cookie className="w-5 h-5 text-brand-600 dark:text-brand-300" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-heading mb-1">
             {lang === "bn" ? "কুকি ও গোপনীয়তা" : "Cookies & Privacy"}
           </p>
-          <p className="text-xs text-muted leading-relaxed mb-3">
+          <p className="text-xs text-muted leading-relaxed mb-2">
             {lang === "bn"
               ? "আমরা প্রয়োজনীয় কুকি সবসময় ব্যবহার করি। বিশ্লেষণ ও মার্কেটিং কুকি আপনি নিয়ন্ত্রণ করতে পারবেন।"
               : "We always use essential cookies. You can choose analytics and marketing cookies."}
@@ -100,6 +100,9 @@ export default function CookieConsent() {
             <button type="button" onClick={() => setShowCustomize((v) => !v)} className="btn btn-ghost btn-sm text-xs">
               {lang === "bn" ? "কাস্টমাইজ" : "Customize"}
             </button>
+            <Link href="/legal/privacy" className="btn btn-ghost btn-sm text-xs">
+              {lang === "bn" ? "আরও জানুন" : "Learn more"}
+            </Link>
           </div>
           {showCustomize && (
             <div className="rounded-xl border border-gray-200 dark:border-white/10 p-3 space-y-2 mb-2 text-xs">
@@ -116,11 +119,6 @@ export default function CookieConsent() {
               </button>
             </div>
           )}
-          <div className="flex flex-wrap gap-2">
-            <Link href="/legal/privacy" className="btn btn-ghost btn-sm text-xs">
-              {lang === "bn" ? "আরও জানুন" : "Learn more"}
-            </Link>
-          </div>
         </div>
         <button
           type="button"

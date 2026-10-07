@@ -151,9 +151,9 @@ export default function Navbar() {
       <div className="hidden lg:flex justify-center pt-2 px-4">
         <nav
           className={cn(
-            "w-full flex items-center justify-between gap-3 px-5",
+            "w-full flex items-center justify-between gap-2 xl:gap-3 px-3 xl:px-5",
             "h-[4.5rem] rounded-full",
-            "bg-white/72 dark:bg-[#0b1f3a]/82 backdrop-blur-2xl",
+            "bg-white/80 dark:bg-[#0b1f3a]/80 backdrop-blur-2xl",
             "border border-white/60 dark:border-white/[0.09]",
             "shadow-[0_4px_20px_rgba(30,43,107,0.10),0_1px_3px_rgba(0,0,0,0.05),inset_0_1px_0_rgba(255,255,255,0.82)]",
             "dark:shadow-[0_4px_24px_rgba(0,0,0,0.42),inset_0_1px_0_rgba(255,255,255,0.05)]",
@@ -170,7 +170,7 @@ export default function Navbar() {
           <Link href="/" className="flex items-center gap-3 flex-shrink-0 min-w-0">
             <BrandLogo size="md" href={false} priority />
             <span className="min-w-0">
-              <span className="font-bold text-xl tracking-tight block text-brand-800 dark:text-white truncate">
+              <span className="font-bold text-lg xl:text-xl tracking-tight block text-brand-800 dark:text-white truncate">
                 {brandName}
               </span>
               <p className="text-xs font-medium text-brand-600/90 dark:text-brand-200/80 truncate max-w-[15rem] leading-snug">
@@ -259,9 +259,9 @@ export default function Navbar() {
               )}
             </Link>
 
-            <Link href="/projects" className="hidden md:inline-flex btn btn-primary btn-sm btn-ripple">
+            <Link href="/projects" aria-label={t("nav_get_quote")} title={t("nav_get_quote")} className="hidden md:inline-flex btn btn-primary btn-sm btn-ripple">
               <Briefcase className="w-4 h-4" strokeWidth={2.5} />
-              {t("nav_get_quote")}
+              <span className="hidden xl:inline">{t("nav_get_quote")}</span>
             </Link>
 
           </div>

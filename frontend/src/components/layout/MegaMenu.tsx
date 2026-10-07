@@ -157,7 +157,7 @@ export default function MegaMenu({ onNavigate }: MegaMenuProps) {
             onMouseLeave={closeAfterDelay}
             onFocus={() => openNow(menu.id)}
             className={cn(
-              "flex items-center gap-1 px-3.5 py-2 rounded-xl text-sm font-medium transition-all",
+              "flex items-center gap-1 px-2 xl:px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all",
               openMenu === menu.id
                 ? "text-brand-700 dark:text-brand-300 bg-brand-50/80 dark:bg-white/10"
                 : "text-gray-700 dark:text-gray-200 hover:text-brand-700 dark:hover:text-brand-300 hover:bg-brand-50/80 dark:hover:bg-white/10"
@@ -220,7 +220,7 @@ export default function MegaMenu({ onNavigate }: MegaMenuProps) {
         <Link
           key={link.href}
           href={link.href}
-          className="px-3.5 py-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-brand-700 dark:hover:text-brand-300 hover:bg-brand-50/80 dark:hover:bg-white/10 transition-all"
+          className="px-2 xl:px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap text-gray-700 dark:text-gray-200 hover:text-brand-700 dark:hover:text-brand-300 hover:bg-brand-50/80 dark:hover:bg-white/10 transition-all"
         >
           {link.label}
         </Link>
