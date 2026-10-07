@@ -1,4 +1,5 @@
 from uuid import UUID
+from app.core.rate_limit import rate_limit
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
@@ -169,7 +170,7 @@ async def suggest_products(
     ])
 
 
-@router.post("/validate-stock", response_model=ApiResponse)
+@router.post("/validate-stock", response_model=ApiResponse, dependencies=[Depends(rate_limit("validate_stock", 120, 300))])
 async def validate_stock(
     payload: dict,
     db: AsyncSession = Depends(get_db),

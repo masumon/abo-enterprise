@@ -67,6 +67,11 @@ _PUBLIC_SETTING_PREFIXES = (
 )
 
 
+# Security policy keys are changed only through the dedicated super-admin endpoint
+# (/auth/security-policy), never through the generic settings routes.
+_PROTECTED_SETTING_KEYS = {"security_require_2fa_admins"}
+
+
 def _is_public_setting_key(key: str) -> bool:
     if key in _PUBLIC_SETTING_EXACT_KEYS:
         return True
@@ -215,7 +220,7 @@ async def upsert_settings(
     results = []
     skipped: list[str] = []
     for item in payload:
-        if item.value == "***HIDDEN***":
+        if item.value == "***HIDDEN***" or item.key in _PROTECTED_SETTING_KEYS:
             skipped.append(item.key)
             continue
         result = await db.execute(
@@ -288,6 +293,8 @@ async def update_setting(
     db: AsyncSession = Depends(get_db),
 ):
     """Update setting (admin only)"""
+    if key in _PROTECTED_SETTING_KEYS:
+        raise HTTPException(status_code=403, detail="This setting is managed from Security settings")
     result = await db.execute(
         select(Setting).where((Setting.key == key) & (Setting.is_deleted == False))
     )
@@ -337,6 +344,8 @@ async def create_setting(
     db: AsyncSession = Depends(get_db),
 ):
     """Create new setting (admin only)"""
+    if key in _PROTECTED_SETTING_KEYS:
+        raise HTTPException(status_code=403, detail="This setting is managed from Security settings")
     existing = await db.execute(
         select(Setting).where((Setting.key == key) & (Setting.is_deleted == False))
     )

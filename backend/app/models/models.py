@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, timezone
-from sqlalchemy import String, Text, Boolean, Integer, SmallInteger, Numeric, ForeignKey, DateTime, JSON
+from sqlalchemy import BigInteger, String, Text, Boolean, Integer, SmallInteger, Numeric, ForeignKey, DateTime, JSON
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
@@ -225,6 +225,12 @@ class AdminUser(Base):
     # Optional TOTP two-factor auth (migration 0004)
     totp_secret: Mapped[str | None] = mapped_column(Text, nullable=True)
     totp_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Sign-in hardening (migration 0041)
+    totp_recovery_codes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    totp_last_step: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    token_version: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    failed_login_count: Mapped[int] = mapped_column(Integer, default=0, server_default="0")
+    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_login: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)

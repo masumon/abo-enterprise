@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.security import require_role
 from app.models.customer import Customer
-from app.models.models import BookingV2, LeadV2, Order
+from app.models.models import ActivityLog, BookingV2, LeadV2, Order
 from app.schemas.schemas import PaginatedMeta, PaginatedResponse
 
 router = APIRouter(prefix="/admin", tags=["customers"])
@@ -330,7 +330,7 @@ async def update_customer(
     customer_id: UUID,
     payload: CustomerUpdate,
     db: AsyncSession = Depends(get_db),
-    _: str = Depends(require_role("customers.write")),
+    admin_id: str = Depends(require_role("customers.write")),
 ):
     customer_result = await db.execute(select(Customer).where(Customer.id == customer_id))
     customer = customer_result.scalar_one_or_none()
@@ -343,6 +343,10 @@ async def update_customer(
     for key, value in changes.items():
         setattr(customer, key, value.strip() if isinstance(value, str) else value)
     customer.updated_at = datetime.now(timezone.utc)
+    db.add(ActivityLog(
+        admin_id=UUID(admin_id), action="update", entity_type="customer", entity_id=customer.id,
+        new_values={"fields": sorted(changes.keys())},
+    ))
 
     await db.commit()
     await db.refresh(customer)

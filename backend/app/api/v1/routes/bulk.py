@@ -10,7 +10,7 @@ from app.core.database import get_db
 from app.core.security import require_role
 from app.core import product_import as pi
 from app.core.taxonomy import load_categories, ancestors_of
-from app.models.models import Product, Order, LeadV2, BookingV2, Category, ProductImportJob
+from app.models.models import ActivityLog, Product, Order, LeadV2, BookingV2, Category, ProductImportJob
 from app.schemas.schemas import BulkOrderStatusUpdate, ApiResponse, ProductCreate, ProductUpdate
 
 router = APIRouter(prefix="/admin/bulk", tags=["bulk"])
@@ -45,6 +45,10 @@ async def bulk_update_order_status(
         .returning(Order.id)
     )
     updated_ids = [str(r[0]) for r in result.fetchall()]
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(admin_id), action="bulk_update", entity_type="order",
+        new_values={"status": payload.status, "count": len(updated_ids)},
+    ))
     await db.commit()
 
     return ApiResponse(
@@ -237,6 +241,10 @@ async def import_products(
         except Exception as e:
             errors.append({"row": row_num, "error": str(e)})
 
+    db.add(ActivityLog(
+        admin_id=uuid.UUID(_admin), action="import", entity_type="product",
+        new_values={"created": created, "updated": updated, "errors": len(errors)},
+    ))
     await db.commit()
     return ApiResponse(
         data={"created": created, "updated": updated, "errors": errors},

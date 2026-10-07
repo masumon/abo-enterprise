@@ -167,9 +167,10 @@ async def create_lead(
 @router.get("/{lead_id}", response_model=ApiResponse)
 async def get_lead(
     lead_id: uuid.UUID,
+    admin_id: str = Depends(require_role("leads.read")),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get lead details (public - if they have access token)"""
+    """Get one lead's full details (admin only — it contains the customer's contact data)."""
     result = await db.execute(
         select(LeadV2).where(and_(LeadV2.id == lead_id, LeadV2.is_deleted == False))
     )

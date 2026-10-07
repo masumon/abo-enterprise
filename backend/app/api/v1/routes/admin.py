@@ -313,15 +313,26 @@ async def update_admin_user(
 
     old_values: dict = {}
     updates = payload.model_dump(exclude_unset=True)
+
+    # Only a super admin may touch a super admin account or hand out that role —
+    # otherwise any user manager could take over the owner's account.
+    actor = (await db.execute(select(AdminUser).where(AdminUser.id == UUID(admin_id)))).scalar_one_or_none()
+    actor_is_super = bool(actor and actor.role == "super_admin")
+    if not actor_is_super and (user.role == "super_admin" or updates.get("role") == "super_admin"):
+        raise HTTPException(status_code=403, detail="Only a super admin can change a super admin account")
+
     if "password" in updates:
         password = updates.pop("password")
         if password:
             user.password_hash = hash_password(password)
+            user.token_version = (user.token_version or 0) + 1  # sign them out everywhere
             old_values["password"] = "[redacted]"
 
     for field, value in updates.items():
         old_values[field] = getattr(user, field)
         setattr(user, field, value)
+    if updates.get("is_active") is False:
+        user.token_version = (user.token_version or 0) + 1
 
     log = ActivityLog(
         admin_id=UUID(admin_id),
@@ -363,7 +374,12 @@ async def deactivate_admin_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
+    actor = (await db.execute(select(AdminUser).where(AdminUser.id == UUID(admin_id)))).scalar_one_or_none()
+    if user.role == "super_admin" and not (actor and actor.role == "super_admin"):
+        raise HTTPException(status_code=403, detail="Only a super admin can deactivate a super admin")
+
     user.is_active = False
+    user.token_version = (user.token_version or 0) + 1
     log = ActivityLog(
         admin_id=UUID(admin_id),
         action="deactivate",

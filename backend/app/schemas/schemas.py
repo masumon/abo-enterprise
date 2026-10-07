@@ -420,6 +420,16 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    # Set when the owner requires 2FA and this account has not set it up yet:
+    # the session may only open the 2FA set-up screen.
+    mfa_setup_required: bool = False
+    # Set when a one-time recovery code was used instead of the authenticator app.
+    recovery_code_used: bool = False
+    recovery_codes_remaining: int | None = None
+
+
+class SecurityPolicyPayload(BaseModel):
+    require_2fa: bool
 
 
 class TotpCodePayload(BaseModel):

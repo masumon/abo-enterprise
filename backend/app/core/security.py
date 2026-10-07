@@ -32,12 +32,16 @@ def verify_password(plain: str, hashed: str) -> bool:
         return False
 
 
-def create_access_token(subject: str | Any, expires_delta: timedelta | None = None) -> str:
+def create_access_token(
+    subject: str | Any,
+    expires_delta: timedelta | None = None,
+    extra: dict | None = None,
+) -> str:
     expire = datetime.now(timezone.utc) + (
         expires_delta or timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     )
     return jwt.encode(
-        {"sub": str(subject), "exp": expire, "type": "access"},
+        {**(extra or {}), "sub": str(subject), "exp": expire, "type": "access"},
         settings.SECRET_KEY,
         algorithm=settings.JWT_ALGORITHM,
     )
@@ -151,6 +155,20 @@ async def require_admin(
     user = result.scalar_one_or_none()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Admin account inactive or not found")
+
+    # Signed out everywhere ("log out all devices", password reset, 2FA reset): the
+    # version baked into the token no longer matches. Tokens issued before this
+    # feature carry no version and count as 0, so existing sessions stay valid.
+    if int(payload.get("tv", 0) or 0) != int(user.token_version or 0):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session ended. Please sign in again.")
+
+    # When the owner requires 2FA, a session without it may only reach the 2FA set-up
+    # endpoints — it can never be locked out, and never reach admin data.
+    if not user.totp_enabled:
+        from app.core.admin_security import path_allowed_before_2fa, two_factor_required
+
+        if (payload.get("mfa_setup") or await two_factor_required(db)) and not path_allowed_before_2fa(request.url.path):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="2fa_setup_required")
 
     permission = _legacy_route_permission(request)
     if permission:

@@ -102,7 +102,7 @@ def _verify_bkash_webhook(body: bytes, signature: str) -> bool:
     return hmac.compare_digest(expected, signature)
 
 
-@router.post("/bkash/initiate", response_model=PaymentResponseModel)
+@router.post("/bkash/initiate", response_model=PaymentResponseModel, dependencies=[Depends(rate_limit("payment_start", 20, 600))])
 async def initiate_bkash_payment(
     request: PaymentInitiateRequest,
     db: AsyncSession = Depends(get_db),
@@ -147,7 +147,7 @@ async def initiate_bkash_payment(
         raise HTTPException(status_code=400, detail="Payment initiation failed")
 
 
-@router.post("/bkash/verify", response_model=PaymentResponseModel)
+@router.post("/bkash/verify", response_model=PaymentResponseModel, dependencies=[Depends(rate_limit("payment_start", 20, 600))])
 async def verify_bkash_payment(
     request: PaymentVerifyRequest,
     db: AsyncSession = Depends(get_db),
@@ -204,7 +204,7 @@ async def verify_bkash_payment(
         raise HTTPException(status_code=400, detail="Payment verification failed")
 
 
-@router.post("/bkash/initiate-booking", response_model=PaymentResponseModel)
+@router.post("/bkash/initiate-booking", response_model=PaymentResponseModel, dependencies=[Depends(rate_limit("payment_start", 20, 600))])
 async def initiate_bkash_booking_payment(
     request: BookingPaymentInitiateRequest,
     db: AsyncSession = Depends(get_db),
@@ -270,7 +270,7 @@ async def initiate_bkash_booking_payment(
         raise HTTPException(status_code=400, detail="Payment initiation failed")
 
 
-@router.post("/nagad/initiate-booking", response_model=PaymentResponseModel)
+@router.post("/nagad/initiate-booking", response_model=PaymentResponseModel, dependencies=[Depends(rate_limit("payment_start", 20, 600))])
 async def initiate_nagad_booking_payment(
     request: BookingPaymentInitiateRequest,
     db: AsyncSession = Depends(get_db),
@@ -333,7 +333,7 @@ async def initiate_nagad_booking_payment(
         raise HTTPException(status_code=400, detail="Payment initiation failed")
 
 
-@router.post("/nagad/initiate", response_model=PaymentResponseModel)
+@router.post("/nagad/initiate", response_model=PaymentResponseModel, dependencies=[Depends(rate_limit("payment_start", 20, 600))])
 async def initiate_nagad_payment(
     request: PaymentInitiateRequest,
     db: AsyncSession = Depends(get_db),
@@ -379,7 +379,7 @@ async def initiate_nagad_payment(
         raise HTTPException(status_code=400, detail="Payment initiation failed")
 
 
-@router.post("/nagad/verify", response_model=PaymentResponseModel)
+@router.post("/nagad/verify", response_model=PaymentResponseModel, dependencies=[Depends(rate_limit("payment_start", 20, 600))])
 async def verify_nagad_payment(
     request: PaymentVerifyRequest,
     db: AsyncSession = Depends(get_db),
@@ -439,7 +439,7 @@ async def verify_nagad_payment(
         raise HTTPException(status_code=400, detail="Payment verification failed")
 
 
-@router.post("/sslcommerz/initiate", response_model=PaymentResponseModel)
+@router.post("/sslcommerz/initiate", response_model=PaymentResponseModel, dependencies=[Depends(rate_limit("payment_start", 20, 600))])
 async def initiate_sslcommerz_payment(
     request: PaymentInitiateRequest,
     db: AsyncSession = Depends(get_db),
@@ -487,7 +487,7 @@ async def initiate_sslcommerz_payment(
         raise HTTPException(status_code=400, detail="Payment initiation failed")
 
 
-@router.post("/sslcommerz/initiate-booking", response_model=PaymentResponseModel)
+@router.post("/sslcommerz/initiate-booking", response_model=PaymentResponseModel, dependencies=[Depends(rate_limit("payment_start", 20, 600))])
 async def initiate_sslcommerz_booking_payment(
     request: BookingPaymentInitiateRequest,
     db: AsyncSession = Depends(get_db),
