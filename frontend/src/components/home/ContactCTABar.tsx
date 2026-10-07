@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { getBusinessHours } from "@/lib/businessHours";
 import { Phone, Facebook, MessageCircle, Youtube, Instagram } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
@@ -23,8 +24,8 @@ export default function ContactCTABar() {
   const phoneHref = toBdTelHref(phone);
   const whatsappNumber = getSettingValue(settings, "whatsapp_number");
   const hours = lang === "bn"
-    ? getSettingValue(settings, "contact_hours_bn")
-    : getSettingValue(settings, "contact_hours_en");
+    ? getBusinessHours(settings, "bn")
+    : getBusinessHours(settings, "en");
 
   const links = [
     { href: getSettingValue(settings, "facebook_url"), icon: Facebook, label: "Facebook", bg: "bg-[#1877F2] hover:bg-[#1568d9]" },

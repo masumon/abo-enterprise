@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ElementType } from "react";
+import { getBusinessHours } from "@/lib/businessHours";
 import Link from "next/link";
 import { Facebook, MessageCircle, Mail, MapPin, Phone, Loader2, Instagram, Linkedin, Youtube, ChevronDown, CheckCircle2, BadgeCheck, Clock, Lock } from "lucide-react";
 import { VisaMark, MastercardMark, BkashMark, NagadMark, RocketMark, CardMark, PlayStoreMark, AppStoreMark } from "@/components/icons/PaymentIcons";
@@ -62,7 +63,7 @@ export default function Footer() {
   const emailAddr = getSettingValue(settings, "contact_email");
   const address = resolveAddress(settings, lang);
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "contact_address"), address);
-  const hours = bn ? getSettingValue(settings, "contact_hours_bn") : getSettingValue(settings, "contact_hours_en");
+  const hours = getBusinessHours(settings, bn ? "bn" : "en");
   const aboutText = bn ? getSettingValue(settings, "footer_about_bn") : getSettingValue(settings, "footer_about_en");
   const whatsappDigits = normalizePhoneDigits(getSettingValue(settings, "whatsapp_number") || phoneRaw);
   const phoneDigits = normalizePhoneDigits(phoneRaw);

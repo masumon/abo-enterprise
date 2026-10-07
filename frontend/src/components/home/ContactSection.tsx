@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { getBusinessHours } from "@/lib/businessHours";
 import { MapPin, Phone, Mail, Clock, type LucideIcon } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import GlassCard from "@/components/ui/GlassCard";
@@ -22,8 +23,8 @@ export default function ContactSection() {
   const address = resolveAddress(settings, lang);
   const mapsLink = resolveGoogleMapsLink(getSettingValue(settings, "google_maps_embed"), address);
   const hours = lang === "bn"
-    ? getSettingValue(settings, "contact_hours_bn")
-    : getSettingValue(settings, "contact_hours_en");
+    ? getBusinessHours(settings, "bn")
+    : getBusinessHours(settings, "en");
 
   const infoItems: Array<{ icon: LucideIcon; label: string; href: string | null }> = [
     ...(phoneDisplay ? [{ icon: Phone, label: phoneDisplay, href: phoneHref }] : []),

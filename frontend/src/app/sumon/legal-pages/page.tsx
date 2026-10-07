@@ -115,6 +115,13 @@ export default function LegalPagesAdmin() {
             </a>
           </div>
 
+          <div className="rounded-xl border border-amber-200 bg-amber-50/70 dark:bg-amber-500/10 dark:border-amber-500/30 px-3 py-2.5 text-xs leading-relaxed text-amber-900 dark:text-amber-200">
+            <p className="font-semibold">⚠ কাস্টম লেখা সংরক্ষণের আগে জানুন</p>
+            <p className="mt-0.5">
+              এখানে লেখা সংরক্ষণ করলে এই পেজের পুরো ডিফল্ট লেখা (আইনি ভিত্তি, অধিকার-প্রক্রিয়া, কুকি তালিকা, অভিযোগ ও কমপ্লায়েন্স ডেস্কসহ) আপনার লেখা দিয়ে প্রতিস্থাপিত হবে। ফাঁকা রাখলে ওয়েবসাইট স্বয়ংক্রিয়ভাবে বাংলাদেশের নির্দেশিকা-অনুসারী ডিফল্ট লেখা দেখায়। কাস্টম লেখা দিলে আইনজীবীর দেখা লেখাই দিন।
+            </p>
+          </div>
+
           <div>
             <label className="text-xs font-semibold text-muted mb-1 block">English</label>
             <textarea

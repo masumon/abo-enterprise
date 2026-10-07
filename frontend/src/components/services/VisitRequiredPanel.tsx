@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { getBusinessHours } from "@/lib/businessHours";
 import { MapPin, Clock, CheckCircle, Navigation } from "lucide-react";
 import type { Service } from "@/types";
 import { useLanguageStore } from "@/store/language";
@@ -34,7 +35,7 @@ export default function VisitRequiredPanel({ service }: { service: Service }) {
   // Same keys the footer and contact page publish, so the shop cannot end up
   // with two addresses or two sets of hours.
   const address = resolveAddress(settings, lang);
-  const hours = getSettingValue(settings, bn ? "contact_hours_bn" : "contact_hours_en");
+  const hours = getBusinessHours(settings, bn ? "bn" : "en");
 
   return (
     <section className="enterprise-card p-6 border-l-4 border-l-accent-500">

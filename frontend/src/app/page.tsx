@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { sanitizeBusinessHours } from "@/lib/businessHours";
 import dynamic from "next/dynamic";
 import { redirect } from "next/navigation";
 import Hero from "@/components/home/Hero";
@@ -97,7 +98,7 @@ function buildOrganizationJsonLd(settings: Record<string, string>) {
 function buildLocalBusinessJsonLd(settings: Record<string, string>) {
   const phone = toE164Bd(settingValue(settings, "contact_phone"));
   const streetAddress = settingValue(settings, "contact_address");
-  const openingHours = settingValue(settings, "contact_hours_en");
+  const openingHours = sanitizeBusinessHours(settingValue(settings, "contact_hours_en"), settingValue(settings, "site_name"));
   const image = settingValue(settings, "default_og_image_url", settingValue(settings, "logo_url", DEFAULT_OG_IMAGE));
 
   return {
