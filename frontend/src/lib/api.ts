@@ -69,6 +69,16 @@ api.interceptors.response.use(
         return api.request(config);
       }
     }
+    // Owner requires 2FA and this admin has not set it up yet: send them to the set-up screen.
+    if (
+      error.response?.status === 403 &&
+      (error.response.data as { detail?: string } | undefined)?.detail === "2fa_setup_required" &&
+      typeof window !== "undefined" &&
+      isAdminProtectedPath(window.location.pathname) &&
+      !window.location.pathname.startsWith("/sumon/security")
+    ) {
+      window.location.href = "/sumon/security?setup=1";
+    }
     if (error.response?.status === 401 && typeof window !== "undefined") {
       clearAdminToken();
       if (isAdminProtectedPath(window.location.pathname)) {
@@ -349,22 +359,55 @@ export const serviceLeadsAdminApi = {
     api.delete<ApiResponse<null>>(`/api/v1/service-leads/admin/leads/${id}`),
 };
 
+export interface AdminLoginResult {
+  access_token: string;
+  token_type: string;
+  /** Owner requires 2FA and this account has none yet: only the set-up screen is open. */
+  mfa_setup_required?: boolean;
+  recovery_code_used?: boolean;
+  recovery_codes_remaining?: number | null;
+}
+
+export interface TwoFactorStatus {
+  enabled: boolean;
+  /** Only returned by the newer backend. */
+  recovery_codes_remaining?: number;
+  required?: boolean;
+}
+
+export interface SecurityPolicy {
+  require_2fa: boolean;
+  my_totp_enabled: boolean;
+  admins: { id: string; name: string; email: string; role: string; totp_enabled: boolean }[];
+}
+
 export const authApi = {
   login: (email: string, password: string, totpCode?: string) =>
-    api.post<ApiResponse<{ access_token: string; token_type: string }>>("/api/v1/auth/login", {
+    api.post<ApiResponse<AdminLoginResult>>("/api/v1/auth/login", {
       email,
       password,
       ...(totpCode ? { totp_code: totpCode } : {}),
     }),
 
-  totpStatus: () => api.get<ApiResponse<{ enabled: boolean }>>("/api/v1/auth/2fa/status"),
+  totpStatus: () => api.get<ApiResponse<TwoFactorStatus>>("/api/v1/auth/2fa/status"),
   totpSetup: () =>
     api.post<ApiResponse<{ secret: string; otpauth_uri: string; qr_data_uri: string }>>("/api/v1/auth/2fa/setup"),
-  totpEnable: (code: string) => api.post<ApiResponse<{ enabled: boolean }>>("/api/v1/auth/2fa/enable", { code }),
+  totpEnable: (code: string) =>
+    api.post<ApiResponse<{ enabled: boolean; recovery_codes?: string[]; access_token?: string }>>("/api/v1/auth/2fa/enable", { code }),
+  totpRecoveryCodes: (code: string) =>
+    api.post<ApiResponse<{ recovery_codes: string[] }>>("/api/v1/auth/2fa/recovery-codes", { code }),
   totpDisable: (code: string) => api.post<ApiResponse<{ enabled: boolean }>>("/api/v1/auth/2fa/disable", { code }),
 
   getMe: () =>
-    api.get<ApiResponse<{ id: string; email: string; name: string; role: string }>>("/api/v1/auth/me"),
+    api.get<ApiResponse<{ id: string; email: string; name: string; role: string; totp_enabled?: boolean }>>("/api/v1/auth/me"),
+
+  logoutAll: () => api.post<ApiResponse<null>>("/api/v1/auth/logout-all"),
+
+  /** Master (super) admin only. */
+  securityPolicy: () => api.get<ApiResponse<SecurityPolicy>>("/api/v1/auth/security-policy"),
+  setSecurityPolicy: (require_2fa: boolean) =>
+    api.put<ApiResponse<{ require_2fa: boolean }>>("/api/v1/auth/security-policy", { require_2fa }),
+  resetAdmin2fa: (userId: string) => api.post<ApiResponse<null>>(`/api/v1/auth/admins/${userId}/reset-2fa`),
 
   logout: () =>
     api.post<ApiResponse<null>>("/api/v1/auth/logout"),

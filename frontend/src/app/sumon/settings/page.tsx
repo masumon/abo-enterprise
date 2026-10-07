@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { validateSettingValues } from "@/lib/settingsValidation";
 import { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -685,7 +686,7 @@ export default function AdminSettingsPage() {
     setSaving("__all__");
     let anyFailed = false;
     for (const section of SECTIONS) {
-      const urlErr = validateUrls(section);
+      const urlErr = validateUrls(section) ?? validateSettingValues(section.fields, values);
       if (urlErr) { toast("error", urlErr); anyFailed = true; continue; }
 
       try {
@@ -716,7 +717,7 @@ export default function AdminSettingsPage() {
   const proceedSave = async (sectionId: string) => {
     const section = SECTIONS.find((s) => s.id === sectionId);
     if (!section) return;
-    const urlErr = validateUrls(section);
+    const urlErr = validateUrls(section) ?? validateSettingValues(section.fields, values);
     if (urlErr) { toast("error", urlErr); return; }
 
     setSaving(sectionId);

@@ -102,6 +102,8 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     { href: "/sumon/settings#marketing_config", icon: Settings, label: "Marketing & SEO", labelBn: "মার্কেটিং ও SEO", minRole: "admin" },
     { href: "/sumon/users", icon: Users, label: "Users", labelBn: "ইউজার", minRole: "admin", permission: "users.read" },
     { href: "/sumon/roles-permissions", icon: ShieldCheck, label: "Roles & Permissions", labelBn: "ভূমিকা ও অনুমতি", minRole: "admin", permission: "users.read" },
+    { href: "/sumon/security", icon: ShieldCheck, label: "Account Security", labelBn: "অ্যাকাউন্ট নিরাপত্তা" },
+    { href: "/sumon/help", icon: BookOpen, label: "Help Guide", labelBn: "সহায়তা গাইড" },
     { href: "/sumon/notifications", icon: Bell, label: "Notifications", labelBn: "নোটিফিকেশন" },
     { href: "/sumon/events", icon: History, label: "System Events", labelBn: "সিস্টেম ইভেন্ট", minRole: "admin", permission: "ops.read" },
     { href: "/sumon/audit", icon: Shield, label: "Audit Logs", labelBn: "অডিট", minRole: "admin", permission: "audit_logs.read" },

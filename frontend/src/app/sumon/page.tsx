@@ -14,6 +14,7 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminQuickActions from "@/components/admin/AdminQuickActions";
 import DashboardOperationsPanel from "@/app/sumon/DashboardOperationsPanel";
+import SetupChecklist from "@/components/admin/SetupChecklist";
 import { formatPrice } from "@/lib/utils";
 import { useAlertStore } from "@/store/alerts";
 import { useLanguageStore } from "@/store/language";
@@ -122,6 +123,9 @@ export default function AdminDashboard() {
           </button>
         </div>}
       />
+
+      {/* Plain-language list of what is still missing; hides itself when everything is done. */}
+      <SetupChecklist totalProducts={stats ? stats.total_products : null} />
 
       {error && <div role="alert" className="flex items-center gap-2 bg-red-50 border border-red-100 text-red-700 text-sm rounded-xl px-4 py-3">
         <span aria-hidden="true">!</span>

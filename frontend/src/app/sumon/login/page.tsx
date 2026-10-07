@@ -32,7 +32,13 @@ function getErrorInfo(e: unknown): { type: ErrorType; msg: string } {
   if (err.response) {
     const detail = err.response.data?.detail;
     if (err.response.status === 401) {
+      if (detail === "Invalid authenticator code") {
+        return { type: "auth", msg: "কোডটি সঠিক নয়, অথবা এই কোড আগেই ব্যবহার হয়েছে। অ্যাপে নতুন কোড আসা পর্যন্ত (প্রায় ৩০ সেকেন্ড) অপেক্ষা করে আবার চেষ্টা করুন, কিংবা রিকভারি কোড ব্যবহার করুন।" };
+      }
       return { type: "auth", msg: detail ?? "ইমেইল বা পাসওয়ার্ড সঠিক নয়" };
+    }
+    if (err.response.status === 429) {
+      return { type: "auth", msg: /account/i.test(detail ?? "") ? "বারবার ভুল চেষ্টার কারণে এই অ্যাকাউন্ট সাময়িকভাবে বন্ধ আছে। ১৫ মিনিট পরে আবার চেষ্টা করুন।" : "অনেকবার ভুল চেষ্টা হয়েছে। কিছুক্ষণ পরে আবার চেষ্টা করুন।" };
     }
     return { type: "unknown", msg: detail ?? `Server error (${err.response.status})` };
   }
@@ -58,6 +64,8 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [totpRequired, setTotpRequired] = useState(false);
   const [totpCode, setTotpCode] = useState("");
+  // Lost phone? A one-time recovery code can be typed instead of the 6-digit app code.
+  const [useRecovery, setUseRecovery] = useState(false);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -89,6 +97,17 @@ function LoginForm() {
           console.warn("Admin auth fell back to localStorage token on a non-preview host:", window.location.hostname);
         }
         setAdminToken(token);
+      }
+      const result = res.data.data;
+      // Owner requires 2FA and this account has none yet -> straight to the set-up screen.
+      if (result?.mfa_setup_required) {
+        router.replace("/sumon/security?setup=1");
+        return;
+      }
+      // A recovery code was used up -> remind them to make a fresh set.
+      if (result?.recovery_code_used) {
+        router.replace(`/sumon/security?recovery_used=1&left=${result.recovery_codes_remaining ?? 0}`);
+        return;
       }
       const redirect = searchParams.get("redirect");
       const safeRedirect =
@@ -169,24 +188,42 @@ function LoginForm() {
           {totpRequired && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                Authenticator Code <span className="text-gray-500">(2FA)</span>
+                {useRecovery ? "রিকভারি কোড" : "অথেনটিকেটর কোড"} <span className="text-gray-500">(2FA)</span>
               </label>
               <input
                 value={totpCode}
-                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                inputMode="numeric"
+                onChange={(e) =>
+                  setTotpCode(
+                    useRecovery
+                      ? e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, "").slice(0, 11)
+                      : e.target.value.replace(/\D/g, "").slice(0, 6)
+                  )
+                }
+                inputMode={useRecovery ? "text" : "numeric"}
                 autoComplete="one-time-code"
+                autoCapitalize="characters"
                 autoFocus
-                className="w-full px-4 py-3 bg-white/5 border border-brand-500/50 rounded-xl text-white text-center text-xl tracking-[0.4em] placeholder-gray-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40"
-                placeholder="000000"
+                className="w-full px-4 py-3 bg-white/5 border border-brand-500/50 rounded-xl text-white text-center text-xl tracking-[0.3em] placeholder-gray-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40"
+                placeholder={useRecovery ? "XXXXX-XXXXX" : "000000"}
               />
-              <p className="text-gray-500 text-xs mt-1.5">অথেনটিকেটর অ্যাপের ৬-সংখ্যার কোড দিন</p>
+              <p className="text-gray-500 text-xs mt-1.5">
+                {useRecovery
+                  ? "২-ধাপ চালু করার সময় পাওয়া ১০টি রিকভারি কোডের একটি দিন (প্রতিটি একবারই কাজ করে)।"
+                  : "অথেনটিকেটর অ্যাপের ৬-সংখ্যার কোড দিন"}
+              </p>
+              <button
+                type="button"
+                onClick={() => { setUseRecovery((v) => !v); setTotpCode(""); }}
+                className="mt-2 text-xs text-brand-400 hover:text-brand-300 underline underline-offset-2"
+              >
+                {useRecovery ? "অ্যাপের কোড ব্যবহার করুন" : "ফোন হাতে নেই? রিকভারি কোড ব্যবহার করুন"}
+              </button>
             </div>
           )}
 
           <button
             type="submit"
-            disabled={loading || (totpRequired && totpCode.length !== 6)}
+            disabled={loading || (totpRequired && (useRecovery ? totpCode.replace(/-/g, "").length !== 10 : totpCode.length !== 6))}
             className="w-full mt-2 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold transition-colors disabled:opacity-60"
           >
             {loading ? (
