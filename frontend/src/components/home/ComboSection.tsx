@@ -8,6 +8,7 @@ import { useLanguageStore } from "@/store/language";
 import { useCartStore } from "@/store/cart";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { formatPrice } from "@/lib/utils";
+import { timeoutSignal } from "@/lib/timeoutSignal";
 
 interface ComboItem {
   product_id: string;
@@ -50,7 +51,7 @@ export default function ComboSection() {
 
   useEffect(() => {
     let active = true;
-    fetch(`${getApiBaseUrl()}/api/v1/combos`, { signal: AbortSignal.timeout(15000) })
+    fetch(`${getApiBaseUrl()}/api/v1/combos`, { signal: timeoutSignal(15000) })
       .then((r) => (r.ok ? r.json() : { data: [] }))
       .then((j) => { if (active) setCombos((j.data ?? []) as Combo[]); })
       .catch(() => {});

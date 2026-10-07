@@ -10,6 +10,7 @@ import { useLanguageStore } from "@/store/language";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { searchApi } from "@/lib/api";
+import { timeoutSignal } from "@/lib/timeoutSignal";
 import { getRecentSearches, clearRecentSearches } from "@/lib/recentSearches";
 
 interface CategoryNode {
@@ -52,7 +53,7 @@ export default function SearchDiscovery() {
 
   useEffect(() => {
     let active = true;
-    fetch(`${getApiBaseUrl()}/api/v1/categories`, { signal: AbortSignal.timeout(15000) })
+    fetch(`${getApiBaseUrl()}/api/v1/categories`, { signal: timeoutSignal(15000) })
       .then((r) => (r.ok ? r.json() : { data: [] }))
       .then((j) => {
         if (!active) return;
