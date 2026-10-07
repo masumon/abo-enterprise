@@ -147,16 +147,19 @@ export default function Hero() {
           </>
         )}
         {/* Readability scrim: keeps the headline legible over busy photos */}
-        <div
-          className="absolute left-0 w-[65%] bottom-0 top-[var(--navbar-offset)] pointer-events-none"
-          style={{
-            background: "linear-gradient(90deg, rgba(20,24,43,0.80) 0%, rgba(20,24,43,0.55) 55%, rgba(20,24,43,0) 100%)",
-            // fade in below the navbar so the dark nav text stays readable
-            WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 90px)",
-            maskImage: "linear-gradient(to bottom, transparent 0, #000 90px)",
-          }}
-          aria-hidden
-        />
+        {/* Skipped when an admin picked custom text colours — they chose those for their own image. */}
+        {!hstyle.titleColor && !hstyle.subColor && (
+          <div
+            className="absolute left-0 w-[65%] bottom-0 top-[var(--navbar-offset)] pointer-events-none"
+            style={{
+              background: "linear-gradient(90deg, rgba(20,24,43,0.80) 0%, rgba(20,24,43,0.55) 55%, rgba(20,24,43,0) 100%)",
+              // fade in below the navbar so the dark nav text stays readable
+              WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 90px)",
+              maskImage: "linear-gradient(to bottom, transparent 0, #000 90px)",
+            }}
+            aria-hidden
+          />
+        )}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
           <div className="absolute top-20 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl animate-float" />
           <div className="absolute bottom-0 left-0 w-72 h-72 bg-accent-500/10 rounded-full blur-3xl" />

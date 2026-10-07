@@ -79,7 +79,9 @@ export default function ContactPage() {
             {contactInfo.map(({ icon: Icon, label, value, href }, i) => (
               <Reveal key={label} as="div" delay={i * 60}><GlassCard className="p-4 flex gap-4"><div className="w-10 h-10 bg-brand-50 rounded-xl flex items-center justify-center flex-shrink-0"><Icon className="w-5 h-5 text-brand-600" /></div><div><p className="text-xs text-muted font-medium">{label}</p>{href ? <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className="text-sm font-medium text-brand-600 hover:underline">{value}</a> : <span className="text-sm font-medium text-brand-600">{value}</span>}</div></GlassCard></Reveal>
             ))}
-            <GlassCard className="p-4 flex gap-3"><Clock className="w-5 h-5 text-brand-600 flex-shrink-0" /><div><p className="text-sm font-medium text-heading">{t("contact_hours")}</p><p className="text-sm text-muted mt-1">{getSettingValue(settings, lang === "bn" ? "contact_hours_bn" : "contact_hours_en") || (lang === "bn" ? "সময় নির্ধারণ করা নেই" : "Hours are not configured")}</p></div></GlassCard>
+            {getSettingValue(settings, lang === "bn" ? "contact_hours_bn" : "contact_hours_en") && (
+              <GlassCard className="p-4 flex gap-3"><Clock className="w-5 h-5 text-brand-600 flex-shrink-0" /><div><p className="text-sm font-medium text-heading">{t("contact_hours")}</p><p className="text-sm text-muted mt-1">{getSettingValue(settings, lang === "bn" ? "contact_hours_bn" : "contact_hours_en")}</p></div></GlassCard>
+            )}
             <GlassCard className="overflow-hidden p-0"><MapEmbed embedSrc={mapsEmbed} address={address} title="ABO Enterprise Location" minHeight="14rem" /></GlassCard>
           </div>
 

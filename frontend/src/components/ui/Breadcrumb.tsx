@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { ChevronRight, Home } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguageStore } from "@/store/language";
 
 interface BreadcrumbItem {
   label: string;
@@ -14,12 +15,16 @@ interface BreadcrumbProps {
   className?: string;
 }
 
-export default function Breadcrumb({ items, className }: BreadcrumbProps) {
+export default function Breadcrumb({ items: allItems, className }: BreadcrumbProps) {
+  const { lang } = useLanguageStore();
+  // The Home link is rendered below; drop a caller-supplied "/" crumb so it
+  // doesn't show twice ("Home › হোম › …").
+  const items = allItems.filter((item) => item.href !== "/");
   return (
     <nav aria-label="Breadcrumb" className={cn("flex items-center flex-wrap gap-1 text-xs sm:text-sm mb-4", className)}>
       <Link href="/" className="flex items-center gap-1 hover:text-brand-600 dark:hover:text-brand-300 transition-colors text-muted">
         <Home className="w-3.5 h-3.5" aria-hidden />
-        <span className="sr-only sm:not-sr-only">Home</span>
+        <span className="sr-only sm:not-sr-only">{lang === "bn" ? "হোম" : "Home"}</span>
       </Link>
       {items.map((item, i) => (
         <span key={`${item.label}-${i}`} className="flex items-center gap-1">

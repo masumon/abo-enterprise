@@ -96,6 +96,18 @@ export default function PageHero({
             decoding="async"
           />
           <div className="absolute inset-0" style={{ background: overlayGradient }} />
+          {isBrand && (
+            // Extra scrim behind the title column: banners often have their own baked-in text.
+            <div
+              className="absolute inset-x-0 bottom-0 top-[var(--navbar-offset)] hidden md:block"
+              style={{
+                background: "linear-gradient(90deg, rgba(10,22,40,0.72) 0%, rgba(10,22,40,0.40) 55%, rgba(10,22,40,0) 100%)",
+                // start below the navbar and fade in, so nav links stay readable
+                WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 70px)",
+                maskImage: "linear-gradient(to bottom, transparent 0, #000 70px)",
+              }}
+            />
+          )}
         </picture>
       )}
 
@@ -133,7 +145,7 @@ export default function PageHero({
             className={cn(
               isCenter && "justify-center",
               isBrand
-                ? "text-white/70 [&_a]:text-white/80 [&_a:hover]:text-white"
+                ? "text-white/70 [&_a]:text-white/80 [&_a:hover]:text-white [&_[aria-current]]:!text-white"
                 : undefined
             )}
           />
@@ -181,7 +193,7 @@ export default function PageHero({
 
       {isBrand && (
         <div className="absolute bottom-0 left-0 right-0 pointer-events-none" aria-hidden>
-          <svg viewBox="0 0 1440 48" fill="none" className="w-full h-6 md:h-8">
+          <svg viewBox="0 0 1440 48" preserveAspectRatio="none" fill="none" className="w-full h-6 md:h-8 block">
             <path
               d="M0 48L48 42C96 36 192 24 288 20C384 16 480 24 576 30C672 36 768 42 864 38C960 34 1056 20 1152 16C1248 12 1344 20 1392 24L1440 28V48H0Z"
               fill="var(--surface, #fafbff)"
