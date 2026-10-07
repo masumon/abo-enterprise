@@ -2,12 +2,16 @@
 
 import Script from "next/script";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { useCookieConsent } from "@/lib/cookieConsent";
 
 export default function GoogleTagManager() {
   const { settings } = usePublicSettings(["seo_gtm_id"]);
   const gtmId = getSettingValue(settings, "seo_gtm_id");
+  // A tag container can carry analytics and ad tags, so it loads only after the
+  // visitor accepted analytics or marketing cookies (opt-in).
+  const { analytics, marketing } = useCookieConsent();
 
-  if (!gtmId) return null;
+  if (!gtmId || !(analytics || marketing)) return null;
 
   return (
     <>
