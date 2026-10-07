@@ -126,6 +126,82 @@ export default function PrivacyPage() {
       ),
     },
     {
+      id: "data-map",
+      title: isBn ? "কী সংগ্রহ করি, কেন ও কোন ভিত্তিতে" : "What We Collect, Why & On What Basis",
+      content: (
+        <BulletList
+          items={
+            isBn
+              ? [
+                    "নাম, ফোন, ইমেইল, ডেলিভারি ঠিকানা — অর্ডার বা বুকিং নিশ্চিত, ডেলিভারি ও সহায়তার জন্য (চুক্তি)।",
+                    "অর্ডার, ইনভয়েস ও পেমেন্ট রেফারেন্স (পূর্ণ কার্ড তথ্য বা পিন কখনোই নয়) — পেমেন্ট গ্রহণ, ইনভয়েস ও আইনত প্রয়োজনীয় রেকর্ড রাখার জন্য (চুক্তি, আইনি বাধ্যবাধকতা)।",
+                    "আপনার পাঠানো বার্তা, চ্যাট-সহকারীর কথোপকথনসহ — উত্তর দিতে ও সেবা উন্নত করতে (চুক্তি, বৈধ স্বার্থ)।",
+                    "ডিভাইস, ব্রাউজার, আইপি ঠিকানা ও নিরাপত্তা লগ — সাইট সুরক্ষা, প্রতারণা প্রতিরোধ ও ত্রুটি সমাধানে (বৈধ স্বার্থ)।",
+                    "ভিজিট পরিসংখ্যান ও বিজ্ঞাপন-পরিমাপের তথ্য — কেবল আপনি অ্যানালিটিক্স বা মার্কেটিং কুকিতে সম্মতি দিলে (সম্মতি)।",
+                    "মার্কেটিং পছন্দ — আপনি সম্মতি দিলেই কেবল অফার পাঠানোর জন্য (সম্মতি)।",
+                  ]
+              : [
+                    "Name, phone, email, delivery address — to confirm, deliver and support your order or booking (contract).",
+                    "Order, invoice and payment references (never full card details or PIN) — to take payment, issue invoices and keep legally required records (contract, legal obligation).",
+                    "Messages you send us, including chat-assistant conversations — to answer you and improve our service (contract, legitimate interest).",
+                    "Device, browser, IP address and security logs — to protect the site, prevent fraud and fix errors (legitimate interest).",
+                    "Visit statistics and ad-measurement data — only if you accept analytics or marketing cookies (consent).",
+                    "Marketing preferences — to send offers only if you opted in (consent).",
+                  ]
+          }
+        />
+      ),
+    },
+    {
+      id: "retention",
+      title: isBn ? "কতদিন তথ্য রাখি" : "How Long We Keep Data",
+      content: (
+        <div className="space-y-3">
+        <p>
+          {isBn
+            ? "সংগ্রহের উদ্দেশ্যে যতদিন প্রয়োজন কেবল ততদিন আমরা ব্যক্তিগত তথ্য রাখি, তারপর মুছে বা অজ্ঞাতনামা করি। অর্ডার, ইনভয়েস ও পেমেন্ট রেকর্ড কর, ভ্যাট ও হিসাব সংক্রান্ত আইনে যতদিন প্রয়োজন ততদিন রাখা হয়। অ্যাকাউন্টের তথ্য অ্যাকাউন্ট সক্রিয় থাকা পর্যন্ত থাকে এবং আইনি বা চলমান অর্ডারের কারণ না থাকলে অনুরোধে মুছে ফেলা হয়। সম্মতির রেকর্ড আপনার পছন্দের প্রমাণ হিসেবে প্রত্যাহার না হওয়া পর্যন্ত ও তার পর যুক্তিসঙ্গত সময় রাখা হয়। নিরাপত্তা লগ সেবা সুরক্ষায় প্রয়োজনীয় সীমিত সময়ের জন্য রাখা হয়।"
+            : "We keep personal data only as long as needed for the purpose it was collected, and then delete or anonymise it. Order, invoice and payment records are kept for as long as tax, VAT and accounting laws require. Account details are kept while your account is active and removed on request once no legal or open-order reason remains. Consent records are kept as proof of your choice until the consent is withdrawn and a reasonable period afterwards. Security logs are kept only for a limited period needed to protect the service."}
+        </p>
+        </div>
+      ),
+    },
+    {
+      id: "assistant",
+      title: isBn ? "চ্যাট সহকারী ও স্বয়ংক্রিয় সহায়তা" : "Chat Assistant & Automated Help",
+      content: (
+        <p>
+          {isBn
+            ? "আমাদের সাইট সহকারী স্বয়ংক্রিয় নিয়মে প্রশ্নের উত্তর দেয়। কথোপকথন চালিয়ে যেতে, আমাদের টিমকে ফলো-আপে সাহায্য করতে ও সেবা উন্নত করতে আপনার বার্তা ও সহকারীর উত্তর সংরক্ষণ করা হয়। চ্যাটে পাসওয়ার্ড, কার্ড নম্বর বা পিন দেবেন না। সহকারী আপনার উপর আইনগত প্রভাব ফেলে এমন সিদ্ধান্ত নেয় না; যেকোনো সময় আমাদের যোগাযোগ মাধ্যমে মানুষের সাহায্য চাইতে পারেন।"
+            : "Our site assistant answers questions using automated rules. Your messages and the assistant's replies are stored to continue the conversation, help our team follow up and improve the service. Please do not share passwords, card numbers or PINs in chat. The assistant does not make decisions that have legal effect on you; you can always ask for a human through our contact channels."}
+        </p>
+      ),
+    },
+    {
+      id: "security-measures",
+      title: isBn ? "নিরাপত্তা ব্যবস্থা" : "Security Measures",
+      content: (
+        <BulletList
+          items={
+            isBn
+              ? [
+                    "সাইট ও API জুড়ে এনক্রিপ্টেড সংযোগ (HTTPS)।",
+                    "অ্যাডমিনদের জন্য ভূমিকা-ভিত্তিক প্রবেশাধিকার ও দুই-স্তরের যাচাইয়ের সুবিধা; কর্মীরা কাজের জন্য প্রয়োজনীয় তথ্যই দেখেন।",
+                    "পেমেন্টের তথ্য পেমেন্ট প্রদানকারীর নিরাপদ ব্যবস্থায় প্রক্রিয়াজাত হয়, আমরা সংরক্ষণ করি না।",
+                    "সমস্যা শনাক্ত ও মোকাবিলায় নিয়মিত ব্যাকআপ ও পর্যবেক্ষণ।",
+                    "কোনো ব্যবস্থাই শতভাগ নিরাপদ নয়; সমস্যা চোখে পড়লে অভিযোগ ও কমপ্লায়েন্স ডেস্কে সাথে সাথে জানান।",
+                  ]
+              : [
+                    "Encrypted connections (HTTPS) across the site and API.",
+                    "Role-based access and two-factor authentication options for administrators; staff see only the data their job needs.",
+                    "Payment details are handled by the payment providers' secure systems, not stored by us.",
+                    "Regular backups and monitoring to detect and respond to problems.",
+                    "No system is perfectly secure; if you notice a problem, tell us at once through the Complaints & Compliance Desk.",
+                  ]
+          }
+        />
+      ),
+    },
+    {
       id: "rights-process",
       title: isBn ? "আপনার অধিকার ও প্রয়োগের পদ্ধতি" : "Your Rights & How to Exercise Them",
       content: (

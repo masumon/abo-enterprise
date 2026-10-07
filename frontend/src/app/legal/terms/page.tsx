@@ -127,6 +127,157 @@ export default function TermsPage() {
       ),
     },
     {
+      id: "account",
+      title: isBn ? "অ্যাকাউন্ট ও নিবন্ধন" : "Account & Registration",
+      content: (
+        <BulletList
+          items={
+            isBn
+              ? [
+                    "নিবন্ধন বা অর্ডারের সময় সঠিক ও হালনাগাদ তথ্য দিন এবং তা হালনাগাদ রাখুন।",
+                    "লগইন তথ্য ও ওয়ান-টাইম কোড গোপন রাখা এবং আপনার অ্যাকাউন্টের সকল কার্যকলাপের দায়িত্ব আপনার।",
+                    "অননুমোদিত ব্যবহারের সন্দেহ হলে সাথে সাথে আমাদের জানান।",
+                    "মিথ্যা তথ্য, সেবার অপব্যবহার বা প্রতারণায় ব্যবহৃত অ্যাকাউন্ট আমরা (সম্ভব হলে নোটিশ দিয়ে) স্থগিত বা বন্ধ করতে পারি।",
+                  ]
+              : [
+                    "Provide accurate, current information when you register or order, and keep it up to date.",
+                    "You are responsible for keeping your login details and one-time codes confidential and for all activity under your account.",
+                    "Tell us immediately if you suspect unauthorised use of your account.",
+                    "We may suspend or close an account that gives false information, abuses the service or is used for fraud, after notice where reasonably possible.",
+                  ]
+          }
+        />
+      ),
+    },
+    {
+      id: "product-info",
+      title: isBn ? "পণ্য তথ্য, মূল্য ও অর্ডার গ্রহণ" : "Product Information, Pricing & Order Acceptance",
+      content: (
+        <BulletList
+          items={
+            isBn
+              ? [
+                    "বিবরণ, ছবি, স্পেসিফিকেশন ও মূল্য সঠিক রাখতে আমরা যত্নবান; ছবি দৃষ্টান্তমূলক, রং বা প্যাকেজিংয়ে সামান্য পার্থক্য হতে পারে।",
+                    "মূল্য বাংলাদেশি টাকায় (BDT) এবং প্রযোজ্য ভ্যাটসহ, অন্যথা উল্লেখ না থাকলে। ডেলিভারি চার্জ নিশ্চিত করার আগে আলাদাভাবে দেখানো হয়।",
+                    "পণ্যের প্রাপ্যতা স্টকের উপর নির্ভরশীল। মূল্য বা স্টকে ভুল ধরা পড়লে আমরা সংশ্লিষ্ট অর্ডার বাতিল করতে পারি এবং পরিশোধিত টাকা সম্পূর্ণ ফেরত দেব।",
+                    "আমরা অর্ডার নিশ্চিত করলে (এসএমএস, ইমেইল, হোয়াটসঅ্যাপ বা কলে) তবেই চুক্তি বাধ্যতামূলক হয়। সন্দেহজনক প্রতারণা, অপব্যবহার, অপ্রাপ্যতা বা সেবা-বহির্ভূত ঠিকানার কারণে অর্ডার প্রত্যাখ্যান বা বাতিল করতে পারি; পরিশোধিত অর্থ সম্পূর্ণ ফেরত পাবেন।",
+                    "কুপন ও অফার সংশ্লিষ্ট শর্ত মেনে চলে, নগদে রূপান্তরযোগ্য নয় এবং নির্ধারিত সময়ের পর প্রত্যাহার হতে পারে।",
+                  ]
+              : [
+                    "We take care that descriptions, images, specifications and prices are accurate; images are illustrative and minor variations in colour or packaging can occur.",
+                    "Prices are in Bangladeshi Taka (BDT) and include applicable VAT unless stated otherwise. Delivery charges are shown separately before you confirm.",
+                    "Availability is subject to stock. If a price or stock error is found, we may cancel the affected order and will refund any payment in full.",
+                    "An order is a binding contract only once we confirm it (by SMS, email, WhatsApp or call). We may decline or cancel an order for suspected fraud, abuse, unavailability or an unserviceable address, with a full refund of anything paid.",
+                    "Coupons and offers follow the conditions shown with them, cannot be exchanged for cash and may be withdrawn after their stated period.",
+                  ]
+          }
+        />
+      ),
+    },
+    {
+      id: "payments-security",
+      title: isBn ? "পেমেন্ট পদ্ধতি ও নিরাপত্তা" : "Payment Methods & Security",
+      content: (
+        <BulletList
+          items={
+            isBn
+              ? [
+                    "ক্যাশ অন ডেলিভারি, bKash, Nagad, কার্ড ও ব্যাংক পেমেন্ট (গেটওয়ে পার্টনারের মাধ্যমে) চেকআউটে দেখানো হয়; অর্ডার বা এলাকাভেদে ভিন্ন হতে পারে।",
+                    "কার্ড ও ওয়ালেটের তথ্য পেমেন্ট প্রদানকারীর নিরাপদ পেজে দিতে হয়; আমরা আপনার পূর্ণ কার্ড তথ্য বা পিন দেখি না বা সংরক্ষণ করি না।",
+                    "ম্যানুয়াল মোবাইল-ওয়ালেট পেমেন্টে সঠিক ট্রানজেকশন আইডি ও পরিমাণ দিতে হবে; অমিল, দ্বৈত বা যাচাইহীন পেমেন্টে অর্ডার বিলম্বিত হতে পারে এবং পাঠানোর আগে আপনার সাথে মীমাংসা করা হয়।",
+                    "পেমেন্ট ব্যর্থ হয়ে টাকা কেটে গেলে ট্রানজেকশনের তথ্যসহ যোগাযোগ করুন; যাচাইকৃত অর্থ মূল পেমেন্ট পদ্ধতিতে ফেরত দেওয়া হয়।",
+                  ]
+              : [
+                    "Available methods (cash on delivery, bKash, Nagad, card and bank payments via our gateway partners) are shown at checkout and may differ by order or area.",
+                    "Card and wallet credentials are entered on the payment provider's secure page; we do not see or store your full card details or PIN.",
+                    "For manual mobile-wallet payments you must give the correct transaction ID and amount; mismatched, duplicate or unverified payments may delay the order and are resolved with you before dispatch.",
+                    "If a payment fails but money is deducted, contact us with the transaction details; verified amounts are refunded to the original payment method.",
+                  ]
+          }
+        />
+      ),
+    },
+    {
+      id: "warranty-claims",
+      title: isBn ? "ওয়ারেন্টি ও ডেড-অন-অ্যারাইভাল" : "Warranty & Dead-on-Arrival",
+      content: (
+        <div className="space-y-3">
+        <p>
+          {isBn
+            ? "ব্র্যান্ড বা বিক্রেতার ওয়ারেন্টিযুক্ত পণ্যে পণ্য পেজ বা ওয়ারেন্টি কার্ডে উল্লেখিত মেয়াদ ও শর্ত প্রযোজ্য। ওয়ারেন্টি উৎপাদনজনিত ত্রুটি কভার করে; শারীরিক বা তরল ক্ষতি, অপব্যবহার, অননুমোদিত মেরামত বা স্বাভাবিক ক্ষয় কভার করে না।"
+            : "Where a product carries a brand or seller warranty, the warranty period and terms stated on the product page or warranty card apply. Warranty covers manufacturing defects; it does not cover physical or liquid damage, misuse, unauthorised repair or normal wear."}
+        </p>
+        <p>
+          {isBn
+            ? "প্রথম খোলার সময় চালু না হওয়া (ডেড-অন-অ্যারাইভাল), ক্ষতিগ্রস্ত বা ভুল পণ্য রিফান্ড নীতির রিটার্ন সময়ের মধ্যে — সম্ভব হলে আনবক্সিংয়ের ছবি/ভিডিওসহ — জানান। আমরা প্রতিস্থাপন বা রিফান্ড দিই এবং ফেরত পাঠানোর খরচ বহন করি।"
+            : "A product that does not work when first opened (dead on arrival) or arrives damaged or wrong should be reported within the return window in our Refund Policy, ideally with an unboxing photo or video. We then replace or refund it and bear the return cost."}
+        </p>
+        </div>
+      ),
+    },
+    {
+      id: "bookings",
+      title: isBn ? "সেবা বুকিং" : "Service Bookings",
+      content: (
+        <p>
+          {isBn
+            ? "আমরা নিশ্চিত করলে তবেই বুকিং নিশ্চিত হয়। মূল্য, প্রয়োজনীয় কাগজপত্র, অগ্রিমের পরিমাণ, সময় পরিবর্তন ও বাতিলের শর্ত সেবা পেজ বা বুকিং নিশ্চিতকরণে দেখানো হয় এবং ওই বুকিংয়ে প্রযোজ্য। সরকারি বা তৃতীয় পক্ষের ফি থাকলে তা আলাদা দেখানো হয় এবং সংশ্লিষ্ট সংস্থাকে পরিশোধের পর ফেরতযোগ্য নয়।"
+            : "A booking is confirmed only when we confirm it. Prices, required documents, advance amounts, rescheduling and cancellation conditions are shown on the service page or booking confirmation and apply to that booking. Where a government or third-party fee is involved, it is shown separately and is non-refundable once paid to that body."}
+        </p>
+      ),
+    },
+    {
+      id: "force-majeure",
+      title: isBn ? "অনিবার্য কারণ (ফোর্স ম্যাজোর)" : "Force Majeure",
+      content: (
+        <p>
+          {isBn
+            ? "আমাদের যুক্তিসঙ্গত নিয়ন্ত্রণ-বহির্ভূত ঘটনা — প্রাকৃতিক দুর্যোগ, বন্যা, অগ্নিকাণ্ড, মহামারি, ধর্মঘট বা হরতাল, যুদ্ধ বা অস্থিরতা, সরকারি পদক্ষেপ, বিদ্যুৎ, ইন্টারনেট বা কুরিয়ার নেটওয়ার্কের বিপর্যয় — থেকে সৃষ্ট বিলম্ব বা ব্যর্থতার দায় আমরা বহন করি না। আমরা দ্রুত জানাব, এবং প্রভাবিত অর্ডার বাতিল করে পরিশোধিত পুরো টাকা ফেরত নিতে পারবেন।"
+            : "We are not liable for delay or failure caused by events beyond our reasonable control — natural disaster, flood, fire, epidemic, strike or hartal, war or unrest, government action, power, internet or courier network failure. We will tell you promptly, and you may cancel an affected order for a full refund of what you paid."}
+        </p>
+      ),
+    },
+    {
+      id: "indemnity",
+      title: isBn ? "অপব্যবহারের দায়" : "Responsibility for Misuse",
+      content: (
+        <p>
+          {isBn
+            ? "আপনার সাইট অপব্যবহার, এই শর্ত ভঙ্গ বা অন্যের অধিকার লঙ্ঘনের কারণে আমাদের ক্ষতি বা তৃতীয় পক্ষের দাবি তৈরি হলে আইন অনুমোদিত সীমায় আপনি ক্ষতিপূরণ দিতে সম্মত। এতে আইনগত কোনো ভোক্তা-অধিকার ক্ষুণ্ণ হয় না; আমাদের নিজস্ব প্রতারণা, চরম অবহেলা এবং আইনে বাদ দেওয়া যায় না এমন দায় আমরা বহন করব।"
+            : "If your misuse of the site, breach of these terms or infringement of another person's rights causes us loss or a third-party claim, you agree to compensate us to the extent permitted by law. This does not reduce any consumer right you have by law, and we remain responsible for our own fraud, gross negligence and anything the law does not allow us to exclude."}
+        </p>
+      ),
+    },
+    {
+      id: "general",
+      title: isBn ? "সাধারণ বিধান" : "General Provisions",
+      content: (
+        <BulletList
+          items={
+            isBn
+              ? [
+                    "ইলেকট্রনিক চুক্তি: এই শর্তাবলী ও আপনার অর্ডার বাংলাদেশের আইন — চুক্তি আইন, ১৮৭২ ও তথ্য ও যোগাযোগ প্রযুক্তি আইন, ২০০৬ সহ — অনুযায়ী বৈধ ইলেকট্রনিক চুক্তি গঠন করে; আমাদের ইলেকট্রনিক রেকর্ড লেনদেনের প্রমাণ হিসেবে গ্রহণযোগ্য।",
+                    "পৃথকযোগ্যতা: কোনো বিধান অবৈধ বা অকার্যকর প্রমাণিত হলে বাকি অংশ বহাল থাকবে।",
+                    "অধিকার ত্যাগ নয়: কোনো বিধান প্রয়োগ না করা মানে তা ত্যাগ করা নয়।",
+                    "হস্তান্তর: আমরা ব্যবসার উত্তরসূরির কাছে আমাদের অধিকার ও দায়িত্ব হস্তান্তর করতে পারি; আপনি আমাদের সম্মতি ছাড়া তা পারবেন না।",
+                    "সম্পূর্ণ চুক্তি: এই শর্তাবলী, গোপনীয়তা নীতি, কুকি নীতি ও রিফান্ড নীতি মিলে সাইট ব্যবহারের সম্পূর্ণ চুক্তি।",
+                    "তৃতীয় পক্ষের লিংক: আমরা যেসব বাইরের ওয়েবসাইটে লিংক দিই, তাদের বিষয়বস্তু বা চর্চার দায় আমাদের নয়।",
+                    "নোটিশ: সাইটে প্রকাশ করে অথবা আপনার দেওয়া যোগাযোগের ঠিকানায় এসএমএস, ইমেইল বা হোয়াটসঅ্যাপে আমরা নোটিশ দিতে পারি।",
+                  ]
+              : [
+                    "Electronic contracts: these terms and your orders form a valid electronic contract under the laws of Bangladesh, including the Contract Act, 1872 and the Information and Communication Technology Act, 2006; our electronic records are admissible as evidence of the transaction.",
+                    "Severability: if any provision is found invalid or unenforceable, the rest remains in force.",
+                    "No waiver: failing to enforce a provision is not a waiver of it.",
+                    "Assignment: we may transfer our rights and duties to a successor of the business; you may not transfer yours without our consent.",
+                    "Entire agreement: these terms, the Privacy Policy, Cookie Policy and Refund Policy together form the whole agreement about your use of the site.",
+                    "Third-party links: we are not responsible for the content or practices of external websites we link to.",
+                    "Notices: we may give notice by posting on the site or by SMS, email or WhatsApp to the contact details you provided.",
+                  ]
+          }
+        />
+      ),
+    },
+    {
       id: "law",
       title: isBn ? "প্রযোজ্য আইন ও এখতিয়ার" : "Governing Law & Jurisdiction",
       content: (
@@ -160,13 +311,13 @@ export default function TermsPage() {
                     "অর্ডার নিশ্চিত হওয়ার (প্রিপেইডের ক্ষেত্রে পেমেন্ট পাওয়ার) পর ৪৮ ঘণ্টার মধ্যে পণ্য কুরিয়ারের কাছে হস্তান্তর করা হয়।",
                     "সাধারণত একই শহর/গ্রামে ৫ দিন এবং অন্য শহর/গ্রামে ১০ দিনের মধ্যে ডেলিভারি দেওয়া হয়।",
                     "সরকারি ছুটি, প্রাকৃতিক দুর্যোগ, হরতাল বা দুর্গম এলাকার কারণে বিলম্ব হলে আমরা আপনাকে জানাব।",
-                    "ডেলিভারি চার্জ ও ফ্রি-ডেলিভারির শর্ত চেকআউটে প্রদর্শিত হয়। পণ্য গ্রহণের সময় প্যাকেট যাচাই করে নিন।",
+                    "ডেলিভারি চার্জ ও ফ্রি-ডেলিভারির শর্ত চেকআউটে প্রদর্শিত হয়। এখানে উল্লেখিত সময় সর্বোচ্চ সীমা; এলাকাভিত্তিক সাধারণ সময় শিপিং পেজে দেখুন। পণ্য গ্রহণের সময় প্যাকেট যাচাই করে নিন।",
                   ]
                 : [
                     "Goods are handed to the courier within 48 hours of order confirmation (or of receiving payment for prepaid orders).",
                     "Delivery is normally within 5 days in the same city/village and 10 days to other cities/villages.",
                     "If public holidays, natural disasters, strikes or remote locations delay delivery, we will tell you.",
-                    "Delivery charges and any free-delivery conditions are shown at checkout. Please check the parcel when you receive it.",
+                    "Delivery charges and any free-delivery conditions are shown at checkout. The times above are maximums; typical times by area are on the Shipping page. Please check the parcel when you receive it.",
                   ]
             }
           />

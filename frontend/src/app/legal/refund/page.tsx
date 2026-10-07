@@ -103,6 +103,65 @@ export default function RefundPage() {
       ),
     },
     {
+      id: "defective",
+      title: isBn ? "ত্রুটিপূর্ণ, ক্ষতিগ্রস্ত বা ভুল পণ্য" : "Defective, Damaged or Wrong Items",
+      content: (
+        <div className="space-y-3">
+        <BulletList
+          items={
+            isBn
+              ? [
+                    "রিটার্ন সময়ের মধ্যে অর্ডার নম্বরসহ সমস্যার স্পষ্ট ছবি বা আনবক্সিং ভিডিও পাঠিয়ে জানান।",
+                    "আমরা ২৪–৪৮ ঘণ্টায় যাচাই করি। নিশ্চিত হলে আমাদের খরচে পিকআপ বা ফেরত পাঠানোর ব্যবস্থা করে পণ্য প্রতিস্থাপন বা আপনার পরিশোধিত ডেলিভারি চার্জসহ পুরো টাকা ফেরত দিই।",
+                    "ডেড-অন-অ্যারাইভাল, ভুল বা ক্ষতিগ্রস্ত ডেলিভারিতে সবসময় এই নিয়ম প্রযোজ্য; কোনো রিস্টকিং ফি নেই।",
+                  ]
+              : [
+                    "Tell us within the return window and send your order number with clear photos or an unboxing video showing the problem.",
+                    "We verify within 24–48 hours. If confirmed, we arrange pickup or return shipping at our cost and replace the item or refund you in full, including the delivery charge you paid.",
+                    "Dead-on-arrival products and wrong or damaged deliveries are always handled this way; no restocking fee applies.",
+                  ]
+          }
+        />
+        </div>
+      ),
+    },
+    {
+      id: "change-of-mind",
+      title: isBn ? "মত বদলের রিটার্ন" : "Change-of-mind Returns",
+      content: (
+        <div className="space-y-3">
+        <p>
+          {isBn
+            ? "যোগ্য পণ্যে আপনি অব্যবহৃত পণ্য মূল ও সম্পূর্ণ প্যাকেজিং, সব এক্সেসরিজ, ট্যাগ ও ইনভয়েসসহ রিটার্ন সময়ের মধ্যে ফেরত দিতে পারেন। মত বদলের রিটার্নে ফেরত পাঠানোর খরচ গ্রাহক বহন করেন। খোলা হাইজিন বা ব্যক্তিগত পরিচর্যার পণ্য, সফটওয়্যার বা ডিজিটাল পণ্য, অর্ডার-অনুযায়ী বা কাস্টমাইজড পণ্য এবং গ্রাহকের কারণে ক্ষতিগ্রস্ত পণ্য যোগ্য নয়; ‘যা রিফান্ডযোগ্য নয়’ অংশ দেখুন।"
+            : "Where a product is eligible, you may return an unused item in its original, complete packaging with all accessories, tags and the invoice within the return window. For change-of-mind returns the return-shipping cost is borne by the customer. Opened hygiene or personal-care products, software or digital goods, made-to-order or customised items, and items damaged by the customer are not eligible; see Non-Refundable Items."}
+        </p>
+        </div>
+      ),
+    },
+    {
+      id: "refund-destinations",
+      title: isBn ? "রিফান্ড কোথায় যায়" : "Where Your Refund Goes",
+      content: (
+        <BulletList
+          items={
+            isBn
+              ? [
+                    "পেমেন্ট গেটওয়ে বা কার্ডে প্রিপেইড হলে: মূল পেমেন্ট পদ্ধতিতেই ফেরত।",
+                    "bKash বা Nagad এ পরিশোধ করলে: একই ওয়ালেট নম্বরে ফেরত।",
+                    "ক্যাশ অন ডেলিভারি অর্ডারে: আপনার bKash, Nagad বা ব্যাংক অ্যাকাউন্টে, অথবা চাইলে আমাদের দোকানে নগদে।",
+                    "ফেরত দেওয়া বা বাতিল পণ্যের জন্য প্রকৃত পরিশোধিত অর্থই রিফান্ড হয়; প্রতিটি রিফান্ড আমরা এসএমএস, ইমেইল বা হোয়াটসঅ্যাপে নিশ্চিত করি। ব্যাংক বা গেটওয়ের প্রক্রিয়ায় কয়েক দিন বাড়তি লাগতে পারে।",
+                  ]
+              : [
+                    "Prepaid by a payment gateway or card: back to the original payment method.",
+                    "Paid by bKash or Nagad: back to the same wallet number.",
+                    "Cash on delivery orders: to your bKash, Nagad or bank account, or by cash at our shop if you prefer.",
+                    "Refunds are for the amount actually paid for the returned or cancelled item; we confirm each refund by SMS, email or WhatsApp. Bank or gateway processing time can add a few days.",
+                  ]
+          }
+        />
+      ),
+    },
+    {
       id: "cancellation",
       title: isBn ? "অর্ডার বাতিল" : "Order Cancellation",
       content: (
