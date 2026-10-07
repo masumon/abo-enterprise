@@ -76,7 +76,9 @@ export default function ServicesOverview() {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          // sm+: fixed-size tracks centred in the container, so one or two
+          // services sit in the middle instead of hugging the left edge.
+          <div className="grid grid-cols-2 sm:[grid-template-columns:repeat(auto-fit,minmax(16rem,18rem))] sm:justify-center gap-2.5 sm:gap-4">
             {services.map((service) => {
               const name = lang === "bn" && service.name_bn ? service.name_bn : service.name_en;
               const desc =

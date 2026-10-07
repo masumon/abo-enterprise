@@ -1380,3 +1380,25 @@
     animation-iteration-count: infinite !important;
   }
 }
+
+/* ── Marquee rows (components/ui/AutoScrollRow) ─────────────────────────── */
+.abo-marquee {
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 4%, #000 96%, transparent 100%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 4%, #000 96%, transparent 100%);
+}
+.abo-marquee-track {
+  animation: abo-marquee-scroll 60s linear infinite;
+  will-change: transform;
+}
+.abo-marquee:hover .abo-marquee-track,
+.abo-marquee:focus-within .abo-marquee-track {
+  animation-play-state: paused;
+}
+@keyframes abo-marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .abo-marquee { overflow-x: auto; -webkit-mask-image: none; mask-image: none; }
+  .abo-marquee-track { animation: none; }
+}

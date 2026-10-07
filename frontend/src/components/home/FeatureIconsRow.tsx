@@ -78,6 +78,7 @@ export default function FeatureIconsRow() {
           items={FEATURES}
           keyExtractor={(f) => f.id}
           spaceBetween={8}
+          minSlides={24}
           renderItem={({ icon: Icon, label, color, href }) => (
             <Link
               href={href}

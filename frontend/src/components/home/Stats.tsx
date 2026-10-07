@@ -46,6 +46,7 @@ export default function Stats() {
           items={stats}
           keyExtractor={(s) => s.key}
           spaceBetween={16}
+          minSlides={12}
           renderItem={({ icon: Icon, end, suffix, key }) => (
             <GlassCard hover className="p-6 text-center w-40 sm:w-48">
               <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-brand-50 dark:bg-brand-500/15 flex items-center justify-center">

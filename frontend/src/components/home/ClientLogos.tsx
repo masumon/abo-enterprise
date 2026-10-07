@@ -116,6 +116,7 @@ export default function ClientLogos() {
           items={clients}
           keyExtractor={(client, i) => `${client.name}-${i}`}
           spaceBetween={16}
+          minSlides={18}
           renderItem={(client) =>
             hasDetail(client) ? (
               <button
