@@ -11,7 +11,7 @@ import { searchApi } from "@/lib/api";
 import { loadProducts, loadServices, peekCachedProducts, peekCachedServices } from "@/lib/catalogLoader";
 import type { Product, Service, BlogPost } from "@/types";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { WHATSAPP_NUMBER } from "@/lib/utils";
+import { useContactInfo } from "@/hooks/useContactInfo";
 import PageHero from "@/components/ui/PageHero";
 
 interface Result {
@@ -168,6 +168,7 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
 function SearchResults() {
   const params = useSearchParams();
   const { lang } = useLanguageStore();
+  const contact = useContactInfo();
   const q = params.get("q") || "";
   const [results, setResults] = useState<Result[]>([]);
   const [loading, setLoading] = useState(false);
@@ -348,7 +349,7 @@ function SearchResults() {
                   {lang === "bn" ? "আমরা সোর্স করতে পারি কিনা জানান।" : "Let us know if we can source it."}
                 </p>
                 <a
-                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lang === "bn" ? `আমি "${q}" খুঁজছি` : `I'm looking for "${q}"`)}`}
+                  href={`${contact.waBase}?text=${encodeURIComponent(lang === "bn" ? `আমি "${q}" খুঁজছি` : `I'm looking for "${q}"`)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block w-full text-center text-xs font-semibold py-2.5 px-4 rounded-lg border border-[var(--line)] text-[var(--ink)] hover:border-brand-300"
@@ -474,7 +475,7 @@ function SearchResults() {
                     {lang === "bn" ? "আমরা সোর্স করতে পারি কিনা জানান।" : "Let us know if we can source it."}
                   </p>
                   <a
-                    href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(lang === "bn" ? `আমি "${q}" খুঁজছি` : `I'm looking for "${q}"`)}`}
+                    href={`${contact.waBase}?text=${encodeURIComponent(lang === "bn" ? `আমি "${q}" খুঁজছি` : `I'm looking for "${q}"`)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block w-full text-center text-xs font-semibold py-2.5 px-4 rounded-lg border border-[var(--line)] text-[var(--ink)] hover:border-brand-300"

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
+from app.core.contact import support_number
 from app.core.json_util import to_json_safe
 from app.core.security import require_role
 from app.core.config import settings
@@ -115,7 +116,7 @@ def _notify_status_change(
         send_sms,
         booking.customer_phone,
         f"ABO Enterprise: booking {booking.booking_number} is now {label}. "
-        f"Questions? Call {settings.WHATSAPP_NUMBER}.",
+        f"Questions? Call {support_number()}.",
     )
 
     if booking.customer_email:
@@ -128,7 +129,7 @@ def _notify_status_change(
                 booking.customer_name,
                 booking.service_name,
                 booking.status,
-                settings.WHATSAPP_NUMBER,
+                support_number(),
             ),
         )
 
@@ -209,7 +210,7 @@ async def _create_unlinked_booking(payload, background_tasks: BackgroundTasks, d
                 booking.customer_name,
                 booking.service_name,
                 "Quote upon confirmation",
-                settings.WHATSAPP_NUMBER,
+                support_number(),
                 track_url,
             ),
         )
@@ -488,7 +489,7 @@ async def create_booking(
             payload.customer_name,
             service.name_en,
             estimated,
-            settings.WHATSAPP_NUMBER,
+            support_number(),
             track_url,
         )
         background_tasks.add_task(

@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from app.core.database import get_db
+from app.core.contact import update_from_items as update_contact_numbers
 from app.core.security import ADMIN_SESSION_COOKIE, decode_token, require_role
 from app.core.rbac import has_permission
 from app.models.models import AdminUser, Setting, ActivityLog
@@ -249,6 +250,7 @@ async def upsert_settings(
         new_values={"keys": [r["key"] for r in results], "skipped_keys": skipped},
     ))
     await db.commit()
+    update_contact_numbers(results)
 
     message = (
         f"{len(results)} settings saved; {len(skipped)} skipped (hidden, protected, or not editable)"
@@ -318,6 +320,7 @@ async def update_setting(
     ))
     await db.commit()
     await db.refresh(setting)
+    update_contact_numbers([{"key": key, "value": setting.value}])
 
     return ApiResponse(
         success=True,

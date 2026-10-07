@@ -44,6 +44,8 @@ async def _init_db_and_bootstrap() -> None:
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME}")
     await _init_db_and_bootstrap()
+    from app.core.contact import load_from_db as load_contact_numbers
+    await load_contact_numbers()
     yield
     logger.info(f"Shutting down {settings.APP_NAME}")
 

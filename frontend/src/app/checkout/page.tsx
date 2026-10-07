@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { LegalConsentNote } from "@/components/legal/LegalShared";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -290,7 +291,8 @@ export default function CheckoutPage() {
             </section>
 
             <div className="flex items-center gap-6 text-xs text-muted"><div className="flex items-center gap-1.5"><Shield className="w-4 h-4 text-green-500" />{lang === "bn" ? "নিরাপদ" : "Secure"}</div><div className="flex items-center gap-1.5"><Truck className="w-4 h-4 text-brand-500" />{lang === "bn" ? "দেশwide ডেলিভারি" : "Nationwide delivery"}</div></div>
-            <button type="submit" disabled={isSubmitting || stockIssue || signInRequired || !pricingSettingsReady} className="btn btn-success btn-lg w-full hidden lg:flex">{isSubmitting ? (lang === "bn" ? "প্রক্রিয়া..." : "Processing...") : ctaLabel}<ChevronRight className="w-5 h-5" /></button>
+            <LegalConsentNote purpose="order" className="mb-3" />
+<button type="submit" disabled={isSubmitting || stockIssue || signInRequired || !pricingSettingsReady} className="btn btn-success btn-lg w-full hidden lg:flex">{isSubmitting ? (lang === "bn" ? "প্রক্রিয়া..." : "Processing...") : ctaLabel}<ChevronRight className="w-5 h-5" /></button>
           </form></div>
 
           <div className="lg:col-span-2"><div className="lg:sticky lg:top-[calc(var(--navbar-offset)+1rem)]"><section className="enterprise-card p-6"><h2 className="font-semibold text-heading mb-4 flex items-center gap-2"><ShoppingBag className="w-4 h-4 text-brand-500" />{lang === "bn" ? "সারসংক্ষেপ" : "Summary"}</h2><div className="space-y-3">

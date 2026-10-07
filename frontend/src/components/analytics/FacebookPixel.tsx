@@ -2,12 +2,15 @@
 
 import Script from "next/script";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
+import { useCookieConsent } from "@/lib/cookieConsent";
 
 export default function FacebookPixel() {
   const { settings } = usePublicSettings(["facebook_pixel_id"]);
   const pixelId = getSettingValue(settings, "facebook_pixel_id");
+  // Opt-in: marketing pixel only after the visitor accepts marketing cookies.
+  const { marketing } = useCookieConsent();
 
-  if (!pixelId) return null;
+  if (!pixelId || !marketing) return null;
 
   return (
     <>

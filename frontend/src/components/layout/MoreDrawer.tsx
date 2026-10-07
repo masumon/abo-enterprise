@@ -11,7 +11,8 @@ import { useLanguageStore } from "@/store/language";
 import { useCustomerStore } from "@/store/customer";
 import { useWishlistStore } from "@/store/wishlist";
 import { useCompareStore } from "@/store/compare";
-import { cn, WHATSAPP_NUMBER } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { useContactInfo } from "@/hooks/useContactInfo";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { getBrandName, getBrandTagline } from "@/lib/tokens";
@@ -39,6 +40,7 @@ interface Row {
 
 export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { lang, toggle: toggleLang } = useLanguageStore();
+  const contact = useContactInfo();
   const router = useRouter();
   const isLoggedIn = useCustomerStore((s) => s.isLoggedIn());
   const customerName = useCustomerStore((s) => s.session?.name);
@@ -271,7 +273,7 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
         >
           <div className="grid grid-cols-3 gap-2">
             <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}`}
+              href={contact.whatsappHref()}
               target="_blank"
               rel="noopener noreferrer"
               onClick={onClose}
@@ -281,7 +283,7 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
               <span className="text-[10px] font-semibold">WhatsApp</span>
             </a>
             <a
-              href={`tel:+${WHATSAPP_NUMBER}`}
+              href={contact.telHref || "/contact"}
               onClick={onClose}
               className="flex flex-col items-center gap-1 py-2.5 rounded-xl bg-brand-50 dark:bg-brand-500/10 text-brand-700 dark:text-brand-300"
             >

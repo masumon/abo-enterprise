@@ -2,13 +2,14 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, MessageCircle } from "lucide-react";
+import { Search } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import Accordion from "@/components/ui/Accordion";
 import EmptyState from "@/components/ui/EmptyState";
 import { resolveFaqItems, FAQ_CATEGORIES } from "@/lib/data/faq";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
+import ContactActions from "@/components/common/ContactActions";
 import { SITE_FAQ_KEY } from "@/lib/cmsContent";
 
 export default function FaqClient() {
@@ -88,10 +89,7 @@ export default function FaqClient() {
               {lang === "bn" ? "উত্তর না পেলে সরাসরি যোগাযোগ করুন" : "Can't find your answer? Contact us directly"}
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <a href="https://wa.me/8801825007977" target="_blank" rel="noopener noreferrer" className="btn btn-brand btn-sm">
-                <MessageCircle className="w-4 h-4" />
-                WhatsApp
-              </a>
+              <ContactActions />
               <Link href="/contact" className="btn btn-outline btn-sm">
                 {lang === "bn" ? "যোগাযোগ" : "Contact"}
               </Link>

@@ -4,48 +4,37 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Cookie, X } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
-
-const STORAGE_KEY = "abo-cookie-consent-v2";
-
-interface ConsentState {
-  status: "accepted" | "rejected" | "custom" | "dismissed";
-  analytics: boolean;
-  marketing: boolean;
-  updated_at: string;
-}
-
-function saveConsent(status: ConsentState["status"], analytics: boolean, marketing: boolean) {
-  const payload: ConsentState = {
-    status,
-    analytics,
-    marketing,
-    updated_at: new Date().toISOString(),
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-}
+import { CONSENT_REOPEN_EVENT, readConsent, saveConsent } from "@/lib/cookieConsent";
 
 export default function CookieConsent() {
   const { lang } = useLanguageStore();
   const [visible, setVisible] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
-  const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
+  // Optional categories start unticked (opt-in), never pre-selected.
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(false);
   const [marketingEnabled, setMarketingEnabled] = useState(false);
 
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
+    const parsed = readConsent();
+    if (!parsed) {
       const timer = setTimeout(() => setVisible(true), 1200);
       return () => clearTimeout(timer);
     }
+    if (parsed.status === "dismissed") return;
+    setVisible(false);
+  }, []);
 
-    try {
-      const parsed = JSON.parse(raw) as ConsentState;
-      if (parsed.status === "dismissed") return;
-      setVisible(false);
-    } catch {
-      const timer = setTimeout(() => setVisible(true), 1200);
-      return () => clearTimeout(timer);
-    }
+  // "Change cookie preferences" (cookie policy page) re-opens the banner.
+  useEffect(() => {
+    const reopen = () => {
+      const c = readConsent();
+      setAnalyticsEnabled(Boolean(c?.analytics));
+      setMarketingEnabled(Boolean(c?.marketing));
+      setShowCustomize(true);
+      setVisible(true);
+    };
+    window.addEventListener(CONSENT_REOPEN_EVENT, reopen);
+    return () => window.removeEventListener(CONSENT_REOPEN_EVENT, reopen);
   }, []);
 
   const acceptAll = () => {

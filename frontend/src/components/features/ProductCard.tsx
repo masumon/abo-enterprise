@@ -9,6 +9,7 @@ import { useCartStore } from "@/store/cart";
 import { useWishlistStore } from "@/store/wishlist";
 import { useCompareStore } from "@/store/compare";
 import { useLanguageStore } from "@/store/language";
+import { useContactInfo } from "@/hooks/useContactInfo";
 import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
 import { formatPrice, discountPercent } from "@/lib/utils";
@@ -26,6 +27,23 @@ interface Props {
    *  grids for a denser mobile layout. Every other grid (/products,
    *  /search, wishlist, compare) keeps the default sizing unchanged. */
   density?: "default" | "compact";
+}
+
+/** Out-of-stock "notify me" link — own component so the settings hook only runs for the few sold-out cards. */
+function NotifyMeLink({ nameBn, nameEn, bn }: { nameBn?: string | null; nameEn: string; bn: boolean }) {
+  const contact = useContactInfo();
+  const text = bn ? `${nameBn || nameEn} — স্টক এলে জানান` : `Notify when ${nameEn} is back`;
+  return (
+    <a
+      href={`${contact.waBase}?text=${encodeURIComponent(text)}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+      className="text-[10px] bg-green-600 text-white px-2 py-1 rounded-lg relative z-20 pointer-events-auto"
+    >
+      {bn ? "নোটিফাই" : "Notify me"}
+    </a>
+  );
 }
 
 function productAlt(product: Product, lang: string) {
@@ -213,15 +231,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2">
             <span className="bg-black/50 text-white text-xs font-bold px-3 py-1 rounded-full">{t("out_of_stock")}</span>
-            <a
-              href={`https://wa.me/8801825007977?text=${encodeURIComponent(lang === "bn" ? `${product.name_bn} — স্টক এলে জানান` : `Notify when ${product.name_en} is back`)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="text-[10px] bg-green-600 text-white px-2 py-1 rounded-lg relative z-20 pointer-events-auto"
-            >
-              {lang === "bn" ? "নোটিফাই" : "Notify me"}
-            </a>
+            <NotifyMeLink nameBn={product.name_bn} nameEn={product.name_en} bn={lang === "bn"} />
           </div>
         )}
       </div>

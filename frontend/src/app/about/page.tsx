@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import FacebookIcon from "@/components/icons/FacebookIcon";
 import { Target, Eye, Heart, CheckCircle, Users, Briefcase, ShoppingCart, Award, Calendar, TrendingUp } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
@@ -17,6 +18,7 @@ import {
   ABOUT_STORY_IMAGE_KEY,
   getAboutStoryImage,
   getAboutTeam,
+  normalizeExternalUrl,
   type CmsTeamMember,
 } from "@/lib/cmsContent";
 
@@ -181,6 +183,18 @@ export default function AboutPage() {
                 <h3 className="font-bold text-gray-900">{member.name}</h3>
                 <p className="text-sm text-brand-600 font-medium mt-1">{t(member.role)}</p>
                 <p className="text-xs text-gray-500 mt-2">{t(member.desc)}</p>
+                {normalizeExternalUrl(member.facebook) && (
+                  <a
+                    href={normalizeExternalUrl(member.facebook)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} — Facebook`}
+                    title={`${member.name} on Facebook`}
+                    className="mt-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1877f2] text-white transition-transform hover:scale-110"
+                  >
+                    <FacebookIcon className="h-4 w-4" />
+                  </a>
+                )}
               </div>
             ))}
           </div>

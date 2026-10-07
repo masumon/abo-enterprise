@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { LegalConsentNote } from "@/components/legal/LegalShared";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -332,6 +333,7 @@ export default function LeadCapture() {
                 </div>
               </div>
 
+              <LegalConsentNote purpose="inquiry" />
               <button
                 type="submit"
                 disabled={isSubmitting}

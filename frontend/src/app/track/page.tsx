@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useContactInfo } from "@/hooks/useContactInfo";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { Truck, Package, Phone, Calendar, ArrowLeft, CreditCard, ClipboardList, Search, Loader2 } from "lucide-react";
+import { Truck, Package, Phone, MessageCircle, Calendar, ArrowLeft, CreditCard, ClipboardList, Search, Loader2 } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,7 @@ const BOOKING_STATUS_LABEL: Record<string, { en: string; bn: string; color: stri
 };
 
 export default function TrackingPage() {
+  const contact = useContactInfo();
   const params = useSearchParams();
   const router = useRouter();
   const { lang } = useLanguageStore();
@@ -301,10 +303,18 @@ export default function TrackingPage() {
               </div>
 
               <div className="border-t border-gray-100 dark:border-white/10 mt-6 pt-6 flex flex-col sm:flex-row gap-3">
-                <a href="tel:+8801825007977" className="btn btn-outline btn-sm flex-1 justify-center">
-                  <Phone className="w-4 h-4" />
-                  {t("Call support", "সাপোর্টে কল করুন")}
-                </a>
+                {contact.hasPhone && (
+                  <a href={contact.telHref} className="btn btn-outline btn-sm flex-1 justify-center">
+                    <Phone className="w-4 h-4" />
+                    {t("Call support", "সাপোর্টে কল করুন")}
+                  </a>
+                )}
+                {contact.hasWhatsapp && (
+                  <a href={contact.whatsappHref(`${t("Order tracking", "অর্ডার ট্র্যাকিং")}: ${tracking.number}`)} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm flex-1 justify-center">
+                    <MessageCircle className="w-4 h-4" />
+                    WhatsApp
+                  </a>
+                )}
                 <Link href={tracking.kind === "order" ? "/orders" : "/profile"} className="btn btn-outline btn-sm flex-1 justify-center">
                   {t("View all", "সব দেখুন")}
                 </Link>

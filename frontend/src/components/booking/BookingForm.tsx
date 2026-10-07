@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { LegalConsentNote } from "@/components/legal/LegalShared";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -937,7 +938,8 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
         </div>
       )}
 
-      <button type="submit" disabled={submitting} className="btn btn-brand btn-lg w-full">
+      <LegalConsentNote purpose="booking" className="mb-3" />
+<button type="submit" disabled={submitting} className="btn btn-brand btn-lg w-full">
         {submitting ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" /> {L("Submitting...", "জমা হচ্ছে...")}

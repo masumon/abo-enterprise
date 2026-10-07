@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
+from app.core.contact import support_number
 from app.core.rate_limit import rate_limit
 from app.core.security import require_customer, require_role
 from app.core.config import settings
@@ -480,7 +481,7 @@ async def create_order(
             payload.customer_name,
             items,
             float(order.total),
-            settings.WHATSAPP_NUMBER,
+            support_number(),
         )
         background_tasks.add_task(
             send_email, payload.customer_email,
@@ -695,7 +696,7 @@ async def resend_order_confirmation(
         order.customer_name,
         items,
         float(order.total),
-        settings.WHATSAPP_NUMBER,
+        support_number(),
     )
     background_tasks.add_task(
         send_email, order.customer_email,

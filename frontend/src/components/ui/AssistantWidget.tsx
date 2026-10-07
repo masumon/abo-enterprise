@@ -65,7 +65,7 @@ const SESSION_TOKEN_KEY = "abo_assistant_session_token";
 const DEFAULT_CONFIG: AssistantConfig = {
   enabled: true,
   whatsapp_enabled: false,
-  whatsapp_number: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "8801825007977",
+  whatsapp_number: "",
   welcome_en: "",
   welcome_bn: "",
   features: DEFAULT_FEATURES,
