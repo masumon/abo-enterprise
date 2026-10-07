@@ -6,8 +6,22 @@ import LegalPageLayout, { type LegalSection } from "@/components/layout/LegalPag
 import PageHero from "@/components/ui/PageHero";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { useLegalPageOverride } from "@/hooks/useLegalPageOverride";
+import { ComplianceOfficerBlock, CookiePreferencesButton, CookieTable, type CookieRow } from "@/components/legal/LegalShared";
 
-const LAST_UPDATED = "2026-07-25";
+const LAST_UPDATED = "2026-10-07";
+
+
+const COOKIE_ROWS: CookieRow[] = [
+  { name: "abo-cookie-consent-v2", category: { en: "Consent record", bn: "সম্মতির রেকর্ড" }, purpose: { en: "Remembers the cookie choice you made.", bn: "আপনার কুকি পছন্দ মনে রাখে।" }, duration: { en: "Until you clear it", bn: "মুছে ফেলার আগ পর্যন্ত" }, provider: "ABO Enterprise", optional: false },
+  { name: "abo-cart · abo-wishlist · abo-compare", category: { en: "Shopping", bn: "কেনাকাটা" }, purpose: { en: "Keeps your cart, wishlist and comparison list on this device.", bn: "আপনার কার্ট, উইশলিস্ট ও তুলনা তালিকা এই ডিভাইসে ধরে রাখে।" }, duration: { en: "Until you clear it", bn: "মুছে ফেলার আগ পর্যন্ত" }, provider: "ABO Enterprise", optional: false },
+  { name: "abo-customer · abo-customer-profile", category: { en: "Account", bn: "অ্যাকাউন্ট" }, purpose: { en: "Keeps you signed in and remembers saved delivery details.", bn: "আপনাকে লগইন রাখে এবং সংরক্ষিত ডেলিভারি তথ্য মনে রাখে।" }, duration: { en: "Until you sign out", bn: "সাইন-আউট না করা পর্যন্ত" }, provider: "ABO Enterprise", optional: false },
+  { name: "abo-lang · abo-theme", category: { en: "Preferences", bn: "পছন্দ" }, purpose: { en: "Remembers your language and light/dark mode.", bn: "আপনার ভাষা ও লাইট/ডার্ক মোড মনে রাখে।" }, duration: { en: "Until you clear it", bn: "মুছে ফেলার আগ পর্যন্ত" }, provider: "ABO Enterprise", optional: false },
+  { name: "abo_assistant_session*", category: { en: "Chat assistant", bn: "চ্যাট সহকারী" }, purpose: { en: "Keeps your conversation with the site assistant together.", bn: "সাইট সহকারীর সাথে আপনার কথোপকথন ধরে রাখে।" }, duration: { en: "Browser session / until cleared", bn: "ব্রাউজার সেশন / মুছে ফেলা পর্যন্ত" }, provider: "ABO Enterprise", optional: false },
+  { name: "__cf_bm (and similar)", category: { en: "Security", bn: "নিরাপত্তা" }, purpose: { en: "Bot and abuse protection by our security/CDN provider (may be set).", bn: "আমাদের নিরাপত্তা/CDN সেবাদাতার বট ও অপব্যবহার প্রতিরোধ (সেট হতে পারে)।" }, duration: { en: "Up to 30 minutes", bn: "সর্বোচ্চ ৩০ মিনিট" }, provider: "Cloudflare", optional: false },
+  { name: "Payment gateway cookies", category: { en: "Payment", bn: "পেমেন্ট" }, purpose: { en: "Set by bKash, Nagad or SSLCommerz on their own pages to complete and secure your payment.", bn: "পেমেন্ট সম্পন্ন ও সুরক্ষিত করতে bKash, Nagad বা SSLCommerz নিজেদের পেজে সেট করে।" }, duration: { en: "Session", bn: "সেশন" }, provider: "bKash / Nagad / SSLCommerz", optional: false },
+  { name: "_ga · _ga_*", category: { en: "Analytics", bn: "অ্যানালিটিক্স" }, purpose: { en: "Counts visits and page views so we can improve the site.", bn: "ভিজিট ও পেজ-ভিউ গণনা করে সাইট উন্নত করতে সাহায্য করে।" }, duration: { en: "Up to 2 years", bn: "সর্বোচ্চ ২ বছর" }, provider: "Google Analytics", optional: true },
+  { name: "_fbp", category: { en: "Marketing", bn: "মার্কেটিং" }, purpose: { en: "Measures the effectiveness of our ads (only if the Meta Pixel is enabled).", bn: "আমাদের বিজ্ঞাপনের কার্যকারিতা মাপে (শুধু Meta Pixel চালু থাকলে)।" }, duration: { en: "Up to 90 days", bn: "সর্বোচ্চ ৯০ দিন" }, provider: "Meta (Facebook)", optional: true },
+];
 
 export default function CookiesPage() {
   const { lang } = useLanguageStore();
@@ -97,14 +111,42 @@ export default function CookiesPage() {
       ),
     },
     {
-      id: "contact",
-      title: isBn ? "যোগাযোগ" : "Contact",
+      id: "inventory",
+      title: isBn ? "আমরা যেসব কুকি ও স্টোরেজ ব্যবহার করি" : "Cookies & Storage We Use",
       content: (
-        <p>
-          {isBn ? "কুকি সংক্রান্ত প্রশ্নে: " : "For cookie-related questions: "}
-          <b>{email}</b> · <b>{phone}</b>।
-        </p>
+        <div className="space-y-3">
+          <p>
+            {isBn
+              ? "অপরিহার্য কুকি সাইট চালাতে প্রয়োজন, তাই সম্মতি ছাড়াই ব্যবহৃত হয়। ঐচ্ছিক (অ্যানালিটিক্স ও মার্কেটিং) কুকি আপনার স্পষ্ট সম্মতির আগে চালু হয় না — সম্মতি না দিলে এগুলো লোডই হয় না।"
+              : "Essential cookies are needed to run the site, so they are used without consent. Optional (analytics and marketing) cookies are never switched on before you agree — if you do not consent, they are not even loaded."}
+          </p>
+          <CookieTable rows={COOKIE_ROWS} />
+          <p className="text-xs text-muted">
+            {isBn
+              ? "তালিকাটি আমাদের বর্তমান ব্যবস্থা অনুযায়ী; মেয়াদ প্রদানকারীর সেটিং অনুযায়ী বদলাতে পারে। মার্কেটিং কুকি কেবল তখনই ব্যবহৃত হয় যখন সাইটে একটি বিজ্ঞাপন-পিক্সেল সক্রিয় করা থাকে।"
+              : "This list reflects our current setup; durations may vary with the provider's settings. Marketing cookies are used only when an advertising pixel has been enabled on the site."}
+          </p>
+        </div>
       ),
+    },
+    {
+      id: "preferences",
+      title: isBn ? "সম্মতি পরিবর্তন বা প্রত্যাহার" : "Change or Withdraw Consent",
+      content: (
+        <div className="space-y-3">
+          <p>
+            {isBn
+              ? "সম্মতি দেওয়ার মতোই সহজে আপনি তা বদলাতে বা প্রত্যাহার করতে পারেন। নিচের বাটনে চাপলে কুকি পছন্দ-ফর্ম আবার খুলবে। প্রত্যাহারের আগে যা প্রক্রিয়াজাত হয়েছে তার বৈধতা এতে নষ্ট হয় না। ব্রাউজারের সেটিং থেকেও কুকি মুছে ফেলা বা ব্লক করা যায়।"
+              : "You can change or withdraw consent as easily as you gave it. The button below re-opens the cookie preferences. Withdrawal does not affect processing that happened before it. You can also delete or block cookies in your browser settings."}
+          </p>
+          <CookiePreferencesButton />
+        </div>
+      ),
+    },
+    {
+      id: "contact",
+      title: isBn ? "অভিযোগ ও যোগাযোগ" : "Complaints & Contact",
+      content: <ComplianceOfficerBlock />,
     },
   ];
 

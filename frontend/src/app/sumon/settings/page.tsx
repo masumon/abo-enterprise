@@ -28,8 +28,10 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
       { path: "role.en", label: "Role (EN)" }, { path: "role.bn", label: "Role (BN)" },
       { path: "desc.en", label: "Bio (EN)", type: "textarea" }, { path: "desc.bn", label: "Bio (BN)", type: "textarea" },
       { path: "image", label: "Photo", type: "image" },
+      { path: "facebook", label: "Facebook link", hint: "optional — e.g. https://www.facebook.com/username (shown as a Facebook icon in the footer credit and on the About page)" },
+      { path: "website", label: "Website link", hint: "optional — portfolio or website; links the name in the footer credit" },
     ],
-    newItem: () => ({ id: Date.now().toString(36), name: "", role: { en: "", bn: "" }, desc: { en: "", bn: "" }, image: "" }),
+    newItem: () => ({ id: Date.now().toString(36), name: "", role: { en: "", bn: "" }, desc: { en: "", bn: "" }, image: "", facebook: "", website: "" }),
     previewRow: (item) => (
       <div className="text-center max-w-[180px] mx-auto">
         <div className="w-16 h-16 mx-auto mb-2 rounded-full bg-brand-100 overflow-hidden flex items-center justify-center text-brand-700 font-bold">
@@ -195,7 +197,7 @@ const SECTIONS: Section[] = [
     title: "Contact & Location",
     icon: <MapPin className="w-4 h-4" />,
     fields: [
-      { key: "contact_phone", label: "Phone", type: "tel", placeholder: "01825007977", defaultValue: "01825007977" },
+      { key: "contact_phone", label: "Phone (call)", type: "tel", placeholder: "01XXXXXXXXX", hint: "Shown for calls across the site, in invoices and customer SMS." },
       { key: "contact_email", label: "Email", type: "email", placeholder: "info@aboenterprise.com", defaultValue: "info@aboenterprise.com", hint: "Shown on the site (footer, contact, invoices). Editable here — no redeploy." },
       { key: "contact_address", label: "Address (বাংলা)", type: "textarea", placeholder: "হাজী বাহার উদ্দিন মার্কেট, আব্দুল্লাপুর, বৈরাগীবাজার-৩১৭০, বিয়ানীবাজার, সিলেট, বাংলাদেশ", hint: "সাইট বাংলায় থাকলে এই ঠিকানা দেখাবে" },
       { key: "contact_address_en", label: "Address (English)", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh", hint: "Shown when the site is in English. Leave blank to reuse the Bangla address.", translateFrom: "contact_address" },

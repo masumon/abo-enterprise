@@ -1,6 +1,7 @@
 "use client";
 
-import { Truck, Phone, Mail, MapPin, CheckCircle2, Clock } from "lucide-react";
+import { Truck, Phone, Mail, MapPin, CheckCircle2, Clock, MessageCircle } from "lucide-react";
+import { useContactInfo } from "@/hooks/useContactInfo";
 import type { PublicInvoiceData } from "@/lib/api";
 import { cn, formatPrice } from "@/lib/utils";
 import BrandLogo from "@/components/ui/BrandLogo";
@@ -9,7 +10,6 @@ import { getBrandTagline } from "@/lib/tokens";
 import {
   DEFAULT_ADDRESS_EN,
   DEFAULT_ADDRESS_BN,
-  DEFAULT_BUSINESS_PHONE,
   DEFAULT_BUSINESS_EMAIL,
 } from "@/lib/maps";
 
@@ -20,6 +20,7 @@ interface Props {
 
 /** Customer-facing invoice — premium, screenshot-ready, bilingual, dark-aware. */
 export default function InvoiceCard({ invoice, lang }: Props) {
+  const contact = useContactInfo();
   const bn = lang === "bn";
   const discount = invoice.discount_amount ?? 0;
   // Delivery is always shown (0 = free). Legacy invoices without a stored
@@ -302,13 +303,21 @@ export default function InvoiceCard({ invoice, lang }: Props) {
             {bn ? DEFAULT_ADDRESS_BN : DEFAULT_ADDRESS_EN}
           </span>
           <span className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-            <span className="flex items-center gap-1">
-              <Phone className="w-3 h-3" />
-              {DEFAULT_BUSINESS_PHONE}
-            </span>
+            {contact.hasPhone && (
+              <span className="flex items-center gap-1">
+                <Phone className="w-3 h-3" />
+                {contact.phoneDisplay}
+              </span>
+            )}
+            {contact.hasWhatsapp && contact.whatsappDisplay !== contact.phoneDisplay && (
+              <span className="flex items-center gap-1">
+                <MessageCircle className="w-3 h-3" />
+                WhatsApp {contact.whatsappDisplay}
+              </span>
+            )}
             <span className="flex items-center gap-1">
               <Mail className="w-3 h-3" />
-              {DEFAULT_BUSINESS_EMAIL}
+              {contact.email || DEFAULT_BUSINESS_EMAIL}
             </span>
           </span>
         </div>

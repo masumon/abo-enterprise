@@ -4,6 +4,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
+from app.core.contact import support_number
 from app.core.security import require_role
 from app.core.config import settings
 from app.core.email import send_email, lead_notification_html, customer_lead_confirmation_html
@@ -148,7 +149,7 @@ async def create_lead(
             lead.lead_number,
             payload.name,
             payload.lead_type,
-            settings.WHATSAPP_NUMBER,
+            support_number(),
         )
         background_tasks.add_task(
             send_email,

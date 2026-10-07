@@ -104,4 +104,3 @@ export function buildCustomerWhatsAppLink(phone: string, message: string): strin
   return `https://wa.me/${toWhatsAppDigits(phone)}?text=${encodeURIComponent(message)}`;
 }
 
-export const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "8801825007977";

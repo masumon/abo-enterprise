@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
+import { useCookieConsent } from "@/lib/cookieConsent";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
@@ -27,12 +28,15 @@ function RouteTracker() {
 }
 
 export default function GoogleAnalytics() {
+  // Opt-in: no analytics script or cookie until the visitor accepts analytics cookies.
+  const { analytics } = useCookieConsent();
   if (!GA_ID) {
     if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
       console.warn("GA disabled: NEXT_PUBLIC_GA_MEASUREMENT_ID is not set");
     }
     return null;
   }
+  if (!analytics) return null;
 
   return (
     <>

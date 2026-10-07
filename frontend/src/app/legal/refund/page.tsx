@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { MessageCircle } from "lucide-react";
+import ContactActions from "@/components/common/ContactActions";
 import { useLanguageStore } from "@/store/language";
 import LegalPageLayout, { type LegalSection } from "@/components/layout/LegalPageLayout";
 import PageHero from "@/components/ui/PageHero";
 import { useLegalPageOverride } from "@/hooks/useLegalPageOverride";
+import { BulletList, ComplianceOfficerBlock } from "@/components/legal/LegalShared";
 
-const LAST_UPDATED = "2026-07-25";
+const LAST_UPDATED = "2026-10-07";
 
 export default function RefundPage() {
   const { lang } = useLanguageStore();
@@ -102,15 +103,57 @@ export default function RefundPage() {
       ),
     },
     {
-      id: "support",
-      title: isBn ? "সাপোর্ট" : "Contact Support",
+      id: "cancellation",
+      title: isBn ? "অর্ডার বাতিল" : "Order Cancellation",
+      content: (
+        <p>
+          {isBn
+            ? "পণ্য কুরিয়ারে হস্তান্তরের আগে আপনি বিনা খরচে অর্ডার বাতিল করতে পারেন; প্রিপেইড অর্ডারের পুরো টাকা ফেরত দেওয়া হবে। হস্তান্তরের পর বাতিল করতে চাইলে পণ্য গ্রহণ না করে ফেরত পাঠান বা আমাদের জানান — তখন রিটার্ন নীতি প্রযোজ্য হবে।"
+            : "You can cancel an order free of charge before it is handed to the courier, and a prepaid order is refunded in full. After dispatch, refuse the parcel or contact us — the return rules above then apply."}
+        </p>
+      ),
+    },
+    {
+      id: "non-delivery",
+      title: isBn ? "ডেলিভারি না হলে বা বিলম্বিত হলে" : "Non-delivery & Late Delivery",
       content: (
         <div className="space-y-2">
+          <p>
+            {isBn
+              ? "আমরা প্রতিশ্রুত সময়ের মধ্যে পণ্য পৌঁছাতে ব্যর্থ হলে বা অর্ডার পূরণ করতে না পারলে আপনি বাতিল করে পরিশোধিত পুরো টাকা ফেরত পাবেন। এই ক্ষেত্রে রিফান্ড ১০ দিনের মধ্যে সম্পন্ন করা হয়। ক্যাশব্যাক বা অফারের অর্থ আমরা ওয়ালেটে আটকে রাখি না।"
+              : "If we fail to deliver within the promised time or cannot fulfil your order, you can cancel and get everything you paid back — completed within 10 days. We do not hold cashback or offer money back in a wallet."}
+          </p>
+        </div>
+      ),
+    },
+    {
+      id: "consumer-rights",
+      title: isBn ? "আপনার ভোক্তা-অধিকার" : "Your Consumer Rights",
+      content: (
+        <BulletList
+          items={
+            isBn
+              ? [
+                  "এই নীতি ভোক্তা-অধিকার সংরক্ষণ আইন, ২০০৯ ও ডিজিটাল কমার্স পরিচালনা নির্দেশিকা, ২০২১ এর অধীন আপনার অধিকার সীমিত করে না।",
+                  "ত্রুটিপূর্ণ বা বর্ণনার সাথে মেলে না এমন পণ্যে রিটার্ন-ডেলিভারি খরচ আমরা বহন করি।",
+                  "সমাধানে সন্তুষ্ট না হলে জাতীয় ভোক্তা-অধিকার সংরক্ষণ অধিদপ্তরে (হটলাইন ১৬১২১) অভিযোগ করতে পারেন।",
+                ]
+              : [
+                  "This policy does not limit your rights under the Consumer Rights Protection Act, 2009 or the Digital Commerce Operation Guidelines, 2021.",
+                  "For defective items or items not matching the description, we bear the return-delivery cost.",
+                  "If you are not satisfied with the outcome, you may complain to the Directorate of National Consumer Rights Protection (hotline 16121).",
+                ]
+          }
+        />
+      ),
+    },
+    {
+      id: "support",
+      title: isBn ? "সাপোর্ট ও অভিযোগ" : "Support & Complaints",
+      content: (
+        <div className="space-y-3">
           <p>{isBn ? "রিফান্ডের জন্য অর্ডার নম্বর ও প্রমাণসহ যোগাযোগ করুন।" : "Contact us with your order number and proof for refund requests."}</p>
-          <Link href="/contact" className="btn btn-outline btn-sm inline-flex">{isBn ? "যোগাযোগ" : "Contact Us"}</Link>
-          <a href="https://wa.me/8801825007977" target="_blank" rel="noopener noreferrer" className="btn btn-brand btn-sm inline-flex ml-2">
-            <MessageCircle className="w-4 h-4" /> WhatsApp
-          </a>
+          <ComplianceOfficerBlock />
         </div>
       ),
     },

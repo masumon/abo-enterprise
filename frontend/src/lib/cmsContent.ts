@@ -20,6 +20,44 @@ export interface CmsTeamMember {
   image?: string;
   role: { en: string; bn: string };
   desc: { en: string; bn: string };
+  /** Optional public profile links (admin: Settings → Team Members). */
+  facebook?: string;
+  website?: string;
+}
+
+/** Add https:// to a bare "www.…"/"facebook.com/…" link; returns "" for empty/unsafe input. */
+export function normalizeExternalUrl(raw: string | undefined | null): string {
+  const v = (raw ?? "").trim();
+  if (!v) return "";
+  const hasHttp = /^https?:\/\//i.test(v);
+  const hasOtherScheme = /^[a-z][a-z0-9+.-]*:/i.test(v);
+  const withScheme = hasHttp ? v : hasOtherScheme ? "" : `https://${v.replace(/^\/+/, "")}`;
+  try {
+    const u = new URL(withScheme);
+    return u.protocol === "https:" || u.protocol === "http:" ? u.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+export type CreditKind = "developer" | "design";
+
+const DEV_ROLE_RE = /developer|engineer|ডেভেলপার|প্রকৌশলী/i;
+const DESIGN_ROLE_RE = /designer|creative|design|ডিজাইনার|সৃজনশীল|ডিজাইন/i;
+
+/**
+ * Team members shown in the footer's developer credit, derived from their
+ * admin-entered role text (developer / designer / creative) so nothing is
+ * hard-coded. Developers come first.
+ */
+export function getCreditMembers(team: CmsTeamMember[]): { member: CmsTeamMember; kind: CreditKind }[] {
+  const out: { member: CmsTeamMember; kind: CreditKind }[] = [];
+  for (const member of team) {
+    const roleText = `${member.role?.en ?? ""} ${member.role?.bn ?? ""}`;
+    if (DEV_ROLE_RE.test(roleText)) out.push({ member, kind: "developer" });
+    else if (DESIGN_ROLE_RE.test(roleText)) out.push({ member, kind: "design" });
+  }
+  return out.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "developer" ? -1 : 1));
 }
 
 export interface CmsClientLogo {

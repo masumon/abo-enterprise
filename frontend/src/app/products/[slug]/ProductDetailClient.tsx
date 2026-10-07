@@ -17,7 +17,8 @@ import { useCompareStore } from "@/store/compare";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import { useToastStore } from "@/store/toast";
-import { formatPrice, discountPercent, cn, WHATSAPP_NUMBER } from "@/lib/utils";
+import { formatPrice, discountPercent, cn } from "@/lib/utils";
+import { useContactInfo } from "@/hooks/useContactInfo";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import ImageZoom from "@/components/ui/ImageZoom";
 import ProductCard from "@/components/features/ProductCard";
@@ -54,6 +55,7 @@ export default function ProductDetailClient({ product }: Props) {
   const { toggle: toggleWish, has: wished } = useWishlistStore();
   const { add: addCompare, has: compared } = useCompareStore();
   const { lang } = useLanguageStore();
+  const contact = useContactInfo();
   const t = useT();
   const toast = useToastStore((s) => s.push);
 
@@ -325,7 +327,7 @@ export default function ProductDetailClient({ product }: Props) {
                   <GitCompare className="w-4 h-4" />
                 </button>
                 <button type="button" onClick={handleShare} className="btn btn-outline btn-sm"><Share2 className="w-4 h-4" /></button>
-                <a href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm text-green-600">
+                <a href={`${contact.waBase}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm text-green-600">
                   <MessageCircle className="w-4 h-4" />
                 </a>
               </div>

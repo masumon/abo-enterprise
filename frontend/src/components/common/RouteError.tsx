@@ -3,8 +3,7 @@
 import { useEffect } from "react";
 import { AlertTriangle, RefreshCw, Home, MessageCircle } from "lucide-react";
 import { trackEvent } from "@/components/analytics/GoogleAnalytics";
-
-const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "8801825007977";
+import { useContactInfo } from "@/hooks/useContactInfo";
 
 interface Props {
   error: Error & { digest?: string };
@@ -19,6 +18,7 @@ export default function RouteError({
   title = "Something went wrong",
   message = "একটি সমস্যা হয়েছে। পুনরায় চেষ্টা করুন।",
 }: Props) {
+  const contact = useContactInfo();
   useEffect(() => {
     console.error(error);
     // Surfaces client crashes in GA4 (exception event) — free error telemetry.
@@ -52,7 +52,7 @@ export default function RouteError({
           <p className="mt-4 text-xs text-gray-400">Error ID: {error.digest}</p>
         )}
         <a
-          href={`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`সাইটে একটি সমস্যা পেয়েছি${error.digest ? ` (Error ID: ${error.digest})` : ""}`)}`}
+          href={`${contact.waBase}?text=${encodeURIComponent(`সাইটে একটি সমস্যা পেয়েছি${error.digest ? ` (Error ID: ${error.digest})` : ""}`)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="mt-3 inline-flex items-center gap-1.5 text-xs text-brand-600 hover:underline"

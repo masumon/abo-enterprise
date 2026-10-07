@@ -11,6 +11,8 @@ import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { jsonLdString, pageMeta } from "@/lib/metadata";
 import { fetchWithRetry } from "@/lib/fetchRetry";
+import { fetchPublicSettings, settingValue } from "@/lib/serverSettings";
+import { normalizeBdPhoneDigits } from "@/lib/phone";
 
 const API_BASE = getApiBaseUrl();
 
@@ -207,7 +209,7 @@ export async function generateMetadata({ params }: { params: PageParams }): Prom
   return { title: "Service Not Found | ABO Enterprise" };
 }
 
-function buildJsonLd(service: Service) {
+function buildJsonLd(service: Service, telephone?: string) {
   const priceSpec: Record<string, unknown> = { "@type": "PriceSpecification" };
   if (service.pricing_type === "fixed" && service.base_price) {
     priceSpec.price = service.base_price;
@@ -232,7 +234,7 @@ function buildJsonLd(service: Service) {
       "@type": "Organization",
       name: "ABO Enterprise",
       url: SITE_URL,
-      telephone: "+8801825007977",
+      ...(telephone ? { telephone } : {}),
       address: {
         "@type": "PostalAddress",
         addressCountry: "BD",
@@ -318,8 +320,10 @@ export default async function ServicesCatchAllPage({ params }: { params: PagePar
 
     if (service) {
       const faqJsonLd = buildFaqJsonLd(service);
+      // Business phone comes from the admin settings, never hard-coded.
+      const phoneDigits = normalizeBdPhoneDigits(settingValue(await fetchPublicSettings(), "contact_phone"));
       const graph = [
-        buildJsonLd(service),
+        buildJsonLd(service, phoneDigits ? `+${phoneDigits}` : undefined),
         buildBreadcrumbJsonLd([
           { name: service.name_en, path: `/services/${service.slug}` },
         ]),

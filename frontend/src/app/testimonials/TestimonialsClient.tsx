@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useContactInfo } from "@/hooks/useContactInfo";
 import Image from "next/image";
 import Link from "next/link";
 import { Star, BadgeCheck, MessageCircle, Send } from "lucide-react";
@@ -18,6 +19,7 @@ const TESTIMONIALS_CACHE_KEY = "reviews:testimonials";
 
 export default function TestimonialsClient() {
   const { lang } = useLanguageStore();
+  const contact = useContactInfo();
   const toast = useToastStore((s) => s.push);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
@@ -203,7 +205,7 @@ export default function TestimonialsClient() {
 
       <section className="pb-16">
         <div className="container mx-auto px-4 text-center">
-          <a href="https://wa.me/8801825007977" target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-md">
+          <a href={contact.whatsappHref()} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-md">
             <MessageCircle className="w-4 h-4" />
             {lang === "bn" ? "WhatsApp-এ ভিডিও রিভিউ পাঠান" : "Send video review on WhatsApp"}
           </a>

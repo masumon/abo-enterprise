@@ -21,7 +21,7 @@ import { useLanguageStore } from "@/store/language";
 import { fulfilmentDetail, fulfilmentLabel, turnaroundLabel } from "@/lib/fulfilment";
 import VisitRequiredPanel from "@/components/services/VisitRequiredPanel";
 import { formatPrice } from "@/lib/utils";
-import { WHATSAPP_NUMBER } from "@/lib/utils";
+import { useContactInfo } from "@/hooks/useContactInfo";
 import type { Service } from "@/types";
 import { cn } from "@/lib/utils";
 import PageHero from "@/components/ui/PageHero";
@@ -76,6 +76,7 @@ function PricingBadge({ service, lang }: { service: Service; lang: string }) {
 
 export default function ServiceDetailClient({ service }: Props) {
   const { lang } = useLanguageStore();
+  const contact = useContactInfo();
   const [activeTier, setActiveTier] = useState<string | null>(
     service.pricing_tiers?.[0]?.id ?? null
   );
@@ -181,7 +182,7 @@ export default function ServiceDetailClient({ service }: Props) {
             </span>
           )}
           <a
-            href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`}
+            href={`${contact.waBase}?text=${waMsg}`}
             target="_blank"
             rel="noopener noreferrer"
             className="btn btn-md bg-white text-brand-700 hover:bg-brand-50 font-bold gap-2"
@@ -304,7 +305,7 @@ export default function ServiceDetailClient({ service }: Props) {
                   <ArrowRight className="w-5 h-5" />
                 </Link>
                 <a
-                  href={`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(t(`I want to book ${activeTierData.tier_name} for ${service.name_en}`, `${service.name_bn || service.name_en} — ${activeTierData.tier_name} বুক করতে চাই`))}`}
+                  href={`${contact.waBase}?text=${encodeURIComponent(t(`I want to book ${activeTierData.tier_name} for ${service.name_en}`, `${service.name_bn || service.name_en} — ${activeTierData.tier_name} বুক করতে চাই`))}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-outline btn-lg gap-2"
@@ -467,7 +468,7 @@ export default function ServiceDetailClient({ service }: Props) {
               <ArrowRight className="w-5 h-5" />
             </Link>
             <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}?text=${waMsg}`}
+              href={`${contact.waBase}?text=${waMsg}`}
               target="_blank"
               rel="noopener noreferrer"
               className="btn btn-outline btn-lg gap-2 text-green-700 border-green-400 hover:bg-green-50"
