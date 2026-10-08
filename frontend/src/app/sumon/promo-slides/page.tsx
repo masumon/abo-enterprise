@@ -320,7 +320,7 @@ export default function AdminPromoSlidesPage() {
                 <div>
                   <label className="form-label flex items-center justify-between gap-2">
                     Caption (EN)
-                    <TranslateButton bn={editing.title_bn} onResult={(en) => set("title_en", en)} label="→ English" />
+                    <TranslateButton bn={editing.title_bn} onResult={(en) => set("title_en", en)} en={editing.title_en} onResultBn={(b) => set("title_bn", b)} label="→ English" />
                   </label>
                   <input value={editing.title_en ?? ""} onChange={(e) => set("title_en", e.target.value)} className="input w-full text-sm" />
                 </div>

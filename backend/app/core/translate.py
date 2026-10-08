@@ -1,90 +1,163 @@
 """Server-side Bangla↔English translation, shared by every admin module.
 
-Originally lived inside the blog router; extracted here so any admin form
-(products, services, settings, …) can auto-fill its English fields from Bangla
-without duplicating the logic or being gated behind blog-only permissions.
+Several free providers are tried in turn, because any single one rate-limits
+(HTTP 429) shared server IPs now and then:
 
-Google's free gtx endpoint is tried first (reliable from server IPs), MyMemory
-is the fallback. Raises on total failure so a caller never writes a failed
-translation — or the source Bangla — into an English field.
+1. Google "gtx" endpoint
+2. Google "dict-chrome-ex" endpoint (a separate quota)
+3. MyMemory (identified by the site email, which raises its daily limit)
+
+A provider that was just rate-limited is skipped for a short cool-down, results
+are cached, and the call raises only when every provider failed — so a caller
+never writes a failed translation, or the source text, into the target field.
 """
 import logging
 import re
+import threading
+import time
+from collections import OrderedDict
+
+import httpx
 
 logger = logging.getLogger(__name__)
 
-# The free gtx endpoint is a GET (URL length limited), so keep chunks small.
-_TRANSLATE_MAX_CHARS = 1500
+_MAX_CHARS = 1500       # GET URL length limit for the Google endpoints
+_MYMEMORY_MAX = 480     # MyMemory rejects longer queries
+_COOLDOWN_SECONDS = 90
+_CONTACT_EMAIL = "info@aboenterprise.com"
+_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ABO-Admin-Translate/1.0)"}
+
+_lock = threading.Lock()
+_cooldown_until: dict[str, float] = {}
+_cache: "OrderedDict[tuple[str, str, str], str]" = OrderedDict()
+_CACHE_MAX = 300
+
+
+def _google_gtx(text: str, source: str, target: str) -> str:
+    r = httpx.get(
+        "https://translate.googleapis.com/translate_a/single",
+        params={"client": "gtx", "sl": source or "auto", "tl": target, "dt": "t", "q": text},
+        timeout=12, headers=_HEADERS,
+    )
+    r.raise_for_status()
+    return "".join(seg[0] for seg in r.json()[0] if seg and seg[0])
+
+
+def _google_chrome(text: str, source: str, target: str) -> str:
+    r = httpx.get(
+        "https://clients5.google.com/translate_a/t",
+        params={"client": "dict-chrome-ex", "sl": source or "auto", "tl": target, "q": text},
+        timeout=12, headers=_HEADERS,
+    )
+    r.raise_for_status()
+    data = r.json()
+    first = data[0] if isinstance(data, list) and data else data
+    if isinstance(first, list):  # [translated, detected-language]
+        first = first[0]
+    return str(first or "")
+
+
+def _mymemory(text: str, source: str, target: str) -> str:
+    def call(piece: str) -> str:
+        r = httpx.get(
+            "https://api.mymemory.translated.net/get",
+            params={"q": piece, "langpair": f"{source}|{target}", "de": _CONTACT_EMAIL},
+            timeout=15, headers=_HEADERS,
+        )
+        r.raise_for_status()
+        j = r.json()
+        if str(j.get("responseStatus")) != "200" or j.get("quotaFinished"):
+            raise ValueError(f"mymemory: {j.get('responseDetails') or j.get('responseStatus')}")
+        return (j.get("responseData") or {}).get("translatedText") or ""
+
+    if len(text) <= _MYMEMORY_MAX:
+        return call(text)
+    pieces, buf = [], ""
+    for p in re.split(r"(?<=[।.!?])\s+", text):
+        if len(buf) + len(p) + 1 > _MYMEMORY_MAX:
+            if buf:
+                pieces.append(buf)
+            buf = p[:_MYMEMORY_MAX]
+        else:
+            buf = f"{buf} {p}".strip()
+    if buf:
+        pieces.append(buf)
+    return " ".join(call(x) for x in pieces if x.strip())
+
+
+_PROVIDERS = (("google_gtx", _google_gtx), ("google_chrome", _google_chrome), ("mymemory", _mymemory))
+
+
+def _translate_piece(text: str, source: str, target: str) -> str:
+    """One single-line chunk through the provider chain."""
+    key = (source, target, text)
+    with _lock:
+        if key in _cache:
+            _cache.move_to_end(key)
+            return _cache[key]
+    last: Exception | None = None
+    now = time.monotonic()
+    for name, fn in _PROVIDERS:
+        if _cooldown_until.get(name, 0) > now:
+            continue
+        try:
+            out = (fn(text, source, target) or "").strip()
+            if not out:
+                raise ValueError("empty result")
+            with _lock:
+                _cache[key] = out
+                if len(_cache) > _CACHE_MAX:
+                    _cache.popitem(last=False)
+            return out
+        except Exception as exc:  # noqa: BLE001 — try the next provider
+            last = exc
+            logger.warning("translate provider %s failed: %s", name, exc)
+            if isinstance(exc, httpx.HTTPStatusError) and exc.response.status_code in (429, 403, 503):
+                _cooldown_until[name] = time.monotonic() + _COOLDOWN_SECONDS
+    # Everything on cool-down or failing: one last pass ignoring cool-downs.
+    for name, fn in _PROVIDERS:
+        if _cooldown_until.get(name, 0) <= now:
+            continue
+        try:
+            out = (fn(text, source, target) or "").strip()
+            if out:
+                return out
+        except Exception as exc:  # noqa: BLE001
+            last = exc
+    raise RuntimeError(f"all translation providers failed: {last}")
+
+
+def _split_long_line(line: str) -> list[str]:
+    parts = re.split(r"(?<=[।.!?])\s+", line)
+    buf, chunks = "", []
+    for p in parts:
+        if len(buf) + len(p) + 1 > _MAX_CHARS:
+            if buf:
+                chunks.append(buf)
+            buf = p[:_MAX_CHARS]
+        else:
+            buf = f"{buf} {p}".strip()
+    if buf:
+        chunks.append(buf)
+    return chunks
 
 
 def translate_text(text: str, source: str = "bn", target: str = "en") -> str:
-    """Translate `text` from `source` to `target`. Empty in → empty out."""
-    import httpx
-    from deep_translator import MyMemoryTranslator
-
-    def _google_free(chunk: str) -> str:
-        r = httpx.get(
-            "https://translate.googleapis.com/translate_a/single",
-            params={"client": "gtx", "sl": source or "auto", "tl": target, "dt": "t", "q": chunk},
-            timeout=12,
-            headers={"User-Agent": "Mozilla/5.0"},
-        )
-        r.raise_for_status()
-        data = r.json()
-        return "".join(seg[0] for seg in data[0] if seg and seg[0])
-
-    def _mymemory(chunk: str) -> str:
-        # MyMemory rejects requests over ~500 chars, so split on sentence
-        # boundaries into <=480-char pieces.
-        if len(chunk) <= 480:
-            return MyMemoryTranslator(source=source, target=target).translate(chunk)
-        pieces, buf = [], ""
-        for p in re.split(r"(?<=[।.!?])\s+", chunk):
-            if len(buf) + len(p) + 1 > 480:
-                if buf:
-                    pieces.append(buf)
-                buf = p[:480]
-            else:
-                buf = f"{buf} {p}".strip()
-        if buf:
-            pieces.append(buf)
-        return " ".join(MyMemoryTranslator(source=source, target=target).translate(x) for x in pieces if x.strip())
-
-    def _one(chunk: str) -> str:
-        try:
-            out = _google_free(chunk)
-            if out and out.strip():
-                return out
-            raise ValueError("empty result")
-        except Exception as exc:  # noqa: BLE001 — fall back to MyMemory
-            logger.warning("Google free translate failed (%s); trying MyMemory", exc)
-            return _mymemory(chunk)
-
-    text = text.strip()
+    """Translate `text` from `source` to `target`. Empty in → empty out.
+    Line breaks are preserved; very long lines are split on sentence ends."""
+    text = (text or "").strip()
     if not text:
         return ""
-    if len(text) <= _TRANSLATE_MAX_CHARS:
-        return _one(text)
-
-    # Long content: preserve line breaks, translate non-blank lines (chunking
-    # any single very long line on sentence boundaries).
+    source = (source or "bn").lower()
+    target = (target or "en").lower()
+    if source == target:
+        return text
     out: list[str] = []
     for line in text.split("\n"):
         if not line.strip():
             out.append("")
-            continue
-        if len(line) <= _TRANSLATE_MAX_CHARS:
-            out.append(_one(line))
-            continue
-        parts = re.split(r"(?<=[।.!?])\s+", line)
-        buf, chunks = "", []
-        for p in parts:
-            if len(buf) + len(p) + 1 > _TRANSLATE_MAX_CHARS:
-                chunks.append(buf)
-                buf = p
-            else:
-                buf = f"{buf} {p}".strip()
-        if buf:
-            chunks.append(buf)
-        out.append(" ".join(_one(c) for c in chunks))
+        elif len(line) <= _MAX_CHARS:
+            out.append(_translate_piece(line.strip(), source, target))
+        else:
+            out.append(" ".join(_translate_piece(c, source, target) for c in _split_long_line(line)))
     return "\n".join(out)

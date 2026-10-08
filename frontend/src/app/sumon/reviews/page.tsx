@@ -546,7 +546,7 @@ export default function AdminReviewsPage() {
                 <div>
                   <label className="form-label flex items-center justify-between gap-2">
                     Review (English)
-                    <TranslateButton bn={draft.review_bn} onResult={(en) => setDraft(d => ({ ...d, review_en: en }))} />
+                    <TranslateButton bn={draft.review_bn} onResult={(en) => setDraft(d => ({ ...d, review_en: en }))} en={draft.review_en} onResultBn={(b) => setDraft(d => ({ ...d, review_bn: b }))} />
                   </label>
                   <textarea
                     rows={4}

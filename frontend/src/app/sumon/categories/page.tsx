@@ -587,7 +587,7 @@ export default function AdminCategoriesPage() {
             <Field label="Name (English) *">
               <div className="flex items-center gap-2">
                 <input value={form.name_en} onChange={(e) => setForm((p) => ({ ...p, name_en: e.target.value, slug: p.slug || slugify(e.target.value) }))} className={INP_CLS} placeholder="Fast Chargers" />
-                <TranslateButton bn={form.name_bn} onResult={(en) => setForm((p) => ({ ...p, name_en: en, slug: p.slug || slugify(en) }))} className="btn btn-outline btn-sm gap-1 flex-shrink-0" label="EN" />
+                <TranslateButton bn={form.name_bn} onResult={(en) => setForm((p) => ({ ...p, name_en: en, slug: p.slug || slugify(en) }))} en={form.name_en} onResultBn={(b) => setForm((p) => ({ ...p, name_bn: b }))} className="btn btn-outline btn-sm gap-1 flex-shrink-0" label="EN" />
               </div>
             </Field>
             <Field label="নাম (বাংলা)">

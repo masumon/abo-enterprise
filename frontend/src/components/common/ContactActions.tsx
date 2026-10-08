@@ -25,7 +25,10 @@ export default function ContactActions({ message, className, size = "sm", showNu
   const bn = lang === "bn";
   const c = useContactInfo();
   if (!c.hasPhone && !c.hasWhatsapp) return null;
-  const btn = cn("btn justify-center gap-2", size === "sm" ? "btn-sm" : "btn-md", variant === "brand" ? "btn-brand" : "btn-outline");
+  const size_ = size === "sm" ? "btn-sm" : "btn-md";
+  const btn = cn("btn justify-center gap-2", size_, variant === "brand" ? "btn-brand" : "btn-outline");
+  // Call is always the outlined button; stacking btn-brand + btn-outline left white text on a white background.
+  const callBtn = cn("btn justify-center gap-2 btn-outline", size_);
   return (
     <div className={cn("flex flex-wrap items-center gap-2", className)}>
       {c.hasWhatsapp && (
@@ -35,7 +38,7 @@ export default function ContactActions({ message, className, size = "sm", showNu
         </a>
       )}
       {c.hasPhone && (
-        <a href={c.telHref} className={cn(btn, variant === "brand" && "btn-outline")}>
+        <a href={c.telHref} className={callBtn}>
           <Phone className="w-4 h-4" aria-hidden />
           <span>{bn ? "কল করুন" : "Call"}{showNumbers && c.phoneDisplay ? ` · ${c.phoneDisplay}` : ""}</span>
         </a>

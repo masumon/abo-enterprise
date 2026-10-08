@@ -831,7 +831,7 @@ export default function AdminProductsPage() {
                 <div>
                   <label className="flex items-center justify-between gap-2 text-sm font-medium text-gray-700 mb-1">
                     Name (English)
-                    <TranslateButton bn={watch("name_bn")} onResult={(en) => setValue("name_en", en, { shouldValidate: true, shouldDirty: true })} />
+                    <TranslateButton bn={watch("name_bn")} onResult={(en) => setValue("name_en", en, { shouldValidate: true, shouldDirty: true })} en={watch("name_en")} onResultBn={(b) => setValue("name_bn", b, { shouldValidate: true, shouldDirty: true })} />
                   </label>
                   <input {...register("name_en")} className={cn("input", errors.name_en && "input-error")} placeholder="Phone Case" />
                   {errors.name_en && <p className="text-red-500 text-xs mt-1">{errors.name_en.message}</p>}
@@ -891,7 +891,7 @@ export default function AdminProductsPage() {
               <div>
                 <label className="flex items-center justify-between gap-2 text-sm font-medium text-gray-700 mb-1">
                   Description (English)
-                  <TranslateButton bn={watch("description_bn")} onResult={(en) => setValue("description_en", en, { shouldDirty: true })} />
+                  <TranslateButton bn={watch("description_bn")} onResult={(en) => setValue("description_en", en, { shouldDirty: true })} en={watch("description_en")} onResultBn={(b) => setValue("description_bn", b, { shouldDirty: true })} />
                 </label>
                 <textarea {...register("description_en")} rows={2} className="input resize-none" placeholder="Product description..." />
               </div>

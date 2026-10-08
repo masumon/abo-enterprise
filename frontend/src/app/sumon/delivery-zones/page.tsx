@@ -153,7 +153,7 @@ export default function AdminDeliveryZonesPage() {
             <div className="p-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">নাম (EN) *</label><TranslateButton bn={form.name_bn} onResult={(en) => set("name_en", en)} /></div>
+                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">নাম (EN) *</label><TranslateButton bn={form.name_bn} onResult={(en) => set("name_en", en)} en={form.name_en} onResultBn={(b) => set("name_bn", b)} /></div>
                   <input className="input mt-1" value={form.name_en} onChange={(e) => set("name_en", e.target.value)} placeholder="Sylhet local" />
                 </div>
                 <div><label className="form-label">নাম (বাংলা) *</label><input className="input" value={form.name_bn} onChange={(e) => set("name_bn", e.target.value)} placeholder="সিলেট লোকাল" /></div>

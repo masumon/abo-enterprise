@@ -230,14 +230,14 @@ export default function AdminCombosPage() {
             <div className="p-5 space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">শিরোনাম (EN) *</label><TranslateButton bn={form.title_bn} onResult={(en) => set("title_en", en)} /></div>
+                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">শিরোনাম (EN) *</label><TranslateButton bn={form.title_bn} onResult={(en) => set("title_en", en)} en={form.title_en} onResultBn={(b) => set("title_bn", b)} /></div>
                   <input className="input mt-1" value={form.title_en} onChange={(e) => set("title_en", e.target.value)} />
                 </div>
                 <div><label className="form-label">শিরোনাম (বাংলা) *</label><input className="input" value={form.title_bn} onChange={(e) => set("title_bn", e.target.value)} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">বিবরণ (EN)</label><TranslateButton bn={form.description_bn} onResult={(en) => set("description_en", en)} /></div>
+                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">বিবরণ (EN)</label><TranslateButton bn={form.description_bn} onResult={(en) => set("description_en", en)} en={form.description_en} onResultBn={(b) => set("description_bn", b)} /></div>
                   <textarea className="input mt-1" rows={2} value={form.description_en} onChange={(e) => set("description_en", e.target.value)} />
                 </div>
                 <div><label className="form-label">বিবরণ (বাংলা)</label><textarea className="input" rows={2} value={form.description_bn} onChange={(e) => set("description_bn", e.target.value)} /></div>
@@ -249,7 +249,7 @@ export default function AdminCombosPage() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">ব্যাজ (EN)</label><TranslateButton bn={form.badge_bn} onResult={(en) => set("badge_en", en)} /></div>
+                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">ব্যাজ (EN)</label><TranslateButton bn={form.badge_bn} onResult={(en) => set("badge_en", en)} en={form.badge_en} onResultBn={(b) => set("badge_bn", b)} /></div>
                   <input className="input mt-1" value={form.badge_en} onChange={(e) => set("badge_en", e.target.value)} placeholder="Save ৳500" />
                 </div>
                 <div><label className="form-label">ব্যাজ (বাংলা)</label><input className="input" value={form.badge_bn} onChange={(e) => set("badge_bn", e.target.value)} placeholder="৳৫০০ সাশ্রয়" /></div>

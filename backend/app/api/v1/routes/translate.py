@@ -8,6 +8,7 @@ to fill an English field from Bangla. It writes nothing to the database.
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
 from app.core.security import require_admin
@@ -29,7 +30,8 @@ async def admin_translate(payload: TranslateIn, _admin: str = Depends(require_ad
     """Translate arbitrary admin text. Returns {translated}; 502 on failure so
     the UI can prompt for a manual entry instead of saving the source text."""
     try:
-        translated = translate_text(payload.text, payload.source, payload.target)
+        # Blocking HTTP calls: keep them off the event loop (Render runs one worker).
+        translated = await run_in_threadpool(translate_text, payload.text, payload.source, payload.target)
     except Exception as exc:  # noqa: BLE001
         logger.warning("Admin translate failed: %s", exc)
         raise HTTPException(status_code=502, detail="Translation service unavailable")

@@ -515,7 +515,7 @@ function SectionCard({
             <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
               <span>{field.label}</span>
               {field.translateFrom ? (
-                <TranslateButton bn={values[field.translateFrom]} onResult={(en) => onChange(field.key, en)} />
+                <TranslateButton bn={values[field.translateFrom]} onResult={(en) => onChange(field.key, en)} en={values[field.key]} onResultBn={(b) => onChange(field.translateFrom!, b)} />
               ) : null}
             </label>
             {field.upload ? (

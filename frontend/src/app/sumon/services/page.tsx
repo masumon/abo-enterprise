@@ -870,7 +870,7 @@ export default function AdminServicesPage() {
                 <div>
                   <label className="form-label flex items-center justify-between gap-2">
                     <span>Name (English) <span className="text-red-400">*</span></span>
-                    <TranslateButton bn={editing.name_bn} onResult={(en) => handleNameChange(en)} />
+                    <TranslateButton bn={editing.name_bn} onResult={(en) => handleNameChange(en)} en={editing.name_en} onResultBn={(b) => setEditing(prev => prev ? { ...prev, name_bn: b } : prev)} />
                   </label>
                   <input value={editing.name_en ?? ""} onChange={e => handleNameChange(e.target.value)} placeholder="Service name" className="input w-full" />
                 </div>
@@ -984,14 +984,14 @@ export default function AdminServicesPage() {
                 <div>
                   <label className="form-label flex items-center justify-between gap-2">
                     <span>Short Description (EN)</span>
-                    <TranslateButton bn={editing.short_description_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, short_description_en: en } : prev)} />
+                    <TranslateButton bn={editing.short_description_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, short_description_en: en } : prev)} en={editing.short_description_en} onResultBn={(b) => setEditing(prev => prev ? { ...prev, short_description_bn: b } : prev)} />
                   </label>
                   <textarea value={editing.short_description_en ?? ""} onChange={f("short_description_en")} rows={2} placeholder="One-line summary…" className="input w-full resize-none text-sm" />
                 </div>
                 <div>
                   <label className="form-label flex items-center justify-between gap-2">
                     <span>Full Description (EN)</span>
-                    <TranslateButton bn={editing.description_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, description_en: en } : prev)} />
+                    <TranslateButton bn={editing.description_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, description_en: en } : prev)} en={editing.description_en} onResultBn={(b) => setEditing(prev => prev ? { ...prev, description_bn: b } : prev)} />
                   </label>
                   <textarea value={editing.description_en ?? ""} onChange={f("description_en")} rows={4} placeholder="Detailed description…" className="input w-full resize-y text-sm" />
                 </div>
@@ -1006,7 +1006,7 @@ export default function AdminServicesPage() {
                 <div>
                   <label className="form-label flex items-center justify-between gap-2">
                     <span>Long Description (EN) <span className="text-gray-400 font-normal text-xs">(optional — detail page body)</span></span>
-                    <TranslateButton bn={editing.long_description_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, long_description_en: en } : prev)} />
+                    <TranslateButton bn={editing.long_description_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, long_description_en: en } : prev)} en={editing.long_description_en} onResultBn={(b) => setEditing(prev => prev ? { ...prev, long_description_bn: b } : prev)} />
                   </label>
                   <textarea value={editing.long_description_en ?? ""} onChange={f("long_description_en")} rows={5} placeholder="In-depth service write-up shown on the service detail page…" className="input w-full resize-y text-sm" />
                 </div>

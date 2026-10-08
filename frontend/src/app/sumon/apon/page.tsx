@@ -6,6 +6,7 @@ import { AlertTriangle, CheckCircle2, ExternalLink, Loader2, Plus, Save, Search,
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import ImageUpload from "@/components/admin/ImageUpload";
+import TranslateButton from "@/components/admin/TranslateButton";
 import JsonListEditor, { type JsonListField } from "@/components/admin/JsonListEditor";
 import { adminApi } from "@/lib/api";
 import { aponAdminApi, type AponAdminRelease, type AponStats } from "@/lib/aponApi";
@@ -304,7 +305,7 @@ export default function AponAdminPage() {
               <div><label className={label} htmlFor="ap-sha">SHA-256 (নিজে বসে)</label><input id="ap-sha" className={cn(field, "font-mono text-xs")} value={form.sha256} onChange={(e) => setForm({ ...form, sha256: e.target.value })} /></div>
               <div className="grid sm:grid-cols-2 gap-3">
                 <div><label className={label} htmlFor="ap-cb">কী নতুন (বাংলা)</label><textarea id="ap-cb" rows={3} className={field} value={form.changelog_bn} onChange={(e) => setForm({ ...form, changelog_bn: e.target.value })} /></div>
-                <div><label className={label} htmlFor="ap-ce">What&apos;s new (English)</label><textarea id="ap-ce" rows={3} className={field} value={form.changelog_en} onChange={(e) => setForm({ ...form, changelog_en: e.target.value })} /></div>
+                <div><div className="flex items-center justify-between gap-2 mb-1"><label className="text-xs font-semibold text-muted" htmlFor="ap-ce">What&apos;s new (English)</label><TranslateButton bn={form.changelog_bn} onResult={(t) => setForm((f) => ({ ...f, changelog_en: t }))} en={form.changelog_en} onResultBn={(t) => setForm((f) => ({ ...f, changelog_bn: t }))} /></div><textarea id="ap-ce" rows={3} className={field} value={form.changelog_en} onChange={(e) => setForm({ ...form, changelog_en: e.target.value })} /></div>
               </div>
               <div className="flex gap-2">
                 <button type="button" onClick={saveRelease} disabled={busy === "save"} className="btn btn-brand btn-md gap-2">{busy === "save" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} সংরক্ষণ করুন</button>
@@ -323,13 +324,13 @@ export default function AponAdminPage() {
             <p className="text-xs text-muted">ফাঁকা রাখলে ডিফল্ট লেখা দেখাবে।</p>
             <div className="grid sm:grid-cols-2 gap-3">
               <div><label className={label}>অ্যাপের নাম (বাংলা)</label><input className={field} value={v("apon_name_bn")} onChange={(e) => set("apon_name_bn", e.target.value)} placeholder="আপন" /></div>
-              <div><label className={label}>App name (English)</label><input className={field} value={v("apon_name_en")} onChange={(e) => set("apon_name_en", e.target.value)} placeholder="Apon" /></div>
+              <div><div className="flex items-center justify-between gap-2 mb-1"><label className="text-xs font-semibold text-muted">App name (English)</label><TranslateButton bn={v("apon_name_bn")} onResult={(t) => set("apon_name_en", t)} en={v("apon_name_en")} onResultBn={(t) => set("apon_name_bn", t)} /></div><input className={field} value={v("apon_name_en")} onChange={(e) => set("apon_name_en", e.target.value)} placeholder="Apon" /></div>
               <div><label className={label}>ট্যাগলাইন (বাংলা)</label><input className={field} value={v("apon_tagline_bn")} onChange={(e) => set("apon_tagline_bn", e.target.value)} /></div>
-              <div><label className={label}>Tagline (English)</label><input className={field} value={v("apon_tagline_en")} onChange={(e) => set("apon_tagline_en", e.target.value)} /></div>
+              <div><div className="flex items-center justify-between gap-2 mb-1"><label className="text-xs font-semibold text-muted">Tagline (English)</label><TranslateButton bn={v("apon_tagline_bn")} onResult={(t) => set("apon_tagline_en", t)} en={v("apon_tagline_en")} onResultBn={(t) => set("apon_tagline_bn", t)} /></div><input className={field} value={v("apon_tagline_en")} onChange={(e) => set("apon_tagline_en", e.target.value)} /></div>
               <div><label className={label}>বিবরণ (বাংলা)</label><textarea rows={4} className={field} value={v("apon_description_bn")} onChange={(e) => set("apon_description_bn", e.target.value)} /></div>
-              <div><label className={label}>Description (English)</label><textarea rows={4} className={field} value={v("apon_description_en")} onChange={(e) => set("apon_description_en", e.target.value)} /></div>
+              <div><div className="flex items-center justify-between gap-2 mb-1"><label className="text-xs font-semibold text-muted">Description (English)</label><TranslateButton bn={v("apon_description_bn")} onResult={(t) => set("apon_description_en", t)} en={v("apon_description_en")} onResultBn={(t) => set("apon_description_bn", t)} /></div><textarea rows={4} className={field} value={v("apon_description_en")} onChange={(e) => set("apon_description_en", e.target.value)} /></div>
               <div><label className={label}>ডাউনলোড বাটনের লেখা (বাংলা)</label><input className={field} value={v("apon_button_label_bn")} onChange={(e) => set("apon_button_label_bn", e.target.value)} placeholder="আপন ডাউনলোড করুন" /></div>
-              <div><label className={label}>Button label (English)</label><input className={field} value={v("apon_button_label_en")} onChange={(e) => set("apon_button_label_en", e.target.value)} placeholder="Download Apon" /></div>
+              <div><div className="flex items-center justify-between gap-2 mb-1"><label className="text-xs font-semibold text-muted">Button label (English)</label><TranslateButton bn={v("apon_button_label_bn")} onResult={(t) => set("apon_button_label_en", t)} en={v("apon_button_label_en")} onResultBn={(t) => set("apon_button_label_bn", t)} /></div><input className={field} value={v("apon_button_label_en")} onChange={(e) => set("apon_button_label_en", e.target.value)} placeholder="Download Apon" /></div>
             </div>
             <ImageUpload value={v("apon_icon_url")} onChange={(u) => set("apon_icon_url", u)} label="অ্যাপের আইকন (ফাঁকা = ডিফল্ট)" guide="512×512px · PNG" previewSize="sm" />
             <div className="grid sm:grid-cols-2 gap-3">

@@ -177,7 +177,7 @@ export default function JsonListEditor({ value, onChange, fields, newItem, mapKe
                   <span className="flex items-center justify-between gap-2 text-[11px] text-gray-500 mb-0.5">
                     <span>{lang === "bn" && f.labelBn ? f.labelBn : f.label}{f.hint ? <em className="text-gray-400 not-italic"> · {f.hint}</em> : null}</span>
                     {f.translateFrom ? (
-                      <TranslateButton bn={(() => { const s = getPath(item, f.translateFrom!); return s == null ? "" : String(s); })()} onResult={(en) => update(i, f.path, en)} />
+                      <TranslateButton bn={(() => { const s = getPath(item, f.translateFrom!); return s == null ? "" : String(s); })()} onResult={(en) => update(i, f.path, en)} en={(() => { const s = getPath(item, f.path); return s == null ? "" : String(s); })()} onResultBn={(b) => update(i, f.translateFrom!, b)} />
                     ) : null}
                   </span>
                   {f.type === "icon" ? (

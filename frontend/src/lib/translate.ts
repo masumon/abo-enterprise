@@ -6,9 +6,18 @@ import { translateApi } from "@/lib/api";
  * translation — into an English field. Empty input returns "".
  */
 export async function translateBnToEn(text: string): Promise<string> {
+  return translateText(text, "bn", "en");
+}
+
+/** English → Bangla through the same endpoint. */
+export async function translateEnToBn(text: string): Promise<string> {
+  return translateText(text, "en", "bn");
+}
+
+async function translateText(text: string, source: string, target: string): Promise<string> {
   const t = (text ?? "").trim();
   if (!t) return "";
-  const res = await translateApi.toEnglish(t);
+  const res = await translateApi.toEnglish(t, source, target);
   const out = res.data?.data?.translated?.trim();
   if (!out) throw new Error("Empty translation");
   return out;

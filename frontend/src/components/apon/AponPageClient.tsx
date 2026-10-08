@@ -158,11 +158,11 @@ export default function AponPageClient() {
               <div
                 key={s.src}
                 className={cn(
-                  "absolute w-44 sm:w-56 overflow-hidden rounded-[1.9rem] border-[5px] border-[#0b1220] shadow-2xl bg-white",
+                  "absolute w-44 sm:w-56 overflow-hidden rounded-[1.9rem] border-[5px] border-[#0b1220] shadow-2xl bg-[#0b1220]",
                   i === 0 ? "left-4 sm:left-8 top-8 -rotate-6" : "right-4 sm:right-8 top-0 rotate-3",
                 )}
               >
-                <Image src={s.src} alt={bn ? s.alt_bn : s.alt_en} width={540} height={1145} unoptimized priority={i === 0} className="block h-auto w-full" />
+                <Image src={s.src} alt={bn ? s.alt_bn : s.alt_en} width={540} height={1145} unoptimized priority={i === 0} className="block w-full aspect-[540/1145] object-cover object-top" />
               </div>
             ))}
           </div>
@@ -191,10 +191,10 @@ export default function AponPageClient() {
       <section className="py-12 sm:py-16 bg-brand-50/60 dark:bg-white/[0.03]" aria-labelledby="apon-shots">
         <div className={section}>
           <h2 id="apon-shots" className={h2}>{bn ? "অ্যাপের ভেতরটা দেখুন" : "A look inside"}</h2>
-          <ul className="mt-8 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:justify-center" aria-label={bn ? "স্ক্রিনশট" : "Screenshots"}>
+          <ul className="mt-8 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:justify-center items-start" aria-label={bn ? "স্ক্রিনশট" : "Screenshots"}>
             {shots.map((s) => (
-              <li key={s.src} className="snap-center shrink-0 w-[11.5rem] sm:w-[13.5rem] overflow-hidden rounded-[1.7rem] border-[5px] border-[#0b1220] shadow-xl bg-white">
-                <Image src={s.src} alt={bn ? s.alt_bn : s.alt_en} width={540} height={1145} unoptimized loading="lazy" className="block h-auto w-full" />
+              <li key={s.src} className="snap-center shrink-0 w-[11.5rem] sm:w-[13.5rem] overflow-hidden rounded-[1.7rem] border-[5px] border-[#0b1220] shadow-xl bg-[#0b1220]">
+                <Image src={s.src} alt={bn ? s.alt_bn : s.alt_en} width={540} height={1145} unoptimized loading="lazy" className="block w-full aspect-[540/1145] object-cover object-top" />
               </li>
             ))}
           </ul>
@@ -305,12 +305,12 @@ export default function AponPageClient() {
           </p>
           <ContactActions size="md" className="mt-5 justify-center" showNumbers message={bn ? `${name} অ্যাপ নিয়ে সহায়তা চাই` : `I need help with the ${name} app`} />
           {contact.email && (
-            <p className="mt-3 text-sm"><a href={`mailto:${contact.email}`} className="font-semibold text-brand-700 dark:text-brand-300 hover:underline">{contact.email}</a></p>
+            <p className="mt-4 text-base"><a href={`mailto:${contact.email}`} className="font-bold text-brand-700 dark:text-brand-300 underline underline-offset-4 hover:text-brand-800">{contact.email}</a></p>
           )}
-          <p className="mt-6 text-xs text-muted">
-            <Link href="/apon/privacy" className="underline underline-offset-2 hover:text-heading">{bn ? "অ্যাপের গোপনীয়তা নীতি ও শর্তাবলী" : "App privacy policy and terms"}</Link>
+          <p className="mt-6 text-sm text-heading">
+            <Link href="/apon/privacy" className="font-semibold text-brand-700 dark:text-brand-300 underline underline-offset-2 hover:text-brand-800">{bn ? "অ্যাপের গোপনীয়তা নীতি ও শর্তাবলী" : "App privacy policy and terms"}</Link>
             {" · "}
-            <Link href="/legal/privacy" className="underline underline-offset-2 hover:text-heading">{bn ? "ওয়েবসাইটের গোপনীয়তা নীতি" : "Website privacy policy"}</Link>
+            <Link href="/legal/privacy" className="font-semibold text-brand-700 dark:text-brand-300 underline underline-offset-2 hover:text-brand-800">{bn ? "ওয়েবসাইটের গোপনীয়তা নীতি" : "Website privacy policy"}</Link>
           </p>
         </div>
       </section>

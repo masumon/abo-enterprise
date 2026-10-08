@@ -299,7 +299,7 @@ export default function AdminEmailTemplatesPage() {
                 <div>
                   <label className="form-label flex items-center justify-between gap-2">
                     Subject (EN)
-                    <TranslateButton bn={editing.subject_bn} onResult={(en) => setEditing((p) => p ? { ...p, subject_en: en } : p)} />
+                    <TranslateButton bn={editing.subject_bn} onResult={(en) => setEditing((p) => p ? { ...p, subject_en: en } : p)} en={editing.subject_en} onResultBn={(b) => setEditing((p) => p ? { ...p, subject_bn: b } : p)} />
                   </label>
                   <input value={editing.subject_en ?? ""} onChange={(e) => setEditing((p) => p ? { ...p, subject_en: e.target.value } : p)} className="input w-full text-sm" />
                 </div>
@@ -311,7 +311,7 @@ export default function AdminEmailTemplatesPage() {
               <div>
                 <label className="form-label flex items-center justify-between gap-2">
                   Body (EN)
-                  <TranslateButton bn={editing.body_bn} onResult={(en) => setEditing((p) => p ? { ...p, body_en: en } : p)} />
+                  <TranslateButton bn={editing.body_bn} onResult={(en) => setEditing((p) => p ? { ...p, body_en: en } : p)} en={editing.body_en} onResultBn={(b) => setEditing((p) => p ? { ...p, body_bn: b } : p)} />
                 </label>
                 <textarea rows={6} value={editing.body_en ?? ""} onChange={(e) => setEditing((p) => p ? { ...p, body_en: e.target.value } : p)} className="input w-full resize-y text-sm font-mono" placeholder="Hello {{customer_name}}, ..." />
               </div>

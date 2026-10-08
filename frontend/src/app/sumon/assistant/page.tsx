@@ -395,7 +395,7 @@ export default function AdminAssistantPage() {
                   <div>
                     <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                       Welcome Message (English)
-                      <TranslateButton bn={config.assistant_welcome_bn} onResult={(en) => setConfig((c) => ({ ...c, assistant_welcome_en: en }))} />
+                      <TranslateButton bn={config.assistant_welcome_bn} onResult={(en) => setConfig((c) => ({ ...c, assistant_welcome_en: en }))} en={config.assistant_welcome_en} onResultBn={(b) => setConfig((c) => ({ ...c, assistant_welcome_bn: b }))} />
                     </label>
                     <textarea value={config.assistant_welcome_en} onChange={(e) => setConfig((c) => ({ ...c, assistant_welcome_en: e.target.value }))} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100" />
                   </div>
@@ -672,7 +672,7 @@ export default function AdminAssistantPage() {
                   <div>
                     <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 uppercase mb-1">
                       Answer (English)
-                      <TranslateButton bn={faqEditing.answer_bn} onResult={(en) => setFaqEditing((f) => f && { ...f, answer_en: en })} />
+                      <TranslateButton bn={faqEditing.answer_bn} onResult={(en) => setFaqEditing((f) => f && { ...f, answer_en: en })} en={faqEditing.answer_en} onResultBn={(b) => setFaqEditing((f) => f && { ...f, answer_bn: b })} />
                     </label>
                     <textarea
                       value={faqEditing.answer_en}

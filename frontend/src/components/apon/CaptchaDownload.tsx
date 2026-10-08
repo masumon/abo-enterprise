@@ -185,7 +185,7 @@ export default function CaptchaDownload({ label, captchaRequired, fileName, clas
                         autoComplete="off"
                         autoFocus
                         placeholder={bn ? "উত্তর লিখুন" : "Your answer"}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-[var(--line)] bg-white dark:bg-white/5 text-center text-2xl font-bold focus:outline-none focus:border-brand-500"
+                        className="w-full px-4 py-3 rounded-xl border-2 border-[var(--line)] bg-white dark:bg-white/10 text-gray-900 dark:text-white caret-brand-600 placeholder:text-gray-400 placeholder:font-normal placeholder:text-base text-center text-2xl font-bold focus:outline-none focus:border-brand-500"
                       />
                     </label>
                     {/* Honeypot: hidden from people, tempting for bots. */}
