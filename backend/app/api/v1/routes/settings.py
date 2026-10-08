@@ -64,6 +64,7 @@ _PUBLIC_SETTING_PREFIXES = (
     "service_",
     "review_",
     "legal_",
+    "apon_",
 )
 
 

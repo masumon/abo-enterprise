@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { AponNavButton } from "@/components/apon/AponEntryPoints";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -258,6 +259,8 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
+
+            <AponNavButton />
 
             <Link href="/projects" aria-label={t("nav_get_quote")} title={t("nav_get_quote")} className="hidden md:inline-flex btn btn-primary btn-sm btn-ripple">
               <Briefcase className="w-4 h-4" strokeWidth={2.5} />

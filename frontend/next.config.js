@@ -63,6 +63,7 @@ const nextConfig = {
   async redirects() {
     return [
       { source: "/home", destination: "/", permanent: true },
+      { source: "/app", destination: "/apon", permanent: false },
       { source: "/shop", destination: "/products", permanent: true },
       { source: "/dashboard", destination: "/profile", permanent: true },
       // GAP-10 — /register was a second door onto the same OTP form as /login.
