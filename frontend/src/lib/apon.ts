@@ -102,14 +102,14 @@ export const DEFAULT_FEATURES: AponFeature[] = [
 ];
 
 export const DEFAULT_PERMISSIONS: AponPermission[] = [
-  { icon: "camera", name_bn: "ক্যামেরা", name_en: "Camera", why_bn: "ছবি তুলে লেখা পড়া ও ছবি সংযুক্ত করার জন্য।", why_en: "To read text from photos and attach pictures.", optional: true },
-  { icon: "mic", name_bn: "মাইক্রোফোন", name_en: "Microphone", why_bn: "মুখে বলে লেখার জন্য।", why_en: "To dictate by voice.", optional: true },
-  { icon: "contacts", name_bn: "কন্ট্যাক্ট", name_en: "Contacts", why_bn: "ধার-দেনা বা তথ্যে নাম বাছাইয়ের সুবিধার জন্য।", why_en: "To pick names for debts and entries.", optional: true },
+  { icon: "camera", name_bn: "ক্যামেরা", name_en: "Camera", why_bn: "শুধু আপনি ছবি তুলতে চাপলে — রশিদ, প্রেসক্রিপশন বা কাগজের লেখা পড়াতে। লেখা পড়া হয় ফোনের ভেতরেই।", why_en: "Only when you tap to take a photo — receipts, prescriptions or text on paper. Reading the text happens inside the phone.", optional: true },
+  { icon: "mic", name_bn: "মাইক্রোফোন", name_en: "Microphone", why_bn: "শুধু আপনি মাইক চাপলে, কথা বলে লিখতে। অ্যাপ নিজে কোনো শব্দ রেকর্ড করে রাখে না।", why_en: "Only when you tap the mic, to write by speaking. The app does not record or keep any sound itself.", optional: true },
+  { icon: "contacts", name_bn: "কন্ট্যাক্ট", name_en: "Contacts", why_bn: "শুধু “কন্টাক্ট থেকে নিন” চাপলে; আপনি যাকে বাছেন শুধু তার তথ্য আসে, পুরো ফোনবুক নয়।", why_en: "Only when you tap “Import from contacts”; only the person you pick comes in, never the whole phonebook.", optional: true },
   { icon: "photos", name_bn: "ছবি ও স্টোরেজ", name_en: "Photos and storage", why_bn: "ছবি যুক্ত করা এবং ব্যাকআপ ফাইল সংরক্ষণ/পুনরুদ্ধারের জন্য।", why_en: "To attach photos and save or restore backup files.", optional: true },
-  { icon: "location", name_bn: "লোকেশন", name_en: "Location", why_bn: "যেসব সুবিধায় আপনার অবস্থান লাগে কেবল সেগুলোর জন্য।", why_en: "Only for features that need your location.", optional: true },
-  { icon: "bell", name_bn: "নোটিফিকেশন ও নির্ভুল অ্যালার্ম", name_en: "Notifications and exact alarms", why_bn: "সময়মতো রিমাইন্ডার দেওয়ার জন্য।", why_en: "To deliver reminders on time.", optional: false },
-  { icon: "battery", name_bn: "ব্যাটারি অপটিমাইজেশন ছাড় ও চালুর সময় সক্রিয়", name_en: "Battery exemption and start at boot", why_bn: "ফোন রিস্টার্টের পরও রিমাইন্ডার ঠিকমতো চলার জন্য।", why_en: "So reminders keep working after a phone restart.", optional: true },
-  { icon: "fingerprint", name_bn: "ফিঙ্গারপ্রিন্ট/বায়োমেট্রিক", name_en: "Fingerprint / biometrics", why_bn: "অ্যাপ লক করে আপনার তথ্য সুরক্ষিত রাখার জন্য।", why_en: "To lock the app and protect your data.", optional: true },
+  { icon: "location", name_bn: "লোকেশন", name_en: "Location", why_bn: "শুধু আপনি “জায়গা যোগ করুন” চাপলে, সেই মুহূর্তে একবার। অ্যাপ বন্ধ থাকলে অবস্থান নেয় না।", why_en: "Only when you tap “Add place”, once, at that moment. Never while the app is closed.", optional: true },
+  { icon: "bell", name_bn: "নোটিফিকেশন ও নির্ভুল অ্যালার্ম", name_en: "Notifications and exact alarms", why_bn: "কাজ ও ওষুধের রিমাইন্ডার ঠিক যে মিনিটে দিয়েছেন সেই মিনিটে বাজাতে, অ্যাপ বন্ধ থাকলেও।", why_en: "To ring task and medicine reminders at the exact minute you set, even when the app is closed.", optional: false },
+  { icon: "battery", name_bn: "ব্যাটারি অপটিমাইজেশন ছাড় ও চালুর সময় সক্রিয়", name_en: "Battery exemption and start at boot", why_bn: "ফোন যেন ব্যাটারি বাঁচাতে গিয়ে রিমাইন্ডার বন্ধ না করে, আর ফোন আবার চালু হলে রিমাইন্ডার আবার সেট হয়।", why_en: "So the phone does not switch reminders off to save battery, and reminders are set again after a restart.", optional: true },
+  { icon: "fingerprint", name_bn: "ফিঙ্গারপ্রিন্ট/বায়োমেট্রিক", name_en: "Fingerprint / biometrics", why_bn: "শুধু অ্যাপ লক চালু করলে, অ্যাপ খুলতে।", why_en: "Only if you turn on app lock, to open the app.", optional: true },
   { icon: "globe", name_bn: "ইন্টারনেট", name_en: "Internet", why_bn: "আপনি নিজে কিছু শেয়ার করলে এবং নোটিফিকেশন সেবার জন্য। অ্যাপ আপনার তথ্য নিজে থেকে কোথাও পাঠায় না।", why_en: "When you share something yourself and for the notification service. The app does not send your data anywhere on its own.", optional: false },
 ];
 
