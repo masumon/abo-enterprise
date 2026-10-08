@@ -514,9 +514,12 @@ function SectionCard({
           <div key={field.key} className="px-4 sm:px-6 py-4 hover:bg-gray-50/40 dark:hover:bg-white/[0.02] transition-colors">
             <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
               <span>{field.label}</span>
-              {field.translateFrom ? (
-                <TranslateButton bn={values[field.translateFrom]} onResult={(en) => onChange(field.key, en)} en={values[field.key]} onResultBn={(b) => onChange(field.translateFrom!, b)} />
-              ) : null}
+              {(() => {
+                const from = field.translateFrom ?? (field.key.endsWith("_en") && section.fields.some((x) => x.key === field.key.replace(/_en$/, "_bn")) ? field.key.replace(/_en$/, "_bn") : undefined);
+                return from ? (
+                  <TranslateButton bn={values[from]} onResult={(en) => onChange(field.key, en)} en={values[field.key]} onResultBn={(b) => onChange(from, b)} />
+                ) : null;
+              })()}
             </label>
             {field.upload ? (
               <ImageUpload

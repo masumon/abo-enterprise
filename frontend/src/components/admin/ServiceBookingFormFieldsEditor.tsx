@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2, Pencil, Trash2, Plus, ChevronUp } from "lucide-react";
+import TranslateButton from "@/components/admin/TranslateButton";
 import type { ServiceBookingFormField } from "@/types";
 
 /**
@@ -159,7 +160,7 @@ export default function ServiceBookingFormFieldsEditor({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="form-label text-[11px]">Label (EN) <span className="text-red-400">*</span></label>
+              <div className="flex items-center justify-between gap-2"><label className="form-label text-[11px]">Label (EN) <span className="text-red-400">*</span></label><TranslateButton bn={newField.field_label_bn} onResult={(t) => setNewField(p => ({ ...p, field_label_en: t }))} en={newField.field_label_en} onResultBn={(t) => setNewField(p => ({ ...p, field_label_bn: t }))} /></div>
               <input
                 value={newField.field_label_en ?? ""}
                 onChange={e => setNewField(p => ({ ...p, field_label_en: e.target.value }))}

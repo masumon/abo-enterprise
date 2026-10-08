@@ -176,9 +176,12 @@ export default function JsonListEditor({ value, onChange, fields, newItem, mapKe
                 <label key={f.path} className={`block ${f.type === "image" || f.type === "textarea" || f.type === "icon" ? "sm:col-span-2" : ""}`}>
                   <span className="flex items-center justify-between gap-2 text-[11px] text-gray-500 mb-0.5">
                     <span>{lang === "bn" && f.labelBn ? f.labelBn : f.label}{f.hint ? <em className="text-gray-400 not-italic"> · {f.hint}</em> : null}</span>
-                    {f.translateFrom ? (
-                      <TranslateButton bn={(() => { const s = getPath(item, f.translateFrom!); return s == null ? "" : String(s); })()} onResult={(en) => update(i, f.path, en)} en={(() => { const s = getPath(item, f.path); return s == null ? "" : String(s); })()} onResultBn={(b) => update(i, f.translateFrom!, b)} />
-                    ) : null}
+                    {(() => {
+                      const from = f.translateFrom ?? (f.path === "en" && fields.some((x) => x.path === "bn") ? "bn" : f.path.endsWith("_en") && fields.some((x) => x.path === f.path.replace(/_en$/, "_bn")) ? f.path.replace(/_en$/, "_bn") : undefined);
+                      if (!from) return null;
+                      const g = (path: string) => { const s = getPath(item, path); return s == null ? "" : String(s); };
+                      return <TranslateButton bn={g(from)} onResult={(en) => update(i, f.path, en)} en={g(f.path)} onResultBn={(b) => update(i, from, b)} />;
+                    })()}
                   </span>
                   {f.type === "icon" ? (
                     <IconPicker value={val} onChange={(v) => update(i, f.path, v)} />

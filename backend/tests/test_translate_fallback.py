@@ -54,3 +54,17 @@ def test_keeps_line_breaks_and_caches(monkeypatch):
 def test_same_language_and_empty_are_passthrough():
     assert tr.translate_text("   ") == ""
     assert tr.translate_text("abc", "en", "en") == "abc"
+
+
+def test_brand_name_is_protected(monkeypatch):
+    seen: list[str] = []
+
+    def fake(text, s, g):
+        seen.append(text)
+        return text
+
+    monkeypatch.setattr(tr, "_PROVIDERS", (("a", fake),))
+    tr.translate_text("আপন ডাউনলোড করুন, আপনার ফোন", "bn", "en")
+    assert seen[-1] == "Apon ডাউনলোড করুন, আপনার ফোন"  # "আপনার" is a different word and stays
+    tr.translate_text("Download Apon today", "en", "bn")
+    assert seen[-1] == "Download আপন today"

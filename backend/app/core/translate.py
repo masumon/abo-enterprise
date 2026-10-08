@@ -142,6 +142,25 @@ def _split_long_line(line: str) -> list[str]:
     return chunks
 
 
+# Brand names must survive translation: "আপন" is also the ordinary word "your/own", so a plain
+# translation turns "আপন ডাউনলোড করুন" into "Download your". Applied only to whole words.
+_BN_WORD = r"(?<![ঀ-৿])%s(?![ঀ-৿])"
+_GLOSSARY_BN_TO_EN = (
+    (re.compile(_BN_WORD % "আপন"), "Apon"),
+    (re.compile(r"এবিও\s*এন্টারপ্রাইজ"), "ABO Enterprise"),
+)
+_GLOSSARY_EN_TO_BN = (
+    (re.compile(r"\bApon\b"), "আপন"),
+)
+
+
+def _apply_glossary(text: str, source: str, target: str) -> str:
+    rules = _GLOSSARY_BN_TO_EN if (source, target) == ("bn", "en") else _GLOSSARY_EN_TO_BN if (source, target) == ("en", "bn") else ()
+    for pattern, repl in rules:
+        text = pattern.sub(repl, text)
+    return text
+
+
 def translate_text(text: str, source: str = "bn", target: str = "en") -> str:
     """Translate `text` from `source` to `target`. Empty in → empty out.
     Line breaks are preserved; very long lines are split on sentence ends."""
@@ -152,6 +171,7 @@ def translate_text(text: str, source: str = "bn", target: str = "en") -> str:
     target = (target or "en").lower()
     if source == target:
         return text
+    text = _apply_glossary(text, source, target)
     out: list[str] = []
     for line in text.split("\n"):
         if not line.strip():

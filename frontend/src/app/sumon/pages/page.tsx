@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import TranslateButton from "@/components/admin/TranslateButton";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
@@ -39,7 +40,7 @@ export default function AdminPagesPage() {
   const [saving, setSaving] = useState(false);
   const PER_PAGE = 20;
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: { status: "draft" },
   });
@@ -212,7 +213,7 @@ export default function AdminPagesPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title (English)</label>
+                  <div className="flex items-center justify-between gap-2 mb-1"><label className="text-sm font-medium text-gray-700">Title (English)</label><TranslateButton bn={watch("title_bn")} onResult={(t) => setValue("title_en", t, { shouldValidate: true, shouldDirty: true })} en={watch("title_en")} onResultBn={(t) => setValue("title_bn", t, { shouldDirty: true })} /></div>
                   <input {...register("title_en")} className={cn("input", errors.title_en && "input-error")} />
                   {errors.title_en && <p className="text-red-500 text-xs mt-1">{errors.title_en.message}</p>}
                 </div>
@@ -222,7 +223,7 @@ export default function AdminPagesPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Content (English)</label>
+                <div className="flex items-center justify-between gap-2 mb-1"><label className="text-sm font-medium text-gray-700">Content (English)</label><TranslateButton bn={watch("content_bn")} onResult={(t) => setValue("content_en", t, { shouldValidate: true, shouldDirty: true })} en={watch("content_en")} onResultBn={(t) => setValue("content_bn", t, { shouldDirty: true })} /></div>
                 <textarea {...register("content_en")} rows={8} className={cn("input", errors.content_en && "input-error")} />
                 {errors.content_en && <p className="text-red-500 text-xs mt-1">{errors.content_en.message}</p>}
               </div>

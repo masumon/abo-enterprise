@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import TranslateButton from "@/components/admin/TranslateButton";
 import AdminTitle from "@/components/admin/AdminTitle";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { adminApi } from "@/lib/api";
@@ -124,7 +125,7 @@ export default function LegalPagesAdmin() {
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-muted mb-1 block">English</label>
+            <div className="flex items-center justify-between gap-2 mb-1"><label className="text-xs font-semibold text-muted">English</label><TranslateButton bn={bn} onResult={setEn} en={en} onResultBn={setBn} /></div>
             <textarea
               value={en}
               onChange={(e) => setEn(e.target.value)}

@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2, Pencil, Trash2, Plus, ChevronUp } from "lucide-react";
+import TranslateButton from "@/components/admin/TranslateButton";
 import { formatPrice } from "@/lib/utils";
 import type { ServicePricingTier } from "@/types";
 
@@ -131,7 +132,7 @@ export default function ServicePricingTiersEditor({
             </div>
           </div>
           <div>
-            <label className="form-label text-[11px]">Description (EN)</label>
+            <div className="flex items-center justify-between gap-2"><label className="form-label text-[11px]">Description (EN)</label><TranslateButton bn={newTier.description_bn} onResult={(t) => setNewTier(p => ({ ...p, description_en: t }))} en={newTier.description_en} onResultBn={(t) => setNewTier(p => ({ ...p, description_bn: t }))} /></div>
             <textarea
               value={newTier.description_en ?? ""}
               onChange={e => setNewTier(p => ({ ...p, description_en: e.target.value }))}
