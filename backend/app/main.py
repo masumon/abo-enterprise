@@ -44,6 +44,11 @@ async def _init_db_and_bootstrap() -> None:
 async def lifespan(app: FastAPI):
     logger.info(f"Starting {settings.APP_NAME}")
     await _init_db_and_bootstrap()
+    # Safety net for the hand-applied admin-security SQL (see core/schema_guard.py).
+    from app.core.database import engine as _engine
+    from app.core.schema_guard import ensure_admin_security_columns
+    await ensure_admin_security_columns(_engine)
+
     from app.core.contact import load_from_db as load_contact_numbers
     await load_contact_numbers()
     yield
