@@ -277,8 +277,8 @@ export default function AponPrivacyPage() {
             "অন্যদের তৈরি খোলা (ওপেন-সোর্স) উপাদান তাদের নিজ নিজ লেখকের, তাদের নিজস্ব শর্তে ব্যবহৃত। চাইলে সেই শর্তের কপি পাঠানো হবে।",
           )}
           {p(
-            "Apon — your data only on your phone. 100% offline — nothing goes to a server.",
-            "আপন — আপনার তথ্য শুধু আপনার ফোনে। ১০০% অফলাইন — কিছুই সার্ভারে যায় না।",
+            "Apon — your data only on your phone. The app itself sends nothing to any server.",
+            "আপন — আপনার তথ্য শুধু আপনার ফোনে। অ্যাপ নিজে কিছুই সার্ভারে পাঠায় না।",
           )}
         </div>
       ),
