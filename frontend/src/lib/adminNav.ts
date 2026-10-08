@@ -2,7 +2,7 @@ import {
   LayoutDashboard, ShoppingCart, Briefcase, Package, Users, Wrench, FileText, Star, BookOpen, FolderKanban,
   Images, CreditCard, Bot, Mail, BarChart2, Settings, Shield, Send, Truck, UserPlus, Percent, FolderTree,
   LayoutTemplate, Megaphone, ExternalLink, UploadCloud, Tags, Bell, History, ScrollText, ShieldCheck, Boxes,
-  GalleryHorizontal, type LucideIcon,
+  GalleryHorizontal, Smartphone, type LucideIcon,
 } from "lucide-react";
 
 export type AdminRole = "super_admin" | "admin" | "editor" | "viewer";
@@ -79,6 +79,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     { href: "/sumon/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি" },
     { href: "/sumon/blog", icon: BookOpen, label: "Blog", labelBn: "ব্লগ", permission: "blog.read" },
     { href: "/sumon/pages", icon: FileText, label: "Pages", labelBn: "পেজ", permission: "pages.read" },
+    { href: "/sumon/apon", icon: Smartphone, label: "Mobile App (Apon)", labelBn: "মোবাইল অ্যাপ (আপন)", minRole: "admin", permission: "app.read" },
     { href: "/sumon/legal-pages", icon: ScrollText, label: "Legal Pages", labelBn: "আইনি পেজ", minRole: "admin", permission: "settings.write" },
     { href: "/sumon/email-templates", icon: Mail, label: "Email Templates", labelBn: "ইমেইল", minRole: "admin", permission: "email_templates.read" },
   ]},

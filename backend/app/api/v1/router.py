@@ -38,6 +38,7 @@ from app.api.v1.routes import (
     notifications,
     reports,
     pages,
+    app_download,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -80,3 +81,4 @@ api_router.include_router(customer_metrics.router)
 api_router.include_router(notifications.router)
 api_router.include_router(reports.router)
 api_router.include_router(pages.router)
+api_router.include_router(app_download.router)

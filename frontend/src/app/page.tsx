@@ -6,6 +6,7 @@ import Hero from "@/components/home/Hero";
 import FlashSaleSection from "@/components/home/FlashSaleSection";
 import CategoryCards from "@/components/home/CategoryCards";
 import FeatureIconsRow from "@/components/home/FeatureIconsRow";
+import { AponHomeBand } from "@/components/apon/AponEntryPoints";
 import FeaturedProducts from "@/components/home/FeaturedProducts";
 import ComboSection from "@/components/home/ComboSection";
 import WhyChooseUsCards from "@/components/home/WhyChooseUsCards";
@@ -185,6 +186,9 @@ export default async function HomePage({
 
       {/* Feature Icons Row */}
       <FeatureIconsRow />
+
+      {/* Apon app promo — renders nothing until the admin publishes the app */}
+      <AponHomeBand />
 
       {/* Flash Sale Section */}
       <FlashSaleSection />

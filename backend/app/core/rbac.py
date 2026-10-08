@@ -24,6 +24,7 @@ ROLE_PERMISSIONS = {
         "ops.read", "ops.write",
         "payments.read", "payments.write",
         "audit_logs.read",
+        "app.read", "app.write",
     ],
     "editor": [
         "orders.read", "products.read", "products.write",

@@ -13,6 +13,7 @@ import { useWishlistStore } from "@/store/wishlist";
 import { useCompareStore } from "@/store/compare";
 import { cn } from "@/lib/utils";
 import { useContactInfo } from "@/hooks/useContactInfo";
+import { useAponDrawerRow } from "@/components/apon/AponEntryPoints";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { getBrandName, getBrandTagline } from "@/lib/tokens";
@@ -41,6 +42,7 @@ interface Row {
 export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { lang, toggle: toggleLang } = useLanguageStore();
   const contact = useContactInfo();
+  const aponRow = useAponDrawerRow();
   const router = useRouter();
   const isLoggedIn = useCustomerStore((s) => s.isLoggedIn());
   const customerName = useCustomerStore((s) => s.session?.name);
@@ -124,6 +126,7 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
       // labels that quietly routed to only one of the three named pages.
       title: { en: "Company", bn: "প্রতিষ্ঠান" },
       rows: [
+        ...(aponRow ? [aponRow] : []),
         { href: "/projects", label: { en: "Projects", bn: "প্রজেক্ট" } },
         { href: "/gallery", label: { en: "Gallery", bn: "গ্যালারি" } },
         { href: "/blog", label: { en: "Blog", bn: "ব্লগ" } },

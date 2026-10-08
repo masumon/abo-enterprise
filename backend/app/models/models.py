@@ -1108,3 +1108,42 @@ class SearchTerm(Base):
     term: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     count: Mapped[int] = mapped_column(Integer, default=0, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+
+
+# ==================== MOBILE APP (APON) DOWNLOADS ====================
+
+
+class AppRelease(Base):
+    """One uploaded build of the mobile app. `source_url` is private (admin only): visitors
+    only ever download through the website, never from this address."""
+
+    __tablename__ = "app_releases"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    version_name: Mapped[str] = mapped_column(String(40), nullable=False)
+    version_code: Mapped[int] = mapped_column(Integer, nullable=False, unique=True)
+    file_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    source_url: Mapped[str] = mapped_column(Text, nullable=False)
+    size_bytes: Mapped[int | None] = mapped_column(BigInteger)
+    sha256: Mapped[str | None] = mapped_column(String(64))
+    min_android: Mapped[str | None] = mapped_column(String(20))
+    changelog_bn: Mapped[str | None] = mapped_column(Text)
+    changelog_en: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(20), default="draft")  # draft | published
+    is_current: Mapped[bool] = mapped_column(Boolean, default=False)
+    download_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class AppDownloadEvent(Base):
+    """One completed download request. The visitor's IP is stored only as a keyed hash."""
+
+    __tablename__ = "app_download_events"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    release_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("app_releases.id", ondelete="SET NULL"))
+    ip_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    user_agent: Mapped[str | None] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)

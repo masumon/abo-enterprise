@@ -13,6 +13,7 @@ const PAGES = [
   { key: "terms", label: "Terms of Service", labelBn: "সেবার শর্তাবলী", href: "/legal/terms" },
   { key: "refund", label: "Refund Policy", labelBn: "রিফান্ড নীতি", href: "/legal/refund" },
   { key: "cookies", label: "Cookies Policy", labelBn: "কুকি নীতি", href: "/legal/cookies" },
+  { key: "apon", label: "Apon App Privacy & Terms", labelBn: "আপন অ্যাপ — গোপনীয়তা ও শর্ত", href: "/apon/privacy" },
 ] as const;
 
 export default function LegalPagesAdmin() {
