@@ -8,7 +8,7 @@ from app.core.http_cache import etag_json_response
 from app.core.security import require_role
 from app.core.taxonomy import descendant_ids_for_slug
 from app.models.models import Product, ActivityLog
-from app.schemas.schemas import ProductCreate, ProductUpdate, ProductOut, ApiResponse, PaginatedResponse, PaginatedMeta
+from app.schemas.schemas import ProductCreate, ProductUpdate, ProductOut, ProductPublicOut, ApiResponse, PaginatedResponse, PaginatedMeta
 from app.core.blog_links import set_blogs_for_product, get_blog_ids_for_product
 from app.core.search import build_search_condition
 
@@ -101,7 +101,7 @@ async def list_products(
     products = result.scalars().all()
 
     payload = PaginatedResponse(
-        data=[ProductOut.model_validate(p) for p in products],
+        data=[ProductPublicOut.model_validate(p) for p in products],
         meta=PaginatedMeta(page=page, per_page=per_page, total=total, total_pages=-(-total // per_page)),
     )
     # ETag + short public cache: repeat catalog views become 304s — big win on
@@ -237,7 +237,7 @@ async def related_products(slug: str, db: AsyncSession = Depends(get_db)):
         .limit(4)
     )
     items = related.scalars().all()
-    return ApiResponse(data=[ProductOut.model_validate(p) for p in items])
+    return ApiResponse(data=[ProductPublicOut.model_validate(p) for p in items])
 
 
 @router.get("/{slug}", response_model=ApiResponse)
@@ -248,7 +248,7 @@ async def get_product(slug: str, db: AsyncSession = Depends(get_db)):
     product = result.scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Product not found")
-    return ApiResponse(data=ProductOut.model_validate(product))
+    return ApiResponse(data=ProductPublicOut.model_validate(product))
 
 
 @router.post("", response_model=ApiResponse, status_code=status.HTTP_201_CREATED)

@@ -172,6 +172,17 @@ class ProductOut(ProductBase):
         return v if v is not None else []
 
 
+
+class ProductPublicOut(ProductOut):
+    """ProductOut for public (customer-facing) endpoints.
+
+    `cost_price` is the admin's purchase cost (Reports -> Profit only) and must
+    never reach a customer, so it is dropped from the serialized output. Admin
+    endpoints keep using ProductOut, which still includes it.
+    """
+
+    cost_price: float | None = Field(default=None, exclude=True)
+
 # ---- Review ----
 
 class ReviewCreate(BaseModel):
