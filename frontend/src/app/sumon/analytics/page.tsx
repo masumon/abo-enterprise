@@ -5,9 +5,11 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import api, { downloadCsv, downloadPdf } from "@/lib/api";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminSectionBoundary from "@/components/admin/AdminSectionBoundary";
 import { useToastStore } from "@/store/toast";
 import { useLanguageStore } from "@/store/language";
 import { apiErrorMessage } from "@/lib/apiError";
+import { asArray, asNumber, asObject } from "@/lib/safeData";
 import {
   TrendingUp, TrendingDown, ShoppingCart, Calendar, Users, Download,
   RefreshCw, BarChart3, Globe2, Package, Wrench, Trophy, Activity,
@@ -34,6 +36,24 @@ interface Overview {
     leads_pct: number | null;
   };
   top_services: { service_id: string; name?: string; name_bn?: string; count: number; revenue: number }[];
+}
+
+/** Coerce whatever the overview endpoint returned into the expected shape. */
+function normalizeOverview(raw: unknown): Overview | null {
+  const o = asObject<Overview>(raw);
+  if (!Object.keys(o).length) return null;
+  const rev = asObject<Overview["revenue"]>(o.revenue);
+  const c = asObject<Overview["counts"]>(o.counts);
+  const t = o.trends && typeof o.trends === "object" ? o.trends : undefined;
+  return {
+    revenue: { orders: asNumber(rev.orders), bookings: asNumber(rev.bookings), total: asNumber(rev.total) },
+    counts: { orders: asNumber(c.orders), bookings: asNumber(c.bookings), leads: asNumber(c.leads), leads_won: asNumber(c.leads_won) },
+    conversion_rate: asNumber(o.conversion_rate),
+    trends: t,
+    top_services: asArray<Overview["top_services"][number]>(o.top_services).filter(Boolean).map((s) => ({
+      ...s, count: asNumber(s.count), revenue: asNumber(s.revenue),
+    })),
+  };
 }
 
 interface ChartDay { date: string; orders: number; bookings: number; total: number }
@@ -134,10 +154,14 @@ export default function AnalyticsPage() {
         api.get(`/api/v1/admin/analytics/lead-funnel?days=${days}`),
         api.get(`/api/v1/admin/analytics/top-products?days=${days}&limit=5`).catch(() => null),
       ]);
-      setOverview(ov.data.data);
-      setChart(ch.data.data);
-      setFunnel(fn.data.data);
-      setTopProducts(tp?.data?.data ?? []);
+      setOverview(normalizeOverview(ov?.data?.data));
+      setChart(asArray<Partial<ChartDay>>(ch?.data?.data).filter(Boolean).map((d) => ({
+        date: String(d.date ?? ""), orders: asNumber(d.orders), bookings: asNumber(d.bookings), total: asNumber(d.total),
+      })));
+      setFunnel(Object.fromEntries(Object.entries(asObject<Record<string, unknown>>(fn?.data?.data)).map(([k, v]) => [k, asNumber(v)])));
+      setTopProducts(asArray<Partial<TopProduct>>(tp?.data?.data).filter(Boolean).map((p) => ({
+        product: String(p.product ?? "—"), orders: asNumber(p.orders), revenue: asNumber(p.revenue),
+      })));
     } catch (e) {
       toast("error", apiErrorMessage(e, "Failed to load analytics"));
     } finally {
@@ -198,11 +222,11 @@ export default function AnalyticsPage() {
         ))}
       </div>
 
-      {tab === "visitors" && <VisitorAnalytics days={days} />}
+      {tab === "visitors" && <AdminSectionBoundary><VisitorAnalytics days={days} /></AdminSectionBoundary>}
 
-      {tab === "operations" && <OperationsPanel />}
+      {tab === "operations" && <AdminSectionBoundary><OperationsPanel /></AdminSectionBoundary>}
 
-      {tab === "business" && (<>
+      {tab === "business" && (<AdminSectionBoundary>
       <div className="flex justify-end">
         <Link href="/sumon/reports?report=revenue" className="text-xs font-medium text-brand-600 hover:underline">
           {bn ? "সম্পূর্ণ রিপোর্ট দেখুন (Reports) →" : "View the full, exact-numbers report in Reports →"}
@@ -393,7 +417,7 @@ export default function AnalyticsPage() {
           ))}
         </div>
       </div>
-      </>)}
+      </AdminSectionBoundary>)}
     </div>
   );
 }

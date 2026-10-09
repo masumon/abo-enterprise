@@ -12,6 +12,7 @@ import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
+import { asArray, asNumber, asObject } from "@/lib/safeData";
 
 type Tab = "inventory" | "brands";
 
@@ -39,8 +40,9 @@ export default function AdminInventoryPage() {
     setLoading(true);
     try {
       const [s, r] = await Promise.all([inventoryApi.summary(), inventoryApi.list({ search: search || undefined, per_page: 100 })]);
-      setSummary(s.data.data);
-      setItems(r.data.data);
+      const sum = asObject<typeof summary>(s?.data?.data);
+      setSummary({ products: asNumber(sum.products), low_stock: asNumber(sum.low_stock), out_of_stock: asNumber(sum.out_of_stock), units: asNumber(sum.units) });
+      setItems(asArray<InventoryItem>(r?.data?.data).filter((p) => p && typeof p === "object"));
     } catch (e) {
       toast("error", apiErrorMessage(e, "Failed to load inventory"));
     } finally { setLoading(false); }
@@ -50,7 +52,7 @@ export default function AdminInventoryPage() {
     setLoading(true);
     try {
       const r = await brandsApi.list({ search: search || undefined, include_inactive: true, per_page: 100 });
-      setBrands(r.data.data);
+      setBrands(asArray<Brand>(r?.data?.data).filter((b) => b && typeof b === "object"));
     } catch (e) {
       toast("error", apiErrorMessage(e, "Failed to load brands"));
     } finally { setLoading(false); }
@@ -66,7 +68,7 @@ export default function AdminInventoryPage() {
     setSelected(item);
     try {
       const r = await inventoryApi.movements(item.id);
-      setMovements(r.data.data);
+      setMovements(asArray<InventoryMovement>(r?.data?.data));
     } catch (e) {
       toast("error", apiErrorMessage(e, "Failed to load stock history"));
     }
@@ -156,7 +158,7 @@ export default function AdminInventoryPage() {
               <input className="rounded-lg border border-border p-2 bg-surface md:col-span-2" placeholder="Reason (required)" value={reason} onChange={(e) => setReason(e.target.value)} />
               <button className="md:col-span-4 inline-flex items-center justify-center gap-2 rounded-lg bg-brand text-white py-2 disabled:opacity-50" disabled={adjusting} onClick={submitAdjustment}>{Number(delta) >= 0 ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />} {adjusting ? "Saving..." : "Apply stock adjustment"}</button>
             </div>
-            <div className="max-h-64 overflow-auto border border-border rounded-lg"><table className="w-full text-xs"><thead><tr className="border-b border-border text-left"><th className="p-2">Time</th><th className="p-2">Type</th><th className="p-2">Change</th><th className="p-2">Balance</th><th className="p-2">Reason</th></tr></thead><tbody>{movements.map((m) => <tr key={m.id} className="border-b border-border/50"><td className="p-2">{new Date(m.created_at).toLocaleString()}</td><td className="p-2">{m.movement_type}</td><td className="p-2">{m.quantity_delta > 0 ? "+" : ""}{m.quantity_delta}</td><td className="p-2">{m.quantity_after}</td><td className="p-2">{m.reason || "—"}</td></tr>)}</tbody></table></div>
+            <div className="max-h-64 overflow-auto border border-border rounded-lg"><table className="w-full text-xs"><thead><tr className="border-b border-border text-left"><th className="p-2">Time</th><th className="p-2">Type</th><th className="p-2">Change</th><th className="p-2">Balance</th><th className="p-2">Reason</th></tr></thead><tbody>{movements.map((m) => <tr key={m.id} className="border-b border-border/50"><td className="p-2">{m.created_at ? new Date(m.created_at).toLocaleString() : "—"}</td><td className="p-2">{m.movement_type}</td><td className="p-2">{m.quantity_delta > 0 ? "+" : ""}{m.quantity_delta}</td><td className="p-2">{m.quantity_after}</td><td className="p-2">{m.reason || "—"}</td></tr>)}</tbody></table></div>
           </div>}
         </>
       ) : (
@@ -177,5 +179,5 @@ export default function AdminInventoryPage() {
 }
 
 function Stat({ label, value, icon }: { label: string; value: number; icon: ReactNode }) {
-  return <div className="rounded-xl border border-border p-4 flex items-center justify-between"><div><div className="text-xs text-muted">{label}</div><div className="text-2xl font-semibold">{value.toLocaleString()}</div></div>{icon}</div>;
+  return <div className="rounded-xl border border-border p-4 flex items-center justify-between"><div><div className="text-xs text-muted">{label}</div><div className="text-2xl font-semibold">{asNumber(value).toLocaleString()}</div></div>{icon}</div>;
 }
