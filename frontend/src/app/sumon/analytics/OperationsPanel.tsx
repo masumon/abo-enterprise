@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import api, { downloadCsv } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
+import { asArray, asNumber, asObject } from "@/lib/safeData";
 import {
   Activity, AlertTriangle, Bell, CheckCircle2, Database, Download,
   HardDrive, Loader2, Mail, RefreshCw, ShieldCheck, Upload, XCircle,
@@ -77,7 +78,10 @@ export default function OperationsPanel() {
     // Health runs real network checks (SMTP/Cloudinary/GA4) — fetch it in
     // parallel but render the fast sections as soon as they arrive.
     api.get("/api/v1/admin/ops/health")
-      .then((r) => setHealth(r.data.data))
+      .then((r) => {
+        const h = asObject<HealthData>(r?.data?.data);
+        setHealth(Object.keys(h).length ? { checks: asObject<Record<string, HealthCheck>>(h.checks) as Record<string, HealthCheck>, healthy: asNumber(h.healthy), total: asNumber(h.total) } : null);
+      })
       .catch((e) => toast("error", apiErrorMessage(e, "Health check failed")))
       .finally(() => setHealthLoading(false));
     try {
@@ -86,9 +90,15 @@ export default function OperationsPanel() {
         api.get("/api/v1/admin/ops/security"),
         api.get("/api/v1/admin/ops/notifications"),
       ]);
-      setErrors(er.data.data);
-      setSecurity(sec.data.data);
-      setFeed(nf.data.data);
+      // Defensive: coerce each list to an array so an unexpected payload shape can't crash the panel.
+      const listify = (raw: unknown, keys: string[]) => {
+        const o = asObject<Record<string, unknown>>(raw);
+        return { ...o, ...Object.fromEntries(keys.map((k) => [k, asArray(o[k])])) } as Record<string, never[]>;
+      };
+      setErrors(listify(er?.data?.data, ["runtime_errors", "failed_emails", "failed_payments"]));
+      setSecurity(listify(sec?.data?.data, ["admin_accounts", "failed_logins", "audit_tail"]));
+      const f = asObject<{ items: FeedItem[]; counts: Record<string, number> }>(nf?.data?.data);
+      setFeed({ items: asArray<FeedItem>(f.items), counts: asObject<Record<string, number>>(f.counts) as Record<string, number> });
     } catch (e) {
       toast("error", apiErrorMessage(e, "Failed to load operations data"));
     } finally {
@@ -150,7 +160,7 @@ export default function OperationsPanel() {
           <div className="flex items-center gap-2">
             {feed && (
               <span className="text-xs text-gray-400">
-                {feed.counts.error} error · {feed.counts.warning} warning · {feed.counts.info} info
+                {asNumber(feed.counts.error)} error · {asNumber(feed.counts.warning)} warning · {asNumber(feed.counts.info)} info
               </span>
             )}
             <button type="button" onClick={loadAll} className="btn btn-outline btn-sm inline-flex items-center gap-1.5">
@@ -187,7 +197,7 @@ export default function OperationsPanel() {
           </div>
         ) : health ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            {Object.entries(health.checks).map(([key, c]) => (
+            {Object.entries(health.checks).filter(([, c]) => c && typeof c === "object").map(([key, c]) => (
               <div key={key} className={`rounded-lg border p-3 ${c.ok ? "border-gray-100 bg-gray-50/50" : "border-red-200 bg-red-50/60"}`}>
                 <div className="flex items-center gap-1.5 mb-1">
                   {c.ok ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <XCircle className="w-3.5 h-3.5 text-red-500" />}
@@ -237,7 +247,7 @@ export default function OperationsPanel() {
               <div>
                 <p className="text-xs font-semibold text-gray-500 mb-1.5">Failed Payments ({(errors.failed_payments as unknown[]).length})</p>
                 <EventList
-                  rows={(errors.failed_payments as { at: string; order_number: string; total: number }[]).map((e) => ({ at: e.at, text: `${e.order_number} — ৳${e.total.toLocaleString()}`, tone: "error" }))}
+                  rows={(errors.failed_payments as { at: string; order_number: string; total: number }[]).map((e) => ({ at: e.at, text: `${e.order_number} — ৳${asNumber(e.total).toLocaleString()}`, tone: "error" }))}
                   empty="কোনো ফেইলড পেমেন্ট নেই ✓"
                 />
               </div>

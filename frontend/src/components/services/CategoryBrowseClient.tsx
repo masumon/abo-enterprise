@@ -9,6 +9,8 @@ import ServiceCard from "@/components/services/ServiceCard";
 import PageHero from "@/components/ui/PageHero";
 import { ServiceCardSkeleton } from "@/components/common/Skeletons";
 import { cn } from "@/lib/utils";
+import CompactEmpty from "@/components/common/CompactEmpty";
+import { Wrench } from "lucide-react";
 
 interface Props {
   /** Root-first chain of taxonomy nodes; the last entry is the page's node. */
@@ -128,16 +130,15 @@ export default function CategoryBrowseClient({ trail, initialServices, initialTo
               ))}
             </div>
           ) : services.length === 0 ? (
-            <div className="text-center py-16 enterprise-card p-8">
-              <p className="text-muted mb-4">
-                {lang === "bn"
-                  ? "এই ক্যাটাগরিতে এখনো কোনো সেবা যোগ করা হয়নি।"
-                  : "No services have been added to this category yet."}
-              </p>
-              <Link href="/contact" className="btn btn-brand btn-md">
-                {lang === "bn" ? "যোগাযোগ করুন" : "Contact Us"}
-              </Link>
-            </div>
+            <CompactEmpty
+              icon={Wrench}
+              text={lang === "bn"
+                ? "এই ক্যাটাগরিতে সেবা শিগগির আসছে — এখনই দরকার হলে আমাদের জানান।"
+                : "Services in this category are coming soon — tell us if you need one now."}
+              whatsappMessage={lang === "bn" ? `আমি "${name(node)}" সেবা সম্পর্কে জানতে চাই।` : `I'd like to know about "${name(node)}" services.`}
+              linkLabel={lang === "bn" ? "যোগাযোগ করুন" : "Contact Us"}
+              linkHref="/contact"
+            />
           ) : (
             <>
               <p className="text-sm text-muted mb-4">

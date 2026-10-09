@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { BlogPost } from "@/types";
 import { useLanguageStore } from "@/store/language";
+import { formatStableDate } from "@/lib/stableDate";
 import { Newspaper } from "lucide-react";
 import Reveal from "@/components/ui/Reveal";
 
@@ -13,13 +14,9 @@ interface Props {
   totalPages: number;
 }
 
-function formatDate(dateStr?: string, lang?: string) {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-BD", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+// Hydration-safe (fixed time zone + month names) — see lib/stableDate.
+function formatDate(dateStr: string | undefined, lang: string | undefined) {
+  return formatStableDate(dateStr, lang === "en" ? "en" : "bn");
 }
 
 export default function BlogGrid({ posts, page, totalPages }: Props) {

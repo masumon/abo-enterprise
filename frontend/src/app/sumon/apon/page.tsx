@@ -14,6 +14,7 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { DEFAULT_FAQ, DEFAULT_FEATURES, DEFAULT_PERMISSIONS, DEFAULT_SHOTS, formatMB } from "@/lib/apon";
 import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
+import { asArray, asNumber, asObject } from "@/lib/safeData";
 
 type Tab = "releases" | "content" | "controls" | "stats";
 type Values = Record<string, string>;
@@ -70,15 +71,22 @@ export default function AponAdminPage() {
   const load = useCallback(async () => {
     try {
       const s = await adminApi.getSettings();
-      setValues(s.data.data ?? {});
+      // Coerce every setting to a string so a non-string value (bool/null/number) can't crash .trim() below.
+      const raw = asObject<Record<string, unknown>>(s?.data?.data);
+      setValues(Object.fromEntries(Object.entries(raw).map(([k, val]) => [k, val == null ? "" : String(val)])));
     } catch (e) {
       toast("error", apiErrorMessage(e, "সেটিংস লোড করা যায়নি"));
     }
     try {
       const r = await aponAdminApi.list();
-      setReleases(r.data.data ?? []);
+      setReleases(asArray<AponAdminRelease>(r?.data?.data).filter((x) => x && typeof x === "object" && x.id));
       setBackendMissing(false);
-      aponAdminApi.stats().then((x) => setStats(x.data.data ?? null)).catch(() => undefined);
+      aponAdminApi.stats().then((x) => {
+        const d = x?.data?.data;
+        if (!d || typeof d !== "object" || Array.isArray(d)) { setStats(null); return; }
+        const o = asObject<AponStats>(d);
+        setStats({ total: asNumber(o.total), last_30_days: asNumber(o.last_30_days), per_day: asArray(o.per_day), per_release: asArray(o.per_release) });
+      }).catch(() => undefined);
     } catch {
       setBackendMissing(true); // server/SQL not updated yet
     } finally {

@@ -171,7 +171,7 @@ export default async function BlogPostPage(
       <main className="min-h-screen page-surface">
         {/* Hero */}
         {post.featured_image_url ? (
-          <div className="relative w-full overflow-hidden bg-gray-100 dark:bg-[#141930] h-[min(480px,50vh)]">
+          <div className="relative w-full overflow-hidden bg-gray-100 dark:bg-[#141930] aspect-[16/9] max-h-[min(480px,50vh)]">
             <Image
               src={post.featured_image_url}
               alt={post.title_en}
@@ -182,10 +182,10 @@ export default async function BlogPostPage(
             />
           </div>
         ) : (
-          <div className="gradient-brand h-32" />
+          <div className="gradient-brand h-6 sm:h-32" />
         )}
 
-        <div className="max-w-3xl mx-auto px-4 py-10">
+        <div className="max-w-3xl mx-auto px-4 pt-5 pb-10 sm:py-10">
           <BlogPostBreadcrumb category={post.category} title={post.title_bn ?? post.title_en} />
 
           {/* Category */}
@@ -199,6 +199,7 @@ export default async function BlogPostPage(
             authorName={post.author_name}
             dateStr={post.published_at ?? post.created_at}
             tags={post.tags}
+            part="meta"
           />
 
           {/* Title + Content + Print/Translate (client interactive) */}
@@ -210,6 +211,10 @@ export default async function BlogPostPage(
           />
 
           <BlogProductRail products={rail.products} matched={rail.matched} />
+
+          {/* Back link after the article (it used to sit between the meta row
+              and the title, leaving a large gap above the headline). */}
+          <BlogPostMeta authorName={post.author_name} part="back" />
         </div>
       </main>
     </>

@@ -6,11 +6,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Copy, Download, KeyRound, Loader2, LogOut, Printer, ShieldCheck, ShieldOff, Users } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import AdminSectionBoundary from "@/components/admin/AdminSectionBoundary";
 import { authApi, type SecurityPolicy, type TwoFactorStatus } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { getAdminToken, setAdminToken } from "@/lib/adminAuth";
 import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
+import { asArray, asObject } from "@/lib/safeData";
 
 type Setup = { secret: string; qr_data_uri: string };
 
@@ -97,13 +99,21 @@ function SecurityInner() {
   const load = useCallback(async () => {
     try {
       const [me, st] = await Promise.all([authApi.getMe(), authApi.totpStatus()]);
-      const r = me.data.data?.role ?? "";
+      const meData = asObject<{ role: string }>(me?.data?.data);
+      const r = typeof meData.role === "string" ? meData.role : "";
       setRole(r);
-      setStatus(st.data.data ?? { enabled: false });
+      const stData = asObject<TwoFactorStatus>(st?.data?.data);
+      setStatus({ ...stData, enabled: !!stData.enabled });
       if (r === "super_admin") {
         try {
           const p = await authApi.securityPolicy();
-          setPolicy(p.data.data ?? null);
+          const pd = asObject<SecurityPolicy>(p?.data?.data);
+          if (Object.keys(pd).length) {
+            setPolicy({ require_2fa: !!pd.require_2fa, my_totp_enabled: !!pd.my_totp_enabled, admins: asArray<SecurityPolicy["admins"][number]>(pd.admins).filter((a) => a && typeof a === "object") });
+          } else {
+            setPolicy(null);
+            setPolicyUnavailable(true);
+          }
         } catch {
           setPolicyUnavailable(true); // backend not updated yet
         }
@@ -127,7 +137,8 @@ function SecurityInner() {
     setBusy(true);
     try {
       const r = await authApi.totpSetup();
-      setSetup(r.data.data ?? null);
+      const sd = asObject<Setup>(r?.data?.data);
+      setSetup(typeof sd.secret === "string" && typeof sd.qr_data_uri === "string" ? (sd as Setup) : null);
       setCode("");
     } catch (e) {
       toast("error", apiErrorMessage(e, "চালু করা যায়নি"));
@@ -146,7 +157,8 @@ function SecurityInner() {
       setSetup(null);
       setCode("");
       toast("success", "২-ধাপ যাচাই চালু হয়েছে");
-      if (d?.recovery_codes?.length) setNewCodes(d.recovery_codes);
+      const codes = asArray<string>(d?.recovery_codes);
+      if (codes.length) setNewCodes(codes);
       else afterFullSetup();
       await load();
     } catch (e) {
@@ -175,7 +187,8 @@ function SecurityInner() {
     setBusy(true);
     try {
       const r = await authApi.totpRecoveryCodes(code);
-      setNewCodes(r.data.data?.recovery_codes ?? null);
+      const rc = asArray<string>(r?.data?.data?.recovery_codes);
+      setNewCodes(rc.length ? rc : null);
       setMode(null);
       setCode("");
       await load();
@@ -493,7 +506,7 @@ function SecurityInner() {
 export default function SecurityPage() {
   return (
     <Suspense fallback={<div className="flex justify-center py-24"><Loader2 className="w-7 h-7 animate-spin text-brand-600" /></div>}>
-      <SecurityInner />
+      <AdminSectionBoundary><SecurityInner /></AdminSectionBoundary>
     </Suspense>
   );
 }

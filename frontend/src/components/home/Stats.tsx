@@ -29,13 +29,14 @@ export default function Stats() {
     publicApi.stats().then((r) => {
       const d = r.data.data;
       if (!d) return;
-      setStats([
+      setStats(([
         { icon: Users, end: typeof d.clients === "number" ? d.clients : null, suffix: "+", key: "trust_clients" },
         { icon: Briefcase, end: typeof d.projects === "number" ? d.projects : null, suffix: "+", key: "trust_projects" },
         { icon: Package, end: typeof d.products === "number" ? d.products : null, suffix: "+", key: "trust_products" },
         { icon: Clock, end: typeof d.years === "number" ? d.years : null, suffix: "+", key: "trust_years" },
         { icon: Headphones, end: 24, suffix: "/7", key: "trust_support" },
-      ]);
+      // Once real figures are in, hide any metric that is 0 or missing.
+      ] as StatItem[]).filter((s) => typeof s.end === "number" && s.end > 0));
     }).catch(() => {});
   }, []);
 

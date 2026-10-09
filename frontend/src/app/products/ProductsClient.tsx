@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Search, SlidersHorizontal, Loader2, LayoutGrid, List, X, AlertCircle } from "lucide-react";
+import { Search, SlidersHorizontal, Loader2, LayoutGrid, List, X, AlertCircle, PackageSearch } from "lucide-react";
+import CompactEmpty from "@/components/common/CompactEmpty";
 import type { Category, Product, Subcategory } from "@/types";
 import ProductCard from "@/components/features/ProductCard";
 import Reveal from "@/components/ui/Reveal";
@@ -419,6 +420,16 @@ export default function ProductsClient({
           <p className="text-gray-400 text-sm mb-5">{lang === "bn" ? "সার্ভার শীঘ্রই চালু হবে — আবার চেষ্টা করুন।" : "Server may be starting — please retry."}</p>
           <button type="button" onClick={() => load(1)} className="btn btn-brand btn-md btn-ripple">{lang === "bn" ? "আবার চেষ্টা" : "Retry"}</button>
         </div>
+      ) : products.length === 0 && activeFilters.length === 0 ? (
+        /* Catalog is empty (no filters applied) — a compact, friendly note with
+           a way to ask for a product instead of a large blank card. */
+        <CompactEmpty
+          icon={PackageSearch}
+          text={lang === "bn" ? "নতুন পণ্য শিগগির যোগ হচ্ছে — কোনো পণ্য দরকার হলে আমাদের জানান।" : "New products are being added soon — tell us what you need."}
+          whatsappMessage={lang === "bn" ? "আমি একটি পণ্য সম্পর্কে জানতে চাই।" : "I'd like to ask about a product."}
+          linkLabel={lang === "bn" ? "সেবাসমূহ দেখুন" : "Browse services"}
+          linkHref="/services"
+        />
       ) : products.length === 0 ? (
         <EmptyState
           icon={Search}

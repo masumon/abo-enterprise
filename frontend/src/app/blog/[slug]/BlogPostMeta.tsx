@@ -2,27 +2,27 @@
 
 import Link from "next/link";
 import { useLanguageStore } from "@/store/language";
+import { formatStableDate } from "@/lib/stableDate";
 
 interface BlogPostMetaProps {
   authorName: string;
   dateStr?: string;
   tags?: string[];
+  /** Render only the meta row ("meta"), only the back link ("back"), or both (default). */
+  part?: "meta" | "back" | "both";
 }
 
-function formatDate(dateStr: string | undefined, lang: "bn" | "en") {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-BD", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+// Hydration-safe (fixed time zone + month names) — see lib/stableDate.
+function formatDate(dateStr: string | undefined, lang: string | undefined) {
+  return formatStableDate(dateStr, lang === "en" ? "en" : "bn");
 }
 
-export default function BlogPostMeta({ authorName, dateStr, tags }: BlogPostMetaProps) {
+export default function BlogPostMeta({ authorName, dateStr, tags, part = "both" }: BlogPostMetaProps) {
   const { lang } = useLanguageStore();
 
   return (
     <>
+      {part !== "back" && (
       <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400 mb-6 pb-6 border-b border-gray-100">
         <span className="font-medium text-gray-600">{authorName}</span>
         <span>·</span>
@@ -40,7 +40,9 @@ export default function BlogPostMeta({ authorName, dateStr, tags }: BlogPostMeta
           </>
         )}
       </div>
+      )}
 
+      {part !== "meta" && (
       <div className="mt-12 pt-6 border-t border-gray-100">
         <Link
           href="/blog"
@@ -49,6 +51,7 @@ export default function BlogPostMeta({ authorName, dateStr, tags }: BlogPostMeta
           {lang === "bn" ? "← ব্লগে ফিরে যান" : "← Back to Blog"}
         </Link>
       </div>
+      )}
     </>
   );
 }

@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users, AlertTriangle } from "lucide-react";
+import { Search, ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users, AlertTriangle, MoreVertical } from "lucide-react";
 import { getAdminPageTitle } from "@/lib/adminNav";
 import AdminInstallButton from "@/components/admin/AdminInstallButton";
 import { useAlertStore } from "@/store/alerts";
 import { useLanguageStore } from "@/store/language";
 import { useEffect, useState } from "react";
 import { notificationsApi, type NotificationRecord } from "@/lib/api";
+
+const MENU_ITEM = "w-full min-h-[44px] flex items-center gap-3 px-3 rounded-xl text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50";
 
 interface Props {
   adminName: string;
@@ -27,6 +29,8 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
   const alertTotal = pendingOrders + pendingBookings + newLeads;
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
+  // Phones (< 640px): install/theme/language/refresh move into a compact "more" menu.
+  const [moreOpen, setMoreOpen] = useState(false);
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [persistentNotifs, setPersistentNotifs] = useState<NotificationRecord[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -77,7 +81,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
 
   return (
     <header className="sticky top-0 z-20 admin-topbar">
-      <div className="flex items-center gap-3 px-4 md:px-6 lg:px-8 h-14">
+      <div className="flex items-center gap-2 sm:gap-3 px-3 sm:px-4 md:px-6 lg:px-8 h-14">
         <button
           type="button"
           onClick={onMenuClick}
@@ -88,29 +92,32 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
         </button>
 
         <nav className="flex items-center gap-1.5 text-sm min-w-0 flex-1" aria-label="Breadcrumb">
-          <Link href="/sumon" className="text-gray-400 hover:text-brand-600 transition-colors shrink-0">
+          <Link href="/sumon" className={`text-gray-400 hover:text-brand-600 transition-colors shrink-0 ${pathname !== "/sumon" ? "hidden sm:inline" : ""}`}>
             {lang === "bn" ? "অ্যাডমিন" : "Admin"}
           </Link>
           {pathname !== "/sumon" && (
             <>
-              <ChevronRight className="w-3.5 h-3.5 text-gray-300 shrink-0" />
+              <ChevronRight className="w-3.5 h-3.5 text-gray-300 shrink-0 hidden sm:block" />
               <span className="font-semibold text-gray-900 truncate">{pageTitle}</span>
             </>
           )}
         </nav>
 
-        <div className="flex items-center gap-2 shrink-0">
-          <AdminInstallButton />
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          <div className="hidden sm:flex items-center">
+            <AdminInstallButton />
+          </div>
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event("abo-admin-search"))}
-            className="h-9 px-2.5 flex items-center justify-center gap-1.5 rounded-xl hover:bg-gray-100 transition-colors text-gray-600 text-xs font-semibold"
+            className="h-10 min-w-[40px] sm:h-9 sm:min-w-0 px-2.5 flex items-center justify-center gap-1.5 rounded-xl hover:bg-gray-100 transition-colors text-gray-600 text-xs font-semibold"
             aria-label={lang === "bn" ? "পেজ খুঁজুন" : "Search pages"}
             title={lang === "bn" ? "পেজ খুঁজুন (Ctrl+K)" : "Search pages (Ctrl+K)"}
           >
             <Search className="w-4 h-4" />
             <span className="hidden md:inline">{lang === "bn" ? "খুঁজুন" : "Search"}</span>
           </button>
+          <div className="hidden sm:flex items-center gap-2">
           {onToggleTheme && (
             <button
               type="button"
@@ -141,11 +148,12 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
           >
             <RotateCw className={`w-4 h-4 text-gray-600 ${isRefreshing ? "animate-spin" : ""}`} />
           </button>
+          </div>
           <div className="relative">
             <button
               type="button"
-              onClick={() => setNotifOpen((v) => !v)}
-              className="relative w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-600"
+              onClick={() => { setNotifOpen((v) => !v); setMoreOpen(false); }}
+              className="relative w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-600"
               aria-label={lang === "bn" ? "নোটিফিকেশন" : "Notifications"}
               aria-expanded={notifOpen}
             >
@@ -231,6 +239,43 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
                       {lang === "bn" ? "সব দেখুন →" : "View all →"}
                     </Link>
                   )}
+                </div>
+              </>
+            )}
+          </div>
+          {/* "More" menu — phones only; keeps every top-bar function reachable. */}
+          <div className="relative sm:hidden">
+            <button
+              type="button"
+              onClick={() => { setMoreOpen((v) => !v); setNotifOpen(false); }}
+              className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-600"
+              aria-label={lang === "bn" ? "আরও অপশন" : "More options"}
+              aria-expanded={moreOpen}
+              aria-haspopup="menu"
+            >
+              <MoreVertical className="w-5 h-5" />
+            </button>
+            {moreOpen && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setMoreOpen(false)} aria-hidden />
+                <div role="menu" className="absolute right-0 mt-2 w-56 z-40 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-xl p-1.5 space-y-0.5">
+                  {onToggleTheme && (
+                    <button type="button" role="menuitem" onClick={() => { onToggleTheme(); setMoreOpen(false); }} className={MENU_ITEM}>
+                      {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                      {dark ? (lang === "bn" ? "লাইট মোড" : "Light mode") : (lang === "bn" ? "ডার্ক মোড" : "Dark mode")}
+                    </button>
+                  )}
+                  <button type="button" role="menuitem" onClick={() => { toggleLang(); setMoreOpen(false); }} className={MENU_ITEM}>
+                    <Languages className="w-4 h-4" />
+                    {lang === "bn" ? "Switch to English" : "বাংলায় দেখুন"}
+                  </button>
+                  <button type="button" role="menuitem" onClick={() => { void handleRefresh(); setMoreOpen(false); }} disabled={isRefreshing} className={MENU_ITEM}>
+                    <RotateCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                    {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
+                  </button>
+                  <div className="px-1.5 pt-1.5 pb-0.5 border-t border-gray-100 dark:border-white/10">
+                    <AdminInstallButton showLabel />
+                  </div>
                 </div>
               </>
             )}

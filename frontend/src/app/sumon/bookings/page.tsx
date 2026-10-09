@@ -17,6 +17,7 @@ import { useFocusTrap } from "@/lib/useFocusTrap";
 const ComposeEmailModal = dynamic(() => import("@/components/admin/ComposeEmailModal"), { ssr: false });
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
+import { useAdminT } from "@/lib/i18n/adminText";
 
 const STATUSES_V2 = ["pending", "confirmed", "in_progress", "completed", "cancelled", "on_hold"];
 // "pending" is the value every new booking starts at — omitting it made the
@@ -24,6 +25,7 @@ const STATUSES_V2 = ["pending", "confirmed", "in_progress", "completed", "cancel
 const PAYMENT_STATUSES = ["pending", "unpaid", "partial", "paid", "refunded"];
 
 export default function AdminBookingsPage() {
+  const tx = useAdminT();
   const [bookingsV2, setBookingsV2] = useState<BookingV2[]>([]);
   const [loadingV2, setLoadingV2] = useState(false);
   const [statusFilterV2, setStatusFilterV2] = useState("");
@@ -182,7 +184,7 @@ export default function AdminBookingsPage() {
         title="Bookings"
         titleBn="বুকিং ব্যবস্থাপনা"
         description={`${totalV2} total bookings — service intake, status management, receipts, and fulfillment tracking`}
-        descriptionBn={`${totalV2}টি বুকিং — service intake, status management, receipt এবং fulfillment tracking`}
+        descriptionBn={`${String(totalV2).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি বুকিং — সেবা গ্রহণ, স্ট্যাটাস ব্যবস্থাপনা, রসিদ ও কাজের অগ্রগতি`}
         actions={
           <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-3 py-2 text-brand-700">
             <Briefcase className="w-4 h-4" />
@@ -193,22 +195,22 @@ export default function AdminBookingsPage() {
 
       <AdminToolbar>
         <select value={statusFilterV2} onChange={(e) => { setStatusFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
-          <option value="">All Status</option>
+          <option value="">{tx("All Status")}</option>
           {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
         </select>
         <select value={paymentFilterV2} onChange={(e) => { setPaymentFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
-          <option value="">All Payment</option>
+          <option value="">{tx("All Payment")}</option>
           {PAYMENT_STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
         </select>
         <select value={districtFilterV2} onChange={(e) => { setDistrictFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
-          <option value="">All Districts</option>
+          <option value="">{tx("All Districts")}</option>
           {BD_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
         <button
           onClick={handleCsvExport}
           disabled={csvLoading}
           className="admin-btn-secondary !py-2 gap-1.5"
-          title="Export all bookings to CSV"
+          title={tx("Export all bookings to CSV")}
         >
           {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
           CSV
@@ -217,7 +219,7 @@ export default function AdminBookingsPage() {
           onClick={handlePdfExport}
           disabled={exportPdfLoading}
           className="admin-btn-secondary !py-2 gap-1.5"
-          title="Export all bookings as PDF"
+          title={tx("Export all bookings as PDF")}
         >
           {exportPdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
           PDF
@@ -233,44 +235,44 @@ export default function AdminBookingsPage() {
         ) : bookingsV2.length === 0 ? (
           <div className="p-12 text-center">
             <Briefcase className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 font-medium">No service bookings found</p>
+            <p className="text-gray-400 font-medium">{tx("No service bookings found")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="table-premium table-responsive min-w-[620px]">
               <thead>
                 <tr>
-                  <th>Booking</th>
-                  <th>Customer</th>
-                  <th>Service</th>
-                  <th>Pricing</th>
-                  <th>Payment</th>
-                  <th>Status</th>
+                  <th>{tx("Booking")}</th>
+                  <th>{tx("Customer")}</th>
+                  <th>{tx("Service")}</th>
+                  <th>{tx("Pricing")}</th>
+                  <th>{tx("Payment")}</th>
+                  <th>{tx("Status")}</th>
                   <th />
                 </tr>
               </thead>
               <tbody>
                 {bookingsV2.map((b) => (
                   <tr key={b.id} className="cursor-pointer" onClick={() => setDetailV2(b)}>
-                    <td className="px-5 py-3" data-label="Booking">
+                    <td className="px-5 py-3" data-label={tx("Booking")}>
                       <p className="font-medium text-gray-900">{b.booking_number}</p>
                       <p className="text-xs text-gray-400">{new Date(b.created_at).toLocaleDateString("en-BD")}</p>
                     </td>
-                    <td className="px-5 py-3" data-label="Customer">
+                    <td className="px-5 py-3" data-label={tx("Customer")}>
                       <p className="text-gray-900">{b.customer_name}</p>
                       <p className="text-xs text-gray-400">{b.customer_phone}</p>
                     </td>
-                    <td className="px-5 py-3" data-label="Service">
+                    <td className="px-5 py-3" data-label={tx("Service")}>
                       <p className="text-gray-800">{b.service_name}</p>
                       {b.service_tier && <p className="text-xs text-gray-400">{b.service_tier}</p>}
                     </td>
-                    <td className="px-5 py-3 text-gray-600" data-label="Pricing">
+                    <td className="px-5 py-3 text-gray-600" data-label={tx("Pricing")}>
                       <p className="capitalize text-xs">{b.pricing_type}</p>
                       <p className="font-medium text-gray-900">
                         {b.final_price != null ? `৳${b.final_price.toLocaleString()}` : b.quoted_price != null ? `৳${b.quoted_price.toLocaleString()}` : "—"}
                       </p>
                     </td>
-                    <td className="px-5 py-3" data-label="Payment">
+                    <td className="px-5 py-3" data-label={tx("Payment")}>
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
                         b.payment_status === "paid" ? "bg-green-100 text-green-700" :
                         b.payment_status === "partial" ? "bg-yellow-100 text-yellow-700" :
@@ -280,7 +282,7 @@ export default function AdminBookingsPage() {
                         {b.payment_status}
                       </span>
                     </td>
-                    <td className="px-5 py-3" onClick={e => e.stopPropagation()} data-label="Status">
+                    <td className="px-5 py-3" onClick={e => e.stopPropagation()} data-label={tx("Status")}>
                       <div className="flex items-center gap-2">
                         <div className="relative">
                           <select
@@ -296,7 +298,7 @@ export default function AdminBookingsPage() {
                         <button
                           onClick={() => handleDeleteV2(b.id, b.booking_number)}
                           disabled={updatingIdV2 === b.id}
-                          title="Delete booking"
+                          title={tx("Delete booking")}
                           className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -314,9 +316,9 @@ export default function AdminBookingsPage() {
       {/* Pagination */}
       {totalV2 > 20 && (
         <div className="flex justify-center gap-2">
-          <button disabled={pageV2 === 1} onClick={() => setPageV2(p => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-          <span className="px-4 py-2 text-sm text-gray-600">Page {pageV2}</span>
-          <button disabled={bookingsV2.length < 20} onClick={() => setPageV2(p => p + 1)} className="btn btn-outline btn-sm">Next</button>
+          <button disabled={pageV2 === 1} onClick={() => setPageV2(p => p - 1)} className="btn btn-outline btn-sm">{tx("Previous")}</button>
+          <span className="px-4 py-2 text-sm text-gray-600">{tx("Page")} {pageV2}</span>
+          <button disabled={bookingsV2.length < 20} onClick={() => setPageV2(p => p + 1)} className="btn btn-outline btn-sm">{tx("Next")}</button>
         </div>
       )}
 
@@ -328,7 +330,7 @@ export default function AdminBookingsPage() {
           onClick={() => setDetailV2(null)}
           role="dialog"
           aria-modal="true"
-          aria-label="Service booking details"
+          aria-label={tx("Service booking details")}
         >
           <div
             ref={detailV2Ref}
@@ -366,21 +368,21 @@ export default function AdminBookingsPage() {
 
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-                  <h3 className="font-semibold text-gray-900 text-sm">Customer</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm">{tx("Customer")}</h3>
                   <div className="flex gap-2">
                     {detailV2.customer_phone && <a href={`tel:${detailV2.customer_phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>}
                     {detailV2.customer_phone && <a href={buildCustomerWhatsAppLink(detailV2.customer_phone, `Hello ${detailV2.customer_name}, regarding your booking ${detailV2.booking_number} at ABO Enterprise. How can we help you?`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>}
-                    {detailV2.customer_email && <button type="button" onClick={() => setComposeEmail({ to: detailV2.customer_email!, subject: `Regarding your booking ${detailV2.booking_number}`, context: `Booking ${detailV2.booking_number}` })} title="Compose and send an email to the customer from no-reply@aboenterprise.com" className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</button>}
+                    {detailV2.customer_email && <button type="button" onClick={() => setComposeEmail({ to: detailV2.customer_email!, subject: `Regarding your booking ${detailV2.booking_number}`, context: `Booking ${detailV2.booking_number}` })} title={tx("Compose and send an email to the customer from no-reply@aboenterprise.com")} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</button>}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div><p className="text-gray-500 text-xs">Name</p><p className="font-medium">{detailV2.customer_name}</p></div>
-                  <div><p className="text-gray-500 text-xs">Phone</p><p className="font-medium">{detailV2.customer_phone}</p></div>
-                  {detailV2.customer_email && <div><p className="text-gray-500 text-xs">Email</p><p className="font-medium">{detailV2.customer_email}</p></div>}
-                  {detailV2.customer_company && <div><p className="text-gray-500 text-xs">Company</p><p className="font-medium">{detailV2.customer_company}</p></div>}
+                  <div><p className="text-gray-500 text-xs">{tx("Name")}</p><p className="font-medium">{detailV2.customer_name}</p></div>
+                  <div><p className="text-gray-500 text-xs">{tx("Phone")}</p><p className="font-medium">{detailV2.customer_phone}</p></div>
+                  {detailV2.customer_email && <div><p className="text-gray-500 text-xs">{tx("Email")}</p><p className="font-medium">{detailV2.customer_email}</p></div>}
+                  {detailV2.customer_company && <div><p className="text-gray-500 text-xs">{tx("Company")}</p><p className="font-medium">{detailV2.customer_company}</p></div>}
                   {(detailV2.district || detailV2.upazila) && (
                     <div className="col-span-2">
-                      <p className="text-gray-500 text-xs">Location</p>
+                      <p className="text-gray-500 text-xs">{tx("Location")}</p>
                       <p className="font-medium">{[detailV2.upazila, detailV2.district].filter(Boolean).join(", ")}</p>
                     </div>
                   )}
@@ -390,18 +392,18 @@ export default function AdminBookingsPage() {
               <div className="bg-gray-50 rounded-xl p-4">
                 <h3 className="font-semibold text-gray-900 text-sm mb-3">Service &amp; Pricing</h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div><p className="text-gray-500 text-xs">Service</p><p className="font-medium">{detailV2.service_name}</p></div>
+                  <div><p className="text-gray-500 text-xs">{tx("Service")}</p><p className="font-medium">{detailV2.service_name}</p></div>
                   {detailV2.service_tier && <div><p className="text-gray-500 text-xs">Tier</p><p className="font-medium">{detailV2.service_tier}</p></div>}
                   <div><p className="text-gray-500 text-xs">Pricing Type</p><p className="font-medium capitalize">{detailV2.pricing_type}</p></div>
-                  <div><p className="text-gray-500 text-xs">Payment</p><p className="font-medium capitalize">{detailV2.payment_status}</p></div>
-                  {detailV2.quoted_price != null && <div><p className="text-gray-500 text-xs">Quoted</p><p className="font-medium">৳{detailV2.quoted_price.toLocaleString()}</p></div>}
-                  {detailV2.final_price != null && <div><p className="text-gray-500 text-xs">Final</p><p className="font-medium">৳{detailV2.final_price.toLocaleString()}</p></div>}
-                  {detailV2.hours_worked != null && <div><p className="text-gray-500 text-xs">Hours</p><p className="font-medium">{detailV2.hours_worked}h</p></div>}
-                  <div><p className="text-gray-500 text-xs">Created</p><p className="font-medium">{new Date(detailV2.created_at).toLocaleDateString("en-BD")}</p></div>
+                  <div><p className="text-gray-500 text-xs">{tx("Payment")}</p><p className="font-medium capitalize">{detailV2.payment_status}</p></div>
+                  {detailV2.quoted_price != null && <div><p className="text-gray-500 text-xs">{tx("Quoted")}</p><p className="font-medium">৳{detailV2.quoted_price.toLocaleString()}</p></div>}
+                  {detailV2.final_price != null && <div><p className="text-gray-500 text-xs">{tx("Final")}</p><p className="font-medium">৳{detailV2.final_price.toLocaleString()}</p></div>}
+                  {detailV2.hours_worked != null && <div><p className="text-gray-500 text-xs">{tx("Hours")}</p><p className="font-medium">{detailV2.hours_worked}h</p></div>}
+                  <div><p className="text-gray-500 text-xs">{tx("Created")}</p><p className="font-medium">{new Date(detailV2.created_at).toLocaleDateString("en-BD")}</p></div>
                 </div>
                 {detailV2.details && (
                   <div className="pt-3 border-t border-gray-200 mt-3">
-                    <p className="text-gray-500 text-xs mb-1">Details</p>
+                    <p className="text-gray-500 text-xs mb-1">{tx("Details")}</p>
                     <p className="text-sm text-gray-800 whitespace-pre-wrap">{detailV2.details}</p>
                   </div>
                 )}
@@ -413,7 +415,7 @@ export default function AdminBookingsPage() {
                 )}
                 {detailV2.form_data && Object.keys(detailV2.form_data).length > 0 && (
                   <div className="pt-3 border-t border-gray-200 mt-3">
-                    <p className="text-gray-500 text-xs mb-2">Booking Form Answers</p>
+                    <p className="text-gray-500 text-xs mb-2">{tx("Booking Form Answers")}</p>
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       {Object.entries(detailV2.form_data).map(([key, value]) => (
                         <div key={key}>
@@ -447,7 +449,7 @@ export default function AdminBookingsPage() {
                 )}
                 {detailV2.notes && (
                   <div className="pt-3 border-t border-gray-200 mt-3">
-                    <p className="text-gray-500 text-xs mb-1">Notes</p>
+                    <p className="text-gray-500 text-xs mb-1">{tx("Notes")}</p>
                     <p className="text-sm text-gray-800 whitespace-pre-wrap">{detailV2.notes}</p>
                   </div>
                 )}
@@ -504,12 +506,12 @@ export default function AdminBookingsPage() {
                       }
                       className="btn btn-outline btn-sm text-xs"
                     >
-                      Edit
+                      {tx("Edit")}
                     </button>
                   ) : (
                     <div className="flex gap-2">
                       <button type="button" onClick={() => setEditV2(null)} className="btn btn-outline btn-sm text-xs">
-                        Cancel
+                        {tx("Cancel")}
                       </button>
                       <button
                         type="button"
@@ -540,7 +542,7 @@ export default function AdminBookingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="form-label text-[11px]">Payment Status</label>
+                      <label className="form-label text-[11px]">{tx("Payment Status")}</label>
                       <select
                         value={editV2.payment_status ?? "pending"}
                         onChange={(e) => setEditV2((p) => ({ ...p, payment_status: e.target.value }))}
@@ -552,7 +554,7 @@ export default function AdminBookingsPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="form-label text-[11px]">Payment Method</label>
+                      <label className="form-label text-[11px]">{tx("Payment Method")}</label>
                       <input
                         value={editV2.payment_method ?? ""}
                         onChange={(e) => setEditV2((p) => ({ ...p, payment_method: e.target.value }))}
@@ -590,7 +592,7 @@ export default function AdminBookingsPage() {
                       />
                     </div>
                     <div className="sm:col-span-2">
-                      <label className="form-label text-[11px]">Internal Notes</label>
+                      <label className="form-label text-[11px]">{tx("Internal Notes")}</label>
                       <textarea
                         rows={3}
                         value={editV2.notes ?? ""}
@@ -602,13 +604,13 @@ export default function AdminBookingsPage() {
                 ) : (
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
-                      <p className="text-gray-500 text-xs">Final Price</p>
+                      <p className="text-gray-500 text-xs">{tx("Final Price")}</p>
                       <p className="font-medium">
                         {detailV2.final_price != null ? `৳${detailV2.final_price.toLocaleString()}` : "— not set"}
                       </p>
                     </div>
                     <div>
-                      <p className="text-gray-500 text-xs">Payment Method</p>
+                      <p className="text-gray-500 text-xs">{tx("Payment Method")}</p>
                       <p className="font-medium">{detailV2.payment_method || "—"}</p>
                     </div>
                     <div>
@@ -635,7 +637,7 @@ export default function AdminBookingsPage() {
         open={!!confirmState}
         title={confirmState?.title ?? ""}
         message={confirmState?.message ?? ""}
-        confirmLabel="Delete"
+        confirmLabel={tx("Delete")}
         variant="danger"
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}
@@ -645,7 +647,7 @@ export default function AdminBookingsPage() {
         open={!!confirmStatus}
         title={confirmStatus ? `Mark this booking as "${confirmStatus.status.replace(/_/g, " ")}"?` : ""}
         message="The customer may be notified of this change. Make sure this is intentional before continuing."
-        confirmLabel="Confirm"
+        confirmLabel={tx("Confirm")}
         variant="warning"
         onConfirm={() => { if (confirmStatus) void updateStatusV2(confirmStatus.id, confirmStatus.status); setConfirmStatus(null); }}
         onCancel={() => setConfirmStatus(null)}

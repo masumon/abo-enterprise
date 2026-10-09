@@ -15,7 +15,7 @@ function Steps({ items }: { items: React.ReactNode[] }) {
 
 function Go({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="inline-flex items-center gap-1 font-semibold text-brand-600 dark:text-brand-300 hover:underline">
+    <Link href={href} className="inline-flex items-center gap-1 font-semibold text-brand-600 dark:text-brand-300 hover:underline max-[899px]:min-h-[40px] max-[899px]:align-middle">
       {children} <ExternalLink className="w-3 h-3" aria-hidden />
     </Link>
   );

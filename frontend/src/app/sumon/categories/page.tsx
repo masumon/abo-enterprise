@@ -26,6 +26,7 @@ import LivePreview from "@/components/admin/LivePreview";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { cn } from "@/lib/utils";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { useAdminT } from "@/lib/i18n/adminText";
 
 function slugify(v: string): string {
   return v.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -118,6 +119,7 @@ function updateNodeInTree<T extends Node>(nodes: T[], id: string, fn: (n: T) => 
 }
 
 export default function AdminCategoriesPage() {
+  const tx = useAdminT();
   const [roots, setRoots] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [editor, setEditor] = useState<EditorState | null>(null);
@@ -326,8 +328,8 @@ export default function AdminCategoriesPage() {
         <p className="text-[0.72rem] text-gray-400 font-mono truncate">/{node.slug}</p>
       </div>
       <ToggleSwitch on={node.is_active !== false} onClick={() => void toggleActive(node)} />
-      <IconBtn title="Edit" onClick={() => openEdit(node)}><Pencil className="w-3.5 h-3.5" /></IconBtn>
-      <IconBtn title="Delete" danger onClick={() => void remove(node)}><Trash2 className="w-3.5 h-3.5" /></IconBtn>
+      <IconBtn title={tx("Edit")} onClick={() => openEdit(node)}><Pencil className="w-3.5 h-3.5" /></IconBtn>
+      <IconBtn title={tx("Delete")} danger onClick={() => void remove(node)}><Trash2 className="w-3.5 h-3.5" /></IconBtn>
     </div>
   );
 
@@ -360,7 +362,7 @@ export default function AdminCategoriesPage() {
             <p className="mt-1 text-white/80 text-sm max-w-[46ch]">পণ্য ও সেবার সব ক্যাটাগরি এক জায়গায় — সুন্দর, দ্রুত ও সহজ।</p>
           </div>
           <div className="flex gap-2">
-            <button type="button" onClick={() => void load()} title="Refresh"
+            <button type="button" onClick={() => void load()} title={tx("Refresh")}
               className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white font-semibold text-sm px-3.5 py-2.5 rounded-xl transition-colors">
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -456,7 +458,7 @@ export default function AdminCategoriesPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-[1.02rem] sm:text-[1.06rem] text-heading tracking-tight truncate max-w-full">{root.name_en}</span>
                       {root.name_bn && <span className="text-sm text-gray-500 dark:text-gray-400">{root.name_bn}</span>}
-                      <span className="text-[0.62rem] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-brand-500/12 text-brand-600">Root</span>
+                      <span className="text-[0.62rem] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-brand-500/12 text-brand-600">{tx("Root")}</span>
                     </div>
                     <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mt-1.5 text-xs">
                       <span className="font-mono text-gray-400 truncate max-w-[150px] sm:max-w-none">/{root.slug}</span>
@@ -474,8 +476,8 @@ export default function AdminCategoriesPage() {
                   <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
                     <ToggleSwitch on={root.is_active !== false} onClick={() => void toggleActive(root)} />
                     <IconBtn title="সাব যোগ" onClick={() => openCreate(root)} accentHover><Plus className="w-4 h-4" /></IconBtn>
-                    <IconBtn title="Edit" onClick={() => openEdit(root)}><Pencil className="w-4 h-4" /></IconBtn>
-                    <IconBtn title="Delete" danger onClick={() => void remove(root)}><Trash2 className="w-4 h-4" /></IconBtn>
+                    <IconBtn title={tx("Edit")} onClick={() => openEdit(root)}><Pencil className="w-4 h-4" /></IconBtn>
+                    <IconBtn title={tx("Delete")} danger onClick={() => void remove(root)}><Trash2 className="w-4 h-4" /></IconBtn>
                     {kids.length > 0 && (
                       <IconBtn
                         title={isOpen ? "বন্ধ" : "খুলুন"}

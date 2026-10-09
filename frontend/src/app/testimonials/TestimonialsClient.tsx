@@ -136,6 +136,9 @@ export default function TestimonialsClient() {
         )}
       </PageHero>
 
+      {/* No approved reviews yet: skip the empty grid section entirely (the hero
+          already invites the first review) so the form follows straight away. */}
+      {(loading || reviews.length > 0) && (
       <section className="enterprise-section">
         <div className="container mx-auto px-4">
           {loading ? (
@@ -170,6 +173,7 @@ export default function TestimonialsClient() {
           )}
         </div>
       </section>
+      )}
 
       <section className="enterprise-section-alt">
         <div className="container mx-auto px-4 max-w-xl">

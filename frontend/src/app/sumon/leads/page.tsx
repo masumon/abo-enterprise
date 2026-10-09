@@ -16,6 +16,7 @@ import { useFocusTrap } from "@/lib/useFocusTrap";
 const ComposeEmailModal = dynamic(() => import("@/components/admin/ComposeEmailModal"), { ssr: false });
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
+import { useAdminT } from "@/lib/i18n/adminText";
 
 const STATUSES_V1 = ["new", "contacted", "qualified", "proposal_sent", "negotiation", "won", "lost"];
 const STATUSES_V2 = ["new", "contacted", "qualified", "proposal_sent", "negotiation", "won", "lost", "archived"];
@@ -27,6 +28,7 @@ interface AdminLead extends Lead {
 }
 
 export default function AdminLeadsPage() {
+  const tx = useAdminT();
   const [tab, setTab] = useState<"v1" | "v2">("v2");
 
   // V1 state
@@ -192,7 +194,7 @@ export default function AdminLeadsPage() {
         title="Leads"
         titleBn="লিড ব্যবস্থাপনা"
         description={`${tab === "v1" ? total : totalV2} total leads — qualification, follow-up, export, and lifecycle management`}
-        descriptionBn={`${tab === "v1" ? total : totalV2}টি লিড — qualification, follow-up, export এবং lifecycle management`}
+        descriptionBn={`${String(tab === "v1" ? total : totalV2).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি লিড — যাচাই, ফলো-আপ, এক্সপোর্ট ও পুরো প্রক্রিয়া ব্যবস্থাপনা`}
         actions={
           <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-3 py-2 text-brand-700">
             <Users className="w-4 h-4" />
@@ -208,18 +210,18 @@ export default function AdminLeadsPage() {
           searchPlaceholder="Search name, phone, company…"
         >
           <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setPage(1); }} className="admin-input w-auto text-sm">
-            <option value="">All Types</option>
+            <option value="">{tx("All Types")}</option>
             {TYPES_V1.map(t => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
           </select>
           <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className="admin-input w-auto text-sm">
-            <option value="">All Status</option>
+            <option value="">{tx("All Status")}</option>
             {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
           </select>
           <button
             onClick={handleCsvExport}
             disabled={csvLoading}
             className="admin-btn-secondary !py-2 gap-1.5"
-            title="Export all leads to CSV"
+            title={tx("Export all leads to CSV")}
           >
             {csvLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             CSV
@@ -228,7 +230,7 @@ export default function AdminLeadsPage() {
             onClick={handlePdfExport}
             disabled={exportPdfLoading}
             className="admin-btn-secondary !py-2 gap-1.5"
-            title="Export all leads as PDF"
+            title={tx("Export all leads as PDF")}
           >
             {exportPdfLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             PDF
@@ -241,11 +243,11 @@ export default function AdminLeadsPage() {
           searchPlaceholder="Search name, phone, email or company…"
         >
           <select value={typeFilterV2} onChange={(e) => { setTypeFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
-            <option value="">All Types</option>
+            <option value="">{tx("All Types")}</option>
             {TYPES_V2.map(t => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
           </select>
           <select value={statusFilterV2} onChange={(e) => { setStatusFilterV2(e.target.value); setPageV2(1); }} className="admin-input w-auto text-sm">
-            <option value="">All Status</option>
+            <option value="">{tx("All Status")}</option>
             {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
           </select>
         </AdminToolbar>
@@ -256,16 +258,16 @@ export default function AdminLeadsPage() {
         <button
           onClick={() => setTab("v1")}
           className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "v1" ? "border-amber-500 text-amber-700" : "border-transparent text-gray-500 hover:text-gray-700"}`}
-          title="Older inquiries — no form on the site creates new entries here anymore; see New Leads for current activity"
+          title={tx("Older inquiries — no form on the site creates new entries here anymore; see New Leads for current activity")}
         >
           <Archive className="w-3.5 h-3.5" />
-          Older Inquiries <span className="text-gray-400 font-normal">(archived, view only)</span>
+          {tx("Older Inquiries")} <span className="text-gray-400 font-normal">(archived, view only)</span>
         </button>
         <button
           onClick={() => setTab("v2")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${tab === "v2" ? "border-brand-500 text-brand-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}
         >
-          New Leads <span className="text-gray-400 font-normal">(active)</span>
+          {tx("New Leads")} <span className="text-gray-400 font-normal">(active)</span>
         </button>
       </div>
 
@@ -274,25 +276,25 @@ export default function AdminLeadsPage() {
         <div className="admin-card overflow-hidden">
           <div className="px-4 sm:px-5 py-2.5 bg-amber-50 border-b border-amber-100 flex items-center gap-2 text-xs text-amber-800">
             <Archive className="w-3.5 h-3.5 shrink-0" />
-            <span>These are older inquiries — no form on the site creates new entries here anymore. New inquiries arrive under <strong>New Leads</strong>.</span>
+            <span>These are older inquiries — no form on the site creates new entries here anymore. New inquiries arrive under <strong>{tx("New Leads")}</strong>.</span>
           </div>
           {loading ? (
             <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
           ) : leads.length === 0 ? (
             <div className="p-12 text-center">
               <Users className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-400 font-medium">No leads found</p>
+              <p className="text-gray-400 font-medium">{tx("No leads found")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="table-premium min-w-[480px]">
                 <thead>
                   <tr>
-                    <th>Name</th>
-                    <th className="hidden sm:table-cell">Type</th>
-                    <th className="hidden md:table-cell">Budget</th>
-                    <th className="hidden md:table-cell">Date</th>
-                    <th>Status</th>
+                    <th>{tx("Name")}</th>
+                    <th className="hidden sm:table-cell">{tx("Type")}</th>
+                    <th className="hidden md:table-cell">{tx("Budget")}</th>
+                    <th className="hidden md:table-cell">{tx("Date")}</th>
+                    <th>{tx("Status")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -338,19 +340,19 @@ export default function AdminLeadsPage() {
           ) : leadsV2.length === 0 ? (
             <div className="p-12 text-center">
               <Users className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-400 font-medium">No service leads found</p>
+              <p className="text-gray-400 font-medium">{tx("No service leads found")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="table-premium min-w-[560px]">
                 <thead>
                   <tr>
-                    <th>Lead</th>
-                    <th className="hidden sm:table-cell">Type</th>
-                    <th className="hidden md:table-cell">Budget</th>
-                    <th className="hidden sm:table-cell">Score</th>
-                    <th className="hidden md:table-cell">Date</th>
-                    <th>Status</th>
+                    <th>{tx("Lead")}</th>
+                    <th className="hidden sm:table-cell">{tx("Type")}</th>
+                    <th className="hidden md:table-cell">{tx("Budget")}</th>
+                    <th className="hidden sm:table-cell">{tx("Score")}</th>
+                    <th className="hidden md:table-cell">{tx("Date")}</th>
+                    <th>{tx("Status")}</th>
                     <th />
                   </tr>
                 </thead>
@@ -391,7 +393,7 @@ export default function AdminLeadsPage() {
                           <button
                             onClick={() => handleDeleteV2(l.id, l.name)}
                             disabled={updatingIdV2 === l.id}
-                            title="Delete lead"
+                            title={tx("Delete lead")}
                             className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -410,16 +412,16 @@ export default function AdminLeadsPage() {
       {/* Pagination */}
       {tab === "v1" && total > 20 && (
         <div className="flex justify-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-          <span className="px-4 py-2 text-sm text-gray-600">Page {page}</span>
-          <button disabled={leads.length < 20} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">Next</button>
+          <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn btn-outline btn-sm">{tx("Previous")}</button>
+          <span className="px-4 py-2 text-sm text-gray-600">{tx("Page")} {page}</span>
+          <button disabled={leads.length < 20} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">{tx("Next")}</button>
         </div>
       )}
       {tab === "v2" && totalV2 > 20 && (
         <div className="flex justify-center gap-2">
-          <button disabled={pageV2 === 1} onClick={() => setPageV2(p => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-          <span className="px-4 py-2 text-sm text-gray-600">Page {pageV2}</span>
-          <button disabled={leadsV2.length < 20} onClick={() => setPageV2(p => p + 1)} className="btn btn-outline btn-sm">Next</button>
+          <button disabled={pageV2 === 1} onClick={() => setPageV2(p => p - 1)} className="btn btn-outline btn-sm">{tx("Previous")}</button>
+          <span className="px-4 py-2 text-sm text-gray-600">{tx("Page")} {pageV2}</span>
+          <button disabled={leadsV2.length < 20} onClick={() => setPageV2(p => p + 1)} className="btn btn-outline btn-sm">{tx("Next")}</button>
         </div>
       )}
 
@@ -431,7 +433,7 @@ export default function AdminLeadsPage() {
           onClick={() => setDetail(null)}
           role="dialog"
           aria-modal="true"
-          aria-label="Lead details"
+          aria-label={tx("Lead details")}
         >
           <div
             ref={detailRef}
@@ -464,31 +466,31 @@ export default function AdminLeadsPage() {
 
                 <div className="bg-gray-50 rounded-xl p-4">
                   <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-                    <h3 className="font-semibold text-gray-900 text-sm">Contact Info</h3>
+                    <h3 className="font-semibold text-gray-900 text-sm">{tx("Contact Info")}</h3>
                     <div className="flex gap-2">
                       {detail.phone && <a href={`tel:${detail.phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>}
                       {detail.phone && <a href={buildCustomerWhatsAppLink(detail.phone, `Hello ${detail.name}, thank you for your inquiry at ABO Enterprise. How can we help you?`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>}
-                      {detail.email && <button type="button" onClick={() => setComposeEmail({ to: detail.email!, subject: "Regarding your inquiry at ABO Enterprise", context: `Lead — ${detail.name}` })} title="Compose and send an email to the customer from no-reply@aboenterprise.com" className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</button>}
+                      {detail.email && <button type="button" onClick={() => setComposeEmail({ to: detail.email!, subject: "Regarding your inquiry at ABO Enterprise", context: `Lead — ${detail.name}` })} title={tx("Compose and send an email to the customer from no-reply@aboenterprise.com")} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</button>}
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div><p className="text-gray-500 text-xs">Name</p><p className="font-medium">{detail.name}</p></div>
-                    <div><p className="text-gray-500 text-xs">Phone</p><p className="font-medium">{detail.phone}</p></div>
-                    {detail.email && <div><p className="text-gray-500 text-xs">Email</p><p className="font-medium">{detail.email}</p></div>}
-                    {detail.company && <div><p className="text-gray-500 text-xs">Company</p><p className="font-medium">{detail.company}</p></div>}
+                    <div><p className="text-gray-500 text-xs">{tx("Name")}</p><p className="font-medium">{detail.name}</p></div>
+                    <div><p className="text-gray-500 text-xs">{tx("Phone")}</p><p className="font-medium">{detail.phone}</p></div>
+                    {detail.email && <div><p className="text-gray-500 text-xs">{tx("Email")}</p><p className="font-medium">{detail.email}</p></div>}
+                    {detail.company && <div><p className="text-gray-500 text-xs">{tx("Company")}</p><p className="font-medium">{detail.company}</p></div>}
                   </div>
                 </div>
 
                 <div className="bg-gray-50 rounded-xl p-4">
-                  <h3 className="font-semibold text-gray-900 text-sm mb-3">Project Info</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm mb-3">{tx("Project Info")}</h3>
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div><p className="text-gray-500 text-xs">Type</p><p className="font-medium capitalize">{detail.lead_type.replace(/_/g, " ")}</p></div>
-                    {detail.budget_range && <div><p className="text-gray-500 text-xs">Budget</p><p className="font-medium">{detail.budget_range}</p></div>}
-                    <div><p className="text-gray-500 text-xs">Date</p><p className="font-medium">{new Date(detail.created_at).toLocaleDateString("en-BD")}</p></div>
+                    <div><p className="text-gray-500 text-xs">{tx("Type")}</p><p className="font-medium capitalize">{detail.lead_type.replace(/_/g, " ")}</p></div>
+                    {detail.budget_range && <div><p className="text-gray-500 text-xs">{tx("Budget")}</p><p className="font-medium">{detail.budget_range}</p></div>}
+                    <div><p className="text-gray-500 text-xs">{tx("Date")}</p><p className="font-medium">{new Date(detail.created_at).toLocaleDateString("en-BD")}</p></div>
                   </div>
                   {detail.project_description && (
                     <div className="pt-3 border-t border-gray-200 mt-3">
-                      <p className="text-gray-500 text-xs mb-1">Description</p>
+                      <p className="text-gray-500 text-xs mb-1">{tx("Description")}</p>
                       <p className="text-sm text-gray-800 whitespace-pre-wrap">{detail.project_description}</p>
                     </div>
                   )}
@@ -500,7 +502,7 @@ export default function AdminLeadsPage() {
                   )}
                   {(detail as { reason_lost?: string }).reason_lost && (
                     <div className="pt-3 border-t border-red-100 mt-3">
-                      <p className="text-red-500 text-xs mb-1 font-medium">Reason Lost</p>
+                      <p className="text-red-500 text-xs mb-1 font-medium">{tx("Reason Lost")}</p>
                       <p className="text-sm text-red-800 bg-red-50 rounded-lg px-3 py-2 whitespace-pre-wrap">{(detail as { reason_lost?: string }).reason_lost}</p>
                     </div>
                   )}
@@ -519,7 +521,7 @@ export default function AdminLeadsPage() {
           onClick={() => setDetailV2(null)}
           role="dialog"
           aria-modal="true"
-          aria-label="Service lead details"
+          aria-label={tx("Service lead details")}
         >
           <div
             ref={detailV2Ref}
@@ -551,41 +553,41 @@ export default function AdminLeadsPage() {
 
               <div className="bg-gray-50 rounded-xl p-4">
                 <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
-                  <h3 className="font-semibold text-gray-900 text-sm">Contact</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm">{tx("Contact")}</h3>
                   <div className="flex gap-2">
                     {detailV2.phone && <a href={`tel:${detailV2.phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>}
                     {detailV2.phone && <a href={buildCustomerWhatsAppLink(detailV2.phone, `Hello ${detailV2.name}, thank you for your inquiry ${detailV2.lead_number} at ABO Enterprise. How can we help you?`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>}
-                    {detailV2.email && <button type="button" onClick={() => setComposeEmail({ to: detailV2.email!, subject: `Regarding your inquiry ${detailV2.lead_number}`, context: `Lead ${detailV2.lead_number}` })} title="Compose and send an email to the customer from no-reply@aboenterprise.com" className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</button>}
+                    {detailV2.email && <button type="button" onClick={() => setComposeEmail({ to: detailV2.email!, subject: `Regarding your inquiry ${detailV2.lead_number}`, context: `Lead ${detailV2.lead_number}` })} title={tx("Compose and send an email to the customer from no-reply@aboenterprise.com")} className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium">✉ Email</button>}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div><p className="text-gray-500 text-xs">Name</p><p className="font-medium">{detailV2.name}</p></div>
-                  <div><p className="text-gray-500 text-xs">Phone</p><p className="font-medium">{detailV2.phone}</p></div>
-                  {detailV2.email && <div><p className="text-gray-500 text-xs">Email</p><p className="font-medium">{detailV2.email}</p></div>}
-                  {detailV2.company && <div><p className="text-gray-500 text-xs">Company</p><p className="font-medium">{detailV2.company}</p></div>}
-                  {detailV2.job_title && <div><p className="text-gray-500 text-xs">Job Title</p><p className="font-medium">{detailV2.job_title}</p></div>}
-                  {detailV2.company_size && <div><p className="text-gray-500 text-xs">Company Size</p><p className="font-medium">{detailV2.company_size}</p></div>}
+                  <div><p className="text-gray-500 text-xs">{tx("Name")}</p><p className="font-medium">{detailV2.name}</p></div>
+                  <div><p className="text-gray-500 text-xs">{tx("Phone")}</p><p className="font-medium">{detailV2.phone}</p></div>
+                  {detailV2.email && <div><p className="text-gray-500 text-xs">{tx("Email")}</p><p className="font-medium">{detailV2.email}</p></div>}
+                  {detailV2.company && <div><p className="text-gray-500 text-xs">{tx("Company")}</p><p className="font-medium">{detailV2.company}</p></div>}
+                  {detailV2.job_title && <div><p className="text-gray-500 text-xs">{tx("Job Title")}</p><p className="font-medium">{detailV2.job_title}</p></div>}
+                  {detailV2.company_size && <div><p className="text-gray-500 text-xs">{tx("Company Size")}</p><p className="font-medium">{detailV2.company_size}</p></div>}
                 </div>
               </div>
 
               <div className="bg-gray-50 rounded-xl p-4">
-                <h3 className="font-semibold text-gray-900 text-sm mb-3">Project</h3>
+                <h3 className="font-semibold text-gray-900 text-sm mb-3">{tx("Project")}</h3>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div><p className="text-gray-500 text-xs">Type</p><p className="font-medium capitalize">{detailV2.lead_type.replace(/_/g, " ")}</p></div>
-                  <div><p className="text-gray-500 text-xs">Source</p><p className="font-medium capitalize">{detailV2.source}</p></div>
+                  <div><p className="text-gray-500 text-xs">{tx("Type")}</p><p className="font-medium capitalize">{detailV2.lead_type.replace(/_/g, " ")}</p></div>
+                  <div><p className="text-gray-500 text-xs">{tx("Source")}</p><p className="font-medium capitalize">{detailV2.source}</p></div>
                   {(detailV2.budget_min != null || detailV2.budget_max != null) && (
                     <div>
-                      <p className="text-gray-500 text-xs">Budget</p>
+                      <p className="text-gray-500 text-xs">{tx("Budget")}</p>
                       <p className="font-medium">৳{(detailV2.budget_min ?? 0).toLocaleString()}–{(detailV2.budget_max ?? 0).toLocaleString()}</p>
                     </div>
                   )}
-                  {detailV2.timeline && <div><p className="text-gray-500 text-xs">Timeline</p><p className="font-medium">{detailV2.timeline}</p></div>}
-                  <div><p className="text-gray-500 text-xs">Created</p><p className="font-medium">{new Date(detailV2.created_at).toLocaleDateString("en-BD")}</p></div>
-                  {detailV2.converted_at && <div><p className="text-gray-500 text-xs">Converted</p><p className="font-medium">{new Date(detailV2.converted_at).toLocaleDateString("en-BD")}</p></div>}
+                  {detailV2.timeline && <div><p className="text-gray-500 text-xs">{tx("Timeline")}</p><p className="font-medium">{detailV2.timeline}</p></div>}
+                  <div><p className="text-gray-500 text-xs">{tx("Created")}</p><p className="font-medium">{new Date(detailV2.created_at).toLocaleDateString("en-BD")}</p></div>
+                  {detailV2.converted_at && <div><p className="text-gray-500 text-xs">{tx("Converted")}</p><p className="font-medium">{new Date(detailV2.converted_at).toLocaleDateString("en-BD")}</p></div>}
                 </div>
                 {detailV2.project_description && (
                   <div className="pt-3 border-t border-gray-200 mt-3">
-                    <p className="text-gray-500 text-xs mb-1">Description</p>
+                    <p className="text-gray-500 text-xs mb-1">{tx("Description")}</p>
                     <p className="text-sm text-gray-800 whitespace-pre-wrap">{detailV2.project_description}</p>
                   </div>
                 )}
@@ -597,7 +599,7 @@ export default function AdminLeadsPage() {
                 )}
                 {(detailV2 as unknown as { reason_lost?: string }).reason_lost && (
                   <div className="pt-3 border-t border-red-100 mt-3">
-                    <p className="text-red-500 text-xs mb-1 font-medium">Reason Lost</p>
+                    <p className="text-red-500 text-xs mb-1 font-medium">{tx("Reason Lost")}</p>
                     <p className="text-sm text-red-800 bg-red-50 rounded-lg px-3 py-2 whitespace-pre-wrap">{(detailV2 as unknown as { reason_lost?: string }).reason_lost}</p>
                   </div>
                 )}
@@ -611,7 +613,7 @@ export default function AdminLeadsPage() {
         open={!!confirmState}
         title={confirmState?.title ?? ""}
         message={confirmState?.message ?? ""}
-        confirmLabel="Delete"
+        confirmLabel={tx("Delete")}
         variant="danger"
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}

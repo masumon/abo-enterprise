@@ -34,7 +34,7 @@ export default function TranslateButton({ bn, onResult, label = "→ English", c
   const emptyEn = !(en ?? "").trim();
   const cls =
     className ??
-    "inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700 disabled:opacity-40 disabled:cursor-not-allowed";
+    "inline-flex items-center gap-1 text-xs font-medium text-brand-600 hover:text-brand-700 disabled:opacity-40 disabled:cursor-not-allowed max-[899px]:min-h-[40px] max-[899px]:px-1.5";
 
   const runBn = async () => {
     if (emptyEn || loadingBn || !onResultBn) return;

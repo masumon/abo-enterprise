@@ -15,6 +15,7 @@ import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { useAdminT } from "@/lib/i18n/adminText";
 
 const GATEWAY_LABELS: Record<string, string> = {
   bkash: "bKash",
@@ -63,6 +64,7 @@ const EMPTY_FORM: Partial<PaymentMethodRecord> = {
 };
 
 export default function AdminPaymentsPage() {
+  const tx = useAdminT();
   const searchParams = useSearchParams();
   const [tab, setTab] = useState<"gateways" | "transactions" | "reconciliation">(() => {
     const requested = searchParams.get("tab");
@@ -270,7 +272,7 @@ export default function AdminPaymentsPage() {
         </div>
         {tab === "gateways" && (
           <button onClick={() => openNew()} className="btn btn-primary btn-sm gap-1.5">
-            <Plus className="w-4 h-4" /> Add Gateway
+            <Plus className="w-4 h-4" /> {tx("Add Gateway")}
           </button>
         )}
         {tab === "reconciliation" && (
@@ -304,31 +306,31 @@ export default function AdminPaymentsPage() {
           {reconLoading ? (
             <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
           ) : reconRecords.length === 0 ? (
-            <p className="p-8 text-center text-gray-500">No reconciliation records yet</p>
+            <p className="p-8 text-center text-gray-500">{tx("No reconciliation records yet")}</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="table-premium table-responsive min-w-[600px]">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Gateway</th>
-                    <th>Transactions</th>
-                    <th>Amount</th>
-                    <th>Status</th>
+                    <th>{tx("Date")}</th>
+                    <th>{tx("Gateway")}</th>
+                    <th>{tx("Transactions")}</th>
+                    <th>{tx("Amount")}</th>
+                    <th>{tx("Status")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {reconRecords.map((r) => (
                     <tr key={r.id}>
-                      <td className="text-sm text-gray-600" data-label="Date">{new Date(r.reconciliation_date).toLocaleDateString("en-BD")}</td>
-                      <td className="capitalize" data-label="Gateway">{r.payment_gateway}</td>
-                      <td className="text-sm" data-label="Transactions">
+                      <td className="text-sm text-gray-600" data-label={tx("Date")}>{new Date(r.reconciliation_date).toLocaleDateString("en-BD")}</td>
+                      <td className="capitalize" data-label={tx("Gateway")}>{r.payment_gateway}</td>
+                      <td className="text-sm" data-label={tx("Transactions")}>
                         <span className="text-green-600">{r.successful_count} ok</span>
                         {r.failed_count > 0 && <span className="text-red-500 ml-2">{r.failed_count} fail</span>}
                         {r.pending_count > 0 && <span className="text-amber-600 ml-2">{r.pending_count} pending</span>}
                       </td>
-                      <td className="font-medium" data-label="Amount">৳{r.total_amount.toLocaleString()}</td>
-                      <td data-label="Status">
+                      <td className="font-medium" data-label={tx("Amount")}>৳{r.total_amount.toLocaleString()}</td>
+                      <td data-label={tx("Status")}>
                         <span className="badge text-xs capitalize">{r.reconciliation_status}</span>
                       </td>
                     </tr>
@@ -339,9 +341,9 @@ export default function AdminPaymentsPage() {
           )}
           {reconTotal > 20 && (
             <div className="flex justify-center gap-2 p-4 border-t border-gray-100">
-              <button disabled={reconPage === 1} onClick={() => setReconPage((p) => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-              <span className="text-sm text-gray-500 self-center">Page {reconPage}</span>
-              <button disabled={reconPage * 20 >= reconTotal} onClick={() => setReconPage((p) => p + 1)} className="btn btn-outline btn-sm">Next</button>
+              <button disabled={reconPage === 1} onClick={() => setReconPage((p) => p - 1)} className="btn btn-outline btn-sm">{tx("Previous")}</button>
+              <span className="text-sm text-gray-500 self-center">{tx("Page")} {reconPage}</span>
+              <button disabled={reconPage * 20 >= reconTotal} onClick={() => setReconPage((p) => p + 1)} className="btn btn-outline btn-sm">{tx("Next")}</button>
             </div>
           )}
         </div>
@@ -354,7 +356,7 @@ export default function AdminPaymentsPage() {
               onChange={(e) => { setTxGateway(e.target.value); setTxPage(1); }}
               className="border border-gray-200 rounded-lg text-sm px-3 py-1.5"
             >
-              <option value="all">All Gateways</option>
+              <option value="all">{tx("All Gateways")}</option>
               <option value="bkash">bKash</option>
               <option value="nagad">Nagad</option>
             </select>
@@ -362,29 +364,29 @@ export default function AdminPaymentsPage() {
           {txLoading ? (
             <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
           ) : transactions.length === 0 ? (
-            <div className="p-12 text-center text-gray-400">No transactions found</div>
+            <div className="p-12 text-center text-gray-400">{tx("No transactions found")}</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="table-premium table-responsive min-w-[520px]">
                 <thead>
                   <tr>
-                    <th>Gateway</th>
-                    <th>Reference</th>
-                    <th>Order</th>
-                    <th>Amount</th>
-                    <th>Status</th>
-                    <th>Date</th>
+                    <th>{tx("Gateway")}</th>
+                    <th>{tx("Reference")}</th>
+                    <th>{tx("Order")}</th>
+                    <th>{tx("Amount")}</th>
+                    <th>{tx("Status")}</th>
+                    <th>{tx("Date")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {transactions.map((t) => (
                     <tr key={`${t.gateway}-${t.id}`}>
-                      <td className="capitalize font-medium" data-label="Gateway">{t.gateway}</td>
-                      <td className="font-mono text-xs text-gray-600" data-label="Reference">{t.reference_id}</td>
-                      <td className="text-xs text-gray-500" data-label="Order">{t.order_id ? t.order_id.slice(0, 8) + "…" : "—"}</td>
-                      <td className="font-semibold" data-label="Amount">৳{t.amount.toLocaleString()}</td>
-                      <td data-label="Status"><span className="badge bg-gray-100 text-gray-700 capitalize">{t.status}</span></td>
-                      <td className="text-xs text-gray-500" data-label="Date">{new Date(t.created_at).toLocaleString("en-BD")}</td>
+                      <td className="capitalize font-medium" data-label={tx("Gateway")}>{t.gateway}</td>
+                      <td className="font-mono text-xs text-gray-600" data-label={tx("Reference")}>{t.reference_id}</td>
+                      <td className="text-xs text-gray-500" data-label={tx("Order")}>{t.order_id ? t.order_id.slice(0, 8) + "…" : "—"}</td>
+                      <td className="font-semibold" data-label={tx("Amount")}>৳{t.amount.toLocaleString()}</td>
+                      <td data-label={tx("Status")}><span className="badge bg-gray-100 text-gray-700 capitalize">{t.status}</span></td>
+                      <td className="text-xs text-gray-500" data-label={tx("Date")}>{new Date(t.created_at).toLocaleString("en-BD")}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -393,9 +395,9 @@ export default function AdminPaymentsPage() {
           )}
           {txTotal > 20 && (
             <div className="flex justify-center gap-2 py-4 border-t">
-              <button disabled={txPage === 1} onClick={() => setTxPage((p) => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-              <span className="px-3 py-1 text-sm text-gray-600">Page {txPage}</span>
-              <button disabled={txPage * 20 >= txTotal} onClick={() => setTxPage((p) => p + 1)} className="btn btn-outline btn-sm">Next</button>
+              <button disabled={txPage === 1} onClick={() => setTxPage((p) => p - 1)} className="btn btn-outline btn-sm">{tx("Previous")}</button>
+              <span className="px-3 py-1 text-sm text-gray-600">{tx("Page")} {txPage}</span>
+              <button disabled={txPage * 20 >= txTotal} onClick={() => setTxPage((p) => p + 1)} className="btn btn-outline btn-sm">{tx("Next")}</button>
             </div>
           )}
         </div>
@@ -410,7 +412,7 @@ export default function AdminPaymentsPage() {
           {/* Quick-add unconfigured defaults */}
           {DEFAULT_GATEWAYS.some((g) => !configured.has(g)) && (
             <div className="bg-brand-50 border border-brand-100 rounded-xl p-4">
-              <p className="text-xs font-semibold text-brand-700 uppercase tracking-wide mb-3">Quick Add Common Gateways</p>
+              <p className="text-xs font-semibold text-brand-700 uppercase tracking-wide mb-3">{tx("Quick Add Common Gateways")}</p>
               <div className="flex flex-wrap gap-2">
                 {DEFAULT_GATEWAYS.filter((g) => !configured.has(g)).map((g) => (
                   <button
@@ -430,8 +432,8 @@ export default function AdminPaymentsPage() {
           {methods.length === 0 ? (
             <div className="admin-card p-12 text-center">
               <CreditCard className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-400 font-medium">No payment gateways configured</p>
-              <p className="text-gray-400 text-sm mt-1">Add a gateway to enable payments at checkout</p>
+              <p className="text-gray-400 font-medium">{tx("No payment gateways configured")}</p>
+              <p className="text-gray-400 text-sm mt-1">{tx("Add a gateway to enable payments at checkout")}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -472,7 +474,7 @@ export default function AdminPaymentsPage() {
                           onClick={() => handleDelete(m.id)}
                           disabled={deletingId === m.id}
                           aria-label={`Remove ${label} gateway from the list`}
-                          title="Remove from list (history is kept)"
+                          title={tx("Remove from list (history is kept)")}
                           className="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
                         >
                           {deletingId === m.id
@@ -516,7 +518,7 @@ export default function AdminPaymentsPage() {
                     <div className="mt-3 flex items-center gap-1.5">
                       {m.is_active
                         ? <><Check className="w-3.5 h-3.5 text-green-500" /><span className="text-xs text-green-600 font-medium">Active at checkout</span></>
-                        : <><AlertCircle className="w-3.5 h-3.5 text-gray-400" /><span className="text-xs text-gray-400">Disabled</span></>
+                        : <><AlertCircle className="w-3.5 h-3.5 text-gray-400" /><span className="text-xs text-gray-400">{tx("Disabled")}</span></>
                       }
                     </div>
                   </div>
@@ -577,7 +579,7 @@ export default function AdminPaymentsPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                  Account Identifier
+                  {tx("Account Identifier")}
                 </label>
                 <input
                   value={editing.account_identifier ?? ""}
@@ -618,7 +620,7 @@ export default function AdminPaymentsPage() {
                     type="number"
                     value={editing.min_amount ?? ""}
                     onChange={(e) => setEditing((p) => p ? { ...p, min_amount: e.target.value ? parseFloat(e.target.value) : null } : p)}
-                    placeholder="No limit"
+                    placeholder={tx("No limit")}
                     className="input w-full"
                   />
                 </div>
@@ -628,7 +630,7 @@ export default function AdminPaymentsPage() {
                     type="number"
                     value={editing.max_amount ?? ""}
                     onChange={(e) => setEditing((p) => p ? { ...p, max_amount: e.target.value ? parseFloat(e.target.value) : null } : p)}
-                    placeholder="No limit"
+                    placeholder={tx("No limit")}
                     className="input w-full"
                   />
                 </div>
@@ -661,7 +663,7 @@ export default function AdminPaymentsPage() {
             </div>
 
             <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 flex-shrink-0">
-              <button onClick={closePanel} className="btn btn-outline btn-sm">Cancel</button>
+              <button onClick={closePanel} className="btn btn-outline btn-sm">{tx("Cancel")}</button>
               <button onClick={handleSave} disabled={saving} className="btn btn-primary btn-sm gap-1.5">
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 {isNew ? "Add Gateway" : "Save Changes"}
@@ -675,7 +677,7 @@ export default function AdminPaymentsPage() {
         open={!!confirmState}
         title={confirmState?.title ?? ""}
         message={confirmState?.message ?? ""}
-        confirmLabel="Disable"
+        confirmLabel={tx("Disable")}
         variant="warning"
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}

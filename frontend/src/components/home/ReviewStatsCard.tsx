@@ -29,29 +29,31 @@ export default function ReviewStatsCard({
   const totalOrders = totalOrdersProp ?? fetched?.orders ?? 0;
   const totalProducts = totalProductsProp ?? fetched?.products ?? 0;
 
+  // Hide any metric that is 0 or missing — a "0" tile reads as unfinished.
+  const positive = (n: number | null | undefined): n is number => typeof n === "number" && Number.isFinite(n) && n > 0;
   const stats = [
-    averageRating != null && {
+    positive(averageRating) && {
       icon: Star,
       label: lang === "bn" ? "গড় রেটিং" : "Average Rating",
       value: averageRating.toFixed(1),
       color: "text-accent-600",
       bgColor: "bg-accent-50 dark:bg-accent-500/15",
     },
-    {
+    positive(totalOrders) && {
       icon: ShoppingCart,
       label: lang === "bn" ? "সম্পন্ন অর্ডার" : "Orders Completed",
       value: totalOrders.toLocaleString(),
       color: "text-brand-600",
       bgColor: "bg-brand-50 dark:bg-brand-500/10",
     },
-    {
+    positive(totalProducts) && {
       icon: Package,
       label: lang === "bn" ? "মোট পণ্য" : "Total Products",
       value: totalProducts.toLocaleString(),
       color: "text-brand-600",
       bgColor: "bg-brand-50 dark:bg-brand-500/10",
     },
-    {
+    positive(totalReviews) && {
       icon: MessageCircle,
       label: lang === "bn" ? "মোট রিভিউ" : "Total Reviews",
       value: totalReviews.toLocaleString(),
@@ -60,9 +62,13 @@ export default function ReviewStatsCard({
     },
   ].filter(Boolean) as { icon: typeof Star; label: string; value: string; color: string; bgColor: string }[];
 
+  if (!stats.length) return null;
+  // Balanced layout for however many metrics remain (1–4).
+  const cols = ["", "grid-cols-1", "grid-cols-2", "grid-cols-3", "grid-cols-4"][stats.length];
+
   return (
     <div className="rounded-2xl border border-gray-200 dark:border-white/10 overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 dark:from-white/5 dark:to-transparent p-4 sm:p-8">
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-6">
+      <div className={`grid ${cols} gap-1.5 sm:gap-6 ${stats.length < 4 ? "max-w-3xl mx-auto" : ""}`}>
         {stats.map(({ icon: Icon, label, value, color, bgColor }, idx) => (
           <div key={idx} className="flex flex-col items-center text-center">
             <div className={`w-8 h-8 sm:w-14 sm:h-14 rounded-full ${bgColor} flex items-center justify-center mb-1.5 sm:mb-3`}>

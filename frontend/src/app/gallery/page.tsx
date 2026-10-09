@@ -8,6 +8,7 @@ import { useLanguageStore } from "@/store/language";
 import PageHero from "@/components/ui/PageHero";
 import Reveal from "@/components/ui/Reveal";
 import { cn } from "@/lib/utils";
+import CompactEmpty from "@/components/common/CompactEmpty";
 import { useShowcaseContent } from "@/hooks/useShowcaseContent";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { isDirectVideoFile, toVideoEmbedUrl } from "@/lib/showcaseContent";
@@ -83,6 +84,15 @@ export default function GalleryPage() {
             ))}
           </div>
 
+          {images.length === 0 ? (
+            <CompactEmpty
+              icon={ImageIcon}
+              text={lang === "bn" ? "নতুন ছবি শিগগির যোগ হবে — আমাদের কাজ দেখতে প্রজেক্ট পেজ দেখুন।" : "New photos are coming soon — see our projects meanwhile."}
+              showContact={false}
+              linkLabel={lang === "bn" ? "প্রজেক্ট দেখুন" : "Browse projects"}
+              linkHref="/projects"
+            />
+          ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {images.map((img, i) => (
               <Reveal key={`${img.src}-${i}`} as="div" delay={(i % 8) * 45} className="h-full">
@@ -100,8 +110,9 @@ export default function GalleryPage() {
               </Reveal>
             ))}
           </div>
+          )}
 
-          <div className="mt-12">
+          <div className={images.length === 0 ? "mt-8" : "mt-12"}>
             <h3 className="font-bold text-heading mb-6 text-center text-xl">
               {lang === "bn" ? "ভিডিও গ্যালারি" : "Video Gallery"}
             </h3>
@@ -110,26 +121,13 @@ export default function GalleryPage() {
                  instructions ("Admin → Showcase") to the public. Visitors now
                  get a neutral message that redirects them to the photo tab;
                  the admin guidance is reachable from the admin panel itself. */
-              <div className="enterprise-card p-8 text-center max-w-2xl mx-auto flex flex-col items-center">
-                <span className="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-900/30 flex items-center justify-center mb-4">
-                  <Play className="w-7 h-7 text-brand-600" />
-                </span>
-                <span className="text-base font-semibold text-heading">
-                  {lang === "bn" ? "ভিডিও শীঘ্রই আসছে" : "Videos coming soon"}
-                </span>
-                <span className="text-sm text-muted mt-2">
-                  {lang === "bn"
-                    ? "আমাদের কাজের ভিডিও শীঘ্রই যুক্ত হবে — এখন ছবিগুলো দেখুন।"
-                    : "Videos of our work are coming soon — see the photos meanwhile."}
-                </span>
-                <Link
-                  href="/projects"
-                  className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:underline"
-                >
-                  {lang === "bn" ? "প্রজেক্ট দেখুন" : "Browse projects"}
-                  <ExternalLink className="w-3 h-3" />
-                </Link>
-              </div>
+              <CompactEmpty
+                icon={Play}
+                text={lang === "bn" ? "আমাদের কাজের ভিডিও শীঘ্রই যুক্ত হবে।" : "Videos of our work are coming soon."}
+                showContact={false}
+                linkLabel={lang === "bn" ? "প্রজেক্ট দেখুন" : "Browse projects"}
+                linkHref="/projects"
+              />
             ) : (
               <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
                 {videos.map((p) => (
