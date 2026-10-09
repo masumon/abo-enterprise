@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useLanguageStore } from "@/store/language";
+import { formatStableDate } from "@/lib/stableDate";
 
 interface BlogPostMetaProps {
   authorName: string;
@@ -9,13 +10,9 @@ interface BlogPostMetaProps {
   tags?: string[];
 }
 
-function formatDate(dateStr: string | undefined, lang: "bn" | "en") {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString(lang === "bn" ? "bn-BD" : "en-BD", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+// Hydration-safe (fixed time zone + month names) — see lib/stableDate.
+function formatDate(dateStr: string | undefined, lang: string | undefined) {
+  return formatStableDate(dateStr, lang === "en" ? "en" : "bn");
 }
 
 export default function BlogPostMeta({ authorName, dateStr, tags }: BlogPostMetaProps) {
