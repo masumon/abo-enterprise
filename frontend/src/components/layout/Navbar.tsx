@@ -83,12 +83,12 @@ export default function Navbar() {
         {showTicker ? (
           <div
             className={cn(
-              "marquee-viewport flex-1 min-w-0 mx-1 h-9 rounded-full px-3 shadow-sm",
+              "marquee-viewport flex-1 min-w-0 mx-1 h-10 rounded-full px-3 shadow-sm",
               ANNOUNCEMENT_VARIANT_BG[announcements[0]?.variant ?? "promo"] ?? ANNOUNCEMENT_VARIANT_BG.promo
             )}
           >
             <div
-              className="marquee-track items-center h-9"
+              className="marquee-track items-center h-10"
               style={{ ["--marquee-duration" as string]: `${durationSec}s` }}
             >
               {tickerTrack.map((a, i) => (
@@ -97,7 +97,7 @@ export default function Navbar() {
                   href={a.href || "/"}
                   aria-hidden={i >= announcements.length}
                   tabIndex={i >= announcements.length ? -1 : 0}
-                  className="inline-flex items-center gap-1.5 text-[13px] font-bold text-white pr-8 whitespace-nowrap"
+                  className="inline-flex items-center h-10 gap-1.5 text-[13px] font-bold text-white pr-8 whitespace-nowrap"
                 >
                   {a.icon && <span aria-hidden>{a.icon}</span>}
                   <span>{lang === "bn" ? a.bn : a.en}</span>

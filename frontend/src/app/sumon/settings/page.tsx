@@ -482,7 +482,7 @@ function SectionCard({
         <button
           onClick={() => onSave(section.id)}
           disabled={isSaving}
-          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
+          className={`flex items-center gap-1.5 px-4 py-1.5 max-[899px]:min-h-[40px] rounded-lg text-sm font-medium transition-all ${
             isSaved
               ? "bg-green-500 text-white"
               : "bg-brand-600 text-white hover:bg-brand-700"
@@ -501,14 +501,14 @@ function SectionCard({
         <div className="px-6 py-2.5 bg-brand-50/50 border-b border-brand-100/60 text-xs text-brand-800 flex items-center gap-2 flex-wrap">
           <ImageIcon className="w-3.5 h-3.5 flex-shrink-0" />
           <span>{section.note}</span>
-          <Link href="/sumon/media" className="font-semibold underline hover:no-underline">
+          <Link href="/sumon/media" className="font-semibold underline hover:no-underline max-[899px]:inline-flex max-[899px]:items-center max-[899px]:min-h-[40px]">
             Image Manager খুলুন →
           </Link>
         </div>
       )}
       {section.testHref && (
         <div className="px-6 py-2.5 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/10 text-xs">
-          <Link href={section.testHref} className="font-semibold text-brand-700 dark:text-brand-400 underline hover:no-underline">
+          <Link href={section.testHref} className="font-semibold text-brand-700 dark:text-brand-400 underline hover:no-underline max-[899px]:inline-flex max-[899px]:items-center max-[899px]:min-h-[40px]">
             {section.testLabel ?? "Test connection →"}
           </Link>
         </div>
@@ -794,7 +794,7 @@ export default function AdminSettingsPage() {
                 role="tab"
                 aria-selected={activeGroup === g.id}
                 onClick={() => setActiveGroup(g.id)}
-                className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3.5 py-2 max-[899px]:min-h-[40px] rounded-lg text-sm font-medium transition-colors ${
                   activeGroup === g.id ? "bg-white dark:bg-gray-800 text-brand-700 dark:text-brand-400 shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                 }`}
               >

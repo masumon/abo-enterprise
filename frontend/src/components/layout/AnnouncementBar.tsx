@@ -68,7 +68,7 @@ export default function AnnouncementBar() {
                 href={a.href || "/"}
                 aria-hidden={i >= announcements.length}
                 tabIndex={i >= announcements.length ? -1 : 0}
-                className="inline-flex items-center gap-2 font-semibold tracking-[0.01em] hover:text-white transition-colors pr-10"
+                className="inline-flex items-center h-9 gap-2 font-semibold tracking-[0.01em] hover:text-white transition-colors pr-10"
               >
                 {a.icon && <span aria-hidden>{a.icon}</span>}
                 <span>{lang === "bn" ? a.bn : a.en}</span>
