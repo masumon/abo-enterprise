@@ -57,3 +57,6 @@ backend/demo_cleanup_backups/
 
 # Local agent worktrees
 /.claude/worktrees/
+
+# Owner product photos (source material, not site code)
+/Mobile_Accesoris_Product/
