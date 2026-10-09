@@ -12,7 +12,8 @@ import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import UtmTracker from "@/lib/utm";
 import { DEFAULT_OG_IMAGE, SITE_URL, getBrandFullTitle } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
-import { fetchPublicSettings, settingValue } from "@/lib/serverSettings";
+import { fetchPublicSettings, settingValue, pickHeroSettings } from "@/lib/serverSettings";
+import PublicSettingsSeed from "@/components/providers/PublicSettingsSeed";
 
 const API_ORIGIN = getApiBaseUrl();
 
@@ -153,6 +154,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
      served from the static shell, which is the price of getting `lang` and the
      first paint correct for both audiences. */
   const lang = normalizeLang((await cookies()).get(LANG_COOKIE)?.value);
+  // Same cached fetch generateMetadata() already made (60 s revalidate), so
+  // this adds no extra API call. Seeds hero/banner image URLs for first paint.
+  const heroSettings = pickHeroSettings(await fetchPublicSettings());
   return (
     <html lang={lang} suppressHydrationWarning className={`${hindSiliguri.variable} ${notoSerifBengali.variable}`}>
       <head>
@@ -174,6 +178,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <GoogleAnalytics />
         <StoreHydration />
         <UtmTracker />
+        <PublicSettingsSeed settings={heroSettings} />
         <PublicShell>{children}</PublicShell>
         <PWAInstallPrompt />
       </body>

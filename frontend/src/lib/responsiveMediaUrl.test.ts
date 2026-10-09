@@ -1,4 +1,4 @@
-import { responsiveMediaDimensions, responsiveMediaUrl } from "./responsiveMediaUrl";
+import { cloudinarySrcSet, cloudinaryWidthUrl, responsiveMediaDimensions, responsiveMediaUrl } from "./responsiveMediaUrl";
 
 describe("responsiveMediaUrl", () => {
   const cloudinary = "https://res.cloudinary.com/demo/image/upload/v1234/abo-enterprise/banner.jpg";
@@ -27,5 +27,21 @@ describe("responsiveMediaUrl", () => {
       tablet: { width: 1280, height: 500 },
       mobile: { width: 768, height: 420 },
     });
+  });
+});
+
+describe("cloudinaryWidthUrl / cloudinarySrcSet", () => {
+  const cloudinary = "https://res.cloudinary.com/demo/image/upload/v1234/abo-enterprise/hero.webp";
+
+  it("adds a width-limited auto-format transformation", () => {
+    expect(cloudinaryWidthUrl(cloudinary, 960)).toBe(
+      "https://res.cloudinary.com/demo/image/upload/f_auto,q_auto,c_limit,w_960/v1234/abo-enterprise/hero.webp"
+    );
+    expect(cloudinarySrcSet(cloudinary, [480, 960])).toContain("w_480/v1234/abo-enterprise/hero.webp 480w");
+  });
+
+  it("leaves non-Cloudinary URLs alone", () => {
+    expect(cloudinaryWidthUrl("/logo.png", 960)).toBe("/logo.png");
+    expect(cloudinarySrcSet("https://example.com/a.jpg", [480])).toBeUndefined();
   });
 });
