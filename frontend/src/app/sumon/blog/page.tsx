@@ -14,6 +14,7 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { useAdminT } from "@/lib/i18n/adminText";
 
 const CATEGORIES = ["technology", "business", "tips", "news", "case-study", "announcement"];
 const DRAFT_KEY = "admin_blog_new_draft";
@@ -54,6 +55,7 @@ function slugify(text: string) {
 }
 
 export default function AdminBlogPage() {
+  const tx = useAdminT();
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
@@ -331,10 +333,11 @@ export default function AdminBlogPage() {
         title="Blog"
         titleBn="ব্লগ"
         description={`${total} total posts`}
+        descriptionBn={`মোট ${String(total).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি পোস্ট`}
         actions={
           <button onClick={openNew} className="btn btn-primary btn-sm gap-1.5">
             <Plus className="w-4 h-4" />
-            New Post
+            {tx("New Post")}
           </button>
         }
       />
@@ -349,9 +352,9 @@ export default function AdminBlogPage() {
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
           className="input w-auto text-sm"
         >
-          <option value="">All Status</option>
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
+          <option value="">{tx("All Status")}</option>
+          <option value="draft">{tx("Draft")}</option>
+          <option value="published">{tx("Published")}</option>
         </select>
       </AdminToolbar>
 
@@ -361,9 +364,9 @@ export default function AdminBlogPage() {
         ) : posts.length === 0 ? (
           <div className="p-12 text-center">
             <BookOpen className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 font-medium">No posts found</p>
+            <p className="text-gray-400 font-medium">{tx("No posts found")}</p>
             <button onClick={openNew} className="btn btn-primary btn-sm mt-4 gap-1.5">
-              <Plus className="w-4 h-4" /> Create first post
+              <Plus className="w-4 h-4" /> {tx("Create first post")}
             </button>
           </div>
         ) : (
@@ -371,18 +374,18 @@ export default function AdminBlogPage() {
             <table className="table-premium table-responsive min-w-[640px]">
               <thead>
                 <tr>
-                  <th>Title</th>
-                  <th>Category</th>
-                  <th>Author</th>
-                  <th>Date</th>
-                  <th>Status</th>
-                  <th className="text-right pr-5">Actions</th>
+                  <th>{tx("Title")}</th>
+                  <th>{tx("Category")}</th>
+                  <th>{tx("Author")}</th>
+                  <th>{tx("Date")}</th>
+                  <th>{tx("Status")}</th>
+                  <th className="text-right pr-5">{tx("Actions")}</th>
                 </tr>
               </thead>
               <tbody>
                 {posts.map((p) => (
                   <tr key={p.id} onClick={() => openEdit(p)} className="cursor-pointer hover:bg-brand-50/40 transition-colors">
-                    <td className="px-5 py-3" data-label="Title">
+                    <td className="px-5 py-3" data-label={tx("Title")}>
                       <div className="flex items-center gap-2">
                         {p.is_featured && <Star className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
                         <div>
@@ -391,24 +394,24 @@ export default function AdminBlogPage() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-gray-600 capitalize" data-label="Category">{p.category ?? "—"}</td>
-                    <td className="px-5 py-3 text-gray-600" data-label="Author">{p.author_name}</td>
-                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap" data-label="Date">
+                    <td className="px-5 py-3 text-gray-600 capitalize" data-label={tx("Category")}>{p.category ?? "—"}</td>
+                    <td className="px-5 py-3 text-gray-600" data-label={tx("Author")}>{p.author_name}</td>
+                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap" data-label={tx("Date")}>
                       {p.published_at
                         ? new Date(p.published_at).toLocaleDateString("en-BD")
                         : p.created_at
                           ? new Date(p.created_at).toLocaleDateString("en-BD")
                           : "—"}
                     </td>
-                    <td className="px-5 py-3" data-label="Status"><StatusBadge status={p.status} /></td>
-                    <td className="px-5 py-3 text-right" data-label="Actions" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-5 py-3" data-label={tx("Status")}><StatusBadge status={p.status} /></td>
+                    <td className="px-5 py-3 text-right" data-label={tx("Actions")} onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
                         {p.status === "draft" && (
                           <button
                             onClick={async (e) => { e.stopPropagation(); await adminBlogApi.update(p.id!, { status: "published" }); toast("success", "Published!"); load(); }}
                             className="px-2 py-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 whitespace-nowrap transition-colors"
-                            title="Publish now"
-                          >Publish</button>
+                            title={tx("Publish now")}
+                          >{tx("Publish")}</button>
                         )}
                         {p.status === "published" && (
                           <a
@@ -417,7 +420,7 @@ export default function AdminBlogPage() {
                             rel="noopener noreferrer"
                             aria-label={`View ${p.title_en} on website`}
                             className="p-1.5 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                            title="View on site"
+                            title={tx("View on site")}
                             onClick={(e) => e.stopPropagation()}
                           >
                             <ExternalLink className="w-4 h-4" />
@@ -427,7 +430,7 @@ export default function AdminBlogPage() {
                           onClick={(e) => { e.stopPropagation(); handleClone(p); }}
                           aria-label={`Duplicate ${p.title_en}`}
                           className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
-                          title="Clone / Duplicate"
+                          title={tx("Clone / Duplicate")}
                         >
                           <Copy className="w-4 h-4" />
                         </button>
@@ -435,7 +438,7 @@ export default function AdminBlogPage() {
                           onClick={(e) => { e.stopPropagation(); openEdit(p); }}
                           aria-label={`Edit ${p.title_en}`}
                           className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
-                          title="Edit"
+                          title={tx("Edit")}
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
@@ -444,7 +447,7 @@ export default function AdminBlogPage() {
                           disabled={deletingId === p.id}
                           aria-label={`Delete ${p.title_en}`}
                           className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
+                          title={tx("Delete")}
                         >
                           {deletingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         </button>
@@ -460,9 +463,9 @@ export default function AdminBlogPage() {
 
       {total > 20 && (
         <div className="flex justify-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-          <span className="px-4 py-2 text-sm text-gray-600">Page {page}</span>
-          <button disabled={posts.length < 20} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">Next</button>
+          <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn btn-outline btn-sm">{tx("Previous")}</button>
+          <span className="px-4 py-2 text-sm text-gray-600">{tx("Page")} {page}</span>
+          <button disabled={posts.length < 20} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">{tx("Next")}</button>
         </div>
       )}
 
@@ -519,14 +522,14 @@ export default function AdminBlogPage() {
               {/* Status + Featured row */}
               <div className="flex items-center gap-4">
                 <div className="flex-1">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Status</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{tx("Status")}</label>
                   <select
                     value={editing.status ?? "draft"}
                     onChange={e => setEditing(prev => prev ? { ...prev, status: e.target.value as "draft" | "published" } : prev)}
                     className="input w-full text-sm"
                   >
-                    <option value="draft">Draft</option>
-                    <option value="published">Published</option>
+                    <option value="draft">{tx("Draft")}</option>
+                    <option value="published">{tx("Published")}</option>
                   </select>
                   {editing.status === "published" && (
                     <div className="mt-2">
@@ -552,7 +555,7 @@ export default function AdminBlogPage() {
                     }`}
                   >
                     <Star className="w-3.5 h-3.5" />
-                    Featured
+                    {tx("Featured")}
                   </button>
                 </div>
               </div>
@@ -613,7 +616,7 @@ export default function AdminBlogPage() {
               {/* Category + Author */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Category</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{tx("Category")}</label>
                   <select
                     value={editing.category ?? ""}
                     onChange={e => setEditing(prev => prev ? { ...prev, category: e.target.value } : prev)}
@@ -624,7 +627,7 @@ export default function AdminBlogPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Author</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{tx("Author")}</label>
                   <input
                     value={editing.author_name ?? ""}
                     onChange={e => setEditing(prev => prev ? { ...prev, author_name: e.target.value } : prev)}
@@ -760,12 +763,12 @@ export default function AdminBlogPage() {
                       product rail under the article, and the link also shows in each item&apos;s own form.
                     </p>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Products</label>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">{tx("Products")}</label>
                       <LinkChecklist
                         options={productOptions}
                         selected={editing.product_ids ?? []}
                         loading={optionsLoading}
-                        emptyText="No products"
+                        emptyText={tx("No products")}
                         searchPlaceholder="Search products…"
                         onToggle={(id) => setEditing(prev => {
                           if (!prev) return prev;
@@ -775,12 +778,12 @@ export default function AdminBlogPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">Services</label>
+                      <label className="block text-xs font-semibold text-gray-600 mb-1.5">{tx("Services")}</label>
                       <LinkChecklist
                         options={serviceOptions}
                         selected={editing.service_ids ?? []}
                         loading={optionsLoading}
-                        emptyText="No services"
+                        emptyText={tx("No services")}
                         searchPlaceholder="Search services…"
                         onToggle={(id) => setEditing(prev => {
                           if (!prev) return prev;
@@ -841,15 +844,15 @@ export default function AdminBlogPage() {
             <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-gray-50/50">
               <div className="flex items-center gap-1.5 text-xs text-gray-500">
                 {editing.status === "published"
-                  ? <><Eye className="w-3.5 h-3.5 text-green-500" /> Visible on site</>
-                  : <><EyeOff className="w-3.5 h-3.5 text-gray-400" /> Not yet published</>
+                  ? <><Eye className="w-3.5 h-3.5 text-green-500" /> {tx("Visible on site")}</>
+                  : <><EyeOff className="w-3.5 h-3.5 text-gray-400" /> {tx("Not yet published")}</>
                 }
               </div>
               <div className="flex items-center gap-2">
                 {isNew && (
-                  <button onClick={() => closeEditor(true)} className="btn btn-outline btn-sm text-red-500 border-red-200 hover:bg-red-50">Discard Draft</button>
+                  <button onClick={() => closeEditor(true)} className="btn btn-outline btn-sm text-red-500 border-red-200 hover:bg-red-50">{tx("Discard Draft")}</button>
                 )}
-                <button onClick={() => closeEditor(false)} className="btn btn-outline btn-sm">Cancel</button>
+                <button onClick={() => closeEditor(false)} className="btn btn-outline btn-sm">{tx("Cancel")}</button>
                 <button
                   onClick={handleSave}
                   disabled={saving}
@@ -868,7 +871,7 @@ export default function AdminBlogPage() {
         open={!!confirmState}
         title={confirmState?.title ?? ""}
         message={confirmState?.message ?? ""}
-        confirmLabel="Delete"
+        confirmLabel={tx("Delete")}
         variant="danger"
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}

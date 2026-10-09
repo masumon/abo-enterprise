@@ -14,6 +14,7 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice, buildCustomerWhatsAppLink, cn } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { useAdminT } from "@/lib/i18n/adminText";
 
 const ComposeEmailModal = dynamic(() => import("@/components/admin/ComposeEmailModal"), { ssr: false });
 
@@ -34,6 +35,7 @@ const STATUSES = ["pending", "confirmed", "processing", "shipped", "delivered", 
 const COURIERS = ["pathao", "steadfast", "redx", "other"];
 
 export default function AdminOrdersPage() {
+  const tx = useAdminT();
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -290,6 +292,7 @@ export default function AdminOrdersPage() {
         title="Orders"
         titleBn="অর্ডার ব্যবস্থাপনা"
         description={`${total} total orders — status update, bulk actions, courier tracking`}
+        descriptionBn={`মোট ${String(total).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি অর্ডার — স্ট্যাটাস আপডেট, একসাথে অ্যাকশন, কুরিয়ার ট্র্যাকিং`}
       />
 
       <AdminToolbar
@@ -297,15 +300,15 @@ export default function AdminOrdersPage() {
         onSearchChange={handleSearchChange}
         searchPlaceholder="নাম, ফোন, অর্ডার#…"
       >
-        <select value={days} onChange={(e) => { setDays(Number(e.target.value)); setPage(1); }} className="admin-input w-auto text-sm py-2" aria-label="Date range">
-          <option value={0}>All time</option>
-          <option value={1}>Today</option>
-          <option value={7}>Last 7 days</option>
-          <option value={30}>Last 30 days</option>
-          <option value={90}>Last 90 days</option>
+        <select value={days} onChange={(e) => { setDays(Number(e.target.value)); setPage(1); }} className="admin-input w-auto text-sm py-2" aria-label={tx("Date range")}>
+          <option value={0}>{tx("All time")}</option>
+          <option value={1}>{tx("Today")}</option>
+          <option value={7}>{tx("Last 7 days")}</option>
+          <option value={30}>{tx("Last 30 days")}</option>
+          <option value={90}>{tx("Last 90 days")}</option>
         </select>
         <select value={filter} onChange={(e) => { setFilter(e.target.value); setPage(1); }} className="admin-input w-auto text-sm py-2">
-          <option value="">All Status</option>
+          <option value="">{tx("All Status")}</option>
           {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
         </select>
         <div className="flex items-center gap-1">
@@ -313,7 +316,7 @@ export default function AdminOrdersPage() {
             value={csvDays}
             onChange={(e) => setCsvDays(Number(e.target.value))}
             className="admin-input w-auto text-sm py-2"
-            title="Export range"
+            title={tx("Export range")}
           >
             <option value={7}>7d</option>
             <option value={30}>30d</option>
@@ -350,7 +353,7 @@ export default function AdminOrdersPage() {
             onChange={e => setBulkStatus(e.target.value)}
             className="input w-auto text-sm py-1"
           >
-            <option value="">Set status…</option>
+            <option value="">{tx("Set status…")}</option>
             {STATUSES.map(s => <option key={s} value={s} className="capitalize">{s}</option>)}
           </select>
           <button
@@ -362,7 +365,7 @@ export default function AdminOrdersPage() {
             Apply
           </button>
           <button onClick={() => setSelected(new Set())} className="btn btn-ghost btn-sm ml-auto">
-            Clear
+            {tx("Clear")}
           </button>
         </div>
       )}
@@ -378,8 +381,8 @@ export default function AdminOrdersPage() {
         ) : orders.length === 0 ? (
           <AdminEmptyState
             icon={ShoppingCart}
-            title="No orders found"
-            description="Orders will appear here when customers checkout."
+            title={tx("No orders found")}
+            description={tx("Orders will appear here when customers checkout.")}
           />
         ) : (
           <>
@@ -412,12 +415,12 @@ export default function AdminOrdersPage() {
                       {allSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                     </button>
                   </th>
-                  <th>Order</th>
-                  <th>Customer</th>
-                  <th className="hidden sm:table-cell">Payment</th>
-                  <th>Total</th>
-                  <th className="hidden md:table-cell">Date</th>
-                  <th>Status</th>
+                  <th>{tx("Order")}</th>
+                  <th>{tx("Customer")}</th>
+                  <th className="hidden sm:table-cell">{tx("Payment")}</th>
+                  <th>{tx("Total")}</th>
+                  <th className="hidden md:table-cell">{tx("Date")}</th>
+                  <th>{tx("Status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -465,9 +468,9 @@ export default function AdminOrdersPage() {
 
       {total > 20 && (
         <div className="flex justify-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-          <span className="px-4 py-2 text-sm text-gray-600">Page {page} of {Math.max(1, Math.ceil(total / 20))}</span>
-          <button disabled={page >= Math.ceil(total / 20)} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">Next</button>
+          <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn btn-outline btn-sm">{tx("Previous")}</button>
+          <span className="px-4 py-2 text-sm text-gray-600">{tx("Page")} {page} / {Math.max(1, Math.ceil(total / 20))}</span>
+          <button disabled={page >= Math.ceil(total / 20)} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">{tx("Next")}</button>
         </div>
       )}
 
@@ -479,7 +482,7 @@ export default function AdminOrdersPage() {
           onClick={() => setDetail(null)}
           role="dialog"
           aria-modal="true"
-          aria-label="Order details"
+          aria-label={tx("Order details")}
         >
           <div
             ref={detailRef}
@@ -523,7 +526,7 @@ export default function AdminOrdersPage() {
 
                 <div className="bg-gray-50 rounded-xl p-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900 text-sm">Customer Info</h3>
+                    <h3 className="font-semibold text-gray-900 text-sm">{tx("Customer Info")}</h3>
                     <div className="flex gap-2">
                       <a href={`tel:${detail.customer_phone}`} className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">📞 Call</a>
                       <a href={buildCustomerWhatsAppLink(detail.customer_phone, `Hello ${detail.customer_name}, your order ${detail.order_number} at ABO Enterprise (${formatPrice(detail.total)}) has been received. We will confirm shortly. Thank you!`)} target="_blank" rel="noopener noreferrer" className="text-xs bg-green-50 text-green-700 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors font-medium">💬 WhatsApp</a>
@@ -531,7 +534,7 @@ export default function AdminOrdersPage() {
                         <button
                           type="button"
                           onClick={() => setComposeEmail({ to: detail.customer_email!, subject: `Regarding your order ${detail.order_number}`, context: `Order ${detail.order_number}` })}
-                          title="Compose and send an email to the customer from no-reply@aboenterprise.com"
+                          title={tx("Compose and send an email to the customer from no-reply@aboenterprise.com")}
                           className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-lg hover:bg-blue-100 transition-colors font-medium"
                         >
                           ✉ Email
@@ -540,22 +543,22 @@ export default function AdminOrdersPage() {
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><span className="text-gray-500">Name</span><p className="font-medium">{detail.customer_name}</p></div>
-                    <div><span className="text-gray-500">Phone</span><p className="font-medium">{detail.customer_phone}</p></div>
-                    {detail.customer_email && <div className="col-span-2"><span className="text-gray-500">Email</span><p className="font-medium">{detail.customer_email}</p></div>}
-                    <div className="col-span-2"><span className="text-gray-500">Address</span><p className="font-medium">{detail.delivery_address}</p></div>
+                    <div><span className="text-gray-500">{tx("Name")}</span><p className="font-medium">{detail.customer_name}</p></div>
+                    <div><span className="text-gray-500">{tx("Phone")}</span><p className="font-medium">{detail.customer_phone}</p></div>
+                    {detail.customer_email && <div className="col-span-2"><span className="text-gray-500">{tx("Email")}</span><p className="font-medium">{detail.customer_email}</p></div>}
+                    <div className="col-span-2"><span className="text-gray-500">{tx("Address")}</span><p className="font-medium">{detail.delivery_address}</p></div>
                     {/* X4 — an institutional order must be recognisable here,
                         or the invoice goes out in the wrong name. */}
-                    {detail.company_name && <div className="col-span-2"><span className="text-gray-500">Company</span><p className="font-medium">{detail.company_name}</p></div>}
+                    {detail.company_name && <div className="col-span-2"><span className="text-gray-500">{tx("Company")}</span><p className="font-medium">{detail.company_name}</p></div>}
                     {detail.company_bin && <div><span className="text-gray-500">BIN</span><p className="font-medium font-mono">{detail.company_bin}</p></div>}
                     {detail.company_tin && <div><span className="text-gray-500">TIN</span><p className="font-medium font-mono">{detail.company_tin}</p></div>}
                     {detail.po_number && <div className="col-span-2"><span className="text-gray-500">PO number</span><p className="font-medium font-mono">{detail.po_number}</p></div>}
-                    {detail.billing_address && <div className="col-span-2"><span className="text-gray-500">Billing address</span><p className="font-medium whitespace-pre-line">{detail.billing_address}</p></div>}
+                    {detail.billing_address && <div className="col-span-2"><span className="text-gray-500">{tx("Billing address")}</span><p className="font-medium whitespace-pre-line">{detail.billing_address}</p></div>}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold text-gray-900 text-sm mb-3">Items</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm mb-3">{tx("Items")}</h3>
                   <div className="space-y-2">
                     {detail.items?.map((item, i) => {
                       // Combo lines are stored with a "[Combo] " name prefix
@@ -583,12 +586,12 @@ export default function AdminOrdersPage() {
                 </div>
 
                 <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
-                  <div className="flex justify-between"><span className="text-gray-500">Subtotal</span><span>{formatPrice(detail.subtotal)}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Delivery</span><span>{formatPrice(detail.delivery_charge)}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">{tx("Subtotal")}</span><span>{formatPrice(detail.subtotal)}</span></div>
+                  <div className="flex justify-between"><span className="text-gray-500">{tx("Delivery")}</span><span>{formatPrice(detail.delivery_charge)}</span></div>
                   <div className="flex justify-between font-bold text-base pt-2 border-t border-gray-200">
-                    <span>Total</span><span className="text-accent-500">{formatPrice(detail.total)}</span>
+                    <span>{tx("Total")}</span><span className="text-accent-500">{formatPrice(detail.total)}</span>
                   </div>
-                  <div className="flex justify-between text-gray-500 pt-1"><span>Payment</span><span className="capitalize">{detail.payment_method}</span></div>
+                  <div className="flex justify-between text-gray-500 pt-1"><span>{tx("Payment")}</span><span className="capitalize">{detail.payment_method}</span></div>
                   {(detail.advance_amount ?? 0) > 0 && (
                     <div className={`mt-2 rounded-lg px-3 py-2 text-xs border flex items-center justify-between gap-2 ${detail.advance_paid ? "bg-green-50 border-green-200 text-green-700" : "bg-amber-50 border-amber-200 text-amber-800"}`}>
                       <span>
@@ -606,18 +609,18 @@ export default function AdminOrdersPage() {
                 </div>
 
                 <div className="bg-brand-50 border border-brand-100 rounded-xl p-4 space-y-3">
-                  <h3 className="font-semibold text-gray-900 text-sm">Courier / Delivery</h3>
+                  <h3 className="font-semibold text-gray-900 text-sm">{tx("Courier / Delivery")}</h3>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="text-xs text-gray-500">Provider</label>
+                      <label className="text-xs text-gray-500">{tx("Provider")}</label>
                       <select value={courierProvider} onChange={(e) => setCourierProvider(e.target.value)} className="input text-sm mt-1">
                         <option value="">— Select —</option>
                         {COURIERS.map((c) => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                     <div>
-                      <label className="text-xs text-gray-500">Tracking ID</label>
-                      <input value={courierTracking} onChange={(e) => setCourierTracking(e.target.value)} className="input text-sm mt-1" placeholder="Consignment ID" />
+                      <label className="text-xs text-gray-500">{tx("Tracking ID")}</label>
+                      <input value={courierTracking} onChange={(e) => setCourierTracking(e.target.value)} className="input text-sm mt-1" placeholder={tx("Consignment ID")} />
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -647,7 +650,7 @@ export default function AdminOrdersPage() {
 
                 {detail.notes && (
                   <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-                    <p className="text-xs text-amber-700 font-medium mb-1">Notes</p>
+                    <p className="text-xs text-amber-700 font-medium mb-1">{tx("Notes")}</p>
                     <p className="text-sm text-amber-900">{detail.notes}</p>
                   </div>
                 )}
@@ -661,7 +664,7 @@ export default function AdminOrdersPage() {
         open={!!confirmState}
         title={confirmState?.title ?? ""}
         message={confirmState?.message ?? ""}
-        confirmLabel="Update"
+        confirmLabel={tx("Update")}
         variant="warning"
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}

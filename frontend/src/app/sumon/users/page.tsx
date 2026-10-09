@@ -10,6 +10,7 @@ import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import TwoFactorCard from "@/components/admin/TwoFactorCard";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { useAdminT } from "@/lib/i18n/adminText";
 
 interface AdminUser {
   id: string;
@@ -25,6 +26,7 @@ const ROLES = ["admin", "editor", "viewer"];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function AdminUsersPage() {
+  const tx = useAdminT();
   const toast = useToastStore((s) => s.push);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,6 +133,7 @@ export default function AdminUsersPage() {
         title="Users"
         titleBn="ইউজার"
         description={`${users.length} admin accounts`}
+        descriptionBn={`${String(users.length).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি অ্যাডমিন অ্যাকাউন্ট`}
         actions={
           <>
             <div className="relative">
@@ -138,13 +141,13 @@ export default function AdminUsersPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search users…"
+                placeholder={tx("Search users…")}
                 className="input pl-8 text-sm w-full sm:w-52"
-                aria-label="Search users"
+                aria-label={tx("Search users")}
               />
             </div>
             <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Add User
+              <Plus className="w-4 h-4" /> {tx("Add User")}
             </button>
           </>
         }
@@ -194,11 +197,11 @@ export default function AdminUsersPage() {
             <table className="table-premium min-w-[500px]">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th className="hidden sm:table-cell">Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th className="hidden lg:table-cell">Last Login</th>
+                  <th>{tx("Name")}</th>
+                  <th className="hidden sm:table-cell">{tx("Email")}</th>
+                  <th>{tx("Role")}</th>
+                  <th>{tx("Status")}</th>
+                  <th className="hidden lg:table-cell">{tx("Last Login")}</th>
                   <th />
                 </tr>
               </thead>
@@ -272,12 +275,12 @@ export default function AdminUsersPage() {
                 <Shield className="w-5 h-5 text-brand-600" />
                 {modal === "create" ? "New Admin User" : "Edit User"}
               </h2>
-              <button onClick={closeModal} aria-label="Close" className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <button onClick={closeModal} aria-label={tx("Close")} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-4">
               {modal === "create" && (
                 <div>
-                  <label className="form-label" htmlFor="user-email">Email</label>
+                  <label className="form-label" htmlFor="user-email">{tx("Email")}</label>
                   <input
                     id="user-email"
                     type="email"
@@ -289,7 +292,7 @@ export default function AdminUsersPage() {
                 </div>
               )}
               <div>
-                <label className="form-label" htmlFor="user-name">Name</label>
+                <label className="form-label" htmlFor="user-name">{tx("Name")}</label>
                 <input
                   id="user-name"
                   value={form.name}
@@ -298,7 +301,7 @@ export default function AdminUsersPage() {
                 />
               </div>
               <div>
-                <label className="form-label" htmlFor="user-role">Role</label>
+                <label className="form-label" htmlFor="user-role">{tx("Role")}</label>
                 <select
                   id="user-role"
                   value={form.role}
@@ -333,7 +336,7 @@ export default function AdminUsersPage() {
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={closeModal} className="btn btn-outline btn-md">Cancel</button>
+              <button onClick={closeModal} className="btn btn-outline btn-md">{tx("Cancel")}</button>
               <button onClick={handleSave} disabled={saving} className="btn btn-brand btn-md">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : modal === "create" ? "Create" : "Save"}
               </button>

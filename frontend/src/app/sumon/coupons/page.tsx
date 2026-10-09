@@ -7,6 +7,7 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import { useAdminT } from "@/lib/i18n/adminText";
 
 interface Coupon {
   id?: string;
@@ -20,6 +21,7 @@ interface Coupon {
  *  Same UI as before; Save now diffs rows against what loaded and issues
  *  create/update/delete calls instead of overwriting one Settings blob. */
 export default function AdminCouponsPage() {
+  const tx = useAdminT();
   const [rows, setRows] = useState<Coupon[]>([]);
   const [original, setOriginal] = useState<AdminCoupon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,13 +117,14 @@ export default function AdminCouponsPage() {
         title="Coupons"
         titleBn="কুপন ম্যানেজার"
         description={`${rows.length} coupon${rows.length === 1 ? "" : "s"} — code, discount %, minimum order, active flag`}
+        descriptionBn={`${String(rows.length).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি কুপন — কোড, ছাড় %, ন্যূনতম অর্ডার, সক্রিয় কিনা`}
       />
 
       <div className="admin-card p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4">
           <button onClick={addRow} className="admin-btn-secondary gap-1.5">
             <Plus className="w-4 h-4" />
-            Add Coupon
+            {tx("Add Coupon")}
           </button>
           <button onClick={save} disabled={saving} className="btn btn-brand btn-sm gap-1.5">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
@@ -136,25 +139,25 @@ export default function AdminCouponsPage() {
         ) : rows.length === 0 ? (
           <AdminEmptyState
             icon={Percent}
-            title="No coupons yet"
-            description="Add a coupon to give customers a discount at checkout."
+            title={tx("No coupons yet")}
+            description={tx("Add a coupon to give customers a discount at checkout.")}
           />
         ) : (
           <div className="overflow-x-auto">
             <table className="table-premium table-responsive min-w-[560px]">
               <thead>
                 <tr>
-                  <th>Code</th>
-                  <th className="w-32">Discount %</th>
-                  <th className="w-40">Min Subtotal (৳)</th>
-                  <th className="w-24">Active</th>
+                  <th>{tx("Code")}</th>
+                  <th className="w-32">{tx("Discount %")}</th>
+                  <th className="w-40">{tx("Min Subtotal (৳)")}</th>
+                  <th className="w-24">{tx("Active")}</th>
                   <th className="w-16"></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map((r, i) => (
                   <tr key={i}>
-                    <td className="px-4 py-2" data-label="Code">
+                    <td className="px-4 py-2" data-label={tx("Code")}>
                       <input
                         value={r.code}
                         onChange={(e) => updateRow(i, { code: e.target.value.toUpperCase() })}
@@ -162,7 +165,7 @@ export default function AdminCouponsPage() {
                         placeholder="ABO10"
                       />
                     </td>
-                    <td className="px-4 py-2" data-label="Discount %">
+                    <td className="px-4 py-2" data-label={tx("Discount %")}>
                       <input
                         type="number"
                         value={r.discount_percent}
@@ -172,7 +175,7 @@ export default function AdminCouponsPage() {
                         className="admin-input text-sm w-full"
                       />
                     </td>
-                    <td className="px-4 py-2" data-label="Min Subtotal (৳)">
+                    <td className="px-4 py-2" data-label={tx("Min Subtotal (৳)")}>
                       <input
                         type="number"
                         value={r.min_subtotal}
@@ -181,7 +184,7 @@ export default function AdminCouponsPage() {
                         className="admin-input text-sm w-full"
                       />
                     </td>
-                    <td className="px-4 py-2" data-label="Active">
+                    <td className="px-4 py-2" data-label={tx("Active")}>
                       <label className="inline-flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"

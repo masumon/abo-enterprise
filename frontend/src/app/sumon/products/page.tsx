@@ -25,6 +25,7 @@ import type { Product, Category } from "@/types";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { useAdminT } from "@/lib/i18n/adminText";
 
 // Values are the backend product-category slugs (do not change); labels are the
 // customer-facing names, kept in sync with the storefront category filters.
@@ -113,6 +114,7 @@ function ProductThumb({ src, alt }: { src?: string | null; alt: string }) {
 }
 
 export default function AdminProductsPage() {
+  const tx = useAdminT();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -543,6 +545,7 @@ export default function AdminProductsPage() {
         title="Products"
         titleBn="পণ্য ব্যবস্থাপনা"
         description={`${total} products — add, edit, stock & pricing`}
+        descriptionBn={`${String(total).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি পণ্য — যোগ, সম্পাদনা, স্টক ও মূল্য`}
         actions={
           <>
             <input
@@ -558,16 +561,16 @@ export default function AdminProductsPage() {
               className="admin-btn-secondary"
               title="Bulk import — CSV with slug, name_en, name_bn, price, stock_quantity…"
             >
-              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} Import CSV
+              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} {tx("Import CSV")}
             </button>
-            <button onClick={handleExportCsv} className="admin-btn-secondary" title="Export all products as CSV">
-              <Download className="w-4 h-4" /> Export CSV
+            <button onClick={handleExportCsv} className="admin-btn-secondary" title={tx("Export all products as CSV")}>
+              <Download className="w-4 h-4" /> {tx("Export CSV")}
             </button>
-            <button onClick={handleExportPdf} className="admin-btn-secondary" title="Export all products as a PDF report">
-              <FileText className="w-4 h-4" /> Export PDF
+            <button onClick={handleExportPdf} className="admin-btn-secondary" title={tx("Export all products as a PDF report")}>
+              <FileText className="w-4 h-4" /> {tx("Export PDF")}
             </button>
             <button onClick={openCreate} className="admin-btn-primary">
-              <Plus className="w-4 h-4" /> Add Product
+              <Plus className="w-4 h-4" /> {tx("Add Product")}
             </button>
           </>
         }
@@ -606,23 +609,23 @@ export default function AdminProductsPage() {
         <div className="flex flex-wrap items-center gap-2 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">
           <span className="text-sm font-medium text-brand-800">{selected.size} selected</span>
           <button onClick={() => runBulkUpdate({ is_active: true }, "activated")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
-            <Check className="w-3.5 h-3.5" /> Activate
+            <Check className="w-3.5 h-3.5" /> {tx("Activate")}
           </button>
           <button onClick={() => runBulkUpdate({ is_active: false }, "deactivated")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
-            <Ban className="w-3.5 h-3.5" /> Deactivate
+            <Ban className="w-3.5 h-3.5" /> {tx("Deactivate")}
           </button>
           <button onClick={() => runBulkUpdate({ is_featured: true }, "featured")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
-            <Star className="w-3.5 h-3.5" /> Feature
+            <Star className="w-3.5 h-3.5" /> {tx("Feature")}
           </button>
           <button onClick={() => runBulkUpdate({ is_featured: false }, "unfeatured")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
-            <StarOff className="w-3.5 h-3.5" /> Unfeature
+            <StarOff className="w-3.5 h-3.5" /> {tx("Unfeature")}
           </button>
           <button onClick={() => setBulkDeleteConfirm(true)} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1 text-red-600 hover:bg-red-50">
-            <Trash2 className="w-3.5 h-3.5" /> Delete
+            <Trash2 className="w-3.5 h-3.5" /> {tx("Delete")}
           </button>
           {bulkLoading && <Loader2 className="w-4 h-4 animate-spin text-brand-600" />}
           <button onClick={() => setSelected(new Set())} className="btn btn-ghost btn-sm ml-auto">
-            Clear
+            {tx("Clear")}
           </button>
         </div>
       )}
@@ -639,7 +642,7 @@ export default function AdminProductsPage() {
             <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
           </div>
         ) : products.length === 0 ? (
-          <AdminEmptyState icon={Package} title="No products yet" description="Add your first product to start selling." />
+          <AdminEmptyState icon={Package} title={tx("No products yet")} description={tx("Add your first product to start selling.")} />
         ) : (
           <div className="overflow-x-auto">
             <table className="table-premium min-w-[480px]">
@@ -648,17 +651,17 @@ export default function AdminProductsPage() {
                   <th className="w-10 px-3">
                     <input
                       type="checkbox"
-                      aria-label="Select all products on this page"
+                      aria-label={tx("Select all products on this page")}
                       checked={allOnPageSelected}
                       onChange={toggleSelectAll}
                       className="rounded"
                     />
                   </th>
-                  <th>Product</th>
-                  <th className="hidden sm:table-cell">Category</th>
-                  <th>Price</th>
-                  <th className="hidden md:table-cell">Stock</th>
-                  <th>Status</th>
+                  <th>{tx("Product")}</th>
+                  <th className="hidden sm:table-cell">{tx("Category")}</th>
+                  <th>{tx("Price")}</th>
+                  <th className="hidden md:table-cell">{tx("Stock")}</th>
+                  <th>{tx("Status")}</th>
                   <th />
                 </tr>
               </thead>
@@ -692,13 +695,13 @@ export default function AdminProductsPage() {
                     </td>
                     <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => openClone(p)} aria-label={`Duplicate ${p.name_en}`} title="Duplicate" className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
+                        <button onClick={() => openClone(p)} aria-label={`Duplicate ${p.name_en}`} title={tx("Duplicate")} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
                           <Copy className="w-4 h-4" />
                         </button>
-                        <button onClick={() => openEdit(p)} aria-label={`Edit ${p.name_en}`} title="Edit" className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
+                        <button onClick={() => openEdit(p)} aria-label={`Edit ${p.name_en}`} title={tx("Edit")} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
                           <Pencil className="w-4 h-4" />
                         </button>
-                        <button onClick={() => setDeleteId(p.id ?? null)} aria-label={`Delete ${p.name_en}`} title="Delete" className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
+                        <button onClick={() => setDeleteId(p.id ?? null)} aria-label={`Delete ${p.name_en}`} title={tx("Delete")} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -713,9 +716,9 @@ export default function AdminProductsPage() {
 
       {total > 20 && (
         <div className="flex justify-center gap-3">
-          <button type="button" disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-          <span className="px-4 py-2 text-sm text-gray-600 self-center">Page {page}</span>
-          <button type="button" disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">Next</button>
+          <button type="button" disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="btn btn-outline btn-sm">{tx("Previous")}</button>
+          <span className="px-4 py-2 text-sm text-gray-600 self-center">{tx("Page")} {page}</span>
+          <button type="button" disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">{tx("Next")}</button>
         </div>
       )}
 
@@ -739,7 +742,7 @@ export default function AdminProductsPage() {
               </LivePreview>
 
               <ImageUpload
-                label="Product Image"
+                label={tx("Product Image")}
                 value={currentImage || imageUrl}
                 onChange={(url) => { setValue("image_url", url); setImageUrl(url); }}
                 folder="abo-enterprise/products"
@@ -775,7 +778,7 @@ export default function AdminProductsPage() {
                           type="button"
                           onClick={() => setGalleryImages((imgs) => imgs.filter((_, i) => i !== idx))}
                           className="p-2 text-gray-400 hover:text-red-500 mt-1"
-                          title="Remove"
+                          title={tx("Remove")}
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -792,9 +795,9 @@ export default function AdminProductsPage() {
                   {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tx("Category")}</label>
                   <select {...register("category")} className="input">
-                    <option value="">Select category</option>
+                    <option value="">{tx("Select category")}</option>
                     {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                   </select>
                   {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
@@ -881,7 +884,7 @@ export default function AdminProductsPage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Badge</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tx("Badge")}</label>
                   <select {...register("badge")} className="input">
                     {BADGES.map(b => <option key={b} value={b}>{b || "None"}</option>)}
                   </select>
@@ -919,11 +922,11 @@ export default function AdminProductsPage() {
                         <input {...register("barcode")} className="input" placeholder="8901234567890" />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Brand</label>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">{tx("Brand")}</label>
                         <input {...register("brand")} className="input" placeholder="Samsung, Apple..." />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Sub-category</label>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">{tx("Sub-category")}</label>
                         <input {...register("sub_category")} className="input" placeholder="Cables, Cases..." />
                       </div>
                       <div>
@@ -974,7 +977,7 @@ export default function AdminProductsPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Tags <span className="text-gray-400 font-normal">(comma-separated)</span></label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">{tx("Tags")} <span className="text-gray-400 font-normal">(comma-separated)</span></label>
                       <input {...register("tags")} className="input" placeholder="phone, accessories, black..." />
                     </div>
                     <div>
@@ -982,7 +985,7 @@ export default function AdminProductsPage() {
                       <textarea {...register("warranty_info")} rows={2} className="input resize-none text-sm" placeholder="6 months manufacturer warranty..." />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Delivery Info</label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">{tx("Delivery Info")}</label>
                       <textarea {...register("delivery_info")} rows={2} className="input resize-none text-sm" placeholder="Delivered within 2-3 business days..." />
                     </div>
                     <div className="grid sm:grid-cols-2 gap-3">
@@ -1059,11 +1062,11 @@ export default function AdminProductsPage() {
               <div className="flex items-center gap-6">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input {...register("is_active")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
-                  <span className="text-sm text-gray-700">Active</span>
+                  <span className="text-sm text-gray-700">{tx("Active")}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input {...register("is_featured")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
-                  <span className="text-sm text-gray-700">Featured</span>
+                  <span className="text-sm text-gray-700">{tx("Featured")}</span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer" title="Also let customers book/request this item as a service">
                   <input {...register("is_bookable")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
@@ -1088,7 +1091,7 @@ export default function AdminProductsPage() {
                   options={blogOptions}
                   selected={productBlogIds}
                   loading={blogOptionsLoading || linkedBlogsLoading}
-                  emptyText="No blog posts"
+                  emptyText={tx("No blog posts")}
                   searchPlaceholder="Search blog posts…"
                   onToggle={(id) => setProductBlogIds((cur) => cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id])}
                 />
@@ -1096,7 +1099,7 @@ export default function AdminProductsPage() {
             </form>
 
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-              <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline btn-md">Cancel</button>
+              <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline btn-md">{tx("Cancel")}</button>
               <button onClick={handleSubmit(onSubmit)} disabled={saving} className="btn btn-brand btn-md">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (editing ? "Save Changes" : "Create Product")}
               </button>
@@ -1107,9 +1110,9 @@ export default function AdminProductsPage() {
 
       <ConfirmDialog
         open={deleteId !== null}
-        title="Delete Product?"
+        title={tx("Delete Product?")}
         message="This action cannot be undone."
-        confirmLabel="Delete"
+        confirmLabel={tx("Delete")}
         variant="danger"
         onConfirm={handleDelete}
         onCancel={() => setDeleteId(null)}
@@ -1119,7 +1122,7 @@ export default function AdminProductsPage() {
         open={bulkDeleteConfirm}
         title={`Delete ${selected.size} Product${selected.size === 1 ? "" : "s"}?`}
         message="This action cannot be undone."
-        confirmLabel="Delete"
+        confirmLabel={tx("Delete")}
         variant="danger"
         onConfirm={runBulkDelete}
         onCancel={() => setBulkDeleteConfirm(false)}

@@ -14,6 +14,7 @@ import GlassCard from "@/components/ui/GlassCard";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { useAdminT } from "@/lib/i18n/adminText";
 
 interface AdminReview {
   id: string;
@@ -34,6 +35,7 @@ interface AdminReview {
 }
 
 export default function AdminReviewsPage() {
+  const tx = useAdminT();
   const toast = useToastStore((s) => s.push);
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [loading, setLoading] = useState(true);
@@ -216,6 +218,7 @@ export default function AdminReviewsPage() {
         title="Product Reviews"
         titleBn="পণ্য রিভিউ"
         description={`${total} total reviews · homepage testimonials are edited separately in Settings`}
+        descriptionBn={`মোট ${String(total).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি রিভিউ · হোমপেজের গ্রাহক মতামত আলাদাভাবে সেটিংসে সম্পাদনা হয়`}
         actions={
           <>
             <div className="relative">
@@ -223,22 +226,22 @@ export default function AdminReviewsPage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search reviews…"
-                aria-label="Search reviews"
+                placeholder={tx("Search reviews…")}
+                aria-label={tx("Search reviews")}
                 className="input pl-8 text-sm w-full sm:w-48"
               />
             </div>
             <select
               value={ratingFilter}
               onChange={(e) => setRatingFilter(e.target.value)}
-              aria-label="Filter by rating"
+              aria-label={tx("Filter by rating")}
               className="input text-sm w-auto"
             >
-              <option value="">All Ratings</option>
+              <option value="">{tx("All Ratings")}</option>
               {[5,4,3,2,1].map(n => <option key={n} value={n}>{n} Star{n !== 1 ? "s" : ""}</option>)}
             </select>
             <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
-              <Plus className="w-4 h-4" /> Add Review
+              <Plus className="w-4 h-4" /> {tx("Add Review")}
             </button>
           </>
         }
@@ -252,7 +255,7 @@ export default function AdminReviewsPage() {
         ) : reviews.length === 0 ? (
           <div className="p-12 text-center">
             <Star className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 font-medium">No reviews found</p>
+            <p className="text-gray-400 font-medium">{tx("No reviews found")}</p>
           </div>
         ) : filteredReviews.length === 0 ? (
           <div className="p-12 text-center">
@@ -264,14 +267,14 @@ export default function AdminReviewsPage() {
             <table className="w-full text-sm min-w-[640px] table-responsive">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/60">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Rating</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Review</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Source</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
-                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider" title="Shown on the website when on">Active</th>
-                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider" title="Shown in the featured reviews section on the homepage when on">Featured</th>
-                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider" title="Shows a verified badge to customers when on">Verified</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Customer")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Rating")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Review")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Source")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Date")}</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider" title="Shown on the website when on">{tx("Active")}</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider" title="Shown in the featured reviews section on the homepage when on">{tx("Featured")}</th>
+                  <th className="text-center px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider" title="Shows a verified badge to customers when on">{tx("Verified")}</th>
                   <th className="px-5 py-3" />
                 </tr>
               </thead>
@@ -280,7 +283,7 @@ export default function AdminReviewsPage() {
                   const busy = busyId === r.id;
                   return (
                     <tr key={r.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-5 py-3" data-label="Customer">
+                      <td className="px-5 py-3" data-label={tx("Customer")}>
                         <div className="flex items-center gap-2.5">
                           {r.photo_url ? (
                             <Image src={r.photo_url} alt="" width={32} height={32} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
@@ -293,7 +296,7 @@ export default function AdminReviewsPage() {
                             <div className="flex items-center gap-1.5">
                               <p className="font-medium text-gray-900 truncate">{r.customer_name}</p>
                               {r.admin_reply && (
-                                <span title="Admin replied" className="flex-shrink-0">
+                                <span title={tx("Admin replied")} className="flex-shrink-0">
                                   <MessageSquare className="w-3.5 h-3.5 text-brand-500" />
                                 </span>
                               )}
@@ -302,11 +305,11 @@ export default function AdminReviewsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-5 py-3" data-label="Rating">
+                      <td className="px-5 py-3" data-label={tx("Rating")}>
                         <div className="flex items-center gap-0.5">{stars(r.rating)}</div>
                         <p className="text-xs text-gray-400 mt-0.5">{r.rating}/5</p>
                       </td>
-                      <td className="px-5 py-3 max-w-xs" data-label="Review">
+                      <td className="px-5 py-3 max-w-xs" data-label={tx("Review")}>
                         <p className="text-sm text-gray-700 line-clamp-2">{r.review_en}</p>
                         {r.review_bn && <p className="text-xs text-gray-400 truncate mt-0.5">{r.review_bn}</p>}
                         {r.admin_reply && (
@@ -316,15 +319,15 @@ export default function AdminReviewsPage() {
                           </p>
                         )}
                       </td>
-                      <td className="px-5 py-3" data-label="Source">
+                      <td className="px-5 py-3" data-label={tx("Source")}>
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 capitalize">
                           {r.source}
                         </span>
                       </td>
-                      <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs" data-label="Date">
+                      <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs" data-label={tx("Date")}>
                         {new Date(r.created_at).toLocaleDateString("en-BD")}
                       </td>
-                      <td className="px-5 py-3 text-center" data-label="Active (shown on site)">
+                      <td className="px-5 py-3 text-center" data-label={tx("Active (shown on site)")}>
                         <button
                           onClick={() => patch(r, { is_active: !r.is_active })}
                           disabled={busy}
@@ -353,7 +356,7 @@ export default function AdminReviewsPage() {
                           <Star className={`w-5 h-5 mx-auto ${r.is_featured ? "fill-amber-400 text-amber-400" : "text-gray-300"}`} />
                         </button>
                       </td>
-                      <td className="px-5 py-3 text-center" data-label="Verified badge">
+                      <td className="px-5 py-3 text-center" data-label={tx("Verified badge")}>
                         <button
                           onClick={() => patch(r, { is_verified: !r.is_verified })}
                           disabled={busy}
@@ -369,12 +372,12 @@ export default function AdminReviewsPage() {
                           }
                         </button>
                       </td>
-                      <td className="px-5 py-3" data-label="Actions">
+                      <td className="px-5 py-3" data-label={tx("Actions")}>
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => openEdit(r)}
                             aria-label={`Edit review by ${r.customer_name}`}
-                            title="Edit / Reply"
+                            title={tx("Edit / Reply")}
                             className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
                           >
                             <Pencil className="w-4 h-4" />
@@ -383,7 +386,7 @@ export default function AdminReviewsPage() {
                             onClick={() => handleDelete(r.id, r.customer_name)}
                             disabled={busy}
                             aria-label={`Delete review by ${r.customer_name}`}
-                            title="Delete review"
+                            title={tx("Delete review")}
                             className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-40"
                           >
                             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
@@ -406,15 +409,15 @@ export default function AdminReviewsPage() {
             onClick={() => setPage((p) => p - 1)}
             className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40"
           >
-            Previous
+            {tx("Previous")}
           </button>
-          <span className="px-4 py-2 text-sm text-gray-600">Page {page}</span>
+          <span className="px-4 py-2 text-sm text-gray-600">{tx("Page")} {page}</span>
           <button
             disabled={reviews.length < 20}
             onClick={() => setPage((p) => p + 1)}
             className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40"
           >
-            Next
+            {tx("Next")}
           </button>
         </div>
       )}
@@ -423,7 +426,7 @@ export default function AdminReviewsPage() {
         open={!!confirm}
         title={confirm?.title ?? ""}
         message={confirm?.message ?? ""}
-        confirmLabel="Delete"
+        confirmLabel={tx("Delete")}
         variant="danger"
         onConfirm={() => confirm?.action()}
         onCancel={() => setConfirm(null)}
@@ -477,10 +480,10 @@ export default function AdminReviewsPage() {
 
               {/* Customer Info */}
               <section className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Customer Info</h3>
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{tx("Customer Info")}</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="form-label">Customer Name</label>
+                    <label className="form-label">{tx("Customer Name")}</label>
                     <input
                       value={draft.customer_name ?? ""}
                       onChange={e => setDraft(d => ({ ...d, customer_name: e.target.value }))}
@@ -488,7 +491,7 @@ export default function AdminReviewsPage() {
                     />
                   </div>
                   <div>
-                    <label className="form-label">Company</label>
+                    <label className="form-label">{tx("Company")}</label>
                     <input
                       value={draft.company ?? ""}
                       onChange={e => setDraft(d => ({ ...d, company: e.target.value }))}
@@ -498,7 +501,7 @@ export default function AdminReviewsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="form-label">Rating</label>
+                    <label className="form-label">{tx("Rating")}</label>
                     <div className="flex items-center gap-1 mt-1" role="radiogroup" aria-label="Rating 1 to 5 stars">
                       {[1,2,3,4,5].map((n) => (
                         <button
@@ -517,7 +520,7 @@ export default function AdminReviewsPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="form-label">Source</label>
+                    <label className="form-label">{tx("Source")}</label>
                     <select
                       value={draft.source ?? "direct"}
                       onChange={e => setDraft(d => ({ ...d, source: e.target.value }))}
@@ -530,7 +533,7 @@ export default function AdminReviewsPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="form-label">Photo</label>
+                  <label className="form-label">{tx("Photo")}</label>
                   <ImageUpload
                     value={draft.photo_url ?? ""}
                     onChange={(url) => setDraft(d => ({ ...d, photo_url: url }))}
@@ -542,7 +545,7 @@ export default function AdminReviewsPage() {
 
               {/* Review Content */}
               <section className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Review Content</h3>
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{tx("Review Content")}</h3>
                 <div>
                   <label className="form-label flex items-center justify-between gap-2">
                     Review (English)
@@ -571,7 +574,7 @@ export default function AdminReviewsPage() {
               {!creating && (
               <section className="space-y-3">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5" /> Admin Reply
+                  <MessageSquare className="w-3.5 h-3.5" /> {tx("Admin Reply")}
                 </h3>
                 {editing?.admin_reply_at && (
                   <p className="text-xs text-gray-400">
@@ -591,7 +594,7 @@ export default function AdminReviewsPage() {
             </div>
 
             <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-gray-50/50">
-              <button onClick={closeEdit} className="btn btn-outline btn-sm">Cancel</button>
+              <button onClick={closeEdit} className="btn btn-outline btn-sm">{tx("Cancel")}</button>
               <button onClick={handleSave} disabled={saving} className="btn btn-primary btn-sm gap-1.5">
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 {creating ? "Create Review" : "Save Changes"}

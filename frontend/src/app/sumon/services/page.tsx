@@ -25,6 +25,7 @@ import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { useAdminT } from "@/lib/i18n/adminText";
 
 // Fallback only — used when the taxonomy API is unreachable, so the editor
 // still works offline. The live taxonomy tree is the real source (alembic 0014
@@ -102,6 +103,7 @@ function jsonToArr<T = Record<string, unknown>>(json: string): T[] {
 }
 
 export default function AdminServicesPage() {
+  const tx = useAdminT();
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -623,9 +625,10 @@ export default function AdminServicesPage() {
         title="Services"
         titleBn="সেবা"
         description={`${total} total services`}
+        descriptionBn={`মোট ${String(total).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি সেবা`}
         actions={
           <button onClick={openNew} className="btn btn-primary btn-sm gap-1.5">
-            <Plus className="w-4 h-4" /> New Service
+            <Plus className="w-4 h-4" /> {tx("New Service")}
           </button>
         }
       />
@@ -634,23 +637,23 @@ export default function AdminServicesPage() {
         <div className="flex flex-wrap items-center gap-2 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">
           <span className="text-sm font-medium text-brand-800">{selected.size} selected</span>
           <button onClick={() => confirmBulkUpdate({ is_active: true }, "activate", "activated", "Activate selected services?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
-            <Check className="w-3.5 h-3.5" /> Activate
+            <Check className="w-3.5 h-3.5" /> {tx("Activate")}
           </button>
           <button onClick={() => confirmBulkUpdate({ is_active: false }, "deactivate", "deactivated", "Deactivate selected services?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
-            <Ban className="w-3.5 h-3.5" /> Deactivate
+            <Ban className="w-3.5 h-3.5" /> {tx("Deactivate")}
           </button>
           <button onClick={() => confirmBulkUpdate({ is_featured: true }, "feature", "featured", "Feature selected services?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
-            <Star className="w-3.5 h-3.5" /> Feature
+            <Star className="w-3.5 h-3.5" /> {tx("Feature")}
           </button>
           <button onClick={() => confirmBulkUpdate({ is_featured: false }, "unfeature", "unfeatured", "Unfeature selected services?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
-            <StarOff className="w-3.5 h-3.5" /> Unfeature
+            <StarOff className="w-3.5 h-3.5" /> {tx("Unfeature")}
           </button>
           <button onClick={handleBulkDelete} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1 text-red-600 hover:bg-red-50">
-            <Trash2 className="w-3.5 h-3.5" /> Delete
+            <Trash2 className="w-3.5 h-3.5" /> {tx("Delete")}
           </button>
           {bulkLoading && <Loader2 className="w-4 h-4 animate-spin text-brand-600" />}
           <button onClick={() => setSelected(new Set())} className="btn btn-ghost btn-sm ml-auto">
-            Clear
+            {tx("Clear")}
           </button>
         </div>
       )}
@@ -661,9 +664,9 @@ export default function AdminServicesPage() {
         ) : services.length === 0 ? (
           <div className="p-12 text-center">
             <Briefcase className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 font-medium">No services found</p>
+            <p className="text-gray-400 font-medium">{tx("No services found")}</p>
             <button onClick={openNew} className="btn btn-primary btn-sm mt-4 gap-1.5">
-              <Plus className="w-4 h-4" /> Create first service
+              <Plus className="w-4 h-4" /> {tx("Create first service")}
             </button>
           </div>
         ) : (
@@ -674,19 +677,19 @@ export default function AdminServicesPage() {
                 <th className="w-10 px-3">
                   <input
                     type="checkbox"
-                    aria-label="Select all services on this page"
+                    aria-label={tx("Select all services on this page")}
                     checked={allOnPageSelected}
                     onChange={toggleSelectAll}
                     className="rounded"
                   />
                 </th>
-                <th>Service</th>
-                <th className="hidden sm:table-cell">Category</th>
-                <th className="hidden md:table-cell">Pricing</th>
+                <th>{tx("Service")}</th>
+                <th className="hidden sm:table-cell">{tx("Category")}</th>
+                <th className="hidden md:table-cell">{tx("Pricing")}</th>
                 <th className="hidden md:table-cell">Tiers</th>
-                <th className="hidden sm:table-cell">Featured</th>
-                <th>Active</th>
-                <th className="text-right pr-5">Actions</th>
+                <th className="hidden sm:table-cell">{tx("Featured")}</th>
+                <th>{tx("Active")}</th>
+                <th className="text-right pr-5">{tx("Actions")}</th>
               </tr>
             </thead>
             <tbody>
@@ -737,7 +740,7 @@ export default function AdminServicesPage() {
                         onClick={() => openEdit(s)}
                         aria-label={`Edit ${s.name_en}`}
                         className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
-                        title="Edit"
+                        title={tx("Edit")}
                       >
                         <Pencil className="w-4 h-4" />
                       </button>
@@ -746,7 +749,7 @@ export default function AdminServicesPage() {
                         disabled={deletingId === s.id}
                         aria-label={`Delete ${s.name_en}`}
                         className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete"
+                        title={tx("Delete")}
                       >
                         {deletingId === s.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                       </button>
@@ -762,9 +765,9 @@ export default function AdminServicesPage() {
 
       {total > 20 && (
         <div className="flex justify-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-          <span className="px-4 py-2 text-sm text-gray-600">Page {page}</span>
-          <button disabled={services.length < 20} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">Next</button>
+          <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="btn btn-outline btn-sm">{tx("Previous")}</button>
+          <span className="px-4 py-2 text-sm text-gray-600">{tx("Page")} {page}</span>
+          <button disabled={services.length < 20} onClick={() => setPage(p => p + 1)} className="btn btn-outline btn-sm">{tx("Next")}</button>
         </div>
       )}
 
@@ -806,7 +809,7 @@ export default function AdminServicesPage() {
                       <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_active ? "bg-green-500" : "bg-gray-300"}`} />
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_active ? "translate-x-5" : "translate-x-1"}`} />
                     </div>
-                    <span className="text-sm text-gray-700">Active</span>
+                    <span className="text-sm text-gray-700">{tx("Active")}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <div className="relative">
@@ -815,7 +818,7 @@ export default function AdminServicesPage() {
                       <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_featured ? "bg-amber-400" : "bg-gray-300"}`} />
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_featured ? "translate-x-5" : "translate-x-1"}`} />
                     </div>
-                    <span className="text-sm text-gray-700">Featured</span>
+                    <span className="text-sm text-gray-700">{tx("Featured")}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer select-none" title="Also let customers buy/order this service like a product">
                     <div className="relative">
@@ -857,7 +860,7 @@ export default function AdminServicesPage() {
                     options={blogOptions}
                     selected={editing.blog_ids ?? []}
                     loading={blogOptionsLoading || linkedBlogsLoading}
-                    emptyText="No blog posts"
+                    emptyText={tx("No blog posts")}
                     searchPlaceholder="Search blog posts…"
                     onToggle={(id) => setEditing(prev => {
                       if (!prev) return prev;
@@ -872,7 +875,7 @@ export default function AdminServicesPage() {
                     <span>Name (English) <span className="text-red-400">*</span></span>
                     <TranslateButton bn={editing.name_bn} onResult={(en) => handleNameChange(en)} en={editing.name_en} onResultBn={(b) => setEditing(prev => prev ? { ...prev, name_bn: b } : prev)} />
                   </label>
-                  <input value={editing.name_en ?? ""} onChange={e => handleNameChange(e.target.value)} placeholder="Service name" className="input w-full" />
+                  <input value={editing.name_en ?? ""} onChange={e => handleNameChange(e.target.value)} placeholder={tx("Service name")} className="input w-full" />
                 </div>
                 <div>
                   <label className="form-label">Name (বাংলা)</label>
@@ -891,7 +894,7 @@ export default function AdminServicesPage() {
                   {taxonomy.length > 0 ? (
                     <div>
                       <label className="form-label">
-                        Category <span className="text-red-400">*</span>{" "}
+                        {tx("Category")} <span className="text-red-400">*</span>{" "}
                         <span className="text-gray-400 font-normal text-xs">(any depth)</span>
                       </label>
                       <select
@@ -911,7 +914,7 @@ export default function AdminServicesPage() {
                     </div>
                   ) : (
                     <div>
-                      <label className="form-label">Category <span className="text-red-400">*</span></label>
+                      <label className="form-label">{tx("Category")} <span className="text-red-400">*</span></label>
                       <select value={editing.category ?? ""} onChange={f("category")} className="input w-full text-sm">
                         {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                       </select>
@@ -1015,7 +1018,7 @@ export default function AdminServicesPage() {
                   <textarea value={editing.long_description_bn ?? ""} onChange={f("long_description_bn")} rows={5} placeholder="সার্ভিস পেজের বিস্তারিত লেখা…" className="input w-full resize-y text-sm" dir="auto" />
                 </div>
                 <div>
-                  <label className="form-label">Tags <span className="text-gray-400 font-normal text-xs">(comma-separated — search &amp; related services)</span></label>
+                  <label className="form-label">{tx("Tags")} <span className="text-gray-400 font-normal text-xs">(comma-separated — search &amp; related services)</span></label>
                   <input
                     value={editing.tags?.join(", ") ?? ""}
                     onChange={(e) => setEditing((prev) => prev ? { ...prev, tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) } : prev)}
@@ -1133,7 +1136,7 @@ export default function AdminServicesPage() {
 
               {/* ── Pricing ─────────────────────────────── */}
               <section className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pricing</h3>
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{tx("Pricing")}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="form-label">Pricing Type <span className="text-red-400">*</span></label>
@@ -1144,7 +1147,7 @@ export default function AdminServicesPage() {
                   {/* GAP-15 — where the service is completed. Left blank, the
                       public pages say nothing, which is the pre-0008 behaviour. */}
                   <div>
-                    <label className="form-label">Fulfilment</label>
+                    <label className="form-label">{tx("Fulfilment")}</label>
                     <select
                       value={editing.fulfilment ?? ""}
                       onChange={(e) => setEditing(prev => prev ? { ...prev, fulfilment: (e.target.value || null) as ServiceFulfilment } : prev)}
@@ -1421,7 +1424,7 @@ export default function AdminServicesPage() {
 
             {/* Footer */}
             <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-gray-50/50">
-              <button onClick={closeEditor} className="btn btn-outline btn-sm">Cancel</button>
+              <button onClick={closeEditor} className="btn btn-outline btn-sm">{tx("Cancel")}</button>
               <button onClick={handleSave} disabled={saving} className="btn btn-primary btn-sm gap-1.5">
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                 {isNew ? "Create Service" : "Save Changes"}
@@ -1435,7 +1438,7 @@ export default function AdminServicesPage() {
         open={!!confirmState}
         title={confirmState?.title ?? ""}
         message={confirmState?.message ?? ""}
-        confirmLabel="Delete"
+        confirmLabel={tx("Delete")}
         variant="danger"
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}

@@ -11,6 +11,7 @@ import StatusBadge from "@/components/admin/StatusBadge";
 import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import { useAdminT } from "@/lib/i18n/adminText";
 
 interface AdminInvoice {
   id: string;
@@ -34,6 +35,7 @@ interface AdminInvoice {
 const PAYMENT_STATUSES = ["pending", "paid", "overdue", "cancelled", "refunded"];
 
 export default function AdminInvoicesPage() {
+  const tx = useAdminT();
   const toast = useToastStore((s) => s.push);
   const [confirmState, setConfirmState] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const [invoices, setInvoices] = useState<AdminInvoice[]>([]);
@@ -245,7 +247,7 @@ export default function AdminInvoicesPage() {
             Sync from Orders
           </button>
           <button onClick={() => setShowCreate(true)} className="btn btn-brand btn-md flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Create Invoice
+            <Plus className="w-4 h-4" /> {tx("Create Invoice")}
           </button>
         </div>
       </div>
@@ -260,7 +262,7 @@ export default function AdminInvoicesPage() {
           onChange={(e) => { setFilter(e.target.value); setPage(1); }}
           className="border border-gray-200 rounded-lg text-sm px-3 py-2 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30"
         >
-          <option value="">All Status</option>
+          <option value="">{tx("All Status")}</option>
           {PAYMENT_STATUSES.map((s) => (
             <option key={s} value={s} className="capitalize">{s}</option>
           ))}
@@ -299,18 +301,18 @@ export default function AdminInvoicesPage() {
         ) : invoices.length === 0 ? (
           <div className="p-12 text-center">
             <FileText className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 font-medium">No invoices found</p>
+            <p className="text-gray-400 font-medium">{tx("No invoices found")}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm table-responsive">
               <thead>
                 <tr className="border-b border-gray-100 bg-gray-50/60">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Invoice</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Customer</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Total</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Invoice")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Customer")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Total")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Date")}</th>
+                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Status")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -320,21 +322,21 @@ export default function AdminInvoicesPage() {
                     className="hover:bg-gray-50/50 cursor-pointer transition-colors"
                     onClick={() => setDetail(inv)}
                   >
-                    <td className="px-5 py-3" data-label="Invoice">
+                    <td className="px-5 py-3" data-label={tx("Invoice")}>
                       <p className="font-medium text-gray-900">{inv.invoice_number}</p>
                       {inv.payment_method && (
                         <p className="text-xs text-gray-400 capitalize">{inv.payment_method.replace(/_/g, " ")}</p>
                       )}
                     </td>
-                    <td className="px-5 py-3" data-label="Customer">
+                    <td className="px-5 py-3" data-label={tx("Customer")}>
                       <p className="text-gray-900">{inv.customer_name}</p>
                       <p className="text-xs text-gray-400">{inv.customer_email ?? inv.customer_phone ?? "—"}</p>
                     </td>
-                    <td className="px-5 py-3 font-semibold text-gray-900" data-label="Total">{formatPrice(inv.total)}</td>
-                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs" data-label="Date">
+                    <td className="px-5 py-3 font-semibold text-gray-900" data-label={tx("Total")}>{formatPrice(inv.total)}</td>
+                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs" data-label={tx("Date")}>
                       {new Date(inv.created_at).toLocaleDateString("en-BD")}
                     </td>
-                    <td className="px-5 py-3" data-label="Status">
+                    <td className="px-5 py-3" data-label={tx("Status")}>
                       <StatusBadge status={inv.payment_status} />
                     </td>
                   </tr>
@@ -352,15 +354,15 @@ export default function AdminInvoicesPage() {
             onClick={() => setPage((p) => p - 1)}
             className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40"
           >
-            Previous
+            {tx("Previous")}
           </button>
-          <span className="px-4 py-2 text-sm text-gray-600">Page {page}</span>
+          <span className="px-4 py-2 text-sm text-gray-600">{tx("Page")} {page}</span>
           <button
             disabled={invoices.length < 20}
             onClick={() => setPage((p) => p + 1)}
             className="px-4 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40"
           >
-            Next
+            {tx("Next")}
           </button>
         </div>
       )}
@@ -420,31 +422,31 @@ export default function AdminInvoicesPage() {
                 <button
                   onClick={() => handleDelete(detail)}
                   disabled={deleting}
-                  title="Delete invoice"
+                  title={tx("Delete invoice")}
                   className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-red-500 border border-red-100 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  Delete
+                  {tx("Delete")}
                 </button>
               </div>
 
               {/* Customer */}
               <div className="bg-gray-50 rounded-xl p-4 space-y-2">
-                <h3 className="font-semibold text-gray-900 text-sm">Customer</h3>
+                <h3 className="font-semibold text-gray-900 text-sm">{tx("Customer")}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                   <div>
-                    <span className="text-xs text-gray-400 block">Name</span>
+                    <span className="text-xs text-gray-400 block">{tx("Name")}</span>
                     <p className="font-medium text-gray-900">{detail.customer_name}</p>
                   </div>
                   {detail.customer_email && (
                     <div>
-                      <span className="text-xs text-gray-400 block">Email</span>
+                      <span className="text-xs text-gray-400 block">{tx("Email")}</span>
                       <p className="font-medium text-gray-900 truncate">{detail.customer_email}</p>
                     </div>
                   )}
                   {detail.customer_phone && (
                     <div>
-                      <span className="text-xs text-gray-400 block">Phone</span>
+                      <span className="text-xs text-gray-400 block">{tx("Phone")}</span>
                       <p className="font-medium text-gray-900">{detail.customer_phone}</p>
                     </div>
                   )}
@@ -457,9 +459,9 @@ export default function AdminInvoicesPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-100">
-                        <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-400">Item</th>
-                        <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-400">Qty</th>
-                        <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-400">Price</th>
+                        <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-400">{tx("Item")}</th>
+                        <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-400">{tx("Qty")}</th>
+                        <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-400">{tx("Price")}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
@@ -486,22 +488,22 @@ export default function AdminInvoicesPage() {
               {/* Totals */}
               <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between text-gray-500">
-                  <span>Subtotal</span>
+                  <span>{tx("Subtotal")}</span>
                   <span>{formatPrice(detail.subtotal)}</span>
                 </div>
                 {detail.tax > 0 && (
                   <div className="flex justify-between text-gray-500">
-                    <span>Tax</span>
+                    <span>{tx("Tax")}</span>
                     <span>{formatPrice(detail.tax)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-base pt-2 border-t border-gray-200">
-                  <span>Total</span>
+                  <span>{tx("Total")}</span>
                   <span className="text-accent-500">{formatPrice(detail.total)}</span>
                 </div>
                 {detail.payment_method && (
                   <div className="flex justify-between text-gray-500 pt-1">
-                    <span>Payment</span>
+                    <span>{tx("Payment")}</span>
                     <span className="capitalize">{detail.payment_method.replace(/_/g, " ")}</span>
                   </div>
                 )}
@@ -512,7 +514,7 @@ export default function AdminInvoicesPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                   {detail.issued_date && (
                     <div className="bg-gray-50 rounded-xl p-3">
-                      <span className="text-xs text-gray-400 block mb-1">Issued</span>
+                      <span className="text-xs text-gray-400 block mb-1">{tx("Issued")}</span>
                       <p className="font-medium text-gray-900 text-xs">
                         {new Date(detail.issued_date).toLocaleDateString("en-BD")}
                       </p>
@@ -520,7 +522,7 @@ export default function AdminInvoicesPage() {
                   )}
                   {detail.due_date && (
                     <div className="bg-gray-50 rounded-xl p-3">
-                      <span className="text-xs text-gray-400 block mb-1">Due</span>
+                      <span className="text-xs text-gray-400 block mb-1">{tx("Due")}</span>
                       <p className="font-medium text-gray-900 text-xs">
                         {new Date(detail.due_date).toLocaleDateString("en-BD")}
                       </p>
@@ -528,7 +530,7 @@ export default function AdminInvoicesPage() {
                   )}
                   {detail.paid_date && (
                     <div className="bg-green-50 rounded-xl p-3">
-                      <span className="text-xs text-green-400 block mb-1">Paid</span>
+                      <span className="text-xs text-green-400 block mb-1">{tx("Paid")}</span>
                       <p className="font-medium text-green-700 text-xs">
                         {new Date(detail.paid_date).toLocaleDateString("en-BD")}
                       </p>
@@ -540,7 +542,7 @@ export default function AdminInvoicesPage() {
               {/* Notes */}
               {detail.notes && (
                 <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-                  <p className="text-xs text-amber-700 font-medium mb-1">Notes</p>
+                  <p className="text-xs text-amber-700 font-medium mb-1">{tx("Notes")}</p>
                   <p className="text-sm text-amber-900">{detail.notes}</p>
                 </div>
               )}
@@ -553,7 +555,7 @@ export default function AdminInvoicesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
           <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-semibold">Create Invoice</h2>
+              <h2 className="text-lg font-semibold">{tx("Create Invoice")}</h2>
               <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-4">
@@ -563,11 +565,11 @@ export default function AdminInvoicesPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="form-label">Email</label>
+                  <label className="form-label">{tx("Email")}</label>
                   <input type="email" value={createForm.customer_email} onChange={(e) => setCreateForm((f) => ({ ...f, customer_email: e.target.value }))} className="input w-full text-sm" />
                 </div>
                 <div>
-                  <label className="form-label">Phone</label>
+                  <label className="form-label">{tx("Phone")}</label>
                   <input value={createForm.customer_phone} onChange={(e) => setCreateForm((f) => ({ ...f, customer_phone: e.target.value }))} className="input w-full text-sm" />
                 </div>
               </div>
@@ -581,7 +583,7 @@ export default function AdminInvoicesPage() {
                     onClick={() => setCreateItems((prev) => [...prev, { name: "", qty: 1, price: 0 }])}
                     className="text-xs text-brand-600 hover:text-brand-700 font-medium flex items-center gap-1"
                   >
-                    <Plus className="w-3.5 h-3.5" /> Add item
+                    <Plus className="w-3.5 h-3.5" /> {tx("Add item")}
                   </button>
                 </div>
                 <div className="space-y-2">
@@ -597,7 +599,7 @@ export default function AdminInvoicesPage() {
                         type="number" min={1} value={item.qty}
                         onChange={(e) => setCreateItems((prev) => prev.map((it, i) => i === idx ? { ...it, qty: Number(e.target.value) } : it))}
                         className="input w-14 text-sm text-center"
-                        title="Qty"
+                        title={tx("Qty")}
                       />
                       <input
                         type="number" min={0} value={item.price}
@@ -625,21 +627,21 @@ export default function AdminInvoicesPage() {
                   <input type="number" min={0} value={createForm.tax} onChange={(e) => setCreateForm((f) => ({ ...f, tax: Number(e.target.value) }))} className="input w-full" />
                 </div>
                 <div>
-                  <label className="form-label">Payment Method</label>
+                  <label className="form-label">{tx("Payment Method")}</label>
                   <input value={createForm.payment_method} onChange={(e) => setCreateForm((f) => ({ ...f, payment_method: e.target.value }))} className="input w-full text-sm" placeholder="bkash, cash, bank..." />
                 </div>
               </div>
               <div>
-                <label className="form-label">Notes</label>
+                <label className="form-label">{tx("Notes")}</label>
                 <textarea rows={2} value={createForm.notes} onChange={(e) => setCreateForm((f) => ({ ...f, notes: e.target.value }))} className="input w-full resize-none text-sm" />
               </div>
               <div className="bg-gray-50 rounded-xl p-3 text-sm font-semibold text-gray-800 flex justify-between">
-                <span>Total</span>
+                <span>{tx("Total")}</span>
                 <span>৳{(createItems.reduce((s, i) => s + i.qty * i.price, 0) + (createForm.tax || 0)).toLocaleString()}</span>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-6">
-              <button onClick={() => setShowCreate(false)} className="btn btn-outline btn-md">Cancel</button>
+              <button onClick={() => setShowCreate(false)} className="btn btn-outline btn-md">{tx("Cancel")}</button>
               <button onClick={handleCreate} disabled={creating} className="btn btn-brand btn-md">
                 {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Invoice"}
               </button>
@@ -652,7 +654,7 @@ export default function AdminInvoicesPage() {
         open={!!confirmState}
         title={confirmState?.title ?? ""}
         message={confirmState?.message ?? ""}
-        confirmLabel="Delete"
+        confirmLabel={tx("Delete")}
         variant="danger"
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}
