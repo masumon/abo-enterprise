@@ -1,13 +1,14 @@
-# Weekly independent database backup (free tier).
+# Daily independent database backup (free tier).
 #
 # Runs only when the BACKUP_DATABASE_URL repo secret is set
 # (Settings → Secrets and variables → Actions). The dump is stored as a
-# GitHub Actions artifact (private to the repo) for 30 days.
-name: Weekly DB Backup
+# GitHub Actions artifact (private to the repo) for 14 days (14 daily copies,
+# so at most one day of data can be lost).
+name: Daily DB Backup
 
 on:
   schedule:
-    - cron: "30 21 * * 5" # every Friday 21:30 UTC (Saturday 03:30 BDT)
+    - cron: "30 21 * * *" # every day 21:30 UTC (03:30 BDT)
   workflow_dispatch: {}
 
 jobs:
@@ -56,5 +57,5 @@ jobs:
         with:
           name: db-backup-${{ github.run_id }}
           path: abo-db-*.dump
-          retention-days: 30
+          retention-days: 14
           if-no-files-found: error
