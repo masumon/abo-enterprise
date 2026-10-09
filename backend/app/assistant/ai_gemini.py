@@ -97,7 +97,7 @@ async def _list_models(client: httpx.AsyncClient, key: str, auth: str) -> list[s
 
 
 async def _generate(client: httpx.AsyncClient, key: str, model: str, system: str, user: str,
-                    max_tokens: int = 400, auth: str = "header") -> str:
+                    max_tokens: int = 2048, auth: str = "header") -> str:
     headers, params = _auth(key, auth)
     r = await client.post(
         f"{API_BASE}/models/{model}:generateContent",
@@ -140,7 +140,7 @@ async def verify_key(key: str) -> VerifyResult:
                 candidates = list(dict.fromkeys([*listed[:4], *PREFERRED_MODELS]))[:10]
                 for cand in candidates:
                     try:
-                        text = await _generate(client, key, cand, "Reply with the single word OK.", "Say OK", max_tokens=10, auth=auth)
+                        text = await _generate(client, key, cand, "Reply with the single word OK.", "Say OK", max_tokens=512, auth=auth)
                     except httpx.HTTPStatusError as exc:
                         last_err = exc
                         if exc.response.status_code == 404:
@@ -149,8 +149,8 @@ async def verify_key(key: str) -> VerifyResult:
                             raise             # quota: the key works, just busy
                         break                 # 400/401/403: this auth style is wrong → next style
                     model = cand if auth == "header" else f"{cand}@{auth}"
-                    if not text:
-                        return VerifyResult(False, model, "Google উত্তর দেয়নি — একটু পরে আবার যাচাই করুন।", "Google gave no answer — try again shortly.")
+                    # A 200 reply means key + model work. Gemini 3.x "thinks" first and the thinking counts
+                    # toward the token limit, so a short test reply can legitimately come back empty.
                     return VerifyResult(True, model, "সফল! Google AI কাজ করছে।", "Success! Google AI is working.")
         if last_err is not None and last_err.response.status_code != 404:
             raise last_err

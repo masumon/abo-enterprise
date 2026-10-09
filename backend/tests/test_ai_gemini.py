@@ -141,3 +141,10 @@ async def test_answer_uses_saved_auth_masks_numbers_and_respects_daily_cap(monke
     assert "01712345678" not in sent["user"] and "me@x.com" not in sent["user"]
     assert "Bangla" in sent["system"] and "01885411007" in sent["system"]
     assert await ai.answer(None, "again", "bn", "FACTS", FACTS) is None
+
+
+async def test_empty_reply_from_thinking_model_still_counts_as_working(monkeypatch):
+    _google(monkeypatch, lambda r: httpx.Response(200, json={"models": []}) if r.method == "GET"
+            else httpx.Response(200, json={"candidates": [{"finishReason": "MAX_TOKENS", "content": {"role": "model"}}]}))
+    res = await ai.verify_key(GOOD_KEY)
+    assert res.ok and res.model == "gemini-flash-latest"
