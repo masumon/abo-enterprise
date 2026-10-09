@@ -3,11 +3,12 @@ import type { ReactNode } from "react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Props {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
   children: ReactNode;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   try {
     const apiUrl = getApiBaseUrl();
     const res = await fetch(`${apiUrl}/api/v1/products/${params.slug}`, {

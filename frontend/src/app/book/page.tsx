@@ -15,11 +15,12 @@ function BookPageFallback() {
   );
 }
 
-export default function BookPage({
-  searchParams,
-}: {
-  searchParams: { service?: string; tier?: string; mode?: string };
-}) {
+export default async function BookPage(
+  props: {
+    searchParams: Promise<{ service?: string; tier?: string; mode?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   return (
     <Suspense fallback={<BookPageFallback />}>
       <BookPageClient serviceSlug={searchParams.service} tierId={searchParams.tier} mode={searchParams.mode} />

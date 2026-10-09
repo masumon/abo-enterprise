@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type JSX } from "react";
 import { Save, Loader2 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import HomepageSectionNav from "@/components/admin/HomepageSectionNav";
