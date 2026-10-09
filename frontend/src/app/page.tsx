@@ -14,7 +14,8 @@ import ReviewStatsCard from "@/components/home/ReviewStatsCard";
 import Reveal from "@/components/ui/Reveal";
 import { SITE_URL, DEFAULT_OG_IMAGE, getBrandFullTitle } from "@/lib/tokens";
 import { jsonLdString } from "@/lib/metadata";
-import { fetchPublicSettings, settingValue } from "@/lib/serverSettings";
+import { fetchPublicSettings, fetchPromoSlides, settingValue } from "@/lib/serverSettings";
+import { cloudinarySrcSet, HERO_BG_WIDTHS, PROMO_WIDTHS } from "@/lib/responsiveMediaUrl";
 import { isVideoUrl } from "@/lib/media";
 import { getLegacyHomeLaneTarget } from "@/lib/legacyHomeLane";
 
@@ -154,18 +155,41 @@ export default async function HomePage(
   const legacyTarget = getLegacyHomeLaneTarget(legacyLane);
   if (legacyTarget) redirect(legacyTarget);
 
-  const settings = await fetchPublicSettings();
-  // The hero banner is a CSS background inside a client component, so the
-  // browser would only discover it after hydration. Preloading it here (server
-  // already has the URL) lets the fetch start with the HTML — a pure hint, no
-  // markup or layout change. Skip videos and the unset case.
+  const [settings, heroSlides] = await Promise.all([fetchPublicSettings(), fetchPromoSlides("hero")]);
+  // Preload the LCP image per breakpoint so the fetch starts with the HTML:
+  // ≥1024px the desktop hero background, <1024px the first promo slide (the
+  // mobile/tablet hero). srcset/sizes match what Hero/PromoSlider render, so
+  // the browser reuses the preloaded file. Videos and unset values are skipped.
   // Same key resolveHomeBannerImage() reads, but via the server-safe helper so
   // no client-only module is pulled into this Server Component.
   const heroBanner = settingValue(settings, "hero_image_url");
   const heroPreload = heroBanner && !isVideoUrl(heroBanner) ? heroBanner : null;
+  const firstSlide = heroSlides?.[0];
+  const slidePreload = firstSlide && !firstSlide.video_url && firstSlide.image_url ? firstSlide.image_url : null;
   return (
     <>
-      {heroPreload && <link rel="preload" as="image" href={heroPreload} />}
+      {heroPreload && (
+        <link
+          rel="preload"
+          as="image"
+          href={heroPreload}
+          imageSrcSet={cloudinarySrcSet(heroPreload, HERO_BG_WIDTHS)}
+          imageSizes="100vw"
+          media="(min-width: 1024px)"
+          fetchPriority="high"
+        />
+      )}
+      {slidePreload && cloudinarySrcSet(slidePreload, PROMO_WIDTHS) && (
+        <link
+          rel="preload"
+          as="image"
+          href={slidePreload}
+          imageSrcSet={cloudinarySrcSet(slidePreload, PROMO_WIDTHS)}
+          imageSizes="(min-width: 1024px) 1px, (min-width: 768px) 720px, 100vw"
+          media="(max-width: 1023px)"
+          fetchPriority="high"
+        />
+      )}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: jsonLdString(buildOrganizationJsonLd(settings)) }}
@@ -180,7 +204,7 @@ export default async function HomePage(
       />
 
       {/* Hero Section */}
-      <Hero />
+      <Hero initialHeroSlides={heroSlides} />
 
       {/* Category Cards */}
       <CategoryCards />

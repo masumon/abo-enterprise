@@ -19,6 +19,7 @@ import {
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ImageUpload from "@/components/admin/ImageUpload";
 import LivePreview from "@/components/admin/LivePreview";
+import BannerDevicePreview, { BannerGuide } from "@/components/admin/BannerDevicePreview";
 import AutoVideo from "@/components/ui/AutoVideo";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { isVideoUrl } from "@/lib/media";
@@ -184,7 +185,14 @@ function SlotEditor({
         previewSize="lg"
         accept="both"
       />
-      <SlotContextPreview slotKey={slot.key} value={value} />
+      {slot.kind ? (
+        <>
+          <BannerGuide kind={slot.kind} />
+          <BannerDevicePreview kind={slot.kind} value={value} title={slot.kind === "page-banner" ? slot.label.replace(/ Banner$/, "") : undefined} />
+        </>
+      ) : (
+        <SlotContextPreview slotKey={slot.key} value={value} />
+      )}
     </div>
   );
 }

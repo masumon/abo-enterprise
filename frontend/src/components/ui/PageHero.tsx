@@ -69,7 +69,8 @@ export default function PageHero({
           ? cn(
               // Mobile is a compact strip; desktop keeps the taller hero.
               "text-white py-6 md:py-20 pt-[calc(var(--navbar-offset)+1.25rem)] md:pt-[calc(var(--navbar-offset)+3.5rem)]",
-              !hasImage && "gradient-brand"
+              // Always painted: it is the branded placeholder while a banner photo loads.
+              "gradient-brand"
             )
           : cn(
               "page-surface border-b border-gray-100 dark:border-white/10 py-5 md:py-16 pt-[calc(var(--navbar-offset)+1rem)] md:pt-[calc(var(--navbar-offset)+3rem)]",
@@ -93,15 +94,16 @@ export default function PageHero({
             alt=""
             className="absolute inset-0 h-full w-full object-cover"
             loading="eager"
+            fetchPriority="high"
             decoding="async"
           />
           <div className="absolute inset-0" style={{ background: overlayGradient }} />
           {isBrand && (
             // Extra scrim behind the title column: banners often have their own baked-in text.
             <div
-              className="absolute inset-x-0 bottom-0 top-[var(--navbar-offset)] hidden md:block"
+              className="absolute inset-x-0 bottom-0 top-[var(--navbar-offset)] hidden lg:block"
               style={{
-                background: "linear-gradient(90deg, rgba(10,22,40,0.72) 0%, rgba(10,22,40,0.40) 55%, rgba(10,22,40,0) 100%)",
+                background: "linear-gradient(90deg, rgba(10,22,40,0.84) 0%, rgba(10,22,40,0.72) 45%, rgba(10,22,40,0.34) 75%, rgba(10,22,40,0.14) 100%)",
                 // Soft blur so text baked into the banner image can't compete with the page title.
                 backdropFilter: "blur(2px)",
                 WebkitBackdropFilter: "blur(2px)",
@@ -112,11 +114,26 @@ export default function PageHero({
             />
           )}
           {isBrand && (
-            // Mobile strip is short, so the title always sits on top of the banner's own text:
-            // darken + blur the picture there so only the page title reads.
+            // Desktop: blur only the title side (fades out to the right) so
+            // text baked into the banner can't compete with the page title,
+            // while the right side of the photo stays sharp.
             <div
-              className="absolute inset-0 md:hidden"
-              style={{ background: "rgba(10,22,40,0.45)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)" }}
+              className="absolute inset-0 hidden lg:block"
+              style={{
+                backdropFilter: "blur(5px)",
+                WebkitBackdropFilter: "blur(5px)",
+                WebkitMaskImage: "linear-gradient(90deg, #000 0%, #000 50%, transparent 80%)",
+                maskImage: "linear-gradient(90deg, #000 0%, #000 50%, transparent 80%)",
+              }}
+            />
+          )}
+          {isBrand && (
+            // Phones AND tablets (<1024px): the title spans most of the banner
+            // width, so it always lands on the banner's own baked-in text.
+            // Darken + blur the whole picture there so only the page title reads.
+            <div
+              className="absolute inset-0 lg:hidden"
+              style={{ background: "rgba(10,22,40,0.55)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)" }}
             />
           )}
         </picture>
@@ -178,7 +195,7 @@ export default function PageHero({
         <h1
           className={cn(
             "text-[1.4rem] sm:text-3xl md:text-5xl font-bold mb-1.5 md:mb-3 text-balance leading-tight tracking-tight",
-            isBrand ? "drop-shadow-sm" : "text-heading",
+            isBrand ? "drop-shadow-sm [text-shadow:0_2px_12px_rgba(0,0,0,0.45)]" : "text-heading",
             isCenter && "mx-auto"
           )}
         >
@@ -189,7 +206,7 @@ export default function PageHero({
           <p
             className={cn(
               "text-[13px] sm:text-sm md:text-lg max-w-2xl leading-snug md:leading-relaxed",
-              isBrand ? "text-white/85" : "text-muted",
+              isBrand ? "text-white/90 [text-shadow:0_1px_8px_rgba(0,0,0,0.45)]" : "text-muted",
               isCenter && "mx-auto"
             )}
           >

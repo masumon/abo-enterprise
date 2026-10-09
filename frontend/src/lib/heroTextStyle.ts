@@ -80,10 +80,10 @@ export function heroVAlignClass(s: HeroTextStyle): string {
 // ── Admin option lists ──
 export const HERO_COLOR_OPTIONS = ["#e4a11b", "#ffffff", "#f0b441", "#35479b", "#2e7d4f", "#e7eaf6"];
 export const HERO_TITLE_SIZES = [
-  { v: "sm", label: "S" }, { v: "md", label: "M" }, { v: "lg", label: "L" }, { v: "xl", label: "XL" },
+  { v: "sm", label: "ছোট" }, { v: "md", label: "মাঝারি" }, { v: "lg", label: "বড়" }, { v: "xl", label: "খুব বড়" },
 ] as const;
 export const HERO_SUB_SIZES = [
-  { v: "sm", label: "S" }, { v: "md", label: "M" }, { v: "lg", label: "L" },
+  { v: "sm", label: "ছোট" }, { v: "md", label: "মাঝারি" }, { v: "lg", label: "বড়" },
 ] as const;
 export const HERO_ALIGNS = [
   { v: "left", label: "◧ বাম" }, { v: "center", label: "▣ মাঝ" }, { v: "right", label: "◨ ডান" },
@@ -91,3 +91,19 @@ export const HERO_ALIGNS = [
 export const HERO_VALIGNS = [
   { v: "top", label: "↑ উপর" }, { v: "center", label: "↔ মাঝ" }, { v: "bottom", label: "↓ নিচ" },
 ] as const;
+
+/** One-click safe looks for non-technical admins. `{}` = automatic default. */
+export const HERO_STYLE_PRESETS: { id: string; labelBn: string; label: string; style: HeroTextStyle }[] = [
+  { id: "auto", labelBn: "অটো (প্রস্তাবিত)", label: "Auto (recommended)", style: {} },
+  { id: "white-shadow", labelBn: "সাদা লেখা + গাঢ় ছায়া", label: "White text + strong shadow", style: { titleColor: "#ffffff", subColor: "#ffffff", shadow: true } },
+  { id: "gold", labelBn: "সোনালি শিরোনাম", label: "Gold headline", style: { titleColor: "#f0b441", subColor: "#ffffff", shadow: true } },
+  { id: "big-center", labelBn: "বড় ও মাঝখানে", label: "Big & centred", style: { align: "center", titleSize: "lg", subSize: "md", shadow: true } },
+  { id: "compact", labelBn: "ছোট ও পরিষ্কার", label: "Small & clean", style: { titleSize: "sm", subSize: "sm" } },
+];
+
+/** True when `s` equals a preset's style (key order independent). */
+export function matchesPreset(s: HeroTextStyle, preset: HeroTextStyle): boolean {
+  const clean = (o: HeroTextStyle) =>
+    JSON.stringify(Object.entries(o).filter(([k, v]) => v !== undefined && !(v === false && k !== "bold")).sort(([a], [b]) => a.localeCompare(b)));
+  return clean(s) === clean(preset);
+}

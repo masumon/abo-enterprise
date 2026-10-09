@@ -6,6 +6,16 @@ import { isOffline } from "@/lib/networkStatus";
 
 let memoryCache: Record<string, string> | null = null;
 let pending: Promise<Record<string, string>> | null = null;
+/** Server-rendered subset (hero/banner keys) handed down by the root layout,
+ * so the first HTML already contains the right banner images instead of
+ * waiting for a client fetch after hydration. Only used as the INITIAL value;
+ * the hook still revalidates against the API exactly as before. */
+let seeded: Record<string, string> | null = null;
+
+/** Called during render by <PublicSettingsSeed> (server + client, same data). */
+export function seedPublicSettings(data: Record<string, string> | null | undefined) {
+  if (data && Object.keys(data).length > 0) seeded = data;
+}
 
 async function loadCachedSettings(): Promise<Record<string, string> | null> {
   return getCachedApiResponse<Record<string, string>>(SETTINGS_CACHE_KEY);
@@ -48,6 +58,9 @@ async function fetchSettings(): Promise<Record<string, string>> {
         memoryCache = cached;
         return cached;
       }
+      // API unreachable/slow (e.g. Render cold start): keep the server-rendered
+      // hero/banner values instead of blanking images that are already showing.
+      if (seeded) return seeded;
       memoryCache = {};
       return memoryCache;
     })
@@ -60,7 +73,7 @@ async function fetchSettings(): Promise<Record<string, string>> {
 
 /** Fetch public CMS settings (stale cache + background revalidation). Safe for client components. */
 export function usePublicSettings(keys?: string[]) {
-  const [settings, setSettings] = useState<Record<string, string>>(memoryCache ?? {});
+  const [settings, setSettings] = useState<Record<string, string>>(memoryCache ?? seeded ?? {});
   const [loading, setLoading] = useState(!memoryCache);
   // A joined string, not the `keys` array itself: callers often pass an
   // inline array literal (e.g. usePublicSettings(["x"])), a new reference

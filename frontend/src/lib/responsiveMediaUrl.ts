@@ -59,3 +59,27 @@ export function responsiveMediaUrl(
 export function responsiveMediaDimensions(preset: ResponsiveMediaPreset) {
   return PRESETS[preset];
 }
+
+/**
+ * Width-limited Cloudinary delivery URL (keeps the original aspect ratio, never
+ * upscales): `f_auto,q_auto,c_limit,w_{width}`. Non-Cloudinary URLs are
+ * returned unchanged.
+ */
+export function cloudinaryWidthUrl(value: string, width: number): string {
+  const url = value.trim();
+  if (!url || !isCloudinaryImageUrl(url)) return url;
+  return url.replace("/image/upload/", `/image/upload/f_auto,q_auto,c_limit,w_${width}/`);
+}
+
+/** `srcset` string for a Cloudinary image at the given widths, or undefined
+ * for non-Cloudinary URLs (callers then use the plain `src`). */
+export function cloudinarySrcSet(value: string, widths: number[]): string | undefined {
+  const url = value.trim();
+  if (!url || !isCloudinaryImageUrl(url)) return undefined;
+  return widths.map((w) => `${cloudinaryWidthUrl(url, w)} ${w}w`).join(", ");
+}
+
+/** Homepage desktop hero background widths (≥1024px viewports, 1x–2x). */
+export const HERO_BG_WIDTHS = [1280, 1600, 1920, 2560];
+/** Promo card / slider widths (448px card on desktop, full width on mobile). */
+export const PROMO_WIDTHS = [480, 720, 960, 1280];

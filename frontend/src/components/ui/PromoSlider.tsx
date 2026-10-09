@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -13,6 +13,7 @@ import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
 import { SITE_URL } from "@/lib/tokens";
 import AutoVideo from "@/components/ui/AutoVideo";
+import { cloudinarySrcSet, cloudinaryWidthUrl, PROMO_WIDTHS } from "@/lib/responsiveMediaUrl";
 
 /** The site's own host (no leading www), for same-origin link detection. */
 const SITE_HOST = (() => {
@@ -47,8 +48,14 @@ function resolveSlideLink(raw?: string | null): { path: string | null; external:
  * placeholder until it has decoded, then fades in. Fixes the "black flash" a
  * slow banner image used to leave while the browser fetched it.
  */
-function PromoImage({ src, alt, eager }: { src: string; alt: string; eager?: boolean }) {
+function PromoImage({ src, alt, eager, sizes }: { src: string; alt: string; eager?: boolean; sizes?: string }) {
   const [loaded, setLoaded] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+  // Server-rendered images can finish loading before React hydrates and
+  // attaches onLoad — check `complete` so the spinner never sticks.
+  useEffect(() => {
+    if (imgRef.current?.complete) setLoaded(true);
+  }, []);
   return (
     <>
       {!loaded && (
@@ -61,7 +68,11 @@ function PromoImage({ src, alt, eager }: { src: string; alt: string; eager?: boo
       )}
       {/* eslint-disable-next-line @next/next/no-img-element -- admin-supplied promo art at arbitrary CDN sizes */}
       <img
-        src={src}
+        ref={imgRef}
+        // Cloudinary resizes + picks AVIF/WebP; other hosts get the raw URL.
+        src={cloudinaryWidthUrl(src, 960)}
+        srcSet={cloudinarySrcSet(src, PROMO_WIDTHS)}
+        sizes={sizes}
         alt={alt}
         onLoad={() => setLoaded(true)}
         onError={() => setLoaded(true)}
@@ -70,6 +81,8 @@ function PromoImage({ src, alt, eager }: { src: string; alt: string; eager?: boo
           loaded ? "opacity-100" : "opacity-0"
         )}
         loading={eager ? "eager" : "lazy"}
+        fetchPriority={eager ? "high" : undefined}
+        decoding="async"
       />
     </>
   );
@@ -87,6 +100,11 @@ interface Props {
    * an intersection check and was measured adding real seconds to LCP.
    * flash_sale is below the fold, so it stays lazy. */
   eagerFirstSlide?: boolean;
+  /** Slides fetched on the server (homepage) — rendered in the first HTML so
+   * the hero image starts loading immediately. null/undefined = fetch here. */
+  initialSlides?: PromoSlide[] | null;
+  /** `sizes` hint for the responsive image srcset. */
+  sizes?: string;
 }
 
 /**
@@ -100,11 +118,13 @@ interface Props {
  * Renders `fallback` (and fetches nothing further) when the API returns no
  * slides, which is what keeps the pre-existing single hero media working.
  */
-export default function PromoSlider({ placement, fallback, className, aspect = "aspect-video", eagerFirstSlide }: Props) {
+export default function PromoSlider({ placement, fallback, className, aspect = "aspect-video", eagerFirstSlide, initialSlides, sizes = "100vw" }: Props) {
   const { lang } = useLanguageStore();
-  const [slides, setSlides] = useState<PromoSlide[] | null>(null);
+  const [slides, setSlides] = useState<PromoSlide[] | null>(initialSlides ?? null);
+  const hasInitial = initialSlides != null;
 
   useEffect(() => {
+    if (hasInitial) return; // server already supplied fresh (60 s) slides
     let cancelled = false;
     promoSlidesApi
       .list(placement)
@@ -118,7 +138,7 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
     return () => {
       cancelled = true;
     };
-  }, [placement]);
+  }, [placement, hasInitial]);
 
   // null = still loading: render the fallback so there's no layout jump.
   if (!slides || slides.length === 0) return <>{fallback ?? null}</>;
@@ -150,6 +170,7 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
                   src={slide.image_url ?? ""}
                   alt={slide.alt_text || title || ""}
                   eager={eagerFirstSlide && index === 0}
+                  sizes={sizes}
                 />
               )}
             </div>
