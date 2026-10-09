@@ -1296,7 +1296,7 @@ export const assistantApi = {
       session_token?: string;
       data?: Record<string, unknown>;
       suggestions?: string[];
-    }>>("/api/v1/assistant/chat", data),
+    }>>("/api/v1/assistant/chat", data, { timeout: 60000 }), // AI answers can take ~30 s
 
   history: (sessionId: string, sessionToken: string, limit = 20) =>
     api.get<ApiResponse<{ role: string; content: string; intent?: string }[]>>(
@@ -1348,6 +1348,8 @@ export interface GeminiStatus {
   daily_cap: number;
   used_today: number;
   verified_at: string;
+  last_error?: string;
+  last_error_at?: string;
 }
 
 export const assistantAdminApi = {

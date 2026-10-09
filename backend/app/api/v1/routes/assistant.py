@@ -502,6 +502,8 @@ async def _gemini_status(db: AsyncSession) -> dict:
         "model": cfg["model"] if cfg["key"] else "",
         "daily_cap": cfg["daily_cap"],
         "used_today": ai_gemini.usage_today(),
+        "last_error": ai_gemini.last_error().get("text", ""),
+        "last_error_at": ai_gemini.last_error().get("at", ""),
         "verified_at": cfg["verified_at"],
     }
 

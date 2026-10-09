@@ -292,10 +292,34 @@ async def answer(db: AsyncSession, question: str, lang: str, facts_text: str, fa
     user = f"FACTS:\n{facts_text}\n\nCUSTOMER QUESTION:\n{_mask(question)[:600]}"
     try:
         _usage["count"] = usage_today() + 1
-        async with httpx.AsyncClient(timeout=httpx.Timeout(9.0)) as client:
+        # Gemini 3.x "thinks" before answering, which can take well over 10 s.
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0)) as client:
             text = await _generate(client, cfg["key"], cfg["model"], system, user, auth=cfg["auth"])
-    except Exception as exc:  # noqa: BLE001 — quota, network, model gone: fall back quietly
+    except httpx.HTTPStatusError as exc:  # quota, model gone, auth: fall back quietly, remember why
+        _note_error(f"Google {exc.response.status_code}: {_reason(exc) or 'error'}")
+        logger.warning("Gemini answer failed: %s", exc)
+        return None
+    except Exception as exc:  # noqa: BLE001 — network problems, timeouts
+        _note_error(f"{type(exc).__name__}: সময়মতো উত্তর আসেনি / connection problem")
         logger.warning("Gemini answer failed: %s", exc)
         return None
     text = re.sub(r"^#+\s*", "", text, flags=re.M).replace("**", "").strip()
-    return text[:1200] or None
+    if not text:
+        _note_error("Google খালি উত্তর দিয়েছে (empty reply)")
+        return None
+    _last_error.update(text="", at="")
+    return text[:1200]
+
+
+_last_error: dict[str, str] = {"text": "", "at": ""}
+
+
+def _note_error(text: str) -> None:
+    from datetime import datetime, timezone
+
+    _last_error.update(text=text[:200], at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
+
+
+def last_error() -> dict[str, str]:
+    """Most recent AI failure (shown in the admin card); empty after a successful answer."""
+    return dict(_last_error)

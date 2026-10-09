@@ -74,6 +74,7 @@ export default function GeminiAiCard() {
               <p><span className="text-gray-500">সংরক্ষিত কী:</span> <span className="font-mono font-semibold">{status.key_hint}</span></p>
               <p><span className="text-gray-500">মডেল:</span> <span className="font-semibold">{status.model}</span></p>
               <p><span className="text-gray-500">আজ ব্যবহার:</span> <span className="font-semibold">{status.used_today} / {status.daily_cap || "সীমাহীন"}</span></p>
+              {status.last_error ? <p className="sm:col-span-2 text-red-600"><span className="font-semibold">শেষ সমস্যা:</span> {status.last_error}{status.last_error_at ? ` (${new Date(status.last_error_at).toLocaleString("bn-BD")})` : ""} — এ সময় সহকারী সাধারণ উত্তর দিয়েছে।</p> : null}
               {status.verified_at && <p><span className="text-gray-500">শেষ যাচাই:</span> <span className="font-semibold">{new Date(status.verified_at).toLocaleString("bn-BD")}</span></p>}
             </div>
             <div className="flex flex-wrap gap-2">
