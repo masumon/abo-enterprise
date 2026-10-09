@@ -1340,7 +1340,23 @@ export interface AssistantActionLog {
   created_at: string;
 }
 
+export interface GeminiStatus {
+  has_key: boolean;
+  key_hint: string;
+  enabled: boolean;
+  model: string;
+  daily_cap: number;
+  used_today: number;
+  verified_at: string;
+}
+
 export const assistantAdminApi = {
+  getAi: () => api.get<ApiResponse<GeminiStatus>>("/api/v1/assistant/admin/ai"),
+  // Verifying a key calls Google (model list + a test reply), so allow extra time.
+  updateAi: (data: { api_key?: string; enabled?: boolean; daily_cap?: number }) =>
+    api.put<ApiResponse<GeminiStatus>>("/api/v1/assistant/admin/ai", data, { timeout: 60000 }),
+  verifyAi: () => api.post<ApiResponse<GeminiStatus>>("/api/v1/assistant/admin/ai/verify", {}, { timeout: 60000 }),
+  removeAi: () => api.delete<ApiResponse<GeminiStatus>>("/api/v1/assistant/admin/ai"),
   getConfig: () =>
     api.get<ApiResponse<AssistantAdminConfig>>("/api/v1/assistant/admin/config"),
 

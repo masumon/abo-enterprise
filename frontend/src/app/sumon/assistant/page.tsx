@@ -16,6 +16,7 @@ import {
 } from "@/lib/api";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import GeminiAiCard from "@/components/admin/GeminiAiCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import TranslateButton from "@/components/admin/TranslateButton";
 import { translateBnToEn } from "@/lib/translate";
@@ -303,6 +304,8 @@ export default function AdminAssistantPage() {
       {/* Settings Tab */}
       {tab === "settings" && (
         <div className="space-y-6 admin-page-narrow">
+          <GeminiAiCard />
+
           {/* Integration overview */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">

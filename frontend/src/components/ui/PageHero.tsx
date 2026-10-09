@@ -102,10 +102,21 @@ export default function PageHero({
               className="absolute inset-x-0 bottom-0 top-[var(--navbar-offset)] hidden md:block"
               style={{
                 background: "linear-gradient(90deg, rgba(10,22,40,0.72) 0%, rgba(10,22,40,0.40) 55%, rgba(10,22,40,0) 100%)",
+                // Soft blur so text baked into the banner image can't compete with the page title.
+                backdropFilter: "blur(2px)",
+                WebkitBackdropFilter: "blur(2px)",
                 // start below the navbar and fade in, so nav links stay readable
                 WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 70px)",
                 maskImage: "linear-gradient(to bottom, transparent 0, #000 70px)",
               }}
+            />
+          )}
+          {isBrand && (
+            // Mobile strip is short, so the title always sits on top of the banner's own text:
+            // darken + blur the picture there so only the page title reads.
+            <div
+              className="absolute inset-0 md:hidden"
+              style={{ background: "rgba(10,22,40,0.45)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)" }}
             />
           )}
         </picture>
