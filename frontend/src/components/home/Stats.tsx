@@ -35,7 +35,8 @@ export default function Stats() {
         { icon: Package, end: typeof d.products === "number" ? d.products : null, suffix: "+", key: "trust_products" },
         { icon: Clock, end: typeof d.years === "number" ? d.years : null, suffix: "+", key: "trust_years" },
         { icon: Headphones, end: 24, suffix: "/7", key: "trust_support" },
-      ]);
+      // Once real figures are in, hide any metric that is 0 or missing.
+      ].filter((s) => typeof s.end === "number" && s.end > 0));
     }).catch(() => {});
   }, []);
 
