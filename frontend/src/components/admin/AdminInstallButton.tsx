@@ -12,7 +12,7 @@ import { useToastStore } from "@/store/toast";
  * the one-tap native prompt; iOS Safari has no prompt API, so we show the
  * Share → "Add to Home Screen" instruction instead.
  */
-export default function AdminInstallButton() {
+export default function AdminInstallButton({ showLabel = false }: { showLabel?: boolean } = {}) {
   const toast = useToastStore((s) => s.push);
   const [installed, setInstalled] = useState(false);
   const [available, setAvailable] = useState(false);
@@ -35,7 +35,7 @@ export default function AdminInstallButton() {
   // Already running as the installed app — nothing to offer.
   if (installed) {
     return (
-      <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 h-9 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold" title="Admin app installed">
+      <span className={`${showLabel ? "inline-flex" : "hidden sm:inline-flex"} items-center gap-1.5 px-2.5 h-9 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold`} title="Admin app installed">
         <Check className="w-4 h-4" /> App
       </span>
     );
@@ -67,7 +67,7 @@ export default function AdminInstallButton() {
       title="Install the admin panel as an app"
     >
       <Download className="w-4 h-4" />
-      <span className="hidden sm:inline">Install App</span>
+      <span className={showLabel ? "inline" : "hidden sm:inline"}>Install App</span>
     </button>
   );
 }
