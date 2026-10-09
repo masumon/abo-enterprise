@@ -2,7 +2,7 @@ import {
   LayoutDashboard, ShoppingCart, Briefcase, Package, Users, Wrench, FileText, Star, BookOpen, FolderKanban,
   Images, CreditCard, Bot, Mail, BarChart2, Settings, Shield, Send, Truck, UserPlus, Percent, FolderTree,
   LayoutTemplate, Megaphone, ExternalLink, UploadCloud, Tags, Bell, History, ScrollText, ShieldCheck, Boxes,
-  GalleryHorizontal, Smartphone, type LucideIcon,
+  GalleryHorizontal, Smartphone, Sparkles, type LucideIcon,
 } from "lucide-react";
 
 export type AdminRole = "super_admin" | "admin" | "editor" | "viewer";
@@ -74,6 +74,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     { href: "/sumon/reviews", icon: Star, label: "Product Reviews", labelBn: "রিভিউ", permission: "reviews.read", descBn: "গ্রাহকের মতামত দেখান বা লুকান", keywords: "review রিভিউ মতামত রেটিং" },
   ]},
   { id: "website", label: "Make the website yours", labelBn: "ওয়েবসাইট সাজান", items: [
+    { href: "/sumon/website", icon: Sparkles, label: "Website hub", labelBn: "ওয়েবসাইট সাজান — সব এক জায়গায়", exact: true, descBn: "ব্যানার, ছবি, ভিডিও, লেখা — কী বদলাবেন বাছুন", keywords: "website hub banner hero photo video logo সাজান ব্যানার ছবি ভিডিও" },
     { href: "/sumon/homepage", icon: LayoutTemplate, label: "Homepage Content", labelBn: "হোমপেজ (হিরো ব্যানার, লেখা)", descBn: "হোমপেজের বড় ব্যানার, লেখা, ছবি ও ভিডিও", keywords: "hero banner homepage হিরো ব্যানার হোম ভিডিও লোগো" },
     { href: "/sumon/promo-slides", icon: GalleryHorizontal, label: "Homepage Banners & Slider", labelBn: "ব্যানার ও স্লাইডার", permission: "settings.read", descBn: "অফারের ব্যানার ও ঘুরতে থাকা স্লাইড", keywords: "slider slide banner offer স্লাইড ব্যানার অফার" },
     { href: "/sumon/announcements", icon: Megaphone, label: "Homepage Announcement Bar", labelBn: "ঘোষণা বার (উপরের লেখা)", descBn: "সাইটের একদম উপরে চলমান ঘোষণা", keywords: "announcement ঘোষণা মার্কি ticker" },

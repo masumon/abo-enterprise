@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useLanguageStore } from "@/store/language";
 import Image from "next/image";
 import { Upload, Loader2, X, ImageIcon, Check, Sparkles, FolderOpen } from "lucide-react";
 import api from "@/lib/api";
@@ -64,6 +65,8 @@ export default function ImageUpload({
   hint,
   guide,
 }: ImageUploadProps) {
+  const { lang } = useLanguageStore();
+  const bn = lang === "bn";
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
@@ -100,7 +103,7 @@ export default function ImageUpload({
     const isVid = file.type.startsWith("video/");
     const maxSize = (isVid ? 50 : 30) * 1024 * 1024;
     if (file.size > maxSize) {
-      setError(`File must be under ${isVid ? 50 : 30}MB`);
+      setError(bn ? `ফাইল বড় হয়ে গেছে। ${isVid ? "ভিডিও ৫০MB" : "ছবি ৩০MB"}-এর মধ্যে হতে হবে — ছোট করে আবার দিন।` : `File must be under ${isVid ? 50 : 30}MB`);
       if (fileRef.current) fileRef.current.value = "";
       return;
     }
@@ -109,7 +112,7 @@ export default function ImageUpload({
     const { width, height } = await readImageDimensions(file, previewUrl);
     // Large photos are fine — the browser/server optimizes them; only reject tiny images.
     if (width !== null && height !== null && (width < 100 || height < 100)) {
-      setError("Image must be at least 100×100 pixels");
+      setError(bn ? "ছবিটি খুব ছোট (কমপক্ষে ১০০×১০০ পিক্সেল লাগবে)। বড় ছবি দিন।" : "Image must be at least 100×100 pixels");
       URL.revokeObjectURL(previewUrl);
       if (fileRef.current) fileRef.current.value = "";
       return;
@@ -176,7 +179,7 @@ export default function ImageUpload({
       onChange(url);
       setPending(null);
     } catch (e) {
-      setError(apiErrorMessage(e, "Upload failed. Check file size and format, or paste a URL."));
+      setError(apiErrorMessage(e, bn ? "আপলোড হয়নি। ফাইলের সাইজ ও ধরন দেখুন, অথবা নিচে ছবির লিংক পেস্ট করুন।" : "Upload failed. Check file size and format, or paste a URL."));
     } finally {
       setUploading(false);
       setUploadProgress(null);
@@ -293,7 +296,7 @@ export default function ImageUpload({
             ) : (
               <span className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 group-hover:text-brand-500">
                 <Upload className="w-5 h-5 mb-0.5" />
-                <span className="text-[10px] font-medium">Upload</span>
+                <span className="text-[10px] font-medium">{bn ? "আপলোড" : "Upload"}</span>
               </span>
             )}
             {value && (
@@ -312,20 +315,20 @@ export default function ImageUpload({
                 className="btn btn-outline btn-sm flex items-center gap-2"
               >
                 <ImageIcon className="w-4 h-4" />
-                {value ? "Change file" : "Choose file"}
+                {value ? (bn ? "ফাইল বদলান" : "Change file") : (bn ? "ফাইল বাছুন" : "Choose file")}
               </button>
               <button
                 type="button"
                 onClick={() => setPickerOpen(true)}
                 disabled={uploading}
                 className="btn btn-outline btn-sm flex items-center gap-2"
-                title="Reuse an already-uploaded image or video"
+                title={bn ? "আগে আপলোড করা ছবি/ভিডিও আবার ব্যবহার করুন" : "Reuse an already-uploaded image or video"}
               >
                 <FolderOpen className="w-4 h-4" />
-                Browse Library
+                {bn ? "ভাণ্ডার থেকে নিন" : "Browse Library"}
               </button>
             </div>
-            <p className="text-[11px] text-gray-400">or drag & drop a file onto the box</p>
+            <p className="text-[11px] text-gray-400">{bn ? "অথবা ফাইল টেনে এনে এখানে ছাড়ুন" : "or drag & drop a file onto the box"}</p>
 
             {value && (
               <button
@@ -333,17 +336,19 @@ export default function ImageUpload({
                 onClick={() => onChange("")}
                 className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
               >
-                <X className="w-3 h-3" /> Remove
+                <X className="w-3 h-3" /> {bn ? "মুছুন" : "Remove"}
               </button>
             )}
 
             <p className="text-[11px] text-gray-500 flex items-center gap-1">
               <Sparkles className="w-3 h-3 text-brand-400" />
-              {accept === "video" ? "ভিডিও" : accept === "both" ? "ছবি বা ভিডিও" : "ছবি"} · সর্বোচ্চ ৩০MB · যেকোন ফরম্যাট · WebP/GIF/ভিডিও হুবহু, বড় JPG/PNG হাই-কোয়ালিটি অপ্টিমাইজ
+              {bn
+                ? `${accept === "video" ? "ভিডিও (সর্বোচ্চ ৫০MB)" : accept === "both" ? "ছবি (সর্বোচ্চ ৩০MB) বা ভিডিও (সর্বোচ্চ ৫০MB)" : "ছবি (সর্বোচ্চ ৩০MB)"} · যেকোনো ফরম্যাট চলবে · বড় ছবি নিজে ছোট ও দ্রুত করে নেওয়া হয়`
+                : `${accept === "video" ? "Video (max 50MB)" : accept === "both" ? "Image (max 30MB) or video (max 50MB)" : "Image (max 30MB)"} · any format · large photos are optimised automatically`}
             </p>
             {guide && (
               <p className="text-xs text-gray-500">
-                📐 <span className="font-medium">Recommended:</span> {guide}
+                📐 <span className="font-medium">{bn ? "প্রস্তাবিত মাপ:" : "Recommended:"}</span> {guide}
               </p>
             )}
             {hint && <p className="text-xs text-gray-400">{hint}</p>}
@@ -356,7 +361,7 @@ export default function ImageUpload({
           type="url"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Or paste image/video URL…"
+          placeholder={bn ? "অথবা ছবি/ভিডিওর লিংক পেস্ট করুন…" : "Or paste image/video URL…"}
           className="input w-full text-sm"
         />
       )}
