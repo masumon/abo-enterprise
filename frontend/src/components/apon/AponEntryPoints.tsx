@@ -85,7 +85,7 @@ export function AponFooterBadge() {
   if (!visible("footer")) return null;
   const bn = lang === "bn";
   return (
-    <Link href="/apon" className="flex-1 flex items-center gap-2 rounded-xl bg-white/[0.06] hover:bg-white/10 transition-colors px-3 py-2">
+    <Link href="/apon" className="flex-1 flex items-center gap-2 min-h-[44px] rounded-xl bg-white/[0.06] ring-1 ring-white/10 hover:bg-white/10 transition-colors px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent-400">
       <Smartphone className="w-5 h-5 flex-shrink-0 text-[#F2C14E]" aria-hidden />
       <span className="text-left leading-tight">
         <span className="block text-[8px] uppercase tracking-wide text-white/80">{bn ? "ডাউনলোড করুন" : "Download"}</span>

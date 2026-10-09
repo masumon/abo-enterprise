@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Mic } from "lucide-react";
 
 interface Props {
@@ -34,7 +34,10 @@ function getSR(): (new () => SpeechRecognitionLike) | null {
 export default function VoiceSearchButton({ lang, onResult, className }: Props) {
   const [listening, setListening] = useState(false);
   const recRef = useRef<SpeechRecognitionLike | null>(null);
-  const SR = getSR();
+  // Support is only known in the browser, so detect it after mount; reading `window` while rendering
+  // made the first client render differ from the server HTML (hydration mismatch).
+  const [SR, setSR] = useState<(new () => SpeechRecognitionLike) | null>(null);
+  useEffect(() => { setSR(() => getSR()); }, []);
   if (!SR) return null;
 
   const start = () => {

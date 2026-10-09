@@ -35,8 +35,10 @@ async function loadInfo(): Promise<AponInfo | null> {
  */
 export function useAponInfo() {
   const { settings } = usePublicSettings([...APON_SETTING_KEYS]);
-  const [info, setInfo] = useState<AponInfo | null>(cache?.info ?? null);
-  const [loading, setLoading] = useState(!cache);
+  // Always start empty: reading the module cache here would make the first client render differ
+  // from the server HTML (a hydration mismatch). The effect below fills it from the cache at once.
+  const [info, setInfo] = useState<AponInfo | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let alive = true;

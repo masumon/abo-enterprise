@@ -66,8 +66,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   { id: "products-services", label: "Products & services", labelBn: "পণ্য ও সেবা", items: [
     { href: "/sumon/products", icon: Package, label: "Products", labelBn: "পণ্য", exact: true, permission: "products.read", descBn: "পণ্য যোগ, ছবি, দাম ও স্টক", keywords: "product পণ্য দাম ছবি" },
     { href: "/sumon/categories", icon: FolderTree, label: "Categories", labelBn: "ক্যাটাগরি", minRole: "admin", permission: "products.read", descBn: "পণ্যের ভাগ ও ক্যাটাগরির ছবি", keywords: "category ক্যাটাগরি" },
-    { href: "/sumon/inventory?tab=brands", icon: Tags, label: "Brands", labelBn: "ব্র্যান্ড", minRole: "admin", permission: "products.read", descBn: "ব্র্যান্ডের নাম ও লোগো", keywords: "brand ব্র্যান্ড লোগো" },
-    { href: "/sumon/inventory", icon: Boxes, label: "Inventory", labelBn: "স্টক (ইনভেন্টরি)", minRole: "admin", permission: "products.read", descBn: "কোন পণ্য কতটা আছে", keywords: "stock inventory স্টক মজুত" },
+    { href: "/sumon/inventory", icon: Boxes, label: "Inventory", labelBn: "স্টক ও ব্র্যান্ড", minRole: "admin", permission: "products.read", descBn: "কোন পণ্য কতটা আছে; ব্র্যান্ডের নাম ও লোগো", keywords: "stock inventory brand স্টক মজুত ব্র্যান্ড লোগো" },
     { href: "/sumon/products/import", icon: UploadCloud, label: "Bulk Import", labelBn: "একসাথে অনেক পণ্য আপলোড", minRole: "admin", permission: "products.write", descBn: "Excel/CSV থেকে একসাথে পণ্য তুলুন", keywords: "import bulk csv excel আপলোড" },
     { href: "/sumon/combos", icon: Package, label: "Combo Packs", labelBn: "কম্বো প্যাক", permission: "products.read", descBn: "কয়েকটি পণ্য মিলিয়ে অফার", keywords: "combo কম্বো অফার প্যাক" },
     { href: "/sumon/services", icon: Wrench, label: "Services", labelBn: "সেবা", permission: "services.read", descBn: "সেবার বিবরণ, দাম ও বুকিং ফর্ম", keywords: "service সেবা" },
@@ -84,27 +83,22 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     { href: "/sumon/pages", icon: FileText, label: "Pages", labelBn: "অতিরিক্ত পেজ", permission: "pages.read", descBn: "নিজের মতো নতুন পেজ বানান", keywords: "page পেজ" },
     { href: "/sumon/apon", icon: Smartphone, label: "Mobile App (Apon)", labelBn: "মোবাইল অ্যাপ (আপন)", minRole: "admin", permission: "app.read", descBn: "অ্যাপের ভার্সন, ডাউনলোড পেজ ও পরিসংখ্যান", keywords: "app apk apon download অ্যাপ আপন ডাউনলোড" },
     { href: "/sumon/legal-pages", icon: ScrollText, label: "Legal Pages", labelBn: "আইনি পেজ (গোপনীয়তা, শর্ত)", minRole: "admin", permission: "settings.write", descBn: "প্রাইভেসি, শর্ত, রিফান্ড, কুকি", keywords: "legal privacy terms refund cookies গোপনীয়তা শর্ত রিফান্ড" },
-    { href: "/sumon/settings", icon: Settings, label: "Settings", labelBn: "সাইট সেটিংস (লোগো, নাম, যোগাযোগ)", minRole: "admin", descBn: "সাইটের নাম, লোগো, ফোন, ঠিকানা, সময়", keywords: "logo favicon contact phone address whatsapp লোগো ফোন ঠিকানা হোয়াটসঅ্যাপ" },
+    { href: "/sumon/settings", icon: Settings, label: "Settings", labelBn: "সাইট সেটিংস", minRole: "admin", descBn: "নাম, লোগো, ফোন, ঠিকানা, কুরিয়ার, Google/SEO, ইমেইল-SMS", keywords: "logo favicon contact phone address whatsapp courier steadfast seo google analytics pixel marketing smtp sms লোগো ফোন ঠিকানা হোয়াটসঅ্যাপ কুরিয়ার গুগল" },
   ]},
   { id: "marketing", label: "Marketing", labelBn: "প্রচার ও মার্কেটিং", items: [
     { href: "/sumon/coupons", icon: Percent, label: "Coupons", labelBn: "কুপন", minRole: "admin", descBn: "ছাড়ের কোড বানান", keywords: "coupon discount কুপন ছাড়" },
     { href: "/sumon/newsletter", icon: Send, label: "Newsletter", labelBn: "নিউজলেটার", minRole: "admin", descBn: "গ্রাহকদের ইমেইল পাঠান", keywords: "newsletter email নিউজলেটার" },
     { href: "/sumon/email-templates", icon: Mail, label: "Email Templates", labelBn: "অটো ইমেইলের লেখা", minRole: "admin", permission: "email_templates.read", descBn: "অর্ডার/বুকিংয়ে যে ইমেইল যায় তার লেখা", keywords: "email template ইমেইল টেমপ্লেট" },
-    { href: "/sumon/settings#marketing_config", icon: Settings, label: "Marketing & SEO", labelBn: "গুগল ও SEO সেটিং", minRole: "admin", descBn: "Google Analytics, Meta Pixel, SEO", keywords: "seo google analytics pixel গুগল" },
   ]},
   { id: "delivery-payment", label: "Delivery & payment", labelBn: "ডেলিভারি ও পেমেন্ট", items: [
     { href: "/sumon/delivery", icon: Truck, label: "Checkout & Delivery", labelBn: "চেকআউট ও ডেলিভারি সেটিং", minRole: "admin", permission: "settings.write", descBn: "ডেলিভারি চার্জ, পেমেন্ট পদ্ধতি", keywords: "delivery checkout charge ডেলিভারি চার্জ" },
     { href: "/sumon/delivery-zones", icon: Truck, label: "Delivery Zones", labelBn: "ডেলিভারি এলাকা", minRole: "admin", permission: "settings.read", descBn: "কোন এলাকায় কত চার্জ", keywords: "zone area এলাকা জোন" },
-    { href: "/sumon/settings#steadfast_courier", icon: Shield, label: "Courier (Steadfast)", labelBn: "কুরিয়ার (Steadfast)", minRole: "admin", permission: "settings.read", descBn: "Steadfast কুরিয়ারের সংযোগ", keywords: "courier steadfast কুরিয়ার" },
-    { href: "/sumon/payments", icon: CreditCard, label: "Payments", labelBn: "পেমেন্ট", minRole: "admin", permission: "payments.read", descBn: "কে কত টাকা দিল", keywords: "payment bkash nagad পেমেন্ট বিকাশ নগদ" },
-    { href: "/sumon/payments?tab=reconciliation", icon: CreditCard, label: "Reconciliation", labelBn: "পেমেন্ট মিলিয়ে দেখা", minRole: "admin", permission: "payments.read", descBn: "পেমেন্ট ও অর্ডারের হিসাব মেলান", keywords: "reconciliation মিলান হিসাব" },
+    { href: "/sumon/payments", icon: CreditCard, label: "Payments", labelBn: "পেমেন্ট", minRole: "admin", permission: "payments.read", descBn: "কে কত টাকা দিল; পেমেন্ট ও অর্ডার মেলানো", keywords: "payment bkash nagad reconciliation পেমেন্ট বিকাশ নগদ মিলান হিসাব" },
     { href: "/sumon/invoices", icon: FileText, label: "Invoices", labelBn: "ইনভয়েস", minRole: "admin", permission: "invoices.read", descBn: "ইনভয়েস দেখুন ও প্রিন্ট করুন", keywords: "invoice ইনভয়েস বিল" },
   ]},
   { id: "reports", label: "Reports", labelBn: "রিপোর্ট ও হিসাব", items: [
     { href: "/sumon/analytics", icon: BarChart2, label: "Analytics", labelBn: "সাইটের পরিসংখ্যান", descBn: "কতজন এল, কী দেখল, কী কিনল", keywords: "analytics visitors পরিসংখ্যান ভিজিটর" },
-    { href: "/sumon/reports?report=revenue", icon: BarChart2, label: "Revenue", labelBn: "আয় (রেভিনিউ)", minRole: "admin", permission: "analytics.read", descBn: "দিন/মাসের মোট আয়", keywords: "revenue income আয় রেভিনিউ" },
-    { href: "/sumon/reports", icon: ScrollText, label: "Sales Reports", labelBn: "বিক্রয় রিপোর্ট", minRole: "admin", permission: "analytics.read", descBn: "কোন পণ্য কত বিক্রি", keywords: "sales report বিক্রয় রিপোর্ট" },
-    { href: "/sumon/reports?report=payments", icon: CreditCard, label: "Payment Reports", labelBn: "পেমেন্ট রিপোর্ট", minRole: "admin", permission: "analytics.read", descBn: "পেমেন্টের রিপোর্ট", keywords: "payment report পেমেন্ট রিপোর্ট" },
+    { href: "/sumon/reports", icon: ScrollText, label: "Sales Reports", labelBn: "রিপোর্ট (আয়, বিক্রয়, পেমেন্ট)", minRole: "admin", permission: "analytics.read", descBn: "দিন/মাসের আয়, কোন পণ্য কত বিক্রি, পেমেন্ট রিপোর্ট", keywords: "report revenue sales payments income রিপোর্ট আয় রেভিনিউ বিক্রয় পেমেন্ট" },
   ]},
   { id: "system-security", label: "System & Security", labelBn: "নিরাপত্তা ও ব্যবস্থাপনা", items: [
     { href: "/sumon/security", icon: ShieldCheck, label: "Account Security", labelBn: "আমার নিরাপত্তা (2FA)", descBn: "পাসওয়ার্ড, 2FA, রিকভারি কোড", keywords: "security 2fa password নিরাপত্তা পাসওয়ার্ড" },
@@ -136,7 +130,7 @@ export const ADMIN_QUICK_ACTIONS = [
   { href: "/sumon/products", label: "Add Product", labelBn: "নতুন পণ্য", icon: Package, color: "green" as const },
   { href: "/sumon/bookings", label: "Bookings", labelBn: "বুকিং", icon: Briefcase, color: "accent" as const },
   { href: "/sumon/leads", label: "New Leads", labelBn: "নতুন লিড", icon: Users, color: "amber" as const },
-  { href: "/sumon/settings", label: "Site Settings", labelBn: "সাইট সেটিংস", icon: Settings, color: "brand" as const },
+  { href: "/sumon/customers", label: "Customers", labelBn: "গ্রাহক", icon: Users, color: "brand" as const },
   { href: "/sumon/analytics", label: "Analytics", labelBn: "রিপোর্ট", icon: BarChart2, color: "green" as const },
 ];
 
@@ -147,5 +141,5 @@ export const ADMIN_WEBSITE_ACTIONS = [
   { href: "/sumon/media", label: "Upload photos & videos", labelBn: "ছবি-ভিডিও আপলোড", icon: Images, color: "green" as const },
   { href: "/sumon/blog", label: "Write a blog post", labelBn: "নতুন ব্লগ লিখুন", icon: BookOpen, color: "amber" as const },
   { href: "/sumon/announcements", label: "Announcement bar", labelBn: "ঘোষণা বার", icon: Megaphone, color: "brand" as const },
-  { href: "/sumon/settings", label: "Logo, name & contact", labelBn: "লোগো, নাম ও যোগাযোগ", icon: Settings, color: "green" as const },
+  { href: "/sumon/website", label: "All website tools", labelBn: "সব ওয়েবসাইট টুল", icon: Sparkles, color: "green" as const },
 ];
