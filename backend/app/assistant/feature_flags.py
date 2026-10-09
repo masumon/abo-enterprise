@@ -27,7 +27,7 @@ ASSISTANT_BOOLEAN_FEATURES: dict[str, bool] = {
     # DuckDuckGo Instant Answer fallback (free, key-less, non-AI). ON by
     # owner request — the assistant answers site questions from the DB first
     # and falls back to the web only when nothing local matches.
-    "assistant_feature_web_search": True,
+    "assistant_feature_web_search": False,
     "assistant_feature_complaints": True,
 }
 
@@ -63,7 +63,7 @@ class AssistantFeatureFlags:
     delivery_info: bool = True
     faq: bool = True
     blog: bool = True
-    web_search: bool = True
+    web_search: bool = False
     complaints: bool = True
 
     @classmethod
@@ -84,7 +84,7 @@ class AssistantFeatureFlags:
             delivery_info=parse_bool(data.get("assistant_feature_delivery_info"), True),
             faq=parse_bool(data.get("assistant_feature_faq"), True),
             blog=parse_bool(data.get("assistant_feature_blog"), True),
-            web_search=parse_bool(data.get("assistant_feature_web_search"), True),
+            web_search=parse_bool(data.get("assistant_feature_web_search"), False),
             complaints=parse_bool(data.get("assistant_feature_complaints"), True),
         )
 

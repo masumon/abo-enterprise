@@ -1404,7 +1404,7 @@ class AssistantConfigOut(BaseModel):
     assistant_feature_delivery_info: bool = True
     assistant_feature_faq: bool = True
     assistant_feature_blog: bool = True
-    assistant_feature_web_search: bool = True
+    assistant_feature_web_search: bool = False
     assistant_feature_complaints: bool = True
 
 

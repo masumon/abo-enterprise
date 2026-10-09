@@ -139,6 +139,8 @@ export default function AssistantWidget() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  // The free API server sleeps when idle; tell people why the first reply is slow.
+  const [slow, setSlow] = useState(false);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
@@ -292,6 +294,7 @@ export default function AssistantWidget() {
       setSuggestions([]);
       setMessages((prev) => [...prev, { role: "user", content: trimmed }]);
       setLoading(true);
+      const slowTimer = setTimeout(() => setSlow(true), 6000);
 
       try {
         const res = await assistantApi.chat({
@@ -323,7 +326,11 @@ export default function AssistantWidget() {
           ...prev,
           { role: "assistant", content: t("assistant_error") },
         ]);
+        // Put the question back so a retry is one tap away.
+        setInput(trimmed);
       } finally {
+        clearTimeout(slowTimer);
+        setSlow(false);
         setLoading(false);
       }
     },
@@ -458,7 +465,7 @@ export default function AssistantWidget() {
 
             {historyLoading && (
               <div className="flex justify-center py-8">
-                <TypingIndicator label={t("assistant_typing")} />
+                <TypingIndicator label={slow ? (lang === "bn" ? "সার্ভার চালু হচ্ছে, একটু অপেক্ষা করুন…" : "Waking up the server, one moment…") : t("assistant_typing")} />
               </div>
             )}
 
@@ -486,24 +493,32 @@ export default function AssistantWidget() {
                   {formatMessageContent(msg.content)}
                   {msg.role === "assistant" && msg.links && msg.links.length > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2 border-t border-gray-100/80 dark:border-white/10">
-                      {msg.links.map((link) => (
-                        <Link
-                          key={link.url}
-                          href={link.url}
-                          onClick={() => setOpen(false)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors"
-                        >
-                          {lang === "bn" && link.label_bn ? link.label_bn : link.label}
-                          <ExternalLink className="w-3 h-3 opacity-70" />
-                        </Link>
-                      ))}
+                      {msg.links.map((link) => {
+                        const cls = "inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-lg bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 hover:bg-brand-100 dark:hover:bg-brand-900/50 transition-colors";
+                        const label = lang === "bn" && link.label_bn ? link.label_bn : link.label;
+                        // WhatsApp / call / e-mail links leave the site, so they must not go through the router.
+                        if (/^(https?:|tel:|mailto:)/.test(link.url)) {
+                          return (
+                            <a key={link.url} href={link.url} target={link.url.startsWith("http") ? "_blank" : undefined} rel="noopener noreferrer" className={cls}>
+                              {label}
+                              <ExternalLink className="w-3 h-3 opacity-70" />
+                            </a>
+                          );
+                        }
+                        return (
+                          <Link key={link.url} href={link.url} onClick={() => setOpen(false)} className={cls}>
+                            {label}
+                            <ExternalLink className="w-3 h-3 opacity-70" />
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
               </div>
             ))}
 
-            {loading && <TypingIndicator label={t("assistant_typing")} />}
+            {loading && <TypingIndicator label={slow ? (lang === "bn" ? "সার্ভার চালু হচ্ছে, একটু অপেক্ষা করুন…" : "Waking up the server, one moment…") : t("assistant_typing")} />}
 
             {suggestions.length > 0 && !loading && (
               <div className="flex flex-wrap gap-2 pt-1 animate-fade-in">
@@ -530,7 +545,7 @@ export default function AssistantWidget() {
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && sendMessage()}
                 placeholder={t("assistant_placeholder")}
                 className={cn(
                   "flex-1 px-4 py-3 text-sm rounded-2xl transition-all duration-200",
