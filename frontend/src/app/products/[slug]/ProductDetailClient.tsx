@@ -26,6 +26,7 @@ import ProductFAQ from "@/components/features/ProductFAQ";
 import ProductReviews from "@/components/features/ProductReviews";
 import GlassCard from "@/components/ui/GlassCard";
 import CountdownTimer, { getWeeklySaleEnd } from "@/components/ui/CountdownTimer";
+import { parseDhakaDateTime } from "@/lib/flashSale";
 
 const ProductBookingModal = dynamic(() => import("@/components/products/ProductBookingModal"), { ssr: false });
 
@@ -226,8 +227,8 @@ export default function ProductDetailClient({ product }: Props) {
                 )}
               </div>
 
-              {product.is_flash_sale && (
-                <CountdownTimer endDate={getWeeklySaleEnd()} label={lang === "bn" ? "ফ্ল্যাশ সেল শেষ" : "Flash sale ends"} className="mb-3" />
+              {flashLive && (
+                <CountdownTimer endDate={parseDhakaDateTime(product.flash_sale_ends_at) ?? getWeeklySaleEnd()} label={lang === "bn" ? "ফ্ল্যাশ সেল শেষ" : "Flash sale ends"} className="mb-3" />
               )}
 
               {product.category && <span className="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">{product.category}</span>}

@@ -58,6 +58,13 @@ async function fetchSettings(): Promise<Record<string, string>> {
   return pending;
 }
 
+/** Re-fetch the public settings from the API right now (shared with every
+ * usePublicSettings caller). Used by sections that must react to admin
+ * changes without a reload, e.g. the flash sale. Offline → cached values. */
+export function refreshPublicSettings(): Promise<Record<string, string>> {
+  return fetchSettings();
+}
+
 /** Fetch public CMS settings (stale cache + background revalidation). Safe for client components. */
 export function usePublicSettings(keys?: string[]) {
   const [settings, setSettings] = useState<Record<string, string>>(memoryCache ?? {});

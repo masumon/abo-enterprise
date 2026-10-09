@@ -16,6 +16,7 @@ import { formatPrice, discountPercent } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import Badge, { badgeVariantFromProduct } from "@/components/ui/Badge";
 import CountdownTimer, { getWeeklySaleEnd } from "@/components/ui/CountdownTimer";
+import { parseDhakaDateTime } from "@/lib/flashSale";
 import { PaymentMethodBadges } from "@/components/ui/PaymentMethodBadge";
 import type { Product } from "@/types";
 
@@ -266,7 +267,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
           )}
         </div>
         {flashLive && !compact && (
-          <CountdownTimer endDate={getWeeklySaleEnd()} label={lang === "bn" ? "ফ্ল্যাশ সেল শেষ" : "Flash sale ends"} className="mb-2 text-xs" />
+          <CountdownTimer endDate={parseDhakaDateTime(product.flash_sale_ends_at) ?? getWeeklySaleEnd()} label={lang === "bn" ? "ফ্ল্যাশ সেল শেষ" : "Flash sale ends"} className="mb-2 text-xs" />
         )}
         {!compact && (
           <div className="flex flex-wrap gap-1 mb-3 items-center">

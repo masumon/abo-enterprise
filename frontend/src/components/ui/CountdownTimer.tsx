@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
+import { parseDhakaDateTime, weeklyEndDhaka } from "@/lib/flashSale";
 
 export type CountdownSize = "sm" | "md" | "lg" | "xl";
 
@@ -30,23 +31,36 @@ interface Props {
   icon?: string;
   /** Defaults to "red" — every existing usage keeps its current look. */
   tone?: keyof typeof TONES;
+  /** Called once when the countdown reaches zero (so a parent can hide). */
+  onExpire?: () => void;
 }
 
 function pad(n: number) {
   return n.toString().padStart(2, "0");
 }
 
-export default function CountdownTimer({ endDate, className, label, size = "md", icon = "⚡", tone = "red" }: Props) {
+export default function CountdownTimer({ endDate, className, label, size = "md", icon = "⚡", tone = "red", onExpire }: Props) {
   const S = SIZES[size] ?? SIZES.md;
   const T = TONES[tone] ?? TONES.red;
   const [remaining, setRemaining] = useState({ h: 0, m: 0, s: 0, expired: false });
+  // Depend on the timestamp, not the Date object: callers often build a new
+  // Date every render, which used to restart this interval on every render.
+  const endMs = endDate.getTime();
+  const onExpireRef = useRef(onExpire);
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
 
   useEffect(() => {
+    let id: ReturnType<typeof setInterval> | undefined;
     const tick = () => {
-      const diff = endDate.getTime() - Date.now();
-      if (diff <= 0) {
+      const diff = endMs - Date.now();
+      if (diff <= 0 || Number.isNaN(diff)) {
         setRemaining({ h: 0, m: 0, s: 0, expired: true });
-        return;
+        if (id !== undefined) clearInterval(id);
+        id = undefined;
+        onExpireRef.current?.();
+        return false;
       }
       setRemaining({
         h: Math.floor(diff / 3_600_000),
@@ -54,11 +68,13 @@ export default function CountdownTimer({ endDate, className, label, size = "md",
         s: Math.floor((diff % 60_000) / 1000),
         expired: false,
       });
+      return true;
     };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [endDate]);
+    if (tick()) id = setInterval(tick, 1000);
+    return () => {
+      if (id !== undefined) clearInterval(id);
+    };
+  }, [endMs]);
 
   if (remaining.expired) return null;
 
@@ -89,38 +105,26 @@ export default function CountdownTimer({ endDate, className, label, size = "md",
   );
 }
 
-/** Returns end of current week Sunday 23:59:59 for flash sale countdown */
+/** End of the current week (Sunday 23:59:59, Bangladesh time) — the default
+ * flash-sale countdown when no explicit end exists. */
 export function getWeeklySaleEnd(): Date {
-  const now = new Date();
-  const day = now.getDay();
-  const daysUntilSunday = day === 0 ? 0 : 7 - day;
-  const end = new Date(now);
-  end.setDate(now.getDate() + daysUntilSunday);
-  end.setHours(23, 59, 59, 999);
-  return end;
+  return weeklyEndDhaka(Date.now());
 }
 
 /**
  * Resolve the flash-sale end time from the admin-configured setting
- * (a `datetime-local` string like "2026-07-10T18:00"). Falls back to the
- * end of the current week when the admin hasn't set one or it's invalid,
- * so behaviour is unchanged when the field is left blank.
+ * (a `datetime-local` string like "2026-07-10T18:00", always Bangladesh
+ * time). Falls back to the end of the current week when blank/invalid.
+ * Kept for compatibility — new code uses getFlashSaleStatus (lib/flashSale).
  */
 export function resolveFlashSaleEnd(endSetting?: string | null): Date {
-  if (endSetting && endSetting.trim()) {
-    const parsed = new Date(endSetting);
-    if (!Number.isNaN(parsed.getTime())) return parsed;
-  }
-  return getWeeklySaleEnd();
+  return parseDhakaDateTime(endSetting) ?? getWeeklySaleEnd();
 }
 
 /** True when the flash-sale window is currently open given admin settings. */
 export function isFlashSaleActive(startSetting: string | null | undefined, end: Date): boolean {
   const now = Date.now();
   if (end.getTime() <= now) return false;
-  if (startSetting && startSetting.trim()) {
-    const start = new Date(startSetting);
-    if (!Number.isNaN(start.getTime()) && start.getTime() > now) return false;
-  }
-  return true;
+  const start = parseDhakaDateTime(startSetting);
+  return !(start && start.getTime() > now);
 }
