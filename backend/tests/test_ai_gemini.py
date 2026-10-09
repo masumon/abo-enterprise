@@ -93,3 +93,19 @@ async def test_answer_masks_numbers_and_emails_and_respects_daily_cap(monkeypatc
     assert "Bangla" in sent["system"] and "01885411007" in sent["system"]
     # cap reached → no second call
     assert await ai.answer(None, "again", "bn", "FACTS", FACTS) is None
+
+
+async def test_new_style_keys_with_dots_reach_google(monkeypatch):
+    called = {}
+
+    async def pick(client, key):
+        called["key"] = key
+        return "gemini-2.5-flash"
+
+    async def gen(*a, **k):
+        return "OK"
+
+    monkeypatch.setattr(ai, "_pick_model", pick)
+    monkeypatch.setattr(ai, "_generate", gen)
+    res = await ai.verify_key("AQ.Ab8RN6Lx2kQ9vT3mPz7wY1cD4fG6hJ8kL0nB")
+    assert res.ok and called["key"].startswith("AQ.")

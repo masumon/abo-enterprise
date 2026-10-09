@@ -109,7 +109,7 @@ export default function GeminiAiCard() {
               <input
                 id="gemini-key" type="password" autoComplete="off" spellCheck={false}
                 value={key} onChange={(e) => { setKey(e.target.value.trim()); setError(""); }}
-                placeholder="AIza..." className="input w-full pl-9 font-mono text-sm"
+                placeholder="AIza… বা AQ.…" className="input w-full pl-9 font-mono text-sm"
               />
             </div>
             <button
@@ -133,7 +133,7 @@ export default function GeminiAiCard() {
               </a>{" "}খুলে আপনার Google অ্যাকাউন্ট দিয়ে ঢুকুন।
             </li>
             <li>শর্তাবলী মেনে নিন, তারপর <b>Create API key</b> চাপুন।</li>
-            <li>যে কী-টা আসে (AIza দিয়ে শুরু) সেটা <b>Copy</b> করুন।</li>
+            <li>যে কী-টা আসে (AIza… বা AQ.… দিয়ে শুরু — দুটোই চলবে) সেটা <b>Copy</b> করুন।</li>
             <li>এখানে বসিয়ে <b>যাচাই করে সংরক্ষণ</b> চাপুন — “সফল” এলে কাজ শুরু।</li>
           </ol>
           <p className="mt-2 text-gray-500">জানা দরকার: ফ্রি সংস্করণে দিনে/মিনিটে সীমা আছে, আর Google তাদের শর্ত অনুযায়ী ফ্রি ব্যবহারের লেখা নিজেদের পণ্য উন্নয়নে ব্যবহার করতে পারে। গ্রাহকের ফোন নম্বর ও ইমেইল আমরা Google-এ পাঠাই না।</p>

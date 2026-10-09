@@ -98,7 +98,9 @@ async def _generate(client: httpx.AsyncClient, key: str, model: str, system: str
 
 async def verify_key(key: str) -> VerifyResult:
     key = (key or "").strip()
-    if not re.fullmatch(r"[A-Za-z0-9_\-]{20,80}", key):
+    # Google issues both classic "AIza…" keys and newer "AQ.Ab…" keys (with dots) — accept both;
+    # the real check is the call to Google below.
+    if not re.fullmatch(r"[A-Za-z0-9_.\-]{20,200}", key):
         return VerifyResult(False, message_bn="কী-এর গঠন ঠিক নেই — Google AI Studio থেকে পুরো কী কপি করুন।", message_en="That doesn't look like an API key — copy the whole key from Google AI Studio.")
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
