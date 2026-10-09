@@ -554,8 +554,12 @@ export default function ServicesPageClient({
                         className="sm:hidden w-full flex items-center justify-between gap-2 -mt-1 mb-2 py-2 text-xs font-semibold text-brand-700 dark:text-brand-200"
                       >
                         <span>
-                          {chips.length}{" "}
-                          {t({ en: chips.length === 1 ? "service" : "services", bn: "টি সেবা" })}
+                          {/* Chips are sub-topics of the category, not live service
+                              listings — label them honestly as topics. */}
+                          {t({
+                            en: `${chips.length} ${chips.length === 1 ? "topic" : "topics"}`,
+                            bn: `${String(chips.length).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি বিষয়`,
+                          })}
                         </span>
                         <ChevronRight
                           aria-hidden
