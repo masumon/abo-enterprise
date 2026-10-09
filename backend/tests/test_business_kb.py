@@ -104,3 +104,8 @@ def test_empty_fact_lines_are_dropped_and_links_are_valid():
     links = contact_links(FACTS)
     assert links[0]["url"] == "https://wa.me/8801885411007"
     assert links[1]["url"] == "tel:+8801885411007"
+
+
+def test_heading_lines_ending_with_colon_are_kept():
+    hit = BusinessKnowledge().answer("আমাদের সেবাসমূহ", "bn", FACTS)
+    assert hit.text.startswith("🧰 আমাদের সেবাসমূহ:")

@@ -54,3 +54,6 @@ backend/_smtp_audit.py
 .venv311/
 backend/demo_cleanup_backups/
 /apon/
+
+# Local agent worktrees
+/.claude/worktrees/

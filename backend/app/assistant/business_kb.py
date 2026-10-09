@@ -435,10 +435,16 @@ class _SafeDict(dict):
 
 
 def fill(template: str, facts: dict[str, Any]) -> str:
-    text = template.format_map(_SafeDict({k: ("" if v is None else v) for k, v in facts.items()}))
-    # Drop lines whose only fact was empty (e.g. "📍 আমাদের ঠিকানা: ").
-    lines = [ln for ln in text.split("\n") if not re.search(r"[:：]\s*$", ln.strip())]
-    return "\n".join(lines).strip()
+    values = _SafeDict({k: ("" if v is None else v) for k, v in facts.items()})
+    out = []
+    for line in template.split("\n"):
+        filled = line.format_map(values)
+        # Drop a line only when it held a fact that turned out empty (e.g. "📍 আমাদের ঠিকানা: ");
+        # plain heading lines such as "🧰 আমাদের সেবাসমূহ:" stay.
+        if "{" in line and re.search(r"[:：]\s*$", filled.strip()):
+            continue
+        out.append(filled)
+    return "\n".join(out).strip()
 
 
 def contact_links(facts: dict[str, Any]) -> list[dict]:
