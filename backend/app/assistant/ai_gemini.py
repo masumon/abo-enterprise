@@ -27,7 +27,6 @@ from app.models.models import Setting
 logger = logging.getLogger(__name__)
 
 API_BASE = "https://generativelanguage.googleapis.com/v1beta"
-VERTEX_BASE = "https://aiplatform.googleapis.com/v1"
 KEY_SETTING = "ai_gemini_key_enc"
 MODEL_SETTING = "ai_gemini_model"
 ENABLED_SETTING = "ai_gemini_enabled"
@@ -37,7 +36,8 @@ VERIFIED_SETTING = "ai_gemini_verified_at"
 ALL_SETTINGS = [KEY_SETTING, MODEL_SETTING, ENABLED_SETTING, CAP_SETTING, HINT_SETTING, VERIFIED_SETTING]
 DEFAULT_DAILY_CAP = 300
 # Newest free-tier "flash" models first; whatever the key can actually use is picked at verify time.
-PREFERRED_MODELS = ("gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash")
+PREFERRED_MODELS = ("gemini-flash-latest", "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash",
+                    "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash", "gemini-2.5-flash-lite")
 
 _cache: dict[str, Any] = {"at": 0.0, "cfg": None}
 _usage: dict[str, Any] = {"day": None, "count": 0}
@@ -64,34 +64,43 @@ def _error_text(status: int, body: str) -> tuple[str, str]:
     return f"Google থেকে ত্রুটি এসেছে ({status}) — একটু পরে আবার চেষ্টা করুন।", f"Google returned an error ({status}) — please try again later."
 
 
-async def _pick_model(client: httpx.AsyncClient, key: str) -> str:
-    r = await client.get(f"{API_BASE}/models", params={"pageSize": 200}, headers={"x-goog-api-key": key})
+def _version_key(name: str) -> tuple:
+    """Sort helper: newest Gemini first (gemini-3.8-flash > gemini-3.5-flash > gemini-2.5-flash)."""
+    nums = re.findall(r"\d+(?:\.\d+)?", name)
+    return (float(nums[0]) if nums else 0.0, "lite" not in name)
+
+
+def _auth(key: str, auth: str) -> tuple[dict, dict | None]:
+    """Headers/params for the Gemini API. "header" = classic x-goog-api-key, "bearer" = new AQ. auth keys."""
+    if auth == "bearer":
+        return {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}, None
+    return {"x-goog-api-key": key, "Content-Type": "application/json"}, None
+
+
+async def _list_models(client: httpx.AsyncClient, key: str, auth: str) -> list[str]:
+    """Flash text models this key can use, newest first. Empty list if listing is not allowed."""
+    headers, params = _auth(key, auth)
+    r = await client.get(f"{API_BASE}/models", params={"pageSize": 200}, headers=headers)
     if r.status_code != 200:
-        raise httpx.HTTPStatusError("models", request=r.request, response=r)
-    names = [
-        m.get("name", "").split("/")[-1]
-        for m in r.json().get("models", [])
-        if "generateContent" in (m.get("supportedGenerationMethods") or [])
-    ]
-    for wanted in PREFERRED_MODELS:
-        if wanted in names:
-            return wanted
-    flash = [n for n in names if "flash" in n and "exp" not in n and "preview" not in n]
-    return flash[0] if flash else (names[0] if names else PREFERRED_MODELS[0])
+        return []
+    names = []
+    for m in r.json().get("models", []) or []:
+        name = str(m.get("name", "")).split("/")[-1]
+        methods = m.get("supportedGenerationMethods") or m.get("supported_generation_methods") or []
+        if not name.startswith("gemini") or (methods and "generateContent" not in methods):
+            continue
+        if any(bad in name for bad in ("tts", "image", "embedding", "audio", "live", "exp", "preview", "thinking")):
+            continue
+        if "flash" in name:
+            names.append(name)
+    return sorted(set(names), key=_version_key, reverse=True)
 
 
-def _is_vertex_key(key: str) -> bool:
-    """Newer Google keys ("AQ.…") are Vertex AI express-mode keys; they use a different endpoint."""
-    return key.startswith("AQ.")
-
-
-async def _generate(client: httpx.AsyncClient, key: str, model: str, system: str, user: str, max_tokens: int = 400) -> str:
-    if _is_vertex_key(key):
-        url, params, headers = f"{VERTEX_BASE}/publishers/google/models/{model}:generateContent", {"key": key}, {"Content-Type": "application/json"}
-    else:
-        url, params, headers = f"{API_BASE}/models/{model}:generateContent", None, {"x-goog-api-key": key, "Content-Type": "application/json"}
+async def _generate(client: httpx.AsyncClient, key: str, model: str, system: str, user: str,
+                    max_tokens: int = 400, auth: str = "header") -> str:
+    headers, params = _auth(key, auth)
     r = await client.post(
-        url,
+        f"{API_BASE}/models/{model}:generateContent",
         params=params,
         headers=headers,
         json={
@@ -107,38 +116,54 @@ async def _generate(client: httpx.AsyncClient, key: str, model: str, system: str
     return "".join(p.get("text", "") for p in parts).strip()
 
 
+def _reason(exc: httpx.HTTPStatusError) -> str:
+    try:
+        return str((exc.response.json().get("error") or {}).get("message") or "")[:160]
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 async def verify_key(key: str) -> VerifyResult:
+    """Find a model + auth style that works for this key. The working pair is returned as
+    "model" or "model@bearer" (stored as-is; `load_config` splits it)."""
     key = (key or "").strip()
-    # Google issues both classic "AIza…" keys and newer "AQ.Ab…" keys (with dots) — accept both;
+    # AI Studio now issues "AQ.…" authentication keys; older keys start with "AIza…". Accept both —
     # the real check is the call to Google below.
     if not re.fullmatch(r"[A-Za-z0-9_.\-]{20,200}", key):
         return VerifyResult(False, message_bn="কী-এর গঠন ঠিক নেই — Google AI Studio থেকে পুরো কী কপি করুন।", message_en="That doesn't look like an API key — copy the whole key from Google AI Studio.")
+    auths = ["header", "bearer"] if key.startswith("AQ.") else ["header"]
+    last_err: httpx.HTTPStatusError | None = None
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
-            # Vertex keys can't list models; for classic keys try the listed best model first.
-            first = None if _is_vertex_key(key) else await _pick_model(client, key)
-            candidates = [m for m in dict.fromkeys([first, *PREFERRED_MODELS]) if m]
-            model, text = "", ""
-            for cand in candidates:
-                try:
-                    text = await _generate(client, key, cand, "Reply with the single word OK.", "Say OK", max_tokens=10)
-                    model = cand
-                    break
-                except httpx.HTTPStatusError as exc:
-                    if exc.response.status_code != 404:  # model not available → try the next one
-                        raise
-            if not model:
-                return VerifyResult(False, message_bn="এই কী দিয়ে কোনো Gemini মডেল পাওয়া যায়নি — Google AI Studio-র \"AIza…\" দিয়ে শুরু কী দিন।", message_en="No Gemini model is available for this key — use an \"AIza…\" key from Google AI Studio.")
-        if not text:
-            return VerifyResult(False, model, "Google উত্তর দেয়নি — একটু পরে আবার যাচাই করুন।", "Google gave no answer — try again shortly.")
-        return VerifyResult(True, model, "সফল! Google AI কাজ করছে।", "Success! Google AI is working.")
+            for auth in auths:
+                listed = await _list_models(client, key, auth)
+                candidates = list(dict.fromkeys([*listed[:4], *PREFERRED_MODELS]))[:10]
+                for cand in candidates:
+                    try:
+                        text = await _generate(client, key, cand, "Reply with the single word OK.", "Say OK", max_tokens=10, auth=auth)
+                    except httpx.HTTPStatusError as exc:
+                        last_err = exc
+                        if exc.response.status_code == 404:
+                            continue          # this model is not available → next model
+                        if exc.response.status_code == 429:
+                            raise             # quota: the key works, just busy
+                        break                 # 400/401/403: this auth style is wrong → next style
+                    model = cand if auth == "header" else f"{cand}@{auth}"
+                    if not text:
+                        return VerifyResult(False, model, "Google উত্তর দেয়নি — একটু পরে আবার যাচাই করুন।", "Google gave no answer — try again shortly.")
+                    return VerifyResult(True, model, "সফল! Google AI কাজ করছে।", "Success! Google AI is working.")
+        if last_err is not None and last_err.response.status_code != 404:
+            raise last_err
+        reason = _reason(last_err) if last_err is not None else ""
+        bn = "এই কী দিয়ে কোনো Gemini মডেল পাওয়া যায়নি — Google AI Studio থেকে নতুন কী বানিয়ে আবার চেষ্টা করুন।"
+        en = "No Gemini model is available for this key — create a new key in Google AI Studio and try again."
+        if reason:
+            bn, en = f"{bn} (Google: {reason})", f"{en} (Google: {reason})"
+        return VerifyResult(False, message_bn=bn, message_en=en)
     except httpx.HTTPStatusError as exc:
         bn, en = _error_text(exc.response.status_code, exc.response.text)
         # Show Google's own reason too (it never contains the key) so a failure can be diagnosed.
-        try:
-            reason = str((exc.response.json().get("error") or {}).get("message") or "")[:160]
-        except Exception:  # noqa: BLE001
-            reason = ""
+        reason = _reason(exc)
         if reason:
             bn, en = f"{bn} (Google: {reason})", f"{en} (Google: {reason})"
         return VerifyResult(False, message_bn=bn, message_en=en)
@@ -210,7 +235,9 @@ async def load_config(db: AsyncSession) -> dict[str, Any]:
         cap = DEFAULT_DAILY_CAP
     cfg = {
         "key": decrypt_totp_secret(enc) if enc else "",
-        "model": s.get(MODEL_SETTING) or PREFERRED_MODELS[0],
+        "model": (s.get(MODEL_SETTING) or PREFERRED_MODELS[0]).split("@")[0],
+        "auth": ((s.get(MODEL_SETTING) or "").split("@") + ["header"])[1] or "header",
+        "model_raw": s.get(MODEL_SETTING) or "",
         "enabled": (s.get(ENABLED_SETTING) or "false").lower() == "true",
         "daily_cap": cap,
         "hint": s.get(HINT_SETTING) or "",
@@ -266,7 +293,7 @@ async def answer(db: AsyncSession, question: str, lang: str, facts_text: str, fa
     try:
         _usage["count"] = usage_today() + 1
         async with httpx.AsyncClient(timeout=httpx.Timeout(9.0)) as client:
-            text = await _generate(client, cfg["key"], cfg["model"], system, user)
+            text = await _generate(client, cfg["key"], cfg["model"], system, user, auth=cfg["auth"])
     except Exception as exc:  # noqa: BLE001 — quota, network, model gone: fall back quietly
         logger.warning("Gemini answer failed: %s", exc)
         return None

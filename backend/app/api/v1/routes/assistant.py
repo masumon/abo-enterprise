@@ -545,7 +545,7 @@ async def verify_gemini_settings(
     result = await ai_gemini.verify_key(cfg["key"])
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.message_bn)
-    if result.model and result.model != cfg["model"]:
+    if result.model and result.model != cfg.get("model_raw"):
         await ai_gemini.save_key(db, cfg["key"], result.model)
         await db.commit()
     return ApiResponse(data=await _gemini_status(db), message=result.message_bn)
