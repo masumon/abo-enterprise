@@ -199,6 +199,7 @@ export default async function BlogPostPage(
             authorName={post.author_name}
             dateStr={post.published_at ?? post.created_at}
             tags={post.tags}
+            part="meta"
           />
 
           {/* Title + Content + Print/Translate (client interactive) */}
@@ -210,6 +211,10 @@ export default async function BlogPostPage(
           />
 
           <BlogProductRail products={rail.products} matched={rail.matched} />
+
+          {/* Back link after the article (it used to sit between the meta row
+              and the title, leaving a large gap above the headline). */}
+          <BlogPostMeta authorName={post.author_name} part="back" />
         </div>
       </main>
     </>
