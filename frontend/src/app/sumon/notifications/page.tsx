@@ -78,7 +78,7 @@ export default function AdminNotificationsPage() {
   const totalPages = Math.ceil(total / PER_PAGE);
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="admin-page">
       <AdminPageHeader
         title="Notifications"
         titleBn="নোটিফিকেশন"

@@ -347,7 +347,7 @@ export default function AdminCategoriesPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="admin-page">
       {/* ---------- Premium header ---------- */}
       <header
         className="relative overflow-hidden rounded-[20px] px-5 sm:px-7 py-6 sm:py-7 text-white shadow-[0_10px_40px_rgba(21,101,192,0.25)]"

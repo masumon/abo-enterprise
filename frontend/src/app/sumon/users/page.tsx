@@ -125,7 +125,7 @@ export default function AdminUsersPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="admin-page">
       <TwoFactorCard />
       <AdminPageHeader
         title="Users"

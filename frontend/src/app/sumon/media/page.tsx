@@ -476,7 +476,7 @@ export default function AdminMediaPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="Image Manager"
         titleBn="ছবি ব্যবস্থাপনা"

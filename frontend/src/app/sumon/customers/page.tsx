@@ -112,7 +112,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="Customers"
         titleBn="গ্রাহক"

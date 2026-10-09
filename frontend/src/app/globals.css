@@ -726,8 +726,24 @@
     box-shadow: 0 2px 14px rgba(15, 23, 42, 0.035);
   }
 
+  /* Admin page frame — the shell <main> owns the outer padding; every page root
+     uses `.admin-page` (full available width, one vertical rhythm). Single-form /
+     editor pages add `.admin-page-narrow` for a comfortable, left-aligned reading width. */
   .admin-page-container {
-    @apply max-w-7xl mx-auto w-full;
+    @apply max-w-screen-2xl mx-auto w-full;
+  }
+
+  .admin-page {
+    @apply w-full min-w-0 space-y-6;
+  }
+
+  /* Modal overlays rendered as direct children must not inherit the rhythm margin. */
+  .admin-page > .fixed {
+    margin-top: 0 !important;
+  }
+
+  .admin-page-narrow {
+    @apply max-w-5xl;
   }
 
   .admin-toolbar {

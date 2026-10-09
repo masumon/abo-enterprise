@@ -276,7 +276,7 @@ export default function AdminAssistantPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="AI Assistant"
         titleBn="AI সহকারী"
@@ -302,7 +302,7 @@ export default function AdminAssistantPage() {
 
       {/* Settings Tab */}
       {tab === "settings" && (
-        <div className="space-y-6 max-w-3xl">
+        <div className="space-y-6 admin-page-narrow">
           {/* Integration overview */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">

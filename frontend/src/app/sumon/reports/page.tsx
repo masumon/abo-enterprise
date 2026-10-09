@@ -78,7 +78,7 @@ export default function AdminReportsPage() {
   const columns = Array.from(new Set(dataRows.flatMap((r) => Object.keys(r))));
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="admin-page">
       <AdminPageHeader
         title="Reports"
         titleBn="রিপোর্ট"

@@ -43,7 +43,7 @@ export default function WebsiteHubPage() {
   const sizes = BRAND_IMAGE_SLOTS.filter((s) => s.guide);
 
   return (
-    <div className="space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="Make the website yours"
         titleBn="ওয়েবসাইট সাজান"

@@ -219,7 +219,7 @@ export default function AdminInvoicesPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="admin-page">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <AdminTitle en="Invoices" bn="ইনভয়েস" />

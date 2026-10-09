@@ -110,7 +110,7 @@ export default function AdminDashboard() {
   const outOfStock = inventory?.out_of_stock ?? null;
 
   return (
-    <div className="space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title={`${greetEn}!`}
         titleBn={`${greetBn}!`}

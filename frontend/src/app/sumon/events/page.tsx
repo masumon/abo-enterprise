@@ -75,7 +75,7 @@ export default function AdminSystemEventsPage() {
   const totalPages = Math.ceil(total / PER_PAGE);
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="admin-page">
       <AdminPageHeader
         title="System Events (technical problems)"
         titleBn="সিস্টেম ইভেন্ট (কারিগরি সমস্যা)"

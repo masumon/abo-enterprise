@@ -118,7 +118,7 @@ export default function AdminAnnouncementsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-3xl mx-auto">
+    <div className="admin-page admin-page-narrow">
       <HomepageSectionNav />
       <AdminPageHeader
         title="Announcements"

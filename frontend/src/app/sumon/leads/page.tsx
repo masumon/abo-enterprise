@@ -187,7 +187,7 @@ export default function AdminLeadsPage() {
     "text-red-600 bg-red-50";
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="admin-page">
       <AdminPageHeader
         title="Leads"
         titleBn="লিড ব্যবস্থাপনা"

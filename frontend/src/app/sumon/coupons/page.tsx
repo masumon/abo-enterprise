@@ -110,7 +110,7 @@ export default function AdminCouponsPage() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="Coupons"
         titleBn="কুপন ম্যানেজার"

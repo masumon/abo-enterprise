@@ -153,7 +153,7 @@ export default function AdminEmailTemplatesPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="admin-page">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <Mail className="w-6 h-6 text-brand-600" />

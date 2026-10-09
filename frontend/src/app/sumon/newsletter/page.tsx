@@ -71,7 +71,7 @@ export default function NewsletterAdminPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="Newsletter Subscribers"
         titleBn="নিউজলেটার সাবস্ক্রাইবার"

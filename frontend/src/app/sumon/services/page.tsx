@@ -618,7 +618,7 @@ export default function AdminServicesPage() {
     setEditing(prev => prev ? { ...prev, [field]: e.target.value ? Number(e.target.value) : undefined } : prev);
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="admin-page">
       <AdminPageHeader
         title="Services"
         titleBn="সেবা"

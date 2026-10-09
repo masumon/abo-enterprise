@@ -211,7 +211,7 @@ export default function AdminReviewsPage() {
   });
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="admin-page">
       <AdminPageHeader
         title="Product Reviews"
         titleBn="পণ্য রিভিউ"

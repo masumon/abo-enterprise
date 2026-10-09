@@ -251,7 +251,7 @@ export default function AdminPaymentsPage() {
   const configured = new Set(methods.map((m) => m.payment_gateway));
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="admin-page">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <AdminTitle en="Payments" bn="পেমেন্ট" />

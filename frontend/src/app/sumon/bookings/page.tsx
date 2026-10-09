@@ -177,7 +177,7 @@ export default function AdminBookingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="admin-page">
       <AdminPageHeader
         title="Bookings"
         titleBn="বুকিং ব্যবস্থাপনা"

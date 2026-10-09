@@ -110,7 +110,7 @@ export default function CareerAdminPage() {
   const totalPages = Math.ceil(total / per_page);
 
   return (
-    <div className="space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="Career Applications"
         titleBn="ক্যারিয়ার আবেদন"

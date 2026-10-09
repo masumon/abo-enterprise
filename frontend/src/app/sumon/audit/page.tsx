@@ -88,7 +88,7 @@ export default function AdminAuditPage() {
   const totalPages = Math.ceil(total / PER_PAGE);
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="admin-page">
       <AdminPageHeader
         title="Audit Logs (staff activity)"
         titleBn="অডিট লগ (স্টাফ কার্যকলাপ)"

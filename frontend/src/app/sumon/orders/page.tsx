@@ -285,7 +285,7 @@ export default function AdminOrdersPage() {
   const allSelected = orders.length > 0 && selected.size === orders.length;
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="Orders"
         titleBn="অর্ডার ব্যবস্থাপনা"

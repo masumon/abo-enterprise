@@ -50,7 +50,7 @@ export default function SteadfastTestPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="admin-page admin-page-narrow">
       <div className="admin-card p-5 sm:p-6">
         <div className="flex items-start gap-3">
           <div className="rounded-xl bg-brand-50 p-3 text-brand-700"><ShieldCheck className="w-6 h-6" /></div>

@@ -156,7 +156,7 @@ export default function AdminShowcasePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="Project Gallery & Software Services"
         titleBn="প্রজেক্ট গ্যালারি ও সফটওয়্যার সেবা"

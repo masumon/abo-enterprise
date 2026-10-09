@@ -171,7 +171,7 @@ export default function AdminCombosPage() {
   };
 
   return (
-    <div>
+    <div className="admin-page">
       <AdminPageHeader
         title="Combo Packs"
         titleBn="কম্বো প্যাক"

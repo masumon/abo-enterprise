@@ -538,7 +538,7 @@ export default function AdminProductsPage() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="Products"
         titleBn="পণ্য ব্যবস্থাপনা"

@@ -119,7 +119,7 @@ export default function AdminProductImportPage() {
   const ext = file ? (file.name.split(".").pop() || "").toLowerCase() : "";
 
   return (
-    <div>
+    <div className="admin-page">
       <AdminPageHeader
         title="Bulk Product Import"
         titleBn="বাল্ক পণ্য ইমপোর্ট"

@@ -152,7 +152,7 @@ export default function AnalyticsPage() {
   const maxFunnel = Math.max(...Object.values(funnel), 1);
 
   return (
-    <div className="space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="Analytics"
         titleBn="বিজনেস রিপোর্ট"

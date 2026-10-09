@@ -742,7 +742,7 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="Settings"
         titleBn="সাইট সেটিংস"
@@ -781,7 +781,7 @@ export default function AdminSettingsPage() {
           ))}
         </div>
       ) : (
-        <div className="space-y-6 max-w-3xl">
+        <div className="space-y-6 admin-page-narrow">
           <div className="flex gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-fit flex-wrap" role="tablist">
             {SECTION_GROUPS.map((g) => (
               <button

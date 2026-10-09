@@ -143,7 +143,7 @@ export default function AdminPromoSlidesPage() {
     setEditing((prev) => (prev ? { ...prev, [key]: value } : prev));
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="admin-page">
       <HomepageSectionNav />
       <AdminPageHeader
         title="Homepage Banners & Slider"

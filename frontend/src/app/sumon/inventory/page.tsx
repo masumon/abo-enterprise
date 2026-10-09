@@ -119,7 +119,7 @@ export default function AdminInventoryPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="admin-page">
       <AdminPageHeader title="Inventory & Brands" description="Real stock balances, movement history, low-stock monitoring and brand master data." />
       <div className="flex gap-2 border-b border-border">
         <button className={`px-4 py-2 font-medium ${tab === "inventory" ? "border-b-2 border-brand text-brand" : "text-muted"}`} onClick={() => setTab("inventory")}>Inventory</button>

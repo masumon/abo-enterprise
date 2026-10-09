@@ -65,7 +65,7 @@ export default function RolesPermissionsPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6">
+    <div className="admin-page">
       <AdminPageHeader
         title="Roles & Permissions"
         titleBn="ভূমিকা ও অনুমতি"

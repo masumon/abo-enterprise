@@ -69,7 +69,7 @@ export default function LegalPagesAdmin() {
   };
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+    <div className="admin-page admin-page-narrow">
       <div className="flex items-center gap-2 mb-1">
         <ScrollText className="w-6 h-6 text-brand-600" />
         <AdminTitle en="Legal Pages" bn="আইনি পেজসমূহ" />

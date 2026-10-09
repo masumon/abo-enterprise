@@ -196,7 +196,7 @@ export default function AponAdminPage() {
   const maxDay = Math.max(1, ...(stats?.per_day.map((d) => d.count) ?? [1]));
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-5">
+    <div className="admin-page admin-page-narrow">
       <AdminPageHeader
         title="Mobile App (Apon)"
         titleBn="মোবাইল অ্যাপ (আপন)"

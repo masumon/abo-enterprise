@@ -105,7 +105,7 @@ export default function AdminDeliveryZonesPage() {
   };
 
   return (
-    <div>
+    <div className="admin-page">
       <AdminPageHeader
         title="Delivery Zones"
         titleBn="ডেলিভারি জোন"

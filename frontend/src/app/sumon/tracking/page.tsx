@@ -59,7 +59,7 @@ export default function AdminTrackingPage() {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="admin-page">
       <AdminPageHeader
         title="Courier Tracking"
         titleBn="কুরিয়ার ট্র্যাকিং"
