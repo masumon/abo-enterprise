@@ -21,11 +21,12 @@ async function fetchProduct(slug: string): Promise<Product | null> {
   }
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const product = await fetchProduct(params.slug);
   if (!product) {
     return { title: "Product Not Found | ABO Enterprise" };
@@ -104,11 +105,12 @@ function buildJsonLd(product: Product) {
   return jsonLd;
 }
 
-export default async function ProductDetailPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
+export default async function ProductDetailPage(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+) {
+  const params = await props.params;
   const product = await fetchProduct(params.slug);
 
   const jsonLd = product ? buildJsonLd(product) : null;

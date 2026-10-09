@@ -57,11 +57,12 @@ export const metadata: Metadata = pageMeta(
   "/products"
 );
 
-export default async function ProductsPage({
-  searchParams,
-}: {
-  searchParams: { category?: string };
-}) {
+export default async function ProductsPage(
+  props: {
+    searchParams: Promise<{ category?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const category = searchParams.category ?? "";
   const categories = await fetchProductTaxonomy();
   const taxonomySlugs = new Set(categories.map((c) => c.slug));

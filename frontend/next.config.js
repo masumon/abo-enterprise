@@ -6,6 +6,8 @@ const withPWA = require("@ducanh2912/next-pwa").default;
 const nextConfig = {
   compress: true,
   poweredByHeader: false,
+  // Next 16 writes an AGENTS.md into the project on `next dev`; not wanted here.
+  agentRules: false,
   // Strip console.* from production bundles (keeps console.error for genuine
   // diagnostics). Development keeps all logging.
   compiler: {

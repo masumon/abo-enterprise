@@ -76,11 +76,12 @@ async function fetchRailProducts(
   return { products: await get("page=1&per_page=3"), matched: false };
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const post = await fetchPost(params.slug);
   if (!post) return { title: "Post Not Found | ABO Enterprise" };
 
@@ -143,11 +144,12 @@ function buildArticleJsonLd(post: BlogPost) {
   };
 }
 
-export default async function BlogPostPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
+export default async function BlogPostPage(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+) {
+  const params = await props.params;
   const post = await fetchPost(params.slug);
   if (!post) notFound();
 

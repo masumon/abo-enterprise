@@ -11,8 +11,8 @@ export const metadata: Metadata = pageMeta(
   "/services/quote"
 );
 
-export default function ServiceQuotePage() {
-  const lang = normalizeLang(cookies().get(LANG_COOKIE)?.value);
+export default async function ServiceQuotePage() {
+  const lang = normalizeLang((await cookies()).get(LANG_COOKIE)?.value);
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-2xl">

@@ -31,11 +31,12 @@ async function fetchPosts(page = 1): Promise<{ posts: BlogPost[]; total: number;
   }
 }
 
-export default async function BlogListPage({
-  searchParams,
-}: {
-  searchParams: { page?: string };
-}) {
+export default async function BlogListPage(
+  props: {
+    searchParams: Promise<{ page?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
   const page = Math.max(1, parseInt(searchParams.page ?? "1", 10));
   const { posts, total, total_pages } = await fetchPosts(page);
 

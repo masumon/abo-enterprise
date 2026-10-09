@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ElementType } from "react";
+import { useEffect, useState, type ElementType, type JSX } from "react";
 import { getBusinessHours } from "@/lib/businessHours";
 import Link from "next/link";
 import { Facebook, MessageCircle, Mail, MapPin, Phone, Loader2, Instagram, Linkedin, Youtube, ChevronDown, CheckCircle2, BadgeCheck, Clock, Lock } from "lucide-react";

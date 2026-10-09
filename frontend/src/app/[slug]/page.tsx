@@ -28,11 +28,12 @@ async function fetchPage(slug: string): Promise<PageRecord | null> {
   }
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const page = await fetchPage(params.slug);
   if (!page) return { title: "Page Not Found | ABO Enterprise" };
 
@@ -63,11 +64,12 @@ function buildPageJsonLd(page: PageRecord) {
   };
 }
 
-export default async function CmsPage({
-  params,
-}: {
-  params: { slug: string };
-}) {
+export default async function CmsPage(
+  props: {
+    params: Promise<{ slug: string }>;
+  }
+) {
+  const params = await props.params;
   const page = await fetchPage(params.slug);
   if (!page) notFound();
 

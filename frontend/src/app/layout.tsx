@@ -144,7 +144,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   /* GAP-01 — the language lived only in localStorage, so every page was sent
      in Bengali and repainted in English after hydration for an English reader,
      and <html lang> was wrong until JavaScript ran. Reading the cookie here
@@ -152,7 +152,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
      makes this layout dynamic: pages are rendered per request rather than
      served from the static shell, which is the price of getting `lang` and the
      first paint correct for both audiences. */
-  const lang = normalizeLang(cookies().get(LANG_COOKIE)?.value);
+  const lang = normalizeLang((await cookies()).get(LANG_COOKIE)?.value);
   return (
     <html lang={lang} suppressHydrationWarning className={`${hindSiliguri.variable} ${notoSerifBengali.variable}`}>
       <head>

@@ -175,7 +175,8 @@ function taxonomyMetadata(
   };
 }
 
-export async function generateMetadata({ params }: { params: PageParams }): Promise<Metadata> {
+export async function generateMetadata(props: { params: Promise<PageParams> }): Promise<Metadata> {
+  const params = await props.params;
   const segments = params.segments ?? [];
 
   if (segments.length === 1) {
@@ -308,7 +309,8 @@ function buildFaqJsonLd(service: Service) {
   };
 }
 
-export default async function ServicesCatchAllPage({ params }: { params: PageParams }) {
+export default async function ServicesCatchAllPage(props: { params: Promise<PageParams> }) {
+  const params = await props.params;
   const segments = params.segments ?? [];
 
   // /services/{serviceSlug} — service detail wins (legacy behaviour).
