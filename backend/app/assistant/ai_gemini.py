@@ -134,6 +134,13 @@ async def verify_key(key: str) -> VerifyResult:
         return VerifyResult(True, model, "সফল! Google AI কাজ করছে।", "Success! Google AI is working.")
     except httpx.HTTPStatusError as exc:
         bn, en = _error_text(exc.response.status_code, exc.response.text)
+        # Show Google's own reason too (it never contains the key) so a failure can be diagnosed.
+        try:
+            reason = str((exc.response.json().get("error") or {}).get("message") or "")[:160]
+        except Exception:  # noqa: BLE001
+            reason = ""
+        if reason:
+            bn, en = f"{bn} (Google: {reason})", f"{en} (Google: {reason})"
         return VerifyResult(False, message_bn=bn, message_en=en)
     except Exception as exc:  # noqa: BLE001 — network problems, timeouts
         logger.warning("Gemini verify failed: %s", exc)
