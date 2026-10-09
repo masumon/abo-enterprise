@@ -408,6 +408,17 @@ class BusinessKnowledge:
         template = e.answer_bn if lang == "bn" else e.answer_en
         return KBHit(e.id, fill(template, facts), list(e.links), score)
 
+    def facts_text(self, lang: str, facts: dict[str, Any], faq: dict[str, str] | None = None) -> str:
+        """Every curated answer (filled with live facts) — the only material the AI may use."""
+        parts = []
+        for e in self.admin_entries(faq or {}) + self.entries:
+            if e.id in ("thanks", "rude"):
+                continue
+            body = fill(e.answer_bn if lang == "bn" else e.answer_en, facts)
+            title = (e.title_bn if lang == "bn" else e.title_en) or e.id
+            parts.append(f"[{title}]\n{body}")
+        return "\n\n".join(parts)[:12000]
+
     def suggestions(self, text: str, lang: str) -> list[str]:
         """Topic titles that partly match — offered as 'did you mean' chips."""
         out = []

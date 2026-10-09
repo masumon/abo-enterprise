@@ -366,8 +366,18 @@ class AssistantOrchestrator:
         response_data.update(action_data or {})
         kb_suggestions: list[str] = []
         if not kb_hit and (intent == Intent.UNKNOWN or text == self.response.unknown(lang)):
-            # Never leave a customer stuck: offer close topics and a direct line to the team.
-            kb_suggestions = self.business_kb.suggestions(preprocessed["raw"], lang)
+            # Optional Google AI, grounded only in the knowledge base. Any failure → normal fallback.
+            from app.assistant import ai_gemini
+
+            ai_text = await ai_gemini.answer(
+                db, preprocessed["raw"], lang, self.business_kb.facts_text(lang, facts, self.knowledge._faq), facts,
+            )
+            if ai_text:
+                text = ai_text
+                response_data["ai"] = True
+            else:
+                # Never leave a customer stuck: offer close topics and a direct line to the team.
+                kb_suggestions = self.business_kb.suggestions(preprocessed["raw"], lang)
             links = (links or []) + contact_links(facts)
         if reasoning.risk_flags:
             response_data["risk_flags"] = reasoning.risk_flags

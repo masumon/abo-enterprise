@@ -477,3 +477,86 @@ async def delete_assistant_faq(
 async def assistant_health():
     """Health check for assistant module."""
     return ApiResponse(data={"status": "ok", "module": "enterprise-automation-assistant"})
+
+
+# ---------------------------------------------------------------- Google AI (Gemini)
+from pydantic import BaseModel as _BaseModel, Field as _Field  # noqa: E402
+
+from app.assistant import ai_gemini  # noqa: E402
+from app.core.security import require_role  # noqa: E402
+
+
+class GeminiSettingsIn(_BaseModel):
+    api_key: str | None = _Field(default=None, max_length=200)
+    enabled: bool | None = None
+    daily_cap: int | None = _Field(default=None, ge=0, le=5000)
+
+
+async def _gemini_status(db: AsyncSession) -> dict:
+    ai_gemini.invalidate()
+    cfg = await ai_gemini.load_config(db)
+    return {
+        "has_key": bool(cfg["key"]),
+        "key_hint": cfg["hint"],
+        "enabled": cfg["enabled"],
+        "model": cfg["model"] if cfg["key"] else "",
+        "daily_cap": cfg["daily_cap"],
+        "used_today": ai_gemini.usage_today(),
+        "verified_at": cfg["verified_at"],
+    }
+
+
+@router.get("/admin/ai", response_model=ApiResponse)
+async def get_gemini_settings(
+    _admin: str = Depends(require_role("settings.read")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin — Google AI status. The key itself is never returned (only a hint)."""
+    return ApiResponse(data=await _gemini_status(db))
+
+
+@router.put("/admin/ai", response_model=ApiResponse)
+async def update_gemini_settings(
+    payload: GeminiSettingsIn,
+    _admin: str = Depends(require_role("settings.write")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin — save a Google AI key (verified first; an invalid key is never saved) and options."""
+    if payload.api_key:
+        result = await ai_gemini.verify_key(payload.api_key)
+        if not result.ok:
+            raise HTTPException(status_code=400, detail=result.message_bn or result.message_en)
+        await ai_gemini.save_key(db, payload.api_key, result.model)
+    if payload.enabled is not None or payload.daily_cap is not None:
+        await ai_gemini.update_options(db, payload.enabled, payload.daily_cap)
+    await db.commit()
+    return ApiResponse(data=await _gemini_status(db), message="saved")
+
+
+@router.post("/admin/ai/verify", response_model=ApiResponse)
+async def verify_gemini_settings(
+    _admin: str = Depends(require_role("settings.write")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin — re-test the saved key against Google."""
+    cfg = await ai_gemini.load_config(db)
+    if not cfg["key"]:
+        raise HTTPException(status_code=400, detail="কোনো API কী সংরক্ষিত নেই।")
+    result = await ai_gemini.verify_key(cfg["key"])
+    if not result.ok:
+        raise HTTPException(status_code=400, detail=result.message_bn)
+    if result.model and result.model != cfg["model"]:
+        await ai_gemini.save_key(db, cfg["key"], result.model)
+        await db.commit()
+    return ApiResponse(data=await _gemini_status(db), message=result.message_bn)
+
+
+@router.delete("/admin/ai", response_model=ApiResponse)
+async def delete_gemini_settings(
+    _admin: str = Depends(require_role("settings.write")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin — remove the key; the assistant goes back to knowledge-base answers only."""
+    await ai_gemini.remove_key(db)
+    await db.commit()
+    return ApiResponse(data=await _gemini_status(db), message="removed")
