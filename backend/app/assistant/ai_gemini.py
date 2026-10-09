@@ -27,6 +27,7 @@ from app.models.models import Setting
 logger = logging.getLogger(__name__)
 
 API_BASE = "https://generativelanguage.googleapis.com/v1beta"
+VERTEX_BASE = "https://aiplatform.googleapis.com/v1"
 KEY_SETTING = "ai_gemini_key_enc"
 MODEL_SETTING = "ai_gemini_model"
 ENABLED_SETTING = "ai_gemini_enabled"
@@ -79,10 +80,20 @@ async def _pick_model(client: httpx.AsyncClient, key: str) -> str:
     return flash[0] if flash else (names[0] if names else PREFERRED_MODELS[0])
 
 
+def _is_vertex_key(key: str) -> bool:
+    """Newer Google keys ("AQ.…") are Vertex AI express-mode keys; they use a different endpoint."""
+    return key.startswith("AQ.")
+
+
 async def _generate(client: httpx.AsyncClient, key: str, model: str, system: str, user: str, max_tokens: int = 400) -> str:
+    if _is_vertex_key(key):
+        url, params, headers = f"{VERTEX_BASE}/publishers/google/models/{model}:generateContent", {"key": key}, {"Content-Type": "application/json"}
+    else:
+        url, params, headers = f"{API_BASE}/models/{model}:generateContent", None, {"x-goog-api-key": key, "Content-Type": "application/json"}
     r = await client.post(
-        f"{API_BASE}/models/{model}:generateContent",
-        headers={"x-goog-api-key": key, "Content-Type": "application/json"},
+        url,
+        params=params,
+        headers=headers,
         json={
             "systemInstruction": {"parts": [{"text": system}]},
             "contents": [{"role": "user", "parts": [{"text": user}]}],
@@ -104,8 +115,20 @@ async def verify_key(key: str) -> VerifyResult:
         return VerifyResult(False, message_bn="কী-এর গঠন ঠিক নেই — Google AI Studio থেকে পুরো কী কপি করুন।", message_en="That doesn't look like an API key — copy the whole key from Google AI Studio.")
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(15.0)) as client:
-            model = await _pick_model(client, key)
-            text = await _generate(client, key, model, "Reply with the single word OK.", "Say OK", max_tokens=10)
+            # Vertex keys can't list models; for classic keys try the listed best model first.
+            first = None if _is_vertex_key(key) else await _pick_model(client, key)
+            candidates = [m for m in dict.fromkeys([first, *PREFERRED_MODELS]) if m]
+            model, text = "", ""
+            for cand in candidates:
+                try:
+                    text = await _generate(client, key, cand, "Reply with the single word OK.", "Say OK", max_tokens=10)
+                    model = cand
+                    break
+                except httpx.HTTPStatusError as exc:
+                    if exc.response.status_code != 404:  # model not available → try the next one
+                        raise
+            if not model:
+                return VerifyResult(False, message_bn="এই কী দিয়ে কোনো Gemini মডেল পাওয়া যায়নি — Google AI Studio-র \"AIza…\" দিয়ে শুরু কী দিন।", message_en="No Gemini model is available for this key — use an \"AIza…\" key from Google AI Studio.")
         if not text:
             return VerifyResult(False, model, "Google উত্তর দেয়নি — একটু পরে আবার যাচাই করুন।", "Google gave no answer — try again shortly.")
         return VerifyResult(True, model, "সফল! Google AI কাজ করছে।", "Success! Google AI is working.")

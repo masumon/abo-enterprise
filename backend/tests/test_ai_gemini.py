@@ -108,4 +108,21 @@ async def test_new_style_keys_with_dots_reach_google(monkeypatch):
     monkeypatch.setattr(ai, "_pick_model", pick)
     monkeypatch.setattr(ai, "_generate", gen)
     res = await ai.verify_key("AQ.Ab8RN6Lx2kQ9vT3mPz7wY1cD4fG6hJ8kL0nB")
-    assert res.ok and called["key"].startswith("AQ.")
+    assert res.ok and "key" not in called  # Vertex-style keys skip model listing
+
+
+async def test_vertex_keys_use_vertex_endpoint_and_skip_model_listing(monkeypatch):
+    seen = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.setdefault("urls", []).append(str(request.url))
+        if "gemini-2.5-flash:" in str(request.url):
+            return httpx.Response(404, json={"error": "not found"})
+        return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": "OK"}]}}]})
+
+    real = httpx.AsyncClient
+    monkeypatch.setattr(ai.httpx, "AsyncClient", lambda **kw: real(transport=httpx.MockTransport(handler)))
+    res = await ai.verify_key("AQ.Ab8RN6Lx2kQ9vT3mPz7wY1cD4fG6hJ8kL0nB")
+    assert res.ok and res.model == "gemini-2.5-flash-lite"
+    assert all("aiplatform.googleapis.com" in u for u in seen["urls"])
+    assert not any("/models?" in u for u in seen["urls"])
