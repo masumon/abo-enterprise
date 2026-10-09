@@ -1,41 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { BrandAppIcon } from "@/components/ui/BrandLogo";
-import { X, Download, ChevronUp, Smartphone } from "lucide-react";
-import { SITE_URL } from "@/lib/tokens";
+import { X, Download } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { hasBottomActionBar } from "@/lib/actionBarRoutes";
+import { canInstall, triggerInstall } from "@/lib/pwaInstall";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
-// Never cover checkout / payment / success pages — the full-screen overlay
-// blocks taps mid-checkout and hides the invoice on the success screen.
+// Never show on checkout / payment / success pages or in the admin.
 const SUPPRESSED_ROUTES = ["/checkout", "/order-success", "/booking-success", "/payment", "/sumon"];
 
 const REMIND_KEY = "pwa_remind_until";
 const INSTALLED_KEY = "pwa_installed";
-const MINIMIZED_KEY = "pwa_minimized_session";
 const FIRST_VISIT_KEY = "pwa_first_seen_at";
-const REMIND_DAYS = 7;
-/** Never prompt inside the visitor's first-5-second read of the homepage.
- * The prompt shows only when BOTH are true:
- *   (a) this is not the visitor's very first session (returning visitor), OR
- *       they've spent > FIRST_VISIT_ENGAGED_MS on-site this visit
- *   (b) at least SHOW_DELAY_MS has elapsed on the current page
+const PAGEVIEWS_KEY = "pwa_session_pageviews";
+/** After "পরে" / close the card stays away this long. */
+const SNOOZE_DAYS = 14;
+/**
+ * The card is a small, non-blocking banner (no page dim/blur) and appears only
+ * after real engagement: a minimum time on site AND either a second page view
+ * in this session or scrolling more than one screen.
  */
-const SHOW_DELAY_MS = 8000;
-const FIRST_VISIT_ENGAGED_MS = 30_000;
-const SITE_HOST = new URL(SITE_URL).hostname;
+const SHOW_DELAY_MS = 15_000;
+const FIRST_VISIT_ENGAGED_MS = 45_000;
+
+// Storage can throw (private mode, blocked site data) — never let it break the page.
+function lsGet(key: string): string | null {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+function lsSet(key: string, value: string) {
+  try { localStorage.setItem(key, value); } catch { /* ignore */ }
+}
+function ssGet(key: string): string | null {
+  try { return sessionStorage.getItem(key); } catch { return null; }
+}
+function ssSet(key: string, value: string) {
+  try { sessionStorage.setItem(key, value); } catch { /* ignore */ }
+}
 
 function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
   return (
-    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia?.("(display-mode: standalone)").matches ||
     ("standalone" in window.navigator && (window.navigator as { standalone?: boolean }).standalone === true)
   );
 }
@@ -49,22 +61,30 @@ export default function PWAInstallPrompt() {
   const pathname = usePathname();
   const bn = lang === "bn";
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [mode, setMode] = useState<"hidden" | "full" | "minimized">("hidden");
+  const [visible, setVisible] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [isIos, setIsIos] = useState(false);
+  const [eligible, setEligible] = useState(false);
+  const timeReached = useRef(false);
+  const engaged = useRef(false);
+
+  // Count page views in this session (a second page view = engagement).
+  useEffect(() => {
+    const n = parseInt(ssGet(PAGEVIEWS_KEY) ?? "0", 10) + 1;
+    ssSet(PAGEVIEWS_KEY, String(n));
+    if (n >= 2) engaged.current = true;
+  }, [pathname]);
 
   useEffect(() => {
     if (isStandalone()) {
-      localStorage.setItem(INSTALLED_KEY, "1");
+      lsSet(INSTALLED_KEY, "1");
       return;
     }
-    if (localStorage.getItem(INSTALLED_KEY) === "1") return;
+    if (lsGet(INSTALLED_KEY) === "1") return;
+    if (parseInt(lsGet(REMIND_KEY) ?? "0", 10) > Date.now()) return;
 
-    const remindUntil = parseInt(localStorage.getItem(REMIND_KEY) ?? "0", 10);
-    if (remindUntil > Date.now()) return;
-
-    const ios = isIOS();
-    setIsIos(ios);
+    setIsIos(isIOS());
+    setEligible(true);
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -72,151 +92,116 @@ export default function PWAInstallPrompt() {
     };
     window.addEventListener("beforeinstallprompt", handler);
 
-    const minimized = sessionStorage.getItem(MINIMIZED_KEY) === "1";
-    const now = Date.now();
-    const firstSeenAt = parseInt(localStorage.getItem(FIRST_VISIT_KEY) ?? "0", 10);
-    const isReturningVisitor = firstSeenAt > 0 && now - firstSeenAt > 60_000; // > 1 min between visits
-    if (!firstSeenAt) localStorage.setItem(FIRST_VISIT_KEY, String(now));
+    const maybeShow = () => {
+      if (timeReached.current && engaged.current) setVisible(true);
+    };
+    const onScroll = () => {
+      if (window.scrollY > window.innerHeight) {
+        engaged.current = true;
+        maybeShow();
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
 
-    const showIn = isReturningVisitor ? SHOW_DELAY_MS : FIRST_VISIT_ENGAGED_MS;
+    const now = Date.now();
+    const firstSeenAt = parseInt(lsGet(FIRST_VISIT_KEY) ?? "0", 10);
+    const isReturningVisitor = firstSeenAt > 0 && now - firstSeenAt > 60_000;
+    if (!firstSeenAt) lsSet(FIRST_VISIT_KEY, String(now));
+
     const timer = setTimeout(() => {
-      setMode(minimized ? "minimized" : "full");
-    }, showIn);
+      timeReached.current = true;
+      maybeShow();
+    }, isReturningVisitor ? SHOW_DELAY_MS : FIRST_VISIT_ENGAGED_MS);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("scroll", onScroll);
       clearTimeout(timer);
     };
   }, []);
 
-  const hide = () => setMode("hidden");
+  // A route change after the timer counts as engagement too.
+  useEffect(() => {
+    if (eligible && timeReached.current && engaged.current) setVisible(true);
+  }, [pathname, eligible]);
+
+  const snooze = () => {
+    lsSet(REMIND_KEY, String(Date.now() + SNOOZE_DAYS * 86400000));
+    setVisible(false);
+  };
 
   const handleInstall = async () => {
     if (deferredPrompt) {
       setInstalling(true);
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") localStorage.setItem(INSTALLED_KEY, "1");
+      try {
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === "accepted") lsSet(INSTALLED_KEY, "1");
+        else snooze();
+      } catch { /* ignore */ }
       setDeferredPrompt(null);
       setInstalling(false);
-      hide();
+      setVisible(false);
       return;
     }
-    if (isIos) {
-      hide();
+    // The shared module may have captured the event before this component mounted.
+    if (canInstall("customer")) {
+      setInstalling(true);
+      const outcome = await triggerInstall("customer");
+      setInstalling(false);
+      if (outcome === "accepted") lsSet(INSTALLED_KEY, "1");
+      else snooze();
+      setVisible(false);
     }
   };
 
-  const handleNotNow = () => {
-    sessionStorage.setItem(MINIMIZED_KEY, "1");
-    setMode("minimized");
-  };
-
-  const handleRemindLater = () => {
-    localStorage.setItem(REMIND_KEY, String(Date.now() + REMIND_DAYS * 86400000));
-    hide();
-  };
-
-  if (mode === "hidden") return null;
+  if (!visible) return null;
   if (SUPPRESSED_ROUTES.some((p) => pathname?.startsWith(p))) return null;
+  // Pages with their own bottom action bar (cart, product, booking) stay clean.
+  if (hasBottomActionBar(pathname)) return null;
 
-  const labels = {
-    title: bn ? "ABO Enterprise অ্যাপ" : "ABO Enterprise App",
-    sub: bn ? "হোম স্ক্রিনে যোগ করুন — দ্রুত অ্যাক্সেস" : "Add to home screen for quick access",
-    install: bn ? "ইনস্টল করুন" : "Install",
-    notNow: bn ? "এখন নয়" : "Not now",
-    remind: bn ? "পরবর্তীতে মনে করিয়ে দিন" : "Remind me later",
-    iosHint: bn ? "Share → Add to Home Screen" : "Share → Add to Home Screen",
-    chip: bn ? "অ্যাপ ইনস্টল" : "Install app",
-    installing: bn ? "ইনস্টল হচ্ছে…" : "Installing…",
-  };
-
-  /*
-   * The minimised chip is fixed at the bottom-left of every page. On cart,
-   * checkout, booking and the product page it lands on top of the page's own
-   * content — in the screenshot it covered the coupon field — and those screens
-   * already carry an action bar, so the chip would be the fourth fixed layer
-   * competing for the same strip of glass. It stands down on those routes; the
-   * install offer is not urgent and the browser keeps its own.
-   */
-  if (mode === "minimized" && hasBottomActionBar(pathname)) return null;
-
-  if (mode === "minimized") {
-    return (
-      <button
-        type="button"
-        onClick={() => setMode("full")}
-        className="fixed bottom-[calc(var(--mobile-chrome-bottom)+0.5rem)] left-4 z-[65] flex items-center gap-2 px-3.5 py-2 rounded-full bg-brand-600 text-white text-xs font-semibold shadow-lg shadow-brand-900/30 hover:bg-brand-500 transition-colors lg:bottom-6"
-        aria-label={labels.chip}
-      >
-        <Smartphone className="w-3.5 h-3.5" />
-        {labels.chip}
-        <ChevronUp className="w-3.5 h-3.5 opacity-80" />
-      </button>
-    );
-  }
+  const nativeAvailable = !!deferredPrompt || canInstall("customer");
+  const hint = isIos
+    ? bn ? "Share → Add to Home Screen চাপুন" : "Tap Share → Add to Home Screen"
+    : nativeAvailable
+      ? bn ? "হোম স্ক্রিনে যোগ করুন — দ্রুত অ্যাক্সেস" : "Add to home screen for quick access"
+      : bn ? "ব্রাউজার মেনু → Install app" : 'Browser menu → "Install app"';
 
   return (
-    <>
-      <div className="fixed inset-0 bg-black/35 z-[64] backdrop-blur-[2px]" onClick={handleNotNow} aria-hidden />
-
-      <div
-        role="dialog"
-        aria-labelledby="pwa-prompt-title"
-        className="fixed bottom-0 left-0 right-0 z-[70] animate-slide-up pb-mobile-nav lg:pb-4 px-4"
-      >
-        <div className="surface-card rounded-t-2xl shadow-2xl px-5 pt-4 pb-6 max-w-md mx-auto relative border border-brand-100/20">
+    <div
+      role="region"
+      aria-label={bn ? "অ্যাপ ইনস্টল" : "Install app"}
+      className="fixed z-[60] left-3 right-3 bottom-[calc(var(--mobile-chrome-bottom)+0.5rem)] sm:left-auto sm:right-4 sm:w-[22rem] lg:bottom-4 animate-slide-up"
+    >
+      <div className="surface-card rounded-2xl shadow-lg border border-brand-100/30 dark:border-white/10 flex items-center gap-3 pl-3 pr-1.5 py-2">
+        <BrandAppIcon size={36} className="!rounded-lg flex-none" />
+        <div className="min-w-0 flex-1">
+          <p className="font-bold text-heading text-[13px] leading-tight truncate">
+            {bn ? "ABO Enterprise অ্যাপ" : "ABO Enterprise App"}
+          </p>
+          <p className="text-[11px] text-muted leading-snug line-clamp-2">{hint}</p>
+        </div>
+        {nativeAvailable && (
           <button
             type="button"
-            onClick={handleNotNow}
-            className="absolute top-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-500 hover:text-gray-700"
-            aria-label={labels.notNow}
+            onClick={handleInstall}
+            disabled={installing}
+            className="btn btn-brand btn-sm min-h-[40px] px-3 gap-1 flex-none"
           >
-            <X className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
+            {installing ? (bn ? "হচ্ছে…" : "…") : bn ? "ইনস্টল" : "Install"}
           </button>
-
-          <div className="flex items-center gap-3 mb-3 pr-8">
-            <BrandAppIcon size={48} className="!rounded-xl ring-2 ring-brand-100" />
-            <div>
-              <p id="pwa-prompt-title" className="font-bold text-heading text-sm">
-                {labels.title}
-              </p>
-              <p className="text-xs text-muted">{SITE_HOST} · {labels.sub}</p>
-            </div>
-          </div>
-
-          {(deferredPrompt || isIos) && (
-            <button
-              type="button"
-              onClick={handleInstall}
-              disabled={installing}
-              className="w-full btn btn-brand btn-md mb-3"
-            >
-              <Download className="w-4 h-4" />
-              {installing ? labels.installing : labels.install}
-            </button>
-          )}
-
-          {isIos && !deferredPrompt && (
-            <p className="text-xs text-center text-muted mb-3">{labels.iosHint}</p>
-          )}
-
-          {!deferredPrompt && !isIos && (
-            <p className="text-xs text-center text-muted mb-3">
-              {bn ? "ব্রাউজার মেনু → Install app / Add to Home Screen" : 'Browser menu → "Install app"'}
-            </p>
-          )}
-
-          <div className="grid grid-cols-2 gap-2">
-            <button type="button" onClick={handleNotNow} className="btn btn-ghost btn-sm text-muted">
-              {labels.notNow}
-            </button>
-            <button type="button" onClick={handleRemindLater} className="btn btn-outline btn-sm border-brand-200 text-brand-700">
-              {labels.remind}
-            </button>
-          </div>
-        </div>
+        )}
+        <button
+          type="button"
+          onClick={snooze}
+          className="flex-none min-w-[40px] min-h-[40px] inline-flex items-center justify-center rounded-full text-muted hover:bg-gray-100 dark:hover:bg-white/10 text-xs font-semibold"
+          aria-label={bn ? "পরে (১৪ দিন আর দেখাবে না)" : "Later (hide for 14 days)"}
+          title={bn ? "পরে" : "Later"}
+        >
+          <X className="w-4 h-4" />
+        </button>
       </div>
-    </>
+    </div>
   );
 }
