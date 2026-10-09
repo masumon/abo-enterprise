@@ -18,7 +18,7 @@ import SetupChecklist from "@/components/admin/SetupChecklist";
 import { formatPrice } from "@/lib/utils";
 import { useAlertStore } from "@/store/alerts";
 import { useLanguageStore } from "@/store/language";
-import { ADMIN_QUICK_ACTIONS } from "@/lib/adminNav";
+import { ADMIN_QUICK_ACTIONS, ADMIN_WEBSITE_ACTIONS } from "@/lib/adminNav";
 
 interface Stats {
   total_orders: number;
@@ -135,6 +135,12 @@ export default function AdminDashboard() {
       <section>
         <div className="flex items-center gap-2 mb-3"><Sparkles className="w-4 h-4 text-brand-500" /><h2 className="text-sm font-semibold text-gray-700">{bn ? "দ্রুত কাজ" : "Quick Actions"}</h2></div>
         <AdminQuickActions actions={quickActions} />
+      </section>
+
+      <section>
+        <div className="flex items-center gap-2 mb-1"><Sparkles className="w-4 h-4 text-accent-500" /><h2 className="text-sm font-semibold text-gray-700">{bn ? "ওয়েবসাইট সাজান" : "Make the website yours"}</h2></div>
+        <p className="text-xs text-gray-500 mb-3">{bn ? "ব্যানার, ছবি, ভিডিও, লেখা বদলান — বদলালে সাইটে সাথে সাথে দেখা যাবে।" : "Change banners, photos, videos and text — updates show on the site right away."}</p>
+        <AdminQuickActions actions={ADMIN_WEBSITE_ACTIONS} />
       </section>
 
       <section>

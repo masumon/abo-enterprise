@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users, AlertTriangle } from "lucide-react";
+import { Search, ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users, AlertTriangle } from "lucide-react";
 import { getAdminPageTitle } from "@/lib/adminNav";
 import AdminInstallButton from "@/components/admin/AdminInstallButton";
 import { useAlertStore } from "@/store/alerts";
@@ -101,6 +101,16 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
 
         <div className="flex items-center gap-2 shrink-0">
           <AdminInstallButton />
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("abo-admin-search"))}
+            className="h-9 px-2.5 flex items-center justify-center gap-1.5 rounded-xl hover:bg-gray-100 transition-colors text-gray-600 text-xs font-semibold"
+            aria-label={lang === "bn" ? "পেজ খুঁজুন" : "Search pages"}
+            title={lang === "bn" ? "পেজ খুঁজুন (Ctrl+K)" : "Search pages (Ctrl+K)"}
+          >
+            <Search className="w-4 h-4" />
+            <span className="hidden md:inline">{lang === "bn" ? "খুঁজুন" : "Search"}</span>
+          </button>
           {onToggleTheme && (
             <button
               type="button"

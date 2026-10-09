@@ -82,7 +82,9 @@ export default function AdminSidebar({
         items: group.items.filter(
           (item) =>
             item.label.toLowerCase().includes(filterText) ||
-            item.labelBn?.toLowerCase().includes(filterText),
+            item.labelBn?.toLowerCase().includes(filterText) ||
+            item.keywords?.toLowerCase().includes(filterText) ||
+            item.descBn?.toLowerCase().includes(filterText),
         ),
       }))
       .filter((g) => g.items.length > 0);

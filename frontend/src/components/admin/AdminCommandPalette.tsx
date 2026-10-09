@@ -23,7 +23,7 @@ export default function AdminCommandPalette({ role }: Props) {
     const all = ADMIN_NAV_GROUPS.flatMap((g) =>
       g.items
         .filter((i) => !i.external && canSeeNavItem(i, role as AdminRole | undefined))
-        .map((i) => ({ ...i, group: g.label }))
+        .map((i) => ({ ...i, group: g.labelBn ?? g.label }))
     );
     const q = query.trim().toLowerCase();
     if (!q) return all;
@@ -31,6 +31,8 @@ export default function AdminCommandPalette({ role }: Props) {
       (i) =>
         i.label.toLowerCase().includes(q) ||
         (i.labelBn ?? "").includes(query.trim()) ||
+        (i.keywords ?? "").toLowerCase().includes(q) ||
+        (i.descBn ?? "").includes(query.trim()) ||
         i.href.toLowerCase().includes(q)
     );
   }, [query, role]);
@@ -46,8 +48,14 @@ export default function AdminCommandPalette({ role }: Props) {
         setOpen(false);
       }
     };
+    // The top-bar search button (works on phones, where there is no Ctrl+K) fires this.
+    const onOpen = () => { setOpen(true); setQuery(""); setActive(0); };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("abo-admin-search", onOpen);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("abo-admin-search", onOpen);
+    };
   }, []);
 
   useEffect(() => {
@@ -82,7 +90,7 @@ export default function AdminCommandPalette({ role }: Props) {
               else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, 0)); }
               else if (e.key === "Enter" && items[active]) { e.preventDefault(); go(items[active].href); }
             }}
-            placeholder="পেজ খুঁজুন… (Orders, Products, Settings…)"
+            placeholder="কী করতে চান? লিখুন — যেমন: ব্যানার, ছবি, অর্ডার, লোগো…"
             className="w-full py-3.5 text-sm outline-none placeholder:text-gray-400"
             aria-label="Search admin pages"
           />
@@ -106,9 +114,9 @@ export default function AdminCommandPalette({ role }: Props) {
                   )}
                 >
                   <Icon className="w-4 h-4 flex-shrink-0 text-gray-400" />
-                  <span className="flex-1">
-                    {item.label}
-                    {item.labelBn && <span className="text-gray-400 ml-2 text-xs">{item.labelBn}</span>}
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-medium truncate">{item.labelBn ?? item.label}</span>
+                    {item.descBn && <span className="block text-xs text-gray-400 truncate">{item.descBn}</span>}
                   </span>
                   <span className="text-[10px] text-gray-300 uppercase">{item.group}</span>
                   {i === active && <CornerDownLeft className="w-3.5 h-3.5 text-brand-400" />}
