@@ -10,6 +10,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { productsApi, categoriesApi, adminApi, adminBlogApi, downloadCsv, downloadPdf } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
+import { parseDhakaDateTime, storedToDhakaInput } from "@/lib/flashSale";
 import ImageUpload from "@/components/admin/ImageUpload";
 import TranslateButton from "@/components/admin/TranslateButton";
 import { translateBnToEn } from "@/lib/translate";
@@ -345,9 +346,10 @@ export default function AdminProductsPage() {
       requires_advance: p.requires_advance ?? false,
       is_flash_sale: p.is_flash_sale ?? false,
       flash_sale_price: p.flash_sale_price ?? undefined,
-      flash_sale_ends_at: p.flash_sale_ends_at
-        ? new Date(p.flash_sale_ends_at).toISOString().slice(0, 16)
-        : "",
+      // Shown and saved in Bangladesh time. The old code displayed the UTC
+      // value but saved it as device-local time, so every edit+save pulled
+      // the end 6 hours earlier.
+      flash_sale_ends_at: p.flash_sale_ends_at ? storedToDhakaInput(p.flash_sale_ends_at) : "",
       low_stock_threshold: p.low_stock_threshold ?? 5,
       is_best_seller: p.is_best_seller ?? false,
       is_bookable: p.is_bookable ?? false,
@@ -410,7 +412,7 @@ export default function AdminProductsPage() {
         tags: tagsStr ? tagsStr.split(",").map((t) => t.trim()).filter(Boolean) : [],
         images: galleryImages.filter(Boolean),
         specifications: Object.fromEntries(specs.filter((r) => r.k.trim()).map((r) => [r.k.trim(), r.v.trim()])),
-        flash_sale_ends_at: flash_sale_ends_at ? new Date(flash_sale_ends_at).toISOString() : null,
+        flash_sale_ends_at: flash_sale_ends_at ? (parseDhakaDateTime(flash_sale_ends_at) ?? new Date(flash_sale_ends_at)).toISOString() : null,
         // Blog posts this product is featured in (many-to-many; replaces links).
         blog_ids: productBlogIds,
       } as Partial<Product>;
@@ -1010,7 +1012,7 @@ export default function AdminProductsPage() {
                       <input {...register("flash_sale_price")} type="number" className="input" placeholder="Leave blank if no flash sale" />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Flash Sale Ends At</label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Flash Sale Ends At (বাংলাদেশ সময়)</label>
                       <input {...register("flash_sale_ends_at")} type="datetime-local" className="input text-sm" />
                     </div>
                   </div>

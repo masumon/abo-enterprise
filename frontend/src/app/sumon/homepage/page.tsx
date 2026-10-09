@@ -31,10 +31,19 @@ import {
 import LivePreview from "@/components/admin/LivePreview";
 import { AdminIcon } from "@/lib/adminIcons";
 import { cn } from "@/lib/utils";
+import FlashSaleAdminStatus from "@/components/admin/FlashSaleAdminStatus";
+import { parseBoolSetting, parseDhakaDateTime, storedToDhakaInput } from "@/lib/flashSale";
+
+/** Show stored values in the form the inputs expect: booleans as explicit
+ * "true"/"false" (a never-saved flash-sale switch is ON on the website, so it
+ * must read ON here too) and date-times as Bangladesh-time datetime-local. */
+function normaliseScalar(f: HomepageScalarField, raw: string | undefined): string {
+  if (f.type === "boolean") return parseBoolSetting(raw, true) ? "true" : "false";
+  if (f.type === "datetime-local") return storedToDhakaInput(raw);
+  return raw ?? "";
+}
 
 const JSON_KEYS = HOMEPAGE_CONTENT_EDITORS.map((e) => e.key);
-const SCALAR_KEYS = HOMEPAGE_SCALAR_FIELDS.map((f) => f.key);
-const ALL_KEYS = [...JSON_KEYS, ...SCALAR_KEYS];
 
 // "As it appears on the website" mini-previews under each row, so a
 // non-technical admin sees the result of what they type. Kept faithful but
@@ -92,7 +101,10 @@ export default function AdminHomepageContentPage() {
     adminApi.getSettings()
       .then((r) => {
         const s = r.data.data ?? {};
-        setValues(Object.fromEntries(ALL_KEYS.map((k) => [k, s[k] ?? ""])));
+        setValues({
+          ...Object.fromEntries(JSON_KEYS.map((k) => [k, s[k] ?? ""])),
+          ...Object.fromEntries(HOMEPAGE_SCALAR_FIELDS.map((f) => [f.key, normaliseScalar(f, s[f.key])])),
+        });
         setHstyle(parseHeroTextStyle(s[HERO_TEXT_STYLE_KEY]));
       })
       .catch((err) => toast("error", apiErrorMessage(err, "Failed to load homepage content")))
@@ -107,6 +119,13 @@ export default function AdminHomepageContentPage() {
     `w-7 h-7 rounded-lg border-2 shadow ${on ? "border-brand-600 ring-2 ring-brand-300" : "border-white dark:border-white/20"}`;
 
   const save = async () => {
+    // Flash sale: the end must come after the start (both Bangladesh time).
+    const fsStart = parseDhakaDateTime(values.flash_sale_start);
+    const fsEnd = parseDhakaDateTime(values.flash_sale_end);
+    if (fsStart && fsEnd && fsEnd.getTime() <= fsStart.getTime()) {
+      toast("error", bn ? "ফ্ল্যাশ সেল: শেষের সময় শুরুর সময়ের পরে হতে হবে" : "Flash sale: end must be after start");
+      return;
+    }
     setSaving(true);
     try {
       await adminApi.upsertSettings([
@@ -202,6 +221,11 @@ export default function AdminHomepageContentPage() {
                 <p className="text-xs text-muted mt-0.5">{bn ? g.descBn : g.desc}</p>
               </div>
               <div className="space-y-3">{g.fields.map(renderScalar)}</div>
+              {g.id === "flash_sale" && (
+                <div className="mt-3">
+                  <FlashSaleAdminStatus values={values} />
+                </div>
+              )}
               {g.id === "flash_sale" && (
                 <div className="mt-4">
                   <LivePreview showDevice={false}>

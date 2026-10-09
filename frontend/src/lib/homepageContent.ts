@@ -70,11 +70,11 @@ export const HOMEPAGE_SCALAR_GROUPS: HomepageScalarGroup[] = [
     desc: "The homepage countdown banner.",
     descBn: "হোমপেজের কাউন্টডাউন ব্যানার।",
     fields: [
-      { key: "feature_flash_sale", label: "Enable Flash Sale", labelBn: "ফ্ল্যাশ সেল চালু", type: "boolean", hint: "Shows the homepage countdown banner", hintBn: "হোমপেজে কাউন্টডাউন ব্যানার দেখায়", dataType: "boolean" },
+      { key: "feature_flash_sale", label: "Flash Sale on/off", labelBn: "ফ্ল্যাশ সেল চালু / বন্ধ", type: "boolean", hint: "ON + inside the start–end window + at least one flash-sale product → shown on the homepage", hintBn: "চালু থাকলে, শুরু–শেষ সময়ের মধ্যে এবং অন্তত একটি ফ্ল্যাশ-সেল পণ্য থাকলে হোমপেজে দেখাবে", dataType: "boolean" },
       { key: "flash_sale_title_en", label: "Title (EN)", labelBn: "শিরোনাম (EN)", placeholder: "Flash Sale", dataType: "string" },
       { key: "flash_sale_title_bn", label: "Title (BN)", labelBn: "শিরোনাম (বাংলা)", placeholder: "ফ্ল্যাশ সেল", dataType: "string" },
-      { key: "flash_sale_start", label: "Start (optional)", labelBn: "শুরু (ঐচ্ছিক)", type: "datetime-local", hint: "Leave blank to start immediately", hintBn: "খালি রাখলে এখনই শুরু", dataType: "string" },
-      { key: "flash_sale_end", label: "End", labelBn: "শেষ", type: "datetime-local", hint: "Countdown target. Blank = end of this week (Sun 23:59).", hintBn: "কাউন্টডাউন লক্ষ্য। খালি = এই সপ্তাহের শেষ (রবি ২৩:৫৯)।", dataType: "string" },
+      { key: "flash_sale_start", label: "Start — Bangladesh time (optional)", labelBn: "শুরু — বাংলাদেশ সময় (ঐচ্ছিক)", type: "datetime-local", hint: "Always Bangladesh time (UTC+6). Blank = starts now.", hintBn: "সবসময় বাংলাদেশ সময় (UTC+6)। খালি রাখলে এখনই শুরু।", dataType: "string" },
+      { key: "flash_sale_end", label: "End — Bangladesh time", labelBn: "শেষ — বাংলাদেশ সময়", type: "datetime-local", hint: "Always Bangladesh time (UTC+6). Hides automatically at this moment. Blank = end of this week (Sun 23:59).", hintBn: "সবসময় বাংলাদেশ সময় (UTC+6)। এই মুহূর্তে নিজে থেকেই হোমপেজ থেকে সরে যাবে। খালি = এই সপ্তাহের শেষ (রবি রাত ১১:৫৯)।", dataType: "string" },
     ],
   },
 ];
