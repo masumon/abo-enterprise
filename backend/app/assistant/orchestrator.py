@@ -35,6 +35,7 @@ from app.assistant.recommendation_engine import RecommendationEngine
 from app.assistant.response_validator import ResponseValidator
 from app.assistant.spell_corrector import SpellCorrector
 from app.assistant.tool_registry import ToolRegistry
+from app.assistant.business_kb import BusinessKnowledge, contact_links, looks_banglish
 
 _FOLLOW_UP_PRODUCT = frozenset({
     Intent.PRODUCT_PRICE, Intent.PRODUCT_STOCK, Intent.PRODUCT_AVAILABILITY, Intent.PRODUCT_DETAILS,
@@ -46,6 +47,20 @@ _SHORT_FOLLOW_UP = frozenset({
     "how", "much", "dam", "koto", "ache", "mojud", "stok",
 })
 _COUPON_CODE_RE = re.compile(r"\b[A-Z0-9]{3,20}\b")
+# Transactional intents keep their own handlers; the curated knowledge base only
+# answers informational questions (and anything the intent engine did not get).
+_KB_SKIP_INTENTS = frozenset({
+    Intent.ORDER_CREATION, Intent.ORDER_CONFIRMATION, Intent.ORDER_TRACKING, Intent.ORDER_STATUS,
+    Intent.SERVICE_BOOKING, Intent.LEAD_CREATION, Intent.LEAD_TRACKING, Intent.BOOKING_TRACKING,
+    Intent.COURIER_TRACKING, Intent.INVOICE, Intent.COUPON, Intent.GREETING,
+})
+_FACT_KEYS = [
+    "contact_phone", "whatsapp_number", "contact_email", "contact_address", "contact_address_en",
+    "contact_hours_bn", "contact_hours_en", "business_hours_bn", "business_hours_en", "site_name",
+    "delivery_charge_sylhet", "delivery_charge_dhaka", "delivery_charge_outside",
+    "free_delivery_min_amount", "free_delivery_min",
+]
+
 _WORKFLOW_START_INTENTS = frozenset({
     Intent.ORDER_CREATION,
     Intent.SERVICE_BOOKING,
@@ -153,6 +168,7 @@ class AssistantOrchestrator:
         self.action_workflow = ActionWorkflowEngine(
             self.knowledge, self.automation, self.response, self.validation,
         )
+        self.business_kb = BusinessKnowledge()
 
     async def process_message(
         self,
@@ -192,6 +208,9 @@ class AssistantOrchestrator:
             ctx.language = language
         elif preprocessed["language"] in ("bn", "mixed"):
             # Any Bengali script → reply in Bengali.
+            ctx.language = "bn"
+        elif looks_banglish(preprocessed["raw"]):
+            # Bangla typed in English letters ("apnader number ki") → reply in Bengali.
             ctx.language = "bn"
         elif len(preprocessed["normalized"].split()) >= 3:
             # A full English sentence switches the reply language back.
@@ -332,8 +351,24 @@ class AssistantOrchestrator:
             "reasoning": reasoning.summary,
             "feedback": {"label": feedback.label, "score": feedback.score},
         }
-        text, action_data, links = await self._handle_intent(db, ctx, intent, entities, nlp_preprocessed, lang, flags)
+        facts = await self._business_facts(db, lang)
+        kb_hit = None
+        if (
+            intent not in _KB_SKIP_INTENTS
+            and not has_reference_identity
+            and not entities.get(EntityType.PRODUCT)
+        ):
+            kb_hit = self.business_kb.answer(preprocessed["raw"], lang, facts, self.knowledge._faq)
+        if kb_hit:
+            text, action_data, links = kb_hit.text, {"kb_topic": kb_hit.id}, kb_hit.links
+        else:
+            text, action_data, links = await self._handle_intent(db, ctx, intent, entities, nlp_preprocessed, lang, flags)
         response_data.update(action_data or {})
+        kb_suggestions: list[str] = []
+        if not kb_hit and (intent == Intent.UNKNOWN or text == self.response.unknown(lang)):
+            # Never leave a customer stuck: offer close topics and a direct line to the team.
+            kb_suggestions = self.business_kb.suggestions(preprocessed["raw"], lang)
+            links = (links or []) + contact_links(facts)
         if reasoning.risk_flags:
             response_data["risk_flags"] = reasoning.risk_flags
 
@@ -356,7 +391,7 @@ class AssistantOrchestrator:
         )
         await self._finalize_turn(db, conv, ctx, message, text, intent.value, response_data)
 
-        suggestions = self._suggestions(intent, lang, ctx)
+        suggestions = kb_suggestions or self._suggestions(intent, lang, ctx)
         suggestions = self.recommendation_engine.recommend(suggestions, ctx)
         result = self.response.format_response(lang, intent, text, data=response_data, suggestions=suggestions, links=links)
         result["session_id"] = conv.session_id
@@ -798,7 +833,7 @@ class AssistantOrchestrator:
     def _suggestions(self, intent: Intent, lang: str, ctx: ConversationContext | None = None) -> list[str]:
         if lang == "bn":
             by_intent = {
-                Intent.GREETING: ["অর্ডার করুন", "সেবা বুক", "অর্ডার ট্র্যাক", "বুকিং ট্র্যাক"],
+                Intent.GREETING: ["আমাদের সেবাসমূহ", "ঠিকানা ও সময়", "ডেলিভারি চার্জ", "অর্ডার ট্র্যাক"],
                 Intent.PRODUCT_SEARCH: ["অর্ডার করুন", "ডেলিভারি চার্জ", "কুপন আছে?", "যোগাযোগ"],
                 Intent.PRODUCT_DETAILS: ["স্টক আছে?", "অর্ডার করুন", "ডেলিভারি সময়"],
                 Intent.ORDER_TRACKING: ["ইনভয়েস", "বুকিং ট্র্যাক", "অর্ডার করুন"],
@@ -813,7 +848,7 @@ class AssistantOrchestrator:
             defaults = ["অর্ডার করুন", "সেবা বুক", "অর্ডার ট্র্যাক", "যোগাযোগ"]
         else:
             by_intent = {
-                Intent.GREETING: ["Place order", "Book service", "Track order", "Track booking"],
+                Intent.GREETING: ["Our services", "Address & hours", "Delivery charge", "Track order"],
                 Intent.PRODUCT_SEARCH: ["Place order", "Delivery charges", "Any coupons?", "Contact"],
                 Intent.PRODUCT_DETAILS: ["Check stock", "Place order", "Delivery time"],
                 Intent.ORDER_TRACKING: ["Invoice", "Track booking", "Place order"],
@@ -915,6 +950,32 @@ class AssistantOrchestrator:
         if lang == "bn":
             return "আমি যা যা পারি:\n" + "\n".join(f"• {c}" for c in caps_bn) + "\n\nকোনটা দিয়ে শুরু করবেন?"
         return "Here's what I can do:\n" + "\n".join(f"• {c}" for c in caps_en) + "\n\nWhere shall we start?"
+
+    async def _business_facts(self, db: AsyncSession, lang: str) -> dict[str, Any]:
+        """Live business facts (admin settings) used to fill knowledge-base answers."""
+        from app.core import contact as contact_numbers
+
+        s = await self.knowledge.get_site_settings(db, _FACT_KEYS)
+        bn = lang == "bn"
+        hours = (
+            s.get("contact_hours_bn" if bn else "contact_hours_en")
+            or s.get("business_hours_bn" if bn else "business_hours_en")
+            or s.get("contact_hours_en") or s.get("contact_hours_bn")
+            or ("শনি–বৃহঃ, সকাল ১০টা – রাত ১০টা" if bn else "Sat–Thu, 10:00 AM – 10:00 PM")
+        )
+        address = (s.get("contact_address") if bn else s.get("contact_address_en")) or s.get("contact_address") or s.get("contact_address_en") or ""
+        return {
+            "phone": s.get("contact_phone") or contact_numbers.support_number(),
+            "whatsapp": s.get("whatsapp_number") or s.get("contact_phone") or contact_numbers.whatsapp_number(),
+            "email": s.get("contact_email") or "info@aboenterprise.com",
+            "hours": hours.strip(),
+            "address": address.strip(),
+            "site": s.get("site_name") or "ABO Enterprise",
+            "free_min": s.get("free_delivery_min_amount") or s.get("free_delivery_min") or "2000",
+            "charge_sylhet": s.get("delivery_charge_sylhet") or "",
+            "charge_dhaka": s.get("delivery_charge_dhaka") or "",
+            "charge_outside": s.get("delivery_charge_outside") or "",
+        }
 
     def _build_result(self, lang: str, intent: Intent, text: str, session_id: str) -> dict:
         if not self.response_validator.validate(text).valid:

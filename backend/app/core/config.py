@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
 
-    WHATSAPP_NUMBER: str = "8801825007977"
+    WHATSAPP_NUMBER: str = "8801885411007"
     BUSINESS_EMAIL: str = "info@aboenterprise.com"
 
     SMTP_HOST: str = ""

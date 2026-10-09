@@ -119,7 +119,7 @@ class KnowledgeBase:
     async def get_delivery_info(self, db: AsyncSession, language: str = "en") -> dict:
         keys = [
             "delivery_charge_dhaka", "delivery_charge_outside", "delivery_charge_sylhet",
-            "delivery_time_en", "delivery_time_bn", "free_delivery_min",
+            "delivery_time_en", "delivery_time_bn", "free_delivery_min", "free_delivery_min_amount",
         ]
         settings_map = await self.get_site_settings(db, keys)
         base_faq = self.get_faq("delivery", language) or ""
@@ -129,7 +129,7 @@ class KnowledgeBase:
             "outside_charge": settings_map.get("delivery_charge_outside"),
             "sylhet_charge": settings_map.get("delivery_charge_sylhet"),
             "delivery_time": settings_map.get("delivery_time_bn" if language == "bn" else "delivery_time_en"),
-            "free_delivery_min": settings_map.get("free_delivery_min"),
+            "free_delivery_min": settings_map.get("free_delivery_min") or settings_map.get("free_delivery_min_amount"),
         }
 
     async def get_site_settings(self, db: AsyncSession, keys: list[str]) -> dict[str, str]:
@@ -328,14 +328,15 @@ class KnowledgeBase:
         )
         row = result.scalar_one_or_none()
         if not row or not row.value:
-            return dict(_DEFAULT_COUPONS)
+            # No coupons configured → none. (Never advertise built-in sample codes.)
+            return {}
         try:
             parsed = json.loads(row.value)
             if isinstance(parsed, dict):
                 return parsed
         except json.JSONDecodeError:
             pass
-        return dict(_DEFAULT_COUPONS)
+        return {}
 
     async def get_coupon(self, db: AsyncSession, code: str) -> dict | None:
         coupons = await self.load_coupons(db)

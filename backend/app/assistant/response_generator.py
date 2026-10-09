@@ -21,18 +21,18 @@ class ResponseGenerator:
         return f"From our catalog and web search:\n\n{summary}"
 
     def unknown(self, language: str) -> str:
+        # Number comes from the admin settings (app.core.contact), never hard-coded.
+        from app.core.contact import whatsapp_number
+
+        wa = whatsapp_number()
         if language == "bn":
             return (
-                "দুঃখিত, আমি ঠিক বুঝতে পারিনি বা এই মুহূর্তে এর সঠিক উত্তর দেওয়া কঠিন। "
-                "পণ্য, সেবা, অর্ডার ট্র্যাক, ডেলিভারি চার্জ বা কুপন সম্পর্কে জিজ্ঞাসা করতে পারেন। "
-                "আরও সাহায্যের জন্য আমাদের সাথে যোগাযোগ করুন — "
-                "ইমেইল: info@aboenterprise.com, WhatsApp: 01825007977।"
+                "দুঃখিত, প্রশ্নটা ঠিক বুঝতে পারিনি। একটু অন্যভাবে লিখুন — যেমন \"পাসপোর্ট\", \"ঠিকানা\", \"ডেলিভারি চার্জ\"। "
+                f"অথবা সরাসরি আমাদের টিমের সাথে কথা বলুন — WhatsApp: {wa}।"
             )
         return (
-            "I'm sorry, I couldn't quite understand that, or it's hard to answer right now. "
-            "You can ask about products, services, order tracking, delivery charges, or coupons. "
-            "For more help, please contact us — "
-            "email: info@aboenterprise.com, WhatsApp: 01825007977."
+            "Sorry, I didn't quite get that. Try rephrasing — e.g. \"passport\", \"address\", \"delivery charge\". "
+            f"Or talk to our team directly — WhatsApp: {wa}."
         )
 
     def need_more_info(self, language: str, fields: list[str]) -> str:
