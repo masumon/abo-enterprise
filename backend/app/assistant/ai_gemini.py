@@ -323,3 +323,87 @@ def _note_error(text: str) -> None:
 def last_error() -> dict[str, str]:
     """Most recent AI failure (shown in the admin card); empty after a successful answer."""
     return dict(_last_error)
+
+
+# ── Admin content helpers (catalog drafts / descriptions) ────────────────────
+# Same key, model, auth style and daily cap as the chat assistant. These are
+# only called from admin endpoints and never receive customer data.
+
+class AiUnavailable(Exception):
+    """AI could not produce a result; `message_bn`/`message_en` are shown to the admin."""
+
+    def __init__(self, message_bn: str, message_en: str, status: int = 503) -> None:
+        super().__init__(message_en)
+        self.message_bn, self.message_en, self.status = message_bn, message_en, status
+
+
+async def is_available(db: AsyncSession) -> bool:
+    try:
+        cfg = await load_config(db)
+    except Exception:  # noqa: BLE001
+        return False
+    return bool(cfg["enabled"] and cfg["key"])
+
+
+def parse_json_text(text: str) -> Any:
+    """JSON from a model reply, tolerating ```json fences or prose around it."""
+    import json
+
+    t = (text or "").strip()
+    t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t, flags=re.I).strip()
+    try:
+        return json.loads(t)
+    except ValueError:
+        pass
+    for open_c, close_c in (("{", "}"), ("[", "]")):
+        a, b = t.find(open_c), t.rfind(close_c)
+        if a != -1 and b > a:
+            try:
+                return json.loads(t[a:b + 1])
+            except ValueError:
+                continue
+    raise ValueError("no JSON in reply")
+
+
+async def generate_json(db: AsyncSession, system: str, user: str,
+                        images: list[tuple[str, bytes]] | None = None, max_tokens: int = 8192) -> Any:
+    """One JSON-mode Gemini call with optional inline images. Counts toward the
+    daily cap. Raises AiUnavailable with a Bangla message on any problem."""
+    import base64
+
+    cfg = await load_config(db)
+    if not (cfg["enabled"] and cfg["key"]):
+        raise AiUnavailable("AI চালু নেই — Admin → AI Assistant-এ Google AI কী যোগ করুন।",
+                            "AI is not set up — add a Google AI key in Admin → AI Assistant.", 400)
+    if cfg["daily_cap"] and usage_today() >= cfg["daily_cap"]:
+        raise AiUnavailable("আজকের AI ব্যবহারের সীমা শেষ — কাল আবার চেষ্টা করুন।",
+                            "Today's AI limit is used up — try again tomorrow.", 429)
+    parts: list[dict] = [{"text": user}]
+    for mime, data in images or []:
+        parts.append({"inline_data": {"mime_type": mime, "data": base64.b64encode(data).decode("ascii")}})
+    headers, params = _auth(cfg["key"], cfg["auth"])
+    body = {
+        "systemInstruction": {"parts": [{"text": system}]},
+        "contents": [{"role": "user", "parts": parts}],
+        "generationConfig": {"temperature": 0.2, "maxOutputTokens": max_tokens, "responseMimeType": "application/json"},
+    }
+    _usage["count"] = usage_today() + 1
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(90.0, connect=10.0)) as client:
+            r = await client.post(f"{API_BASE}/models/{cfg['model']}:generateContent", params=params, headers=headers, json=body)
+    except Exception as exc:  # noqa: BLE001 — network problems, timeouts
+        _note_error(f"{type(exc).__name__}: সময়মতো উত্তর আসেনি / connection problem")
+        raise AiUnavailable("Google AI সময়মতো উত্তর দেয়নি — একটু পরে আবার চেষ্টা করুন।",
+                            "Google AI did not answer in time — try again.") from exc
+    if r.status_code != 200:
+        bn, en = _error_text(r.status_code, r.text)
+        _note_error(f"Google {r.status_code}")
+        raise AiUnavailable(bn, en, 502)
+    data = r.json()
+    out = ((data.get("candidates") or [{}])[0].get("content") or {}).get("parts") or []
+    text = "".join(p.get("text", "") for p in out if not p.get("thought")).strip()
+    try:
+        return parse_json_text(text)
+    except ValueError as exc:
+        _note_error("Google অবোধ্য উত্তর দিয়েছে (unreadable reply)")
+        raise AiUnavailable("AI-এর উত্তর বোঝা যায়নি — আবার চেষ্টা করুন।", "The AI reply could not be read — try again.", 502) from exc

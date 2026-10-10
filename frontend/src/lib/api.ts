@@ -464,6 +464,16 @@ export interface ImportPreviewRow {
   action: "create" | "update" | "skip";
   errors: string[];
   warnings: string[];
+  // Contract-import extras (newer backend; optional so older responses still type-check).
+  name_bn?: string;
+  brand?: string;
+  price?: number | null;
+  cost_price?: number | null;
+  stock_quantity?: number | null;
+  new_category?: boolean;
+  images?: string[];
+  missing_images?: string[];
+  specifications?: Record<string, string>;
 }
 export interface ImportValidateResult {
   headers: string[];
@@ -472,12 +482,14 @@ export interface ImportValidateResult {
   mapping_used: Record<string, string | null>;
   summary: { total: number; create: number; update: number; skip: number; errors: number; warnings: number };
   rows: ImportPreviewRow[];
+  new_categories?: { slug: string; name_en: string; name_bn: string }[];
 }
 export interface ImportCommitResult {
   job_id: string;
   created: number;
   updated: number;
   skipped: number;
+  categories_created?: number;
   errors: { row: number; slug: string; errors: string[]; warnings: string[] }[];
 }
 export interface ImportHistoryItem {
@@ -497,24 +509,27 @@ export const productImportApi = {
     downloadCsv(`/api/v1/admin/bulk/import/products/template?fmt=${fmt}`, `product-import-template.${fmt}`),
   downloadCategoryTree: () =>
     downloadCsv("/api/v1/admin/bulk/import/products/category-tree", "category-tree.csv"),
-  validate: (file: File, mapping: Record<string, string | null> | null, onExisting: string, onNew: string) => {
+  validate: (file: File, mapping: Record<string, string | null> | null, onExisting: string, onNew: string, imageNames?: string[]) => {
     const fd = new FormData();
     fd.append("file", file);
     if (mapping) fd.append("mapping", JSON.stringify(mapping));
     fd.append("on_existing", onExisting);
     fd.append("on_new", onNew);
+    if (imageNames) fd.append("image_names", JSON.stringify(imageNames));
     return api.post<ApiResponse<ImportValidateResult>>("/api/v1/admin/bulk/import/products/validate", fd, {
       headers: { "Content-Type": "multipart/form-data" },
     });
   },
-  commit: (file: File, mapping: Record<string, string | null> | null, onExisting: string, onNew: string) => {
+  commit: (file: File, mapping: Record<string, string | null> | null, onExisting: string, onNew: string, imageMap?: Record<string, string>) => {
     const fd = new FormData();
     fd.append("file", file);
     if (mapping) fd.append("mapping", JSON.stringify(mapping));
     fd.append("on_existing", onExisting);
     fd.append("on_new", onNew);
+    if (imageMap) fd.append("image_map", JSON.stringify(imageMap));
     return api.post<ApiResponse<ImportCommitResult>>("/api/v1/admin/bulk/import/products/commit", fd, {
       headers: { "Content-Type": "multipart/form-data" },
+      timeout: 180000,
     });
   },
   history: () => api.get<ApiResponse<ImportHistoryItem[]>>("/api/v1/admin/bulk/import/products/history"),
@@ -1416,3 +1431,42 @@ export const careerAdminApi = {
 };
 
 export default api;
+
+// ── AI catalog helpers (Google AI; hidden when no key is configured) ─────────
+export interface AiProductDraft {
+  name_bn: string;
+  name_en: string;
+  slug: string;
+  brand: string;
+  category: string;
+  description_bn: string;
+  description_en: string;
+  specifications: Record<string, string>;
+  cost_price: number | null;
+  /** Only ever cost + the admin's margin rule — never invented by the AI. */
+  price: number | null;
+  image_indexes: number[];
+  notes: string;
+}
+export interface AiDescription {
+  description_bn: string;
+  description_en: string;
+  features_bn: string[];
+  features_en: string[];
+  faq: { q_bn: string; a_bn: string; q_en: string; a_en: string }[];
+}
+export const aiCatalogApi = {
+  status: () => api.get<ApiResponse<{ available: boolean; used_today: number; daily_cap: number }>>("/api/v1/admin/ai-catalog/status"),
+  productsFromPhotos: (files: File[], marginPercent: number | null, hint = "") => {
+    const fd = new FormData();
+    files.forEach((f) => fd.append("files", f));
+    if (marginPercent !== null && !Number.isNaN(marginPercent)) fd.append("margin_percent", String(marginPercent));
+    if (hint) fd.append("hint", hint);
+    return api.post<ApiResponse<{ drafts: AiProductDraft[] }>>("/api/v1/admin/ai-catalog/products-from-photos", fd, {
+      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 120000,
+    });
+  },
+  describe: (data: { kind: "product" | "service" | "software" | "showcase"; name: string; notes?: string }) =>
+    api.post<ApiResponse<AiDescription>>("/api/v1/admin/ai-catalog/describe", data, { timeout: 120000 }),
+};

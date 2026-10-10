@@ -25,6 +25,7 @@ from app.schemas.schemas import (
     BlogPostCreate,
     BlogPostUpdate,
     ProductOut,
+    PublicProductOut,
     PaginatedResponse,
     PaginatedMeta,
     ApiResponse,
@@ -147,7 +148,7 @@ async def get_post_products(slug: str, db: AsyncSession = Depends(get_db)):
     if not post_id:
         return ApiResponse(data=[], message="No linked products")
     products = await get_linked_products_for_blog(db, post_id)
-    return ApiResponse(data=[ProductOut.model_validate(p) for p in products])
+    return ApiResponse(data=[PublicProductOut.model_validate(p) for p in products])
 
 
 # ==================== ADMIN ENDPOINTS ====================

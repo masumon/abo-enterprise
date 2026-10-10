@@ -13,7 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from starlette.datastructures import UploadFile
 
 from app.core.database import Base
-from app.models.models import Category, Product, ProductImportJob
+from app.models.models import Category, Product, ProductImportJob, Subcategory
+from app.models.catalog_master import Brand
 from app.api.v1.routes import bulk as bulk_routes
 
 
@@ -22,7 +23,7 @@ async def session():
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     # Only the tables this feature touches — other models use Postgres-only
     # JSONB that SQLite can't compile, and we don't need them here.
-    tables = [Category.__table__, Product.__table__, ProductImportJob.__table__]
+    tables = [Brand.__table__, Category.__table__, Subcategory.__table__, Product.__table__, ProductImportJob.__table__]
     async with engine.begin() as conn:
         await conn.run_sync(lambda c: Base.metadata.create_all(c, tables=tables))
     maker = async_sessionmaker(engine, expire_on_commit=False, class_=AsyncSession)

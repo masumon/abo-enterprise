@@ -388,33 +388,73 @@ async def export_products_pdf(
 # surfaced as warnings.
 # ══════════════════════════════════════════════════════════════════════════════
 
-_TEMPLATE_COLUMNS = list(pi.FIELD_SPEC.keys())
+_TEMPLATE_COLUMNS = list(pi.FIELD_SPEC.keys())  # every field the importer understands (mapping UI)
+# The owner-facing template follows product-import/IMPORT_CONTRACT.md exactly.
+CONTRACT_COLUMNS = [
+    "slug", "name_bn", "name_en", "category", "category_name_bn", "category_name_en", "brand",
+    "price", "original_price", "cost_price", "stock_quantity", "short_description_bn",
+    "short_description_en", "description_bn", "description_en", "specifications", "sku", "badge",
+    "is_featured", "seo_title", "seo_description", "images",
+]
+# Row 2: a Bangla help line per column. Rows starting with "#" are never imported.
+_TEMPLATE_HELP = {
+    "slug": "# সাহায্য: '#' দিয়ে শুরু সারি ইমপোর্ট হয় না। slug খালি রাখলে ইংরেজি নাম থেকে তৈরি হবে",
+    "name_bn": "বাংলা নাম (আবশ্যক)",
+    "name_en": "ইংরেজি নাম (আবশ্যক)",
+    "category": "ক্যাটাগরি slug, যেমন chargers (আবশ্যক)",
+    "category_name_bn": "নতুন ক্যাটাগরি হলে বাংলা নাম",
+    "category_name_en": "নতুন ক্যাটাগরি হলে ইংরেজি নাম",
+    "brand": "ব্র্যান্ড (বক্সে যেমন লেখা)",
+    "price": "বিক্রয়মূল্য ৳ (আবশ্যক)",
+    "original_price": "আগের/কাটা দাম ৳ (ঐচ্ছিক)",
+    "cost_price": "ক্রয়মূল্য ৳ — শুধু আপনি দেখবেন",
+    "stock_quantity": "স্টক সংখ্যা (খালি = ১০)",
+    "short_description_bn": "১-২ লাইনের ছোট বিবরণ",
+    "short_description_en": "Short description (English)",
+    "description_bn": "পূর্ণ বিবরণ; বুলেট লাইন '• ' দিয়ে শুরু",
+    "description_en": "Full description (English)",
+    "specifications": "যেমন  Output: 33W; Port: USB-A",
+    "sku": "স্টক কোড (মিললে পুরনো পণ্য আপডেট)",
+    "badge": "নতুন / Hot (২০ অক্ষর)",
+    "is_featured": "true / false",
+    "seo_title": "৬০ অক্ষরের মধ্যে",
+    "seo_description": "১৫৫ অক্ষরের মধ্যে",
+    "images": "ছবির ফাইলের নাম, | দিয়ে আলাদা; প্রথমটি মূল ছবি",
+}
 _TEMPLATE_EXAMPLE = {
-    "slug": "sample-fast-charger",
-    "name_en": "Sample Fast Charger 65W",
-    "name_bn": "স্যাম্পল ফাস্ট চার্জার ৬৫W",
+    "slug": "#example-fast-charger-33w",
+    "name_bn": "ফাস্ট চার্জার ৩৩W",
+    "name_en": "Fast Charger 33W",
     "category": "chargers",
-    "price": "1490",
-    "original_price": "1990",
-    "description_en": "65W GaN fast charger.",
-    "description_bn": "৬৫W GaN ফাস্ট চার্জার।",
-    "sku": "CHG-65W-001",
-    "brand": "ABO",
-    "stock_quantity": "25",
-    "is_active": "true",
+    "category_name_bn": "চার্জার",
+    "category_name_en": "Chargers",
+    "brand": "Baseus",
+    "price": "1290",
+    "original_price": "1490",
+    "cost_price": "950",
+    "stock_quantity": "10",
+    "short_description_bn": "দ্রুত চার্জের জন্য ৩৩W চার্জার।",
+    "short_description_en": "33W charger for fast charging.",
+    "description_bn": "• ৩৩W দ্রুত চার্জ\n• USB-A পোর্ট",
+    "description_en": "• 33W fast charge\n• USB-A port",
+    "specifications": "Output: 33W; Port: USB-A; Warranty: 6 months",
+    "sku": "CHG-33W-01",
+    "badge": "নতুন",
     "is_featured": "false",
-    "image_url": "https://res.cloudinary.com/demo/image/upload/charger.jpg",
-    "images": "https://res.cloudinary.com/demo/image/upload/charger-2.jpg | https://res.cloudinary.com/demo/image/upload/charger-3.jpg",
-    "tags": "charger, fast, 65w",
+    "seo_title": "Fast Charger 33W price in Bangladesh",
+    "seo_description": "33W fast charger in Sylhet with warranty.",
+    "images": "charger-33w-1.jpg|charger-33w-2.jpg",
 }
 
 
 @router.get("/import/products/template", dependencies=[Depends(require_role("products.write"))])
 async def import_products_template(fmt: str = Query("csv", pattern="^(csv|xlsx)$")):
-    """Download a ready-to-fill import template with the canonical columns and
-    one example row. slug/name_en/name_bn/category/price are required for a NEW
-    product; an existing slug only needs the columns you want to change."""
-    example = [_TEMPLATE_EXAMPLE.get(c, "") for c in _TEMPLATE_COLUMNS]
+    """Download the ready-to-fill import template (IMPORT_CONTRACT columns, a
+    Bangla help row and one example row - both start with '#' so they are never
+    imported). CSV is UTF-8 with BOM so Excel shows Bangla correctly."""
+    cols = CONTRACT_COLUMNS
+    help_row = [_TEMPLATE_HELP.get(c, "") for c in cols]
+    example = [_TEMPLATE_EXAMPLE.get(c, "") for c in cols]
     if fmt == "xlsx":
         try:
             from openpyxl import Workbook
@@ -423,7 +463,8 @@ async def import_products_template(fmt: str = Query("csv", pattern="^(csv|xlsx)$
         wb = Workbook()
         ws = wb.active
         ws.title = "Products"
-        ws.append(_TEMPLATE_COLUMNS)
+        ws.append(cols)
+        ws.append(help_row)
         ws.append(example)
         buf = io.BytesIO()
         wb.save(buf)
@@ -435,12 +476,13 @@ async def import_products_template(fmt: str = Query("csv", pattern="^(csv|xlsx)$
         )
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(_TEMPLATE_COLUMNS)
+    writer.writerow(cols)
+    writer.writerow(help_row)
     writer.writerow(example)
     output.seek(0)
     return StreamingResponse(
         io.BytesIO(output.getvalue().encode("utf-8-sig")),
-        media_type="text/csv",
+        media_type="text/csv; charset=utf-8",
         headers={"Content-Disposition": "attachment; filename=product-import-template.csv"},
     )
 
@@ -468,7 +510,19 @@ async def import_category_tree(db: AsyncSession = Depends(get_db)):
     )
 
 
-async def _run_import_pipeline(file: UploadFile, mapping_json: str | None, on_existing: str, on_new: str, db: AsyncSession):
+def _json_form(raw: str | None, kind: type, label: str):
+    import json
+    if not raw or not isinstance(raw, str):  # also a bare Form() default when called directly
+        return None
+    try:
+        val = json.loads(raw)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail=f"{label} must be valid JSON")
+    return val if isinstance(val, kind) else None
+
+
+async def _run_import_pipeline(file: UploadFile, mapping_json: str | None, on_existing: str, on_new: str, db: AsyncSession,
+                               image_names: set[str] | None = None):
     """Shared parse + map + validate used by both validate (dry-run) and commit.
     Returns (headers, auto_mapping, mapping_used, results)."""
     content = await file.read()
@@ -504,7 +558,7 @@ async def _run_import_pipeline(file: UploadFile, mapping_json: str | None, on_ex
 
     results = pi.validate_rows(
         rows, mapping_used, cat_index, existing_slugs, existing_sku_to_slug,
-        on_existing=on_existing, on_new=on_new,
+        on_existing=on_existing, on_new=on_new, image_names=image_names,
     )
     return headers, auto_mapping, mapping_used, results
 
@@ -515,12 +569,16 @@ async def import_products_validate(
     mapping: str | None = Form(None),
     on_existing: str = Form("update"),
     on_new: str = Form("create"),
+    image_names: str | None = Form(None),
     db: AsyncSession = Depends(get_db),
 ):
     """Dry-run: parse, auto-map columns, validate every row and match categories.
     Writes NOTHING to the database — returns a preview + per-row errors so the
     admin can fix the file before committing."""
-    headers, auto_mapping, mapping_used, results = await _run_import_pipeline(file, mapping, on_existing, on_new, db)
+    # `image_names` (JSON list) = photo files chosen together with the sheet.
+    names = _json_form(image_names, list, "image_names")
+    name_set = {pi.image_key(str(n)) for n in names} if names is not None else None
+    headers, auto_mapping, mapping_used, results = await _run_import_pipeline(file, mapping, on_existing, on_new, db, name_set)
     preview = [r.to_preview() for r in results]
     summary = {
         "total": len(results),
@@ -537,6 +595,7 @@ async def import_products_validate(
             "auto_mapping": auto_mapping,
             "mapping_used": mapping_used,
             "summary": summary,
+            "new_categories": pi.new_categories(results),
             "rows": preview,
         },
         message="Validation complete (nothing saved yet)",
@@ -549,6 +608,7 @@ async def import_products_commit(
     mapping: str | None = Form(None),
     on_existing: str = Form("update"),
     on_new: str = Form("create"),
+    image_map: str | None = Form(None),
     _admin: str = Depends(require_role("products.write")),
     db: AsyncSession = Depends(get_db),
 ):
@@ -556,9 +616,33 @@ async def import_products_commit(
     skipping rows with errors. Re-validates the file server-side (the preview is
     never trusted), records the run in Import History, and returns the result."""
     _, _, _, results = await _run_import_pipeline(file, mapping, on_existing, on_new, db)
+    # {file name: uploaded URL} - the browser uploads the chosen photos through
+    # the normal media API (Cloudinary) first and sends the resulting URLs.
+    raw_map = _json_form(image_map, dict, "image_map") or {}
+    img_urls = {pi.image_key(str(k)): str(v) for k, v in raw_map.items()
+                if isinstance(v, str) and v.startswith(("https://", "http://"))}
 
     created = updated = skipped = 0
     error_report: list[dict] = []
+
+    # Create the new categories first (each in its own savepoint).
+    new_cat_ids: dict[str, object] = {}
+    categories_created = 0
+    for info in pi.new_categories(results):
+        exists = (await db.execute(select(Category).where(Category.slug == info["slug"]))).scalar_one_or_none()
+        if exists is not None:
+            new_cat_ids[info["slug"]] = exists.id
+            continue
+        try:
+            async with db.begin_nested():
+                cat = Category(slug=info["slug"], name_en=info["name_en"][:255], name_bn=info["name_bn"][:255],
+                               applies_to=["product"], is_active=True)
+                db.add(cat)
+                await db.flush()
+            new_cat_ids[info["slug"]] = cat.id
+            categories_created += 1
+        except Exception as exc:  # noqa: BLE001
+            error_report.append({"row": 0, "slug": info["slug"], "errors": [f"ক্যাটাগরি তৈরি হয়নি (category create failed: {exc})"], "warnings": []})
 
     for r in results:
         # Rows that failed validation, or that the admin chose to skip, are never
@@ -570,6 +654,15 @@ async def import_products_commit(
             continue
 
         data = dict(r.data)
+        if r.new_category:
+            r.category_id = new_cat_ids.get(r.new_category["slug"])
+            if r.category_id is None:
+                skipped += 1
+                error_report.append({"row": r.row_num, "slug": data.get("slug", ""), "errors": ["ক্যাটাগরি তৈরি হয়নি (category not created)"], "warnings": []})
+                continue
+        missing = pi.apply_images(data, img_urls)
+        if missing:
+            r.warnings.append(f"ছবি আপলোড হয়নি: {', '.join(missing)} (image not uploaded)")
         # The update target is read outside the savepoint (a pure read).
         existing = None
         if r.action == "update":
@@ -606,6 +699,8 @@ async def import_products_commit(
                 created += 1
             else:
                 updated += 1
+            if r.warnings:
+                error_report.append({"row": r.row_num, "slug": data.get("slug", ""), "errors": [], "warnings": r.warnings})
         except Exception as exc:  # noqa: BLE001 — one bad row must not abort the batch
             skipped += 1
             error_report.append({"row": r.row_num, "slug": data.get("slug", ""), "errors": [f"apply failed: {exc}"], "warnings": []})
@@ -629,6 +724,7 @@ async def import_products_commit(
             "created": created,
             "updated": updated,
             "skipped": skipped,
+            "categories_created": categories_created,
             "errors": error_report,
         },
         message=f"Import complete: {created} created, {updated} updated, {skipped} skipped",

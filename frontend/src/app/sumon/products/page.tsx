@@ -2,13 +2,16 @@
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useCallback, useEffect, useState, useRef, type FormEvent } from "react";
-import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Copy, Download, FileText, Upload, Check, Ban, Star, StarOff, Languages } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Copy, Download, FileText, Upload, Check, Ban, Star, StarOff, Languages, Sparkles, FileSpreadsheet } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Image from "next/image";
 import Link from "next/link";
-import { productsApi, categoriesApi, adminApi, adminBlogApi, downloadCsv, downloadPdf } from "@/lib/api";
+import { productsApi, categoriesApi, adminApi, adminBlogApi, downloadCsv, downloadPdf, type AiDescription } from "@/lib/api";
+import AiDescribeButton from "@/components/admin/AiDescribeButton";
+import AiPhotoProductsModal from "@/components/admin/AiPhotoProductsModal";
+import { useAiAvailable } from "@/lib/useAiAvailable";
 import { apiErrorMessage } from "@/lib/apiError";
 import { parseDhakaDateTime, storedToDhakaInput } from "@/lib/flashSale";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -135,6 +138,8 @@ export default function AdminProductsPage() {
   const [searchInput, setSearchInput] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const modalRef = useFocusTrap(showModal);
+  const aiAvailable = useAiAvailable();
+  const [aiPhotoOpen, setAiPhotoOpen] = useState(false);
 
   // Bulk selection + row actions
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -207,6 +212,38 @@ export default function AdminProductsPage() {
     }
   };
   flatten(taxonomy as unknown as { id: string; name_en: string; subcategories?: unknown[] }[], 0);
+
+  // Category <select>: the original 4 storefront values + every product
+  // category from the taxonomy (e.g. ones created by the bulk import) + the
+  // product's current value, so editing an imported product never shows blank.
+  const categoryOptions: { slug: string; label: string; id?: string }[] = [...CATEGORIES.map((c) => ({ slug: c.value, label: c.label }))];
+  const addCat = (nodes: { id: string; slug: string; name_en: string; name_bn?: string | null; subcategories?: unknown[] }[], depth: number) => {
+    for (const n of nodes) {
+      const known = categoryOptions.find((o) => o.slug === n.slug);
+      if (known) known.id = known.id ?? n.id;
+      else categoryOptions.push({ slug: n.slug, id: n.id, label: `${"— ".repeat(depth)}${n.name_bn || n.name_en}` });
+      addCat((n.subcategories ?? []) as typeof nodes, depth + 1);
+    }
+  };
+  addCat(taxonomy as unknown as { id: string; slug: string; name_en: string; subcategories?: unknown[] }[], 0);
+  const currentCategory = watch("category");
+  if (currentCategory && !categoryOptions.some((o) => o.slug === currentCategory)) {
+    categoryOptions.push({ slug: currentCategory, label: currentCategory });
+  }
+
+  // AI description → product fields. Asks before replacing text the admin wrote.
+  const applyAiDescription = (d: AiDescription) => {
+    const build = (para: string, feats: string[], faq: string) =>
+      [para, feats.map((f) => `• ${f}`).join("\n"), faq].filter((x) => x && x.trim()).join("\n\n");
+    const faqBn = d.faq.filter((f) => f.q_bn).map((f) => `প্রশ্ন: ${f.q_bn}\nউত্তর: ${f.a_bn}`).join("\n\n");
+    const faqEn = d.faq.filter((f) => f.q_en).map((f) => `Q: ${f.q_en}\nA: ${f.a_en}`).join("\n\n");
+    const bn = build(d.description_bn, d.features_bn, faqBn ? `প্রশ্নোত্তর\n${faqBn}` : "");
+    const en = build(d.description_en, d.features_en, faqEn ? `FAQ\n${faqEn}` : "");
+    const hasText = (getValues("description_bn") || "").trim() || (getValues("description_en") || "").trim();
+    if (hasText && !window.confirm("আগের বিবরণ AI-এর লেখা দিয়ে বদলে দেবেন?")) return;
+    if (bn) setValue("description_bn", bn, { shouldDirty: true });
+    if (en) setValue("description_en", en, { shouldDirty: true });
+  };
 
   const load = useCallback(async (pageNum = page, search?: string) => {
     setLoading(true);
@@ -445,6 +482,10 @@ export default function AdminProductsPage() {
     if (!getValues("name_en")?.trim() && nameBn) {
       try { setValue("name_en", await translateBnToEn(nameBn), { shouldValidate: true }); } catch { /* zod will flag it */ }
     }
+    if (!getValues("slug")?.trim() && getValues("name_en")?.trim()) {
+      const auto = getValues("name_en").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+      if (auto.length >= 2) setValue("slug", auto, { shouldValidate: true });
+    }
     const descBn = getValues("description_bn")?.trim();
     if (!getValues("description_en")?.trim() && descBn) {
       try { setValue("description_en", await translateBnToEn(descBn), { shouldValidate: true }); } catch { /* optional field */ }
@@ -565,6 +606,14 @@ export default function AdminProductsPage() {
             >
               {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} {tx("Import CSV")}
             </button>
+            <Link href="/sumon/products/import" className="admin-btn-secondary" title="Excel/CSV ফাইল ও ছবি দিয়ে একসাথে অনেক পণ্য যোগ করুন">
+              <FileSpreadsheet className="w-4 h-4" /> বাল্ক ইমপোর্ট (Excel + ছবি)
+            </Link>
+            {aiAvailable && (
+              <button onClick={() => setAiPhotoOpen(true)} className="admin-btn-secondary" title="পণ্যের ছবি দিন — AI নাম, বিবরণ ও স্পেসিফিকেশনের খসড়া লিখবে">
+                <Sparkles className="w-4 h-4" /> ছবি থেকে পণ্য (AI)
+              </button>
+            )}
             <button onClick={handleExportCsv} className="admin-btn-secondary" title={tx("Export all products as CSV")}>
               <Download className="w-4 h-4" /> {tx("Export CSV")}
             </button>
@@ -729,7 +778,7 @@ export default function AdminProductsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE}>
           <div ref={modalRef} role="dialog" aria-modal="true" className="rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" style={ADMIN_MODAL_PANEL_STYLE}>
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">{editing ? "Edit Product" : "New Product"}</h2>
+              <h2 className="text-lg font-semibold text-gray-900">{editing ? "পণ্য সম্পাদনা (Edit Product)" : "নতুন পণ্য (New Product)"}</h2>
               <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
@@ -743,8 +792,145 @@ export default function AdminProductsPage() {
                 </div>
               </LivePreview>
 
+              <p className="text-xs text-muted bg-brand-50/60 dark:bg-white/5 rounded-lg px-3 py-2">
+                <span className="text-red-500 font-bold">*</span> চিহ্ন দেওয়া ঘরগুলো আবশ্যক। বাকিগুলো পরে পূরণ করলেও চলবে। বাংলা নাম লিখলে ইংরেজি নাম ও ওয়েব ঠিকানা (slug) সেভের সময় নিজে থেকে তৈরি হবে।
+              </p>
+
+              {/* 1 — Name */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">পণ্যের নাম (বাংলা) <span className="text-red-500">*</span></label>
+                  <input {...register("name_bn")} className={cn("input", errors.name_bn && "input-error")} placeholder="যেমন: ফাস্ট চার্জার ৩৩W" />
+                  {errors.name_bn && <p className="text-red-500 text-xs mt-1">{errors.name_bn.message}</p>}
+                </div>
+                <div>
+                  <label className="flex items-center justify-between gap-2 text-sm font-medium text-gray-700 mb-1">
+                    <span>পণ্যের নাম (English) <span className="text-red-500">*</span></span>
+                    <TranslateButton bn={watch("name_bn")} onResult={(en) => setValue("name_en", en, { shouldValidate: true, shouldDirty: true })} en={watch("name_en")} onResultBn={(b) => setValue("name_bn", b, { shouldValidate: true, shouldDirty: true })} />
+                  </label>
+                  <input {...register("name_en")} className={cn("input", errors.name_en && "input-error")} placeholder="Fast Charger 33W" />
+                  {errors.name_en && <p className="text-red-500 text-xs mt-1">{errors.name_en.message}</p>}
+                </div>
+              </div>
+
+              {/* 2 — Price, cost (private) and profit */}
+              <div className="rounded-xl border border-[var(--line)] p-3 space-y-3">
+                <p className="text-sm font-semibold text-heading">দাম</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">বিক্রয়মূল্য ৳ <span className="text-red-500">*</span></label>
+                    <input {...register("price")} type="number" className={cn("input", errors.price && "input-error")} placeholder="1290" />
+                    <p className="text-[11px] text-gray-400 mt-1">গ্রাহক এই দামে কিনবেন।</p>
+                    {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">আগের দাম ৳ <span className="text-gray-400 font-normal">(ঐচ্ছিক)</span></label>
+                    <input {...register("original_price")} type="number" className="input" placeholder="1490" />
+                    <p className="text-[11px] text-gray-400 mt-1">দিলে কেটে দেখানো হবে (ছাড় বোঝাতে)।</p>
+                    {errors.original_price && <p className="text-red-500 text-xs mt-1">{errors.original_price.message}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">ক্রয়মূল্য ৳ (শুধু আপনি দেখবেন)</label>
+                    <input {...register("cost_price")} type="number" className="input" placeholder="950" />
+                    <p className="text-[11px] text-gray-400 mt-1">গ্রাহক কখনো দেখবেন না। লাভের রিপোর্টে কাজে লাগে।</p>
+                  </div>
+                </div>
+                {(() => {
+                  const sale = Number(watch("price")) || 0;
+                  const cost = Number(watch("cost_price")) || 0;
+                  if (!(sale > 0 && cost > 0)) return null;
+                  const profit = sale - cost;
+                  const pct = Math.round((profit / cost) * 100);
+                  return (
+                    <p className={cn("text-sm font-medium rounded-lg px-3 py-2", profit >= 0 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300" : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300")}>
+                      {profit >= 0 ? `প্রতি পিসে লাভ ৳${Math.round(profit)} (${pct}%)` : `সাবধান: প্রতি পিসে লোকসান ৳${Math.round(-profit)}`}
+                    </p>
+                  );
+                })()}
+              </div>
+
+              {/* 3 — Category, stock, badge */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ক্যাটাগরি <span className="text-red-500">*</span></label>
+                  <select {...register("category")} className={cn("input", errors.category && "input-error")}>
+                    <option value="">{tx("Select category")}</option>
+                    {categoryOptions.map(c => <option key={c.slug} value={c.slug}>{c.label}</option>)}
+                  </select>
+                  <p className="text-[11px] text-gray-400 mt-1">ওয়েবসাইটে কোন তালিকায় দেখাবে।</p>
+                  {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
+                </div>
+                {taxonomy.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      ক্যাটালগ গাছের অবস্থান <span className="text-gray-400 font-normal">(ঐচ্ছিক, যেকোনো গভীরতা)</span>
+                    </label>
+                    <select
+                      {...register("category_id")}
+                      className="input"
+                      onChange={(e) => { setValue("category_id", e.target.value); setValue("subcategory_id", ""); }}
+                    >
+                      <option value="">— None —</option>
+                      {treeOptions.map((o) => (
+                        <option key={o.id} value={o.id}>{o.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">স্টক (কয়টি আছে)</label>
+                  {editing ? (
+                    <>
+                      <input
+                        type="number"
+                        value={editing.stock_quantity ?? 0}
+                        disabled
+                        className="input bg-gray-50 text-gray-500 cursor-not-allowed"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        স্টক বদলাতে{" "}
+                        <Link href="/sumon/inventory" className="text-brand-600 hover:underline">
+                          Inventory → Stock Adjustment
+                        </Link>{" "}
+                        ব্যবহার করুন — প্রতিটি পরিবর্তনের কারণ ও হিস্টরি থাকে।
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <input {...register("stock_quantity")} type="number" className="input" placeholder="0" />
+                      <p className="text-xs text-gray-400 mt-1">শুরুর স্টক। পরে Inventory থেকে বদলাবেন।</p>
+                    </>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{tx("Badge")} <span className="text-gray-400 font-normal">(ঐচ্ছিক)</span></label>
+                  <select {...register("badge")} className="input">
+                    {BADGES.map(b => <option key={b} value={b}>{b || "None"}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ওয়েব ঠিকানা (slug) <span className="text-red-500">*</span></label>
+                  <input {...register("slug")} className={cn("input", errors.slug && "input-error")} placeholder="fast-charger-33w" />
+                  <p className="text-[11px] text-gray-400 mt-1">খালি রাখলে ইংরেজি নাম থেকে তৈরি হবে (ছোট হাতের ইংরেজি ও - চিহ্ন)।</p>
+                  {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
+                </div>
+                <div className="flex items-end justify-end">
+                  <button
+                    type="button"
+                    onClick={autoTranslate}
+                    disabled={translating}
+                    className="btn btn-outline btn-sm gap-1.5"
+                    title="নাম ও বিবরণের খালি বাংলা ঘর English থেকে অটো-পূরণ করবে"
+                  >
+                    {translating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
+                    বাংলা অনুবাদ
+                  </button>
+                </div>
+              </div>
+
+              {/* 4 — Photos */}
               <ImageUpload
-                label={tx("Product Image")}
+                label={`${tx("Product Image")} — মূল ছবি`}
                 value={currentImage || imageUrl}
                 onChange={(url) => { setValue("image_url", url); setImageUrl(url); }}
                 folder="abo-enterprise/products"
@@ -753,17 +939,17 @@ export default function AdminProductsPage() {
 
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">Gallery Images</label>
+                  <label className="block text-sm font-medium text-gray-700">আরও ছবি (Gallery) <span className="text-gray-400 font-normal">(ঐচ্ছিক)</span></label>
                   <button
                     type="button"
                     onClick={() => setGalleryImages((imgs) => [...imgs, ""])}
                     className="text-xs text-brand-600 hover:text-brand-700 font-medium"
                   >
-                    + Add image
+                    + ছবি যোগ করুন
                   </button>
                 </div>
                 {galleryImages.length === 0 ? (
-                  <p className="text-xs text-gray-400">No gallery images. Click &quot;Add image&quot; to upload more photos.</p>
+                  <p className="text-xs text-gray-400">অন্য দিক থেকে তোলা ছবি থাকলে &quot;ছবি যোগ করুন&quot; চাপুন।</p>
                 ) : (
                   <div className="space-y-3">
                     {galleryImages.map((url, idx) => (
@@ -790,119 +976,26 @@ export default function AdminProductsPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
-                  <input {...register("slug")} className={cn("input", errors.slug && "input-error")} placeholder="phone-case-black" />
-                  {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{tx("Category")}</label>
-                  <select {...register("category")} className="input">
-                    <option value="">{tx("Select category")}</option>
-                    {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
-                  </select>
-                  {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
-                </div>
-                {taxonomy.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ক্যাটালগ গাছের অবস্থান <span className="text-gray-400 font-normal">(যেকোনো গভীরতা)</span>
-                    </label>
-                    <select
-                      {...register("category_id")}
-                      className="input"
-                      onChange={(e) => { setValue("category_id", e.target.value); setValue("subcategory_id", ""); }}
-                    >
-                      <option value="">— None —</option>
-                      {treeOptions.map((o) => (
-                        <option key={o.id} value={o.id}>{o.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={autoTranslate}
-                    disabled={translating}
-                    className="btn btn-outline btn-sm gap-1.5"
-                    title="নাম ও বিবরণের খালি বাংলা ঘর English থেকে অটো-পূরণ করবে"
-                  >
-                    {translating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
-                    বাংলা অনুবাদ
-                  </button>
-                </div>
-                <div>
-                  <label className="flex items-center justify-between gap-2 text-sm font-medium text-gray-700 mb-1">
-                    Name (English)
-                    <TranslateButton bn={watch("name_bn")} onResult={(en) => setValue("name_en", en, { shouldValidate: true, shouldDirty: true })} en={watch("name_en")} onResultBn={(b) => setValue("name_bn", b, { shouldValidate: true, shouldDirty: true })} />
-                  </label>
-                  <input {...register("name_en")} className={cn("input", errors.name_en && "input-error")} placeholder="Phone Case" />
-                  {errors.name_en && <p className="text-red-500 text-xs mt-1">{errors.name_en.message}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name (বাংলা)</label>
-                  <input {...register("name_bn")} className={cn("input", errors.name_bn && "input-error")} placeholder="ফোন কেস" />
-                  {errors.name_bn && <p className="text-red-500 text-xs mt-1">{errors.name_bn.message}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price (৳)</label>
-                  <input {...register("price")} type="number" className={cn("input", errors.price && "input-error")} placeholder="299" />
-                  {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Original Price (৳)</label>
-                  <input {...register("original_price")} type="number" className="input" placeholder="399 (optional)" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cost Price (৳)</label>
-                  <input {...register("cost_price")} type="number" className="input" placeholder="Internal — used only for the Profit report" />
-                  <p className="text-xs text-gray-400 mt-1">Not shown to customers. Powers Reports → Profit.</p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stock Quantity</label>
-                  {editing ? (
-                    <>
-                      <input
-                        type="number"
-                        value={editing.stock_quantity ?? 0}
-                        disabled
-                        className="input bg-gray-50 text-gray-500 cursor-not-allowed"
-                      />
-                      <p className="text-xs text-gray-400 mt-1">
-                        Stock is changed from{" "}
-                        <Link href="/sumon/inventory" className="text-brand-600 hover:underline">
-                          Inventory → Stock Adjustment
-                        </Link>{" "}
-                        so every change keeps a reason and a history record.
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <input {...register("stock_quantity")} type="number" className="input" placeholder="0" />
-                      <p className="text-xs text-gray-400 mt-1">Starting stock for this new product. Later changes are made from Inventory.</p>
-                    </>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{tx("Badge")}</label>
-                  <select {...register("badge")} className="input">
-                    {BADGES.map(b => <option key={b} value={b}>{b || "None"}</option>)}
-                  </select>
-                </div>
+              {/* 5 — Description */}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-heading">বিবরণ <span className="text-gray-400 font-normal text-xs">(ঐচ্ছিক — বুলেট লাইন &quot;• &quot; দিয়ে শুরু করুন)</span></p>
+                <AiDescribeButton
+                  kind="product"
+                  name={watch("name_bn") || watch("name_en")}
+                  notes={[watch("brand") && `Brand: ${watch("brand")}`, specs.filter((r) => r.k.trim()).map((r) => `${r.k}: ${r.v}`).join("; "), watch("description_bn")].filter(Boolean).join("\n")}
+                  onResult={applyAiDescription}
+                />
               </div>
-
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">বিবরণ (বাংলা)</label>
+                <textarea {...register("description_bn")} rows={4} className="input resize-y" placeholder="পণ্যের বিবরণ..." />
+              </div>
               <div>
                 <label className="flex items-center justify-between gap-2 text-sm font-medium text-gray-700 mb-1">
                   Description (English)
                   <TranslateButton bn={watch("description_bn")} onResult={(en) => setValue("description_en", en, { shouldDirty: true })} en={watch("description_en")} onResultBn={(b) => setValue("description_bn", b, { shouldDirty: true })} />
                 </label>
-                <textarea {...register("description_en")} rows={2} className="input resize-none" placeholder="Product description..." />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description (বাংলা)</label>
-                <textarea {...register("description_bn")} rows={2} className="input resize-none" placeholder="পণ্যের বিবরণ..." />
+                <textarea {...register("description_en")} rows={4} className="input resize-y" placeholder="Product description..." />
               </div>
 
               {/* Extended Details */}
@@ -1102,13 +1195,20 @@ export default function AdminProductsPage() {
 
             <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
               <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline btn-md">{tx("Cancel")}</button>
-              <button onClick={handleSubmit(onSubmit)} disabled={saving} className="btn btn-brand btn-md">
+              <button onClick={(e) => submitWithTranslate(e as unknown as FormEvent)} disabled={saving} className="btn btn-brand btn-md">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (editing ? "Save Changes" : "Create Product")}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <AiPhotoProductsModal
+        open={aiPhotoOpen}
+        onClose={() => setAiPhotoOpen(false)}
+        categoryOptions={categoryOptions}
+        onSaved={() => load(page)}
+      />
 
       <ConfirmDialog
         open={deleteId !== null}

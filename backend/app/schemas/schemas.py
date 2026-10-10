@@ -172,6 +172,12 @@ class ProductOut(ProductBase):
         return v if v is not None else []
 
 
+
+class PublicProductOut(ProductOut):
+    """Storefront view of a product: the private purchase price (cost_price)
+    is never serialized for customers."""
+    cost_price: float | None = Field(default=None, exclude=True)
+
 # ---- Review ----
 
 class ReviewCreate(BaseModel):
