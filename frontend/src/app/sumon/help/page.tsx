@@ -139,7 +139,7 @@ const GROUPS: { title: string; items: { id: string; question: string; answer: Re
         answer: (
           <Steps
             items={[
-              <><Go href="/sumon/settings#trust_media">সেটিংস → টিম সদস্য</Go> খুলুন।</>,
+              <><Go href="/sumon/about-trust#team">আমাদের সম্পর্কে ও বিশ্বাস → টিম সদস্য</Go> খুলুন।</>,
               "নাম, পদবী (বাংলা ও ইংরেজি), ছবি, বায়ো দিন।",
               "“Facebook link” ঘরে প্রোফাইলের লিংক দিলে About পেজ ও ফুটারের ক্রেডিটে আসল Facebook আইকন আসবে, ক্লিক করলে ওই পেজ খুলবে।",
               "ফুটারের ক্রেডিট স্বয়ংক্রিয়ভাবে সেই সদস্যদের দেখায় যাঁদের পদবীতে “Developer/ডেভেলপার” বা “Designer/ডিজাইনার/Creative/সৃজনশীল” আছে।",

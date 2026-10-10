@@ -11,80 +11,9 @@ import TranslateButton from "@/components/admin/TranslateButton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 
-/** Friendly field-editors for the Trust Assets object-array settings.
- * Unknown keys are preserved by JsonListEditor, so existing data is safe. */
-const s = (item: Record<string, unknown>, key: string): string => {
-  const v = item[key];
-  return v == null ? "" : String(v);
-};
-const nested = (item: Record<string, unknown>, key: string, sub: string): string => {
-  const o = item[key];
-  return o && typeof o === "object" ? String((o as Record<string, unknown>)[sub] ?? "") : "";
-};
-
+/** Friendly field-editor for the search-suggestions object-array setting.
+ * Team, client/partner logos and registrations moved to /sumon/about-trust. */
 const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Record<string, unknown>; mapKey?: string; previewRow?: (item: Record<string, unknown>) => React.ReactNode }> = {
-  // ── Trust Assets ──
-  about_team_json: {
-    fields: [
-      { path: "name", label: "Name" },
-      { path: "role.en", label: "Role (EN)" }, { path: "role.bn", label: "Role (BN)" },
-      { path: "desc.en", label: "Bio (EN)", type: "textarea" }, { path: "desc.bn", label: "Bio (BN)", type: "textarea" },
-      { path: "image", label: "Photo", labelBn: "ছবি", type: "image", purpose: "team" },
-      { path: "facebook", label: "Facebook link", hint: "optional — e.g. https://www.facebook.com/username (shown as a Facebook icon in the footer credit and on the About page)" },
-      { path: "website", label: "Website link", hint: "optional — portfolio or website; links the name in the footer credit" },
-    ],
-    newItem: () => ({ id: Date.now().toString(36), name: "", role: { en: "", bn: "" }, desc: { en: "", bn: "" }, image: "", facebook: "", website: "" }),
-    previewRow: (item) => (
-      <div className="text-center max-w-[180px] mx-auto">
-        <div className="w-16 h-16 mx-auto mb-2 rounded-full bg-brand-100 overflow-hidden flex items-center justify-center text-brand-700 font-bold">
-          {s(item, "image") ? (
-            // eslint-disable-next-line @next/next/no-img-element -- live admin preview
-            <img src={s(item, "image")} alt="" className="w-full h-full object-cover" />
-          ) : ((s(item, "name") || "?").charAt(0))}
-        </div>
-        <p className="font-bold text-sm text-heading">{s(item, "name") || "নাম"}</p>
-        <p className="text-xs text-brand-600">{nested(item, "role", "bn") || nested(item, "role", "en")}</p>
-        {(nested(item, "desc", "bn") || nested(item, "desc", "en")) && (
-          <p className="text-xs text-muted mt-1 line-clamp-2">{nested(item, "desc", "bn") || nested(item, "desc", "en")}</p>
-        )}
-      </div>
-    ),
-  },
-  client_logos_json: {
-    fields: [
-      { path: "name", label: "Name" }, { path: "abbr", label: "Abbreviation" }, { path: "image", label: "Logo", labelBn: "লোগো", type: "image", purpose: "brand-logo" },
-      { path: "desc_en", label: "Description (EN)", type: "textarea", hint: "shown when the logo is tapped", translateFrom: "desc_bn" },
-      { path: "desc_bn", label: "Description (BN)", type: "textarea" },
-      { path: "href", label: "Case-study link", hint: "optional — e.g. /projects or https://…" },
-    ],
-    newItem: () => ({ name: "", abbr: "", image: "", desc_en: "", desc_bn: "", href: "" }),
-    previewRow: (item) => (
-      <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 w-fit mx-auto">
-        {s(item, "image") ? (
-          // eslint-disable-next-line @next/next/no-img-element -- live admin preview
-          <img src={s(item, "image")} alt="" className="w-8 h-8 rounded-lg object-cover" />
-        ) : (
-          <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white text-xs font-bold flex items-center justify-center">{s(item, "abbr")}</span>
-        )}
-        <span className="text-sm font-medium text-muted">{s(item, "name") || "ক্লায়েন্ট"}</span>
-      </div>
-    ),
-  },
-  // ── Company registrations shown in the footer ──
-  site_registrations_json: {
-    fields: [
-      { path: "label_bn", label: "Label (BN)", placeholder: "ট্রেড লাইসেন্স" },
-      { path: "label_en", label: "Label (EN)", placeholder: "Trade License", translateFrom: "label_bn" },
-      { path: "value", label: "Number", placeholder: "TL-456789" },
-    ],
-    newItem: () => ({ label_bn: "", label_en: "", value: "" }),
-    previewRow: (item) => (
-      <div className="px-3 py-2 rounded-xl bg-[#123562] border border-white/15 w-fit">
-        <span className="block text-[10px] uppercase tracking-wide text-white/55">{s(item, "label_bn") || s(item, "label_en") || "লেবেল"}</span>
-        <span className="text-[12.5px] font-semibold text-white tabular-nums">{s(item, "value") || "—"}</span>
-      </div>
-    ),
-  },
   // Curated links shown under "Suggestions" on the storefront search screen.
   search_suggestions_json: {
     fields: [
@@ -104,10 +33,7 @@ type SettingValues = Record<string, string>;
 
 const HIDDEN_PLACEHOLDER = "***HIDDEN***";
 
-const JSON_SETTING_KEYS = new Set([
-  "about_team_json",
-  "client_logos_json",
-]);
+const JSON_SETTING_KEYS = new Set<string>([]);
 
 const BOOL_SETTING_KEYS = new Set([
   "maintenance_mode",
@@ -242,28 +168,10 @@ const SECTIONS: Section[] = [
   // ═══════════════════════════════════════════════════════════════════════
   // PAGE BANNERS (All 25 Pages)
   // ═══════════════════════════════════════════════════════════════════════
-  // ═══════════════════════════════════════════════════════════════════════
-  // TRUST ASSETS
-  // ═══════════════════════════════════════════════════════════════════════
-  {
-    id: "trust_media",
-    title: "Team, Clients & Testimonials",
-    icon: <Trophy className="w-4 h-4" />,
-    fields: [
-      { key: "about_team_json", label: "Team Members", type: "textarea", hint: "Add each team member — name, role, photo & short bio" },
-      { key: "client_logos_json", label: "Client Logos", type: "textarea", hint: "Add each client logo — name, photo, and an optional description + case-study link (shown on tap)" },
-    ],
-  },
-  {
-    id: "additional_assets",
-    title: "Additional Assets",
-    icon: <ImageIcon className="w-4 h-4" />,
-    note: "অফিস ফটো ও About Story ছবি এখন Image Manager → Brand & Site ট্যাবে।",
-    fields: [
-      { key: "trade_license", label: "Trade License (legacy)", placeholder: "TL-XXXXX", hint: "Shown in the footer only when the list below is empty" },
-      { key: "site_registrations_json", label: "Registrations (Trade License, TIN, BIN/VAT, BIDA…)", type: "textarea", hint: "Each entry shows as a card in the footer" },
-    ],
-  },
+  // Team members, client/partner logos, business registrations and the
+  // legacy trade licence (about_team_json, client_logos_json,
+  // site_registrations_json, trade_license) are edited on
+  // /sumon/about-trust — same keys, one place.
 
   // ═══════════════════════════════════════════════════════════════════════
   // COMMERCE SETTINGS
@@ -442,7 +350,7 @@ const SECTIONS: Section[] = [
  * untouched and still operates on the full flat SECTIONS list. */
 const SECTION_GROUPS: { id: string; label: string; labelBn: string; sectionIds: string[] }[] = [
   { id: "branding", label: "Branding & Contact", labelBn: "ব্র্যান্ডিং ও যোগাযোগ",
-    sectionIds: ["brand_core", "company_info", "trust_media", "additional_assets", "social_links"] },
+    sectionIds: ["brand_core", "company_info", "social_links"] },
   { id: "store", label: "Store & Checkout", labelBn: "দোকান ও চেকআউট",
     sectionIds: ["ecommerce_config", "steadfast_courier", "flash_sale_config"] },
   { id: "email", label: "Email", labelBn: "ইমেইল",
@@ -806,6 +714,18 @@ export default function AdminSettingsPage() {
               </button>
             ))}
           </div>
+          {activeGroup === "branding" && (
+            <div className="admin-card p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap border-brand-100 dark:border-white/10">
+              <div className="flex items-center gap-3 min-w-0">
+                <Users className="w-5 h-5 text-brand-500 flex-shrink-0" aria-hidden />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-heading">টিম, ক্লায়েন্ট/পার্টনার লোগো ও ব্যবসায়িক নিবন্ধন</p>
+                  <p className="text-xs text-muted mt-0.5">এগুলো এখন &lsquo;আমাদের সম্পর্কে ও বিশ্বাস&rsquo; পাতায় — আগের সব তথ্য সেখানেই আছে।</p>
+                </div>
+              </div>
+              <Link href="/sumon/about-trust" className="btn btn-outline btn-sm flex-shrink-0">সেখানে যান →</Link>
+            </div>
+          )}
           {SECTIONS.filter((section) => groupForSection(section.id) === activeGroup).map((section) => (
             <SectionCard
               key={section.id}
