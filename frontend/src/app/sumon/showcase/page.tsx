@@ -291,7 +291,7 @@ export default function AdminShowcasePage() {
                     </div>
 
                     <Field label="Cover Image">
-                      <ImageUpload value={project.image} onChange={(url) => updateProject(index, { image: url })} folder="abo-enterprise/projects" />
+                      <ImageUpload value={project.image} onChange={(url) => updateProject(index, { image: url })} folder="abo-enterprise/projects" purpose="project" />
                     </Field>
 
                     <Field label="Gallery Images (one URL per line)">
@@ -383,7 +383,7 @@ export default function AdminShowcasePage() {
               </div>
 
               <Field label="Service Image">
-                <ImageUpload value={service.image ?? ""} onChange={(url) => updateService(index, { image: url })} folder="abo-enterprise/services" />
+                <ImageUpload value={service.image ?? ""} onChange={(url) => updateService(index, { image: url })} folder="abo-enterprise/services" purpose="service-image" />
               </Field>
 
               <Field label="Bullet Items (EN | BN per line)">

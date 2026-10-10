@@ -182,6 +182,7 @@ function SlotEditor({
         folder={MEDIA_UPLOAD_FOLDER}
         hint={slot.hint}
         guide={slot.guide}
+        purpose={slot.purpose}
         previewSize="lg"
         accept="both"
       />
@@ -630,6 +631,7 @@ export default function AdminMediaPage() {
                               onChange={(url) => patchProductImage(p.id!, url)}
                               folder={MEDIA_UPLOAD_FOLDER}
                               previewSize="md"
+                              purpose="product-main"
                             />
                             <p className="text-xs text-gray-400">Gallery images</p>
                             {(p.images ?? []).map((img, gi) => (
@@ -643,6 +645,7 @@ export default function AdminMediaPage() {
                                 }}
                                 folder={MEDIA_UPLOAD_FOLDER}
                                 previewSize="sm"
+                                purpose="product-gallery"
                               />
                             ))}
                             <button
@@ -658,6 +661,7 @@ export default function AdminMediaPage() {
                               onChange={(url) => patchProduct(p.id!, { og_image: url })}
                               folder={MEDIA_UPLOAD_FOLDER}
                               previewSize="sm"
+                              purpose="product-og"
                             />
                           </div>
                         ) : null
@@ -674,6 +678,7 @@ export default function AdminMediaPage() {
                               onChange={(url) => patchServiceImage(s.id!, url)}
                               folder={MEDIA_UPLOAD_FOLDER}
                               previewSize="md"
+                              purpose="service-image"
                             />
                             <p className="text-xs text-gray-400">Icon image</p>
                             <ImageUpload
@@ -681,6 +686,7 @@ export default function AdminMediaPage() {
                               onChange={(url) => patchService(s.id!, { icon_url: url })}
                               folder={MEDIA_UPLOAD_FOLDER}
                               previewSize="sm"
+                              purpose="service-icon"
                             />
                             <p className="text-xs text-gray-400">Social share (OG)</p>
                             <ImageUpload
@@ -688,6 +694,7 @@ export default function AdminMediaPage() {
                               onChange={(url) => patchService(s.id!, { og_image: url })}
                               folder={MEDIA_UPLOAD_FOLDER}
                               previewSize="sm"
+                              purpose="og-image"
                             />
                           </div>
                         ) : null
@@ -704,6 +711,7 @@ export default function AdminMediaPage() {
                               onChange={(url) => patchBlogImage(post.id!, url)}
                               folder={MEDIA_UPLOAD_FOLDER}
                               previewSize="md"
+                              purpose="blog-cover"
                             />
                             <p className="text-xs text-gray-400">Social share (OG)</p>
                             <ImageUpload
@@ -711,6 +719,7 @@ export default function AdminMediaPage() {
                               onChange={(url) => patchBlog(post.id!, { og_image: url })}
                               folder={MEDIA_UPLOAD_FOLDER}
                               previewSize="sm"
+                              purpose="og-image"
                             />
                           </div>
                         ) : null
@@ -725,6 +734,7 @@ export default function AdminMediaPage() {
                             onChange={(url) => patchReviewPhoto(r.id, url)}
                             folder={MEDIA_UPLOAD_FOLDER}
                             previewSize="sm"
+                            purpose="testimonial"
                           />
                         </div>
                       ))}

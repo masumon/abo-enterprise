@@ -24,7 +24,7 @@ const label = "block text-xs font-semibold text-muted mb-1";
 const card = "enterprise-card p-4 sm:p-5 space-y-4";
 
 const SHOT_FIELDS: JsonListField[] = [
-  { path: "src", label: "Screenshot", labelBn: "স্ক্রিনশট", type: "image" },
+  { path: "src", label: "Screenshot", labelBn: "স্ক্রিনশট", type: "image", purpose: "apon-screenshot" },
   { path: "alt_bn", label: "Caption (বাংলা)", labelBn: "ছবির বর্ণনা (বাংলা)" },
   { path: "alt_en", label: "Caption (English)", labelBn: "ছবির বর্ণনা (ইংরেজি)", translateFrom: "alt_bn" },
 ];
@@ -340,7 +340,7 @@ export default function AponAdminPage() {
               <div><label className={label}>ডাউনলোড বাটনের লেখা (বাংলা)</label><input className={field} value={v("apon_button_label_bn")} onChange={(e) => set("apon_button_label_bn", e.target.value)} placeholder="আপন ডাউনলোড করুন" /></div>
               <div><div className="flex items-center justify-between gap-2 mb-1"><label className="text-xs font-semibold text-muted">Button label (English)</label><TranslateButton bn={v("apon_button_label_bn")} onResult={(t) => set("apon_button_label_en", t)} en={v("apon_button_label_en")} onResultBn={(t) => set("apon_button_label_bn", t)} /></div><input className={field} value={v("apon_button_label_en")} onChange={(e) => set("apon_button_label_en", e.target.value)} placeholder="Download Apon" /></div>
             </div>
-            <ImageUpload value={v("apon_icon_url")} onChange={(u) => set("apon_icon_url", u)} label="অ্যাপের আইকন (ফাঁকা = ডিফল্ট)" guide="512×512px · PNG" previewSize="sm" />
+            <ImageUpload value={v("apon_icon_url")} onChange={(u) => set("apon_icon_url", u)} label="অ্যাপের আইকন (ফাঁকা = ডিফল্ট)" purpose="apon-icon" previewSize="sm" />
             <div className="grid sm:grid-cols-2 gap-3">
               <div><label className={label}>প্যাকেজ নাম</label><input className={cn(field, "font-mono text-xs")} value={v("apon_package_name")} onChange={(e) => set("apon_package_name", e.target.value)} placeholder="com.masumon.apon" /></div>
               <div><label className={label}>সাইনিং সার্টিফিকেট SHA-256</label><input className={cn(field, "font-mono text-xs")} value={v("apon_cert_sha256")} onChange={(e) => set("apon_cert_sha256", e.target.value)} placeholder="AE:3D:E5:…" /></div>

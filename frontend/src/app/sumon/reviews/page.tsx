@@ -539,6 +539,7 @@ export default function AdminReviewsPage() {
                     onChange={(url) => setDraft(d => ({ ...d, photo_url: url }))}
                     folder="abo-enterprise/reviews"
                     previewSize="sm"
+                    purpose="testimonial"
                   />
                 </div>
               </section>
