@@ -2,7 +2,7 @@ import {
   LayoutDashboard, ShoppingCart, Briefcase, Package, Users, Wrench, FileText, Star, BookOpen, FolderKanban,
   Images, CreditCard, Bot, Mail, BarChart2, Settings, Shield, Send, Truck, UserPlus, Percent, FolderTree,
   LayoutTemplate, Megaphone, ExternalLink, UploadCloud, Tags, Bell, History, ScrollText, ShieldCheck, Boxes,
-  GalleryHorizontal, Smartphone, Sparkles, type LucideIcon,
+  GalleryHorizontal, Smartphone, Sparkles, HeartPulse, type LucideIcon,
 } from "lucide-react";
 
 export type AdminRole = "super_admin" | "admin" | "editor" | "viewer";
@@ -65,24 +65,26 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   ]},
   { id: "products-services", label: "Products & services", labelBn: "পণ্য ও সেবা", items: [
     { href: "/sumon/products", icon: Package, label: "Products", labelBn: "পণ্য", exact: true, permission: "products.read", descBn: "পণ্য যোগ, ছবি, দাম ও স্টক", keywords: "product পণ্য দাম ছবি" },
-    { href: "/sumon/categories", icon: FolderTree, label: "Categories", labelBn: "ক্যাটাগরি", minRole: "admin", permission: "products.read", descBn: "পণ্যের ভাগ ও ক্যাটাগরির ছবি", keywords: "category ক্যাটাগরি" },
-    { href: "/sumon/inventory", icon: Boxes, label: "Inventory", labelBn: "স্টক ও ব্র্যান্ড", minRole: "admin", permission: "products.read", descBn: "কোন পণ্য কতটা আছে; ব্র্যান্ডের নাম ও লোগো", keywords: "stock inventory brand স্টক মজুত ব্র্যান্ড লোগো" },
+    { href: "/sumon/categories", icon: FolderTree, label: "Categories", labelBn: "ক্যাটাগরি", minRole: "admin", permission: "products.read", descBn: "পণ্য ও সেবার ক্যাটাগরি, ছবি, ক্রম ও দেখান/লুকান", keywords: "category subcategory ক্যাটাগরি সাব-ক্যাটাগরি ভাগ ক্রম" },
+    { href: "/sumon/inventory", icon: Boxes, label: "Inventory & Product Brands", labelBn: "স্টক ও পণ্যের ব্র্যান্ড", minRole: "admin", permission: "products.read", descBn: "কোন পণ্য কতটা আছে; পণ্যের ব্র্যান্ড (যেমন Samsung)", keywords: "stock inventory brand manufacturer স্টক মজুত পণ্যের ব্র্যান্ড কোম্পানি" },
     { href: "/sumon/products/import", icon: UploadCloud, label: "Bulk Import", labelBn: "একসাথে অনেক পণ্য আপলোড", minRole: "admin", permission: "products.write", descBn: "Excel/CSV থেকে একসাথে পণ্য তুলুন", keywords: "import bulk csv excel আপলোড" },
     { href: "/sumon/combos", icon: Package, label: "Combo Packs", labelBn: "কম্বো প্যাক", permission: "products.read", descBn: "কয়েকটি পণ্য মিলিয়ে অফার", keywords: "combo কম্বো অফার প্যাক" },
     { href: "/sumon/services", icon: Wrench, label: "Services", labelBn: "সেবা", permission: "services.read", descBn: "সেবার বিবরণ, দাম ও বুকিং ফর্ম", keywords: "service সেবা" },
-    { href: "/sumon/reviews", icon: Star, label: "Product Reviews", labelBn: "রিভিউ", permission: "reviews.read", descBn: "গ্রাহকের মতামত দেখান বা লুকান", keywords: "review রিভিউ মতামত রেটিং" },
+    { href: "/sumon/reviews", icon: Star, label: "Reviews & Testimonials", labelBn: "রিভিউ ও মতামত", permission: "reviews.read", descBn: "পণ্য/সেবার রিভিউ ও সাইটের মতামত — দেখান, লুকান, টেস্ট রিভিউ মুছুন", keywords: "review testimonial rating রিভিউ মতামত রেটিং টেস্টিমোনিয়াল গ্রাহকের কথা" },
   ]},
   { id: "website", label: "Make the website yours", labelBn: "ওয়েবসাইট সাজান", items: [
-    { href: "/sumon/website", icon: Sparkles, label: "Website hub", labelBn: "ওয়েবসাইট সাজান — সব এক জায়গায়", exact: true, descBn: "ব্যানার, ছবি, ভিডিও, লেখা — কী বদলাবেন বাছুন", keywords: "website hub banner hero photo video logo সাজান ব্যানার ছবি ভিডিও" },
+    { href: "/sumon/website", icon: Sparkles, label: "Content hub", labelBn: "কনটেন্ট-কেন্দ্র (সব এক জায়গায়)", exact: true, descBn: "সাইটের সব কনটেন্ট — সংখ্যা, শেষ বদল, নতুন যোগ, সাইটে দেখা", keywords: "website content hub cms কনটেন্ট কেন্দ্র সাজান সব" },
     { href: "/sumon/homepage", icon: LayoutTemplate, label: "Homepage Content", labelBn: "হোমপেজ (হিরো ব্যানার, লেখা)", descBn: "হোমপেজের বড় ব্যানার, লেখা, ছবি ও ভিডিও", keywords: "hero banner homepage হিরো ব্যানার হোম ভিডিও লোগো" },
     { href: "/sumon/promo-slides", icon: GalleryHorizontal, label: "Homepage Banners & Slider", labelBn: "ব্যানার ও স্লাইডার", permission: "settings.read", descBn: "অফারের ব্যানার ও ঘুরতে থাকা স্লাইড", keywords: "slider slide banner offer স্লাইড ব্যানার অফার" },
     { href: "/sumon/announcements", icon: Megaphone, label: "Homepage Announcement Bar", labelBn: "ঘোষণা বার (উপরের লেখা)", descBn: "সাইটের একদম উপরে চলমান ঘোষণা", keywords: "announcement ঘোষণা মার্কি ticker" },
+    { href: "/sumon/about-trust", icon: ShieldCheck, label: "About & Trust", labelBn: "আমাদের সম্পর্কে ও বিশ্বাস", minRole: "admin", descBn: "টিম সদস্য, ক্লায়েন্ট/পার্টনার লোগো, ট্রেড লাইসেন্স ও নিবন্ধন", keywords: "about team member client partner logo trust registration trade license tin bin টিম সদস্য ক্লায়েন্ট পার্টনার লোগো ট্রেড লাইসেন্স নিবন্ধন সম্পর্কে" },
     { href: "/sumon/media", icon: Images, label: "Image Manager", labelBn: "ছবি ও ভিডিও ভাণ্ডার", permission: "media.read", descBn: "সব ছবি-ভিডিও আপলোড, দেখা ও মোছা", keywords: "image photo video upload media ছবি ভিডিও আপলোড" },
-    { href: "/sumon/showcase", icon: FolderKanban, label: "Project Gallery", labelBn: "প্রজেক্ট গ্যালারি", descBn: "আপনার করা কাজের নমুনা", keywords: "project gallery portfolio প্রজেক্ট গ্যালারি কাজ" },
+    { href: "/sumon/showcase", icon: FolderKanban, label: "Software & Projects", labelBn: "সফটওয়্যার ও প্রজেক্ট", descBn: "আপনার করা কাজ ও সফটওয়্যার সেবার নমুনা", keywords: "project gallery portfolio software showcase প্রজেক্ট গ্যালারি কাজ সফটওয়্যার" },
     { href: "/sumon/blog", icon: BookOpen, label: "Blog", labelBn: "ব্লগ", permission: "blog.read", descBn: "লেখা লিখুন, অনুবাদ ও প্রকাশ করুন", keywords: "blog post article ব্লগ লেখা" },
     { href: "/sumon/pages", icon: FileText, label: "Pages", labelBn: "অতিরিক্ত পেজ", permission: "pages.read", descBn: "নিজের মতো নতুন পেজ বানান", keywords: "page পেজ" },
     { href: "/sumon/apon", icon: Smartphone, label: "Mobile App (Apon)", labelBn: "মোবাইল অ্যাপ (আপন)", minRole: "admin", permission: "app.read", descBn: "অ্যাপের ভার্সন, ডাউনলোড পেজ ও পরিসংখ্যান", keywords: "app apk apon download অ্যাপ আপন ডাউনলোড" },
     { href: "/sumon/legal-pages", icon: ScrollText, label: "Legal Pages", labelBn: "আইনি পেজ (গোপনীয়তা, শর্ত)", minRole: "admin", permission: "settings.write", descBn: "প্রাইভেসি, শর্ত, রিফান্ড, কুকি", keywords: "legal privacy terms refund cookies গোপনীয়তা শর্ত রিফান্ড" },
+    { href: "/sumon/content-health", icon: HeartPulse, label: "Content Health", labelBn: "কনটেন্ট স্বাস্থ্য", minRole: "admin", descBn: "ছবি নেই, অনুবাদ বাকি, ভাঙা লিংক — কী ঠিক করতে হবে", keywords: "content health missing image translation broken কনটেন্ট স্বাস্থ্য ছবি নেই অনুবাদ" },
     { href: "/sumon/settings", icon: Settings, label: "Settings", labelBn: "সাইট সেটিংস", minRole: "admin", descBn: "নাম, লোগো, ফোন, ঠিকানা, কুরিয়ার, Google/SEO, ইমেইল-SMS", keywords: "logo favicon contact phone address whatsapp courier steadfast seo google analytics pixel marketing smtp sms লোগো ফোন ঠিকানা হোয়াটসঅ্যাপ কুরিয়ার গুগল" },
   ]},
   { id: "marketing", label: "Marketing", labelBn: "প্রচার ও মার্কেটিং", items: [
@@ -141,5 +143,5 @@ export const ADMIN_WEBSITE_ACTIONS = [
   { href: "/sumon/media", label: "Upload photos & videos", labelBn: "ছবি-ভিডিও আপলোড", icon: Images, color: "green" as const },
   { href: "/sumon/blog", label: "Write a blog post", labelBn: "নতুন ব্লগ লিখুন", icon: BookOpen, color: "amber" as const },
   { href: "/sumon/announcements", label: "Announcement bar", labelBn: "ঘোষণা বার", icon: Megaphone, color: "brand" as const },
-  { href: "/sumon/website", label: "All website tools", labelBn: "সব ওয়েবসাইট টুল", icon: Sparkles, color: "green" as const },
+  { href: "/sumon/website", label: "Content hub", labelBn: "কনটেন্ট-কেন্দ্র", icon: Sparkles, color: "green" as const },
 ];
