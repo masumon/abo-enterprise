@@ -4,8 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import {
-  ShoppingCart, ChevronLeft, Package, CheckCircle,
+  ShoppingCart, ChevronLeft, ChevronRight, CheckCircle,
   Heart, GitCompare, Share2, MessageCircle, Zap, Star, Truck,
+  Phone, ShieldCheck, Wallet, Home,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -27,6 +28,7 @@ import ProductReviews from "@/components/features/ProductReviews";
 import GlassCard from "@/components/ui/GlassCard";
 import CountdownTimer, { getWeeklySaleEnd } from "@/components/ui/CountdownTimer";
 import { parseDhakaDateTime } from "@/lib/flashSale";
+import { parseDescription, specRows } from "@/lib/productText";
 
 const ProductBookingModal = dynamic(() => import("@/components/products/ProductBookingModal"), { ssr: false });
 
@@ -52,6 +54,7 @@ export default function ProductDetailClient({ product }: Props) {
   // Single source: the API-computed capabilities array, with a flag fallback.
   const canBook = product.capabilities?.includes("bookable") ?? !!product.is_bookable;
   const buySectionRef = useRef<HTMLDivElement>(null);
+  const touchX = useRef<number | null>(null);
   const { addItem, openCart } = useCartStore();
   const { toggle: toggleWish, has: wished } = useWishlistStore();
   const { add: addCompare, has: compared } = useCompareStore();
@@ -120,11 +123,15 @@ export default function ProductDetailClient({ product }: Props) {
 
   const handleShare = async () => {
     const url = window.location.href;
-    if (navigator.share) {
-      await navigator.share({ title: product.name_en, url });
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast("success", lang === "bn" ? "লিংক কপি হয়েছে" : "Link copied");
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: name, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast("success", lang === "bn" ? "লিংক কপি হয়েছে" : "Link copied");
+      }
+    } catch {
+      /* share sheet dismissed — nothing to do */
     }
   };
 
@@ -144,6 +151,20 @@ export default function ProductDetailClient({ product }: Props) {
   const productId = product.id ?? product.slug;
   const waMsg = encodeURIComponent(`${lang === "bn" ? "অর্ডার করতে চাই" : "I want to order"}: ${name} - ${formatPrice(effectivePrice)}`);
   const savings = strikePrice ? strikePrice - effectivePrice : 0;
+  const descBlocks = parseDescription(desc);
+  const specs = specRows(product.specifications);
+  const categoryHref = product.category ? `/products?category=${encodeURIComponent(product.category)}` : "/products";
+  const categoryLabel = product.category ? product.category.replace(/[-_]+/g, " ") : "";
+  const imgCount = images.length;
+  const showImage = (i: number) => setSelectedImage(((i % imgCount) + imgCount) % imgCount);
+  // Swipe left/right on the main photo (phones/tablets).
+  const onTouchStart = (e: React.TouchEvent) => { touchX.current = e.touches[0]?.clientX ?? null; };
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchX.current == null || imgCount < 2) return;
+    const dx = (e.changedTouches[0]?.clientX ?? touchX.current) - touchX.current;
+    touchX.current = null;
+    if (Math.abs(dx) > 40) showImage(selectedImage + (dx < 0 ? 1 : -1));
+  };
 
   /*
    * The delivery line, built from the settings checkout bills from. A
@@ -167,17 +188,37 @@ export default function ProductDetailClient({ product }: Props) {
   return (
     <main className="min-h-screen py-8 px-4 pb-[calc(var(--mobile-chrome-bottom)+5rem)] lg:pb-8">
       <div className="max-w-6xl mx-auto">
-        <button type="button" onClick={() => router.back()} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-brand-600 mb-6">
-          <ChevronLeft className="w-4 h-4" aria-hidden />
-          {lang === "bn" ? "পণ্যে ফিরে যান" : "Back to Products"}
-        </button>
+        <nav aria-label={lang === "bn" ? "অবস্থান" : "Breadcrumb"} className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+          <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 min-w-0">
+            <li>
+              <Link href="/" className="inline-flex items-center gap-1 hover:text-brand-600">
+                <Home className="w-3.5 h-3.5" aria-hidden />
+                <span className="sr-only sm:not-sr-only">{lang === "bn" ? "হোম" : "Home"}</span>
+              </Link>
+            </li>
+            <li aria-hidden><ChevronRight className="w-3.5 h-3.5" /></li>
+            <li><Link href="/products" className="hover:text-brand-600">{lang === "bn" ? "পণ্য" : "Products"}</Link></li>
+            {product.category && (
+              <>
+                <li aria-hidden><ChevronRight className="w-3.5 h-3.5" /></li>
+                <li><Link href={categoryHref} className="capitalize hover:text-brand-600">{categoryLabel}</Link></li>
+              </>
+            )}
+            <li aria-hidden className="hidden sm:block"><ChevronRight className="w-3.5 h-3.5" /></li>
+            <li aria-current="page" className="hidden sm:block min-w-0 max-w-[16rem] truncate text-gray-700 dark:text-gray-200">{name}</li>
+          </ol>
+        </nav>
 
         <GlassCard className="overflow-hidden mb-10">
           <div className="grid md:grid-cols-2 gap-0">
             <div className="p-6 border-b md:border-b-0 md:border-r border-gray-100 dark:border-white/10">
-              <div className="relative aspect-[4/5] sm:aspect-square rounded-xl overflow-hidden bg-gradient-to-br from-brand-50 to-brand-100 mb-4">
+              <div
+                className={cn("relative aspect-square rounded-xl overflow-hidden mb-4", images[selectedImage] ? "bg-white ring-1 ring-gray-100 dark:ring-white/10" : "bg-gradient-to-br from-brand-50 to-brand-100")}
+                onTouchStart={onTouchStart}
+                onTouchEnd={onTouchEnd}
+              >
                 {images[selectedImage] ? (
-                  <ImageZoom src={images[selectedImage]} alt={`${name} — ABO Enterprise`} />
+                  <ImageZoom src={images[selectedImage]} alt={`${name} — ABO Enterprise`} fit="contain" label={lang === "bn" ? "ছবি বড় করে দেখুন" : "Zoom image"} />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-brand-500 to-brand-700 text-white">
                     <span className="text-6xl font-bold tracking-tight" aria-hidden>
@@ -189,12 +230,26 @@ export default function ProductDetailClient({ product }: Props) {
                   </div>
                 )}
                 {discount && <span className="absolute top-3 right-3 badge bg-accent-600 text-white z-10">-{discount}%</span>}
+                {product.badge && <span className="absolute top-3 left-3 badge bg-brand-600 text-white z-10 max-w-[60%] truncate">{product.badge}</span>}
+                {imgCount > 1 && (
+                  <>
+                    <button type="button" onClick={() => showImage(selectedImage - 1)} aria-label={lang === "bn" ? "আগের ছবি" : "Previous image"} className="absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 dark:bg-gray-900/80 shadow flex items-center justify-center text-gray-700 dark:text-gray-200 hover:text-brand-600">
+                      <ChevronLeft className="w-5 h-5" aria-hidden />
+                    </button>
+                    <button type="button" onClick={() => showImage(selectedImage + 1)} aria-label={lang === "bn" ? "পরের ছবি" : "Next image"} className="absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white/90 dark:bg-gray-900/80 shadow flex items-center justify-center text-gray-700 dark:text-gray-200 hover:text-brand-600">
+                      <ChevronRight className="w-5 h-5" aria-hidden />
+                    </button>
+                    <span className="absolute bottom-2 right-2 z-10 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white tabular-nums">
+                      {selectedImage + 1}/{imgCount}
+                    </span>
+                  </>
+                )}
               </div>
               {images.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto">
+                <div className="flex gap-2 overflow-x-auto pb-1">
                   {images.map((img, i) => (
-                    <button key={i} type="button" onClick={() => setSelectedImage(i)} className={cn("w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0", selectedImage === i ? "border-brand-500" : "border-gray-200")} aria-label={`Image ${i + 1}`}>
-                      <Image src={img} alt="" width={64} height={64} className="object-cover w-full h-full" />
+                    <button key={i} type="button" onClick={() => setSelectedImage(i)} className={cn("w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 bg-white", selectedImage === i ? "border-brand-500" : "border-gray-200 dark:border-white/10")} aria-label={`Image ${i + 1}`} aria-current={selectedImage === i}>
+                      <Image src={img} alt="" width={64} height={64} className="object-contain w-full h-full p-1" />
                     </button>
                   ))}
                 </div>
@@ -231,9 +286,18 @@ export default function ProductDetailClient({ product }: Props) {
                 <CountdownTimer endDate={parseDhakaDateTime(product.flash_sale_ends_at) ?? getWeeklySaleEnd()} label={lang === "bn" ? "ফ্ল্যাশ সেল শেষ" : "Flash sale ends"} className="mb-3" />
               )}
 
-              {product.category && <span className="text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1">{product.category}</span>}
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-3">{name}</h1>
-              <div className="flex items-baseline gap-3 mb-2">
+              {product.category && (
+                <Link href={categoryHref} className="self-start text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1 hover:underline">{categoryLabel}</Link>
+              )}
+              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-snug text-gray-900 dark:text-white mb-2 break-words [overflow-wrap:anywhere]">{name}</h1>
+              {(product.brand || product.sku) && (
+                <p className="text-xs text-muted mb-3">
+                  {product.brand && <>{lang === "bn" ? "ব্র্যান্ড" : "Brand"}: <span className="font-semibold text-heading">{product.brand}</span></>}
+                  {product.brand && product.sku && " · "}
+                  {product.sku && <>SKU: {product.sku}</>}
+                </p>
+              )}
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-2">
                 <span className="text-3xl font-bold text-accent-600">{formatPrice(effectivePrice)}</span>
                 {strikePrice && <span className="text-lg text-gray-400 line-through">{formatPrice(strikePrice)}</span>}
               </div>
@@ -279,6 +343,26 @@ export default function ProductDetailClient({ product }: Props) {
                 </div>
               )}
 
+              <div className="grid grid-cols-2 gap-2 mb-5 text-xs">
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-gray-50 dark:bg-white/5">
+                  <Wallet className="w-4 h-4 mt-0.5 text-brand-600 flex-shrink-0" aria-hidden />
+                  <div className="min-w-0">
+                    <p className="font-semibold text-heading">{lang === "bn" ? "পেমেন্ট" : "Payment"}</p>
+                    <p className="text-muted">{lang === "bn" ? "ক্যাশ অন ডেলিভারি, বিকাশ, নগদ" : "Cash on delivery, bKash, Nagad"}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 p-2.5 rounded-lg bg-gray-50 dark:bg-white/5">
+                  <ShieldCheck className="w-4 h-4 mt-0.5 text-brand-600 flex-shrink-0" aria-hidden />
+                  <div className="min-w-0">
+                    <p className="font-semibold text-heading">{lang === "bn" ? "ওয়ারেন্টি" : "Warranty"}</p>
+                    <p className="text-muted break-words">{product.warranty_info?.trim() || (lang === "bn" ? "ডেলিভারির সময় চেক করে নিন — রিটার্ন নীতি প্রযোজ্য" : "Check on delivery — return policy applies")}</p>
+                  </div>
+                </div>
+                {product.delivery_info?.trim() && (
+                  <p className="col-span-2 text-muted px-1 break-words">🚚 {product.delivery_info}</p>
+                )}
+              </div>
+
               {/* Screen 07 — the page's own sections, so a buyer who wants the
                   specs or the reviews is not asked to scroll the whole page to
                   find out whether they exist. Anchors only; each entry is
@@ -288,8 +372,8 @@ export default function ProductDetailClient({ product }: Props) {
                 className="flex gap-2 overflow-x-auto scrollbar-hide -mx-1 px-1 mb-5"
               >
                 {[
-                  { id: "overview", en: "Overview", bn: "সংক্ষেপে", show: Boolean(desc) },
-                  { id: "specs", en: "Specs", bn: "স্পেসিফিকেশন", show: Boolean(product.specifications && Object.keys(product.specifications).length > 0) },
+                  { id: "overview", en: "Overview", bn: "সংক্ষেপে", show: descBlocks.length > 0 },
+                  { id: "specs", en: "Specs", bn: "স্পেসিফিকেশন", show: specs.length > 0 },
                   { id: "reviews", en: "Reviews", bn: "রিভিউ", show: true },
                 ].filter((x) => x.show).map((x) => (
                   <a
@@ -302,21 +386,39 @@ export default function ProductDetailClient({ product }: Props) {
                 ))}
               </nav>
 
-              {desc && (
-                <div id="overview" className="scroll-mt-24">
-                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed mb-6">{desc}</p>
+              {descBlocks.length > 0 && (
+                <div id="overview" className="scroll-mt-24 mb-6 space-y-3 text-sm leading-relaxed text-gray-600 dark:text-gray-300 break-words">
+                  <h2 className="font-semibold text-sm text-heading">{lang === "bn" ? "পণ্যের বিবরণ" : "Description"}</h2>
+                  {descBlocks.map((b, i) =>
+                    b.type === "p" ? (
+                      <p key={i}>{b.text}</p>
+                    ) : (
+                      <ul key={i} className="space-y-1.5">
+                        {b.items.map((it, j) => (
+                          <li key={j} className="flex gap-2">
+                            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-brand-500" aria-hidden />
+                            <span className="min-w-0">{it}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )
+                  )}
                 </div>
               )}
-              {product.specifications && Object.keys(product.specifications).length > 0 && (
+              {specs.length > 0 && (
                 <div id="specs" className="mb-6 scroll-mt-24">
-                  <h3 className="font-semibold mb-3 text-sm">{lang === "bn" ? "স্পেসিফিকেশন" : "Specifications"}</h3>
-                  <div className="space-y-2">
-                    {Object.entries(product.specifications).map(([k, v]) => (
-                      <div key={k} className="flex justify-between text-sm py-1.5 border-b border-gray-50 dark:border-white/5">
-                        <span className="text-gray-500">{k}</span>
-                        <span className="font-medium">{v as string}</span>
-                      </div>
-                    ))}
+                  <h2 className="font-semibold mb-3 text-sm text-heading">{lang === "bn" ? "স্পেসিফিকেশন" : "Specifications"}</h2>
+                  <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-white/10">
+                    <table className="w-full text-sm table-fixed">
+                      <tbody>
+                        {specs.map(([k, v]) => (
+                          <tr key={k} className="odd:bg-gray-50 dark:odd:bg-white/5">
+                            <th scope="row" className="w-2/5 px-3 py-2 text-left align-top font-medium text-gray-500 dark:text-gray-400 break-words">{k}</th>
+                            <td className="px-3 py-2 align-top font-medium text-heading break-words [overflow-wrap:anywhere]">{v}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
@@ -327,10 +429,22 @@ export default function ProductDetailClient({ product }: Props) {
                 <button type="button" onClick={() => { addCompare(product); toast("info", lang === "bn" ? "তুলনায় যোগ হয়েছে" : "Added to compare"); }} disabled={compared(productId)} className="btn btn-outline btn-sm">
                   <GitCompare className="w-4 h-4" />
                 </button>
-                <button type="button" onClick={handleShare} className="btn btn-outline btn-sm"><Share2 className="w-4 h-4" /></button>
-                <a href={`${contact.waBase}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm text-green-600">
-                  <MessageCircle className="w-4 h-4" />
+                <button type="button" onClick={handleShare} className="btn btn-outline btn-sm gap-1.5" aria-label={lang === "bn" ? "শেয়ার করুন" : "Share"}>
+                  <Share2 className="w-4 h-4" aria-hidden />
+                  <span className="text-xs">{lang === "bn" ? "শেয়ার" : "Share"}</span>
+                </button>
+              </div>
+              <div className={cn("grid gap-2 mb-4", contact.hasPhone ? "grid-cols-2" : "grid-cols-1")}>
+                <a href={`${contact.waBase}?text=${waMsg}`} target="_blank" rel="noopener noreferrer" className="btn btn-sm gap-1.5 bg-green-600 hover:bg-green-700 text-white border-0">
+                  <MessageCircle className="w-4 h-4" aria-hidden />
+                  {lang === "bn" ? "WhatsApp-এ অর্ডার" : "Order on WhatsApp"}
                 </a>
+                {contact.hasPhone && (
+                  <a href={contact.telHref} className="btn btn-outline btn-sm gap-1.5">
+                    <Phone className="w-4 h-4" aria-hidden />
+                    {lang === "bn" ? "কল করুন" : "Call us"}
+                  </a>
+                )}
               </div>
               <div ref={buySectionRef} className="mt-auto flex flex-col gap-3">
                 <button type="button" onClick={handleAdd} disabled={product.stock_quantity === 0} className={cn("btn btn-md w-full btn-ripple", added ? "btn-outline" : "btn-brand")}>
@@ -371,8 +485,11 @@ export default function ProductDetailClient({ product }: Props) {
         <ProductFAQ />
         {related.length > 0 && (
           <section className="mt-10">
-            <h2 className="text-xl font-bold mb-4">{lang === "bn" ? "সম্পর্কিত পণ্য" : "Related Products"}</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h2 className="text-xl font-bold">{lang === "bn" ? "একই ধরনের আরও পণ্য" : "Related Products"}</h2>
+              <Link href={categoryHref} className="text-sm font-semibold text-brand-600 hover:underline flex-shrink-0">{lang === "bn" ? "সব দেখুন" : "View all"}</Link>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {related.map((p) => <ProductCard key={p.id ?? p.slug} product={p} onAddToCart={openCart} />)}
             </div>
           </section>
