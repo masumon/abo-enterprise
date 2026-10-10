@@ -80,6 +80,8 @@ export default function Navbar() {
           <BrandLogo size="lg" href={false} priority />
         </Link>
 
+        <span className="flex-1" aria-hidden="true" />
+
         {showTicker ? (
           <div
             className={cn(
@@ -109,7 +111,8 @@ export default function Navbar() {
           <span className="flex-1" />
         )}
 
-        {/* Compact, coloured real-icon action buttons (brand/gold scheme). */}
+        {/* Keep the logo on the left and all header controls grouped on the right. */}
+        <div className="flex flex-none items-center gap-2">
         {showAssistantInHeader && (
           <button
             type="button"
@@ -146,6 +149,7 @@ export default function Navbar() {
         >
           <User className={cn("w-4 h-4", isSignedIn && "fill-current")} strokeWidth={2.5} />
         </Link>
+        </div>
       </nav>
 
       {/* ── Desktop floating capsule ── */}
