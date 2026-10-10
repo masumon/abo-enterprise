@@ -62,7 +62,8 @@
       --announcement-height: 0px !important;
       /* Mobile header is a single compact row (min-h-[64px]); match the
          reserved offset to it so content sits flush with no dead gap. */
-      --navbar-height: 4rem;
+      /* Mobile navbar now wraps announcement into its own top row. */
+      --navbar-height: 6.5rem;
     }
   }
 
