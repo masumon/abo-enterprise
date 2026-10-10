@@ -35,6 +35,8 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import {
   BRAND_IMAGE_SLOTS,
+  HERO_IMAGE_SLOTS,
+  HERO_SLOT_KEYS,
   PAGE_BANNER_SLOTS,
   CATALOG_IMAGE_SECTIONS,
   MEDIA_UPLOAD_FOLDER,
@@ -62,6 +64,34 @@ function MediaEl({ url, className }: { url: string; className?: string }) {
   if (isVideoUrl(url)) return <AutoVideo src={url} className={className} />;
   // eslint-disable-next-line @next/next/no-img-element -- live admin context preview
   return <img src={url} alt="" className={className} />;
+}
+
+/** Hero images are edited only in "হোমপেজ সাজান" — here they are shown
+ * read-only with a link, so nothing is edited in two places. */
+function HeroMovedNotice({ values }: { values: SettingValues }) {
+  return (
+    <div className="px-4 sm:px-6 py-4 border-b border-gray-50">
+      <Link
+        href="/sumon/homepage#hero"
+        className="flex flex-wrap items-center gap-3 rounded-xl border border-brand-200 dark:border-brand-400/30 bg-brand-50/60 dark:bg-brand-500/10 p-3 hover:border-brand-400 transition-colors"
+      >
+        <div className="flex gap-1.5 flex-none">
+          {HERO_IMAGE_SLOTS.map((slot) => (
+            <span key={slot.key} className="w-14 h-9 rounded-md overflow-hidden bg-gradient-to-br from-brand-700 to-brand-900 flex items-center justify-center" title={slot.labelBn}>
+              {values[slot.key] ? <MediaEl url={values[slot.key]} className="w-full h-full object-cover" /> : <ImageOff className="w-3.5 h-3.5 text-white/70" />}
+            </span>
+          ))}
+        </div>
+        <span className="min-w-0 flex-1 text-xs">
+          <span className="block text-sm font-semibold text-brand-800 dark:text-brand-200">হিরো ব্যানার এখন &quot;হোমপেজ সাজান&quot;-এ</span>
+          <span className="block text-gray-500 dark:text-gray-400">ডেস্কটপ ব্যানার, মোবাইল ব্যানার ও প্রোমো মিডিয়া — লেখা ও প্রিভিউসহ এক জায়গায় বদলান।</span>
+        </span>
+        <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 dark:text-brand-300">
+          খুলুন <ExternalLink className="w-3.5 h-3.5" />
+        </span>
+      </Link>
+    </div>
+  );
 }
 
 /** "As it appears on the website" context for the well-known brand slots. */
@@ -295,6 +325,12 @@ export default function AdminMediaPage() {
     load();
   }, [load]);
 
+  // Deep link: /sumon/media?tab=catalog (used by "কনটেন্ট স্বাস্থ্য").
+  useEffect(() => {
+    const t = new URLSearchParams(window.location.search).get("tab");
+    if (t && TABS.some((x) => x.id === t)) setTab(t as TabId);
+  }, []);
+
   // Fetch catalog lists the first time the Catalog tab is opened.
   useEffect(() => {
     if (tab === "catalog" && !catalogLoaded && !catalogLoading) void loadCatalog();
@@ -403,7 +439,8 @@ export default function AdminMediaPage() {
   const saveBrand = () =>
     saveSettings(
       "brand",
-      BRAND_IMAGE_SLOTS.map((slot) => ({
+      // Hero keys are owned by /sumon/homepage — never re-save a stale copy here.
+      BRAND_IMAGE_SLOTS.filter((slot) => !HERO_SLOT_KEYS.has(slot.key)).map((slot) => ({
         key: slot.key,
         value: values[slot.key] ?? "",
         data_type: "string",
@@ -490,6 +527,7 @@ export default function AdminMediaPage() {
         title="Image Manager"
         titleBn="ছবি ব্যবস্থাপনা"
         description="Upload, update, or remove brand, banner & catalog images — products, services, blog & reviews."
+        descriptionBn="ছবি ও ভিডিওর লাইব্রেরি — ব্র্যান্ড, পেজ ব্যানার, পণ্য, সেবা, ব্লগ ও রিভিউর ছবি এখানে বদলান।"
       />
 
       <div className="rounded-xl border border-brand-100 bg-brand-50/50 px-4 py-3 text-xs text-gray-600 leading-relaxed">
@@ -504,8 +542,8 @@ export default function AdminMediaPage() {
           <Link href="/sumon/settings" className="text-brand-600 font-medium hover:underline">Settings → Trust Assets</Link>-এ,
           প্রজেক্ট ও সফটওয়্যার কার্ড{" "}
           <Link href="/sumon/showcase" className="text-brand-600 font-medium hover:underline">Showcase</Link>-এ, আর হোমপেজের
-          ব্যানার/স্লাইডার ছবি{" "}
-          <Link href="/sumon/promo-slides" className="text-brand-600 font-medium hover:underline">Homepage Banners &amp; Slider</Link>-এ
+          হিরো ব্যানার ও স্লাইড{" "}
+          <Link href="/sumon/homepage" className="text-brand-600 font-medium hover:underline">হোমপেজ সাজান</Link>-এ
           একসাথে সম্পাদনা হয়।
         </p>
       </div>
@@ -529,7 +567,8 @@ export default function AdminMediaPage() {
       {tab === "brand" && (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <SectionHeader title="Brand & Site Images" titleBn="ব্র্যান্ড ও সাইট ছবি" sectionId="brand" onSave={saveBrand} saving={saving} saved={saved} />
-          {BRAND_IMAGE_SLOTS.map((slot) => (
+          <HeroMovedNotice values={values} />
+          {BRAND_IMAGE_SLOTS.filter((slot) => !HERO_SLOT_KEYS.has(slot.key)).map((slot) => (
             <SlotEditor
               key={slot.key}
               slot={slot}
