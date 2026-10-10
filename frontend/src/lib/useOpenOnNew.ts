@@ -10,7 +10,7 @@ import { useEffect, useRef } from "react";
  */
 export function useOpenOnNew(open: () => void): void {
   const ref = useRef(open);
-  ref.current = open;
+  useEffect(() => { ref.current = open; });
   useEffect(() => {
     const url = new URL(window.location.href);
     if (url.searchParams.get("new") !== "1") return;
