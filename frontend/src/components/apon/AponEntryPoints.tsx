@@ -53,22 +53,22 @@ export function AponHomeBand() {
     <section className="py-4 sm:py-6" aria-label={bn ? "আপন অ্যাপ" : "Apon app"}>
       <div className="container mx-auto px-4">
         <div
-          className="relative overflow-hidden rounded-3xl p-5 sm:p-7 text-white flex flex-col sm:flex-row items-center gap-4 sm:gap-6 shadow-lg"
+          className="relative overflow-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-7 text-white grid grid-cols-[3rem_minmax(0,1fr)] sm:flex sm:flex-row items-center gap-x-3 gap-y-3 sm:gap-6 shadow-lg"
           style={{ background: "linear-gradient(120deg,#0A3C85 0%,#0b3270 60%,#14182b 100%)" }}
         >
           <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-[#F2C14E]/15 blur-2xl pointer-events-none" aria-hidden />
-          <Image src={icon} alt="" width={72} height={72} unoptimized className="relative h-16 w-16 sm:h-[4.5rem] sm:w-[4.5rem] rounded-2xl ring-1 ring-white/25 shadow-xl" />
-          <div className="relative flex-1 text-center sm:text-left min-w-0">
-            <p className="text-lg sm:text-xl font-extrabold">
+          <Image src={icon} alt="" width={72} height={72} unoptimized className="relative h-12 w-12 sm:h-[4.5rem] sm:w-[4.5rem] rounded-xl sm:rounded-2xl ring-1 ring-white/25 shadow-xl" />
+          <div className="relative flex-1 text-left min-w-0">
+            <p className="text-base sm:text-xl font-extrabold leading-tight">
               {name} {bn ? "অ্যাপ" : "App"} <span className="ml-1 align-middle rounded-full bg-[#F2C14E] px-2 py-0.5 text-[11px] font-bold text-[#0A3C85]">{bn ? "ফ্রি" : "FREE"}</span>
             </p>
-            <p className="mt-1 text-sm text-white/85 text-balance">{tagline}</p>
+            <p className="mt-1 text-xs sm:text-sm text-white/85 text-balance line-clamp-2">{tagline}</p>
           </div>
-          <div className="relative flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-            <Link href="/apon#download" className="btn btn-primary btn-md justify-center gap-2">
+          <div className="relative col-span-2 flex flex-row gap-2 w-full sm:w-auto sm:col-span-1">
+            <Link href="/apon#download" className="btn btn-primary btn-md flex-1 sm:flex-none justify-center gap-2 text-sm">
               <Download className="w-4 h-4" aria-hidden /> {bn ? "ডাউনলোড" : "Download"}
             </Link>
-            <Link href="/apon" className="btn btn-md justify-center gap-2 border border-white/40 text-white hover:bg-white/10">
+            <Link href="/apon" className="btn btn-md flex-1 sm:flex-none justify-center gap-2 border border-white/40 text-white hover:bg-white/10 text-sm">
               {bn ? "বিস্তারিত" : "Details"} <ArrowRight className="w-4 h-4" aria-hidden />
             </Link>
           </div>
