@@ -46,8 +46,29 @@ export default function Navbar() {
   const productRoots = useTaxonomy("product");
   const serviceRoots = useTaxonomy("service");
   const searchListId = "site-search-suggestions";
-  const { announcements, shouldShow: showTicker, durationSec } = useAnnouncements();
+  const { announcements, shouldShow: announcementShouldShow, durationSec } = useAnnouncements();
+  const [announcementDismissed, setAnnouncementDismissed] = useState(false);
+  const showTicker = announcementShouldShow && !announcementDismissed;
   const tickerTrack = showTicker ? [...announcements, ...announcements] : [];
+
+  // Share the existing desktop dismissal key so a closed announcement stays closed
+  // across mobile/desktop navigation without changing CMS or database settings.
+  useEffect(() => {
+    try {
+      setAnnouncementDismissed(window.localStorage.getItem("abo-announcement-dismissed") === "1");
+    } catch {
+      // Storage can be unavailable in private browsing; dismissal still works for this session.
+    }
+  }, []);
+
+  const dismissAnnouncement = () => {
+    setAnnouncementDismissed(true);
+    try {
+      window.localStorage.setItem("abo-announcement-dismissed", "1");
+    } catch {
+      // Keep the in-memory dismissal even when storage is unavailable.
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 10);
@@ -106,6 +127,16 @@ export default function Navbar() {
                 </Link>
               ))}
             </div>
+            {announcements.some((a) => a.dismissible !== false) && (
+              <button
+                type="button"
+                onClick={dismissAnnouncement}
+                className="absolute right-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/15 text-white ring-1 ring-white/25 transition hover:bg-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                aria-label={lang === "bn" ? "ঘোষণা বন্ধ করুন" : "Dismiss announcement"}
+              >
+                <X className="h-4 w-4" strokeWidth={2.5} />
+              </button>
+            )}
           </div>
         ) : (
           <span className="flex-1" />

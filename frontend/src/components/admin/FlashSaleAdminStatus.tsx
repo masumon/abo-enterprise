@@ -19,6 +19,7 @@ const TONE: Record<FlashSaleState, string> = {
 export default function FlashSaleAdminStatus({ values }: { values: Record<string, string> }) {
   const [now, setNow] = useState(() => Date.now());
   const [liveProducts, setLiveProducts] = useState<number | null>(null);
+  const [productCheckFailed, setProductCheckFailed] = useState(false);
 
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 15_000);
@@ -26,10 +27,20 @@ export default function FlashSaleAdminStatus({ values }: { values: Record<string
   }, []);
 
   useEffect(() => {
+    let active = true;
     productsApi
       .list({ flash_sale: true, per_page: 1, page: 1 })
-      .then((r) => setLiveProducts(r.data.meta?.total ?? (r.data.data ?? []).length))
-      .catch(() => setLiveProducts(null));
+      .then((r) => {
+        if (!active) return;
+        setLiveProducts(r.data.meta?.total ?? (r.data.data ?? []).length);
+        setProductCheckFailed(false);
+      })
+      .catch(() => {
+        if (!active) return;
+        setLiveProducts(null);
+        setProductCheckFailed(true);
+      });
+    return () => { active = false; };
   }, []);
 
   const status = getFlashSaleStatus(values, now);
@@ -38,6 +49,11 @@ export default function FlashSaleAdminStatus({ values }: { values: Record<string
       <p className={cn("text-sm font-semibold px-3 py-2 rounded-lg border", TONE[status.state])}>
         {describeFlashSaleBn(status, now)}
       </p>
+      {productCheckFailed && status.state !== "off" && (
+        <p className="text-xs px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-800 dark:bg-red-500/10 dark:text-red-300 dark:border-red-500/30">
+          পণ্যের Flash Sale অবস্থা যাচাই করা যায়নি। API/নেটওয়ার্ক সংযোগ পরীক্ষা করুন; যাচাই সফল না হওয়া পর্যন্ত হোমপেজে পণ্য দেখাবে কি না নিশ্চিত বলা যাচ্ছে না।
+        </p>
+      )}
       {liveProducts === 0 && status.state !== "off" && (
         <p className="text-xs px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30">
           এখন কোনো পণ্য ফ্ল্যাশ সেলে নেই, তাই হোমপেজে সেকশনটি দেখাবে না। Products → পণ্য এডিট করে &quot;Flash Sale&quot; টিক, ফ্ল্যাশ সেল দাম (মূল দামের চেয়ে কম) ও শেষ সময় দিন।
