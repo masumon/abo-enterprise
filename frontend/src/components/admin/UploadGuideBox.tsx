@@ -6,11 +6,11 @@ import { isVideoUrl } from "@/lib/media";
 import { cn } from "@/lib/utils";
 
 const PREVIEW_BG: Record<NonNullable<UploadGuide["previewBg"]>, string> = {
-  white: "bg-white",
+  white: "bg-[#fff]",
   dark: "bg-gray-900",
   // Checkerboard = "transparent" — shows whether a logo really has no background.
   checker:
-    "bg-white [background-image:linear-gradient(45deg,#e5e7eb_25%,transparent_25%),linear-gradient(-45deg,#e5e7eb_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#e5e7eb_75%),linear-gradient(-45deg,transparent_75%,#e5e7eb_75%)] [background-size:12px_12px] [background-position:0_0,0_6px,6px_-6px,-6px_0]",
+    "bg-[#fff] [background-image:linear-gradient(45deg,#e5e7eb_25%,transparent_25%),linear-gradient(-45deg,#e5e7eb_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#e5e7eb_75%),linear-gradient(-45deg,transparent_75%,#e5e7eb_75%)] [background-size:12px_12px] [background-position:0_0,0_6px,6px_-6px,-6px_0]",
 };
 
 /** Small frame drawn at the site's real ratio/fit, so the admin sees the crop. */

@@ -146,7 +146,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
     return (
       <article className="card-hover group flex gap-4 p-4 relative">
         <Link href={`/products/${product.slug}`} className="absolute inset-0 z-0" aria-hidden tabIndex={-1} />
-        <div className={cn("relative w-28 aspect-square rounded-xl overflow-hidden flex-shrink-0 pointer-events-none", hasImage ? "bg-white ring-1 ring-gray-100 dark:ring-white/10" : "bg-brand-50")}>
+        <div className={cn("relative w-28 aspect-square rounded-xl overflow-hidden flex-shrink-0 pointer-events-none", hasImage ? "bg-[#fff] ring-1 ring-gray-100 dark:ring-white/10" : "bg-brand-50")}>
           {hasImage ? <Image src={product.image_url!} alt={alt} fill className="object-contain p-1.5" sizes="112px" /> : imgPlaceholder}
         </div>
         <div className="flex-1 min-w-0 relative z-10">
@@ -228,7 +228,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
         // Product photos are shot on white: show the whole item (contain) on a
         // white square so every card lines up, in light and dark mode alike.
         "relative aspect-square overflow-hidden pointer-events-none",
-        hasImage ? "bg-white" : "bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-brand-900/40"
+        hasImage ? "bg-[#fff]" : "bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-brand-900/40"
       )}>
         {hasImage ? <Image src={product.image_url!} alt={alt} fill className="object-contain p-3 transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 50vw, 25vw" /> : imgPlaceholder}
         {isOutOfStock && (
