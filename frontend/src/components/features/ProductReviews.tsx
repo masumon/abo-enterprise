@@ -15,10 +15,6 @@ import { ProductCardSkeleton } from "@/components/common/Skeletons";
 import GlassCard from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
 
-const FALLBACK: Review[] = [
-  { id: "1", customer_name: "Rahim Uddin", company: "Shop Owner", rating: 5, review_en: "Great quality product, fast delivery!", review_bn: "দারুণ মানের পণ্য, দ্রুত ডেলিভারি!", source: "Google", is_verified: true, is_featured: true },
-  { id: "2", customer_name: "Fatema Begum", rating: 5, review_en: "Exactly as described. Highly recommend.", review_bn: "ঠিক যেমন বর্ণনা ছিল। সুপারিশ করি।", source: "Direct", is_verified: false, is_featured: true },
-];
 
 const reviewSchema = z.object({
   customer_name: z.string().min(2, "Name must be at least 2 characters"),
@@ -136,8 +132,8 @@ export default function ProductReviews({ productId }: Props) {
 
   useEffect(() => {
     reviewsApi.list({ product_id: productId, per_page: 6 } as Parameters<typeof reviewsApi.list>[0])
-      .then((r) => setReviews(r.data.data?.length ? r.data.data : FALLBACK))
-      .catch(() => setReviews(FALLBACK))
+      .then((r) => setReviews(r.data.data ?? []))
+      .catch(() => setReviews([]))
       .finally(() => setLoading(false));
   }, [productId]);
 
