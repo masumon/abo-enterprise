@@ -1,16 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Loader2, UploadCloud, FileDown, FileSpreadsheet, FileText, ListTree, CheckCircle2,
   AlertTriangle, XCircle, ArrowLeft, History, RefreshCw, PackagePlus, PackageCheck,
-  SkipForward, Filter, type LucideIcon,
+  SkipForward, Filter, FolderOpen, ImageIcon, FolderPlus, type LucideIcon,
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import {
+  adminApi,
   productImportApi,
   type ImportValidateResult,
   type ImportCommitResult,
@@ -29,10 +30,18 @@ const ACTION_BADGE: Record<string, string> = {
 
 const STEPS = ["আপলোড", "প্রিভিউ", "ইমপোর্ট", "সম্পন্ন"];
 
+/** Same rule as the server: case-insensitive base file name. */
+const imgKey = (name: string) => (name.split(/[\\/]/).pop() || "").trim().toLowerCase();
+const SHEET_RE = /\.(csv|xlsx|xlsm)$/i;
+const IMAGE_RE = /\.(jpe?g|png|webp|gif|avif|heic)$/i;
+
 export default function AdminProductImportPage() {
   const toast = useToastStore((s) => s.push);
   const fileRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const folderRef = useRef<HTMLInputElement>(null);
+  const [uploadNote, setUploadNote] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [onExisting, setOnExisting] = useState("update");
   const [onNew, setOnNew] = useState("create");
@@ -62,6 +71,33 @@ export default function AdminProductImportPage() {
     finally { setDl(null); }
   };
 
+  // Thumbnails for the preview, keyed like the server matches names.
+  const thumbs = useMemo(() => {
+    const m = new Map<string, string>();
+    images.forEach((f) => m.set(imgKey(f.name), URL.createObjectURL(f)));
+    return m;
+  }, [images]);
+  useEffect(() => () => thumbs.forEach((u) => URL.revokeObjectURL(u)), [thumbs]);
+
+  /** One picker for everything: the sheet (CSV/Excel) and the product photos
+   * together — multi-select or a whole folder. */
+  const pickMany = (list: FileList | File[] | null) => {
+    const all = Array.from(list ?? []);
+    if (!all.length) return;
+    const sheet = all.find((f) => SHEET_RE.test(f.name)) ?? null;
+    const imgs = all.filter((f) => IMAGE_RE.test(f.name) || f.type.startsWith("image/"));
+    if (sheet) pickFile(sheet);
+    else { setPreview(null); setResult(null); }
+    if (imgs.length) {
+      setImages((cur) => {
+        const byKey = new Map(cur.map((f) => [imgKey(f.name), f]));
+        imgs.forEach((f) => byKey.set(imgKey(f.name), f));
+        return Array.from(byKey.values());
+      });
+    }
+    if (!sheet && !imgs.length) toast("error", "CSV/Excel ফাইল বা ছবি পাওয়া যায়নি");
+  };
+
   const pickFile = (f: File | null) => {
     setFile(f);
     setPreview(null);
@@ -75,7 +111,7 @@ export default function AdminProductImportPage() {
     setValidating(true);
     setResult(null);
     try {
-      const r = await productImportApi.validate(file, useMapping, onExisting, onNew);
+      const r = await productImportApi.validate(file, useMapping, onExisting, onNew, images.map((f) => f.name));
       const data = r.data.data;
       setPreview(data);
       setMapping(useMapping ?? data.mapping_used);
@@ -100,7 +136,32 @@ export default function AdminProductImportPage() {
     if (!file || !preview) return;
     setCommitting(true);
     try {
-      const r = await productImportApi.commit(file, mapping, onExisting, onNew);
+      // 1) Upload the photos used by the rows that will be imported (Cloudinary,
+      //    through the normal media upload API), 2) send name → URL with the file.
+      const needed = new Set<string>();
+      preview.rows.filter((r) => r.action !== "skip" && r.errors.length === 0)
+        .forEach((r) => (r.images ?? []).forEach((n) => needed.add(imgKey(n))));
+      const toUpload = images.filter((f) => needed.has(imgKey(f.name)));
+      const imageMap: Record<string, string> = {};
+      let done = 0;
+      const failed: string[] = [];
+      const queue = [...toUpload];
+      const worker = async () => {
+        for (let f = queue.shift(); f; f = queue.shift()) {
+          try {
+            const up = await adminApi.uploadMedia(f, "abo-enterprise/products");
+            imageMap[imgKey(f.name)] = up.data.data.url;
+          } catch {
+            failed.push(f.name);
+          }
+          done++;
+          setUploadNote(`ছবি আপলোড হচ্ছে ${done}/${toUpload.length}…`);
+        }
+      };
+      if (toUpload.length) await Promise.all([worker(), worker(), worker()]);
+      if (failed.length) toast("error", `${failed.length}টি ছবি আপলোড হয়নি: ${failed.slice(0, 3).join(", ")}`);
+      setUploadNote("পণ্য সেভ হচ্ছে…");
+      const r = await productImportApi.commit(file, mapping, onExisting, onNew, imageMap);
       setResult(r.data.data);
       toast("success", r.data.message || "ইমপোর্ট সম্পন্ন");
       setPreview(null);
@@ -109,10 +170,11 @@ export default function AdminProductImportPage() {
       toast("error", apiErrorMessage(e, "ইমপোর্ট ব্যর্থ"));
     } finally {
       setCommitting(false);
+      setUploadNote("");
     }
   };
 
-  const startOver = () => { pickFile(null); if (fileRef.current) fileRef.current.value = ""; };
+  const startOver = () => { pickFile(null); setImages([]); if (fileRef.current) fileRef.current.value = ""; };
 
   const S = preview?.summary;
   const visibleRows = (preview?.rows ?? []).filter((r) => !errorsOnly || r.errors.length > 0);
@@ -123,8 +185,8 @@ export default function AdminProductImportPage() {
       <AdminPageHeader
         title="Bulk Product Import"
         titleBn="বাল্ক পণ্য ইমপোর্ট"
-        description="Upload a CSV/Excel file to create or update many products at once. Validate first — nothing is saved until you press Import."
-        descriptionBn="CSV/Excel দিয়ে একসাথে অনেক পণ্য তৈরি/আপডেট করুন। আগে যাচাই করুন — Import না চাপা পর্যন্ত কিছু সেভ হয় না।"
+        description="Upload a CSV/Excel file and the product photos to create or update many products at once. Nothing is saved until you press Import."
+        descriptionBn="টেমপ্লেট পূরণ করে ফাইল ও পণ্যের ছবি একসাথে দিন — আগে প্রিভিউ দেখাবে, “ইমপোর্ট” না চাপা পর্যন্ত কিছু সেভ হয় না।"
         actions={
           <Link href="/sumon/products" className="btn btn-outline btn-sm"><ArrowLeft className="w-4 h-4" /> পণ্যে ফিরুন</Link>
         }
@@ -159,10 +221,15 @@ export default function AdminProductImportPage() {
 
       {/* Step 1 — templates + upload */}
       <div className="admin-card p-5 mb-5">
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">১. টেমপ্লেট ও ক্যাটাগরি</p>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">১. টেমপ্লেট ডাউনলোড করে পূরণ করুন</p>
+        <ol className="text-sm text-muted list-decimal pl-5 mb-3 space-y-0.5">
+          <li>টেমপ্লেট ডাউনলোড করে Excel-এ খুলুন। দ্বিতীয় সারিতে প্রতিটি কলামের বাংলা সাহায্য আছে (# দিয়ে শুরু সারি ইমপোর্ট হয় না)।</li>
+          <li>প্রতিটি পণ্যের জন্য এক সারি লিখুন। <b>images</b> কলামে ছবির ফাইলের নাম লিখুন, যেমন <code className="text-xs">charger-1.jpg|charger-2.jpg</code>।</li>
+          <li>নতুন ক্যাটাগরি হলে category_name_bn / category_name_en দিন — নিজে থেকে তৈরি হবে।</li>
+        </ol>
         <div className="flex flex-wrap gap-2 mb-5">
-          <button type="button" onClick={() => download("csv")} disabled={dl !== null} className="btn btn-outline btn-sm">
-            {dl === "csv" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} টেমপ্লেট (CSV)
+          <button type="button" onClick={() => download("csv")} disabled={dl !== null} className="btn btn-brand btn-sm">
+            {dl === "csv" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} টেমপ্লেট ডাউনলোড
           </button>
           <button type="button" onClick={() => download("xlsx")} disabled={dl !== null} className="btn btn-outline btn-sm">
             {dl === "xlsx" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />} টেমপ্লেট (Excel)
@@ -172,12 +239,12 @@ export default function AdminProductImportPage() {
           </button>
         </div>
 
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">২. ফাইল আপলোড</p>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">২. ফাইল ও ছবি একসাথে বাছুন</p>
         <div
           onClick={() => fileRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
           onDragLeave={() => setDragActive(false)}
-          onDrop={(e) => { e.preventDefault(); setDragActive(false); pickFile(e.dataTransfer.files?.[0] ?? null); }}
+          onDrop={(e) => { e.preventDefault(); setDragActive(false); pickMany(e.dataTransfer.files); }}
           className={cn(
             "border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-200",
             dragActive
@@ -203,11 +270,20 @@ export default function AdminProductImportPage() {
           ) : (
             <>
               <UploadCloud className={cn("w-9 h-9 mx-auto mb-2 transition-colors", dragActive ? "text-brand-600" : "text-brand-400")} />
-              <p className="text-sm text-heading font-medium">CSV বা Excel ফাইল টেনে ছাড়ুন বা ক্লিক করুন</p>
-              <p className="text-[11px] text-muted mt-1">.csv / .xlsx · সর্বোচ্চ ২০০০ সারি</p>
+              <p className="text-sm text-heading font-medium">CSV/Excel ফাইল ও পণ্যের ছবিগুলো একসাথে বাছুন বা টেনে ছাড়ুন</p>
+              <p className="text-[11px] text-muted mt-1">.csv / .xlsx + .jpg / .png / .webp · সর্বোচ্চ ২০০০ সারি</p>
             </>
           )}
-          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xlsm" hidden onChange={(e) => pickFile(e.target.files?.[0] ?? null)} />
+          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xlsm,image/*" multiple hidden onChange={(e) => { pickMany(e.target.files); e.target.value = ""; }} />
+        </div>
+        <input ref={folderRef} type="file" hidden multiple {...({ webkitdirectory: "", directory: "" } as Record<string, string>)} onChange={(e) => { pickMany(e.target.files); e.target.value = ""; }} />
+        <div className="flex flex-wrap items-center gap-2 mt-3 text-sm">
+          <button type="button" onClick={() => folderRef.current?.click()} className="btn btn-outline btn-sm"><FolderOpen className="w-4 h-4" /> পুরো ফোল্ডার বাছুন</button>
+          <button type="button" onClick={() => fileRef.current?.click()} className="btn btn-outline btn-sm"><FolderPlus className="w-4 h-4" /> আরও ছবি যোগ করুন</button>
+          <span className={cn("inline-flex items-center gap-1", images.length ? "text-emerald-600" : "text-muted")}>
+            <ImageIcon className="w-4 h-4" /> {images.length}টি ছবি বাছাই হয়েছে
+          </span>
+          {images.length > 0 && <button type="button" onClick={() => setImages([])} className="text-xs text-red-600 hover:underline">ছবি মুছুন</button>}
         </div>
 
         <div className="flex flex-wrap items-center gap-4 mt-4 text-sm">
@@ -248,6 +324,17 @@ export default function AdminProductImportPage() {
               <StatTile label="আপডেট হবে" value={S.update} icon={PackageCheck} color="brand" />
               <StatTile label="বাদ যাবে" value={S.skip} icon={SkipForward} color="gray" />
               <StatTile label="এরর" value={S.errors} icon={AlertTriangle} color="red" alert={S.errors > 0} />
+            </div>
+          )}
+
+          {(preview.new_categories?.length ?? 0) > 0 && (
+            <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/60 dark:bg-amber-900/10 dark:border-amber-900/40 p-3 text-sm">
+              <p className="font-semibold text-heading mb-1">এই নতুন ক্যাটাগরিগুলো তৈরি হবে:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {preview.new_categories!.map((c) => (
+                  <span key={c.slug} className="px-2 py-0.5 rounded-full bg-white dark:bg-white/10 border border-amber-200 dark:border-amber-900/40 text-xs">{c.name_bn} · {c.name_en} <span className="text-muted font-mono">({c.slug})</span></span>
+                ))}
+              </div>
             </div>
           )}
 
@@ -292,9 +379,11 @@ export default function AdminProductImportPage() {
               <thead>
                 <tr className="text-left text-[11px] uppercase text-gray-400 border-b border-[var(--line)]">
                   <th className="py-2 px-2">সারি</th>
+                  <th className="py-2 px-2">ঠিক?</th>
+                  <th className="py-2 px-2">ছবি</th>
                   <th className="py-2 px-2">অ্যাকশন</th>
-                  <th className="py-2 px-2">Slug</th>
                   <th className="py-2 px-2">নাম</th>
+                  <th className="py-2 px-2">দাম</th>
                   <th className="py-2 px-2">ক্যাটাগরি</th>
                   <th className="py-2 px-2">SKU</th>
                   <th className="py-2 px-2">সমস্যা</th>
@@ -307,10 +396,37 @@ export default function AdminProductImportPage() {
                     r.errors.length > 0 ? "bg-red-50/60 dark:bg-red-900/10" : r.warnings.length > 0 ? "bg-amber-50/40 dark:bg-amber-900/10" : ""
                   )}>
                     <td className="py-2 px-2 text-muted" data-label="সারি">{r.row}</td>
-                    <td className="py-2 px-2" data-label="অ্যাকশন"><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${ACTION_BADGE[r.action]}`}>{r.action}</span></td>
-                    <td className="py-2 px-2 font-mono text-xs" data-label="Slug">{r.slug || "—"}</td>
-                    <td className="py-2 px-2" data-label="নাম">{r.name || "—"}</td>
-                    <td className="py-2 px-2 text-xs" data-label="ক্যাটাগরি">{r.category || "—"}</td>
+                    <td className="py-2 px-2" data-label="ঠিক?">
+                      {r.errors.length === 0
+                        ? <CheckCircle2 className="w-5 h-5 text-emerald-500" aria-label="ঠিক আছে" />
+                        : <XCircle className="w-5 h-5 text-red-500" aria-label="ভুল আছে" />}
+                    </td>
+                    <td className="py-2 px-2" data-label="ছবি">
+                      <div className="flex gap-1">
+                        {(r.images ?? []).slice(0, 3).map((n) => {
+                          const src = thumbs.get(imgKey(n));
+                          return src
+                            // eslint-disable-next-line @next/next/no-img-element
+                            ? <img key={n} src={src} alt={n} title={n} className="w-9 h-9 rounded-md object-cover border border-[var(--line)]" />
+                            : <span key={n} title={`${n} — পাওয়া যায়নি`} className="w-9 h-9 rounded-md border border-dashed border-red-300 text-red-400 flex items-center justify-center text-[10px]">?</span>;
+                        })}
+                        {(r.images ?? []).length === 0 && <span className="text-xs text-muted">—</span>}
+                      </div>
+                    </td>
+                    <td className="py-2 px-2" data-label="অ্যাকশন"><span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${ACTION_BADGE[r.action]}`}>{r.action === "create" ? "নতুন" : r.action === "update" ? "আপডেট" : "বাদ"}</span></td>
+                    <td className="py-2 px-2" data-label="নাম">
+                      <p>{r.name_bn || r.name || "—"}</p>
+                      {r.name_bn && r.name && <p className="text-[11px] text-muted">{r.name}</p>}
+                      <p className="font-mono text-[10px] text-muted">{r.slug}</p>
+                    </td>
+                    <td className="py-2 px-2 text-xs whitespace-nowrap" data-label="দাম">
+                      {r.price != null ? `৳${r.price}` : "—"}
+                      {r.cost_price != null && <p className="text-[10px] text-muted">ক্রয় ৳{r.cost_price}</p>}
+                    </td>
+                    <td className="py-2 px-2 text-xs" data-label="ক্যাটাগরি">
+                      {r.category || "—"}
+                      {r.new_category && <span className="ml-1 px-1 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300 text-[10px]">নতুন</span>}
+                    </td>
                     <td className="py-2 px-2 font-mono text-xs" data-label="SKU">{r.sku || "—"}</td>
                     <td className="py-2 px-2 text-xs" data-label="সমস্যা">
                       {r.errors.map((e, i) => <p key={`e${i}`} className="text-red-600 flex items-start gap-1"><XCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />{e}</p>)}
@@ -326,9 +442,10 @@ export default function AdminProductImportPage() {
           </div>
 
           <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-[var(--line)]">
+            {uploadNote && <span className="text-xs text-muted mr-auto">{uploadNote}</span>}
             <button type="button" onClick={commit} disabled={committing || (S ? S.create + S.update === 0 : true)} className="btn btn-success btn-md">
               {committing ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
-              {S ? `${S.create + S.update}টি পণ্য ইমপোর্ট করুন` : "ইমপোর্ট করুন"}
+              {S ? `সব ঠিক সারি ইমপোর্ট করুন (${S.create + S.update}টি)` : "সব ঠিক সারি ইমপোর্ট করুন"}
             </button>
           </div>
         </div>
@@ -341,6 +458,9 @@ export default function AdminProductImportPage() {
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> ৪. ফলাফল</p>
             <button type="button" onClick={startOver} className="btn btn-outline btn-sm"><UploadCloud className="w-4 h-4" /> নতুন ইমপোর্ট</button>
           </div>
+          {(result.categories_created ?? 0) > 0 && (
+            <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-3">{result.categories_created}টি নতুন ক্যাটাগরি তৈরি হয়েছে।</p>
+          )}
           <div className="grid grid-cols-3 gap-3 mb-4">
             <StatTile label="তৈরি হয়েছে" value={result.created} icon={PackagePlus} color="green" />
             <StatTile label="আপডেট হয়েছে" value={result.updated} icon={PackageCheck} color="brand" />
@@ -348,7 +468,7 @@ export default function AdminProductImportPage() {
           </div>
           {result.errors.length > 0 && (
             <details open className="rounded-xl border border-red-100 dark:border-red-900/30 p-3">
-              <summary className="cursor-pointer text-sm font-semibold text-red-600">এরর রিপোর্ট ({result.errors.length})</summary>
+              <summary className="cursor-pointer text-sm font-semibold text-red-600">সমস্যা / সতর্কতা ({result.errors.length})</summary>
               <div className="mt-2 space-y-1 max-h-64 overflow-y-auto">
                 {result.errors.map((e, i) => (
                   <p key={i} className="text-xs"><span className="font-mono text-muted">সারি {e.row} ({e.slug || "—"}):</span> <span className="text-red-600">{e.errors.join("; ")}</span> {e.warnings.length > 0 && <span className="text-amber-600">{e.warnings.join("; ")}</span>}</p>
@@ -396,9 +516,9 @@ export default function AdminProductImportPage() {
 
       <ConfirmDialog
         open={confirmCommitOpen}
-        title="Import products now?"
-        message={S ? `${S.create} new product(s) will be created and ${S.update} existing product(s) will be updated. This cannot be undone automatically.` : undefined}
-        confirmLabel="Import"
+        title="এখন ইমপোর্ট করবেন?"
+        message={S ? `${S.create}টি নতুন পণ্য তৈরি ও ${S.update}টি পুরনো পণ্য আপডেট হবে${(preview?.new_categories?.length ?? 0) ? `, ${preview!.new_categories!.length}টি নতুন ক্যাটাগরি তৈরি হবে` : ""}। ছবি আপলোডে কিছু সময় লাগতে পারে। ভুল সারিগুলো বাদ যাবে।` : undefined}
+        confirmLabel="ইমপোর্ট করুন"
         variant="warning"
         onConfirm={performCommit}
         onCancel={() => setConfirmCommitOpen(false)}
