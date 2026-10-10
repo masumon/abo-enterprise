@@ -11,6 +11,8 @@ import { servicesAdminApi, categoriesApi, adminBlogApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
 import TranslateButton from "@/components/admin/TranslateButton";
+import AiDescribeButton from "@/components/admin/AiDescribeButton";
+import type { AiDescription } from "@/lib/api";
 import JsonListEditor from "@/components/admin/JsonListEditor";
 import { translateBnToEn } from "@/lib/translate";
 import LivePreview from "@/components/admin/LivePreview";
@@ -325,6 +327,31 @@ export default function AdminServicesPage() {
   };
 
   const closeEditor = () => { setEditing(null); setIsNew(false); };
+
+  // AI description → service fields. Fills empty boxes; asks before replacing text.
+  const applyAiDescription = (d: AiDescription) => {
+    const cur = editing;
+    if (!cur) return;
+    const hasText = (cur.description_bn || "").trim() || (cur.description_en || "").trim();
+    const replace = !hasText || window.confirm("আগের বিবরণ AI-এর লেখা দিয়ে বদলে দেবেন?");
+    setEditing((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev };
+      if (replace) {
+        if (d.description_bn) next.description_bn = d.description_bn;
+        if (d.description_en) next.description_en = d.description_en;
+      }
+      if (!(prev.short_description_bn || "").trim() && d.features_bn[0]) next.short_description_bn = d.description_bn.split(/(?<=[।.!?])\s/)[0] || d.features_bn[0];
+      if (!(prev.short_description_en || "").trim() && d.description_en) next.short_description_en = d.description_en.split(/(?<=[.!?])\s/)[0];
+      if (!(prev.benefits ?? []).length && d.features_en.length) {
+        next.benefits = d.features_en.map((en, i) => ({ en, bn: d.features_bn[i] ?? "" }));
+      }
+      if (!(prev.faq ?? []).length && d.faq.length) {
+        next.faq = d.faq.map((f) => ({ question: f.q_en, answer: f.a_en, question_bn: f.q_bn, answer_bn: f.a_bn }));
+      }
+      return next;
+    });
+  };
 
   const handleNameChange = (v: string) => {
     setEditing(prev => {
@@ -872,18 +899,20 @@ export default function AdminServicesPage() {
 
                 <div>
                   <label className="form-label flex items-center justify-between gap-2">
-                    <span>Name (English) <span className="text-red-400">*</span></span>
+                    <span>সেবার নাম (English) <span className="text-red-400">*</span></span>
                     <TranslateButton bn={editing.name_bn} onResult={(en) => handleNameChange(en)} en={editing.name_en} onResultBn={(b) => setEditing(prev => prev ? { ...prev, name_bn: b } : prev)} />
                   </label>
                   <input value={editing.name_en ?? ""} onChange={e => handleNameChange(e.target.value)} placeholder={tx("Service name")} className="input w-full" />
                 </div>
                 <div>
-                  <label className="form-label">Name (বাংলা)</label>
+                  <label className="form-label">সেবার নাম (বাংলা)</label>
                   <input value={editing.name_bn ?? ""} onChange={f("name_bn")} placeholder="সার্ভিসের নাম" className="input w-full" dir="auto" />
+                  <p className="text-[11px] text-gray-400 mt-1">শুধু বাংলা লিখলেও চলবে — সেভের সময় ইংরেজি নাম নিজে থেকে তৈরি হবে।</p>
                 </div>
                 <div>
-                  <label className="form-label">Slug <span className="text-red-400">*</span></label>
+                  <label className="form-label">ওয়েব ঠিকানা (slug) <span className="text-red-400">*</span></label>
                   <input value={editing.slug ?? ""} onChange={f("slug")} placeholder="url-friendly-slug" className="input w-full font-mono text-sm" />
+                  <p className="text-[11px] text-gray-400 mt-1">ইংরেজি নাম লিখলে নিজে থেকে তৈরি হয় (ছোট হাতের ইংরেজি ও - চিহ্ন)।</p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -972,7 +1001,14 @@ export default function AdminServicesPage() {
               {/* ── Descriptions ────────────────────────── */}
               <section className="space-y-4">
                 <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Descriptions</h3>
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Descriptions <span className="normal-case font-normal">(বিবরণ)</span></h3>
+                  <AiDescribeButton
+                    kind="service"
+                    name={editing.name_bn || editing.name_en}
+                    notes={[editing.short_description_bn, editing.short_description_en, editing.description_bn].filter(Boolean).join("\n")}
+                    onResult={applyAiDescription}
+                    className="btn btn-outline btn-sm gap-1.5 ml-auto"
+                  />
                   <button
                     type="button"
                     onClick={autoTranslateBasic}
@@ -1186,7 +1222,7 @@ export default function AdminServicesPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="form-label">Base Price (BDT)</label>
+                    <label className="form-label">Base Price (BDT) <span className="text-gray-400 font-normal text-xs">— শুরুর দাম; খালি = &quot;দাম জানতে যোগাযোগ&quot;</span></label>
                     <input type="number" value={editing.base_price ?? ""} onChange={fNum("base_price")} placeholder="0" className="input w-full" />
                   </div>
                   <div>
