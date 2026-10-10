@@ -60,8 +60,7 @@
   @media (max-width: 1023.98px) {
     :root {
       --announcement-height: 0px !important;
-      /* Mobile header is a single compact row (min-h-[64px]); match the
-         reserved offset to it so content sits flush with no dead gap. */
+      /* Reserve the announcement row plus the mobile navigation row. */
       /* Mobile navbar now wraps announcement into its own top row. */
       --navbar-height: 6.5rem;
     }

@@ -88,7 +88,7 @@ export default function Navbar() {
             )}
           >
             <div
-              className="marquee-track items-center h-10"
+              className="marquee-track items-center h-9"
               style={{ ["--marquee-duration" as string]: `${durationSec}s` }}
             >
               {tickerTrack.map((a, i) => (
