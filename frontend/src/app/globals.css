@@ -60,9 +60,22 @@
   @media (max-width: 1023.98px) {
     :root {
       --announcement-height: 0px !important;
-      /* Reserve the announcement row plus the mobile navigation row. */
-      /* Mobile navbar now wraps announcement into its own top row. */
-      --navbar-height: 6.5rem;
+      /* Default to the actual one-row navbar height. The announcement row,
+         when present, adds its own height to the reserved content offset. */
+      --navbar-height: 4rem;
+    }
+  }
+
+  /* Keep mobile content offset in sync with the real header state. */
+  @media (max-width: 1023.98px) {
+    :root:has(.mobile-announcement-row) {
+      --navbar-height: 6.25rem;
+    }
+
+    .mobile-announcement-row {
+      -webkit-mask-image: none;
+      mask-image: none;
+      background-clip: padding-box;
     }
   }
 

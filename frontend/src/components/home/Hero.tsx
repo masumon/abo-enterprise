@@ -146,7 +146,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
           />
         </div>
 
-        <div className="px-3 py-2 md:px-6 md:py-4 md:max-w-3xl md:mx-auto">
+        <div className="px-3 pt-2 pb-1 md:px-6 md:py-4 md:max-w-3xl md:mx-auto">
           <HomeSearchBar />
         </div>
       </section>
