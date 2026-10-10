@@ -717,7 +717,7 @@ export default function AdminCategoriesPage() {
               <input value={form.slug} onChange={(e) => setForm((p) => ({ ...p, slug: slugify(e.target.value) }))} className={cn(INP_CLS, "font-mono")} placeholder="auto" />
             </Field>
             <Field label="ক্রম (ছোট সংখ্যা আগে)">
-              <input type="number" value={form.sort_order} onChange={(e) => setForm((p) => ({ ...p, sort_order: Number(e.target.value) || 0 }))} className={INP_CLS} />
+              <input type="number" value={form.sort_order || ""} placeholder="0" onChange={(e) => setForm((p) => ({ ...p, sort_order: Number(e.target.value) || 0 }))} className={INP_CLS} />
             </Field>
           </div>
 

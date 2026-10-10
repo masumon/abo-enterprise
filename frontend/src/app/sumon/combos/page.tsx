@@ -275,7 +275,7 @@ export default function AdminCombosPage() {
                         <select className="input flex-1" value={it.product_id} onChange={(e) => setLine(idx, { product_id: e.target.value })}>
                           {products.map((p) => <option key={p.id} value={p.id}>{p.name_en}{p.price != null ? ` — ৳${p.price}` : ""}</option>)}
                         </select>
-                        <input type="number" min={1} className="input w-20" value={it.quantity} onChange={(e) => setLine(idx, { quantity: Math.max(1, Number(e.target.value) || 1) })} />
+                        <input type="number" min={1} className="input w-20" value={it.quantity || ""} onBlur={() => { if (!it.quantity || it.quantity < 1) setLine(idx, { quantity: 1 }); }} onChange={(e) => setLine(idx, { quantity: Math.max(0, Number(e.target.value) || 1) })} />
                         <button type="button" onClick={() => removeLine(idx)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
                       </div>
                     ))}

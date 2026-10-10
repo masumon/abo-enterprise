@@ -407,7 +407,7 @@ export default function AdminPromoSlidesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                 <div>
                   <label className="form-label">ক্রম <span className="text-gray-400 font-normal text-xs">(ছোট = আগে)</span></label>
-                  <input type="number" value={editing.sort_order ?? 0} onChange={(e) => set("sort_order", Number(e.target.value))} className="input w-full text-sm" />
+                  <input type="number" value={editing.sort_order || ""} placeholder="0" onChange={(e) => set("sort_order", Number(e.target.value))} className="input w-full text-sm" />
                 </div>
                 <label className="flex items-center gap-2 cursor-pointer pb-2">
                   <input type="checkbox" checked={editing.is_active !== false} onChange={(e) => set("is_active", e.target.checked)} className="w-4 h-4 rounded" />

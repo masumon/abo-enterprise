@@ -624,7 +624,7 @@ export default function AdminInvoicesPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="form-label">Tax (৳)</label>
-                  <input type="number" min={0} value={createForm.tax} onChange={(e) => setCreateForm((f) => ({ ...f, tax: Number(e.target.value) }))} className="input w-full" />
+                  <input type="number" min={0} value={createForm.tax || ""} placeholder="0" onChange={(e) => setCreateForm((f) => ({ ...f, tax: Number(e.target.value) }))} className="input w-full" />
                 </div>
                 <div>
                   <label className="form-label">{tx("Payment Method")}</label>

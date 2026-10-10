@@ -391,7 +391,7 @@ function ShowcaseEditor({ editor, projects, services, saving, onClose, onSave, o
       <BiInput label={t("ক্লায়েন্ট", "Client")} value={p.client} onChange={(v) => setP({ client: v })} />
       <BiInput label={t("ক্যাটাগরি", "Category")} value={p.category} onChange={(v) => setP({ category: v })} />
       <div className="grid sm:grid-cols-2 gap-3">
-        <div><label className="block text-sm font-medium text-gray-700 mb-1">{t("সাল", "Year")}</label><input type="number" className="input" value={p.year} onChange={(e) => setP({ year: Number(e.target.value) })} /></div>
+        <div><label className="block text-sm font-medium text-gray-700 mb-1">{t("সাল", "Year")}</label><input type="number" className="input" value={p.year || ""} onChange={(e) => setP({ year: Number(e.target.value) })} /></div>
         <div><label className="block text-sm font-medium text-gray-700 mb-1">{t("প্রযুক্তি (কমা দিয়ে)", "Technologies (comma-separated)")}</label>
           <input className="input" value={p.technologies.join(", ")} onChange={(e) => setP({ technologies: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) })} /></div>
       </div>
@@ -467,7 +467,7 @@ function ShowcaseEditor({ editor, projects, services, saving, onClose, onSave, o
       {isProject ? (
         <div className="grid sm:grid-cols-2 gap-3">
           <div><label className="block text-xs font-medium text-gray-600 mb-1">{t("ওয়েব ঠিকানা (slug)", "Web address (slug)")}</label><input className="input font-mono text-sm" value={p.slug} onChange={(e) => setP({ slug: slugify(e.target.value) })} /></div>
-          <div><label className="block text-xs font-medium text-gray-600 mb-1">{t("ক্রম (ছোট সংখ্যা আগে)", "Sort order")}</label><input type="number" className="input" value={p.sortOrder ?? 0} onChange={(e) => setP({ sortOrder: Number(e.target.value) })} /></div>
+          <div><label className="block text-xs font-medium text-gray-600 mb-1">{t("ক্রম (ছোট সংখ্যা আগে)", "Sort order")}</label><input type="number" className="input" value={p.sortOrder || ""} placeholder="0" onChange={(e) => setP({ sortOrder: Number(e.target.value) })} /></div>
           <div className="sm:col-span-2"><DuplicateNotice result={dup} onOpen={openDup} show="codes" /></div>
         </div>
       ) : (
