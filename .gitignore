@@ -60,3 +60,8 @@ backend/demo_cleanup_backups/
 
 # Owner product photos (source material, not site code)
 /Mobile_Accesoris_Product/
+
+# Local screenshots shared for review
+/*.jpeg
+/*.jpg
+/*.png
