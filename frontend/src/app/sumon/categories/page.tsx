@@ -2,6 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
   ChevronDown,
   FolderTree,
   Languages,
@@ -27,6 +30,7 @@ import { useFocusTrap } from "@/lib/useFocusTrap";
 import { cn } from "@/lib/utils";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useAdminT } from "@/lib/i18n/adminText";
+import { findDuplicateName } from "@/lib/categoryNames";
 
 function slugify(v: string): string {
   return v.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
@@ -108,6 +112,28 @@ function selfAndDescendantIds(node: Node, out: Set<string> = new Set()): Set<str
   for (const child of getChildren(node)) selfAndDescendantIds(child, out);
   return out;
 }
+type Counted = Node & { product_count?: number; service_count?: number };
+/** Products + services in this node and everything under it. */
+function subtreeItemCount(node: Node): { products: number; services: number } {
+  const n = node as Counted;
+  let products = n.product_count ?? 0;
+  let services = n.service_count ?? 0;
+  for (const c of getChildren(node)) {
+    const sub = subtreeItemCount(c);
+    products += sub.products; services += sub.services;
+  }
+  return { products, services };
+}
+const bnNum = (n: number) => String(n).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d]);
+function countLabel(node: Node): string | null {
+  const { products, services } = subtreeItemCount(node);
+  const parts: string[] = [];
+  if (products) parts.push(`${bnNum(products)}টি পণ্য`);
+  if (services) parts.push(`${bnNum(services)}টি সেবা`);
+  return parts.length ? parts.join(" · ") : null;
+}
+type TypeTab = "all" | "product" | "service";
+
 /** Immutably update one node anywhere in the tree (used for optimistic toggles). */
 function updateNodeInTree<T extends Node>(nodes: T[], id: string, fn: (n: T) => T): T[] {
   return nodes.map((n) => {
@@ -126,6 +152,9 @@ export default function AdminCategoriesPage() {
   const [busy, setBusy] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [typeTab, setTypeTab] = useState<TypeTab>("all");
+  const [dupConfirm, setDupConfirm] = useState<string | null>(null);
+  const [reordering, setReordering] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_STEP);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -194,7 +223,38 @@ export default function AdminCategoriesPage() {
     setEditor({ node, parentId: node.parent_id ?? null });
   };
 
-  const save = async () => {
+  const allNodes = useMemo(() => flattenAll(roots as unknown as Node[]), [roots]);
+  const dupNode = useMemo(
+    () => (editor ? findDuplicateName(allNodes, { name_en: form.name_en, name_bn: form.name_bn }, editor.node?.id) : null),
+    [allNodes, editor, form.name_en, form.name_bn],
+  );
+
+  /** Move a node one step up/down among its siblings, then renumber sort_order 0..n. */
+  const move = async (node: Node, dir: -1 | 1) => {
+    if (reordering) return;
+    const parent = node.parent_id ? allNodes.find((n) => n.id === node.parent_id) : null;
+    const siblings = parent ? getChildren(parent) : (roots as unknown as Node[]);
+    const i = siblings.findIndex((n) => n.id === node.id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= siblings.length) return;
+    const next = [...siblings];
+    [next[i], next[j]] = [next[j], next[i]];
+    setReordering(true);
+    try {
+      await Promise.all(
+        next.map((n, idx) => (n.sort_order === idx ? null : categoriesAdminApi.update(n.id, { sort_order: idx }))).filter(Boolean),
+      );
+      await load();
+    } catch (err) {
+      toast("error", apiErrorMessage(err, "ক্রম বদলানো যায়নি — আবার চেষ্টা করুন"));
+      await load();
+    } finally {
+      setReordering(false);
+    }
+  };
+
+  const save = async (force = false) => {
+    if (!force && dupNode) { setDupConfirm(getNodeLabel(dupNode)); return; }
     let name = form.name_en.trim();
     // Bangla-first: fill an empty English name from the Bangla one.
     if (!name && form.name_bn.trim()) {
@@ -203,7 +263,7 @@ export default function AdminCategoriesPage() {
       catch { setBusy(false); toast("error", "অটো-অনুবাদ ব্যর্থ — Name (English) নিজে লিখুন"); return; }
       setBusy(false);
     }
-    if (name.length < 2) { toast("error", "Name is required (বাংলা লিখলে অটো-অনুবাদ হবে)"); return; }
+    if (name.length < 2) { toast("error", "নাম দিন (শুধু বাংলা লিখলেও চলবে — ইংরেজি নিজে হবে)"); return; }
     const slug = form.slug.trim() || slugify(name);
     setBusy(true);
     try {
@@ -229,7 +289,7 @@ export default function AdminCategoriesPage() {
       } else {
         payload.parent_id = form.parent_id ?? null;
         if (!form.parent_id) {
-          if (form.applies_to.length === 0) { toast("error", "product/service অন্তত একটি বাছুন"); setBusy(false); return; }
+          if (form.applies_to.length === 0) { toast("error", "পণ্য বা সেবা — অন্তত একটি বাছুন"); setBusy(false); return; }
           payload.applies_to = form.applies_to;
         }
         await categoriesAdminApi.create(payload);
@@ -238,7 +298,7 @@ export default function AdminCategoriesPage() {
       setEditor(null);
       await load();
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Save failed"));
+      toast("error", apiErrorMessage(err, "সংরক্ষণ হয়নি — আবার চেষ্টা করুন"));
     } finally {
       setBusy(false);
     }
@@ -292,7 +352,16 @@ export default function AdminCategoriesPage() {
     [normalizedQuery, searchActive, statusFilter]
   );
 
-  const filteredRoots = useMemo(() => filterTree(roots as unknown as Node[]), [filterTree, roots]);
+  const typeRoots = useMemo(
+    () => (typeTab === "all" ? roots : roots.filter((r) => ((r.applies_to ?? []) as string[]).includes(typeTab))),
+    [roots, typeTab],
+  );
+  const typeCounts = useMemo(() => ({
+    all: roots.length,
+    product: roots.filter((r) => ((r.applies_to ?? []) as string[]).includes("product")).length,
+    service: roots.filter((r) => ((r.applies_to ?? []) as string[]).includes("service")).length,
+  }), [roots]);
+  const filteredRoots = useMemo(() => filterTree(typeRoots as unknown as Node[]), [filterTree, typeRoots]);
   const shownRoots = searchActive ? filteredRoots : filteredRoots.slice(0, visibleCount);
   const hasMore = !searchActive && filteredRoots.length > visibleCount;
 
@@ -311,8 +380,8 @@ export default function AdminCategoriesPage() {
   const drawerOpen = editor !== null;
 
   // ---- Sub-category row ----
-  const SubRow = ({ node, accent }: { node: Node; accent: typeof ACCENTS[number] }) => (
-    <div className="flex items-center gap-2.5 sm:gap-3 rounded-xl border border-[var(--border,#e2e8f3)] bg-[var(--surface-2,#f4f7fc)] px-2.5 sm:px-3 py-2 transition-colors hover:bg-[var(--surface,#fff)] hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.03]">
+  const SubRow = ({ node, accent, canUp, canDown }: { node: Node; accent: typeof ACCENTS[number]; canUp: boolean; canDown: boolean }) => (
+    <div className="flex items-center flex-wrap gap-2.5 sm:gap-3 rounded-xl border border-[var(--border,#e2e8f3)] bg-[var(--surface-2,#f4f7fc)] px-2.5 sm:px-3 py-2 transition-colors hover:bg-[var(--surface,#fff)] hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.03]">
       {node.image_url ? (
         <span className="relative w-9 h-9 rounded-[10px] overflow-hidden flex-shrink-0 ring-1 ring-black/5">
           <Image src={node.image_url} alt="" fill className="object-cover" sizes="36px" />
@@ -323,25 +392,28 @@ export default function AdminCategoriesPage() {
           {tileGlyph(node)}
         </span>
       )}
-      <div className="min-w-0 flex-1">
+      <div className="min-w-[8rem] flex-1">
         <p className="font-medium text-[0.92rem] text-heading truncate">{getNodeLabel(node)}</p>
-        <p className="text-[0.72rem] text-gray-400 font-mono truncate">/{node.slug}</p>
+        <p className="text-[0.72rem] text-gray-400 truncate">{countLabel(node) ?? "কোনো পণ্য/সেবা নেই"}</p>
       </div>
-      <ToggleSwitch on={node.is_active !== false} onClick={() => void toggleActive(node)} />
-      <IconBtn title={tx("Edit")} onClick={() => openEdit(node)}><Pencil className="w-3.5 h-3.5" /></IconBtn>
-      <IconBtn title={tx("Delete")} danger onClick={() => void remove(node)}><Trash2 className="w-3.5 h-3.5" /></IconBtn>
+      <div className="flex items-center gap-1 ml-auto">
+        <MoveBtns disabled={reordering || searchActive} canUp={canUp} canDown={canDown} onMove={(d) => void move(node, d)} small />
+        <ToggleSwitch on={node.is_active !== false} onClick={() => void toggleActive(node)} />
+        <IconBtn title={tx("Edit")} onClick={() => openEdit(node)}><Pencil className="w-3.5 h-3.5" /></IconBtn>
+        <IconBtn title={tx("Delete")} danger onClick={() => void remove(node)}><Trash2 className="w-3.5 h-3.5" /></IconBtn>
+      </div>
     </div>
   );
 
   // ---- Recursive branch under a root ----
-  const renderBranch = (node: Node, accent: typeof ACCENTS[number], depth: number): React.ReactNode => {
+  const renderBranch = (node: Node, accent: typeof ACCENTS[number], depth: number, idx: number, count: number): React.ReactNode => {
     const children = getChildren(node);
     return (
       <div key={node.id} className="space-y-2">
-        <SubRow node={node} accent={accent} />
+        <SubRow node={node} accent={accent} canUp={idx > 0} canDown={idx < count - 1} />
         {children.length > 0 && depth < 4 && (
           <div className="ml-3 sm:ml-5 border-l-2 border-dashed border-gray-200 dark:border-white/10 pl-2.5 sm:pl-3.5 space-y-2">
-            {children.map((c) => renderBranch(c, accent, depth + 1))}
+            {children.map((c, i) => renderBranch(c, accent, depth + 1, i, children.length))}
           </div>
         )}
       </div>
@@ -359,7 +431,7 @@ export default function AdminCategoriesPage() {
           <div>
             <p className="text-[11px] tracking-[0.16em] uppercase font-bold text-white/70">ABO Enterprise · Admin</p>
             <h1 className="mt-1.5 text-2xl sm:text-[2rem] font-extrabold tracking-tight text-balance">ক্যাটাগরি ব্যবস্থাপনা</h1>
-            <p className="mt-1 text-white/80 text-sm max-w-[46ch]">পণ্য ও সেবার সব ক্যাটাগরি এক জায়গায় — সুন্দর, দ্রুত ও সহজ।</p>
+            <p className="mt-1 text-white/80 text-sm max-w-[52ch]">পণ্য ও সেবার সব ক্যাটাগরি এক জায়গায়। ↑↓ দিয়ে ক্রম বদলান, সুইচ দিয়ে সাইটে দেখান/লুকান।</p>
           </div>
           <div className="flex gap-2">
             <button type="button" onClick={() => void load()} title={tx("Refresh")}
@@ -376,9 +448,9 @@ export default function AdminCategoriesPage() {
         <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-5">
           {[
             { n: stats.total, l: "মোট ক্যাটাগরি" },
-            { n: stats.roots, l: "Root গ্রুপ" },
-            { n: stats.active, l: "Active" },
-            { n: stats.inactive, l: "Inactive" },
+            { n: stats.roots, l: "মূল ক্যাটাগরি" },
+            { n: stats.active, l: "সাইটে দেখায়" },
+            { n: stats.inactive, l: "লুকানো" },
           ].map((s) => (
             <div key={s.l} className="rounded-2xl bg-white/12 border border-white/18 px-3.5 py-3 backdrop-blur-sm">
               <p className="text-2xl font-extrabold tabular-nums leading-none">{s.n}</p>
@@ -388,6 +460,25 @@ export default function AdminCategoriesPage() {
         </div>
       </header>
 
+      {/* ---------- Type tabs ---------- */}
+      <div className="flex gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-full sm:w-fit overflow-x-auto" role="tablist" aria-label="ক্যাটাগরির ধরন">
+        {([["all", "সব"], ["product", "পণ্যের ক্যাটাগরি"], ["service", "সেবার ক্যাটাগরি"]] as [TypeTab, string][]).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={typeTab === id}
+            onClick={() => { setTypeTab(id); setVisibleCount(PAGE_STEP); }}
+            className={cn(
+              "flex-none px-3.5 py-2 max-[899px]:min-h-[40px] rounded-lg text-sm font-medium whitespace-nowrap transition-colors",
+              typeTab === id ? "bg-white dark:bg-gray-800 text-brand-700 dark:text-brand-300 shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            )}
+          >
+            {label} <span className="text-xs opacity-70 tabular-nums">({bnNum(typeCounts[id])})</span>
+          </button>
+        ))}
+      </div>
+
       {/* ---------- Toolbar ---------- */}
       <div className="flex items-center gap-2.5 flex-wrap">
         <div className="relative flex-1 min-w-[220px]">
@@ -395,7 +486,8 @@ export default function AdminCategoriesPage() {
           <input
             value={searchValue}
             onChange={(e) => { setSearchValue(e.target.value); setVisibleCount(PAGE_STEP); }}
-            placeholder="নাম, বাংলা নাম বা slug দিয়ে খুঁজুন…"
+            placeholder="নাম (বাংলা/ইংরেজি) দিয়ে খুঁজুন…"
+            aria-label="ক্যাটাগরি খুঁজুন"
             className="w-full text-sm rounded-xl border border-[var(--border,#e2e8f3)] bg-[var(--surface,#fff)] dark:bg-white/5 dark:border-white/10 pl-10 pr-3 py-2.5 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition"
           />
         </div>
@@ -412,7 +504,7 @@ export default function AdminCategoriesPage() {
                   : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
               )}
             >
-              {s === "all" ? "সব" : s}
+              {s === "all" ? "সব" : s === "active" ? "দেখায়" : "লুকানো"}
             </button>
           ))}
         </div>
@@ -428,11 +520,13 @@ export default function AdminCategoriesPage() {
       ) : roots.length === 0 ? (
         <EmptyState onCreate={() => openCreate(null)} title="এখনো কোনো ক্যাটাগরি নেই" desc={'"নতুন ক্যাটাগরি" চাপুন — যেমন Products, Services বা Repair'} />
       ) : filteredRoots.length === 0 ? (
-        <EmptyState title="কোনো ফলাফল পাওয়া যায়নি" desc="Search বা status filter পরিবর্তন করে আবার চেষ্টা করুন।" />
+        <EmptyState title="কোনো ফলাফল পাওয়া যায়নি" desc="অন্য ট্যাব, খোঁজার লেখা বা অবস্থা বদলে আবার চেষ্টা করুন।" />
       ) : (
         <div className="space-y-3.5">
           {shownRoots.map((root, idx) => {
             const accent = ACCENTS[idx % ACCENTS.length];
+            const rootIdx = roots.findIndex((r) => r.id === root.id);
+            const rootCount = countLabel(root);
             const kids = getChildren(root);
             const isOpen = !collapsed.has(root.id);
             const scope = ((root as Partial<Category>).applies_to ?? []) as string[];
@@ -442,7 +536,7 @@ export default function AdminCategoriesPage() {
                 className="group relative overflow-hidden rounded-[20px] border border-[var(--border,#e2e8f3)] dark:border-white/10 bg-[var(--surface,#fff)] dark:bg-[#0f1d33] shadow-[0_1px_2px_rgba(16,40,80,.04),0_8px_24px_rgba(16,40,80,.06)] hover:shadow-[0_6px_16px_rgba(21,101,192,.10),0_18px_44px_rgba(16,40,80,.14)] hover:-translate-y-0.5 transition-all"
               >
                 <span className="absolute left-0 top-0 bottom-0 w-1.5" style={{ background: accent.rail }} />
-                <div className="flex items-center gap-3 sm:gap-3.5 pl-5 sm:pl-6 pr-3.5 sm:pr-4 py-3.5 sm:py-4">
+                <div className="flex items-center flex-wrap gap-3 sm:gap-3.5 pl-5 sm:pl-6 pr-3.5 sm:pr-4 py-3.5 sm:py-4">
                   {root.image_url ? (
                     <span className="relative w-12 h-12 sm:w-[54px] sm:h-[54px] rounded-[15px] overflow-hidden flex-shrink-0 ring-1 ring-black/5">
                       <Image src={root.image_url} alt="" fill className="object-cover" sizes="54px" />
@@ -458,24 +552,31 @@ export default function AdminCategoriesPage() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-bold text-[1.02rem] sm:text-[1.06rem] text-heading tracking-tight truncate max-w-full">{root.name_en}</span>
                       {root.name_bn && <span className="text-sm text-gray-500 dark:text-gray-400">{root.name_bn}</span>}
-                      <span className="text-[0.62rem] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-brand-500/12 text-brand-600">{tx("Root")}</span>
+                      <span className="text-[0.62rem] font-bold tracking-wider px-2 py-0.5 rounded-full bg-brand-500/12 text-brand-600 dark:text-brand-300">মূল</span>
                     </div>
                     <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mt-1.5 text-xs">
                       <span className="font-mono text-gray-400 truncate max-w-[150px] sm:max-w-none">/{root.slug}</span>
                       {scope.map((s) => (
                         <span key={s} className={cn("px-2 py-0.5 rounded-full font-semibold text-[0.72rem]", s === "service" ? "bg-accent-500/10 text-accent-600" : "bg-brand-500/10 text-brand-600")}>
-                          {s === "service" ? "Service" : "Product"}
+                          {s === "service" ? "সেবা" : "পণ্য"}
                         </span>
                       ))}
                       {kids.length > 0 && (
-                        <span className="px-2 py-0.5 rounded-full font-semibold text-[0.72rem] bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/10">{kids.length}টি সাব</span>
+                        <span className="px-2 py-0.5 rounded-full font-semibold text-[0.72rem] bg-gray-100 dark:bg-white/10 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-white/10">{bnNum(kids.length)}টি সাব</span>
                       )}
+                      <span className="px-2 py-0.5 rounded-full font-semibold text-[0.72rem] bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">{rootCount ?? "কোনো পণ্য/সেবা নেই"}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                  <div className="flex items-center justify-end gap-1 sm:gap-1.5 flex-shrink-0 w-full sm:w-auto">
+                    <MoveBtns
+                      disabled={reordering || searchActive || typeTab !== "all"}
+                      canUp={rootIdx > 0}
+                      canDown={rootIdx < roots.length - 1}
+                      onMove={(d) => void move(root, d)}
+                    />
                     <ToggleSwitch on={root.is_active !== false} onClick={() => void toggleActive(root)} />
-                    <IconBtn title="সাব যোগ" onClick={() => openCreate(root)} accentHover><Plus className="w-4 h-4" /></IconBtn>
+                    <IconBtn title="সাব-ক্যাটাগরি যোগ" onClick={() => openCreate(root)} accentHover><Plus className="w-4 h-4" /></IconBtn>
                     <IconBtn title={tx("Edit")} onClick={() => openEdit(root)}><Pencil className="w-4 h-4" /></IconBtn>
                     <IconBtn title={tx("Delete")} danger onClick={() => void remove(root)}><Trash2 className="w-4 h-4" /></IconBtn>
                     {kids.length > 0 && (
@@ -498,7 +599,7 @@ export default function AdminCategoriesPage() {
                     <div className="overflow-hidden">
                       <div className="pl-5 sm:pl-6 pr-3.5 sm:pr-4 pb-4">
                         <div className="ml-[26px] sm:ml-8 border-l-2 border-dashed border-gray-200 dark:border-white/10 pl-3 sm:pl-4 space-y-2 pt-1">
-                          {kids.map((c) => renderBranch(c, accent, 1))}
+                          {kids.map((c, i) => renderBranch(c, accent, 1, i, kids.length))}
                           <button type="button" onClick={() => openCreate(root)}
                             className="inline-flex items-center gap-1.5 text-brand-600 border border-dashed border-gray-300 dark:border-white/15 rounded-[10px] px-3 py-2 text-[0.82rem] font-semibold hover:bg-brand-500/[0.06] hover:border-brand-500 transition mt-0.5">
                             <Plus className="w-3.5 h-3.5" /> সাব-ক্যাটাগরি যোগ
@@ -586,7 +687,7 @@ export default function AdminCategoriesPage() {
           </LivePreview>
 
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Name (English) *">
+            <Field label="নাম (ইংরেজি)">
               <div className="flex items-center gap-2">
                 <input value={form.name_en} onChange={(e) => setForm((p) => ({ ...p, name_en: e.target.value, slug: p.slug || slugify(e.target.value) }))} className={INP_CLS} placeholder="Fast Chargers" />
                 <TranslateButton bn={form.name_bn} onResult={(en) => setForm((p) => ({ ...p, name_en: en, slug: p.slug || slugify(en) }))} en={form.name_en} onResultBn={(b) => setForm((p) => ({ ...p, name_bn: b }))} className="btn btn-outline btn-sm gap-1 flex-shrink-0" label="EN" />
@@ -602,19 +703,26 @@ export default function AdminCategoriesPage() {
             </Field>
           </div>
 
+          {dupNode && (
+            <div role="alert" className="flex gap-2 rounded-xl border border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-500/10 px-3 py-2.5 text-sm text-amber-900 dark:text-amber-100">
+              <AlertTriangle className="w-4 h-4 flex-none mt-0.5" aria-hidden />
+              <span>একই নামের ক্যাটাগরি আগে থেকেই আছে: <b>{getNodeLabel(dupNode)}</b>। দুটো একই ক্যাটাগরি হলে গ্রাহক বিভ্রান্ত হয় — পুরনোটি ব্যবহার করুন বা নাম বদলান।</span>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Slug (URL)">
+            <Field label="ওয়েব ঠিকানা (slug)">
               <input value={form.slug} onChange={(e) => setForm((p) => ({ ...p, slug: slugify(e.target.value) }))} className={cn(INP_CLS, "font-mono")} placeholder="auto" />
             </Field>
-            <Field label="Sort Order">
+            <Field label="ক্রম (ছোট সংখ্যা আগে)">
               <input type="number" value={form.sort_order} onChange={(e) => setForm((p) => ({ ...p, sort_order: Number(e.target.value) || 0 }))} className={INP_CLS} />
             </Field>
           </div>
 
           {!editor?.node && (
-            <Field label="Parent ক্যাটাগরি">
+            <Field label="কোন ক্যাটাগরির নিচে?">
               <select value={form.parent_id ?? ""} onChange={(e) => setForm((p) => ({ ...p, parent_id: e.target.value || null }))} className={INP_CLS}>
-                <option value="">— None (root ক্যাটাগরি) —</option>
+                <option value="">— কোনোটির নিচে নয় (মূল ক্যাটাগরি) —</option>
                 {parentOptions.map((o) => (
                   <option key={o.id} value={o.id}>{"— ".repeat(o.depth)}{o.label}</option>
                 ))}
@@ -694,7 +802,7 @@ export default function AdminCategoriesPage() {
                     <button key={s} type="button"
                       onClick={() => setForm((p) => ({ ...p, applies_to: on ? p.applies_to.filter((x) => x !== s) : [...p.applies_to, s] }))}
                       className={cn("flex-1 rounded-xl border py-2.5 text-sm font-semibold transition", on ? "border-brand-500 bg-brand-500/[0.08] text-brand-600" : "border-[var(--border,#e2e8f3)] dark:border-white/10 text-gray-500")}>
-                      {s === "product" ? "Product (কেনাকাটা)" : "Service (বুকিং)"}
+                      {s === "product" ? "পণ্য (কেনাকাটা)" : "সেবা (বুকিং)"}
                     </button>
                   );
                 })}
@@ -717,6 +825,16 @@ export default function AdminCategoriesPage() {
           <button type="button" onClick={() => setEditor(null)} className="bg-gray-100 dark:bg-white/10 text-gray-500 font-semibold text-sm px-5 py-3 rounded-xl">বাতিল</button>
         </div>
       </aside>
+
+      <ConfirmDialog
+        open={!!dupConfirm}
+        title="একই নামের ক্যাটাগরি আছে"
+        message={`"${dupConfirm ?? ""}" নামে একটি ক্যাটাগরি আগে থেকেই আছে। তবুও সংরক্ষণ করবেন?`}
+        confirmLabel="তবুও সংরক্ষণ করুন"
+        variant="warning"
+        onConfirm={() => { setDupConfirm(null); void save(true); }}
+        onCancel={() => setDupConfirm(null)}
+      />
 
       <ConfirmDialog
         open={!!deleteTarget}
@@ -745,6 +863,24 @@ function ToggleSwitch({ on, onClick }: { on: boolean; onClick: () => void }) {
     >
       <span className={cn("absolute top-[3px] left-[3px] w-5 h-5 rounded-full bg-white shadow transition-transform", on && "translate-x-[18px]")} />
     </button>
+  );
+}
+
+function MoveBtns({ canUp, canDown, onMove, disabled, small }: { canUp: boolean; canDown: boolean; onMove: (d: -1 | 1) => void; disabled?: boolean; small?: boolean }) {
+  const cls = cn(
+    "rounded-[10px] grid place-items-center bg-[var(--surface-2,#f4f7fc)] dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:text-brand-600 disabled:opacity-30 disabled:hover:text-gray-500 transition",
+    small ? "w-8 h-9" : "w-9 h-9"
+  );
+  const hint = disabled ? "ক্রম বদলাতে ‘সব’ ট্যাবে যান ও খোঁজা মুছুন" : undefined;
+  return (
+    <span className="inline-flex gap-0.5" title={hint}>
+      <button type="button" className={cls} aria-label="উপরে নিন" title={hint ?? "উপরে নিন"} disabled={disabled || !canUp} onClick={(e) => { e.stopPropagation(); onMove(-1); }}>
+        <ArrowUp className="w-3.5 h-3.5" />
+      </button>
+      <button type="button" className={cls} aria-label="নিচে নিন" title={hint ?? "নিচে নিন"} disabled={disabled || !canDown} onClick={(e) => { e.stopPropagation(); onMove(1); }}>
+        <ArrowDown className="w-3.5 h-3.5" />
+      </button>
+    </span>
   );
 }
 
