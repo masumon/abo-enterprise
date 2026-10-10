@@ -16,6 +16,7 @@ from __future__ import annotations
 import csv
 import io
 import re
+import unicodedata
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -28,31 +29,31 @@ from app.models.models import Category
 # type: str | int | float | bool | list ; required only for a *new* product.
 FIELD_SPEC: dict[str, dict] = {
     "slug": {"type": "str", "required": True, "aliases": ["url", "handle"]},
-    "name_en": {"type": "str", "required": True, "aliases": ["name", "name(english)", "nameen", "title", "title_en"]},
-    "name_bn": {"type": "str", "required": True, "aliases": ["name(bangla)", "namebn", "title_bn", "bangla name"]},
-    "category": {"type": "str", "required": True, "aliases": ["category_slug", "categoryname", "category name", "category_path", "categorypath"]},
-    "price": {"type": "float", "required": True, "aliases": ["mrp", "sell price", "sellingprice"]},
-    "original_price": {"type": "float", "aliases": ["compare price", "compareatprice", "old price", "regular price"]},
+    "name_en": {"type": "str", "required": True, "aliases": ["name", "name(english)", "nameen", "title", "title_en", "ইংরেজি নাম", "english name"]},
+    "name_bn": {"type": "str", "required": True, "aliases": ["name(bangla)", "namebn", "title_bn", "bangla name", "নাম", "বাংলা নাম", "পণ্যের নাম"]},
+    "category": {"type": "str", "required": True, "aliases": ["category_slug", "categoryname", "category name", "category_path", "categorypath", "ক্যাটাগরি", "ক্যাটেগরি", "ধরন"]},
+    "price": {"type": "float", "required": True, "aliases": ["mrp", "sell price", "sellingprice", "দাম", "বিক্রয়মূল্য", "বিক্রয় মূল্য"]},
+    "original_price": {"type": "float", "aliases": ["compare price", "compareatprice", "old price", "regular price", "আগের দাম"]},
     # PRIVATE purchase price — admin-only (never on public endpoints).
     "cost_price": {"type": "float", "aliases": ["purchase price", "buy price", "cost", "ক্রয়মূল্য"]},
     "category_name_bn": {"type": "str", "aliases": ["category bn", "ক্যাটাগরির নাম"]},
     "category_name_en": {"type": "str", "aliases": ["category en"]},
     "short_description_bn": {"type": "str", "aliases": ["short desc bn", "short_bn"]},
     "short_description_en": {"type": "str", "aliases": ["short desc en", "short_en", "short description"]},
-    "specifications": {"type": "specs", "aliases": ["specs", "specification", "features table"]},
+    "specifications": {"type": "specs", "aliases": ["specs", "specification", "features table", "স্পেসিফিকেশন"]},
     "description_en": {"type": "str", "aliases": ["description", "desc_en", "details"]},
-    "description_bn": {"type": "str", "aliases": ["desc_bn", "bangla description"]},
-    "sku": {"type": "str", "aliases": ["product code", "code", "item code"]},
+    "description_bn": {"type": "str", "aliases": ["desc_bn", "bangla description", "বিবরণ"]},
+    "sku": {"type": "str", "aliases": ["product code", "code", "item code", "এসকেইউ", "কোড"]},
     "barcode": {"type": "str", "aliases": ["ean", "upc"]},
-    "brand": {"type": "str", "aliases": ["manufacturer"]},
-    "stock_quantity": {"type": "int", "aliases": ["stock", "qty", "quantity", "inventory"]},
+    "brand": {"type": "str", "aliases": ["manufacturer", "ব্র্যান্ড"]},
+    "stock_quantity": {"type": "int", "aliases": ["stock", "qty", "quantity", "inventory", "স্টক", "পরিমাণ"]},
     "low_stock_threshold": {"type": "int", "aliases": ["low stock", "reorder level"]},
     "is_active": {"type": "bool", "aliases": ["active", "published", "status"]},
     "is_featured": {"type": "bool", "aliases": ["featured"]},
     "is_best_seller": {"type": "bool", "aliases": ["best seller", "bestseller"]},
-    "badge": {"type": "str", "aliases": ["tag label", "ribbon"]},
+    "badge": {"type": "str", "aliases": ["tag label", "ribbon", "ব্যাজ"]},
     "image_url": {"type": "str", "aliases": ["image", "main image", "thumbnail", "photo"]},
-    "images": {"type": "list", "aliases": ["gallery", "additional images", "more images"]},
+    "images": {"type": "list", "aliases": ["gallery", "additional images", "more images", "ছবির নাম", "ছবি"]},
     "tags": {"type": "list", "aliases": ["keywords", "labels"]},
     "sort_order": {"type": "int", "aliases": ["order", "position"]},
     "weight": {"type": "float", "aliases": ["weight(kg)", "kg"]},
@@ -65,7 +66,8 @@ FIELD_SPEC: dict[str, dict] = {
 
 # Header (normalised) -> canonical field, built from names + aliases.
 def _norm(h: str) -> str:
-    return re.sub(r"[\s_\-()]+", "", (h or "").strip().lower())
+    # NFC so a Bangla header typed with a decomposed letter still matches.
+    return re.sub(r"[\s_\-()]+", "", unicodedata.normalize("NFC", (h or "").strip().lower()))
 
 
 _HEADER_LOOKUP: dict[str, str] = {}
@@ -101,9 +103,9 @@ def _coerce(field_name: str, raw: Any) -> tuple[Any, str | None]:
         if t == "str":
             return (s, None)
         if t == "int":
-            return (int(float(s)), None)  # tolerate "5.0"
+            return (int(float(_num_text(s))), None)  # tolerate "5.0" and Bangla digits
         if t == "float":
-            return (float(s.replace(",", "")), None)
+            return (float(_num_text(s)), None)
         if t == "bool":
             low = s.lower()
             if low in _TRUE:
@@ -119,6 +121,77 @@ def _coerce(field_name: str, raw: Any) -> tuple[Any, str | None]:
     except (ValueError, TypeError):
         return (None, f"'{s}' is not a valid {t}")
     return (s, None)
+
+
+_BN_DIGITS = str.maketrans("০১২৩৪৫৬৭৮৯", "0123456789")
+
+
+def _num_text(s: str) -> str:
+    """'১,২৯০ টাকা' / '৳1290' -> '1290' (Bangla digits, currency words, commas)."""
+    s = s.translate(_BN_DIGITS)
+    s = re.sub(r"(৳|টাকা|tk\.?|bdt)", "", s, flags=re.I)
+    return s.replace(",", "").strip()
+
+
+# Rough Bangla -> Latin transliteration, only for building a web address (slug)
+# when a row has a Bangla name and no English one. Not shown to customers.
+_BN_LATIN = {
+    "অ": "o", "আ": "a", "ই": "i", "ঈ": "i", "উ": "u", "ঊ": "u", "ঋ": "ri", "এ": "e", "ঐ": "oi", "ও": "o", "ঔ": "ou",
+    "া": "a", "ি": "i", "ী": "i", "ু": "u", "ূ": "u", "ৃ": "ri", "ে": "e", "ৈ": "oi", "ো": "o", "ৌ": "ou",
+    "ক": "k", "খ": "kh", "গ": "g", "ঘ": "gh", "ঙ": "ng", "চ": "ch", "ছ": "chh", "জ": "j", "ঝ": "jh", "ঞ": "n",
+    "ট": "t", "ঠ": "th", "ড": "d", "ঢ": "dh", "ণ": "n", "ত": "t", "থ": "th", "দ": "d", "ধ": "dh", "ন": "n",
+    "প": "p", "ফ": "f", "ব": "b", "ভ": "bh", "ম": "m", "য": "j", "র": "r", "ল": "l", "শ": "sh", "ষ": "sh",
+    "স": "s", "হ": "h", "ড়": "r", "ঢ়": "rh", "য়": "y", "ৎ": "t", "ং": "ng", "ঃ": "", "ঁ": "", "্": "", "়": "",
+}
+_BN_PAIRS = (("ড়", "r"), ("ঢ়", "rh"), ("য়", "y"))
+
+
+def transliterate_bn(text: str) -> str:
+    t = unicodedata.normalize("NFC", text or "").translate(_BN_DIGITS)
+    for k, v in _BN_PAIRS:  # decomposed two-code-point forms first
+        t = t.replace(k, v)
+    return "".join(_BN_LATIN.get(ch, ch) for ch in t)
+
+
+_HAS_BN = re.compile(r"[\u0980-\u09FF]")
+
+
+def slug_from_any(text: str) -> str:
+    """slugify, falling back to a transliteration for Bangla text."""
+    return slugify(transliterate_bn(text)) if _HAS_BN.search(text or "") else slugify(text)
+
+
+def apply_overrides(rows: list[dict[str, str]], mapping: dict[str, str | None],
+                    overrides: dict | None) -> tuple[list[dict[str, str]], dict[str, str | None]]:
+    """In-page fixes from the preview: {"<row number>": {"price": "1290", ...}}.
+    Row numbers are the ones shown in the preview (header = row 1). A fixed
+    field without a column in the file gets a synthetic column. Returns new
+    rows/mapping; the inputs are not modified."""
+    if not overrides:
+        return rows, mapping
+    mapping = dict(mapping)
+    field_to_header: dict[str, str] = {}
+    for h, f in mapping.items():
+        if f and f not in field_to_header:
+            field_to_header[f] = h
+    rows = [dict(r) for r in rows]
+    for key, fixes in overrides.items():
+        try:
+            idx = int(key) - 2
+        except (TypeError, ValueError):
+            continue
+        if not (0 <= idx < len(rows)) or not isinstance(fixes, dict):
+            continue
+        for fname, value in fixes.items():
+            if fname not in FIELD_SPEC:
+                continue
+            header = field_to_header.get(fname)
+            if header is None:
+                header = f"__fix_{fname}"
+                field_to_header[fname] = header
+                mapping[header] = fname
+            rows[idx][header] = "" if value is None else str(value)
+    return rows, mapping
 
 
 def parse_specifications(text: str) -> dict[str, str]:
@@ -346,6 +419,8 @@ def validate_rows(
             field_to_header[fieldname] = header
 
     new_cat_names = _collect_category_names(rows, field_to_header)
+    # Simple Bangla sheet (নাম, দাম, ক্যাটাগরি...): no English-name column at all.
+    simple = "name_bn" in field_to_header and "name_en" not in field_to_header
     results: list[RowResult] = []
     seen_slugs: dict[str, int] = {}
     seen_skus: dict[str, int] = {}
@@ -360,8 +435,14 @@ def validate_rows(
             elif value is not None:
                 data[fieldname] = value
 
+        if simple and data.get("name_bn") and not data.get("name_en"):
+            if not data.get("slug"):
+                data["slug"] = slug_from_any(str(data["name_bn"])) or ""
+            data["name_en"] = data["name_bn"]
+            res.warnings.append(_bi("ইংরেজি নাম নেই — আপাতত বাংলা নামই বসবে, পরে বদলাতে পারবেন", "no English name; Bangla name used"))
+
         # Slug: tidy a hand-typed one; derive from the English name if blank.
-        slug_given = bool(data.get("slug"))
+        slug_given = bool(data.get("slug")) and not simple
         if data.get("slug") and not _SLUG_RE.match(str(data["slug"])):
             data["slug"] = slugify(str(data["slug"]))
         if not data.get("slug") and data.get("name_en"):
@@ -421,10 +502,15 @@ def validate_rows(
                 res.category_label = category_path(node, cat_index)
                 data["category"] = node.slug  # canonical legacy string
             else:
-                cslug = slugify(str(data["category"]))
+                raw_cat = str(data["category"]).strip()
+                cslug = slug_from_any(raw_cat) if simple else slugify(raw_cat)
                 info = new_cat_names.get(cslug)
                 if info is None and (cat_names["name_bn"] or cat_names["name_en"]):
                     info = {"slug": cslug, "name_bn": cat_names["name_bn"] or "", "name_en": cat_names["name_en"] or ""}
+                if info is None and simple and cslug:
+                    # Simple sheet: an unknown category name becomes a new category.
+                    bn = raw_cat if _HAS_BN.search(raw_cat) else ""
+                    info = {"slug": cslug, "name_bn": bn, "name_en": "" if bn else raw_cat}
                 if not cslug or info is None:
                     res.errors.append(_bi(
                         f"ক্যাটাগরি '{data['category']}' পাওয়া যায়নি — নতুন হলে category_name_bn/category_name_en দিন",

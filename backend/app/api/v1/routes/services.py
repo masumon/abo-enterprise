@@ -320,11 +320,16 @@ async def create_service(
 ):
     """Create a new service (admin only)"""
     # Check if slug already exists
-    existing = await db.execute(
+    existing = (await db.execute(
         select(Service).where(Service.slug == payload.slug)
-    )
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Slug already exists")
+    )).scalar_one_or_none()
+    if existing:
+        raise HTTPException(
+            status_code=400,
+            detail=("এই ওয়েব ঠিকানা (slug) আগে মুছে ফেলা একটি সেবায় ব্যবহার হয়েছে — অন্য slug দিন। (Slug already exists)"
+                    if existing.is_deleted else
+                    "এই ওয়েব ঠিকানা (slug) দিয়ে আগে থেকেই একটি সেবা আছে — অন্য slug দিন বা পুরনো সেবাটি খুলুন। (Slug already exists)"),
+        )
 
     _assert_price_coherence(
         payload.pricing_type, payload.base_price, payload.min_price,
@@ -364,21 +369,92 @@ async def create_service(
     )
 
 
+def _admin_service_conditions(*, search=None, is_active=None, category_id=None, missing=None) -> list:
+    conds = [Service.is_deleted == False]  # noqa: E712
+    if search and search.strip():
+        term = f"%{search.strip()}%"
+        conds.append(or_(Service.name_en.ilike(term), Service.name_bn.ilike(term), Service.slug.ilike(term)))
+    if is_active is not None:
+        conds.append(Service.is_active == is_active)
+    if category_id:
+        conds.append(or_(Service.category_id == category_id, Service.subcategory_id == category_id))
+    if missing == "image":
+        conds.append(and_(or_(Service.featured_image_url.is_(None), Service.featured_image_url == ""),
+                          or_(Service.icon_url.is_(None), Service.icon_url == "")))
+    elif missing == "price":
+        conds.append(and_(Service.base_price.is_(None), Service.min_price.is_(None), Service.hourly_rate.is_(None),
+                          Service.pricing_type.notin_(["custom", "custom_quote"])))
+    elif missing == "description":
+        conds.append(and_(or_(Service.description_bn.is_(None), Service.description_bn == ""),
+                          or_(Service.description_en.is_(None), Service.description_en == "")))
+    return conds
+
+
+async def find_service_duplicates(db: AsyncSession, *, name: str | None = None, slug: str | None = None,
+                                  exclude_id: uuid.UUID | None = None, limit: int = 5) -> dict:
+    """"এটা আগে থেকেই আছে?" lookup for the service form (same rules as products)."""
+    out: dict = {"name_matches": [], "slug_taken": None, "sku_taken": None}
+
+    def brief(x: Service) -> dict:
+        return {"id": str(x.id), "slug": x.slug, "name_en": x.name_en, "name_bn": x.name_bn,
+                "image_url": x.featured_image_url or x.icon_url, "is_active": x.is_active}
+
+    live = [Service.is_deleted == False]  # noqa: E712
+    if exclude_id:
+        live.append(Service.id != exclude_id)
+    n = " ".join((name or "").split()).lower()
+    if len(n) >= 2:
+        term = f"%{n}%"
+        rows = (await db.execute(
+            select(Service).where(*live, or_(func.lower(Service.name_en).like(term), func.lower(Service.name_bn).like(term)))
+            .limit(25)
+        )).scalars().all()
+        norm = lambda v: " ".join((v or "").split()).lower()  # noqa: E731
+        exact = [x for x in rows if n in (norm(x.name_en), norm(x.name_bn))]
+        close = [x for x in rows if x not in exact]
+        out["name_matches"] = [{**brief(x), "exact": True} for x in exact][:limit] +             [{**brief(x), "exact": False} for x in close][: max(0, limit - len(exact))]
+    if slug and slug.strip():
+        cond = [Service.slug == slug.strip().lower()]
+        if exclude_id:
+            cond.append(Service.id != exclude_id)
+        x = (await db.execute(select(Service).where(*cond).limit(1))).scalar_one_or_none()
+        if x is not None:
+            out["slug_taken"] = {**brief(x), "deleted": bool(x.is_deleted)}
+    return out
+
+
+@router.get("/admin/services/check-duplicate", response_model=ApiResponse)
+async def check_service_duplicate(
+    name: str | None = Query(None, max_length=255),
+    slug: str | None = Query(None, max_length=255),
+    exclude_id: uuid.UUID | None = Query(None),
+    admin_id: str = Depends(require_role("services.read")),
+    db: AsyncSession = Depends(get_db),
+):
+    return ApiResponse(data=await find_service_duplicates(db, name=name, slug=slug, exclude_id=exclude_id))
+
+
 @router.get("/admin/services", response_model=PaginatedResponse)
 async def list_services_admin(
     admin_id: str = Depends(require_role("services.read")),
     db: AsyncSession = Depends(get_db),
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=100),
+    search: str | None = Query(None, max_length=200),
+    is_active: bool | None = Query(None),
+    category_id: uuid.UUID | None = Query(None),
+    missing: str | None = Query(None, pattern="^(image|price|description)$"),
 ):
-    """List all services (admin)"""
-    query = select(Service).where(Service.is_deleted == False).options(
+    """List all services (admin). Optional filters are additive - with none
+    given the result is exactly the old full list."""
+    conds = _admin_service_conditions(search=search, is_active=is_active, category_id=category_id, missing=missing)
+    query = select(Service).where(*conds).options(
         selectinload(Service.pricing_tiers), selectinload(Service.booking_forms)
     )
 
     # Count total
     count_result = await db.execute(
-        select(func.count(Service.id)).where(Service.is_deleted == False)
+        select(func.count(Service.id)).where(*conds)
     )
     total = count_result.scalar()
 

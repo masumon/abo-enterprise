@@ -109,11 +109,98 @@ async def list_products(
     return etag_json_response(request, payload.model_dump(mode="json"), max_age=60)
 
 
+def _missing_condition(missing: str):
+    """Admin list filter: products that still lack a photo / price / text / category."""
+    if missing == "image":
+        return or_(Product.image_url.is_(None), Product.image_url == "")
+    if missing == "price":
+        return or_(Product.price.is_(None), Product.price <= 0)
+    if missing == "description":
+        return and_(
+            or_(Product.description_bn.is_(None), Product.description_bn == ""),
+            or_(Product.description_en.is_(None), Product.description_en == ""),
+        )
+    return or_(Product.category.is_(None), Product.category == "")
+
+
+def _norm_name(v: str | None) -> str:
+    return " ".join((v or "").split()).lower()
+
+
+async def find_product_duplicates(
+    db: AsyncSession, *, name: str | None = None, slug: str | None = None,
+    sku: str | None = None, exclude_id: UUID | None = None, limit: int = 5,
+) -> dict:
+    """Lightweight "does this already exist?" lookup for the admin form.
+
+    - name: same name (Bangla or English, case/space-insensitive) first, then
+      close matches (contains), live products only.
+    - slug: taken by ANY product (also soft-deleted - the DB column is unique).
+    - sku: taken by another live product.
+    """
+    out: dict = {"name_matches": [], "slug_taken": None, "sku_taken": None}
+
+    def brief(p: Product) -> dict:
+        return {"id": str(p.id), "slug": p.slug, "name_en": p.name_en, "name_bn": p.name_bn,
+                "image_url": p.image_url, "is_active": p.is_active, "sku": p.sku}
+
+    live = [Product.is_deleted == False]  # noqa: E712
+    if exclude_id:
+        live.append(Product.id != exclude_id)
+    n = _norm_name(name)
+    if len(n) >= 2:
+        term = f"%{n}%"
+        rows = (await db.execute(
+            select(Product).where(*live, or_(func.lower(Product.name_en).like(term), func.lower(Product.name_bn).like(term)))
+            .order_by(Product.created_at.desc()).limit(25)
+        )).scalars().all()
+        exact = [p for p in rows if n in (_norm_name(p.name_en), _norm_name(p.name_bn))]
+        close = [p for p in rows if p not in exact]
+        out["name_matches"] = [{**brief(p), "exact": True} for p in exact][:limit] +             [{**brief(p), "exact": False} for p in close][: max(0, limit - len(exact))]
+    if slug and slug.strip():
+        cond = [Product.slug == slug.strip().lower()]
+        if exclude_id:
+            cond.append(Product.id != exclude_id)
+        p = (await db.execute(select(Product).where(*cond).limit(1))).scalar_one_or_none()
+        if p is not None:
+            out["slug_taken"] = {**brief(p), "deleted": bool(p.is_deleted)}
+    if sku and sku.strip():
+        p = (await db.execute(select(Product).where(*live, Product.sku == sku.strip()).limit(1))).scalar_one_or_none()
+        if p is not None:
+            out["sku_taken"] = brief(p)
+    return out
+
+
+def _slug_taken_message(deleted: bool) -> str:
+    if deleted:
+        return "এই ওয়েব ঠিকানা (slug) আগে মুছে ফেলা একটি পণ্যে ব্যবহার হয়েছে — অন্য slug দিন। (Slug already exists)"
+    return "এই ওয়েব ঠিকানা (slug) দিয়ে আগে থেকেই একটি পণ্য আছে — অন্য slug দিন বা পুরনো পণ্যটি খুলুন। (Slug already exists)"
+
+
+def _sku_taken_message(other: dict) -> str:
+    return f"এই SKU ({other.get('sku')}) আগে থেকেই \"{other.get('name_bn') or other.get('name_en')}\" পণ্যে আছে — অন্য SKU দিন। (SKU already exists)"
+
+
+@router.get("/admin/check-duplicate", response_model=ApiResponse)
+async def admin_check_duplicate(
+    name: str | None = Query(None, max_length=255),
+    slug: str | None = Query(None, max_length=255),
+    sku: str | None = Query(None, max_length=100),
+    exclude_id: UUID | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    _admin: dict = Depends(require_role("products.read")),
+):
+    """"এটা আগে থেকেই আছে?" — used while typing a name/slug/SKU in the admin form."""
+    return ApiResponse(data=await find_product_duplicates(db, name=name, slug=slug, sku=sku, exclude_id=exclude_id))
+
+
 @router.get("/admin", response_model=PaginatedResponse)
 async def admin_list_products(
     category: str | None = Query(None),
     search: str | None = Query(None),
     is_active: bool | None = Query(None),
+    stock: str | None = Query(None, pattern="^(low|out)$", description="low = at/below the alert level, out = 0"),
+    missing: str | None = Query(None, pattern="^(image|price|description|category)$"),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
@@ -124,9 +211,15 @@ async def admin_list_products(
         conditions.append(Product.category == category)
     if is_active is not None:
         conditions.append(Product.is_active == is_active)
+    if stock == "out":
+        conditions.append(Product.stock_quantity <= 0)
+    elif stock == "low":
+        conditions.append(Product.stock_quantity <= func.coalesce(Product.low_stock_threshold, 5))
+    if missing:
+        conditions.append(_missing_condition(missing))
     if search:
         term = f"%{search}%"
-        conditions.append(or_(Product.name_en.ilike(term), Product.name_bn.ilike(term), Product.slug.ilike(term)))
+        conditions.append(or_(Product.name_en.ilike(term), Product.name_bn.ilike(term), Product.slug.ilike(term), Product.sku.ilike(term)))
 
     total_result = await db.execute(select(func.count(Product.id)).where(and_(*conditions)))
     total = total_result.scalar_one()
@@ -257,9 +350,11 @@ async def create_product(
     db: AsyncSession = Depends(get_db),
     _admin: str = Depends(require_role("products.write")),
 ):
-    existing = await db.execute(select(Product).where(Product.slug == payload.slug))
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Slug already exists")
+    dupes = await find_product_duplicates(db, slug=payload.slug, sku=payload.sku)
+    if dupes["slug_taken"]:
+        raise HTTPException(status_code=400, detail=_slug_taken_message(dupes["slug_taken"]["deleted"]))
+    if dupes["sku_taken"]:
+        raise HTTPException(status_code=400, detail=_sku_taken_message(dupes["sku_taken"]))
     data = payload.model_dump()
     blog_ids = data.pop("blog_ids", None)
     product = Product(**data)
@@ -289,6 +384,11 @@ async def update_product(
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     changes = payload.model_dump(exclude_unset=True)
+    new_sku = (changes.get("sku") or "").strip()
+    if new_sku and new_sku != (product.sku or "").strip():
+        dupes = await find_product_duplicates(db, sku=new_sku, exclude_id=product.id)
+        if dupes["sku_taken"]:
+            raise HTTPException(status_code=400, detail=_sku_taken_message(dupes["sku_taken"]))
     blog_ids = changes.pop("blog_ids", None)
     for field, value in changes.items():
         setattr(product, field, value)
