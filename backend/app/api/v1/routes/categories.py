@@ -106,10 +106,36 @@ async def admin_list_categories(
 ):
     cats = await load_categories(db, include_inactive=True)
     by_parent = children_map(cats)
+    counts = await _direct_item_counts(db)
     return ApiResponse(
-        data=[_serialize_tree(c, by_parent) for c in by_parent.get(None, [])],
+        data=[_with_counts(_serialize_tree(c, by_parent), counts) for c in by_parent.get(None, [])],
         message="ok",
     )
+
+
+async def _direct_item_counts(db: AsyncSession) -> dict[str, dict[str, int]]:
+    """{category_id: {"product": n, "service": n}} — each item counted once, at
+    its most specific node (subcategory if set, else category). Not the
+    subtree; the admin UI sums those."""
+    out: dict[str, dict[str, int]] = {}
+    for kind, model in (("product", Product), ("service", Service)):
+        node = func.coalesce(model.subcategory_id, model.category_id)
+        rows = (await db.execute(
+            select(node, func.count()).where(node.is_not(None), model.is_deleted == False).group_by(node)  # noqa: E712
+        )).all()
+        for cid, n in rows:
+            bucket = out.setdefault(str(cid), {"product": 0, "service": 0})
+            bucket[kind] += int(n)
+    return out
+
+
+def _with_counts(node: dict, counts: dict[str, dict[str, int]]) -> dict:
+    """Attach product_count/service_count (direct) to every node of a serialized tree."""
+    c = counts.get(node["id"], {})
+    node["product_count"] = c.get("product", 0)
+    node["service_count"] = c.get("service", 0)
+    node["subcategories"] = [_with_counts(ch, counts) for ch in node.get("subcategories", [])]
+    return node
 
 
 async def _slug_taken(db: AsyncSession, slug: str, exclude_id: uuid.UUID | None = None) -> bool:

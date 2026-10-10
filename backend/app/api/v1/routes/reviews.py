@@ -70,16 +70,34 @@ async def create_review(payload: ReviewCreate, db: AsyncSession = Depends(get_db
     return ApiResponse(data=ReviewOut.model_validate(review), message="Review submitted for moderation")
 
 
+REVIEW_KINDS = ("product", "service", "site")
+
+
+def review_kind_conditions(kind: str | None) -> list:
+    """Admin tab filter. 'product' = attached to a product, 'service' = to a
+    service, 'site' = neither (site-wide testimonial shown on /testimonials and,
+    when featured, on the homepage). None/'all' = no extra filter."""
+    if kind == "product":
+        return [Review.product_id.is_not(None)]
+    if kind == "service":
+        return [Review.service_id.is_not(None)]
+    if kind == "site":
+        return [Review.product_id.is_(None), Review.service_id.is_(None)]
+    return []
+
+
 @router.get("/admin", response_model=PaginatedResponse)
 async def admin_list_reviews(
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
+    kind: str | None = Query(None, pattern="^(all|product|service|site)$"),
     db: AsyncSession = Depends(get_db),
     _admin: str = Depends(require_role("reviews.read")),
 ):
-    total = (await db.execute(select(func.count(Review.id)).where(Review.is_deleted == False))).scalar_one()  # noqa: E712
+    where = [Review.is_deleted == False, *review_kind_conditions(kind)]  # noqa: E712
+    total = (await db.execute(select(func.count(Review.id)).where(*where))).scalar_one()
     result = await db.execute(
-        select(Review).where(Review.is_deleted == False)  # noqa: E712
+        select(Review).where(*where)
         .order_by(Review.created_at.desc())
         .offset((page - 1) * per_page).limit(per_page)
     )
