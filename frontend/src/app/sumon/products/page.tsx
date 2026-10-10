@@ -128,7 +128,9 @@ export default function AdminProductsPage() {
 
   // /sumon/products?edit=<id> opens that product's editor (links from the content-health page).
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get("edit");
+    const qs = new URLSearchParams(window.location.search);
+    if (qs.get("new") === "1") { setForm({ type: "new" }); setFormKey((k) => k + 1); return; }
+    const id = qs.get("edit");
     if (!id) return;
     (async () => {
       for (let pg = 1; pg <= 10; pg++) {

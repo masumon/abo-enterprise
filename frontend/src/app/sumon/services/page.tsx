@@ -396,8 +396,10 @@ export default function AdminServicesPage() {
 
   // /sumon/services?edit=<id> opens that service's editor directly.
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get("edit");
+    const qs = new URLSearchParams(window.location.search);
+    const id = qs.get("edit");
     if (id) openEdit({ id } as Service);
+    else if (qs.get("new") === "1") openNew();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
