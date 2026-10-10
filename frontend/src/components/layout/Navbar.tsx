@@ -106,7 +106,7 @@ export default function Navbar() {
         {showTicker ? (
           <div
             className={cn(
-              "mobile-announcement-row marquee-viewport order-first w-full min-w-0 h-9 rounded-full px-3 shadow-sm",
+              "mobile-announcement-row marquee-viewport order-first relative w-full min-w-0 h-9 rounded-full pl-3 pr-10 shadow-sm ring-1 ring-white/25",
               ANNOUNCEMENT_VARIANT_BG[announcements[0]?.variant ?? "promo"] ?? ANNOUNCEMENT_VARIANT_BG.promo
             )}
           >
