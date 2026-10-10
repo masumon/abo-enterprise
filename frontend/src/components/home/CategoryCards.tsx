@@ -50,7 +50,7 @@ export default function CategoryCards() {
   return (
     <section className="pt-2 pb-4 sm:py-6 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 py-1 sm:py-3">
+        <div className={`grid ${categories.length % 3 === 0 ? "grid-cols-3" : "grid-cols-2"} sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4 py-1 sm:py-3`}>
           {categories.map((cat, i) => {
             const Icon = ICONS[cat.icon ?? ""] ?? ShoppingBag;
             const gradient = GRADIENTS[i % GRADIENTS.length];
@@ -60,14 +60,14 @@ export default function CategoryCards() {
               <Link
                 key={`${cat.href}-${i}`}
                 href={cat.href}
-                className="group relative flex min-w-0 flex-col items-center text-center gap-2 px-2.5 py-4 sm:px-4 sm:py-5 rounded-2xl border border-[var(--line)] hover:border-brand-200 dark:hover:border-brand-500/40 bg-gradient-to-b from-white to-gray-50/60 dark:from-white/[0.06] dark:to-white/[0.02] shadow-sm hover:shadow-lg hover:shadow-brand-500/10 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
+                className="group relative flex min-w-0 flex-col items-center text-center gap-1.5 sm:gap-2 px-1.5 py-3 sm:px-4 sm:py-5 rounded-2xl border border-[var(--line)] hover:border-brand-200 dark:hover:border-brand-500/40 bg-gradient-to-b from-white to-gray-50/60 dark:from-white/[0.06] dark:to-white/[0.02] shadow-sm hover:shadow-lg hover:shadow-brand-500/10 hover:-translate-y-0.5 transition-all duration-200 overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500"
               >
                 <span aria-hidden className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-tr from-transparent via-white/40 to-transparent dark:via-white/5 transition-opacity duration-300" />
                 <span className={`relative w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br ${gradient} shadow-md shadow-brand-500/15 ring-1 ring-white/20 flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105`}>
                   <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-white" strokeWidth={2} aria-hidden />
                 </span>
                 <span className="relative text-sm sm:text-base font-extrabold text-heading leading-tight tracking-tight">{label}</span>
-                <span className="relative text-[11px] sm:text-xs text-[var(--ink-muted)] leading-snug line-clamp-2 group-hover:text-[var(--ink)] transition-colors">
+                <span className="relative text-[10px] sm:text-xs text-[var(--ink-muted)] leading-snug line-clamp-2 group-hover:text-[var(--ink)] transition-colors">
                   {blurb}
                 </span>
               </Link>

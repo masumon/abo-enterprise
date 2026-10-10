@@ -135,7 +135,7 @@ export default function FeaturedProducts() {
           </p>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            {filteredProducts.slice(0, 8).map((product) => (
+            {filteredProducts.slice(0, filteredProducts.length >= 8 ? 8 : Math.max(1, filteredProducts.length - (filteredProducts.length % 2))).map((product) => (
               <ProductCard key={product.id} product={product} onAddToCart={openCart} density="compact" />
             ))}
           </div>

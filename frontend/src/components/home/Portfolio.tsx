@@ -81,23 +81,23 @@ export default function Portfolio() {
         </div>
 
         <div className="bg-gradient-to-r from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/10 rounded-2xl p-4 sm:p-6">
-          <div className="marquee-viewport">
-            <div className="marquee-track gap-3 sm:gap-4 py-0.5" style={{ ["--marquee-duration" as string]: "22s" }}>
-              {[...FEATURES, ...FEATURES].map((feature, idx) => {
+          <div>
+            <div className="grid grid-cols-4 gap-2 sm:gap-4 sm:max-w-3xl sm:mx-auto">
+              {FEATURES.map((feature, idx) => {
                 const href = feature.external ? whatsappHref : feature.href;
-                const dup = idx >= FEATURES.length;
+                const dup = false;
                 const FeatureIcon = feature.Icon;
                 const inner = (
                   <>
-                    <span className={`flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br ${feature.tint} mb-2.5 group-hover:scale-110 transition-transform`}>
-                      <FeatureIcon className={`w-6 h-6 sm:w-7 sm:h-7 ${feature.iconColor}`} strokeWidth={2.2} aria-hidden />
+                    <span className={`flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br ${feature.tint} mb-2 sm:mb-2.5 group-hover:scale-110 transition-transform`}>
+                      <FeatureIcon className={`w-5 h-5 sm:w-7 sm:h-7 ${feature.iconColor}`} strokeWidth={2.2} aria-hidden />
                     </span>
-                    <p className="text-xs sm:text-sm font-bold text-heading leading-tight whitespace-nowrap">
+                    <p className="text-[11px] sm:text-sm font-bold text-heading leading-tight">
                       {lang === "bn" ? feature.label.bn : feature.label.en}
                     </p>
                   </>
                 );
-                const className = "group flex-shrink-0 w-[8.5rem] sm:w-[11rem] flex flex-col items-center text-center rounded-2xl px-3 py-4 sm:py-5 bg-white/70 dark:bg-white/5 border border-[var(--line)] shadow-sm hover:shadow-lg hover:shadow-brand-500/10 hover:-translate-y-1 hover:border-brand-200 transition-all touch-manipulation";
+                const className = "group min-w-0 flex flex-col items-center text-center rounded-xl sm:rounded-2xl px-1 py-3 sm:px-3 sm:py-5 bg-white/70 dark:bg-white/5 border border-[var(--line)] shadow-sm hover:shadow-lg hover:shadow-brand-500/10 hover:-translate-y-1 hover:border-brand-200 transition-all touch-manipulation";
                 if (!href) {
                   return <div key={idx} aria-hidden={dup} className={className}>{inner}</div>;
                 }

@@ -46,10 +46,12 @@ export default function CustomerReviews() {
       .finally(() => setLoading(false));
   }, []);
 
+  if (!loading && reviews.length === 0) return null;
+
   return (
     <section className="py-5 lg:py-7 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
-        <div className="mb-10">
+        <div className="mb-6 sm:mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-heading mb-2">
             {lang === "bn" ? "গ্রাহকদের প্রশংসাপত্র" : "Customer Testimonials"}
           </h2>
@@ -80,13 +82,13 @@ export default function CustomerReviews() {
                   </p>
                   <div className="flex items-center gap-3 mt-auto">
                     <div
-                      className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden flex-shrink-0 font-semibold text-brand-700"
+                      className="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-500/20 dark:text-brand-200 flex items-center justify-center overflow-hidden flex-shrink-0 font-semibold text-brand-700"
                       aria-hidden="true"
                     >
                       {r.customer_name.trim().slice(0, 2)}
                     </div>
                     <div>
-                      <p className="font-semibold text-sm">{r.customer_name}</p>
+                      <p className="font-semibold text-sm text-heading">{r.customer_name}</p>
                       {r.company && <p className="text-xs text-gray-500">{r.company}</p>}
                     </div>
                   </div>

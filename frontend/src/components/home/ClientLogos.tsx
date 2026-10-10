@@ -27,11 +27,11 @@ function ClientBadge({ client }: { client: CmsClientLogo }) {
   return (
     <span className="flex items-center gap-2">
       {client.image ? (
-        <span className="w-8 h-8 rounded-lg overflow-hidden relative flex-shrink-0 bg-white dark:bg-white/5">
-          <Image src={client.image} alt={client.name} fill className="object-contain p-1" sizes="32px" />
+        <span className="w-11 h-11 sm:w-10 sm:h-10 rounded-lg overflow-hidden relative flex-shrink-0 bg-white dark:bg-white/5">
+          <Image src={client.image} alt={client.name} fill className="object-contain p-1" sizes="48px" />
         </span>
       ) : (
-        <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white text-xs font-bold flex items-center justify-center">
+        <span className="w-11 h-11 sm:w-10 sm:h-10 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white text-xs font-bold flex items-center justify-center">
           {client.abbr}
         </span>
       )}

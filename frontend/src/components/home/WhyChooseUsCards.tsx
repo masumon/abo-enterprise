@@ -92,11 +92,8 @@ export default function WhyChooseUsCards() {
     <section className="py-5 lg:py-7 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
         {/* Section Header */}
-        <div className="text-center mb-12">
-          <div className="inline-block mb-4">
-            <span className="text-4xl" aria-hidden>⭐</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-heading mb-4">
+        <div className="text-center mb-8 sm:mb-12">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-heading mb-3 sm:mb-4">
             {lang === "bn" ? "কেন আমাদের বেছে নেবেন?" : "Why Choose Us?"}
           </h2>
           <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base max-w-2xl mx-auto">

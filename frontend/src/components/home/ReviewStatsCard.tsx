@@ -74,10 +74,10 @@ export default function ReviewStatsCard({
             <div className={`w-8 h-8 sm:w-14 sm:h-14 rounded-full ${bgColor} flex items-center justify-center mb-1.5 sm:mb-3`}>
               <Icon className={`w-4 h-4 sm:w-7 sm:h-7 ${color}`} aria-hidden />
             </div>
-            <p className="text-xs sm:text-2xl font-bold text-heading mb-0.5 sm:mb-1">
-              {value}
+            <p className="text-base sm:text-2xl font-bold text-heading mb-0.5 sm:mb-1">
+              {lang === "bn" ? value.replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d]) : value}
             </p>
-            <p className="text-[9px] sm:text-sm text-[var(--ink-muted)] leading-tight">
+            <p className="text-[11px] sm:text-sm text-[var(--ink-muted)] leading-tight">
               {label}
             </p>
           </div>
