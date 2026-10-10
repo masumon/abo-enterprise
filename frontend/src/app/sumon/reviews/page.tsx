@@ -29,9 +29,22 @@ interface AdminReview {
   is_featured: boolean;
   is_verified: boolean;
   product_id: string | null;
+  service_id?: string | null;
   admin_reply: string | null;
   admin_reply_at: string | null;
   created_at: string;
+}
+
+type ReviewKind = "all" | "product" | "service" | "site";
+const KIND_TABS: { id: ReviewKind; label: string; hint: string }[] = [
+  { id: "all", label: "সব", hint: "সব রিভিউ ও মতামত" },
+  { id: "product", label: "পণ্যের রিভিউ", hint: "কোনো পণ্যের পাতায় গ্রাহকের দেওয়া রিভিউ" },
+  { id: "service", label: "সেবার রিভিউ", hint: "কোনো সেবার পাতায় দেওয়া রিভিউ" },
+  { id: "site", label: "সাইটের মতামত", hint: "পুরো ব্যবসা নিয়ে মতামত — /testimonials পাতায় দেখায়; ★ দিলে হোমপেজেও" },
+];
+const bnNum = (n: number) => String(n).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d]);
+function reviewKindOf(r: { product_id: string | null; service_id?: string | null }): Exclude<ReviewKind, "all"> {
+  return r.product_id ? "product" : r.service_id ? "service" : "site";
 }
 
 export default function AdminReviewsPage() {
@@ -48,6 +61,9 @@ export default function AdminReviewsPage() {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [ratingFilter, setRatingFilter] = useState("");
+  const [kind, setKind] = useState<ReviewKind>("all");
+  const [statusFilter, setStatusFilter] = useState<"" | "shown" | "hidden">("");
+  const [kindCounts, setKindCounts] = useState<Partial<Record<ReviewKind, number>>>({});
   const [confirm, setConfirm] = useState<{ title: string; message: string; action: () => void } | null>(null);
   const editorRef = useFocusTrap(!!editing || creating, () => {
     setEditing(null);
@@ -58,7 +74,7 @@ export default function AdminReviewsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await api.get("/api/v1/reviews/admin", { params: { page, per_page: 20 } });
+      const r = await api.get("/api/v1/reviews/admin", { params: { page, per_page: 20, ...(kind !== "all" ? { kind } : {}) } });
       setReviews((r.data.data ?? []) as AdminReview[]);
       setTotal(r.data.meta?.total ?? 0);
     } catch {
@@ -66,9 +82,21 @@ export default function AdminReviewsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, toast]);
+  }, [page, kind, toast]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Tab counts (one tiny request per tab). Older backends ignore `kind`, in
+  // which case every tab shows the same total — harmless.
+  const loadCounts = useCallback(async () => {
+    const kinds: ReviewKind[] = ["all", "product", "service", "site"];
+    const res = await Promise.allSettled(kinds.map((k) => api.get("/api/v1/reviews/admin", { params: { page: 1, per_page: 1, ...(k !== "all" ? { kind: k } : {}) } })));
+    const next: Partial<Record<ReviewKind, number>> = {};
+    res.forEach((r, i) => { if (r.status === "fulfilled") next[kinds[i]] = Number(r.value.data?.meta?.total ?? 0); });
+    setKindCounts(next);
+  }, []);
+
+  useEffect(() => { void loadCounts(); }, [loadCounts]);
 
   const patch = async (review: AdminReview, update: Partial<AdminReview>) => {
     setBusyId(review.id);
@@ -153,7 +181,8 @@ export default function AdminReviewsPage() {
         }
         setReviews((prev) => [created, ...prev]);
         setTotal((t) => t + 1);
-        toast("success", "Review created");
+        void loadCounts();
+        toast("success", "নতুন মতামত যোগ হয়েছে");
         closeEdit();
       } catch {
         toast("error", "Create failed");
@@ -179,8 +208,8 @@ export default function AdminReviewsPage() {
 
   const handleDelete = (id: string, name: string) => {
     setConfirm({
-      title: `Delete review from "${name}"?`,
-      message: "This action cannot be undone. The review will be permanently removed.",
+      title: `"${name}"-এর রিভিউ মুছবেন?`,
+      message: "রিভিউটি সাইট ও এই তালিকা থেকে সরে যাবে। টেস্ট বা বাজে রিভিউ মুছতে এটি ব্যবহার করুন।",
       action: async () => {
         setConfirm(null);
         setBusyId(id);
@@ -188,7 +217,8 @@ export default function AdminReviewsPage() {
           await api.delete(`/api/v1/reviews/${id}`);
           setReviews((prev) => prev.filter((r) => r.id !== id));
           setTotal((t) => t - 1);
-          toast("success", "Review deleted");
+          void loadCounts();
+          toast("success", "মুছে ফেলা হয়েছে");
         } catch {
           toast("error", "Delete failed");
         } finally {
@@ -205,6 +235,8 @@ export default function AdminReviewsPage() {
 
   const filteredReviews = reviews.filter((r) => {
     if (ratingFilter && String(r.rating) !== ratingFilter) return false;
+    if (statusFilter === "shown" && !r.is_active) return false;
+    if (statusFilter === "hidden" && r.is_active) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
       return r.customer_name.toLowerCase().includes(q) || r.review_en.toLowerCase().includes(q) || (r.company ?? "").toLowerCase().includes(q);
@@ -215,10 +247,10 @@ export default function AdminReviewsPage() {
   return (
     <div className="admin-page">
       <AdminPageHeader
-        title="Product Reviews"
-        titleBn="পণ্য রিভিউ"
-        description={`${total} total reviews · homepage testimonials are edited separately in Settings`}
-        descriptionBn={`মোট ${String(total).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি রিভিউ · হোমপেজের গ্রাহক মতামত আলাদাভাবে সেটিংসে সম্পাদনা হয়`}
+        title="Reviews & testimonials"
+        titleBn="রিভিউ ও মতামত"
+        description={`${total} in this tab · product reviews, service reviews and site testimonials in one place`}
+        descriptionBn={`এই ট্যাবে ${bnNum(total)}টি · পণ্যের রিভিউ, সেবার রিভিউ ও সাইটের মতামত — সব এক জায়গায়`}
         actions={
           <>
             <div className="relative">
@@ -240,12 +272,49 @@ export default function AdminReviewsPage() {
               <option value="">{tx("All Ratings")}</option>
               {[5,4,3,2,1].map(n => <option key={n} value={n}>{n} Star{n !== 1 ? "s" : ""}</option>)}
             </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as "" | "shown" | "hidden")}
+              aria-label="অবস্থা অনুযায়ী দেখুন"
+              className="input text-sm w-auto"
+            >
+              <option value="">সব অবস্থা</option>
+              <option value="shown">সাইটে দেখানো হচ্ছে</option>
+              <option value="hidden">লুকানো / অনুমোদনের অপেক্ষায়</option>
+            </select>
             <button onClick={openCreate} className="btn btn-brand btn-md flex items-center gap-2">
               <Plus className="w-4 h-4" /> {tx("Add Review")}
             </button>
           </>
         }
       />
+
+      <div className="flex gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-full sm:w-fit overflow-x-auto" role="tablist" aria-label="রিভিউয়ের ধরন">
+        {KIND_TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={kind === t.id}
+            title={t.hint}
+            onClick={() => { setKind(t.id); setPage(1); }}
+            className={`flex-none px-3.5 py-2 max-[899px]:min-h-[40px] rounded-lg text-sm font-medium transition-colors whitespace-nowrap ${
+              kind === t.id ? "bg-white dark:bg-gray-800 text-brand-700 dark:text-brand-300 shadow-sm" : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+            }`}
+          >
+            {t.label}
+            {kindCounts[t.id] !== undefined && <span className="ml-1.5 text-xs tabular-nums opacity-70">({bnNum(kindCounts[t.id] ?? 0)})</span>}
+          </button>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-100 leading-relaxed">
+        <p className="font-semibold">টেস্ট বা বাজে রিভিউ এখানেই সরান</p>
+        <p className="mt-0.5 text-xs sm:text-sm">
+          ✓ চিহ্ন চাপলে রিভিউ সাইটে দেখায় বা লুকায় (গ্রাহকের নতুন রিভিউ প্রথমে লুকানো থাকে — দেখে অনুমোদন দিন)। ★ চাপলে হোমপেজে দেখায়।
+          পরীক্ষার জন্য লেখা বা অপ্রাসঙ্গিক রিভিউ <Trash2 className="w-3.5 h-3.5 inline -mt-0.5" aria-hidden /> চেপে মুছে দিন।
+        </p>
+      </div>
 
       <div className="admin-card overflow-hidden">
         {loading ? (
@@ -302,6 +371,7 @@ export default function AdminReviewsPage() {
                               )}
                             </div>
                             {r.company && <p className="text-xs text-gray-400 truncate">{r.company}</p>}
+                            <p className="text-[11px] text-brand-600 dark:text-brand-300">{KIND_TABS.find((t) => t.id === reviewKindOf(r))?.label}</p>
                           </div>
                         </div>
                       </td>
