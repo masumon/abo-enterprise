@@ -50,7 +50,7 @@ export default function CategoryCards() {
   return (
     <section className="pt-2 pb-4 sm:py-6 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
-        <div className={`grid ${categories.length % 3 === 0 ? "grid-cols-3" : "grid-cols-2"} sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4 py-1 sm:py-3`}>
+        <div className={`grid ${categories.length % 3 === 0 ? "grid-cols-3" : "grid-cols-2"} ${categories.length <= 3 ? "sm:grid-cols-3 max-w-4xl mx-auto" : categories.length === 4 ? "sm:grid-cols-4 max-w-5xl mx-auto" : "sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"} gap-2.5 sm:gap-4 py-1 sm:py-3`}>
           {categories.map((cat, i) => {
             const Icon = ICONS[cat.icon ?? ""] ?? ShoppingBag;
             const gradient = GRADIENTS[i % GRADIENTS.length];
