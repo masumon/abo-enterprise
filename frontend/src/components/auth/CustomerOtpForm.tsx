@@ -54,7 +54,7 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
     e.preventDefault();
     setError("");
     if (!BD_PHONE_REGEX.test(fullPhone)) {
-      setError(bn ? "সঠিক ফোন নম্বর দিন (01XXXXXXXXX)" : "Enter a valid BD phone number");
+      setError(bn ? "সঠিক ফোন নম্বর দিন (01XXXXXXXXX বা 1XXXXXXXXX)" : "Enter a valid BD phone number");
       return;
     }
     if (name.trim().length < 2) {
