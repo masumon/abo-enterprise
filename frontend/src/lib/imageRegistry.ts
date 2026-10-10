@@ -37,6 +37,12 @@ export const BRAND_IMAGE_SLOTS: ImageSlotDef[] = [
   { key: "about_story_image_url", purpose: "about-story", label: "About Story Image", labelBn: "আমাদের গল্প ছবি", usedOn: "/about Our Story", guide: "1200×800px (3:2) · JPG/WebP" },
 ];
 
+/** Homepage hero images — edited ONLY in "হোমপেজ সাজান" (/sumon/homepage)
+ * so the same image is never edited in two places. The Media page lists
+ * them read-only with a link there. */
+export const HERO_SLOT_KEYS: ReadonlySet<string> = new Set(["hero_image_url", "hero_mobile_image_url", "hero_promo_media_url"]);
+export const HERO_IMAGE_SLOTS: ImageSlotDef[] = BRAND_IMAGE_SLOTS.filter((s) => HERO_SLOT_KEYS.has(s.key));
+
 export const PAGE_BANNER_SLOTS: ImageSlotDef[] = PAGE_BANNER_CONFIG.map(({ key, label, hint }) => ({
   key: bannerSettingKey(key),
   label: `${label} Banner`,

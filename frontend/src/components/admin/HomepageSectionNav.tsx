@@ -7,16 +7,15 @@ import { cn } from "@/lib/utils";
 import { useLanguageStore } from "@/store/language";
 
 /**
- * Homepage content is split across three pages backed by different data
- * (JSON settings vs a DB-backed slide table), so they can't be merged into
- * one form without a data-model rewrite. Styled as a tab bar (not just a
- * link strip) so the three pages read as one "Homepage" feature with three
- * tabs, even though each is its own route/page underneath.
+ * "হোমপেজ সাজান" is the one place to arrange the homepage (in the order a
+ * visitor sees it). The announcement bar and promo slides keep their own
+ * pages (different data: a JSON list vs a DB slide table) — this tab bar
+ * ties the three together so they read as one feature.
  */
 const PAGES = [
-  { href: "/sumon/homepage", icon: LayoutTemplate, label: "Content", labelBn: "কনটেন্ট" },
-  { href: "/sumon/promo-slides", icon: GalleryHorizontal, label: "Banners & Slider", labelBn: "ব্যানার ও স্লাইড" },
-  { href: "/sumon/announcements", icon: Megaphone, label: "Announcement Bar", labelBn: "ঘোষণা বার" },
+  { href: "/sumon/homepage", icon: LayoutTemplate, label: "Arrange homepage", labelBn: "হোমপেজ সাজান" },
+  { href: "/sumon/announcements", icon: Megaphone, label: "Announcement bar", labelBn: "ঘোষণা বার" },
+  { href: "/sumon/promo-slides", icon: GalleryHorizontal, label: "Promo slides", labelBn: "প্রোমো স্লাইড" },
 ];
 
 export default function HomepageSectionNav() {
@@ -27,12 +26,12 @@ export default function HomepageSectionNav() {
   return (
     <div className="mb-4">
       <p className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">
-        {bn ? "হোমপেজ — এই তিনটি একসাথে পুরো হোমপেজ তৈরি করে" : "Homepage — these three together make up the full homepage"}
+        {bn ? "হোমপেজ — এই তিনটি পাতা মিলে পুরো হোমপেজ" : "Homepage — these three pages make up the full homepage"}
       </p>
       <nav
         aria-label={bn ? "হোমপেজ অংশ" : "Homepage sections"}
         role="tablist"
-        className="flex gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-fit flex-wrap"
+        className="flex gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-full sm:w-fit flex-wrap"
       >
         {PAGES.map((p) => {
           const active = pathname.startsWith(p.href);
