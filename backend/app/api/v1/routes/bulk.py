@@ -447,14 +447,48 @@ _TEMPLATE_EXAMPLE = {
 }
 
 
+# Simple Bangla template for the owner: only the essential columns first, the
+# rest optional. The headers are Bangla aliases the importer already maps, so
+# the contract template above keeps working unchanged.
+SIMPLE_COLUMNS = ["নাম", "দাম", "ক্রয়মূল্য", "ক্যাটাগরি", "স্টক", "ছবির নাম", "আগের দাম", "ব্র্যান্ড", "বিবরণ", "SKU", "ইংরেজি নাম"]
+_SIMPLE_HELP = {
+    "নাম": "# সাহায্য: এই সারি ও উদাহরণ সারি (#) ইমপোর্ট হয় না — মুছতে হবে না। পণ্যের নাম (আবশ্যক)",
+    "দাম": "বিক্রয়মূল্য ৳ (আবশ্যক)",
+    "ক্রয়মূল্য": "কিনতে কত পড়েছে ৳ — শুধু আপনি দেখবেন",
+    "ক্যাটাগরি": "যেমন চার্জার — নতুন নাম দিলে নতুন ক্যাটাগরি হবে (আবশ্যক)",
+    "স্টক": "কয়টি আছে (খালি = ১০)",
+    "ছবির নাম": "ছবির ফাইলের নাম, যেমন charger-1.jpg (একাধিক হলে | দিয়ে)",
+    "আগের দাম": "ঐচ্ছিক — কাটা দাম দেখাতে",
+    "ব্র্যান্ড": "ঐচ্ছিক",
+    "বিবরণ": "ঐচ্ছিক — বুলেট লাইন '• ' দিয়ে শুরু",
+    "SKU": "ঐচ্ছিক — দোকানের কোড",
+    "ইংরেজি নাম": "ঐচ্ছিক — খালি থাকলে বাংলা নামই বসবে",
+}
+_SIMPLE_EXAMPLE = {
+    "নাম": "#উদাহরণ: ফাস্ট চার্জার ৩৩W", "দাম": "1290", "ক্রয়মূল্য": "950", "ক্যাটাগরি": "চার্জার",
+    "স্টক": "10", "ছবির নাম": "charger-33w-1.jpg", "আগের দাম": "1490", "ব্র্যান্ড": "Baseus",
+    "বিবরণ": "• ৩৩W দ্রুত চার্জ", "SKU": "CHG-33W-01", "ইংরেজি নাম": "Fast Charger 33W",
+}
+
+
 @router.get("/import/products/template", dependencies=[Depends(require_role("products.write"))])
-async def import_products_template(fmt: str = Query("csv", pattern="^(csv|xlsx)$")):
+async def import_products_template(
+    fmt: str = Query("csv", pattern="^(csv|xlsx)$"),
+    variant: str = Query("contract", pattern="^(contract|simple)$"),
+):
     """Download the ready-to-fill import template (IMPORT_CONTRACT columns, a
     Bangla help row and one example row - both start with '#' so they are never
-    imported). CSV is UTF-8 with BOM so Excel shows Bangla correctly."""
-    cols = CONTRACT_COLUMNS
-    help_row = [_TEMPLATE_HELP.get(c, "") for c in cols]
-    example = [_TEMPLATE_EXAMPLE.get(c, "") for c in cols]
+    imported). CSV is UTF-8 with BOM so Excel shows Bangla correctly.
+    variant=simple gives the short Bangla sheet (নাম, দাম, ক্রয়মূল্য, ক্যাটাগরি, স্টক, ছবির নাম...)."""
+    if variant == "simple":
+        cols = SIMPLE_COLUMNS
+        help_row = [_SIMPLE_HELP.get(c, "") for c in cols]
+        example = [_SIMPLE_EXAMPLE.get(c, "") for c in cols]
+    else:
+        cols = CONTRACT_COLUMNS
+        help_row = [_TEMPLATE_HELP.get(c, "") for c in cols]
+        example = [_TEMPLATE_EXAMPLE.get(c, "") for c in cols]
+    fname = "product-import-simple" if variant == "simple" else "product-import-template"
     if fmt == "xlsx":
         try:
             from openpyxl import Workbook
@@ -472,7 +506,7 @@ async def import_products_template(fmt: str = Query("csv", pattern="^(csv|xlsx)$
         return StreamingResponse(
             buf,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": "attachment; filename=product-import-template.xlsx"},
+            headers={"Content-Disposition": f"attachment; filename={fname}.xlsx"},
         )
     output = io.StringIO()
     writer = csv.writer(output)
@@ -483,7 +517,7 @@ async def import_products_template(fmt: str = Query("csv", pattern="^(csv|xlsx)$
     return StreamingResponse(
         io.BytesIO(output.getvalue().encode("utf-8-sig")),
         media_type="text/csv; charset=utf-8",
-        headers={"Content-Disposition": "attachment; filename=product-import-template.csv"},
+        headers={"Content-Disposition": f"attachment; filename={fname}.csv"},
     )
 
 
@@ -522,7 +556,7 @@ def _json_form(raw: str | None, kind: type, label: str):
 
 
 async def _run_import_pipeline(file: UploadFile, mapping_json: str | None, on_existing: str, on_new: str, db: AsyncSession,
-                               image_names: set[str] | None = None):
+                               image_names: set[str] | None = None, overrides: dict | None = None):
     """Shared parse + map + validate used by both validate (dry-run) and commit.
     Returns (headers, auto_mapping, mapping_used, results)."""
     content = await file.read()
@@ -548,6 +582,9 @@ async def _run_import_pipeline(file: UploadFile, mapping_json: str | None, on_ex
                 if h in mapping_used:
                     mapping_used[h] = (fld or None)
 
+    # Fixes typed in the preview ("দেখে নিন" step) - applied on top of the file.
+    rows, mapping_used = pi.apply_overrides(rows, mapping_used, overrides)
+
     cat_index = await pi.build_category_index(db)
     # Existing products for match (case as stored).
     existing = (await db.execute(
@@ -570,6 +607,7 @@ async def import_products_validate(
     on_existing: str = Form("update"),
     on_new: str = Form("create"),
     image_names: str | None = Form(None),
+    overrides: str | None = Form(None),
     db: AsyncSession = Depends(get_db),
 ):
     """Dry-run: parse, auto-map columns, validate every row and match categories.
@@ -578,7 +616,8 @@ async def import_products_validate(
     # `image_names` (JSON list) = photo files chosen together with the sheet.
     names = _json_form(image_names, list, "image_names")
     name_set = {pi.image_key(str(n)) for n in names} if names is not None else None
-    headers, auto_mapping, mapping_used, results = await _run_import_pipeline(file, mapping, on_existing, on_new, db, name_set)
+    headers, auto_mapping, mapping_used, results = await _run_import_pipeline(
+        file, mapping, on_existing, on_new, db, name_set, _json_form(overrides, dict, "overrides"))
     preview = [r.to_preview() for r in results]
     summary = {
         "total": len(results),
@@ -609,13 +648,15 @@ async def import_products_commit(
     on_existing: str = Form("update"),
     on_new: str = Form("create"),
     image_map: str | None = Form(None),
+    overrides: str | None = Form(None),
     _admin: str = Depends(require_role("products.write")),
     db: AsyncSession = Depends(get_db),
 ):
     """Apply the import: create new products and update existing ones (by slug),
     skipping rows with errors. Re-validates the file server-side (the preview is
     never trusted), records the run in Import History, and returns the result."""
-    _, _, _, results = await _run_import_pipeline(file, mapping, on_existing, on_new, db)
+    _, _, _, results = await _run_import_pipeline(
+        file, mapping, on_existing, on_new, db, overrides=_json_form(overrides, dict, "overrides"))
     # {file name: uploaded URL} - the browser uploads the chosen photos through
     # the normal media API (Cloudinary) first and sends the resulting URLs.
     raw_map = _json_form(image_map, dict, "image_map") or {}

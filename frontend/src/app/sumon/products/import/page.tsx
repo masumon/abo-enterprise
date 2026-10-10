@@ -19,6 +19,10 @@ import {
 } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
+import { categoriesApi } from "@/lib/api";
+import { importAdminApi, bnNum, type ImportOverrides } from "@/lib/catalogAdminApi";
+import AiPhotoProductsModal from "@/components/admin/AiPhotoProductsModal";
+import { Camera, Wrench } from "lucide-react";
 
 const IGNORE = "__ignore__";
 
@@ -28,7 +32,7 @@ const ACTION_BADGE: Record<string, string> = {
   skip: "bg-gray-100 text-gray-500 dark:bg-white/10 dark:text-gray-400",
 };
 
-const STEPS = ["আপলোড", "প্রিভিউ", "ইমপোর্ট", "সম্পন্ন"];
+const STEPS = ["ফাইল/ছবি দিন", "দেখে নিন", "সাইটে যোগ করুন"];
 
 /** Same rule as the server: case-insensitive base file name. */
 const imgKey = (name: string) => (name.split(/[\\/]/).pop() || "").trim().toLowerCase();
@@ -54,18 +58,34 @@ export default function AdminProductImportPage() {
   const [dl, setDl] = useState<string | null>(null);
   const [errorsOnly, setErrorsOnly] = useState(false);
   const [confirmCommitOpen, setConfirmCommitOpen] = useState(false);
+  const [overrides, setOverrides] = useState<ImportOverrides>({});
+  const [progress, setProgress] = useState(0);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [catOpts, setCatOpts] = useState<{ slug: string; label: string; id?: string }[]>([]);
+  useEffect(() => {
+    categoriesApi.list({ applies_to: "product" }).then((r) => {
+      const out: { slug: string; label: string; id?: string }[] = [];
+      type N = { id: string; slug: string; name_en: string; name_bn?: string | null; subcategories?: N[] };
+      const walk = (ns: N[], d: number) => ns.forEach((n) => { out.push({ slug: n.slug, id: n.id, label: `${"— ".repeat(d)}${n.name_bn || n.name_en}` }); walk(n.subcategories ?? [], d + 1); });
+      walk((r.data.data ?? []) as unknown as N[], 0);
+      setCatOpts(out);
+    }).catch(() => {});
+  }, []);
+  const fix = (row: number, field: string, value: string) =>
+    setOverrides((o) => ({ ...o, [row]: { ...(o[row] ?? {}), [field]: value } }));
 
-  const step = result ? 4 : committing ? 3 : preview ? 2 : 1;
+  const step = result || committing ? 3 : preview ? 2 : 1;
 
   const loadHistory = useCallback(async () => {
     try { setHistory((await productImportApi.history()).data.data ?? []); } catch { /* table may be pending migration */ }
   }, []);
   useEffect(() => { loadHistory(); }, [loadHistory]);
 
-  const download = async (kind: "csv" | "xlsx" | "tree") => {
+  const download = async (kind: "csv" | "xlsx" | "tree" | "simple") => {
     setDl(kind);
     try {
-      if (kind === "tree") await productImportApi.downloadCategoryTree();
+      if (kind === "simple") await importAdminApi.downloadSimpleTemplate("xlsx");
+      else if (kind === "tree") await productImportApi.downloadCategoryTree();
       else await productImportApi.downloadTemplate(kind);
     } catch (e) { toast("error", apiErrorMessage(e, "ডাউনলোড ব্যর্থ")); }
     finally { setDl(null); }
@@ -103,6 +123,7 @@ export default function AdminProductImportPage() {
     setPreview(null);
     setResult(null);
     setMapping({});
+    setOverrides({});
     setErrorsOnly(false);
   };
 
@@ -111,7 +132,7 @@ export default function AdminProductImportPage() {
     setValidating(true);
     setResult(null);
     try {
-      const r = await productImportApi.validate(file, useMapping, onExisting, onNew, images.map((f) => f.name));
+      const r = await importAdminApi.validate(file, useMapping, onExisting, onNew, images.map((f) => f.name), overrides);
       const data = r.data.data;
       setPreview(data);
       setMapping(useMapping ?? data.mapping_used);
@@ -155,13 +176,16 @@ export default function AdminProductImportPage() {
             failed.push(f.name);
           }
           done++;
-          setUploadNote(`ছবি আপলোড হচ্ছে ${done}/${toUpload.length}…`);
+          setProgress(Math.round((done / Math.max(1, toUpload.length)) * 80));
+          setUploadNote(`ছবি আপলোড হচ্ছে ${bnNum(done)}/${bnNum(toUpload.length)}…`);
         }
       };
       if (toUpload.length) await Promise.all([worker(), worker(), worker()]);
       if (failed.length) toast("error", `${failed.length}টি ছবি আপলোড হয়নি: ${failed.slice(0, 3).join(", ")}`);
-      setUploadNote("পণ্য সেভ হচ্ছে…");
-      const r = await productImportApi.commit(file, mapping, onExisting, onNew, imageMap);
+      setProgress(85);
+      setUploadNote("পণ্যগুলো সাইটে যোগ হচ্ছে…");
+      const r = await importAdminApi.commit(file, mapping, onExisting, onNew, imageMap, overrides);
+      setProgress(100);
       setResult(r.data.data);
       toast("success", r.data.message || "ইমপোর্ট সম্পন্ন");
       setPreview(null);
@@ -174,7 +198,7 @@ export default function AdminProductImportPage() {
     }
   };
 
-  const startOver = () => { pickFile(null); setImages([]); if (fileRef.current) fileRef.current.value = ""; };
+  const startOver = () => { setProgress(0); pickFile(null); setImages([]); if (fileRef.current) fileRef.current.value = ""; };
 
   const S = preview?.summary;
   const visibleRows = (preview?.rows ?? []).filter((r) => !errorsOnly || r.errors.length > 0);
@@ -183,10 +207,10 @@ export default function AdminProductImportPage() {
   return (
     <div className="admin-page">
       <AdminPageHeader
-        title="Bulk Product Import"
-        titleBn="বাল্ক পণ্য ইমপোর্ট"
+        title="Add many products"
+        titleBn="একসাথে অনেক পণ্য যোগ"
         description="Upload a CSV/Excel file and the product photos to create or update many products at once. Nothing is saved until you press Import."
-        descriptionBn="টেমপ্লেট পূরণ করে ফাইল ও পণ্যের ছবি একসাথে দিন — আগে প্রিভিউ দেখাবে, “ইমপোর্ট” না চাপা পর্যন্ত কিছু সেভ হয় না।"
+        descriptionBn="৩ ধাপ: ফাইল/ছবি দিন → দেখে নিন → সাইটে যোগ করুন। শেষ বোতাম না চাপা পর্যন্ত কিছুই সেভ হয় না।"
         actions={
           <Link href="/sumon/products" className="btn btn-outline btn-sm"><ArrowLeft className="w-4 h-4" /> পণ্যে ফিরুন</Link>
         }
@@ -221,25 +245,24 @@ export default function AdminProductImportPage() {
 
       {/* Step 1 — templates + upload */}
       <div className="admin-card p-5 mb-5">
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">১. টেমপ্লেট ডাউনলোড করে পূরণ করুন</p>
-        <ol className="text-sm text-muted list-decimal pl-5 mb-3 space-y-0.5">
-          <li>টেমপ্লেট ডাউনলোড করে Excel-এ খুলুন। দ্বিতীয় সারিতে প্রতিটি কলামের বাংলা সাহায্য আছে (# দিয়ে শুরু সারি ইমপোর্ট হয় না)।</li>
-          <li>প্রতিটি পণ্যের জন্য এক সারি লিখুন। <b>images</b> কলামে ছবির ফাইলের নাম লিখুন, যেমন <code className="text-xs">charger-1.jpg|charger-2.jpg</code>।</li>
-          <li>নতুন ক্যাটাগরি হলে category_name_bn / category_name_en দিন — নিজে থেকে তৈরি হবে।</li>
-        </ol>
-        <div className="flex flex-wrap gap-2 mb-5">
-          <button type="button" onClick={() => download("csv")} disabled={dl !== null} className="btn btn-brand btn-sm">
-            {dl === "csv" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} টেমপ্লেট ডাউনলোড
+        <p className="text-base font-semibold text-heading mb-3">কীভাবে একসাথে অনেক পণ্য যোগ করবেন?</p>
+        <div className="grid sm:grid-cols-2 gap-3 mb-5">
+          <button type="button" onClick={() => setAiOpen(true)} className="text-left rounded-2xl border-2 border-[var(--line)] hover:border-violet-400 p-4 transition-colors">
+            <Camera className="w-8 h-8 text-violet-600 mb-2" />
+            <span className="block font-semibold text-heading">📸 শুধু ছবি দিয়ে (AI)</span>
+            <span className="block text-xs text-muted mt-1">১০টি পর্যন্ত পণ্যের ছবি দিন — AI নাম, বিবরণ লিখবে, আপনি দেখে সেভ করবেন। (AI চালু থাকলে)</span>
           </button>
-          <button type="button" onClick={() => download("xlsx")} disabled={dl !== null} className="btn btn-outline btn-sm">
-            {dl === "xlsx" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />} টেমপ্লেট (Excel)
-          </button>
-          <button type="button" onClick={() => download("tree")} disabled={dl !== null} className="btn btn-outline btn-sm">
-            {dl === "tree" ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListTree className="w-4 h-4" />} ক্যাটাগরি ট্রি (CSV)
-          </button>
+          <div className="rounded-2xl border-2 border-emerald-300 dark:border-emerald-500/40 p-4">
+            <FileSpreadsheet className="w-8 h-8 text-emerald-600 mb-2" />
+            <span className="block font-semibold text-heading">📄 Excel দিয়ে</span>
+            <span className="block text-xs text-muted mt-1 mb-3">সহজ টেমপ্লেটে শুধু নাম, দাম, ক্রয়মূল্য, ক্যাটাগরি, স্টক ও ছবির নাম লিখুন — বাকিগুলো ঐচ্ছিক।</span>
+            <button type="button" onClick={() => download("simple")} disabled={dl !== null} className="btn btn-success btn-sm">
+              {dl === "simple" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} সহজ Excel টেমপ্লেট নামান
+            </button>
+          </div>
         </div>
 
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">২. ফাইল ও ছবি একসাথে বাছুন</p>
+        <p className="text-sm font-semibold text-heading mb-2">Excel ফাইল ও পণ্যের ছবিগুলো একসাথে দিন</p>
         <div
           onClick={() => fileRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
@@ -286,7 +309,22 @@ export default function AdminProductImportPage() {
           {images.length > 0 && <button type="button" onClick={() => setImages([])} className="text-xs text-red-600 hover:underline">ছবি মুছুন</button>}
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 mt-4 text-sm">
+        <details className="mt-4 rounded-xl border border-[var(--line)] p-3 text-sm">
+          <summary className="cursor-pointer font-semibold text-heading flex items-center gap-1.5"><Wrench className="w-4 h-4" /> উন্নত অপশন (সাধারণত লাগে না)</summary>
+          <div className="mt-3 space-y-3">
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => download("csv")} disabled={dl !== null} className="btn btn-outline btn-sm">
+              {dl === "csv" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />} পূর্ণ টেমপ্লেট (CSV)
+            </button>
+            <button type="button" onClick={() => download("xlsx")} disabled={dl !== null} className="btn btn-outline btn-sm">
+              {dl === "xlsx" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />} পূর্ণ টেমপ্লেট (Excel)
+            </button>
+            <button type="button" onClick={() => download("tree")} disabled={dl !== null} className="btn btn-outline btn-sm">
+              {dl === "tree" ? <Loader2 className="w-4 h-4 animate-spin" /> : <ListTree className="w-4 h-4" />} ক্যাটাগরির তালিকা (CSV)
+            </button>
+          </div>
+          <p className="text-xs text-muted">পূর্ণ টেমপ্লেটে slug, SKU, SEO ইত্যাদি সব কলাম আছে। slug মিললে পুরনো পণ্য আপডেট হয়।</p>
+          <div className="flex flex-wrap items-center gap-4">
           <label className="flex items-center gap-2">
             <span className="text-muted">বিদ্যমান পণ্য (slug মিললে):</span>
             <select value={onExisting} onChange={(e) => setOnExisting(e.target.value)} className="input w-auto py-1 text-sm">
@@ -301,8 +339,12 @@ export default function AdminProductImportPage() {
               <option value="skip">বাদ দিন</option>
             </select>
           </label>
-          <button type="button" onClick={() => runValidate(null)} disabled={!file || validating} className="btn btn-brand btn-sm ml-auto">
-            {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} যাচাই ও প্রিভিউ
+          </div>
+          </div>
+        </details>
+        <div className="flex justify-end mt-4">
+          <button type="button" onClick={() => runValidate(null)} disabled={!file || validating} className="btn btn-brand btn-md">
+            {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} পরের ধাপ: দেখে নিন
           </button>
         </div>
       </div>
@@ -311,12 +353,17 @@ export default function AdminProductImportPage() {
       {preview && (
         <div className="admin-card p-5 mb-5">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">৩. কলাম ম্যাপিং ও প্রিভিউ</p>
+            <p className="text-sm font-semibold text-heading">দেখে নিন — সব ঠিক আছে তো?</p>
             <button type="button" onClick={() => runValidate(mapping)} disabled={validating} className="btn btn-outline btn-sm">
-              {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} পুনরায় যাচাই
+              {validating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} আবার দেখুন
             </button>
           </div>
 
+          {S && (
+            <p className={cn("mb-4 rounded-xl px-4 py-3 text-sm font-medium", S.errors ? "bg-amber-50 text-amber-900 dark:bg-amber-500/10 dark:text-amber-200" : "bg-emerald-50 text-emerald-900 dark:bg-emerald-500/10 dark:text-emerald-200")}>
+              {S.errors === 0 ? "✅" : "⚠️"} {bnNum(S.create)}টি পণ্য যোগ হবে{S.update ? ` · ${bnNum(S.update)}টি আপডেট হবে` : ""} · {bnNum(preview.new_categories?.length ?? 0)}টি নতুন ক্যাটাগরি · {S.errors ? `${bnNum(S.errors)}টি সারিতে সমস্যা — নিচে ঠিক করে "আবার দেখুন" চাপুন, নইলে ওগুলো বাদ যাবে` : "কোনো সমস্যা নেই"}
+            </p>
+          )}
           {/* Summary tiles */}
           {S && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
@@ -340,7 +387,7 @@ export default function AdminProductImportPage() {
 
           {/* Column mapping */}
           <details className="mb-4 rounded-xl border border-[var(--line)] p-3">
-            <summary className="cursor-pointer text-sm font-semibold text-heading">কলাম ম্যাপিং ({preview.headers.length}টি কলাম) — প্রয়োজনে বদলান</summary>
+            <summary className="cursor-pointer text-sm font-semibold text-heading">উন্নত: কলাম মেলানো ({bnNum(preview.headers.length)}টি কলাম) — সাধারণত বদলাতে হয় না</summary>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-3">
               {preview.headers.map((h) => (
                 <label key={h} className="flex items-center gap-2 text-xs">
@@ -432,6 +479,13 @@ export default function AdminProductImportPage() {
                       {r.errors.map((e, i) => <p key={`e${i}`} className="text-red-600 flex items-start gap-1"><XCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />{e}</p>)}
                       {r.warnings.map((w, i) => <p key={`w${i}`} className="text-amber-600 flex items-start gap-1"><AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" />{w}</p>)}
                       {r.errors.length === 0 && r.warnings.length === 0 && <span className="text-emerald-500">✓</span>}
+                      {r.errors.length > 0 && (
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          <input aria-label="দাম ঠিক করুন" type="number" placeholder="দাম ৳" defaultValue={overrides[r.row]?.price ?? ""} onChange={(e) => fix(r.row, "price", e.target.value)} className="input !py-1 !px-2 w-20 text-xs" />
+                          <input aria-label="ক্যাটাগরি ঠিক করুন" list="import-cats" placeholder="ক্যাটাগরি" defaultValue={overrides[r.row]?.category ?? ""} onChange={(e) => fix(r.row, "category", e.target.value)} className="input !py-1 !px-2 w-28 text-xs" />
+                          <input aria-label="নাম ঠিক করুন" placeholder="নাম" defaultValue={overrides[r.row]?.name_bn ?? ""} onChange={(e) => fix(r.row, "name_bn", e.target.value)} className="input !py-1 !px-2 w-28 text-xs" />
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -439,13 +493,19 @@ export default function AdminProductImportPage() {
             </table>
             {visibleRows.length > 100 && <p className="text-[11px] text-muted mt-2">প্রথম ১০০টি সারি দেখানো হচ্ছে (মোট {visibleRows.length})।</p>}
             {visibleRows.length === 0 && <p className="text-sm text-muted py-6 text-center">এই ফিল্টারে কোনো সারি নেই।</p>}
+            <datalist id="import-cats">{catOpts.map((c) => <option key={c.slug} value={c.slug}>{c.label}</option>)}</datalist>
           </div>
 
           <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-[var(--line)]">
-            {uploadNote && <span className="text-xs text-muted mr-auto">{uploadNote}</span>}
+            {committing && (
+              <div className="mr-auto flex-1 min-w-[180px]">
+                <div className="h-2 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden"><div className="h-full bg-emerald-500 transition-all" style={{ width: `${progress}%` }} /></div>
+                <span className="text-xs text-muted">{uploadNote}</span>
+              </div>
+            )}
             <button type="button" onClick={commit} disabled={committing || (S ? S.create + S.update === 0 : true)} className="btn btn-success btn-md">
               {committing ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
-              {S ? `সব ঠিক সারি ইমপোর্ট করুন (${S.create + S.update}টি)` : "সব ঠিক সারি ইমপোর্ট করুন"}
+              {S ? `সাইটে যোগ করুন (${bnNum(S.create + S.update)}টি)` : "সাইটে যোগ করুন"}
             </button>
           </div>
         </div>
@@ -455,8 +515,11 @@ export default function AdminProductImportPage() {
       {result && (
         <div className="admin-card p-5 mb-5">
           <div className="flex items-center justify-between mb-4">
-            <p className="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-500" /> ৪. ফলাফল</p>
-            <button type="button" onClick={startOver} className="btn btn-outline btn-sm"><UploadCloud className="w-4 h-4" /> নতুন ইমপোর্ট</button>
+            <p className="text-lg font-bold text-heading flex items-center gap-2"><CheckCircle2 className="w-6 h-6 text-emerald-500" /> হয়ে গেছে! {bnNum(result.created)}টি নতুন পণ্য যোগ হয়েছে{result.updated ? `, ${bnNum(result.updated)}টি আপডেট` : ""}।</p>
+          </div>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Link href="/sumon/products" className="btn btn-brand btn-md"><PackageCheck className="w-4 h-4" /> পণ্যগুলো দেখুন</Link>
+            <button type="button" onClick={startOver} className="btn btn-outline btn-md"><UploadCloud className="w-4 h-4" /> আরেকটি ফাইল দিন</button>
           </div>
           {(result.categories_created ?? 0) > 0 && (
             <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-3">{result.categories_created}টি নতুন ক্যাটাগরি তৈরি হয়েছে।</p>
@@ -486,7 +549,7 @@ export default function AdminProductImportPage() {
           <button type="button" onClick={loadHistory} className="btn btn-ghost btn-sm"><RefreshCw className="w-3.5 h-3.5" /></button>
         </div>
         {history.length === 0 ? (
-          <p className="text-sm text-muted">এখনো কোনো ইমপোর্ট হয়নি। (হিস্টরি দেখাতে ডেটাবেসে <code className="text-xs">032_product_import_jobs.sql</code> রান করা থাকতে হবে।)</p>
+          <p className="text-sm text-muted">এখনো কোনো ইমপোর্ট হয়নি।</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[560px] table-responsive">
@@ -513,6 +576,8 @@ export default function AdminProductImportPage() {
           </div>
         )}
       </div>
+
+      <AiPhotoProductsModal open={aiOpen} onClose={() => setAiOpen(false)} categoryOptions={catOpts} onSaved={() => toast("success", "পণ্য যোগ হয়েছে — পণ্যের তালিকায় দেখুন")} />
 
       <ConfirmDialog
         open={confirmCommitOpen}

@@ -27,6 +27,13 @@ export default function ProjectDetailClient({ project }: { project: ShowcaseProj
             <ChevronLeft className="w-4 h-4" /> {lang === "bn" ? "প্রজেক্ট" : "Projects"}
           </Link>
           <h1 className="text-3xl font-bold">{t(project.title)}</h1>
+          {(project.priceOnRequest || (project.price ?? 0) > 0) && (
+            <p className="mt-2 text-lg font-semibold">
+              {project.priceOnRequest
+                ? (lang === "bn" ? "দাম: আলোচনা সাপেক্ষে" : "Price: on request")
+                : `${lang === "bn" ? "শুরু" : "From"} ৳${project.price}`}
+            </p>
+          )}
           <p className="text-white/80">{t(project.client)} · {project.year}</p>
           {project.liveUrl && (
             <a

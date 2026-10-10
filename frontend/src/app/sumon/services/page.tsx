@@ -27,6 +27,16 @@ import { formatPrice } from "@/lib/utils";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useFocusTrap } from "@/lib/useFocusTrap";
+import { serviceAdminApi, bnNum, shortId, type MissingFilter } from "@/lib/catalogAdminApi";
+import StepForm from "@/components/admin/catalog/StepForm";
+import PublishChecklist from "@/components/admin/catalog/PublishChecklist";
+import AdvancedSection from "@/components/admin/catalog/AdvancedSection";
+import DuplicateNotice, { useDuplicateCheck } from "@/components/admin/catalog/DuplicateNotice";
+import AddEntryChoices from "@/components/admin/catalog/AddEntryChoices";
+import AiPhotoStartModal from "@/components/admin/catalog/AiPhotoStartModal";
+import ActiveSwitch from "@/components/admin/catalog/ActiveSwitch";
+import { useBnEn } from "@/components/admin/catalog/useBnEn";
+import { Copy, FilterX, Search } from "lucide-react";
 import { useAdminT } from "@/lib/i18n/adminText";
 
 // Fallback only — used when the taxonomy API is unreachable, so the editor
@@ -106,6 +116,11 @@ function jsonToArr<T = Record<string, unknown>>(json: string): T[] {
 
 export default function AdminServicesPage() {
   const tx = useAdminT();
+  const t = useBnEn();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"" | "active" | "draft">("");
+  const [missingFilter, setMissingFilter] = useState<MissingFilter>("");
+  const [aiOpen, setAiOpen] = useState(false);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -187,15 +202,18 @@ export default function AdminServicesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const r = await servicesAdminApi.list({ page, per_page: 20 });
+      const r = await serviceAdminApi.list({
+        page, per_page: 20, search: search.trim() || undefined, missing: missingFilter || undefined,
+        is_active: statusFilter === "" ? undefined : statusFilter === "active",
+      });
       setServices((r.data.data ?? []) as Service[]);
       setTotal(r.data.meta?.total ?? 0);
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, search, statusFilter, missingFilter]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { const h = setTimeout(load, 300); return () => clearTimeout(h); }, [load]);
 
   // Shared taxonomy (service-applicable) for the optional Category/Subcategory
   // selectors. Non-fatal on failure — the form works without it.
@@ -328,6 +346,29 @@ export default function AdminServicesPage() {
 
   const closeEditor = () => { setEditing(null); setIsNew(false); };
 
+  // "কপি করে নতুন বানান": a hidden copy with a fresh slug (tiers / booking fields are added after the first save).
+  const openClone = async (s: Service) => {
+    let base: Partial<Service> = s;
+    try { base = (await servicesAdminApi.get(s.id)).data.data as Service; } catch { /* use the list row */ }
+    const { id: _id, pricing_tiers: _t, booking_forms: _f, ...rest } = base as Service;
+    void _id; void _t; void _f;
+    openNew();
+    setEditing({ ...rest, slug: `${base.slug}-copy-${shortId()}`, name_en: `${base.name_en} (Copy)`, is_active: false, is_featured: false });
+  };
+
+  const svcDup = useDuplicateCheck(
+    async (q) => (await serviceAdminApi.checkDuplicate(q)).data.data,
+    { name: editing?.name_bn || editing?.name_en || "", slug: isNew ? editing?.slug ?? "" : "", exclude_id: editing?.id },
+    editing !== null,
+  );
+  const isNegotiable = editing?.pricing_type === "custom" || editing?.pricing_type === "custom_quote";
+  const svcChecks = [
+    { bn: "ছবি", en: "Photo", ok: !!(editing?.featured_image_url || editing?.icon_url) },
+    { bn: "দাম", en: "Price", ok: isNegotiable || editing?.base_price != null || editing?.min_price != null || editing?.hourly_rate != null },
+    { bn: "বিবরণ", en: "Description", ok: !!(editing?.description_bn?.trim() || editing?.description_en?.trim() || editing?.short_description_bn?.trim()) },
+    { bn: "ক্যাটাগরি", en: "Category", ok: !!(editing?.category_id || editing?.category) },
+  ];
+
   // AI description → service fields. Fills empty boxes; asks before replacing text.
   const applyAiDescription = (d: AiDescription) => {
     const cur = editing;
@@ -353,6 +394,15 @@ export default function AdminServicesPage() {
     });
   };
 
+  // /sumon/services?edit=<id> opens that service's editor directly.
+  useEffect(() => {
+    const qs = new URLSearchParams(window.location.search);
+    const id = qs.get("edit");
+    if (id) openEdit({ id } as Service);
+    else if (qs.get("new") === "1") openNew();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleNameChange = (v: string) => {
     setEditing(prev => {
       if (!prev) return prev;
@@ -362,11 +412,14 @@ export default function AdminServicesPage() {
     });
   };
 
-  const handleSave = async () => {
+  const handleSave = async (publish?: boolean) => {
     if (!editing) return;
+    if (publish && svcChecks.some((c) => !c.ok) &&
+      !window.confirm(t(`${svcChecks.filter((c) => !c.ok).map((c) => c.bn).join(", ")} বাকি — তবুও প্রকাশ করবেন?`, `Missing ${svcChecks.filter((c) => !c.ok).map((c) => c.en).join(", ")} — publish anyway?`))) return;
+    if (isNew && svcDup.slug_taken) { toast("error", t("এই ওয়েব ঠিকানা (slug) আগে থেকেই আছে — 'উন্নত' অংশে বদলান", "Slug already exists — change it under Advanced")); return; }
     // Bangla-first: fill empty English name/descriptions from Bangla siblings
     // before validation, so the admin never types English by hand.
-    let ed = editing;
+    let ed = publish === undefined ? editing : { ...editing, is_active: publish };
     setSaving(true);
     try {
       const patch: Partial<Service> = {};
@@ -646,6 +699,19 @@ export default function AdminServicesPage() {
   const fNum = (field: keyof Service) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setEditing(prev => prev ? { ...prev, [field]: e.target.value ? Number(e.target.value) : undefined } : prev);
 
+  const svcRowActions = (s: Service) => (
+    <div className="flex items-center justify-end gap-1">
+      <button type="button" onClick={() => openClone(s)} title={t("কপি করে নতুন বানান", "Copy as new")} aria-label={t("কপি করে নতুন বানান", "Copy as new")}
+        className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-white/10 rounded-lg"><Copy className="w-4 h-4" /></button>
+      <button type="button" onClick={() => openEdit(s)} aria-label={t("সম্পাদনা", "Edit")} title={t("সম্পাদনা", "Edit")}
+        className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-white/10 rounded-lg"><Pencil className="w-4 h-4" /></button>
+      <button type="button" onClick={() => handleDelete(s.id)} disabled={deletingId === s.id} aria-label={t("মুছুন", "Delete")} title={t("মুছুন", "Delete")}
+        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg">
+        {deletingId === s.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+      </button>
+    </div>
+  );
+
   return (
     <div className="admin-page">
       <AdminPageHeader
@@ -653,12 +719,30 @@ export default function AdminServicesPage() {
         titleBn="সেবা"
         description={`${total} total services`}
         descriptionBn={`মোট ${String(total).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি সেবা`}
-        actions={
-          <button onClick={openNew} className="btn btn-primary btn-sm gap-1.5">
-            <Plus className="w-4 h-4" /> {tx("New Service")}
-          </button>
-        }
       />
+      {(total > 0 || loading || search || statusFilter || missingFilter) && (
+        <AddEntryChoices thing={{ bn: "সেবা", en: "service" }} onForm={openNew} onAi={() => setAiOpen(true)} />
+      )}
+      <div className="admin-toolbar flex flex-wrap items-center gap-2">
+        <div className="relative flex-1 min-w-[200px] max-w-xl">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input type="search" value={search} onChange={(e) => { setPage(1); setSearch(e.target.value); }} placeholder={t("সেবা খুঁজুন…", "Search services…")} className="admin-input w-full pl-9" />
+        </div>
+        <select aria-label={t("অবস্থা", "Status")} value={statusFilter} onChange={(e) => { setPage(1); setStatusFilter(e.target.value as "" | "active" | "draft"); }} className="admin-input !py-1.5 text-sm w-auto">
+          <option value="">{t("সব অবস্থা", "Any status")}</option>
+          <option value="active">{t("প্রকাশিত", "Live")}</option>
+          <option value="draft">{t("খসড়া / লুকানো", "Draft / hidden")}</option>
+        </select>
+        <select aria-label={t("যা নেই", "Missing")} value={missingFilter} onChange={(e) => { setPage(1); setMissingFilter(e.target.value as MissingFilter); }} className="admin-input !py-1.5 text-sm w-auto">
+          <option value="">{t("সব তথ্য", "Anything")}</option>
+          <option value="image">{t("ছবি নেই", "No photo")}</option>
+          <option value="price">{t("দাম নেই", "No price")}</option>
+          <option value="description">{t("বিবরণ নেই", "No description")}</option>
+        </select>
+        {(search || statusFilter || missingFilter) && (
+          <button type="button" onClick={() => { setSearch(""); setStatusFilter(""); setMissingFilter(""); }} className="btn btn-ghost btn-sm gap-1"><FilterX className="w-4 h-4" /> {t("ফিল্টার মুছুন", "Clear")}</button>
+        )}
+      </div>
 
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">
@@ -689,104 +773,69 @@ export default function AdminServicesPage() {
         {loading ? (
           <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
         ) : services.length === 0 ? (
-          <div className="p-12 text-center">
-            <Briefcase className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-            <p className="text-gray-400 font-medium">{tx("No services found")}</p>
-            <button onClick={openNew} className="btn btn-primary btn-sm mt-4 gap-1.5">
-              <Plus className="w-4 h-4" /> {tx("Create first service")}
-            </button>
-          </div>
+          (search || statusFilter || missingFilter) ? (
+            <div className="p-10 text-center text-sm text-muted">{t("এই খোঁজ/ফিল্টারে কোনো সেবা নেই।", "No services match.")}</div>
+          ) : (
+            <div className="p-5 sm:p-8 space-y-4">
+              <div className="text-center"><Briefcase className="w-10 h-10 text-gray-300 mx-auto mb-2" /><p className="text-heading font-medium">{t("এখনো কোনো সেবা নেই", "No services yet")}</p></div>
+              <AddEntryChoices large thing={{ bn: "সেবা", en: "service" }} onForm={openNew} onAi={() => setAiOpen(true)} />
+            </div>
+          )
         ) : (
-          <div className="overflow-x-auto">
-          <table className="table-premium min-w-[480px]">
+          <>
+          <ul className="md:hidden divide-y divide-gray-100 dark:divide-white/10">
+            {services.map((s) => (
+              <li key={s.id} className="flex gap-3 px-3 py-3">
+                <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggleSelected(s.id)} className="rounded mt-1" aria-label={s.name_bn || s.name_en} />
+                <ServiceThumb src={s.featured_image_url || s.icon_url} />
+                <div className="min-w-0 flex-1 space-y-1">
+                  <button type="button" onClick={() => openEdit(s)} className="block text-left font-medium text-heading line-clamp-2">{s.name_bn || s.name_en}</button>
+                  <p className="text-xs text-muted">{s.pricing_type === "custom" || s.pricing_type === "custom_quote" ? t("দাম আলোচনা সাপেক্ষে", "Price on request") : s.base_price != null ? formatPrice(s.base_price) : "—"}</p>
+                  <div className="flex items-center justify-between">
+                    <ActiveSwitch active={!!s.is_active} busy={togglingId === s.id} onChange={() => toggleActive(s)} />
+                    {svcRowActions(s)}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="hidden md:block overflow-x-auto">
+          <table className="table-premium">
             <thead>
               <tr>
-                <th className="w-10 px-3">
-                  <input
-                    type="checkbox"
-                    aria-label={tx("Select all services on this page")}
-                    checked={allOnPageSelected}
-                    onChange={toggleSelectAll}
-                    className="rounded"
-                  />
-                </th>
-                <th>{tx("Service")}</th>
-                <th className="hidden sm:table-cell">{tx("Category")}</th>
-                <th className="hidden md:table-cell">{tx("Pricing")}</th>
-                <th className="hidden md:table-cell">Tiers</th>
-                <th className="hidden sm:table-cell">{tx("Featured")}</th>
-                <th>{tx("Active")}</th>
-                <th className="text-right pr-5">{tx("Actions")}</th>
+                <th className="w-10 px-3"><input type="checkbox" aria-label={tx("Select all services on this page")} checked={allOnPageSelected} onChange={toggleSelectAll} className="rounded" /></th>
+                <th>{t("সেবা", "Service")}</th>
+                <th className="hidden lg:table-cell">{t("ক্যাটাগরি", "Category")}</th>
+                <th>{t("দাম", "Price")}</th>
+                <th className="hidden lg:table-cell">{t("প্যাকেজ", "Tiers")}</th>
+                <th>{t("অবস্থা", "Status")}</th>
+                <th />
               </tr>
             </thead>
             <tbody>
               {services.map((s) => (
                 <tr key={s.id}>
-                  <td className="px-3 py-3">
-                    <input
-                      type="checkbox"
-                      aria-label={`Select ${s.name_en}`}
-                      checked={!!s.id && selected.has(s.id)}
-                      onChange={() => s.id && toggleSelected(s.id)}
-                      className="rounded"
-                    />
-                  </td>
-                  <td className="px-5 py-3">
-                    <p className="font-medium text-gray-900">{s.name_en}</p>
-                    <p className="text-xs text-gray-400">{s.slug}</p>
-                  </td>
-                  <td className="px-5 py-3 text-gray-600 hidden sm:table-cell">{CATEGORY_LABELS[s.category ?? ""] ?? (s.category ?? "").replace(/_/g, " ")}</td>
-                  <td className="px-5 py-3 hidden md:table-cell">
-                    <p className="text-gray-600 capitalize text-sm">{s.pricing_type}</p>
-                    {s.base_price != null && <p className="text-xs text-gray-400">{formatPrice(s.base_price)}</p>}
-                  </td>
-                  <td className="px-5 py-3 text-gray-500 text-sm hidden md:table-cell">{s.pricing_tiers?.length ?? 0}</td>
-                  <td className="px-5 py-3 hidden sm:table-cell">
-                    {s.is_featured
-                      ? <Star className="w-4 h-4 text-amber-400" />
-                      : <span className="text-gray-300 text-xs">—</span>
-                    }
-                  </td>
-                  <td className="px-5 py-3">
-                    <button
-                      onClick={() => toggleActive(s)}
-                      disabled={togglingId === s.id}
-                      className="text-gray-400 hover:text-brand-600 transition-colors disabled:opacity-40"
-                    >
-                      {togglingId === s.id
-                        ? <Loader2 className="w-5 h-5 animate-spin" />
-                        : s.is_active
-                          ? <ToggleRight className="w-6 h-6 text-green-500" />
-                          : <ToggleLeft className="w-6 h-6" />
-                      }
+                  <td className="px-3 py-3"><input type="checkbox" aria-label={s.name_bn || s.name_en} checked={selected.has(s.id)} onChange={() => toggleSelected(s.id)} className="rounded" /></td>
+                  <td className="px-4 py-3">
+                    <button type="button" onClick={() => openEdit(s)} className="flex items-center gap-3 text-left">
+                      <ServiceThumb src={s.featured_image_url || s.icon_url} small />
+                      <span className="min-w-0">
+                        <span className="block font-medium text-heading">{s.name_bn || s.name_en}{s.is_featured && <Star className="inline w-3.5 h-3.5 text-amber-400 ml-1" />}</span>
+                        <span className="block text-xs text-gray-400">{s.slug}</span>
+                      </span>
                     </button>
                   </td>
-                  <td className="px-5 py-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => openEdit(s)}
-                        aria-label={`Edit ${s.name_en}`}
-                        className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors"
-                        title={tx("Edit")}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(s.id)}
-                        disabled={deletingId === s.id}
-                        aria-label={`Delete ${s.name_en}`}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        title={tx("Delete")}
-                      >
-                        {deletingId === s.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </td>
+                  <td className="px-4 py-3 text-gray-600 dark:text-gray-300 hidden lg:table-cell">{CATEGORY_LABELS[s.category ?? ""] ?? (s.category ?? "").replace(/_/g, " ")}</td>
+                  <td className="px-4 py-3 text-sm">{s.pricing_type === "custom" || s.pricing_type === "custom_quote" ? t("আলোচনা সাপেক্ষে", "On request") : s.base_price != null ? formatPrice(s.base_price) : <span className="text-muted capitalize">{s.pricing_type}</span>}</td>
+                  <td className="px-4 py-3 text-gray-500 text-sm hidden lg:table-cell">{s.pricing_tiers?.length ?? 0}</td>
+                  <td className="px-4 py-3"><ActiveSwitch active={!!s.is_active} busy={togglingId === s.id} onChange={() => toggleActive(s)} /></td>
+                  <td className="px-4 py-3">{svcRowActions(s)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           </div>
+          </>
         )}
       </div>
 
@@ -815,88 +864,15 @@ export default function AdminServicesPage() {
             </div>
 
             {/* Scrollable form */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-
+            <div data-step-scroll className="flex-1 overflow-y-auto px-4 sm:px-6 py-5 space-y-5">
               {/* Live website preview — the real ServiceCard with current values */}
               <LivePreview>
                 <div className="p-1 pointer-events-none">
                   <ServiceCard service={editing as Service} lang="bn" />
                 </div>
               </LivePreview>
-
-              {/* ── Basic ───────────────────────────────── */}
-              <section className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Basic Info</h3>
-
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <div className="relative">
-                      <input type="checkbox" className="sr-only" checked={!!editing.is_active}
-                        onChange={e => setEditing(prev => prev ? { ...prev, is_active: e.target.checked } : prev)} />
-                      <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_active ? "bg-green-500" : "bg-gray-300"}`} />
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_active ? "translate-x-5" : "translate-x-1"}`} />
-                    </div>
-                    <span className="text-sm text-gray-700">{tx("Active")}</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
-                    <div className="relative">
-                      <input type="checkbox" className="sr-only" checked={!!editing.is_featured}
-                        onChange={e => setEditing(prev => prev ? { ...prev, is_featured: e.target.checked } : prev)} />
-                      <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_featured ? "bg-amber-400" : "bg-gray-300"}`} />
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_featured ? "translate-x-5" : "translate-x-1"}`} />
-                    </div>
-                    <span className="text-sm text-gray-700">{tx("Featured")}</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer select-none" title="Also let customers buy/order this service like a product">
-                    <div className="relative">
-                      <input type="checkbox" className="sr-only" checked={!!editing.is_orderable}
-                        onChange={e => setEditing(prev => prev ? { ...prev, is_orderable: e.target.checked ? true : null } : prev)} />
-                      <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_orderable ? "bg-brand-500" : "bg-gray-300"}`} />
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_orderable ? "translate-x-5" : "translate-x-1"}`} />
-                    </div>
-                    <span className="text-sm text-gray-700">Also orderable</span>
-                  </label>
-                  {/* Turning this off makes the CTA "Contact Us" and the booking
-                      endpoint reject submissions — unless the service is also
-                      orderable, which keeps the Order Now flow working. */}
-                  <label className="flex items-center gap-2 cursor-pointer select-none" title="Uncheck to stop taking online bookings for this service">
-                    <div className="relative">
-                      <input type="checkbox" className="sr-only" checked={editing.is_bookable !== false}
-                        onChange={e => setEditing(prev => prev ? { ...prev, is_bookable: e.target.checked ? null : false } : prev)} />
-                      <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_bookable !== false ? "bg-brand-500" : "bg-gray-300"}`} />
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_bookable !== false ? "translate-x-5" : "translate-x-1"}`} />
-                    </div>
-                    <span className="text-sm text-gray-700">Bookable</span>
-                  </label>
-                </div>
-
-                {/* Linked blog posts — many-to-many. Ticking a blog features
-                    this service in that article; the link shows in the blog
-                    editor too. */}
-                <div>
-                  <label className="form-label">
-                    Blog
-                    {(editing.blog_ids?.length ?? 0) > 0 && (
-                      <span className="ml-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-brand-600 text-white text-[10px] font-bold align-middle">
-                        {editing.blog_ids?.length}
-                      </span>
-                    )}
-                  </label>
-                  <p className="text-xs text-gray-500 mb-2">Tick the blog posts to feature this service in.</p>
-                  <LinkChecklist
-                    options={blogOptions}
-                    selected={editing.blog_ids ?? []}
-                    loading={blogOptionsLoading || linkedBlogsLoading}
-                    emptyText={tx("No blog posts")}
-                    searchPlaceholder="Search blog posts…"
-                    onToggle={(id) => setEditing(prev => {
-                      if (!prev) return prev;
-                      const cur = prev.blog_ids ?? [];
-                      return { ...prev, blog_ids: cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id] };
-                    })}
-                  />
-                </div>
-
+              <StepForm steps={[
+                { id: "basic", bn: "মূল তথ্য", en: "Basics", status: (editing.name_bn || editing.name_en) && (editing.category_id || editing.category) ? "ok" : "warn", content: (<>
                 <div>
                   <label className="form-label flex items-center justify-between gap-2">
                     <span>সেবার নাম (English) <span className="text-red-400">*</span></span>
@@ -909,12 +885,7 @@ export default function AdminServicesPage() {
                   <input value={editing.name_bn ?? ""} onChange={f("name_bn")} placeholder="সার্ভিসের নাম" className="input w-full" dir="auto" />
                   <p className="text-[11px] text-gray-400 mt-1">শুধু বাংলা লিখলেও চলবে — সেভের সময় ইংরেজি নাম নিজে থেকে তৈরি হবে।</p>
                 </div>
-                <div>
-                  <label className="form-label">ওয়েব ঠিকানা (slug) <span className="text-red-400">*</span></label>
-                  <input value={editing.slug ?? ""} onChange={f("slug")} placeholder="url-friendly-slug" className="input w-full font-mono text-sm" />
-                  <p className="text-[11px] text-gray-400 mt-1">ইংরেজি নাম লিখলে নিজে থেকে তৈরি হয় (ছোট হাতের ইংরেজি ও - চিহ্ন)।</p>
-                </div>
-
+                <DuplicateNotice result={svcDup} onOpen={(m) => openEdit({ id: m.id } as Service)} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* One classification. The taxonomy is authoritative; the
                       legacy `category` string is derived from the chosen node
@@ -980,7 +951,8 @@ export default function AdminServicesPage() {
                     </div>
                   </div>
                 )}
-
+                </>) },
+                { id: "photos", bn: "ছবি", en: "Photos", status: editing.featured_image_url || editing.icon_url ? "ok" : "warn", content: (<>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <ImageUpload
                     label="Icon"
@@ -988,16 +960,126 @@ export default function AdminServicesPage() {
                     onChange={(url) => setEditing(prev => prev ? { ...prev, icon_url: url } : prev)}
                     folder="abo-enterprise/services"
                     previewSize="sm"
+                    purpose="service-icon"
                   />
                   <ImageUpload
                     label="Featured Image"
                     value={editing.featured_image_url ?? ""}
                     onChange={(url) => setEditing(prev => prev ? { ...prev, featured_image_url: url } : prev)}
                     folder="abo-enterprise/services"
+                    purpose="service-image"
                   />
                 </div>
+                </>) },
+                { id: "price", bn: "দাম", en: "Price", status: svcChecks[1].ok ? "ok" : "warn", content: (<>
+                <label className="flex items-start gap-3 rounded-xl border border-[var(--line)] p-3 cursor-pointer">
+                  <input type="checkbox" className="rounded mt-0.5" checked={isNegotiable}
+                    onChange={(e) => setEditing(prev => prev ? { ...prev, pricing_type: e.target.checked ? "custom_quote" : "fixed" } : prev)} />
+                  <span>
+                    <span className="block text-sm font-semibold text-heading">{t("দাম আলোচনা সাপেক্ষে", "Price on request")}</span>
+                    <span className="block text-xs text-muted">{t("টিক দিলে সাইটে দাম না দেখিয়ে \"দাম জানতে যোগাযোগ / কোটেশন নিন\" দেখাবে।", "Shows \"request a quote\" instead of a price.")}</span>
+                  </span>
+                </label>
+              {/* ── Pricing ─────────────────────────────── */}
+              <section className="space-y-4">
+                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{tx("Pricing")}</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Pricing Type <span className="text-red-400">*</span></label>
+                    <select value={editing.pricing_type ?? "fixed"} onChange={f("pricing_type")} className="input w-full text-sm">
+                      {PRICING_TYPES.map(pt => <option key={pt} value={pt} className="capitalize">{pt}</option>)}
+                    </select>
+                  </div>
+                  {/* GAP-15 — where the service is completed. Left blank, the
+                      public pages say nothing, which is the pre-0008 behaviour. */}
+                  <div>
+                    <label className="form-label">{tx("Fulfilment")}</label>
+                    <select
+                      value={editing.fulfilment ?? ""}
+                      onChange={(e) => setEditing(prev => prev ? { ...prev, fulfilment: (e.target.value || null) as ServiceFulfilment } : prev)}
+                      className="input w-full text-sm"
+                    >
+                      <option value="">Unspecified (say nothing)</option>
+                      <option value="remote">Remote — no visit needed</option>
+                      <option value="at_shop">At shop — customer must come in</option>
+                      <option value="hybrid">Hybrid — starts online, finishes at shop</option>
+                    </select>
+                  </div>
+                  {/* Screen 08c — published turnaround, in working days. Leave
+                      both blank and the public pages say nothing about time. */}
+                  <div>
+                    <label className="form-label">Turnaround (working days)</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number" min={1} max={365}
+                        value={editing.turnaround_days_min ?? ""}
+                        onChange={fNum("turnaround_days_min")}
+                        placeholder="min" className="input w-full"
+                      />
+                      <span className="text-gray-400">–</span>
+                      <input
+                        type="number" min={1} max={365}
+                        value={editing.turnaround_days_max ?? ""}
+                        onChange={fNum("turnaround_days_max")}
+                        placeholder="max" className="input w-full"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="form-label">Lead Priority (1-10)</label>
+                    <input type="number" min={1} max={10} value={editing.lead_priority ?? 5} onChange={fNum("lead_priority")} className="input w-full" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Base Price (BDT) <span className="text-gray-400 font-normal text-xs">— শুরুর দাম; খালি = &quot;দাম জানতে যোগাযোগ&quot;</span></label>
+                    <input type="number" value={editing.base_price ?? ""} onChange={fNum("base_price")} placeholder="0" className="input w-full" />
+                  </div>
+                  <div>
+                    <label className="form-label">Hourly Rate (BDT)</label>
+                    <input type="number" value={editing.hourly_rate ?? ""} onChange={fNum("hourly_rate")} placeholder="0" className="input w-full" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Min Price (BDT)</label>
+                    <input type="number" value={editing.min_price ?? ""} onChange={fNum("min_price")} placeholder="0" className="input w-full" />
+                  </div>
+                  <div>
+                    <label className="form-label">Max Price (BDT)</label>
+                    <input type="number" value={editing.max_price ?? ""} onChange={fNum("max_price")} placeholder="0" className="input w-full" />
+                  </div>
+                  <div>
+                    <label className="form-label">Delivery Charge (৳)</label>
+                    <input type="number" value={editing.delivery_charge ?? ""} onChange={fNum("delivery_charge")} placeholder="0" className="input w-full" />
+                  </div>
+                  <div>
+                    <label className="form-label">Consultancy Fee (৳) — advance</label>
+                    <input type="number" value={editing.consultancy_fee ?? ""} onChange={fNum("consultancy_fee")} placeholder="0" className="input w-full" />
+                  </div>
+                </div>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" checked={!!editing.requires_advance} onChange={e => setEditing(prev => prev ? { ...prev, requires_advance: e.target.checked } : prev)} className="rounded" />
+                  Requires advance / consultancy fee (booking confirmed after payment)
+                </label>
               </section>
-
+              {/* ── Pricing Tiers (edit only) ────────────── */}
+              <ServicePricingTiersEditor
+                isNew={isNew}
+                tiers={editing.pricing_tiers}
+                tierFormOpen={tierFormOpen}
+                openTierEditor={openTierEditor}
+                closeTierEditor={closeTierEditor}
+                deletingTierId={deletingTierId}
+                handleDeleteTier={handleDeleteTier}
+                newTier={newTier}
+                setNewTier={setNewTier}
+                savingTier={savingTier}
+                handleSaveTier={handleSaveTier}
+                editingTierId={editingTierId}
+              />
+                </>) },
+                { id: "desc", bn: "বিবরণ", en: "Description", status: svcChecks[2].ok ? "ok" : "warn", content: (<>
               {/* ── Descriptions ────────────────────────── */}
               <section className="space-y-4">
                 <div className="flex items-center justify-between gap-3">
@@ -1063,7 +1145,6 @@ export default function AdminServicesPage() {
                   />
                 </div>
               </section>
-
               {/* ── Extended Details ────────────────────── */}
               <section className="border border-gray-100 rounded-xl overflow-hidden">
                 <button
@@ -1169,91 +1250,83 @@ export default function AdminServicesPage() {
                   </div>
                 )}
               </section>
-
-              {/* ── Pricing ─────────────────────────────── */}
-              <section className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{tx("Pricing")}</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">Pricing Type <span className="text-red-400">*</span></label>
-                    <select value={editing.pricing_type ?? "fixed"} onChange={f("pricing_type")} className="input w-full text-sm">
-                      {PRICING_TYPES.map(pt => <option key={pt} value={pt} className="capitalize">{pt}</option>)}
-                    </select>
-                  </div>
-                  {/* GAP-15 — where the service is completed. Left blank, the
-                      public pages say nothing, which is the pre-0008 behaviour. */}
-                  <div>
-                    <label className="form-label">{tx("Fulfilment")}</label>
-                    <select
-                      value={editing.fulfilment ?? ""}
-                      onChange={(e) => setEditing(prev => prev ? { ...prev, fulfilment: (e.target.value || null) as ServiceFulfilment } : prev)}
-                      className="input w-full text-sm"
-                    >
-                      <option value="">Unspecified (say nothing)</option>
-                      <option value="remote">Remote — no visit needed</option>
-                      <option value="at_shop">At shop — customer must come in</option>
-                      <option value="hybrid">Hybrid — starts online, finishes at shop</option>
-                    </select>
-                  </div>
-                  {/* Screen 08c — published turnaround, in working days. Leave
-                      both blank and the public pages say nothing about time. */}
-                  <div>
-                    <label className="form-label">Turnaround (working days)</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number" min={1} max={365}
-                        value={editing.turnaround_days_min ?? ""}
-                        onChange={fNum("turnaround_days_min")}
-                        placeholder="min" className="input w-full"
-                      />
-                      <span className="text-gray-400">–</span>
-                      <input
-                        type="number" min={1} max={365}
-                        value={editing.turnaround_days_max ?? ""}
-                        onChange={fNum("turnaround_days_max")}
-                        placeholder="max" className="input w-full"
-                      />
+                </>) },
+                { id: "publish", bn: "প্রকাশ", en: "Publish", status: svcChecks.every((c) => c.ok) ? "ok" : "warn", content: (<>
+                <PublishChecklist items={svcChecks} />
+                <div className="flex items-center gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <div className="relative">
+                      <input type="checkbox" className="sr-only" checked={!!editing.is_active}
+                        onChange={e => setEditing(prev => prev ? { ...prev, is_active: e.target.checked } : prev)} />
+                      <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_active ? "bg-green-500" : "bg-gray-300"}`} />
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_active ? "translate-x-5" : "translate-x-1"}`} />
                     </div>
-                  </div>
-                  <div>
-                    <label className="form-label">Lead Priority (1-10)</label>
-                    <input type="number" min={1} max={10} value={editing.lead_priority ?? 5} onChange={fNum("lead_priority")} className="input w-full" />
-                  </div>
+                    <span className="text-sm text-gray-700">{tx("Active")}</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <div className="relative">
+                      <input type="checkbox" className="sr-only" checked={!!editing.is_featured}
+                        onChange={e => setEditing(prev => prev ? { ...prev, is_featured: e.target.checked } : prev)} />
+                      <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_featured ? "bg-amber-400" : "bg-gray-300"}`} />
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_featured ? "translate-x-5" : "translate-x-1"}`} />
+                    </div>
+                    <span className="text-sm text-gray-700">{tx("Featured")}</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer select-none" title="Also let customers buy/order this service like a product">
+                    <div className="relative">
+                      <input type="checkbox" className="sr-only" checked={!!editing.is_orderable}
+                        onChange={e => setEditing(prev => prev ? { ...prev, is_orderable: e.target.checked ? true : null } : prev)} />
+                      <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_orderable ? "bg-brand-500" : "bg-gray-300"}`} />
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_orderable ? "translate-x-5" : "translate-x-1"}`} />
+                    </div>
+                    <span className="text-sm text-gray-700">Also orderable</span>
+                  </label>
+                  {/* Turning this off makes the CTA "Contact Us" and the booking
+                      endpoint reject submissions — unless the service is also
+                      orderable, which keeps the Order Now flow working. */}
+                  <label className="flex items-center gap-2 cursor-pointer select-none" title="Uncheck to stop taking online bookings for this service">
+                    <div className="relative">
+                      <input type="checkbox" className="sr-only" checked={editing.is_bookable !== false}
+                        onChange={e => setEditing(prev => prev ? { ...prev, is_bookable: e.target.checked ? null : false } : prev)} />
+                      <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_bookable !== false ? "bg-brand-500" : "bg-gray-300"}`} />
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_bookable !== false ? "translate-x-5" : "translate-x-1"}`} />
+                    </div>
+                    <span className="text-sm text-gray-700">Bookable</span>
+                  </label>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">Base Price (BDT) <span className="text-gray-400 font-normal text-xs">— শুরুর দাম; খালি = &quot;দাম জানতে যোগাযোগ&quot;</span></label>
-                    <input type="number" value={editing.base_price ?? ""} onChange={fNum("base_price")} placeholder="0" className="input w-full" />
-                  </div>
-                  <div>
-                    <label className="form-label">Hourly Rate (BDT)</label>
-                    <input type="number" value={editing.hourly_rate ?? ""} onChange={fNum("hourly_rate")} placeholder="0" className="input w-full" />
-                  </div>
+                {/* Linked blog posts — many-to-many. Ticking a blog features
+                    this service in that article; the link shows in the blog
+                    editor too. */}
+                <div>
+                  <label className="form-label">
+                    Blog
+                    {(editing.blog_ids?.length ?? 0) > 0 && (
+                      <span className="ml-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-brand-600 text-white text-[10px] font-bold align-middle">
+                        {editing.blog_ids?.length}
+                      </span>
+                    )}
+                  </label>
+                  <p className="text-xs text-gray-500 mb-2">Tick the blog posts to feature this service in.</p>
+                  <LinkChecklist
+                    options={blogOptions}
+                    selected={editing.blog_ids ?? []}
+                    loading={blogOptionsLoading || linkedBlogsLoading}
+                    emptyText={tx("No blog posts")}
+                    searchPlaceholder="Search blog posts…"
+                    onToggle={(id) => setEditing(prev => {
+                      if (!prev) return prev;
+                      const cur = prev.blog_ids ?? [];
+                      return { ...prev, blog_ids: cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id] };
+                    })}
+                  />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">Min Price (BDT)</label>
-                    <input type="number" value={editing.min_price ?? ""} onChange={fNum("min_price")} placeholder="0" className="input w-full" />
-                  </div>
-                  <div>
-                    <label className="form-label">Max Price (BDT)</label>
-                    <input type="number" value={editing.max_price ?? ""} onChange={fNum("max_price")} placeholder="0" className="input w-full" />
-                  </div>
-                  <div>
-                    <label className="form-label">Delivery Charge (৳)</label>
-                    <input type="number" value={editing.delivery_charge ?? ""} onChange={fNum("delivery_charge")} placeholder="0" className="input w-full" />
-                  </div>
-                  <div>
-                    <label className="form-label">Consultancy Fee (৳) — advance</label>
-                    <input type="number" value={editing.consultancy_fee ?? ""} onChange={fNum("consultancy_fee")} placeholder="0" className="input w-full" />
-                  </div>
+                <AdvancedSection>
+                <div>
+                  <label className="form-label">ওয়েব ঠিকানা (slug) <span className="text-red-400">*</span></label>
+                  <input value={editing.slug ?? ""} onChange={f("slug")} placeholder="url-friendly-slug" className="input w-full font-mono text-sm" />
+                  <p className="text-[11px] text-gray-400 mt-1">ইংরেজি নাম লিখলে নিজে থেকে তৈরি হয় (ছোট হাতের ইংরেজি ও - চিহ্ন)।</p>
                 </div>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={!!editing.requires_advance} onChange={e => setEditing(prev => prev ? { ...prev, requires_advance: e.target.checked } : prev)} className="rounded" />
-                  Requires advance / consultancy fee (booking confirmed after payment)
-                </label>
-              </section>
-
+                <DuplicateNotice result={svcDup} onOpen={(m) => openEdit({ id: m.id } as Service)} show="codes" />
               {/* ── Scheduling (optional) ───────────────── */}
               <section className="space-y-4">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Appointment Scheduling</h3>
@@ -1344,7 +1417,6 @@ export default function AdminServicesPage() {
                   </div>
                 )}
               </section>
-
               {/* ── Call-To-Action ──────────────────────── */}
               <section className="space-y-4">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Call-To-Action Button</h3>
@@ -1384,7 +1456,6 @@ export default function AdminServicesPage() {
                   </div>
                 </div>
               </section>
-
               {/* ── Booking Form Fields (edit only) ─────── */}
               <ServiceBookingFormFieldsEditor
                 isNew={isNew}
@@ -1402,7 +1473,6 @@ export default function AdminServicesPage() {
                 savingField={savingField}
                 handleSaveField={handleSaveField}
               />
-
               {/* ── SEO ─────────────────────────────────── */}
               <section>
                 <button type="button" onClick={() => setSeoOpen(o => !o)}
@@ -1435,40 +1505,34 @@ export default function AdminServicesPage() {
                         onChange={(url) => setEditing(prev => prev ? { ...prev, og_image: url } : prev)}
                         folder="abo-enterprise/services"
                         previewSize="sm"
+                        purpose="og-image"
                       />
                     </div>
                   </div>
                 )}
               </section>
-
-              {/* ── Pricing Tiers (edit only) ────────────── */}
-              <ServicePricingTiersEditor
-                isNew={isNew}
-                tiers={editing.pricing_tiers}
-                tierFormOpen={tierFormOpen}
-                openTierEditor={openTierEditor}
-                closeTierEditor={closeTierEditor}
-                deletingTierId={deletingTierId}
-                handleDeleteTier={handleDeleteTier}
-                newTier={newTier}
-                setNewTier={setNewTier}
-                savingTier={savingTier}
-                handleSaveTier={handleSaveTier}
-                editingTierId={editingTierId}
-              />
+                </AdvancedSection>
+                </>) },
+              ]} />
             </div>
 
             {/* Footer */}
             <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-gray-50/50">
               <button onClick={closeEditor} className="btn btn-outline btn-sm">{tx("Cancel")}</button>
-              <button onClick={handleSave} disabled={saving} className="btn btn-primary btn-sm gap-1.5">
+              <button onClick={() => handleSave(false)} disabled={saving} className="btn btn-outline btn-sm gap-1.5">
+                {t("খসড়া হিসেবে সেভ", "Save as draft")}
+              </button>
+              <button onClick={() => handleSave(true)} disabled={saving} className="btn btn-primary btn-sm gap-1.5">
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                {isNew ? "Create Service" : "Save Changes"}
+                {!isNew && editing.is_active ? t("সেভ করুন", "Save") : t("সেভ ও প্রকাশ", "Save & publish")}
               </button>
             </div>
           </div>
         </div>
       )}
+
+      <AiPhotoStartModal open={aiOpen} onClose={() => setAiOpen(false)} kind="service" folder="abo-enterprise/services"
+        onDraft={(d) => { setAiOpen(false); openNew(); setEditing((prev) => ({ ...(prev ?? EMPTY_SERVICE), featured_image_url: d.image_url, name_bn: d.name_bn, name_en: d.name_en, slug: slugify(d.name_en), description_bn: d.description_bn, description_en: d.description_en, is_active: false })); }} />
 
       <ConfirmDialog
         open={!!confirmState}
@@ -1481,4 +1545,11 @@ export default function AdminServicesPage() {
       />
     </div>
   );
+}
+
+function ServiceThumb({ src, small }: { src?: string | null; small?: boolean }) {
+  const box = small ? "w-10 h-10" : "w-16 h-16";
+  if (!src) return <div className={`${box} rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center flex-shrink-0`}><Briefcase className="w-4 h-4 text-gray-400" /></div>;
+  // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail from any upload host
+  return <img src={src} alt="" className={`${box} rounded-lg object-cover border border-gray-100 dark:border-white/10 flex-shrink-0`} />;
 }

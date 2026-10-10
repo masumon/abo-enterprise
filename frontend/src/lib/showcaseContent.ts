@@ -23,6 +23,12 @@ export interface ShowcaseProject {
   featured?: boolean;
   sortOrder?: number;
   year: number;
+  /** Starting price ৳ (optional). */
+  price?: number | null;
+  /** Show "দাম আলোচনা সাপেক্ষে" instead of a price. */
+  priceOnRequest?: boolean;
+  /** Draft: kept in the admin, hidden from the public site. */
+  hidden?: boolean;
 }
 
 export interface SoftwareServiceCard {
@@ -34,6 +40,10 @@ export interface SoftwareServiceCard {
   items: { en: string; bn: string }[];
   link?: string;
   videoUrl?: string;
+  price?: number | null;
+  priceOnRequest?: boolean;
+  /** Draft: hidden from the public site. */
+  hidden?: boolean;
 }
 
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -160,7 +170,7 @@ export function getShowcaseProjects(settings: Record<string, string>): ShowcaseP
     getSettingValue(settings, SHOWCASE_PROJECTS_KEY),
     DEFAULT_SHOWCASE_PROJECTS
   );
-  return [...list].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  return list.filter((p) => !p.hidden).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
 }
 
 export function getShowcaseProject(settings: Record<string, string>, slug: string): ShowcaseProject | undefined {
@@ -171,7 +181,7 @@ export function getSoftwareServiceCards(settings: Record<string, string>): Softw
   return parseJsonArray(
     getSettingValue(settings, SOFTWARE_SERVICE_CARDS_KEY),
     DEFAULT_SOFTWARE_SERVICE_CARDS
-  );
+  ).filter((c) => !c.hidden);
 }
 
 /** YouTube / Vimeo / direct video URL → embed src */
