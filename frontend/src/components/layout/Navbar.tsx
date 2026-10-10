@@ -46,8 +46,29 @@ export default function Navbar() {
   const productRoots = useTaxonomy("product");
   const serviceRoots = useTaxonomy("service");
   const searchListId = "site-search-suggestions";
-  const { announcements, shouldShow: showTicker, durationSec } = useAnnouncements();
+  const { announcements, shouldShow: announcementShouldShow, durationSec } = useAnnouncements();
+  const [announcementDismissed, setAnnouncementDismissed] = useState(false);
+  const showTicker = announcementShouldShow && !announcementDismissed;
   const tickerTrack = showTicker ? [...announcements, ...announcements] : [];
+
+  // Share the existing desktop dismissal key so a closed announcement stays closed
+  // across mobile/desktop navigation without changing CMS or database settings.
+  useEffect(() => {
+    try {
+      setAnnouncementDismissed(window.localStorage.getItem("abo-announcement-dismissed") === "1");
+    } catch {
+      // Storage can be unavailable in private browsing; dismissal still works for this session.
+    }
+  }, []);
+
+  const dismissAnnouncement = () => {
+    setAnnouncementDismissed(true);
+    try {
+      window.localStorage.setItem("abo-announcement-dismissed", "1");
+    } catch {
+      // Keep the in-memory dismissal even when storage is unavailable.
+    }
+  };
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 10);
@@ -72,7 +93,7 @@ export default function Navbar() {
     <header className="fixed top-[var(--announcement-height)] left-0 right-0 z-50">
       {/* ── Mobile header — artifact Screen 03 m-head ── */}
       <nav
-        className="lg:hidden flex items-center gap-2 px-3 min-h-[64px] bg-white/85 dark:bg-[#141930]/90 backdrop-blur-xl border-b border-[var(--line)] dark:border-[var(--line)] shadow-sm"
+        className="lg:hidden flex flex-wrap items-center gap-x-2 gap-y-0 px-3 min-h-[64px] bg-white/85 dark:bg-[#141930]/90 backdrop-blur-xl border-b border-[var(--line)] dark:border-[var(--line)] shadow-sm"
         aria-label={lang === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}
       >
         {/* Bigger brand logo (admin-configurable via CMS logo URL). */}
@@ -80,15 +101,17 @@ export default function Navbar() {
           <BrandLogo size="lg" href={false} priority />
         </Link>
 
+        <span className="flex-1" aria-hidden="true" />
+
         {showTicker ? (
           <div
             className={cn(
-              "marquee-viewport flex-1 min-w-0 mx-1 h-10 rounded-full px-3 shadow-sm",
+              "mobile-announcement-row marquee-viewport order-first relative w-full min-w-0 h-9 rounded-full pl-3 pr-10 shadow-sm ring-1 ring-white/25",
               ANNOUNCEMENT_VARIANT_BG[announcements[0]?.variant ?? "promo"] ?? ANNOUNCEMENT_VARIANT_BG.promo
             )}
           >
             <div
-              className="marquee-track items-center h-10"
+              className="marquee-track items-center h-9"
               style={{ ["--marquee-duration" as string]: `${durationSec}s` }}
             >
               {tickerTrack.map((a, i) => (
@@ -97,19 +120,30 @@ export default function Navbar() {
                   href={a.href || "/"}
                   aria-hidden={i >= announcements.length}
                   tabIndex={i >= announcements.length ? -1 : 0}
-                  className="inline-flex items-center h-10 gap-1.5 text-[13px] font-bold text-white pr-8 whitespace-nowrap"
+                  className="inline-flex items-center h-9 gap-1.5 text-[13px] font-bold text-white pr-8 whitespace-nowrap"
                 >
                   {a.icon && <span aria-hidden>{a.icon}</span>}
                   <span>{lang === "bn" ? a.bn : a.en}</span>
                 </Link>
               ))}
             </div>
+            {announcements.some((a) => a.dismissible !== false) && (
+              <button
+                type="button"
+                onClick={dismissAnnouncement}
+                className="absolute right-1 top-1 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-black/15 text-white ring-1 ring-white/25 transition hover:bg-black/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                aria-label={lang === "bn" ? "ঘোষণা বন্ধ করুন" : "Dismiss announcement"}
+              >
+                <X className="h-4 w-4" strokeWidth={2.5} />
+              </button>
+            )}
           </div>
         ) : (
           <span className="flex-1" />
         )}
 
-        {/* Compact, coloured real-icon action buttons (brand/gold scheme). */}
+        {/* Keep the logo on the left and all header controls grouped on the right. */}
+        <div className="flex flex-none items-center gap-2">
         {showAssistantInHeader && (
           <button
             type="button"
@@ -146,6 +180,7 @@ export default function Navbar() {
         >
           <User className={cn("w-4 h-4", isSignedIn && "fill-current")} strokeWidth={2.5} />
         </Link>
+        </div>
       </nav>
 
       {/* ── Desktop floating capsule ── */}
