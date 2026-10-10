@@ -33,6 +33,13 @@ FIELD_SPEC: dict[str, dict] = {
     "category": {"type": "str", "required": True, "aliases": ["category_slug", "categoryname", "category name", "category_path", "categorypath"]},
     "price": {"type": "float", "required": True, "aliases": ["mrp", "sell price", "sellingprice"]},
     "original_price": {"type": "float", "aliases": ["compare price", "compareatprice", "old price", "regular price"]},
+    # PRIVATE purchase price — admin-only (never on public endpoints).
+    "cost_price": {"type": "float", "aliases": ["purchase price", "buy price", "cost", "ক্রয়মূল্য"]},
+    "category_name_bn": {"type": "str", "aliases": ["category bn", "ক্যাটাগরির নাম"]},
+    "category_name_en": {"type": "str", "aliases": ["category en"]},
+    "short_description_bn": {"type": "str", "aliases": ["short desc bn", "short_bn"]},
+    "short_description_en": {"type": "str", "aliases": ["short desc en", "short_en", "short description"]},
+    "specifications": {"type": "specs", "aliases": ["specs", "specification", "features table"]},
     "description_en": {"type": "str", "aliases": ["description", "desc_en", "details"]},
     "description_bn": {"type": "str", "aliases": ["desc_bn", "bangla description"]},
     "sku": {"type": "str", "aliases": ["product code", "code", "item code"]},
@@ -107,9 +114,43 @@ def _coerce(field_name: str, raw: Any) -> tuple[Any, str | None]:
         if t == "list":
             parts = [p.strip() for p in re.split(r"[,\n|]+", s) if p.strip()]
             return (parts, None)
+        if t == "specs":
+            return (parse_specifications(s), None)
     except (ValueError, TypeError):
         return (None, f"'{s}' is not a valid {t}")
     return (s, None)
+
+
+def parse_specifications(text: str) -> dict[str, str]:
+    """`Key: Value; Key: Value` (or one pair per line) -> ordered dict. A part
+    without a colon is kept under a numbered "Note" key, never dropped."""
+    out: dict[str, str] = {}
+    for i, part in enumerate(re.split(r"[;\n]+", text or ""), start=1):
+        part = part.strip()
+        if not part:
+            continue
+        if ":" in part:
+            k, v = part.split(":", 1)
+            k, v = k.strip(), v.strip()
+            if k:
+                out[k] = v
+                continue
+        out[f"Note {i}"] = part
+    return out
+
+
+def _bi(bn: str, en: str) -> str:
+    """Error/warning text for a non-technical admin: Bangla first, English in brackets."""
+    return f"{bn} ({en})"
+
+
+_SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+_URL_RE = re.compile(r"^(https?:)?//", re.I)
+
+
+def image_key(name: str) -> str:
+    """Case-insensitive file-name key: 'images/Charger 1.JPG' -> 'charger 1.jpg'."""
+    return re.split(r"[\\/]", (name or "").strip())[-1].strip().lower()
 
 
 # ── Category matching ────────────────────────────────────────────────────────
@@ -179,8 +220,19 @@ def parse_file(filename: str, content: bytes) -> tuple[list[str], list[dict[str,
     for r in all_rows[1:]:
         if not any((c or "").strip() for c in r):
             continue  # skip fully-blank lines
+        if _is_comment(r):
+            continue  # "# …" help / example rows in the template
         rows.append({headers[i]: (r[i] if i < len(r) else "") for i in range(len(headers))})
     return (headers, rows)
+
+
+def _is_comment(cells) -> bool:
+    """A row whose first non-empty cell starts with '#' is a help/example row."""
+    for c in cells:
+        c = (c or "").strip()
+        if c:
+            return c.startswith("#")
+    return False
 
 
 def _parse_xlsx(content: bytes) -> tuple[list[str], list[dict[str, str]]]:
@@ -200,6 +252,8 @@ def _parse_xlsx(content: bytes) -> tuple[list[str], list[dict[str, str]]]:
     for r in rows_iter:
         if r is None or not any(c is not None and str(c).strip() for c in r):
             continue
+        if _is_comment(["" if c is None else str(c) for c in r]):
+            continue
         row: dict[str, str] = {}
         for i, h in enumerate(headers):
             if not h:
@@ -218,6 +272,9 @@ class RowResult:
     data: dict[str, Any] = field(default_factory=dict)  # coerced canonical fields
     category_id: Any = None
     category_label: str = ""
+    new_category: dict | None = None  # {"slug","name_en","name_bn"} when it will be created
+    image_names: list[str] = field(default_factory=list)  # file names referenced (not URLs)
+    missing_images: list[str] = field(default_factory=list)
     action: str = "skip"  # create | update | skip
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
@@ -227,12 +284,45 @@ class RowResult:
             "row": self.row_num,
             "slug": self.data.get("slug", ""),
             "name": self.data.get("name_en", ""),
+            "name_bn": self.data.get("name_bn", ""),
             "sku": self.data.get("sku", ""),
+            "brand": self.data.get("brand", ""),
+            "price": self.data.get("price"),
+            "cost_price": self.data.get("cost_price"),  # admin-only endpoint
+            "stock_quantity": self.data.get("stock_quantity"),
             "category": self.category_label,
+            "new_category": bool(self.new_category),
+            "images": self.image_names,
+            "missing_images": self.missing_images,
+            "specifications": self.data.get("specifications") or {},
             "action": "skip" if self.errors else self.action,
             "errors": self.errors,
             "warnings": self.warnings,
         }
+
+
+REQUIRED_NEW = ("slug", "name_en", "name_bn", "category", "price")
+_REQ_BN = {"slug": "slug", "name_en": "ইংরেজি নাম", "name_bn": "বাংলা নাম", "category": "ক্যাটাগরি", "price": "বিক্রয়মূল্য"}
+DEFAULT_NEW_STOCK = 10
+
+
+def _collect_category_names(rows: list[dict[str, str]], field_to_header: dict[str, str]) -> dict[str, dict]:
+    """{category_slug: {name_en, name_bn}} gathered from ANY row of the file, so
+    the names only need to be written once per new category."""
+    out: dict[str, dict] = {}
+    hc, hbn, hen = (field_to_header.get(k) for k in ("category", "category_name_bn", "category_name_en"))
+    if not hc or not (hbn or hen):
+        return out
+    for r in rows:
+        slug = slugify(str(r.get(hc, "") or ""))
+        if not slug:
+            continue
+        bn = str(r.get(hbn, "") or "").strip() if hbn else ""
+        en = str(r.get(hen, "") or "").strip() if hen else ""
+        cur = out.setdefault(slug, {"slug": slug, "name_en": "", "name_bn": ""})
+        cur["name_bn"] = cur["name_bn"] or bn
+        cur["name_en"] = cur["name_en"] or en
+    return {k: v for k, v in out.items() if v["name_bn"] or v["name_en"]}
 
 
 def validate_rows(
@@ -243,15 +333,19 @@ def validate_rows(
     existing_sku_to_slug: dict[str, str],
     on_existing: str = "update",
     on_new: str = "create",
+    image_names: set[str] | None = None,
 ) -> list[RowResult]:
     """Pure validation. `mapping` is {original_header: canonical_field|None}.
-    `existing_slugs`/`existing_sku_to_slug` come from the DB (case as stored)."""
+    `existing_slugs`/`existing_sku_to_slug` come from the DB (case as stored).
+    `image_names` = lower-cased file names the admin selected with the sheet
+    (None = not checked, e.g. the old CSV-only flow)."""
     # Invert mapping: canonical_field -> original_header (first wins).
     field_to_header: dict[str, str] = {}
     for header, fieldname in mapping.items():
         if fieldname and fieldname not in field_to_header:
             field_to_header[fieldname] = header
 
+    new_cat_names = _collect_category_names(rows, field_to_header)
     results: list[RowResult] = []
     seen_slugs: dict[str, int] = {}
     seen_skus: dict[str, int] = {}
@@ -262,50 +356,123 @@ def validate_rows(
         for fieldname, header in field_to_header.items():
             value, err = _coerce(fieldname, raw_row.get(header, ""))
             if err:
-                res.errors.append(f"{fieldname}: {err}")
+                res.errors.append(_bi(f"'{fieldname}' কলামের মান ঠিক নেই", f"{fieldname}: {err}"))
             elif value is not None:
                 data[fieldname] = value
 
-        # Derive slug from name if missing.
+        # Slug: tidy a hand-typed one; derive from the English name if blank.
+        slug_given = bool(data.get("slug"))
+        if data.get("slug") and not _SLUG_RE.match(str(data["slug"])):
+            data["slug"] = slugify(str(data["slug"]))
         if not data.get("slug") and data.get("name_en"):
             data["slug"] = slugify(data["name_en"])
+        slug = (data.get("slug") or "").strip()
+
+        # Match an existing product: by slug, or (when no slug was typed) by SKU.
+        sku = (data.get("sku") or "").strip()
+        is_update = slug in existing_slugs
+        if not is_update and not slug_given and sku and existing_sku_to_slug.get(sku):
+            slug = existing_sku_to_slug[sku]
+            data["slug"] = slug
+            is_update = True
+            res.warnings.append(_bi(f"SKU '{sku}' মিলেছে — পুরনো পণ্য '{slug}' আপডেট হবে", f"matched existing product by SKU '{sku}'"))
 
         # Required fields (for a new product).
-        slug = (data.get("slug") or "").strip()
-        is_update = slug in existing_slugs
-        for req in ("slug", "name_en", "name_bn", "category", "price"):
+        for req in REQUIRED_NEW:
             if not is_update and (req not in data or data.get(req) in (None, "")):
-                res.errors.append(f"{req} is required")
-        if data.get("price") is not None and float(data["price"]) < 0:
-            res.errors.append("price cannot be negative")
+                res.errors.append(_bi(f"{_REQ_BN[req]} দিতে হবে", f"{req} is required"))
+        for money in ("price", "original_price", "cost_price"):
+            if data.get(money) is not None and float(data[money]) < 0:
+                res.errors.append(_bi("দাম ঋণাত্মক হতে পারে না", f"{money} cannot be negative"))
+        if data.get("price") is not None and data.get("original_price") is not None and float(data["original_price"]) < float(data["price"]):
+            res.warnings.append(_bi("আগের দাম বিক্রয়মূল্যের চেয়ে কম — কাটা দাম দেখানো হবে না", "original_price is below price"))
+            data.pop("original_price", None)
+        if data.get("price") and data.get("cost_price") is not None and float(data["cost_price"]) > float(data["price"]):
+            res.warnings.append(_bi("ক্রয়মূল্য বিক্রয়মূল্যের চেয়ে বেশি — লোকসান হবে", "cost_price is above price"))
+        if data.get("stock_quantity") is not None and int(data["stock_quantity"]) < 0:
+            res.errors.append(_bi("স্টক ঋণাত্মক হতে পারে না", "stock_quantity cannot be negative"))
+        if not is_update and data.get("stock_quantity") is None:
+            data["stock_quantity"] = DEFAULT_NEW_STOCK
 
-        # Category matching (only if a category cell was given).
+        # Length limits the storefront relies on (soft: trim + warn).
+        if data.get("badge") and len(str(data["badge"])) > 20:
+            data["badge"] = str(data["badge"])[:20]
+            res.warnings.append(_bi("ব্যাজ ২০ অক্ষরে ছোট করা হয়েছে", "badge trimmed to 20 chars"))
+        if data.get("seo_title") and len(str(data["seo_title"])) > 60:
+            res.warnings.append(_bi("SEO শিরোনাম ৬০ অক্ষরের বেশি", "seo_title over 60 chars"))
+        if data.get("seo_description") and len(str(data["seo_description"])) > 155:
+            res.warnings.append(_bi("SEO বিবরণ ১৫৫ অক্ষরের বেশি", "seo_description over 155 chars"))
+
+        # Short descriptions: the Product model has no short field, so they are
+        # prepended to the full description (only when creating, or when the
+        # row also carries a full description — never wipes an existing one).
+        for lang in ("bn", "en"):
+            short = (data.pop(f"short_description_{lang}", None) or "").strip()
+            full = (data.get(f"description_{lang}") or "").strip()
+            if short and (full or not is_update):
+                data[f"description_{lang}"] = f"{short}\n\n{full}" if full else short
+
+        # Category: existing node, or a new one when the file gives its name.
+        cat_names = {"name_bn": data.pop("category_name_bn", None), "name_en": data.pop("category_name_en", None)}
         if data.get("category"):
             node = cat_index.resolve(str(data["category"]))
-            if node is None:
-                res.errors.append(f"category '{data['category']}' not found in the category tree")
-            else:
+            if node is not None:
                 res.category_id = node.id
                 res.category_label = category_path(node, cat_index)
                 data["category"] = node.slug  # canonical legacy string
+            else:
+                cslug = slugify(str(data["category"]))
+                info = new_cat_names.get(cslug)
+                if info is None and (cat_names["name_bn"] or cat_names["name_en"]):
+                    info = {"slug": cslug, "name_bn": cat_names["name_bn"] or "", "name_en": cat_names["name_en"] or ""}
+                if not cslug or info is None:
+                    res.errors.append(_bi(
+                        f"ক্যাটাগরি '{data['category']}' পাওয়া যায়নি — নতুন হলে category_name_bn/category_name_en দিন",
+                        f"category '{data['category']}' not found in the category tree",
+                    ))
+                elif len(cslug) > 50:
+                    res.errors.append(_bi("ক্যাটাগরির slug ৫০ অক্ষরের বেশি", "category slug longer than 50 chars"))
+                else:
+                    name_en = info["name_en"] or info["name_bn"] or cslug.replace("-", " ").title()
+                    res.new_category = {"slug": cslug, "name_en": name_en, "name_bn": info["name_bn"] or name_en}
+                    res.category_label = f"{res.new_category['name_bn']} (নতুন)"
+                    data["category"] = cslug
+
+        # Images: file names are matched against the files chosen with the sheet;
+        # full URLs are kept as-is.
+        imgs = list(data.get("images") or [])
+        if data.get("image_url"):
+            imgs = [data["image_url"], *imgs]
+        for name in imgs:
+            if _URL_RE.match(name):
+                continue
+            res.image_names.append(name)
+            if image_names is not None and image_key(name) not in image_names:
+                res.missing_images.append(name)
+        if res.missing_images:
+            res.warnings.append(_bi(
+                "এই ছবি বাছাই করা হয়নি: " + ", ".join(res.missing_images),
+                "image file(s) not selected",
+            ))
 
         # In-file duplicate slug.
         if slug:
             if slug in seen_slugs:
-                res.errors.append(f"duplicate slug in file (also row {seen_slugs[slug]})")
+                res.errors.append(_bi(f"একই slug আগেও আছে (সারি {seen_slugs[slug]})", f"duplicate slug in file (also row {seen_slugs[slug]})"))
             else:
                 seen_slugs[slug] = idx
+            if len(slug) > 255:
+                res.errors.append(_bi("slug অনেক লম্বা", "slug too long"))
 
         # SKU duplicate detection (warning, never blocks).
-        sku = (data.get("sku") or "").strip()
         if sku:
             if sku in seen_skus:
-                res.warnings.append(f"SKU '{sku}' repeats in file (row {seen_skus[sku]})")
+                res.warnings.append(_bi(f"SKU '{sku}' ফাইলে আবার আছে (সারি {seen_skus[sku]})", f"SKU '{sku}' repeats in file (row {seen_skus[sku]})"))
             else:
                 seen_skus[sku] = idx
             owner = existing_sku_to_slug.get(sku)
             if owner and owner != slug:
-                res.warnings.append(f"SKU '{sku}' already used by product '{owner}'")
+                res.warnings.append(_bi(f"SKU '{sku}' অন্য পণ্যে ('{owner}') ব্যবহৃত", f"SKU '{sku}' already used by product '{owner}'"))
 
         # Action.
         if res.errors:
@@ -319,3 +486,36 @@ def validate_rows(
         results.append(res)
 
     return results
+
+
+def new_categories(results: list[RowResult]) -> list[dict]:
+    """Distinct categories that applying these rows will create."""
+    seen: dict[str, dict] = {}
+    for r in results:
+        if r.new_category and not r.errors and r.action != "skip":
+            seen.setdefault(r.new_category["slug"], r.new_category)
+    return list(seen.values())
+
+
+def apply_images(data: dict[str, Any], image_map: dict[str, str]) -> list[str]:
+    """Replace image file names by uploaded URLs (in place). The first image
+    becomes the main image. Returns the names that had no uploaded URL."""
+    names: list[str] = []
+    if data.get("image_url"):
+        names.append(data.pop("image_url"))
+    names.extend(data.pop("images", None) or [])
+    if not names:
+        return []
+    urls: list[str] = []
+    missing: list[str] = []
+    for n in names:
+        if _URL_RE.match(n):
+            urls.append(n)
+        elif image_map.get(image_key(n)):
+            urls.append(image_map[image_key(n)])
+        else:
+            missing.append(n)
+    if urls:
+        data["image_url"] = urls[0]
+        data["images"] = urls[1:]
+    return missing
