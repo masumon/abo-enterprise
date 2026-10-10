@@ -2,6 +2,10 @@ import { useEffect, useRef } from "react";
 
 export function useFocusTrap(active: boolean, onEscape?: () => void) {
   const ref = useRef<HTMLDivElement>(null);
+  // Keep the latest onEscape without re-running the effect: callers usually pass an inline
+  // function, and re-running on every render (every keystroke) stole focus back to the first field.
+  const escapeRef = useRef(onEscape);
+  useEffect(() => { escapeRef.current = onEscape; });
 
   useEffect(() => {
     if (!active || !ref.current) return;
@@ -16,7 +20,7 @@ export function useFocusTrap(active: boolean, onEscape?: () => void) {
 
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onEscape?.();
+        escapeRef.current?.();
         return;
       }
       if (e.key !== "Tab" || focusable.length === 0) return;
@@ -33,7 +37,7 @@ export function useFocusTrap(active: boolean, onEscape?: () => void) {
       root.removeEventListener("keydown", onKey);
       previous?.focus?.();
     };
-  }, [active, onEscape]);
+  }, [active]);
 
   return ref;
 }
