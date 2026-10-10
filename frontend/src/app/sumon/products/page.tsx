@@ -126,6 +126,20 @@ export default function AdminProductsPage() {
     } catch { toast("error", t("পণ্যটি খোলা যায়নি", "Could not open that product")); }
   };
 
+  // /sumon/products?edit=<id> opens that product's editor (links from the content-health page).
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("edit");
+    if (!id) return;
+    (async () => {
+      for (let pg = 1; pg <= 10; pg++) {
+        const r = await productAdminApi.list({ page: pg, per_page: 100 });
+        const hit = (r.data.data ?? []).find((x) => x.id === id);
+        if (hit) { setForm({ type: "edit", product: hit }); setFormKey((k) => k + 1); return; }
+        if (pg * 100 >= (r.data.meta?.total ?? 0)) return;
+      }
+    })().catch(() => {});
+  }, []);
+
   const toggleBlogRail = async () => {
     const next = !blogRailEnabled;
     setBlogRailEnabled(next);
