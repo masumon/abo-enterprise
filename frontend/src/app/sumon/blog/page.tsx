@@ -179,6 +179,20 @@ export default function AdminBlogPage() {
     }
   };
 
+  // Deep link: /sumon/blog?edit=<id> opens that post's editor (used by
+  // "কনটেন্ট স্বাস্থ্য" → "ঠিক করুন").
+  const deepLinkDone = useRef(false);
+  useEffect(() => {
+    if (deepLinkDone.current) return;
+    deepLinkDone.current = true;
+    const id = new URLSearchParams(window.location.search).get("edit");
+    if (!id) return;
+    adminBlogApi.get(id)
+      .then((r) => { const post = r.data.data as unknown as BlogPost | undefined; if (post?.id) void openEdit(post); })
+      .catch(() => { /* post gone — the list is still shown */ });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+  }, []);
+
   const closeEditor = (discardDraft = false) => {
     if (discardDraft && isNew) {
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
