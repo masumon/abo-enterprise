@@ -1,11 +1,19 @@
 "use client";
 
-import { useEffect, useState, type JSX } from "react";
+import { useEffect, useState, type JSX, type ReactNode } from "react";
 import Link from "next/link";
-import { Save, Loader2, Check, ImageIcon, GalleryHorizontal, ChevronDown } from "lucide-react";
+import { Save, Loader2, Check, ImageIcon, ChevronDown, ExternalLink, Pencil, Megaphone, GalleryHorizontal, ArrowRight } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import HomepageSectionNav from "@/components/admin/HomepageSectionNav";
-import { adminApi } from "@/lib/api";
+import { adminApi, promoSlidesApi } from "@/lib/api";
+import type { PromoSlide } from "@/types";
+import ImageUpload from "@/components/admin/ImageUpload";
+import BannerDevicePreview, { BannerGuide } from "@/components/admin/BannerDevicePreview";
+import { HERO_IMAGE_SLOTS, MEDIA_UPLOAD_FOLDER } from "@/lib/imageRegistry";
+import { SITE_ANNOUNCEMENTS_KEY, getAnnouncements, type CmsAnnouncement } from "@/lib/cmsContent";
+import { ANNOUNCEMENT_VARIANT_BG } from "@/components/layout/AnnouncementBar";
+import { slideLiveState, SLIDE_STATE_LABEL_BN, SLIDE_STATE_CLASS } from "@/lib/promoSlideStatus";
+import { isVideoUrl } from "@/lib/media";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import { useLanguageStore } from "@/store/language";
@@ -47,6 +55,64 @@ function normaliseScalar(f: HomepageScalarField, raw: string | undefined): strin
 }
 
 const JSON_KEYS = HOMEPAGE_CONTENT_EDITORS.map((e) => e.key);
+const HERO_IMG_KEYS = HERO_IMAGE_SLOTS.map((s) => s.key);
+const editorFor = (key: string) => HOMEPAGE_CONTENT_EDITORS.find((e) => e.key === key);
+
+/** The editable parts of the homepage, in the order a visitor sees them —
+ * drives the sticky section navigator. */
+const SECTIONS: { id: string; bn: string; en: string }[] = [
+  { id: "announce", bn: "ঘোষণা বার", en: "Announcement bar" },
+  { id: "hero", bn: "হিরো ব্যানার", en: "Hero banner" },
+  { id: "slides", bn: "স্লাইডার", en: "Slider" },
+  { id: "quick-categories", bn: "ক্যাটাগরি টাইল", en: "Category tiles" },
+  { id: "flash-sale", bn: "ফ্ল্যাশ সেল", en: "Flash sale" },
+  { id: "why-choose", bn: "কেন আমরা", en: "Why choose us" },
+  { id: "faq", bn: "প্রশ্নোত্তর", en: "FAQ" },
+  { id: "rest", bn: "বাকি অংশ", en: "Other sections" },
+  { id: "elsewhere", bn: "অন্য জায়গার লেখা", en: "Used elsewhere" },
+];
+const BN_DIGITS = "০১২৩৪৫৬৭৮৯";
+const bnNum = (n: number) => String(n).replace(/\d/g, (d) => BN_DIGITS[+d]);
+
+/** Full homepage, top to bottom, and where each part is managed. The order
+ * is fixed in the website code (app/page.tsx). */
+const HOMEPAGE_MAP: { bn: string; href?: string; noteBn: string }[] = [
+  { bn: "ঘোষণা বার", href: "#announce", noteBn: "এই পাতায়" },
+  { bn: "হিরো ব্যানার ও স্লাইড", href: "#hero", noteBn: "এই পাতায়" },
+  { bn: "ক্যাটাগরি টাইল", href: "#quick-categories", noteBn: "এই পাতায়" },
+  { bn: "ফিচার আইকন সারি", noteBn: "ওয়েবসাইটে নির্দিষ্ট — কিছু করতে হবে না" },
+  { bn: "আপন অ্যাপ ব্যান্ড", href: "/sumon/apon", noteBn: "অ্যাপ প্রকাশ করলে নিজে থেকেই দেখায়" },
+  { bn: "ফ্ল্যাশ সেল", href: "#flash-sale", noteBn: "এই পাতায়" },
+  { bn: "কম্বো প্যাক", href: "/sumon/combos", noteBn: "কম্বো পাতায় সাজান" },
+  { bn: "ফিচার্ড পণ্য", href: "/sumon/products", noteBn: "পণ্যে \"ফিচার্ড\" চালু করুন" },
+  { bn: "সেবা", href: "/sumon/services", noteBn: "সেবা পাতায়" },
+  { bn: "সফটওয়্যার ও প্রজেক্ট", href: "/sumon/showcase", noteBn: "শোকেস পাতায়" },
+  { bn: "ক্লায়েন্ট লোগো", href: "/sumon/settings#trust_media", noteBn: "সেটিংস → টিম ও ক্লায়েন্ট" },
+  { bn: "কেন আমরা", href: "#why-choose", noteBn: "এই পাতায়" },
+  { bn: "যোগাযোগ বার", href: "/sumon/settings#company_info", noteBn: "ফোন/হোয়াটসঅ্যাপ — সেটিংস" },
+  { bn: "গ্রাহক রিভিউ", href: "/sumon/reviews", noteBn: "রিভিউ পাতায় অনুমোদন দিন" },
+  { bn: "প্রশ্নোত্তর", href: "#faq", noteBn: "এই পাতায়" },
+  { bn: "পরামর্শ ফর্ম", href: "/sumon/leads", noteBn: "জমা পড়া ফর্ম লিড পাতায় দেখুন" },
+  { bn: "যোগাযোগ ও ম্যাপ", href: "/sumon/settings#company_info", noteBn: "ঠিকানা, সময়, ম্যাপ — সেটিংস" },
+];
+
+function Section({ id, n, title, desc, children, aside }: { id: string; n: number; title: string; desc?: ReactNode; children: ReactNode; aside?: ReactNode }) {
+  return (
+    <section id={id} className="enterprise-card p-4 scroll-mt-36">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h2 className="text-sm font-bold text-heading flex items-center gap-2">
+            <span className="w-6 h-6 flex-none rounded-full bg-brand-600 text-white text-xs flex items-center justify-center">{bnNum(n)}</span>
+            {title}
+          </h2>
+          {desc && <p className="text-xs text-muted mt-1">{desc}</p>}
+        </div>
+        {aside}
+      </div>
+      {children}
+    </section>
+  );
+}
 
 // "As it appears on the website" mini-previews under each row, so a
 // non-technical admin sees the result of what they type. Kept faithful but
@@ -102,8 +168,10 @@ export default function AdminHomepageContentPage() {
   // Unsaved-changes / just-saved feedback next to the Save buttons.
   const [dirty, setDirty] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
-  // Read-only: the hero images (edited in Media / Promo slides) for the live preview.
-  const [heroMedia, setHeroMedia] = useState<{ desktop: string; promo: string }>({ desktop: "", promo: "" });
+  // Read-only summaries: the announcement bar and promo slides have their own editors.
+  const [announcements, setAnnouncements] = useState<CmsAnnouncement[] | null>(null);
+  const [slides, setSlides] = useState<PromoSlide[] | null>(null);
+  const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
 
   useEffect(() => {
     adminApi.getSettings()
@@ -112,13 +180,40 @@ export default function AdminHomepageContentPage() {
         setValues({
           ...Object.fromEntries(JSON_KEYS.map((k) => [k, s[k] ?? ""])),
           ...Object.fromEntries(HOMEPAGE_SCALAR_FIELDS.map((f) => [f.key, normaliseScalar(f, s[f.key])])),
+          ...Object.fromEntries(HERO_IMG_KEYS.map((k) => [k, s[k] ?? ""])),
         });
         setHstyle(parseHeroTextStyle(s[HERO_TEXT_STYLE_KEY]));
-        setHeroMedia({ desktop: s.hero_image_url ?? "", promo: s.hero_promo_media_url ?? "" });
+        setAnnouncements(s[SITE_ANNOUNCEMENTS_KEY] ? getAnnouncements(s, []) : null);
       })
       .catch((err) => toast("error", apiErrorMessage(err, "Failed to load homepage content")))
       .finally(() => setLoading(false));
+    promoSlidesApi.adminList()
+      .then((r) => setSlides(r.data.data ?? []))
+      .catch(() => setSlides([]));
   }, []);
+
+  // Warn before leaving the page with unsaved edits.
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => { e.preventDefault(); };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
+  // Highlight the section currently on screen in the sticky navigator.
+  useEffect(() => {
+    if (loading) return;
+    const els = SECTIONS.map((x) => document.getElementById(x.id)).filter((el): el is HTMLElement => !!el);
+    const io = new IntersectionObserver(
+      (entries) => {
+        const vis = entries.filter((e) => e.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (vis[0]) setActiveSection(vis[0].target.id);
+      },
+      { rootMargin: "-140px 0px -55% 0px" }
+    );
+    els.forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [loading]);
 
   const touch = () => { setDirty(true); setJustSaved(false); };
   const setValue = (key: string, val: string) => { setValues((v) => ({ ...v, [key]: val })); touch(); };
@@ -147,6 +242,7 @@ export default function AdminHomepageContentPage() {
           data_type: f.dataType,
         })),
         { key: HERO_TEXT_STYLE_KEY, value: JSON.stringify(hstyle), data_type: "json" },
+        ...HERO_IMG_KEYS.map((k) => ({ key: k, value: (values[k] ?? "").trim(), data_type: "string" })),
       ]);
       toast("success", bn ? "হোমপেজ কনটেন্ট সংরক্ষিত হয়েছে — ওয়েবসাইটে ১ মিনিটের মধ্যে দেখাবে" : "Homepage content saved — live on the website within a minute");
       setDirty(false);
@@ -208,11 +304,57 @@ export default function AdminHomepageContentPage() {
 
 
   const heroGroup = HOMEPAGE_SCALAR_GROUPS.find((g) => g.id === "hero");
-  const otherGroups = HOMEPAGE_SCALAR_GROUPS.filter((g) => g.id !== "hero");
+  const flashGroup = HOMEPAGE_SCALAR_GROUPS.find((g) => g.id === "flash_sale");
+  const heroDesktop = values.hero_image_url ?? "";
+  const heroPromo = values.hero_promo_media_url ?? "";
   const previewTitle =
     (bn ? values.hero_title_bn : values.hero_title_en) || values.hero_title_bn || values.hero_title_en || "এবিও এন্টারপ্রাইজ";
   const previewSub =
     (bn ? values.hero_subtitle_bn : values.hero_subtitle_en) || "প্রিমিয়াম টেক প্রোডাক্ট, ডিজিটাল সেবা ও AI সমাধান।";
+  const activeAnnouncements = (announcements ?? []).filter((x) => x.active !== false);
+  const heroSlides = (slides ?? []).filter((x) => x.placement === "hero");
+  const flashSlides = (slides ?? []).filter((x) => x.placement === "flash_sale");
+  const liveCount = (list: PromoSlide[]) => list.filter((x) => slideLiveState(x) === "live").length;
+  const jsonEditor = (key: string, descBn?: string) => {
+    const ed = editorFor(key);
+    if (!ed) return null;
+    return (
+      <>
+        {descBn && <p className="text-xs text-muted mb-2">{descBn}</p>}
+        <JsonListEditor
+          value={values[ed.key] ?? ""}
+          onChange={(json) => setValue(ed.key, json)}
+          fields={ed.fields}
+          newItem={ed.newItem}
+          previewRow={CONTENT_PREVIEWS[ed.key] ? (item) => CONTENT_PREVIEWS[ed.key](item, bn) : undefined}
+        />
+        <p className="text-[11px] text-muted mt-2">{bn ? "খালি রাখলে ওয়েবসাইটে আগের মতো ডিফল্ট লেখা দেখাবে।" : "Leave empty to show the built-in default."}</p>
+      </>
+    );
+  };
+  const slideThumbs = (list: PromoSlide[]) =>
+    list.length === 0 ? (
+      <p className="text-xs text-muted">{bn ? "এখনো কোনো স্লাইড নেই।" : "No slides yet."}</p>
+    ) : (
+      <div className="flex gap-2 overflow-x-auto pb-1">
+        {[...list].sort((x, y) => x.sort_order - y.sort_order).map((sl) => {
+          const st = slideLiveState(sl);
+          return (
+            <div key={sl.id} className="w-32 flex-none">
+              <div className="aspect-video rounded-lg overflow-hidden bg-gray-100 dark:bg-white/10 flex items-center justify-center">
+                {sl.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail
+                  <img src={sl.image_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-[10px] text-muted">{bn ? "ভিডিও" : "Video"}</span>
+                )}
+              </div>
+              <span className={cn("mt-1 inline-block text-[10px] px-1.5 py-0.5 rounded border font-medium", SLIDE_STATE_CLASS[st])}>{SLIDE_STATE_LABEL_BN[st]}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
   const switchRow = (on: boolean, onClick: () => void, label: string, help: string) => (
     <label className="flex items-center gap-3 cursor-pointer py-1">
       <button
@@ -240,11 +382,11 @@ export default function AdminHomepageContentPage() {
     <div className="admin-page admin-page-narrow pb-24">
       <HomepageSectionNav />
       <AdminPageHeader
-        title="Homepage Content"
-        titleBn="হোমপেজ কনটেন্ট"
-        description="Hero text, Flash Sale, trust badges, Why Choose Us, FAQ, categories & entry cards. Banner images & the announcement bar are edited in the linked pages above."
-        descriptionBn="হিরো লেখা, ফ্ল্যাশ সেল, ট্রাস্ট ব্যাজ, কেন আমরা, প্রশ্নোত্তর, ক্যাটাগরি ও এন্ট্রি কার্ড। ব্যানার ছবি ও ঘোষণা বার উপরের লিংক থেকে সম্পাদনা করুন।"
-        className="mb-6"
+        title="Arrange Homepage"
+        titleBn="হোমপেজ সাজান"
+        description="Everything on the homepage, top to bottom in the order visitors see it. Change, then press Save."
+        descriptionBn="হোমপেজের সব অংশ — ভিজিটর উপর থেকে নিচে যে ক্রমে দেখে, সেই ক্রমে। বদলান, তারপর 'সংরক্ষণ' চাপুন।"
+        className="mb-4"
         actions={
           <div className="flex items-center gap-2 flex-wrap justify-end">
             {saveStatus}
@@ -260,56 +402,108 @@ export default function AdminHomepageContentPage() {
         <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-brand-500" /></div>
       ) : (
         <div className="space-y-6">
-          {/* ── 1. Hero: text + images + style, all in one place ── */}
-          {heroGroup && (
-            <section className="enterprise-card p-4">
-              <div className="mb-3">
-                <h2 className="text-sm font-bold text-heading">{bn ? "১. " + heroGroup.titleBn : "1. " + heroGroup.title}</h2>
-                <p className="text-xs text-muted mt-0.5">{bn ? heroGroup.descBn : heroGroup.desc}</p>
+          {/* Sticky section navigator — the homepage in visitor order. */}
+          <nav aria-label={bn ? "হোমপেজের অংশ" : "Homepage sections"} className="sticky top-14 z-10 enterprise-card px-2 py-2 shadow-sm">
+            <div className="flex gap-1 overflow-x-auto">
+              {SECTIONS.map((x, idx) => (
+                <a
+                  key={x.id}
+                  href={`#${x.id}`}
+                  aria-current={activeSection === x.id ? "true" : undefined}
+                  className={cn(
+                    "flex-none inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors",
+                    activeSection === x.id ? "bg-brand-600 text-white" : "text-muted hover:bg-gray-100 dark:hover:bg-white/10"
+                  )}
+                >
+                  <span className="opacity-70">{bnNum(idx + 1)}</span>
+                  {bn ? x.bn : x.en}
+                </a>
+              ))}
+            </div>
+          </nav>
+
+          {/* 1. Announcement bar — summary; edited on its own page. */}
+          <Section
+            id="announce"
+            n={1}
+            title={bn ? "ঘোষণা বার" : "Announcement bar"}
+            desc={bn ? "ওয়েবসাইটের একদম উপরে চলমান ছোট লেখা (অফার, নোটিশ)। লেখা বদলাতে ডান পাশের বাটন চাপুন।" : "The scrolling strip at the very top (offers, notices)."}
+            aside={
+              <Link href="/sumon/announcements" className="btn btn-outline btn-sm gap-1.5">
+                <Pencil className="w-3.5 h-3.5" /> {bn ? "ঘোষণা বদলান" : "Edit announcements"}
+              </Link>
+            }
+          >
+            {announcements === null ? (
+              <p className="text-xs text-muted">{bn ? "এখনো সাজানো হয়নি — ওয়েবসাইটে ডিফল্ট ৩টি ঘোষণা দেখাচ্ছে।" : "Not set yet — the website shows 3 default announcements."}</p>
+            ) : activeAnnouncements.length === 0 ? (
+              <p className="text-xs text-amber-600 dark:text-amber-400">{bn ? "কোনো ঘোষণা চালু নেই — ঘোষণা বার লুকানো আছে।" : "No active announcement — the bar is hidden."}</p>
+            ) : (
+              <div className="space-y-1.5">
+                {activeAnnouncements.slice(0, 3).map((a, i) => (
+                  <div key={i} className={cn(ANNOUNCEMENT_VARIANT_BG[a.variant ?? "promo"] ?? ANNOUNCEMENT_VARIANT_BG.promo, "rounded-lg px-3 py-1.5 text-xs font-semibold flex items-center gap-2 min-w-0")}>
+                    <Megaphone className="w-3.5 h-3.5 flex-none opacity-80" />
+                    {a.icon && <span aria-hidden>{a.icon}</span>}
+                    <span className="truncate">{(bn ? a.bn : a.en) || a.bn || a.en}</span>
+                  </div>
+                ))}
+                <p className="text-[11px] text-muted">
+                  {bn ? `${bnNum(activeAnnouncements.length)}টি ঘোষণা চালু আছে` : `${activeAnnouncements.length} active`}
+                </p>
               </div>
+            )}
+          </Section>
+
+          {/* 2. Hero banner: text + images + style, all in one place. */}
+          {heroGroup && (
+            <Section
+              id="hero"
+              n={2}
+              title={bn ? "হিরো ব্যানার" : "Hero banner"}
+              desc={bn ? "হোমপেজের সবচেয়ে বড় অংশ — শিরোনাম, ছোট লেখা, বাটন ও ছবি। বড় স্ক্রিনে ডেস্কটপ ছবি, মোবাইলে স্লাইড/মোবাইল ছবি দেখায়।" : "The big top area — headline, subtitle, button and images."}
+            >
               <div className="grid gap-3 sm:grid-cols-2">{heroGroup.fields.map(renderScalar)}</div>
 
-              <div className="mt-4 rounded-xl border border-gray-200 dark:border-white/10 p-3">
-                <p className="text-xs font-semibold text-heading mb-2">{bn ? "হিরো ছবি" : "Hero images"}</p>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  <Link href="/sumon/media" className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-white/10 p-2 hover:border-brand-300 transition-colors min-w-0">
-                    <span className="w-16 h-10 flex-none rounded-md overflow-hidden bg-gradient-to-br from-brand-700 to-brand-900 flex items-center justify-center">
-                      {heroMedia.desktop && !/\.(mp4|webm|mov)(\?|$)/i.test(heroMedia.desktop) ? (
-                        // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail
-                        <img src={heroMedia.desktop} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <ImageIcon className="w-4 h-4 text-white/80" />
+              <div className="mt-5">
+                <p className="text-xs font-semibold text-heading mb-1 flex items-center gap-1.5"><ImageIcon className="w-4 h-4" />{bn ? "হিরো ছবি ও ভিডিও" : "Hero images & video"}</p>
+                <p className="text-[11px] text-muted mb-3">{bn ? "ছবি বদলে নিচের 'সংরক্ষণ' চাপুন। প্রতিটির নিচে 'মাপ ও প্রিভিউ' খুলে দেখুন মোবাইল/ডেস্কটপে কেমন দেখাবে।" : "Change an image, then Save. Open 'size & preview' to check each device."}</p>
+                <div className="grid gap-3 lg:grid-cols-3">
+                  {HERO_IMAGE_SLOTS.map((slot) => (
+                    <div key={slot.key} className="rounded-xl border border-gray-200 dark:border-white/10 p-3 min-w-0">
+                      <p className="text-sm font-semibold text-heading">{bn ? slot.labelBn : slot.label}</p>
+                      {slot.usedOn && <p className="text-[11px] text-muted mb-2">{slot.usedOn}</p>}
+                      <ImageUpload
+                        value={values[slot.key] ?? ""}
+                        onChange={(url) => setValue(slot.key, url)}
+                        folder={MEDIA_UPLOAD_FOLDER}
+                        hint={slot.hint}
+                        guide={slot.guide}
+                        purpose={slot.purpose}
+                        previewSize="md"
+                        accept="both"
+                      />
+                      {slot.kind && (
+                        <details className="group mt-2">
+                          <summary className="cursor-pointer list-none flex items-center justify-between gap-2 text-xs font-semibold text-brand-700 dark:text-brand-300 py-1">
+                            {bn ? "মাপ ও প্রিভিউ" : "Size & preview"}
+                            <ChevronDown className="w-3.5 h-3.5 transition-transform group-open:rotate-180" />
+                          </summary>
+                          <BannerGuide kind={slot.kind} />
+                          <BannerDevicePreview kind={slot.kind} value={values[slot.key] ?? ""} />
+                        </details>
                       )}
-                    </span>
-                    <span className="min-w-0 text-xs">
-                      <span className="block font-semibold text-heading">{bn ? "ডেস্কটপ ব্যানার ও প্রোমো ছবি" : "Desktop banner & promo media"}</span>
-                      <span className="block text-muted">{bn ? "মিডিয়া → ব্র্যান্ড ট্যাবে বদলান (মাপ ও প্রিভিউ সেখানে)" : "Change in Media → Brand tab (sizes & preview there)"}</span>
-                    </span>
-                  </Link>
-                  <Link href="/sumon/promo-slides" className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-white/10 p-2 hover:border-brand-300 transition-colors min-w-0">
-                    <span className="w-16 h-10 flex-none rounded-md bg-brand-50 dark:bg-white/10 flex items-center justify-center">
-                      <GalleryHorizontal className="w-4 h-4 text-brand-600 dark:text-brand-300" />
-                    </span>
-                    <span className="min-w-0 text-xs">
-                      <span className="block font-semibold text-heading">{bn ? "প্রোমো স্লাইড" : "Promo slides"}</span>
-                      <span className="block text-muted">{bn ? "মোবাইল/ট্যাবে হিরো = স্লাইড; ডেস্কটপে ডান পাশের কার্ড" : "Mobile/tablet hero = slides; desktop right-hand card"}</span>
-                    </span>
-                  </Link>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </section>
-          )}
 
-          <section className="enterprise-card p-4">
-            <div className="mb-3">
-              <h2 className="text-sm font-bold text-heading">{bn ? "২. হিরো লেখার স্টাইল" : "2. Hero Text Style"}</h2>
-              <p className="text-xs text-muted mt-0.5">
-                {bn
-                  ? "একটি তৈরি স্টাইল বেছে নিন — সব স্ক্রিনে পড়ার মতো থাকবে। ছবির উপর সবসময় হালকা কালো ছায়া থাকে, তাই লেখা হারিয়ে যায় না।"
-                  : "Pick a ready-made look — readable on every screen. A dark scrim always sits behind the text over the photo."}
-              </p>
-            </div>
-
+              <div className="mt-5">
+                <p className="text-xs font-semibold text-heading mb-1">{bn ? "হিরো লেখার স্টাইল" : "Hero text style"}</p>
+                <p className="text-[11px] text-muted mb-2">
+                  {bn
+                    ? "একটি তৈরি স্টাইল বেছে নিন — সব স্ক্রিনে পড়ার মতো থাকবে। ছবির উপর সবসময় হালকা কালো ছায়া থাকে, তাই লেখা হারিয়ে যায় না।"
+                    : "Pick a ready-made look — readable on every screen. A dark scrim always sits behind the text over the photo."}
+                </p>
             <div className="flex flex-wrap gap-1.5 mb-4" role="radiogroup" aria-label={bn ? "তৈরি স্টাইল" : "Presets"}>
               {HERO_STYLE_PRESETS.map((p) => {
                 const on = matchesPreset(hstyle, p.style);
@@ -324,9 +518,9 @@ export default function AdminHomepageContentPage() {
 
             <LivePreview showDevice={false} defaultDevice="desktop" className="mb-4" titleBn={bn ? "ডেস্কটপ হিরো — যেমন দেখাবে" : "Desktop hero — as it will look"}>
               <div className="pointer-events-none relative rounded-xl overflow-hidden gradient-hero aspect-[16/9] sm:aspect-[16/7] max-h-[420px] w-full">
-                {heroMedia.desktop && !/\.(mp4|webm|mov)(\?|$)/i.test(heroMedia.desktop) && (
+                {heroDesktop && !isVideoUrl(heroDesktop) && (
                   // eslint-disable-next-line @next/next/no-img-element -- admin preview
-                  <img src={heroMedia.desktop} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                  <img src={heroDesktop} alt="" className="absolute inset-0 w-full h-full object-cover" />
                 )}
                 <div
                   className="absolute inset-0"
@@ -352,9 +546,9 @@ export default function AdminHomepageContentPage() {
                   </div>
                   <div className="absolute right-[4%] top-1/2 -translate-y-1/2 w-[28%] space-y-2">
                     <div className="aspect-video rounded-lg bg-white/15 border border-white/30 overflow-hidden">
-                      {heroMedia.promo && !/\.(mp4|webm|mov)(\?|$)/i.test(heroMedia.promo) && (
+                      {heroPromo && !isVideoUrl(heroPromo) && (
                         // eslint-disable-next-line @next/next/no-img-element -- admin preview
-                        <img src={heroMedia.promo} alt="" className="w-full h-full object-cover" />
+                        <img src={heroPromo} alt="" className="w-full h-full object-cover" />
                       )}
                     </div>
                     <div className="h-10 sm:h-16 rounded-lg bg-[#0c1330]/85 border border-white/15" />
@@ -434,22 +628,58 @@ export default function AdminHomepageContentPage() {
                 </div>
               </div>
             </details>
-          </section>
-
-          {otherGroups.map((g) => (
-            <section key={g.id} className="enterprise-card p-4">
-              <div className="mb-3">
-                <h2 className="text-sm font-bold text-heading">{bn ? g.titleBn : g.title}</h2>
-                <p className="text-xs text-muted mt-0.5">{bn ? g.descBn : g.desc}</p>
               </div>
-              <div className="space-y-3">{g.fields.map(renderScalar)}</div>
-              {g.id === "flash_sale" && (
-                <div className="mt-3">
-                  <FlashSaleAdminStatus values={values} />
+            </Section>
+          )}
+
+          {/* 3. Promo slides — summary; edited on its own page (DB-backed). */}
+          <Section
+            id="slides"
+            n={3}
+            title={bn ? "স্লাইডার / প্রোমো স্লাইড" : "Slider / promo slides"}
+            desc={bn ? "মোবাইল ও ট্যাবলেটে হিরোর জায়গায় ঘুরতে থাকা ছবি; ডেস্কটপে ডান পাশের কার্ডে। ফ্ল্যাশ সেলের নিচের ব্যানারও এখানে।" : "Rotating images: the mobile/tablet hero and the desktop promo card; also the flash-sale strip."}
+            aside={
+              <Link href="/sumon/promo-slides" className="btn btn-outline btn-sm gap-1.5">
+                <GalleryHorizontal className="w-3.5 h-3.5" /> {bn ? "স্লাইড বদলান" : "Edit slides"}
+              </Link>
+            }
+          >
+            {slides === null ? (
+              <div className="flex justify-center py-4"><Loader2 className="w-5 h-5 animate-spin text-brand-500" /></div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs font-semibold text-heading mb-1.5">
+                    {bn ? `হিরো স্লাইড — ${bnNum(liveCount(heroSlides))}টি এখন দেখাচ্ছে` : `Hero slides — ${liveCount(heroSlides)} live`}
+                  </p>
+                  {slideThumbs(heroSlides)}
+                  {liveCount(heroSlides) === 0 && (
+                    <p className="text-[11px] text-muted mt-1">{bn ? "কোনো স্লাইড চালু না থাকলে মোবাইলে উপরের 'হোমপেজ ব্যানার (মোবাইল)' ছবি দেখায়।" : "With no live slide, mobile shows the 'Homepage banner (mobile)' image above."}</p>
+                  )}
                 </div>
-              )}
-              {g.id === "flash_sale" && (
-                <div className="mt-4">
+                <div>
+                  <p className="text-xs font-semibold text-heading mb-1.5">
+                    {bn ? `ফ্ল্যাশ সেল ব্যানার — ${bnNum(liveCount(flashSlides))}টি এখন দেখাচ্ছে` : `Flash-sale banners — ${liveCount(flashSlides)} live`}
+                  </p>
+                  {slideThumbs(flashSlides)}
+                </div>
+              </div>
+            )}
+          </Section>
+
+          {/* 4. Quick category tiles */}
+          <Section id="quick-categories" n={4} title={bn ? "ক্যাটাগরি টাইল" : "Category tiles"} desc={bn ? "হিরোর ঠিক নিচে ছোট শর্টকাট (দোকান/সেবা/সফটওয়্যার)। আইকন, নাম ও লিংক দিন।" : "Small shortcuts right under the hero."}>
+            {jsonEditor("site_quick_categories_json")}
+          </Section>
+
+          {/* 5. Flash sale */}
+          {flashGroup && (
+            <Section id="flash-sale" n={5} title={bn ? "ফ্ল্যাশ সেল" : "Flash sale"} desc={bn ? flashGroup.descBn : flashGroup.desc}>
+              <div className="space-y-3">{flashGroup.fields.map(renderScalar)}</div>
+              <div className="mt-3">
+                <FlashSaleAdminStatus values={values} />
+              </div>
+              <div className="mt-4">
                   <LivePreview showDevice={false}>
                     <div className="pointer-events-none rounded-xl overflow-hidden bg-gradient-to-r from-accent-600 to-brand-700 text-white p-4 flex items-center gap-3">
                       <span className="text-2xl">⚡</span>
@@ -468,31 +698,75 @@ export default function AdminHomepageContentPage() {
                       </div>
                     </div>
                   </LivePreview>
-                </div>
-              )}
-            </section>
-          ))}
-
-          {HOMEPAGE_CONTENT_EDITORS.map((ed) => (
-            <section key={ed.key} className="enterprise-card p-4">
-              <div className="mb-3">
-                <h2 className="text-sm font-bold text-heading">{bn ? ed.titleBn : ed.title}</h2>
-                <p className="text-xs text-muted mt-0.5">{bn && ed.descBn ? ed.descBn : ed.desc}</p>
               </div>
-              <JsonListEditor
-                value={values[ed.key] ?? ""}
-                onChange={(json) => setValue(ed.key, json)}
-                fields={ed.fields}
-                newItem={ed.newItem}
-                previewRow={CONTENT_PREVIEWS[ed.key] ? (item) => CONTENT_PREVIEWS[ed.key](item, bn) : undefined}
-              />
-            </section>
-          ))}
-          <p className="text-xs text-muted">
-            {bn
-              ? "খালি রাখলে ওয়েবসাইটে ডিফল্ট কনটেন্ট দেখাবে। পরিবর্তনের পর 'সংরক্ষণ' চাপুন।"
-              : "Leave a section empty to show the built-in default. Click Save after editing."}
-          </p>
+              <p className="text-[11px] text-muted mt-2 flex flex-wrap gap-x-3 gap-y-1">
+                <Link href="/sumon/products" className="text-brand-600 dark:text-brand-300 hover:underline inline-flex items-center gap-1">{bn ? "পণ্যে ফ্ল্যাশ-সেল দাম দিন" : "Set flash-sale prices on products"} <ArrowRight className="w-3 h-3" /></Link>
+                <Link href="/sumon/promo-slides" className="text-brand-600 dark:text-brand-300 hover:underline inline-flex items-center gap-1">{bn ? "ফ্ল্যাশ সেল ব্যানার" : "Flash-sale banners"} <ArrowRight className="w-3 h-3" /></Link>
+              </p>
+            </Section>
+          )}
+
+          {/* 6. Why choose us */}
+          <Section id="why-choose" n={6} title={bn ? "কেন আমরা" : "Why choose us"} desc={bn ? editorFor("site_why_choose_json")?.descBn : editorFor("site_why_choose_json")?.desc}>
+            {jsonEditor("site_why_choose_json")}
+          </Section>
+
+          {/* 7. FAQ */}
+          <Section id="faq" n={7} title={bn ? "প্রশ্নোত্তর" : "FAQ"} desc={bn ? editorFor("site_faq_json")?.descBn : editorFor("site_faq_json")?.desc}>
+            {jsonEditor("site_faq_json")}
+          </Section>
+
+          {/* 8. The rest of the homepage — where each part is managed. */}
+          <Section
+            id="rest"
+            n={8}
+            title={bn ? "পুরো হোমপেজ — বাকি অংশ কোথায় বদলাবেন" : "Whole homepage — where the rest is managed"}
+            desc={bn ? "উপর থেকে নিচে হোমপেজের সব অংশ। অংশগুলোর ক্রম ওয়েবসাইটে নির্দিষ্ট; কিছু অংশে কিছু না থাকলে সেটি নিজে থেকেই লুকিয়ে থাকে।" : "Every homepage part, top to bottom. The order is fixed by the website."}
+          >
+            <ol className="divide-y divide-gray-100 dark:divide-white/10">
+              {HOMEPAGE_MAP.map((m, i) => (
+                <li key={m.bn} className="flex items-center gap-3 py-2 text-sm">
+                  <span className="w-6 text-xs text-muted tabular-nums flex-none">{bnNum(i + 1)}</span>
+                  <span className="font-medium text-heading flex-1 min-w-0">{m.bn}</span>
+                  {m.href ? (
+                    m.href.startsWith("#") ? (
+                      <a href={m.href} className="text-xs text-brand-600 dark:text-brand-300 hover:underline whitespace-nowrap">{m.noteBn}</a>
+                    ) : (
+                      <Link href={m.href} className="text-xs text-brand-600 dark:text-brand-300 hover:underline inline-flex items-center gap-1 text-right">
+                        {m.noteBn} <ExternalLink className="w-3 h-3 flex-none" />
+                      </Link>
+                    )
+                  ) : (
+                    <span className="text-xs text-muted text-right">{m.noteBn}</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </Section>
+
+          {/* 9. Content kept here but shown outside the homepage. */}
+          <Section
+            id="elsewhere"
+            n={9}
+            title={bn ? "অন্য জায়গার লেখা" : "Used elsewhere"}
+            desc={bn ? "এগুলো হোমপেজের মূল অংশে দেখায় না, তবে লেখা এখানেই রাখা হয়।" : "Not part of the main homepage flow, but kept here."}
+          >
+            <div className="space-y-5">
+              <div>
+                <p className="text-sm font-semibold text-heading">{bn ? "ট্রাস্ট ব্যাজ" : "Trust badges"}</p>
+                {jsonEditor("site_trust_badges_json", bn ? "ওয়েবসাইটের নিচে (ফুটারে) ছোট আস্থা-ব্যাজ হিসেবে দেখায়।" : "Shown as small badges in the footer.")}
+              </div>
+              <details className="group rounded-xl border border-gray-200 dark:border-white/10">
+                <summary className="cursor-pointer list-none flex items-center justify-between gap-2 px-3 py-2.5 text-sm font-semibold text-heading">
+                  {bn ? "এন্ট্রি পয়েন্ট কার্ড (এখন ওয়েবসাইটে দেখানো হয় না)" : "Entry point cards (not shown on the website now)"}
+                  <ChevronDown className="w-4 h-4 transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="px-3 pb-3">
+                  {jsonEditor("site_entry_points_json", bn ? "বড় অ্যাকশন কার্ড। বর্তমান ডিজাইনে এগুলো দেখানো হয় না — লেখা সংরক্ষিত থাকবে, মুছে যাবে না।" : "Large call-to-action cards. Not shown in the current design — your text is kept.")}
+                </div>
+              </details>
+            </div>
+          </Section>
         </div>
       )}
 
