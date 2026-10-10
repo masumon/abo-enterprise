@@ -37,7 +37,7 @@ const BLOCKS: Block[] = [
     jsonKeys: ["about_team_json"],
   },
   {
-    id: "clients",
+    id: "trust_media",
     icon: <Handshake className="w-4 h-4" aria-hidden />,
     title: "ক্লায়েন্ট/পার্টনার লোগো",
     where: "হোমপেজের “আমাদের ব্র্যান্ড পার্টনার” অংশ",
