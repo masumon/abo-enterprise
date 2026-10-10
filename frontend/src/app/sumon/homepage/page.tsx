@@ -87,7 +87,7 @@ const HOMEPAGE_MAP: { bn: string; href?: string; noteBn: string }[] = [
   { bn: "ফিচার্ড পণ্য", href: "/sumon/products", noteBn: "পণ্যে \"ফিচার্ড\" চালু করুন" },
   { bn: "সেবা", href: "/sumon/services", noteBn: "সেবা পাতায়" },
   { bn: "সফটওয়্যার ও প্রজেক্ট", href: "/sumon/showcase", noteBn: "শোকেস পাতায়" },
-  { bn: "ক্লায়েন্ট লোগো", href: "/sumon/settings#trust_media", noteBn: "সেটিংস → টিম ও ক্লায়েন্ট" },
+  { bn: "ক্লায়েন্ট লোগো", href: "/sumon/about-trust#trust_media", noteBn: "আমাদের সম্পর্কে ও বিশ্বাস" },
   { bn: "কেন আমরা", href: "#why-choose", noteBn: "এই পাতায়" },
   { bn: "যোগাযোগ বার", href: "/sumon/settings#company_info", noteBn: "ফোন/হোয়াটসঅ্যাপ — সেটিংস" },
   { bn: "গ্রাহক রিভিউ", href: "/sumon/reviews", noteBn: "রিভিউ পাতায় অনুমোদন দিন" },
