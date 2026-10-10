@@ -1,496 +1,165 @@
 "use client";
-import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
-import { useCallback, useEffect, useState, useRef, type FormEvent } from "react";
-import { Plus, Pencil, Trash2, X, Loader2, Package, ChevronDown, Copy, Download, FileText, Upload, Check, Ban, Star, StarOff, Languages, Sparkles, FileSpreadsheet } from "lucide-react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
-import { productsApi, categoriesApi, adminApi, adminBlogApi, downloadCsv, downloadPdf, type AiDescription } from "@/lib/api";
-import AiDescribeButton from "@/components/admin/AiDescribeButton";
+import { Pencil, Trash2, Loader2, Package, Copy, Download, FileText, Upload, Check, EyeOff, Star, StarOff, Tags, FilterX } from "lucide-react";
+import { productsApi, categoriesApi, adminApi, downloadCsv, downloadPdf } from "@/lib/api";
+import { productAdminApi, bnNum, type DupMatch, type MissingFilter, type ProductStockFilter } from "@/lib/catalogAdminApi";
 import AiPhotoProductsModal from "@/components/admin/AiPhotoProductsModal";
-import { useAiAvailable } from "@/lib/useAiAvailable";
 import { apiErrorMessage } from "@/lib/apiError";
-import { parseDhakaDateTime, storedToDhakaInput } from "@/lib/flashSale";
-import ImageUpload from "@/components/admin/ImageUpload";
-import TranslateButton from "@/components/admin/TranslateButton";
-import { translateBnToEn } from "@/lib/translate";
-import LivePreview from "@/components/admin/LivePreview";
-import LinkChecklist, { type LinkOption } from "@/components/admin/LinkChecklist";
-import ProductCard from "@/components/features/ProductCard";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import AddEntryChoices from "@/components/admin/catalog/AddEntryChoices";
+import BulkActionBar from "@/components/admin/catalog/BulkActionBar";
+import InlineNumber from "@/components/admin/catalog/InlineNumber";
+import ActiveSwitch from "@/components/admin/catalog/ActiveSwitch";
+import { useBnEn } from "@/components/admin/catalog/useBnEn";
 import { useToastStore } from "@/store/toast";
 import type { Product, Category } from "@/types";
-import StatusBadge from "@/components/admin/StatusBadge";
 import { cn } from "@/lib/utils";
-import { useFocusTrap } from "@/lib/useFocusTrap";
-import { useAdminT } from "@/lib/i18n/adminText";
+import ProductFormModal, { type ProductFormMode, type CategoryOpt } from "./ProductFormModal";
 
-// Values are the backend product-category slugs (do not change); labels are the
-// customer-facing names, kept in sync with the storefront category filters.
+// Values are the backend product-category slugs (do not change).
 const CATEGORIES: { value: string; label: string }[] = [
   { value: "accessories", label: "Mobile Accessories" },
   { value: "gadgets", label: "Premium Gadgets" },
   { value: "electronics", label: "Electronics" },
   { value: "computer", label: "Computer Accessories" },
 ];
-const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
-  CATEGORIES.map((c) => [c.value, c.label])
-);
-const BADGES = ["", "HOT", "NEW", "SALE"];
+const PER_PAGE = 20;
 
-const schema = z.object({
-  slug: z.string().min(2, "Required").regex(/^[a-z0-9-]+$/, "Lowercase letters, numbers and hyphens only"),
-  name_en: z.string().min(1, "Required"),
-  name_bn: z.string().min(1, "Required"),
-  description_en: z.string().optional(),
-  description_bn: z.string().optional(),
-  price: z.coerce.number().min(1, "Required"),
-  original_price: z.coerce.number().min(0).optional(),
-  cost_price: z.coerce.number().min(0).optional(),
-  category: z.string().min(1, "Required"),
-  category_id: z.string().optional(),
-  subcategory_id: z.string().optional(),
-  badge: z.string().optional(),
-  stock_quantity: z.coerce.number().min(0),
-  is_active: z.boolean(),
-  is_featured: z.boolean(),
-  image_url: z.string().optional(),
-  // SEO fields (Sprint A)
-  seo_title: z.string().optional(),
-  seo_description: z.string().optional(),
-  seo_keywords: z.string().optional(),
-  canonical_url: z.string().optional(),
-  og_image: z.string().optional(),
-  // Extended fields (Sprint D)
-  sku: z.string().optional(),
-  barcode: z.string().optional(),
-  brand: z.string().optional(),
-  sub_category: z.string().optional(),
-  tags: z.string().optional(),
-  weight: z.coerce.number().optional(),
-  warranty_info: z.string().optional(),
-  delivery_info: z.string().optional(),
-  delivery_charge: z.preprocess((v) => (v === "" || v == null ? undefined : v), z.coerce.number().min(0).optional()),
-  requires_advance: z.boolean().optional(),
-  is_flash_sale: z.boolean().optional(),
-  flash_sale_price: z.coerce.number().optional(),
-  flash_sale_ends_at: z.string().optional(),
-  low_stock_threshold: z.coerce.number().min(0).optional(),
-  is_best_seller: z.boolean().optional(),
-  is_bookable: z.boolean().optional(),
-}).refine(
-  (d) => !d.original_price || d.original_price >= d.price,
-  { message: "Original price must be ≥ sale price", path: ["original_price"] }
-).refine(
-  (d) => !d.flash_sale_price || d.flash_sale_price < d.price,
-  { message: "Flash sale price must be less than regular price", path: ["flash_sale_price"] }
-);
-type FormData = z.infer<typeof schema>;
-
-/** Product thumbnail that falls back to a placeholder icon when the image
- * URL is empty OR fails to load (previously a broken URL showed overflowing
- * alt text in the tiny box). */
-function ProductThumb({ src, alt }: { src?: string | null; alt: string }) {
+function ProductThumb({ src, alt, size = 40 }: { src?: string | null; alt: string; size?: number }) {
   const [failed, setFailed] = useState(false);
+  const box = size === 40 ? "w-10 h-10" : "w-16 h-16";
   if (!src || failed) {
-    return (
-      <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-        <Package className="w-4 h-4 text-gray-400" />
-      </div>
-    );
+    return <div className={cn(box, "rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center flex-shrink-0")}><Package className="w-4 h-4 text-gray-400" /></div>;
   }
-  return (
-    <Image
-      src={src}
-      alt={alt}
-      width={40}
-      height={40}
-      onError={() => setFailed(true)}
-      className="w-10 h-10 rounded-lg object-cover border border-gray-100 flex-shrink-0 bg-gray-50"
-    />
-  );
+  return <Image src={src} alt={alt} width={size} height={size} onError={() => setFailed(true)} className={cn(box, "rounded-lg object-contain border border-gray-100 flex-shrink-0 bg-white")} />;
 }
 
+type Filters = { category: string; status: "" | "active" | "draft"; stock: ProductStockFilter; missing: MissingFilter };
+const NO_FILTERS: Filters = { category: "", status: "", stock: "", missing: "" };
+
 export default function AdminProductsPage() {
-  const tx = useAdminT();
+  const t = useBnEn();
+  const toast = useToastStore((s) => s.push);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const toast = useToastStore((s) => s.push);
-  const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState<Product | null>(null);
+  const [search, setSearch] = useState("");
+  const [query, setQuery] = useState("");
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS);
+  const [form, setForm] = useState<ProductFormMode | null>(null);
+  const [formKey, setFormKey] = useState(0);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [seoOpen, setSeoOpen] = useState(false);
-  const [extOpen, setExtOpen] = useState(false);
-  const [imageUrl, setImageUrl] = useState("");
-  const [galleryImages, setGalleryImages] = useState<string[]>([]);
-  const [specs, setSpecs] = useState<{ k: string; v: string }[]>([]);
   const [taxonomy, setTaxonomy] = useState<Category[]>([]);
-  const [searchInput, setSearchInput] = useState("");
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const modalRef = useFocusTrap(showModal);
-  const aiAvailable = useAiAvailable();
   const [aiPhotoOpen, setAiPhotoOpen] = useState(false);
-
-  // Bulk selection + row actions
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkCategory, setBulkCategory] = useState("");
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [blogRailEnabled, setBlogRailEnabled] = useState(true);
   const [blogRailSaving, setBlogRailSaving] = useState(false);
-  // Blog posts this product can be linked to (many-to-many). Managed outside
-  // react-hook-form since it's a toggle list, not a plain input.
-  const [blogOptions, setBlogOptions] = useState<LinkOption[]>([]);
-  const [blogOptionsLoading, setBlogOptionsLoading] = useState(false);
-  const [productBlogIds, setProductBlogIds] = useState<string[]>([]);
-  const [linkedBlogsLoading, setLinkedBlogsLoading] = useState(false);
-  const [translating, setTranslating] = useState(false);
 
-  // Auto-translate English → বাংলা for name & description. Only fills EMPTY
-  // Bengali fields (never overwrites what the admin already wrote). Reuses the
-  // admin translate endpoint.
-  const autoTranslate = async () => {
-    if (translating) return;
-    setTranslating(true);
-    try {
-      const nameEn = (getValues("name_en") || "").trim();
-      const descEn = (getValues("description_en") || "").trim();
-      const nameBn = (getValues("name_bn") || "").trim();
-      const descBn = (getValues("description_bn") || "").trim();
-      const [name, desc] = await Promise.all([
-        !nameBn && nameEn ? adminBlogApi.translate(nameEn, "en", "bn").then((r) => r.data?.data?.translated?.trim() || "").catch(() => "") : Promise.resolve(""),
-        !descBn && descEn ? adminBlogApi.translate(descEn, "en", "bn").then((r) => r.data?.data?.translated?.trim() || "").catch(() => "") : Promise.resolve(""),
-      ]);
-      if (name) setValue("name_bn", name, { shouldDirty: true });
-      if (desc) setValue("description_bn", desc, { shouldDirty: true });
-      toast("success", "বাংলা অনুবাদ পূরণ হয়েছে — সেভ করার আগে দেখে নিন");
-    } catch {
-      toast("error", "অনুবাদ ব্যর্থ — আবার চেষ্টা করুন");
-    } finally {
-      setTranslating(false);
-    }
-  };
-
-  const { register, handleSubmit, reset, setValue, watch, getValues, formState: { errors } } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: { is_active: true, is_featured: false, stock_quantity: 0, low_stock_threshold: 5, is_flash_sale: false, is_best_seller: false },
-  });
-
-  const currentImage = watch("image_url");
-  const previewProduct = {
-    id: editing?.id ?? "preview",
-    slug: watch("slug") || "preview",
-    name_en: watch("name_en") || "Product name",
-    name_bn: watch("name_bn") || "",
-    price: Number(watch("price")) || 0,
-    original_price: watch("original_price") ? Number(watch("original_price")) : undefined,
-    image_url: currentImage || imageUrl || "",
-    category: watch("category") || "",
-    badge: watch("badge") || undefined,
-    stock_quantity: Number(watch("stock_quantity")) || 0,
-    rating: 0,
-    review_count: 0,
-  } as unknown as Product;
-  // Flattened tree for the single node picker — "— " per depth level, so the
-  // admin can place a product at ANY depth of the unlimited taxonomy.
+  // Flattened taxonomy for the form's tree picker and the category options.
   const treeOptions: { id: string; label: string }[] = [];
-  const flatten = (nodes: { id: string; name_en: string; name_bn?: string | null; subcategories?: unknown[] }[], depth: number) => {
+  const categoryOptions: CategoryOpt[] = CATEGORIES.map((c) => ({ slug: c.value, label: c.label }));
+  type Node = { id: string; slug: string; name_en: string; name_bn?: string | null; subcategories?: Node[] };
+  const walk = (nodes: Node[], depth: number) => {
     for (const n of nodes) {
-      treeOptions.push({ id: n.id, label: `${"— ".repeat(depth)}${n.name_bn || n.name_en}` });
-      flatten((n.subcategories ?? []) as typeof nodes, depth + 1);
-    }
-  };
-  flatten(taxonomy as unknown as { id: string; name_en: string; subcategories?: unknown[] }[], 0);
-
-  // Category <select>: the original 4 storefront values + every product
-  // category from the taxonomy (e.g. ones created by the bulk import) + the
-  // product's current value, so editing an imported product never shows blank.
-  const categoryOptions: { slug: string; label: string; id?: string }[] = [...CATEGORIES.map((c) => ({ slug: c.value, label: c.label }))];
-  const addCat = (nodes: { id: string; slug: string; name_en: string; name_bn?: string | null; subcategories?: unknown[] }[], depth: number) => {
-    for (const n of nodes) {
+      const label = `${"— ".repeat(depth)}${n.name_bn || n.name_en}`;
+      treeOptions.push({ id: n.id, label });
       const known = categoryOptions.find((o) => o.slug === n.slug);
-      if (known) known.id = known.id ?? n.id;
-      else categoryOptions.push({ slug: n.slug, id: n.id, label: `${"— ".repeat(depth)}${n.name_bn || n.name_en}` });
-      addCat((n.subcategories ?? []) as typeof nodes, depth + 1);
+      if (known) known.id = known.id ?? n.id; else categoryOptions.push({ slug: n.slug, id: n.id, label });
+      walk(n.subcategories ?? [], depth + 1);
     }
   };
-  addCat(taxonomy as unknown as { id: string; slug: string; name_en: string; subcategories?: unknown[] }[], 0);
-  const currentCategory = watch("category");
-  if (currentCategory && !categoryOptions.some((o) => o.slug === currentCategory)) {
-    categoryOptions.push({ slug: currentCategory, label: currentCategory });
-  }
+  walk(taxonomy as unknown as Node[], 0);
+  const catLabel = (slug: string) => categoryOptions.find((o) => o.slug === slug)?.label.replace(/^(— )+/, "") ?? slug;
 
-  // AI description → product fields. Asks before replacing text the admin wrote.
-  const applyAiDescription = (d: AiDescription) => {
-    const build = (para: string, feats: string[], faq: string) =>
-      [para, feats.map((f) => `• ${f}`).join("\n"), faq].filter((x) => x && x.trim()).join("\n\n");
-    const faqBn = d.faq.filter((f) => f.q_bn).map((f) => `প্রশ্ন: ${f.q_bn}\nউত্তর: ${f.a_bn}`).join("\n\n");
-    const faqEn = d.faq.filter((f) => f.q_en).map((f) => `Q: ${f.q_en}\nA: ${f.a_en}`).join("\n\n");
-    const bn = build(d.description_bn, d.features_bn, faqBn ? `প্রশ্নোত্তর\n${faqBn}` : "");
-    const en = build(d.description_en, d.features_en, faqEn ? `FAQ\n${faqEn}` : "");
-    const hasText = (getValues("description_bn") || "").trim() || (getValues("description_en") || "").trim();
-    if (hasText && !window.confirm("আগের বিবরণ AI-এর লেখা দিয়ে বদলে দেবেন?")) return;
-    if (bn) setValue("description_bn", bn, { shouldDirty: true });
-    if (en) setValue("description_en", en, { shouldDirty: true });
-  };
-
-  const load = useCallback(async (pageNum = page, search?: string) => {
+  const load = useCallback(async () => {
     setLoading(true);
-    setActionError(null);
+    setLoadError(false);
     try {
-      const r = await productsApi.adminList({ page: pageNum, per_page: 20, search: search || undefined });
+      const r = await productAdminApi.list({
+        page, per_page: PER_PAGE, search: query || undefined, category: filters.category || undefined,
+        is_active: filters.status === "" ? undefined : filters.status === "active",
+        stock: filters.stock || undefined, missing: filters.missing || undefined,
+      });
       setProducts(r.data.data ?? []);
       setTotal(r.data.meta?.total ?? 0);
     } catch {
-      setActionError("Failed to load products.");
+      setLoadError(true);
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, query, filters]);
+  useEffect(() => { load(); }, [load]);
 
-  useEffect(() => { load(page); }, [page, load]);
-
-  // Load the shared taxonomy once (product-applicable categories) for the
-  // optional Category/Subcategory selectors. Failure is non-fatal — the form
-  // works without it, so existing behaviour is preserved.
   useEffect(() => {
-    categoriesApi
-      .list({ applies_to: "product" })
-      .then((r) => setTaxonomy(r.data.data ?? []))
-      .catch(() => setTaxonomy([]));
+    categoriesApi.list({ applies_to: "product" }).then((r) => setTaxonomy(r.data.data ?? [])).catch(() => setTaxonomy([]));
+    adminApi.getSettings().then((r) => setBlogRailEnabled((r.data.data?.feature_blog_product_rail ?? "true") !== "false")).catch(() => {});
   }, []);
 
-  // Blog post pages show a small "products from our store" rail (see
-  // BlogProductRail); this setting is the single on/off switch for it, kept
-  // here in Products rather than the generic Settings page since it's a
-  // product-catalog concern.
-  useEffect(() => {
-    adminApi.getSettings()
-      .then((r) => setBlogRailEnabled((r.data.data?.feature_blog_product_rail ?? "true") !== "false"))
-      .catch(() => {});
-  }, []);
+  const onSearch = (v: string) => {
+    setSearch(v);
+    if (searchTimer.current) clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => { setPage(1); setQuery(v.trim()); }, 400);
+  };
+  const setFilter = (patch: Partial<Filters>) => { setPage(1); setSelected(new Set()); setFilters((f) => ({ ...f, ...patch })); };
+  const hasFilters = !!(query || filters.category || filters.status || filters.stock || filters.missing);
 
-  // Blog options for the per-product "linked blogs" picker, loaded once.
-  useEffect(() => {
-    let alive = true;
-    setBlogOptionsLoading(true);
-    adminBlogApi.list({ per_page: 100 })
-      .then((r) => {
-        if (!alive) return;
-        setBlogOptions((r.data.data ?? []).map((b) => ({
-          id: String(b.id), label: b.title_en || b.title_bn || b.slug, sublabel: b.category,
-        })));
-      })
-      .catch(() => { if (alive) setBlogOptions([]); })
-      .finally(() => { if (alive) setBlogOptionsLoading(false); });
-    return () => { alive = false; };
-  }, []);
+  const openForm = (m: ProductFormMode) => { setForm(m); setFormKey((k) => k + 1); };
+  const openExisting = async (m: DupMatch) => {
+    try {
+      const r = await productAdminApi.list({ search: m.slug || m.name_en || "", per_page: 20 });
+      const p = (r.data.data ?? []).find((x) => x.id === m.id);
+      if (p) openForm({ type: "edit", product: p });
+    } catch { toast("error", t("পণ্যটি খোলা যায়নি", "Could not open that product")); }
+  };
 
   const toggleBlogRail = async () => {
     const next = !blogRailEnabled;
     setBlogRailEnabled(next);
     setBlogRailSaving(true);
     try {
-      await adminApi.upsertSettings([{
-        key: "feature_blog_product_rail",
-        value: next ? "true" : "false",
-        data_type: "boolean",
-        description: "Show a product rail at the end of blog posts",
-      }]);
-      toast("success", next ? "Blog product rail enabled" : "Blog product rail disabled");
+      await adminApi.upsertSettings([{ key: "feature_blog_product_rail", value: next ? "true" : "false", data_type: "boolean", description: "Show a product rail at the end of blog posts" }]);
     } catch {
       setBlogRailEnabled(!next);
-      toast("error", "Could not save this setting");
-    } finally {
-      setBlogRailSaving(false);
-    }
+      toast("error", t("সেটিং সেভ হয়নি", "Could not save this setting"));
+    } finally { setBlogRailSaving(false); }
   };
 
-  const handleSearchChange = (v: string) => {
-    setSearchInput(v);
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => { setPage(1); load(1, v); }, 400);
-  };
-
-  const openCreate = () => {
-    setEditing(null);
-    reset({
-      is_active: true, is_featured: false, stock_quantity: 0, image_url: "",
-      seo_title: "", seo_description: "", seo_keywords: "", canonical_url: "", og_image: "",
-      low_stock_threshold: 5, is_flash_sale: false, is_best_seller: false,
-      requires_advance: false,
-    });
-    setImageUrl("");
-    setGalleryImages([]);
-    setSpecs([]);
-    setProductBlogIds([]);
-    setSeoOpen(false);
-    setExtOpen(false);
-    setShowModal(true);
-  };
-
-  const openEdit = (p: Product) => {
-    setEditing(p);
-    // Load the blog posts this product is already linked to (for the ticks).
-    setProductBlogIds([]);
-    if (p.id) {
-      setLinkedBlogsLoading(true);
-      adminBlogApi.productLinks(p.id)
-        .then((r) => setProductBlogIds(r.data.data?.blog_ids ?? []))
-        .catch(() => setProductBlogIds([]))
-        .finally(() => setLinkedBlogsLoading(false));
-    }
-    reset({
-      slug: p.slug,
-      name_en: p.name_en,
-      name_bn: p.name_bn,
-      description_en: p.description_en ?? "",
-      description_bn: p.description_bn ?? "",
-      price: p.price,
-      original_price: p.original_price ?? undefined,
-      cost_price: p.cost_price ?? undefined,
-      category: p.category,
-      category_id: p.category_id ?? "",
-      subcategory_id: p.subcategory_id ?? "",
-      badge: p.badge ?? "",
-      stock_quantity: p.stock_quantity,
-      is_active: p.is_active,
-      is_featured: p.is_featured,
-      image_url: p.image_url ?? "",
-      seo_title: p.seo_title ?? "",
-      seo_description: p.seo_description ?? "",
-      seo_keywords: p.seo_keywords ?? "",
-      canonical_url: p.canonical_url ?? "",
-      og_image: p.og_image ?? "",
-      sku: p.sku ?? "",
-      barcode: p.barcode ?? "",
-      brand: p.brand ?? "",
-      sub_category: p.sub_category ?? "",
-      tags: p.tags?.join(", ") ?? "",
-      weight: p.weight ?? undefined,
-      warranty_info: p.warranty_info ?? "",
-      delivery_info: p.delivery_info ?? "",
-      delivery_charge: p.delivery_charge ?? undefined,
-      requires_advance: p.requires_advance ?? false,
-      is_flash_sale: p.is_flash_sale ?? false,
-      flash_sale_price: p.flash_sale_price ?? undefined,
-      // Shown and saved in Bangladesh time. The old code displayed the UTC
-      // value but saved it as device-local time, so every edit+save pulled
-      // the end 6 hours earlier.
-      flash_sale_ends_at: p.flash_sale_ends_at ? storedToDhakaInput(p.flash_sale_ends_at) : "",
-      low_stock_threshold: p.low_stock_threshold ?? 5,
-      is_best_seller: p.is_best_seller ?? false,
-      is_bookable: p.is_bookable ?? false,
-    });
-    setImageUrl(p.image_url ?? "");
-    setGalleryImages(p.images ?? []);
-    setSpecs(Object.entries((p.specifications as Record<string, string>) ?? {}).map(([k, v]) => ({ k, v: String(v) })));
-    setSeoOpen(false);
-    setExtOpen(false);
-    setShowModal(true);
-  };
-
-  const openClone = (p: Product) => {
-    setEditing(null);
-    reset({
-      slug: `${p.slug}-copy`,
-      name_en: `${p.name_en} (Copy)`,
-      name_bn: p.name_bn,
-      description_en: p.description_en ?? "",
-      description_bn: p.description_bn ?? "",
-      price: p.price,
-      original_price: p.original_price ?? undefined,
-      category: p.category,
-      badge: p.badge ?? "",
-      stock_quantity: 0,
-      is_active: false,
-      is_featured: false,
-      is_bookable: p.is_bookable ?? false,
-      image_url: p.image_url ?? "",
-      seo_title: "", seo_description: "", seo_keywords: "", canonical_url: "", og_image: "",
-      sku: "", barcode: "", brand: p.brand ?? "", sub_category: p.sub_category ?? "",
-      tags: p.tags?.join(", ") ?? "",
-      weight: p.weight ?? undefined,
-      warranty_info: p.warranty_info ?? "", delivery_info: p.delivery_info ?? "",
-      delivery_charge: p.delivery_charge ?? undefined, requires_advance: p.requires_advance ?? false,
-      is_flash_sale: false, flash_sale_price: undefined, flash_sale_ends_at: "",
-      low_stock_threshold: p.low_stock_threshold ?? 5, is_best_seller: false,
-    });
-    setImageUrl(p.image_url ?? "");
-    setGalleryImages([]);
-    setSpecs(Object.entries((p.specifications as Record<string, string>) ?? {}).map(([k, v]) => ({ k, v: String(v) })));
-    setProductBlogIds([]); // a clone starts with no blog links
-    setSeoOpen(false);
-    setExtOpen(false);
-    setShowModal(true);
-  };
-
-  const onSubmit = async (data: FormData) => {
-    setSaving(true);
+  const patchOne = async (p: Product, patch: Partial<Product>) => {
+    setBusyId(p.id ?? null);
     try {
-      const { tags: tagsStr, flash_sale_ends_at, category_id, subcategory_id, is_bookable, ...rest } = data;
-      const payload: Partial<Product> = {
-        ...rest,
-        // Empty selector → null (clears the association); otherwise pass the id.
-        category_id: category_id ? category_id : null,
-        subcategory_id: subcategory_id ? subcategory_id : null,
-        // Cross-capability: checked → also bookable; unchecked → null (default,
-        // never sends false so the product's ordering is never disabled).
-        is_bookable: is_bookable ? true : null,
-        tags: tagsStr ? tagsStr.split(",").map((t) => t.trim()).filter(Boolean) : [],
-        images: galleryImages.filter(Boolean),
-        specifications: Object.fromEntries(specs.filter((r) => r.k.trim()).map((r) => [r.k.trim(), r.v.trim()])),
-        flash_sale_ends_at: flash_sale_ends_at ? (parseDhakaDateTime(flash_sale_ends_at) ?? new Date(flash_sale_ends_at)).toISOString() : null,
-        // Blog posts this product is featured in (many-to-many; replaces links).
-        blog_ids: productBlogIds,
-      } as Partial<Product>;
-      if (editing) {
-        await productsApi.update(editing.id!, payload);
-        toast("success", "Product updated");
-      } else {
-        await productsApi.create(payload);
-        toast("success", "Product created");
-      }
-      setShowModal(false);
-      await load(page);
+      await productsApi.update(p.id!, patch);
+      setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, ...patch } : x)));
+      toast("success", t("সেভ হয়েছে", "Saved"));
     } catch (e) {
-      const msg = apiErrorMessage(e, "Failed to save product");
-      setActionError(msg);
-      toast("error", msg);
-    } finally {
-      setSaving(false);
-    }
+      toast("error", apiErrorMessage(e, t("সেভ হয়নি", "Save failed")));
+      throw e;
+    } finally { setBusyId(null); }
   };
-
-  // Bangla-first submit: fill empty English name/description from Bangla before
-  // validation runs, so the admin never types English by hand. Translation
-  // failure is non-blocking — zod then flags the still-empty English field.
-  const submitWithTranslate = async (e: FormEvent) => {
-    e.preventDefault();
-    const nameBn = getValues("name_bn")?.trim();
-    if (!getValues("name_en")?.trim() && nameBn) {
-      try { setValue("name_en", await translateBnToEn(nameBn), { shouldValidate: true }); } catch { /* zod will flag it */ }
+  const setStock = async (p: Product, next: number) => {
+    const delta = next - (p.stock_quantity ?? 0);
+    if (!delta) return;
+    try {
+      await productAdminApi.adjustStock(p.id!, delta, "পণ্য তালিকা থেকে দ্রুত সংশোধন (quick edit)");
+      setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, stock_quantity: next } : x)));
+      toast("success", t("স্টক আপডেট হয়েছে (ইনভেন্টরি হিস্টরিতে আছে)", "Stock updated (kept in inventory history)"));
+    } catch (e) {
+      toast("error", apiErrorMessage(e, t("স্টক বদলানো যায়নি", "Stock change failed")));
+      throw e;
     }
-    if (!getValues("slug")?.trim() && getValues("name_en")?.trim()) {
-      const auto = getValues("name_en").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
-      if (auto.length >= 2) setValue("slug", auto, { shouldValidate: true });
-    }
-    const descBn = getValues("description_bn")?.trim();
-    if (!getValues("description_en")?.trim() && descBn) {
-      try { setValue("description_en", await translateBnToEn(descBn), { shouldValidate: true }); } catch { /* optional field */ }
-    }
-    handleSubmit(onSubmit)();
   };
 
   const handleDelete = async () => {
@@ -498,69 +167,37 @@ export default function AdminProductsPage() {
     try {
       await productsApi.delete(deleteId);
       setDeleteId(null);
-      toast("success", "Product deleted");
-      await load(page);
-    } catch (e) {
-      const msg = apiErrorMessage(e, "Failed to delete product");
-      setActionError(msg);
-      toast("error", msg);
-    }
+      toast("success", t("পণ্য মুছে ফেলা হয়েছে", "Product deleted"));
+      await load();
+    } catch (e) { toast("error", apiErrorMessage(e, t("মুছতে পারিনি", "Failed to delete product"))); }
   };
 
-  const toggleSelected = (id: string) =>
-    setSelected((s) => {
-      const next = new Set(s);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-
   const pageIds = products.map((p) => p.id).filter((id): id is string => !!id);
-  const allOnPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
-  const toggleSelectAll = () =>
-    setSelected((s) => {
-      const next = new Set(s);
-      if (allOnPageSelected) pageIds.forEach((id) => next.delete(id));
-      else pageIds.forEach((id) => next.add(id));
-      return next;
-    });
+  const allOnPage = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const toggle = (id: string) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const toggleAll = () => setSelected((s) => { const n = new Set(s); pageIds.forEach((id) => (allOnPage ? n.delete(id) : n.add(id))); return n; });
 
-  const runBulkUpdate = async (patch: Partial<Product>, label: string) => {
+  const runBulk = async (patch: Partial<Product>, doneBn: string, doneEn: string) => {
     setBulkLoading(true);
     try {
       await Promise.all(Array.from(selected).map((id) => productsApi.update(id, patch)));
-      toast("success", `${selected.size} product(s) ${label}`);
+      toast("success", t(`${bnNum(selected.size)}টি পণ্য ${doneBn}`, `${selected.size} product(s) ${doneEn}`));
       setSelected(new Set());
-      await load(page);
-    } catch (e) {
-      toast("error", apiErrorMessage(e, "Bulk update failed"));
-    } finally {
-      setBulkLoading(false);
-    }
+      await load();
+    } catch (e) { toast("error", apiErrorMessage(e, t("একসাথে বদলানো যায়নি", "Bulk update failed"))); }
+    finally { setBulkLoading(false); }
   };
-
   const runBulkDelete = async () => {
     setBulkLoading(true);
     try {
       await Promise.all(Array.from(selected).map((id) => productsApi.delete(id)));
-      toast("success", `${selected.size} product(s) deleted`);
+      toast("success", t(`${bnNum(selected.size)}টি পণ্য মুছে ফেলা হয়েছে`, `${selected.size} product(s) deleted`));
       setSelected(new Set());
       setBulkDeleteConfirm(false);
-      await load(page);
-    } catch (e) {
-      toast("error", apiErrorMessage(e, "Bulk delete failed"));
-    } finally {
-      setBulkLoading(false);
-    }
+      await load();
+    } catch (e) { toast("error", apiErrorMessage(e, t("মুছতে পারিনি", "Bulk delete failed"))); }
+    finally { setBulkLoading(false); }
   };
-
-  const handleExportCsv = () =>
-    downloadCsv("/api/v1/admin/bulk/export/products", "products.csv").catch((e) =>
-      toast("error", apiErrorMessage(e, "Export failed"))
-    );
-  const handleExportPdf = () =>
-    downloadPdf("/api/v1/admin/bulk/export/products/pdf", "products.pdf").catch((e) =>
-      toast("error", apiErrorMessage(e, "Export failed"))
-    );
 
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -568,19 +205,29 @@ export default function AdminProductsPage() {
     if (!file) return;
     setImporting(true);
     try {
-      const r = await productsApi.importCsv(file);
-      const { created, updated, errors } = r.data.data;
-      toast(
-        "success",
-        `Import complete: ${created} created, ${updated} updated${errors.length ? `, ${errors.length} row error(s)` : ""}`
-      );
-      await load(page);
-    } catch (e) {
-      toast("error", apiErrorMessage(e, "Import failed"));
-    } finally {
-      setImporting(false);
-    }
+      const { created, updated, errors } = (await productsApi.importCsv(file)).data.data;
+      toast("success", t(`ইমপোর্ট: ${created}টি নতুন, ${updated}টি আপডেট${errors.length ? `, ${errors.length}টি সারিতে সমস্যা` : ""}`, `Import: ${created} created, ${updated} updated${errors.length ? `, ${errors.length} row error(s)` : ""}`));
+      await load();
+    } catch (err) { toast("error", apiErrorMessage(err, t("ইমপোর্ট ব্যর্থ", "Import failed"))); }
+    finally { setImporting(false); }
   };
+
+  const rowActions = (p: Product) => (
+    <div className="flex items-center justify-end gap-1">
+      <button type="button" onClick={() => openForm({ type: "clone", product: p })} title={t("কপি করে নতুন বানান", "Copy as new")} aria-label={t("কপি করে নতুন বানান", "Copy as new")}
+        className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 dark:hover:bg-white/10"><Copy className="w-4 h-4" /></button>
+      <button type="button" onClick={() => openForm({ type: "edit", product: p })} title={t("সম্পাদনা", "Edit")} aria-label={t("সম্পাদনা", "Edit")}
+        className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 dark:hover:bg-white/10"><Pencil className="w-4 h-4" /></button>
+      <button type="button" onClick={() => setDeleteId(p.id ?? null)} title={t("মুছুন", "Delete")} aria-label={t("মুছুন", "Delete")}
+        className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10"><Trash2 className="w-4 h-4" /></button>
+    </div>
+  );
+  const stockCell = (p: Product) => {
+    const low = (p.stock_quantity ?? 0) <= (p.low_stock_threshold ?? 5);
+    return <InlineNumber value={p.stock_quantity} label={t("স্টক", "Stock")} onSave={(v) => setStock(p, v)}
+      className={cn("text-sm", (p.stock_quantity ?? 0) <= 0 ? "text-red-600 font-semibold" : low ? "text-amber-600 font-semibold" : "text-gray-700 dark:text-gray-300")} />;
+  };
+  const sel = "admin-input !py-1.5 text-sm w-auto";
 
   return (
     <div className="admin-page">
@@ -588,647 +235,188 @@ export default function AdminProductsPage() {
         title="Products"
         titleBn="পণ্য ব্যবস্থাপনা"
         description={`${total} products — add, edit, stock & pricing`}
-        descriptionBn={`${String(total).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি পণ্য — যোগ, সম্পাদনা, স্টক ও মূল্য`}
+        descriptionBn={`${bnNum(total)}টি পণ্য — যোগ, সম্পাদনা, স্টক ও দাম`}
         actions={
           <>
-            <input
-              ref={importInputRef}
-              type="file"
-              accept=".csv"
-              className="hidden"
-              onChange={handleImportFile}
-            />
-            <button
-              onClick={() => importInputRef.current?.click()}
-              disabled={importing}
-              className="admin-btn-secondary"
-              title="Bulk import — CSV with slug, name_en, name_bn, price, stock_quantity…"
-            >
-              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} {tx("Import CSV")}
+            <input ref={importInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportFile} />
+            <button type="button" onClick={() => importInputRef.current?.click()} disabled={importing} className="admin-btn-secondary" title={t("পুরনো সাধারণ CSV (slug, name_en, name_bn, price…)", "Legacy quick CSV import")}>
+              {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} {t("দ্রুত CSV", "Quick CSV")}
             </button>
-            <Link href="/sumon/products/import" className="admin-btn-secondary" title="Excel/CSV ফাইল ও ছবি দিয়ে একসাথে অনেক পণ্য যোগ করুন">
-              <FileSpreadsheet className="w-4 h-4" /> বাল্ক ইমপোর্ট (Excel + ছবি)
-            </Link>
-            {aiAvailable && (
-              <button onClick={() => setAiPhotoOpen(true)} className="admin-btn-secondary" title="পণ্যের ছবি দিন — AI নাম, বিবরণ ও স্পেসিফিকেশনের খসড়া লিখবে">
-                <Sparkles className="w-4 h-4" /> ছবি থেকে পণ্য (AI)
-              </button>
-            )}
-            <button onClick={handleExportCsv} className="admin-btn-secondary" title={tx("Export all products as CSV")}>
-              <Download className="w-4 h-4" /> {tx("Export CSV")}
+            <button type="button" onClick={() => downloadCsv("/api/v1/admin/bulk/export/products", "products.csv").catch((e) => toast("error", apiErrorMessage(e, "Export failed")))} className="admin-btn-secondary">
+              <Download className="w-4 h-4" /> CSV
             </button>
-            <button onClick={handleExportPdf} className="admin-btn-secondary" title={tx("Export all products as a PDF report")}>
-              <FileText className="w-4 h-4" /> {tx("Export PDF")}
-            </button>
-            <button onClick={openCreate} className="admin-btn-primary">
-              <Plus className="w-4 h-4" /> {tx("Add Product")}
+            <button type="button" onClick={() => downloadPdf("/api/v1/admin/bulk/export/products/pdf", "products.pdf").catch((e) => toast("error", apiErrorMessage(e, "Export failed")))} className="admin-btn-secondary">
+              <FileText className="w-4 h-4" /> PDF
             </button>
           </>
         }
       />
 
-      <AdminToolbar
-        searchValue={searchInput}
-        onSearchChange={handleSearchChange}
-        searchPlaceholder="পণ্য খুঁজুন…"
-      />
+      {(total > 0 || hasFilters || loading) && (
+        <AddEntryChoices thing={{ bn: "পণ্য", en: "product" }} onForm={() => openForm({ type: "new" })} onAi={() => setAiPhotoOpen(true)} excelHref="/sumon/products/import" />
+      )}
 
-      <label className="flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-4 py-3 cursor-pointer w-fit">
-        <button
-          type="button"
-          role="switch"
-          aria-checked={blogRailEnabled}
-          disabled={blogRailSaving}
-          onClick={toggleBlogRail}
-          className={cn(
-            "relative w-10 h-6 rounded-full transition-colors flex-shrink-0 disabled:opacity-50",
-            blogRailEnabled ? "bg-brand-600" : "bg-gray-300"
-          )}
-        >
-          <span className={cn(
-            "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform",
-            blogRailEnabled && "translate-x-4"
-          )} />
-        </button>
-        <span className="text-sm text-gray-700">
-          ব্লগ পোস্টের নিচে প্রোডাক্ট কার্ড দেখান
-          <span className="block text-xs text-gray-400">Show a product rail at the end of blog posts</span>
+      <AdminToolbar searchValue={search} onSearchChange={onSearch} searchPlaceholder={t("নাম, slug বা SKU দিয়ে খুঁজুন…", "Search name, slug or SKU…")}>
+        <select aria-label={t("ক্যাটাগরি", "Category")} value={filters.category} onChange={(e) => setFilter({ category: e.target.value })} className={sel}>
+          <option value="">{t("সব ক্যাটাগরি", "All categories")}</option>
+          {categoryOptions.map((c) => <option key={c.slug} value={c.slug}>{c.label}</option>)}
+        </select>
+        <select aria-label={t("অবস্থা", "Status")} value={filters.status} onChange={(e) => setFilter({ status: e.target.value as Filters["status"] })} className={sel}>
+          <option value="">{t("সব অবস্থা", "Any status")}</option>
+          <option value="active">{t("প্রকাশিত", "Live")}</option>
+          <option value="draft">{t("খসড়া / লুকানো", "Draft / hidden")}</option>
+        </select>
+        <select aria-label={t("স্টক", "Stock")} value={filters.stock} onChange={(e) => setFilter({ stock: e.target.value as ProductStockFilter })} className={sel}>
+          <option value="">{t("সব স্টক", "Any stock")}</option>
+          <option value="low">{t("স্টক কম", "Low stock")}</option>
+          <option value="out">{t("স্টক শেষ", "Out of stock")}</option>
+        </select>
+        <select aria-label={t("যা নেই", "Missing")} value={filters.missing} onChange={(e) => setFilter({ missing: e.target.value as MissingFilter })} className={sel}>
+          <option value="">{t("সব তথ্য", "Anything")}</option>
+          <option value="image">{t("ছবি নেই", "No photo")}</option>
+          <option value="price">{t("দাম নেই", "No price")}</option>
+          <option value="description">{t("বিবরণ নেই", "No description")}</option>
+        </select>
+        {hasFilters && (
+          <button type="button" onClick={() => { setSearch(""); setQuery(""); setFilter(NO_FILTERS); }} className="btn btn-ghost btn-sm gap-1"><FilterX className="w-4 h-4" /> {t("ফিল্টার মুছুন", "Clear")}</button>
+        )}
+      </AdminToolbar>
+
+      <BulkActionBar
+        count={selected.size}
+        busy={bulkLoading}
+        onClear={() => setSelected(new Set())}
+        actions={[
+          { bn: "প্রকাশ করুন", en: "Publish", icon: Check, onClick: () => runBulk({ is_active: true }, "প্রকাশ হয়েছে", "published") },
+          { bn: "লুকান", en: "Hide", icon: EyeOff, onClick: () => runBulk({ is_active: false }, "লুকানো হয়েছে", "hidden") },
+          { bn: "ফিচার", en: "Feature", icon: Star, onClick: () => runBulk({ is_featured: true }, "ফিচার হয়েছে", "featured") },
+          { bn: "ফিচার বাদ", en: "Unfeature", icon: StarOff, onClick: () => runBulk({ is_featured: false }, "ফিচার থেকে বাদ", "unfeatured") },
+          { bn: "মুছুন", en: "Delete", icon: Trash2, danger: true, onClick: () => setBulkDeleteConfirm(true) },
+        ]}
+      >
+        <span className="inline-flex items-center gap-1">
+          <select aria-label={t("ক্যাটাগরি বদলান", "Change category")} value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)} className={sel}>
+            <option value="">{t("ক্যাটাগরি বদলান…", "Change category…")}</option>
+            {categoryOptions.map((c) => <option key={c.slug} value={c.slug}>{c.label}</option>)}
+          </select>
+          <button type="button" disabled={!bulkCategory || bulkLoading} className="btn btn-outline btn-sm gap-1"
+            onClick={() => { const c = categoryOptions.find((o) => o.slug === bulkCategory); runBulk({ category: bulkCategory as Product["category"], ...(c?.id ? { category_id: c.id } : {}) }, "ক্যাটাগরি বদলেছে", "moved"); setBulkCategory(""); }}>
+            <Tags className="w-3.5 h-3.5" /> {t("বদলান", "Apply")}
+          </button>
         </span>
-      </label>
+      </BulkActionBar>
 
-      {selected.size > 0 && (
-        <div className="flex flex-wrap items-center gap-2 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">
-          <span className="text-sm font-medium text-brand-800">{selected.size} selected</span>
-          <button onClick={() => runBulkUpdate({ is_active: true }, "activated")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
-            <Check className="w-3.5 h-3.5" /> {tx("Activate")}
-          </button>
-          <button onClick={() => runBulkUpdate({ is_active: false }, "deactivated")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
-            <Ban className="w-3.5 h-3.5" /> {tx("Deactivate")}
-          </button>
-          <button onClick={() => runBulkUpdate({ is_featured: true }, "featured")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
-            <Star className="w-3.5 h-3.5" /> {tx("Feature")}
-          </button>
-          <button onClick={() => runBulkUpdate({ is_featured: false }, "unfeatured")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
-            <StarOff className="w-3.5 h-3.5" /> {tx("Unfeature")}
-          </button>
-          <button onClick={() => setBulkDeleteConfirm(true)} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1 text-red-600 hover:bg-red-50">
-            <Trash2 className="w-3.5 h-3.5" /> {tx("Delete")}
-          </button>
-          {bulkLoading && <Loader2 className="w-4 h-4 animate-spin text-brand-600" />}
-          <button onClick={() => setSelected(new Set())} className="btn btn-ghost btn-sm ml-auto">
-            {tx("Clear")}
-          </button>
-        </div>
-      )}
-
-      {actionError && (
-        <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-2">
-          {actionError}
-        </p>
-      )}
+      {loadError && <p role="alert" className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-4 py-2">{t("পণ্য লোড হয়নি — পেজ রিফ্রেশ করুন।", "Failed to load products.")}</p>}
 
       <div className="admin-card overflow-hidden">
         {loading ? (
-          <div className="p-12 flex justify-center">
-            <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
-          </div>
+          <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
         ) : products.length === 0 ? (
-          <AdminEmptyState icon={Package} title={tx("No products yet")} description={tx("Add your first product to start selling.")} />
+          hasFilters ? (
+            <AdminEmptyState icon={FilterX} title={t("এই খোঁজ/ফিল্টারে কোনো পণ্য নেই", "No products match")} description={t("ফিল্টার মুছে আবার দেখুন।", "Clear the filters to see everything.")}
+              action={<button type="button" onClick={() => { setSearch(""); setQuery(""); setFilter(NO_FILTERS); }} className="btn btn-outline btn-sm">{t("ফিল্টার মুছুন", "Clear filters")}</button>} />
+          ) : (
+            <div className="p-5 sm:p-8">
+              <AdminEmptyState icon={Package} title={t("এখনো কোনো পণ্য নেই", "No products yet")} description={t("নিচের যেকোনো একভাবে প্রথম পণ্য যোগ করুন।", "Add your first product one of these ways.")} />
+              <AddEntryChoices large thing={{ bn: "পণ্য", en: "product" }} onForm={() => openForm({ type: "new" })} onAi={() => setAiPhotoOpen(true)} excelHref="/sumon/products/import" />
+            </div>
+          )
         ) : (
-          <div className="overflow-x-auto">
-            <table className="table-premium min-w-[480px]">
-              <thead>
-                <tr>
-                  <th className="w-10 px-3">
-                    <input
-                      type="checkbox"
-                      aria-label={tx("Select all products on this page")}
-                      checked={allOnPageSelected}
-                      onChange={toggleSelectAll}
-                      className="rounded"
-                    />
-                  </th>
-                  <th>{tx("Product")}</th>
-                  <th className="hidden sm:table-cell">{tx("Category")}</th>
-                  <th>{tx("Price")}</th>
-                  <th className="hidden md:table-cell">{tx("Stock")}</th>
-                  <th>{tx("Status")}</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((p) => (
-                  <tr key={p.id} onClick={() => openEdit(p)} className="cursor-pointer hover:bg-brand-50/30 transition-colors">
-                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        aria-label={`Select ${p.name_en}`}
-                        checked={!!p.id && selected.has(p.id)}
-                        onChange={() => p.id && toggleSelected(p.id)}
-                        className="rounded"
-                      />
-                    </td>
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-3">
-                        <ProductThumb src={p.image_url} alt={p.name_en} />
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-900 truncate">{p.name_en}</p>
-                          <p className="text-xs text-gray-400 truncate">{p.slug}</p>
-                          <p className="text-xs text-gray-400 sm:hidden">{CATEGORY_LABELS[p.category] ?? p.category}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-3 text-gray-600 hidden sm:table-cell">{CATEGORY_LABELS[p.category] ?? p.category}</td>
-                    <td className="px-5 py-3 font-semibold text-gray-900">৳{p.price}</td>
-                    <td className="px-5 py-3 text-gray-600 hidden md:table-cell">{p.stock_quantity}</td>
-                    <td className="px-5 py-3">
-                      <StatusBadge status={p.is_active ? "active" : "inactive"} />
-                    </td>
-                    <td className="px-5 py-3 text-right" onClick={e => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => openClone(p)} aria-label={`Duplicate ${p.name_en}`} title={tx("Duplicate")} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
-                          <Copy className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => openEdit(p)} aria-label={`Edit ${p.name_en}`} title={tx("Edit")} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 transition-colors">
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => setDeleteId(p.id ?? null)} aria-label={`Delete ${p.name_en}`} title={tx("Delete")} className="p-1.5 text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
+          <>
+            {/* Phone: thumbnail cards */}
+            <ul className="md:hidden divide-y divide-gray-100 dark:divide-white/10">
+              <li className="flex items-center gap-2 px-3 py-2 text-xs text-muted">
+                <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="rounded" aria-label={t("এই পাতার সব বাছুন", "Select all on page")} /> {t("সব বাছুন", "Select all")}
+              </li>
+              {products.map((p) => (
+                <li key={p.id} className="flex gap-3 px-3 py-3">
+                  <input type="checkbox" checked={!!p.id && selected.has(p.id)} onChange={() => p.id && toggle(p.id)} className="rounded mt-1" aria-label={p.name_bn || p.name_en} />
+                  <button type="button" onClick={() => openForm({ type: "edit", product: p })} className="flex-shrink-0"><ProductThumb src={p.image_url} alt={p.name_en} size={64} /></button>
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <button type="button" onClick={() => openForm({ type: "edit", product: p })} className="block text-left font-medium text-heading line-clamp-2">{p.name_bn || p.name_en}</button>
+                    <p className="text-xs text-muted truncate">{catLabel(p.category)}</p>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+                      <InlineNumber value={p.price} prefix="৳" label={t("দাম", "Price")} onSave={(v) => patchOne(p, { price: v })} className="font-semibold" />
+                      <span className="inline-flex items-center gap-1 text-xs text-muted">{t("স্টক", "Stock")}: {stockCell(p)}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <ActiveSwitch active={!!p.is_active} busy={busyId === p.id} onChange={(v) => patchOne(p, { is_active: v }).catch(() => {})} />
+                      {rowActions(p)}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {/* Tablet / desktop: table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="table-premium">
+                <thead>
+                  <tr>
+                    <th className="w-10 px-3"><input type="checkbox" aria-label={t("এই পাতার সব বাছুন", "Select all on page")} checked={allOnPage} onChange={toggleAll} className="rounded" /></th>
+                    <th>{t("পণ্য", "Product")}</th>
+                    <th className="hidden lg:table-cell">{t("ক্যাটাগরি", "Category")}</th>
+                    <th>{t("দাম", "Price")}</th>
+                    <th>{t("স্টক", "Stock")}</th>
+                    <th>{t("অবস্থা", "Status")}</th>
+                    <th />
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {products.map((p) => (
+                    <tr key={p.id} className="hover:bg-brand-50/30 dark:hover:bg-white/[0.03]">
+                      <td className="px-3 py-3"><input type="checkbox" aria-label={p.name_bn || p.name_en} checked={!!p.id && selected.has(p.id)} onChange={() => p.id && toggle(p.id)} className="rounded" /></td>
+                      <td className="px-4 py-3">
+                        <button type="button" onClick={() => openForm({ type: "edit", product: p })} className="flex items-center gap-3 text-left min-w-0">
+                          <ProductThumb src={p.image_url} alt={p.name_en} />
+                          <span className="min-w-0">
+                            <span className="block font-medium text-heading truncate max-w-[280px]">{p.name_bn || p.name_en}</span>
+                            <span className="block text-xs text-gray-400 truncate max-w-[280px]">{p.sku || p.slug}</span>
+                          </span>
+                        </button>
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 dark:text-gray-300 hidden lg:table-cell">{catLabel(p.category)}</td>
+                      <td className="px-4 py-3 font-semibold"><InlineNumber value={p.price} prefix="৳" label={t("দাম", "Price")} onSave={(v) => patchOne(p, { price: v })} /></td>
+                      <td className="px-4 py-3">{stockCell(p)}</td>
+                      <td className="px-4 py-3"><ActiveSwitch active={!!p.is_active} busy={busyId === p.id} onChange={(v) => patchOne(p, { is_active: v }).catch(() => {})} /></td>
+                      <td className="px-4 py-3">{rowActions(p)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
-      {total > 20 && (
-        <div className="flex justify-center gap-3">
-          <button type="button" disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="btn btn-outline btn-sm">{tx("Previous")}</button>
-          <span className="px-4 py-2 text-sm text-gray-600 self-center">{tx("Page")} {page}</span>
-          <button type="button" disabled={page * 20 >= total} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">{tx("Next")}</button>
+      {total > PER_PAGE && (
+        <div className="flex justify-center items-center gap-3">
+          <button type="button" disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="btn btn-outline btn-sm">{t("আগের", "Previous")}</button>
+          <span className="text-sm text-gray-600">{t(`পাতা ${bnNum(page)} / ${bnNum(Math.ceil(total / PER_PAGE))}`, `Page ${page} of ${Math.ceil(total / PER_PAGE)}`)}</span>
+          <button type="button" disabled={page * PER_PAGE >= total} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">{t("পরের", "Next")}</button>
         </div>
       )}
 
-      {/* Product Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE}>
-          <div ref={modalRef} role="dialog" aria-modal="true" className="rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" style={ADMIN_MODAL_PANEL_STYLE}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">{editing ? "পণ্য সম্পাদনা (Edit Product)" : "নতুন পণ্য (New Product)"}</h2>
-              <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <label className="flex items-center gap-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 cursor-pointer w-fit">
+        <button type="button" role="switch" aria-checked={blogRailEnabled} disabled={blogRailSaving} onClick={toggleBlogRail}
+          className={cn("relative w-10 h-6 rounded-full transition-colors flex-shrink-0 disabled:opacity-50", blogRailEnabled ? "bg-brand-600" : "bg-gray-300")}>
+          <span className={cn("absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform", blogRailEnabled && "translate-x-4")} />
+        </button>
+        <span className="text-sm text-gray-700 dark:text-gray-300">
+          {t("ব্লগ পোস্টের নিচে প্রোডাক্ট কার্ড দেখান", "Show a product rail at the end of blog posts")}
+        </span>
+      </label>
 
-            <form onSubmit={submitWithTranslate} className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
-              {/* Live website preview — the real ProductCard with current values */}
-              <LivePreview>
-                <div className="p-1 pointer-events-none">
-                  <ProductCard product={previewProduct} />
-                </div>
-              </LivePreview>
-
-              <p className="text-xs text-muted bg-brand-50/60 dark:bg-white/5 rounded-lg px-3 py-2">
-                <span className="text-red-500 font-bold">*</span> চিহ্ন দেওয়া ঘরগুলো আবশ্যক। বাকিগুলো পরে পূরণ করলেও চলবে। বাংলা নাম লিখলে ইংরেজি নাম ও ওয়েব ঠিকানা (slug) সেভের সময় নিজে থেকে তৈরি হবে।
-              </p>
-
-              {/* 1 — Name */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">পণ্যের নাম (বাংলা) <span className="text-red-500">*</span></label>
-                  <input {...register("name_bn")} className={cn("input", errors.name_bn && "input-error")} placeholder="যেমন: ফাস্ট চার্জার ৩৩W" />
-                  {errors.name_bn && <p className="text-red-500 text-xs mt-1">{errors.name_bn.message}</p>}
-                </div>
-                <div>
-                  <label className="flex items-center justify-between gap-2 text-sm font-medium text-gray-700 mb-1">
-                    <span>পণ্যের নাম (English) <span className="text-red-500">*</span></span>
-                    <TranslateButton bn={watch("name_bn")} onResult={(en) => setValue("name_en", en, { shouldValidate: true, shouldDirty: true })} en={watch("name_en")} onResultBn={(b) => setValue("name_bn", b, { shouldValidate: true, shouldDirty: true })} />
-                  </label>
-                  <input {...register("name_en")} className={cn("input", errors.name_en && "input-error")} placeholder="Fast Charger 33W" />
-                  {errors.name_en && <p className="text-red-500 text-xs mt-1">{errors.name_en.message}</p>}
-                </div>
-              </div>
-
-              {/* 2 — Price, cost (private) and profit */}
-              <div className="rounded-xl border border-[var(--line)] p-3 space-y-3">
-                <p className="text-sm font-semibold text-heading">দাম</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">বিক্রয়মূল্য ৳ <span className="text-red-500">*</span></label>
-                    <input {...register("price")} type="number" className={cn("input", errors.price && "input-error")} placeholder="1290" />
-                    <p className="text-[11px] text-gray-400 mt-1">গ্রাহক এই দামে কিনবেন।</p>
-                    {errors.price && <p className="text-red-500 text-xs mt-1">{errors.price.message}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">আগের দাম ৳ <span className="text-gray-400 font-normal">(ঐচ্ছিক)</span></label>
-                    <input {...register("original_price")} type="number" className="input" placeholder="1490" />
-                    <p className="text-[11px] text-gray-400 mt-1">দিলে কেটে দেখানো হবে (ছাড় বোঝাতে)।</p>
-                    {errors.original_price && <p className="text-red-500 text-xs mt-1">{errors.original_price.message}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">ক্রয়মূল্য ৳ (শুধু আপনি দেখবেন)</label>
-                    <input {...register("cost_price")} type="number" className="input" placeholder="950" />
-                    <p className="text-[11px] text-gray-400 mt-1">গ্রাহক কখনো দেখবেন না। লাভের রিপোর্টে কাজে লাগে।</p>
-                  </div>
-                </div>
-                {(() => {
-                  const sale = Number(watch("price")) || 0;
-                  const cost = Number(watch("cost_price")) || 0;
-                  if (!(sale > 0 && cost > 0)) return null;
-                  const profit = sale - cost;
-                  const pct = Math.round((profit / cost) * 100);
-                  return (
-                    <p className={cn("text-sm font-medium rounded-lg px-3 py-2", profit >= 0 ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300" : "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300")}>
-                      {profit >= 0 ? `প্রতি পিসে লাভ ৳${Math.round(profit)} (${pct}%)` : `সাবধান: প্রতি পিসে লোকসান ৳${Math.round(-profit)}`}
-                    </p>
-                  );
-                })()}
-              </div>
-
-              {/* 3 — Category, stock, badge */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ক্যাটাগরি <span className="text-red-500">*</span></label>
-                  <select {...register("category")} className={cn("input", errors.category && "input-error")}>
-                    <option value="">{tx("Select category")}</option>
-                    {categoryOptions.map(c => <option key={c.slug} value={c.slug}>{c.label}</option>)}
-                  </select>
-                  <p className="text-[11px] text-gray-400 mt-1">ওয়েবসাইটে কোন তালিকায় দেখাবে।</p>
-                  {errors.category && <p className="text-red-500 text-xs mt-1">{errors.category.message}</p>}
-                </div>
-                {taxonomy.length > 0 && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      ক্যাটালগ গাছের অবস্থান <span className="text-gray-400 font-normal">(ঐচ্ছিক, যেকোনো গভীরতা)</span>
-                    </label>
-                    <select
-                      {...register("category_id")}
-                      className="input"
-                      onChange={(e) => { setValue("category_id", e.target.value); setValue("subcategory_id", ""); }}
-                    >
-                      <option value="">— None —</option>
-                      {treeOptions.map((o) => (
-                        <option key={o.id} value={o.id}>{o.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">স্টক (কয়টি আছে)</label>
-                  {editing ? (
-                    <>
-                      <input
-                        type="number"
-                        value={editing.stock_quantity ?? 0}
-                        disabled
-                        className="input bg-gray-50 text-gray-500 cursor-not-allowed"
-                      />
-                      <p className="text-xs text-gray-400 mt-1">
-                        স্টক বদলাতে{" "}
-                        <Link href="/sumon/inventory" className="text-brand-600 hover:underline">
-                          Inventory → Stock Adjustment
-                        </Link>{" "}
-                        ব্যবহার করুন — প্রতিটি পরিবর্তনের কারণ ও হিস্টরি থাকে।
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <input {...register("stock_quantity")} type="number" className="input" placeholder="0" />
-                      <p className="text-xs text-gray-400 mt-1">শুরুর স্টক। পরে Inventory থেকে বদলাবেন।</p>
-                    </>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">{tx("Badge")} <span className="text-gray-400 font-normal">(ঐচ্ছিক)</span></label>
-                  <select {...register("badge")} className="input">
-                    {BADGES.map(b => <option key={b} value={b}>{b || "None"}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">ওয়েব ঠিকানা (slug) <span className="text-red-500">*</span></label>
-                  <input {...register("slug")} className={cn("input", errors.slug && "input-error")} placeholder="fast-charger-33w" />
-                  <p className="text-[11px] text-gray-400 mt-1">খালি রাখলে ইংরেজি নাম থেকে তৈরি হবে (ছোট হাতের ইংরেজি ও - চিহ্ন)।</p>
-                  {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
-                </div>
-                <div className="flex items-end justify-end">
-                  <button
-                    type="button"
-                    onClick={autoTranslate}
-                    disabled={translating}
-                    className="btn btn-outline btn-sm gap-1.5"
-                    title="নাম ও বিবরণের খালি বাংলা ঘর English থেকে অটো-পূরণ করবে"
-                  >
-                    {translating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
-                    বাংলা অনুবাদ
-                  </button>
-                </div>
-              </div>
-
-              {/* 4 — Photos */}
-              <ImageUpload
-                label={`${tx("Product Image")} — মূল ছবি`}
-                value={currentImage || imageUrl}
-                onChange={(url) => { setValue("image_url", url); setImageUrl(url); }}
-                folder="abo-enterprise/products"
-                previewSize="md"
-              />
-
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-gray-700">আরও ছবি (Gallery) <span className="text-gray-400 font-normal">(ঐচ্ছিক)</span></label>
-                  <button
-                    type="button"
-                    onClick={() => setGalleryImages((imgs) => [...imgs, ""])}
-                    className="text-xs text-brand-600 hover:text-brand-700 font-medium"
-                  >
-                    + ছবি যোগ করুন
-                  </button>
-                </div>
-                {galleryImages.length === 0 ? (
-                  <p className="text-xs text-gray-400">অন্য দিক থেকে তোলা ছবি থাকলে &quot;ছবি যোগ করুন&quot; চাপুন।</p>
-                ) : (
-                  <div className="space-y-3">
-                    {galleryImages.map((url, idx) => (
-                      <div key={idx} className="flex items-start gap-2">
-                        <div className="flex-1">
-                          <ImageUpload
-                            value={url}
-                            onChange={(v) => setGalleryImages((imgs) => imgs.map((u, i) => (i === idx ? v : u)))}
-                            folder="abo-enterprise/products"
-                            previewSize="sm"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setGalleryImages((imgs) => imgs.filter((_, i) => i !== idx))}
-                          className="p-2 text-gray-400 hover:text-red-500 mt-1"
-                          title={tx("Remove")}
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* 5 — Description */}
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-heading">বিবরণ <span className="text-gray-400 font-normal text-xs">(ঐচ্ছিক — বুলেট লাইন &quot;• &quot; দিয়ে শুরু করুন)</span></p>
-                <AiDescribeButton
-                  kind="product"
-                  name={watch("name_bn") || watch("name_en")}
-                  notes={[watch("brand") && `Brand: ${watch("brand")}`, specs.filter((r) => r.k.trim()).map((r) => `${r.k}: ${r.v}`).join("; "), watch("description_bn")].filter(Boolean).join("\n")}
-                  onResult={applyAiDescription}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">বিবরণ (বাংলা)</label>
-                <textarea {...register("description_bn")} rows={4} className="input resize-y" placeholder="পণ্যের বিবরণ..." />
-              </div>
-              <div>
-                <label className="flex items-center justify-between gap-2 text-sm font-medium text-gray-700 mb-1">
-                  Description (English)
-                  <TranslateButton bn={watch("description_bn")} onResult={(en) => setValue("description_en", en, { shouldDirty: true })} en={watch("description_en")} onResultBn={(b) => setValue("description_bn", b, { shouldDirty: true })} />
-                </label>
-                <textarea {...register("description_en")} rows={4} className="input resize-y" placeholder="Product description..." />
-              </div>
-
-              {/* Extended Details */}
-              <div className="border border-gray-200 rounded-xl overflow-hidden">
-                <button type="button" onClick={() => setExtOpen(o => !o)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">
-                  <span className="text-sm font-medium text-gray-700">Extended Details</span>
-                  <ChevronDown className={cn("w-4 h-4 text-gray-400 transition-transform", extOpen && "rotate-180")} />
-                </button>
-                {extOpen && (
-                  <div className="px-4 py-4 space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">SKU</label>
-                        <input {...register("sku")} className="input" placeholder="SKU-001" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Barcode</label>
-                        <input {...register("barcode")} className="input" placeholder="8901234567890" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">{tx("Brand")}</label>
-                        <input {...register("brand")} className="input" placeholder="Samsung, Apple..." />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">{tx("Sub-category")}</label>
-                        <input {...register("sub_category")} className="input" placeholder="Cables, Cases..." />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Weight (kg)</label>
-                        <input {...register("weight")} type="number" step="0.001" className="input" placeholder="0.250" />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Low Stock Alert</label>
-                        <input {...register("low_stock_threshold")} type="number" className="input" placeholder="5" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">
-                        Specifications <span className="text-gray-400 font-normal">(shown as a table on the product page)</span>
-                      </label>
-                      <div className="space-y-2">
-                        {specs.map((row, i) => (
-                          <div key={i} className="flex gap-2">
-                            <input
-                              value={row.k}
-                              onChange={(e) => setSpecs((prev) => prev.map((r, j) => (j === i ? { ...r, k: e.target.value } : r)))}
-                              className="input flex-1 text-sm"
-                              placeholder="Name (e.g. RAM, Color)"
-                            />
-                            <input
-                              value={row.v}
-                              onChange={(e) => setSpecs((prev) => prev.map((r, j) => (j === i ? { ...r, v: e.target.value } : r)))}
-                              className="input flex-1 text-sm"
-                              placeholder="Value (e.g. 8GB, Black)"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => setSpecs((prev) => prev.filter((_, j) => j !== i))}
-                              className="p-2 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50"
-                              aria-label="Remove specification"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={() => setSpecs((prev) => [...prev, { k: "", v: "" }])}
-                          className="text-xs font-medium text-brand-600 hover:underline"
-                        >
-                          + Add specification
-                        </button>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">{tx("Tags")} <span className="text-gray-400 font-normal">(comma-separated)</span></label>
-                      <input {...register("tags")} className="input" placeholder="phone, accessories, black..." />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Warranty Info</label>
-                      <textarea {...register("warranty_info")} rows={2} className="input resize-none text-sm" placeholder="6 months manufacturer warranty..." />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">{tx("Delivery Info")}</label>
-                      <textarea {...register("delivery_info")} rows={2} className="input resize-none text-sm" placeholder="Delivered within 2-3 business days..." />
-                    </div>
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">Delivery Charge (৳) — override</label>
-                        <input type="number" step="1" min="0" {...register("delivery_charge")} className="input text-sm" placeholder="Blank = use zone charge" />
-                      </div>
-                      <label className="flex items-center gap-2 text-sm mt-6 cursor-pointer">
-                        <input type="checkbox" {...register("requires_advance")} className="rounded" />
-                        Requires advance payment
-                      </label>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input {...register("is_flash_sale")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
-                        <span className="text-xs text-gray-700">Flash Sale</span>
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input {...register("is_best_seller")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
-                        <span className="text-xs text-gray-700">Best Seller</span>
-                      </label>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Flash Sale Price (৳)</label>
-                      <input {...register("flash_sale_price")} type="number" className="input" placeholder="Leave blank if no flash sale" />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Flash Sale Ends At (বাংলাদেশ সময়)</label>
-                      <input {...register("flash_sale_ends_at")} type="datetime-local" className="input text-sm" />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* SEO Section */}
-              <div className="border border-gray-200 rounded-xl overflow-hidden">
-                <button type="button" onClick={() => setSeoOpen(o => !o)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">
-                  <span className="text-sm font-medium text-gray-700">SEO Settings</span>
-                  <ChevronDown className={cn("w-4 h-4 text-gray-400 transition-transform", seoOpen && "rotate-180")} />
-                </button>
-                {seoOpen && (
-                  <div className="px-4 py-4 space-y-3">
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">SEO Title <span className="text-gray-400 font-normal">(defaults to product name)</span></label>
-                      <input {...register("seo_title")} className="input" placeholder="Custom SEO title..." />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">SEO Description <span className="text-gray-400 font-normal">(max 160 chars)</span></label>
-                      <textarea {...register("seo_description")} rows={2} maxLength={160} className="input resize-none" placeholder="Meta description for search engines..." />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Keywords <span className="text-gray-400 font-normal">(comma-separated)</span></label>
-                      <input {...register("seo_keywords")} className="input" placeholder="phone case, accessories, sylhet..." />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Canonical URL <span className="text-gray-400 font-normal">(leave blank for default)</span></label>
-                      <input {...register("canonical_url")} className="input" placeholder="https://..." />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">OG Image <span className="text-gray-400 font-normal">(defaults to product image)</span></label>
-                      <ImageUpload
-                        value={watch("og_image") ?? ""}
-                        onChange={(url) => setValue("og_image", url)}
-                        folder="abo-enterprise/products"
-                        previewSize="sm"
-                        showUrlInput
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center gap-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input {...register("is_active")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
-                  <span className="text-sm text-gray-700">{tx("Active")}</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input {...register("is_featured")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
-                  <span className="text-sm text-gray-700">{tx("Featured")}</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer" title="Also let customers book/request this item as a service">
-                  <input {...register("is_bookable")} type="checkbox" className="rounded border-gray-300 text-brand-600 focus:ring-brand-500" />
-                  <span className="text-sm text-gray-700">Also bookable</span>
-                </label>
-              </div>
-
-              {/* Linked blog posts — many-to-many. Ticking a blog features this
-                  product in that article's rail; the same link shows in the blog
-                  editor. */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Blog
-                  {productBlogIds.length > 0 && (
-                    <span className="ml-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-brand-600 text-white text-[10px] font-bold">
-                      {productBlogIds.length}
-                    </span>
-                  )}
-                </label>
-                <p className="text-xs text-gray-500 mb-2">Tick the blog posts to feature this product in.</p>
-                <LinkChecklist
-                  options={blogOptions}
-                  selected={productBlogIds}
-                  loading={blogOptionsLoading || linkedBlogsLoading}
-                  emptyText={tx("No blog posts")}
-                  searchPlaceholder="Search blog posts…"
-                  onToggle={(id) => setProductBlogIds((cur) => cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id])}
-                />
-              </div>
-            </form>
-
-            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
-              <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline btn-md">{tx("Cancel")}</button>
-              <button onClick={(e) => submitWithTranslate(e as unknown as FormEvent)} disabled={saving} className="btn btn-brand btn-md">
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : (editing ? "Save Changes" : "Create Product")}
-              </button>
-            </div>
-          </div>
-        </div>
+      {form && (
+        <ProductFormModal key={formKey} mode={form} onClose={() => setForm(null)} onSaved={() => { setForm(null); load(); }}
+          categoryOptions={categoryOptions} treeOptions={treeOptions} onOpenExisting={openExisting} />
       )}
 
-      <AiPhotoProductsModal
-        open={aiPhotoOpen}
-        onClose={() => setAiPhotoOpen(false)}
-        categoryOptions={categoryOptions}
-        onSaved={() => load(page)}
-      />
+      <AiPhotoProductsModal open={aiPhotoOpen} onClose={() => setAiPhotoOpen(false)} categoryOptions={categoryOptions} onSaved={() => load()} />
 
-      <ConfirmDialog
-        open={deleteId !== null}
-        title={tx("Delete Product?")}
-        message="This action cannot be undone."
-        confirmLabel={tx("Delete")}
-        variant="danger"
-        onConfirm={handleDelete}
-        onCancel={() => setDeleteId(null)}
-      />
-
-      <ConfirmDialog
-        open={bulkDeleteConfirm}
-        title={`Delete ${selected.size} Product${selected.size === 1 ? "" : "s"}?`}
-        message="This action cannot be undone."
-        confirmLabel={tx("Delete")}
-        variant="danger"
-        onConfirm={runBulkDelete}
-        onCancel={() => setBulkDeleteConfirm(false)}
-      />
+      <ConfirmDialog open={deleteId !== null} title={t("পণ্যটি মুছবেন?", "Delete product?")} message={t("সাইট থেকে সরে যাবে। অর্ডারের পুরনো তথ্য থাকবে।", "It will be removed from the site. Past orders keep their data.")}
+        confirmLabel={t("মুছুন", "Delete")} variant="danger" onConfirm={handleDelete} onCancel={() => setDeleteId(null)} />
+      <ConfirmDialog open={bulkDeleteConfirm} title={t(`${bnNum(selected.size)}টি পণ্য মুছবেন?`, `Delete ${selected.size} product(s)?`)} message={t("সাইট থেকে সরে যাবে।", "They will be removed from the site.")}
+        confirmLabel={t("মুছুন", "Delete")} variant="danger" onConfirm={runBulkDelete} onCancel={() => setBulkDeleteConfirm(false)} />
     </div>
   );
 }
