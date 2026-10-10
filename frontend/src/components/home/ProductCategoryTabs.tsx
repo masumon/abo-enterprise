@@ -16,6 +16,22 @@ const CATEGORY_FILTERS = [
   { id: "computer", label: { en: "Computer", bn: "কম্পিউটার" } },
 ];
 
+/** Category slugs (product `category` values) that belong to each homepage tab.
+ * Covers the legacy words, the admin taxonomy slugs and the imported catalog slugs. */
+export const CATEGORY_GROUPS: Record<string, string[]> = {
+  gadgets: ["gadgets", "premium", "speakers", "bluetooth-speakers", "smartwatches", "microphones", "vr-ar", "keyboards", "mouse", "webcams", "smart-rings"],
+  accessories: ["accessories", "mobile-accessories", "chargers", "chargers-adapters", "cables", "power-banks", "headphones", "earphones", "earbuds", "neckbands", "mobile-covers", "tempered-glass", "memory-cards"],
+  electronics: ["electronics", "routers", "monitors", "printers", "scanners", "ups", "ssd", "hdd", "projectors", "extension-boards"],
+  computer: ["computer", "computers", "laptops", "desktops", "pc-components"],
+};
+
+/** True when a product's category belongs to the given homepage tab. */
+export function inCategoryGroup(category: string | null | undefined, tab: string): boolean {
+  if (tab === "all") return true;
+  const c = (category ?? "").toLowerCase();
+  return c.includes(tab) || (CATEGORY_GROUPS[tab] ?? []).includes(c);
+}
+
 interface ProductCategoryTabsProps {
   activeCategory?: string;
   onCategoryChange?: (categoryId: string) => void;

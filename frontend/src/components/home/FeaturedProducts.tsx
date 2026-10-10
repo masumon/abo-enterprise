@@ -7,7 +7,7 @@ import { useLanguageStore } from "@/store/language";
 import { useCartStore } from "@/store/cart";
 import ProductCard from "@/components/features/ProductCard";
 import { ProductCardSkeleton } from "@/components/common/Skeletons";
-import ProductCategoryTabs from "@/components/home/ProductCategoryTabs";
+import ProductCategoryTabs, { inCategoryGroup } from "@/components/home/ProductCategoryTabs";
 import type { Product } from "@/types";
 import DemoModeBanner from "@/components/ui/DemoModeBanner";
 import type { CatalogSource } from "@/lib/catalogLoader";
@@ -83,7 +83,7 @@ export default function FeaturedProducts() {
       setFilteredProducts(products);
     } else {
       setFilteredProducts(
-        products.filter((p) => p.category?.toLowerCase().includes(activeCategory))
+        products.filter((p) => inCategoryGroup(p.category, activeCategory))
       );
     }
   }, [products, activeCategory]);
