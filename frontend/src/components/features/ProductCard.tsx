@@ -257,7 +257,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
           )}
         </div>
         <h3 className={cn(
-          "font-semibold text-heading leading-snug line-clamp-2 break-words [overflow-wrap:anywhere]",
+          "font-semibold text-heading leading-[1.4] line-clamp-3 sm:line-clamp-2 pb-0.5 break-words [overflow-wrap:anywhere]",
           compact ? "text-xs mb-1.5 min-h-[2rem]" : "text-sm mb-2 min-h-[2.5rem]"
         )}>
           {lang === "bn" ? product.name_bn : product.name_en}
