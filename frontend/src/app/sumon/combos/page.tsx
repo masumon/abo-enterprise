@@ -242,7 +242,7 @@ export default function AdminCombosPage() {
                 </div>
                 <div><label className="form-label">বিবরণ (বাংলা)</label><textarea className="input" rows={2} value={form.description_bn} onChange={(e) => set("description_bn", e.target.value)} /></div>
               </div>
-              <ImageUpload value={form.image_url} onChange={(u) => set("image_url", u)} label="কম্বো ছবি" folder="combos" />
+              <ImageUpload value={form.image_url} onChange={(u) => set("image_url", u)} label="কম্বো ছবি" folder="combos" purpose="combo" />
               <div className="grid grid-cols-2 gap-3">
                 <div><label className="form-label">কম্বো দাম (৳) *</label><input type="number" className="input" value={form.combo_price} onChange={(e) => set("combo_price", e.target.value)} /></div>
                 <div><label className="form-label">তুলনা দাম (৳)</label><input type="number" className="input" value={form.compare_at_price} onChange={(e) => set("compare_at_price", e.target.value)} placeholder="খালি = পণ্যের যোগফল" /></div>

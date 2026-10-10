@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Plus, Trash2, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
+import type { UploadPurpose } from "@/lib/uploadGuides";
 import LivePreview from "@/components/admin/LivePreview";
 import TranslateButton from "@/components/admin/TranslateButton";
 import { useLanguageStore } from "@/store/language";
@@ -18,6 +19,8 @@ export interface JsonListField {
   /** When set, this English field shows a "→ English" button that translates
    * the sibling Bangla field at this dotted path (e.g. "title_bn"). */
   translateFrom?: string;
+  /** For type "image": which Bangla upload guide to show (lib/uploadGuides.ts). */
+  purpose?: UploadPurpose;
 }
 
 /** Visual icon + emoji picker so a non-technical admin never types a name. */
@@ -186,7 +189,7 @@ export default function JsonListEditor({ value, onChange, fields, newItem, mapKe
                   {f.type === "icon" ? (
                     <IconPicker value={val} onChange={(v) => update(i, f.path, v)} />
                   ) : f.type === "image" ? (
-                    <ImageUpload value={val} onChange={(url) => update(i, f.path, url)} folder="abo-enterprise/settings" accept="image" />
+                    <ImageUpload value={val} onChange={(url) => update(i, f.path, url)} folder="abo-enterprise/settings" accept="image" purpose={f.purpose} />
                   ) : f.type === "textarea" ? (
                     <textarea value={val} onChange={(e) => update(i, f.path, e.target.value)} rows={2} placeholder={f.placeholder} className="w-full px-2.5 py-1.5 border border-gray-200 dark:border-white/10 rounded-lg text-sm bg-white dark:bg-white/5 resize-y focus:outline-none focus:ring-2 focus:ring-brand-100" />
                   ) : (

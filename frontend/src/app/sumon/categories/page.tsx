@@ -681,7 +681,7 @@ export default function AdminCategoriesPage() {
 
           <div>
             <span className={LBL_CLS}>ছবি (কার্ড/ব্যানারে দেখাবে)</span>
-            <ImageUpload value={form.image_url} onChange={(url) => setForm((p) => ({ ...p, image_url: url }))} />
+            <ImageUpload value={form.image_url} onChange={(url) => setForm((p) => ({ ...p, image_url: url }))} purpose="category" />
           </div>
 
           {!form.parent_id && (

@@ -180,6 +180,10 @@ class PublicProductOut(ProductOut):
 
 # ---- Review ----
 
+
+# Alias kept for callers/tests that use the other name.
+ProductPublicOut = PublicProductOut
+
 class ReviewCreate(BaseModel):
     product_id: uuid.UUID | None = None
     service_id: uuid.UUID | None = None

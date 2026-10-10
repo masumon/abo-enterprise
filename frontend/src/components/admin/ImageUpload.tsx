@@ -12,6 +12,8 @@ import { isVideoUrl } from "@/lib/media";
 import AutoVideo from "@/components/ui/AutoVideo";
 import MediaLibraryPicker from "@/components/admin/MediaLibraryPicker";
 import { cn } from "@/lib/utils";
+import UploadGuideBox from "@/components/admin/UploadGuideBox";
+import { getUploadGuide, ratioMismatch, type UploadPurpose } from "@/lib/uploadGuides";
 
 type AcceptType = "image" | "video" | "both";
 
@@ -27,6 +29,9 @@ interface ImageUploadProps {
   hint?: string;
   /** Recommended size/format line, e.g. "512×512px · PNG (transparent)" */
   guide?: string;
+  /** What this upload is for — shows the Bangla "কীভাবে দেবেন?" guide and a
+   *  preview at the site's real ratio (see lib/uploadGuides.ts). Optional. */
+  purpose?: UploadPurpose;
 }
 
 const ACCEPT_MAP: Record<AcceptType, string> = {
@@ -64,7 +69,10 @@ export default function ImageUpload({
   showUrlInput = true,
   hint,
   guide,
+  purpose,
 }: ImageUploadProps) {
+  const purposeGuide = getUploadGuide(purpose);
+  const guideLine = guide ?? purposeGuide?.size;
   const { lang } = useLanguageStore();
   const bn = lang === "bn";
   const fileRef = useRef<HTMLInputElement>(null);
@@ -221,6 +229,11 @@ export default function ImageUpload({
                 {pending.width && pending.height ? `${pending.width}×${pending.height}px · ` : ""}
                 {fmtBytes(pending.file.size)}
               </p>
+              {purposeGuide && pending.width && pending.height && ratioMismatch(purposeGuide, pending.width, pending.height) && (
+                <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-1">
+                  ⚠️ ছবির অনুপাত প্রস্তাবিত {purposeGuide.ratioLabel}-এর সাথে মিলছে না — কিছু অংশ কেটে যেতে পারে বা ফাঁকা দেখাতে পারে। চাইলে তবুও আপলোড করতে পারেন।
+                </p>
+              )}
               <p className="text-[11px] text-brand-600 mt-1 flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 {/^image\/(webp|gif|svg\+xml)$/.test(pending.file.type) || pending.file.type.startsWith("video/")
@@ -346,14 +359,18 @@ export default function ImageUpload({
                 ? `${accept === "video" ? "ভিডিও (সর্বোচ্চ ৫০MB)" : accept === "both" ? "ছবি (সর্বোচ্চ ৩০MB) বা ভিডিও (সর্বোচ্চ ৫০MB)" : "ছবি (সর্বোচ্চ ৩০MB)"} · যেকোনো ফরম্যাট চলবে · বড় ছবি নিজে ছোট ও দ্রুত করে নেওয়া হয়`
                 : `${accept === "video" ? "Video (max 50MB)" : accept === "both" ? "Image (max 30MB) or video (max 50MB)" : "Image (max 30MB)"} · any format · large photos are optimised automatically`}
             </p>
-            {guide && (
+            {guideLine && (
               <p className="text-xs text-gray-500">
-                📐 <span className="font-medium">{bn ? "প্রস্তাবিত মাপ:" : "Recommended:"}</span> {guide}
+                📐 <span className="font-medium">{bn ? "প্রস্তাবিত মাপ:" : "Recommended:"}</span> {guideLine}
               </p>
             )}
             {hint && <p className="text-xs text-gray-400">{hint}</p>}
           </div>
         </div>
+      )}
+
+      {purposeGuide && (
+        <UploadGuideBox guide={purposeGuide} src={pending ? (pending.file.type.startsWith("image/") ? pending.previewUrl : undefined) : value || undefined} />
       )}
 
       {showUrlInput && !pending && (

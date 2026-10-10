@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from "react";
 import { adminApi } from "@/lib/api";
 import ImageUpload from "@/components/admin/ImageUpload";
 import JsonListEditor, { type JsonListField } from "@/components/admin/JsonListEditor";
+import type { UploadPurpose } from "@/lib/uploadGuides";
 import TranslateButton from "@/components/admin/TranslateButton";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -28,7 +29,7 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
       { path: "name", label: "Name" },
       { path: "role.en", label: "Role (EN)" }, { path: "role.bn", label: "Role (BN)" },
       { path: "desc.en", label: "Bio (EN)", type: "textarea" }, { path: "desc.bn", label: "Bio (BN)", type: "textarea" },
-      { path: "image", label: "Photo", type: "image" },
+      { path: "image", label: "Photo", labelBn: "ছবি", type: "image", purpose: "team" },
       { path: "facebook", label: "Facebook link", hint: "optional — e.g. https://www.facebook.com/username (shown as a Facebook icon in the footer credit and on the About page)" },
       { path: "website", label: "Website link", hint: "optional — portfolio or website; links the name in the footer credit" },
     ],
@@ -51,7 +52,7 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
   },
   client_logos_json: {
     fields: [
-      { path: "name", label: "Name" }, { path: "abbr", label: "Abbreviation" }, { path: "image", label: "Logo", type: "image" },
+      { path: "name", label: "Name" }, { path: "abbr", label: "Abbreviation" }, { path: "image", label: "Logo", labelBn: "লোগো", type: "image", purpose: "brand-logo" },
       { path: "desc_en", label: "Description (EN)", type: "textarea", hint: "shown when the logo is tapped", translateFrom: "desc_bn" },
       { path: "desc_bn", label: "Description (BN)", type: "textarea" },
       { path: "href", label: "Case-study link", hint: "optional — e.g. /projects or https://…" },
@@ -155,6 +156,8 @@ interface SettingField {
   hint?: string;
   upload?: boolean;
   accept?: "image" | "video" | "both";
+  /** Bangla upload guide shown under the upload control. */
+  purpose?: UploadPurpose;
   /** The value the live site falls back to when this setting is empty. Shown
    * pre-filled so the admin sees what's actually live (not a blank field). */
   defaultValue?: string;
@@ -213,7 +216,7 @@ const SECTIONS: Section[] = [
       { key: "footer_app_title_en", label: "App block title (EN)", placeholder: "Get the Apon app" },
       { key: "footer_app_subtitle_bn", label: "App block slogan (বাংলা)", placeholder: "কাজ, টাকা, ওষুধ — সব এক খাতায়, আপনার ফোনেই।" },
       { key: "footer_app_subtitle_en", label: "App block slogan (EN)", placeholder: "Tasks, money, medicines — one notebook, on your phone." },
-      { key: "footer_payment_image_url", label: "Payment Methods Image", upload: true, accept: "image", hint: "ফুটারের 'পেমেন্ট পদ্ধতি সমূহ' — সব পেমেন্ট লোগো একসাথে একটি চওড়া ছবি আপলোড করুন (যেমন SSLCommerz 'Pay With' স্ট্রিপ)। এটি বিল্ট-ইন আইকনের বদলে বসবে এবং মোবাইল/ট্যাব/ডেস্কটপে fit হবে। খালি রাখলে বিল্ট-ইন আইকন দেখাবে।" },
+      { key: "footer_payment_image_url", label: "Payment Methods Image", upload: true, accept: "image", purpose: "payment-strip", hint: "ফুটারের 'পেমেন্ট পদ্ধতি সমূহ' — সব পেমেন্ট লোগো একসাথে একটি চওড়া ছবি আপলোড করুন (যেমন SSLCommerz 'Pay With' স্ট্রিপ)। এটি বিল্ট-ইন আইকনের বদলে বসবে এবং মোবাইল/ট্যাব/ডেস্কটপে fit হবে। খালি রাখলে বিল্ট-ইন আইকন দেখাবে।" },
       { key: "google_maps_embed", label: "Google Maps Embed", type: "textarea", hint: "Share → Embed a map", placeholder: "Paste iframe or URL" },
       { key: "google_maps_api_key", label: "Google Maps API Key", placeholder: "AIza..." },
     ],
@@ -531,6 +534,7 @@ function SectionCard({
                 onChange={(url) => onChange(field.key, url)}
                 folder="abo-enterprise/settings"
                 accept={field.accept ?? "image"}
+                purpose={field.purpose}
               />
             ) : field.type === "boolean" || field.key === "maintenance_mode" ? (
               <label className="flex items-center gap-3 cursor-pointer">

@@ -146,14 +146,14 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
     return (
       <article className="card-hover group flex gap-4 p-4 relative">
         <Link href={`/products/${product.slug}`} className="absolute inset-0 z-0" aria-hidden tabIndex={-1} />
-        <div className="relative w-28 aspect-square rounded-xl overflow-hidden bg-brand-50 flex-shrink-0 pointer-events-none">
-          {hasImage ? <Image src={product.image_url!} alt={alt} fill className="object-cover" sizes="112px" /> : imgPlaceholder}
+        <div className={cn("relative w-28 aspect-square rounded-xl overflow-hidden flex-shrink-0 pointer-events-none", hasImage ? "bg-[#fff] ring-1 ring-gray-100 dark:ring-white/10" : "bg-brand-50")}>
+          {hasImage ? <Image src={product.image_url!} alt={alt} fill className="object-contain p-1.5" sizes="112px" /> : imgPlaceholder}
         </div>
         <div className="flex-1 min-w-0 relative z-10">
           {product.category && (
             <Badge variant="outline" className="text-xs capitalize mb-1">{product.category}</Badge>
           )}
-          <h3 className="font-semibold text-heading line-clamp-2">{lang === "bn" ? product.name_bn : product.name_en}</h3>
+          <h3 className="font-semibold text-heading line-clamp-2 break-words [overflow-wrap:anywhere]">{lang === "bn" ? product.name_bn : product.name_en}</h3>
           {reviewCount > 0 ? (
             <div className="flex items-center gap-1 mt-1">
               <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" aria-hidden />
@@ -193,7 +193,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
       <div className={cn("absolute left-3 right-3 flex justify-between z-10 pointer-events-none", compact ? "top-2" : "top-3")}>
         <div className="flex flex-col gap-1">
           {product.badge && (
-            <Badge variant={badgeVariantFromProduct(product.badge)}>{product.badge}</Badge>
+            <Badge variant={badgeVariantFromProduct(product.badge)} className="max-w-[7.5rem] truncate">{product.badge}</Badge>
           )}
           {product.category && !compact && (
             <Badge variant="outline" className="text-xs capitalize">{product.category}</Badge>
@@ -225,10 +225,12 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
       </div>
 
       <div className={cn(
-        "relative bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-brand-900/40 overflow-hidden pointer-events-none",
-        compact ? "aspect-square" : "aspect-[4/5] sm:aspect-square"
+        // Product photos are shot on white: show the whole item (contain) on a
+        // white square so every card lines up, in light and dark mode alike.
+        "relative aspect-square overflow-hidden pointer-events-none",
+        hasImage ? "bg-[#fff]" : "bg-gradient-to-br from-brand-50 to-brand-100 dark:from-brand-900/30 dark:to-brand-900/40"
       )}>
-        {hasImage ? <Image src={product.image_url!} alt={alt} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 50vw, 25vw" /> : imgPlaceholder}
+        {hasImage ? <Image src={product.image_url!} alt={alt} fill className="object-contain p-3 transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 50vw, 25vw" /> : imgPlaceholder}
         {isOutOfStock && (
           <div className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex flex-col items-center justify-center gap-2">
             <span className="bg-black/50 text-white text-xs font-bold px-3 py-1 rounded-full">{t("out_of_stock")}</span>
@@ -255,12 +257,12 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
           )}
         </div>
         <h3 className={cn(
-          "font-semibold text-heading leading-snug line-clamp-2",
+          "font-semibold text-heading leading-snug line-clamp-2 break-words [overflow-wrap:anywhere]",
           compact ? "text-xs mb-1.5 min-h-[2rem]" : "text-sm mb-2 min-h-[2.5rem]"
         )}>
           {lang === "bn" ? product.name_bn : product.name_en}
         </h3>
-        <div className={cn("flex items-baseline gap-2 mt-auto", compact ? "mb-1.5" : "mb-2")}>
+        <div className={cn("flex flex-wrap items-baseline gap-x-2 mt-auto", compact ? "mb-1.5" : "mb-2")}>
           <span className={cn("font-bold text-accent-600", compact ? "text-base" : "text-xl sm:text-2xl")}>{formatPrice(effectivePrice)}</span>
           {strikePrice && (
             <span className="text-xs text-gray-400 line-through">{formatPrice(strikePrice)}</span>

@@ -23,14 +23,14 @@ const PLACEMENTS: { value: PromoSlide["placement"]; label: string }[] = [
 /** Rendered size per surface, so uploads match the box they land in. */
 const SPECS: Record<PromoSlide["placement"], { size: string; ratio: string; note: string }> = {
   hero: {
-    size: "1280 × 720 px",
-    ratio: "16:9",
-    note: "Shown at the top of the homepage — below the top bar on mobile, beside the headline on desktop.",
+    size: "১২৮০ × ৭২০ px",
+    ratio: "১৬:৯",
+    note: "হোমপেজের একদম উপরে দেখায় — মোবাইলে উপরের বারের নিচে, ডেস্কটপে শিরোনামের পাশে।",
   },
   flash_sale: {
-    size: "1500 × 500 px",
-    ratio: "3:1",
-    note: "Shown under the flash-sale countdown. Only visible while a flash sale is running.",
+    size: "১৫০০ × ৫০০ px",
+    ratio: "৩:১",
+    note: "ফ্ল্যাশ সেলের কাউন্টডাউনের নিচে দেখায় — শুধু ফ্ল্যাশ সেল চলাকালীন।",
   },
 };
 
@@ -282,12 +282,12 @@ export default function AdminPromoSlidesPage() {
                 const spec = SPECS[editing.placement ?? "hero"];
                 return (
                   <>
-                    <div className="rounded-xl bg-brand-50 border border-brand-100 px-3 py-2.5 text-[12px] text-brand-800 space-y-1">
-                      <p><span className="font-semibold">Recommended size:</span> {spec.size} ({spec.ratio})</p>
-                      <p><span className="font-semibold">Format:</span> JPG, PNG or WEBP · max 5MB</p>
+                    <div className="rounded-xl bg-brand-50 dark:bg-white/5 border border-brand-100 dark:border-white/10 px-3 py-2.5 text-[12px] text-brand-800 dark:text-brand-200 space-y-1">
+                      <p><span className="font-semibold">প্রস্তাবিত মাপ:</span> {spec.size} ({spec.ratio})</p>
+                      <p><span className="font-semibold">ফরম্যাট:</span> JPG, PNG বা WebP · ১MB-এর কম হলে দ্রুত লোড হয়</p>
                       <p className="text-brand-700/80">{spec.note}</p>
                       <p className="text-brand-700/80">
-                        Images are cropped to fill the box, so keep text and logos away from the edges.
+                        ছবি বক্স ভরাট করতে কিনারা কেটে নেওয়া হয় — তাই লেখা, দাম ও লোগো মাঝখানে রাখুন, কিনারা থেকে দূরে।
                       </p>
                     </div>
 
@@ -296,7 +296,7 @@ export default function AdminPromoSlidesPage() {
                       value={editing.image_url ?? ""}
                       onChange={(url) => set("image_url", url)}
                       folder="abo-enterprise/promo"
-                      hint={`${spec.size} (${spec.ratio}) · JPG/PNG/WEBP · max 5MB`}
+                      purpose={editing.placement === "flash_sale" ? "promo-flash" : "promo-hero"}
                     />
                   </>
                 );
@@ -306,7 +306,7 @@ export default function AdminPromoSlidesPage() {
                 <label className="form-label">Video URL <span className="text-gray-400 font-normal text-xs">(optional — used instead of the image)</span></label>
                 <input value={editing.video_url ?? ""} onChange={(e) => set("video_url", e.target.value)} className="input w-full text-sm" placeholder="https://…" />
                 <p className="text-[11px] text-gray-400 mt-1">
-                  MP4 (H.264), same ratio as the image, under 10MB. Autoplays muted — keep it short and silent-friendly.
+                  MP4 (H.264), ছবির মতো একই অনুপাত, ১০MB-এর কম। শব্দ ছাড়া নিজে চলবে — ছোট ভিডিও দিন, শব্দ ছাড়াও যেন বোঝা যায়।
                 </p>
               </div>
 

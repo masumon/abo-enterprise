@@ -9,9 +9,13 @@ interface Props {
   src: string;
   alt: string;
   className?: string;
+  /** "contain" shows the whole photo (product shots on white); default "cover". */
+  fit?: "cover" | "contain";
+  /** Optional label for the zoom button (screen readers). */
+  label?: string;
 }
 
-export default function ImageZoom({ src, alt, className }: Props) {
+export default function ImageZoom({ src, alt, className, fit = "cover", label = "Zoom image" }: Props) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -27,9 +31,9 @@ export default function ImageZoom({ src, alt, className }: Props) {
         type="button"
         onClick={() => setOpen(true)}
         className={cn("relative group w-full h-full", className)}
-        aria-label="Zoom image"
+        aria-label={label}
       >
-        <Image src={src} alt={alt} fill className="object-cover" sizes="(max-width: 768px) 100vw, 50vw" />
+        <Image src={src} alt={alt} fill className={fit === "contain" ? "object-contain p-3 sm:p-5" : "object-cover"} sizes="(max-width: 768px) 100vw, 50vw" />
         <span className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
           <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
         </span>

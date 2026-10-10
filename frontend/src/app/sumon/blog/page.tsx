@@ -643,6 +643,7 @@ export default function AdminBlogPage() {
                 value={editing.featured_image_url ?? ""}
                 onChange={(url) => setEditing(prev => prev ? { ...prev, featured_image_url: url } : prev)}
                 folder="abo-enterprise/blog"
+                purpose="blog-cover"
               />
 
               {/* Excerpt BN — primary */}
@@ -833,6 +834,7 @@ export default function AdminBlogPage() {
                         onChange={(url) => setEditing(prev => prev ? { ...prev, og_image: url } : prev)}
                         folder="abo-enterprise/blog"
                         previewSize="sm"
+                        purpose="og-image"
                       />
                     </div>
                   </div>
