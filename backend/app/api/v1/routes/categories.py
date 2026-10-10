@@ -88,7 +88,8 @@ async def get_category(slug: str, db: AsyncSession = Depends(get_db)):
     """A single node with its subtree plus an `ancestors` breadcrumb chain."""
     cats = await load_categories(db, include_inactive=True)
     node = next((c for c in cats if c.slug == slug and not c.is_deleted), None)
-    if not node:
+    # A category switched off in the admin (or sitting under one) is off on the site too.
+    if not node or not node.is_active or any(not a.is_active for a in ancestors_of(node, cats)):
         raise HTTPException(status_code=404, detail="Category not found")
     active = [c for c in cats if c.is_active]
     by_parent = children_map(active)

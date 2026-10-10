@@ -75,3 +75,29 @@ def ancestors_of(node: Category, cats: list[Category]) -> list[Category]:
         cur = parent.parent_id
     chain.reverse()
     return chain
+
+
+async def hidden_category_ids(db: AsyncSession) -> list[uuid.UUID]:
+    """Ids of categories turned off in the admin plus everything beneath them —
+    the public site hides these categories and the items filed under them."""
+    cats = await load_categories(db, include_inactive=True)
+    by_parent = children_map(cats)
+    hidden: set[uuid.UUID] = set()
+    for c in cats:
+        if not c.is_active and c.id not in hidden:
+            hidden.update(subtree_ids(c.id, by_parent))
+    return list(hidden)
+
+
+def visible_in_categories(model, hidden: list[uuid.UUID]):
+    """SQL condition: the item is not filed under a hidden category."""
+    from sqlalchemy import and_, or_
+
+    if not hidden:
+        from sqlalchemy import true
+
+        return true()
+    conds = [or_(model.category_id.is_(None), model.category_id.notin_(hidden))]
+    if hasattr(model, "subcategory_id"):
+        conds.append(or_(model.subcategory_id.is_(None), model.subcategory_id.notin_(hidden)))
+    return and_(*conds)

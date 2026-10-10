@@ -5,7 +5,7 @@ from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import selectinload
 from app.core.database import get_db
 from app.core.http_cache import etag_json_response
-from app.core.taxonomy import descendant_ids_for_slug
+from app.core.taxonomy import descendant_ids_for_slug, hidden_category_ids, visible_in_categories
 from app.core.json_util import to_json_safe
 from app.core.security import require_role
 from app.core.blog_links import set_blogs_for_service, get_blog_ids_for_service
@@ -114,6 +114,7 @@ async def list_services(
         Service.is_deleted == False,  # noqa: E712
         Service.is_active == True,  # noqa: E712
     ]
+    conditions.append(visible_in_categories(Service, await hidden_category_ids(db)))
     if category:
         conditions.append(Service.category == category)
     # Additive taxonomy filters — legacy string `category` above still works.

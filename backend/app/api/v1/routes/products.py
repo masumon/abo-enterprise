@@ -6,7 +6,7 @@ from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
 from app.core.http_cache import etag_json_response
 from app.core.security import require_role
-from app.core.taxonomy import descendant_ids_for_slug
+from app.core.taxonomy import descendant_ids_for_slug, hidden_category_ids, visible_in_categories
 from app.models.models import Product, ActivityLog
 from app.schemas.schemas import ProductCreate, ProductUpdate, ProductOut, PublicProductOut, ApiResponse, PaginatedResponse, PaginatedMeta
 from app.core.blog_links import set_blogs_for_product, get_blog_ids_for_product
@@ -32,6 +32,7 @@ async def list_products(
     db: AsyncSession = Depends(get_db),
 ) -> Response:
     conditions = [Product.is_active == True, Product.is_deleted == False]  # noqa: E712
+    conditions.append(visible_in_categories(Product, await hidden_category_ids(db)))
     if category:
         conditions.append(Product.category == category)
     # Additive taxonomy filters — used only when provided; the legacy string
@@ -252,6 +253,7 @@ async def suggest_products(
             Product.is_active == True,  # noqa: E712
             Product.is_deleted == False,  # noqa: E712
             or_(Product.name_en.ilike(term), Product.name_bn.ilike(term)),
+            visible_in_categories(Product, await hidden_category_ids(db)),
         )
         .order_by(Product.sort_order.asc())
         .limit(limit)
@@ -325,6 +327,7 @@ async def related_products(slug: str, db: AsyncSession = Depends(get_db)):
             Product.id != product.id,
             Product.is_active == True,  # noqa: E712
             Product.is_deleted == False,  # noqa: E712
+            visible_in_categories(Product, await hidden_category_ids(db)),
         )
         .order_by(Product.is_featured.desc(), Product.sort_order.asc())
         .limit(4)
