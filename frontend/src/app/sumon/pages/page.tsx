@@ -1,5 +1,6 @@
 "use client";
 
+import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import TranslateButton from "@/components/admin/TranslateButton";
@@ -61,6 +62,7 @@ export default function AdminPagesPage() {
   }, [page, statusFilter, search, toast]);
 
   useEffect(() => { load(); }, [load]);
+  useOpenOnNew(() => openCreate());
 
   const openCreate = () => {
     setEditing(null);

@@ -1,5 +1,6 @@
 "use client";
 
+import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
@@ -193,6 +194,7 @@ export default function AdminCategoriesPage() {
   }, [toast]);
 
   useEffect(() => { load(); }, [load]);
+  useOpenOnNew(() => openCreate(null));
 
   const openCreate = (parent: Node | null) => {
     setForm({

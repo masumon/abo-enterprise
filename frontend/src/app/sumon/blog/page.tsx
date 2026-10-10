@@ -1,4 +1,5 @@
 "use client";
+import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback, useRef } from "react";
@@ -98,6 +99,7 @@ export default function AdminBlogPage() {
   }, [statusFilter, search, page, toast]);
 
   useEffect(() => { load(); }, [load]);
+  useOpenOnNew(() => openNew());
 
   // Load product & service options once — used by the "linked items" pickers
   // so a blog post can feature specific products/services (many-to-many).

@@ -1,5 +1,6 @@
 "use client";
 
+import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2, ExternalLink, Loader2, Plus, Save, Search, Trash2 } from "lucide-react";
@@ -95,6 +96,7 @@ export default function AponAdminPage() {
   }, [toast]);
 
   useEffect(() => { void load(); }, [load]);
+  useOpenOnNew(() => openNew());
 
   const v = (k: string, d = "") => values[k] ?? d;
   const set = (k: string, val: string) => setValues((p) => ({ ...p, [k]: val }));

@@ -1,4 +1,5 @@
 "use client";
+import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback } from "react";
@@ -85,6 +86,7 @@ export default function AdminReviewsPage() {
   }, [page, kind, toast]);
 
   useEffect(() => { load(); }, [load]);
+  useOpenOnNew(() => openCreate());
 
   // Tab counts (one tiny request per tab). Older backends ignore `kind`, in
   // which case every tab shows the same total — harmless.
