@@ -48,9 +48,9 @@ export default function CategoryCards() {
   const categories = getQuickCategories(settings, FALLBACK);
 
   return (
-    <section className="py-4 sm:py-6 bg-white dark:bg-[var(--surface)]">
+    <section className="pt-2 pb-4 sm:py-6 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 py-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 py-1 sm:py-3">
           {categories.map((cat, i) => {
             const Icon = ICONS[cat.icon ?? ""] ?? ShoppingBag;
             const gradient = GRADIENTS[i % GRADIENTS.length];
