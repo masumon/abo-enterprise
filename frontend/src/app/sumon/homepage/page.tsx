@@ -18,6 +18,7 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import { useLanguageStore } from "@/store/language";
 import JsonListEditor from "@/components/admin/JsonListEditor";
+import TranslateButton from "@/components/admin/TranslateButton";
 import {
   HOMEPAGE_CONTENT_EDITORS,
   HOMEPAGE_SCALAR_GROUPS,
@@ -278,10 +279,23 @@ export default function AdminHomepageContentPage() {
       );
     }
     return (
-      <label key={f.key} className="block">
-        <span className="block text-xs font-medium text-muted mb-1">{bn ? f.labelBn : f.label}</span>
+      <label key={f.key} htmlFor={`hp-${f.key}`} className="block">
+        {f.key.endsWith("_en") && HOMEPAGE_SCALAR_FIELDS.some((x) => x.key === f.key.replace(/_en$/, "_bn")) ? (
+          <span className="flex items-center justify-between gap-2 mb-1">
+            <span className="text-xs font-medium text-muted">{bn ? f.labelBn : f.label}</span>
+            <TranslateButton
+              bn={values[f.key.replace(/_en$/, "_bn")]}
+              onResult={(t) => setValue(f.key, t)}
+              en={val}
+              onResultBn={(t) => setValue(f.key.replace(/_en$/, "_bn"), t)}
+            />
+          </span>
+        ) : (
+          <span className="block text-xs font-medium text-muted mb-1">{bn ? f.labelBn : f.label}</span>
+        )}
         {f.type === "textarea" ? (
           <textarea
+            id={`hp-${f.key}`}
             value={val}
             onChange={(e) => setValue(f.key, e.target.value)}
             placeholder={f.placeholder}
@@ -290,6 +304,7 @@ export default function AdminHomepageContentPage() {
           />
         ) : (
           <input
+            id={`hp-${f.key}`}
             type={f.type === "datetime-local" ? "datetime-local" : f.type === "url" ? "url" : "text"}
             value={val}
             onChange={(e) => setValue(f.key, e.target.value)}

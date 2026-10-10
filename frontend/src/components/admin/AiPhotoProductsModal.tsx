@@ -9,6 +9,7 @@ import { downscaleImage } from "@/lib/useAiAvailable";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { useToastStore } from "@/store/toast";
 import { cn } from "@/lib/utils";
+import TranslateButton from "@/components/admin/TranslateButton";
 import type { Product } from "@/types";
 
 export interface CategoryOption { slug: string; label: string; id?: string }
@@ -241,7 +242,7 @@ export default function AiPhotoProductsModal({ open, onClose, categoryOptions, o
                   {r.error && <p className="text-xs text-red-600 flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" /> {r.error}</p>}
                   <div className="grid sm:grid-cols-2 gap-2">
                     <Field label="বাংলা নাম *"><input value={r.name_bn} onChange={(e) => patch(r.key, { name_bn: e.target.value })} className="input text-sm" /></Field>
-                    <Field label="ইংরেজি নাম *"><input value={r.name_en} onChange={(e) => patch(r.key, { name_en: e.target.value })} className="input text-sm" /></Field>
+                    <div><Field label="ইংরেজি নাম *"><input value={r.name_en} onChange={(e) => patch(r.key, { name_en: e.target.value })} className="input text-sm" /></Field><div className="mt-1"><TranslateButton bn={r.name_bn} onResult={(t) => patch(r.key, { name_en: t })} en={r.name_en} onResultBn={(t) => patch(r.key, { name_bn: t })} /></div></div>
                     <Field label="ব্র্যান্ড"><input value={r.brand} onChange={(e) => patch(r.key, { brand: e.target.value })} className="input text-sm" /></Field>
                     <Field label="ক্যাটাগরি *">
                       <select value={r.category} onChange={(e) => patch(r.key, { category: e.target.value })} className={cn("input text-sm", !r.category && "border-amber-400")}>
@@ -257,7 +258,7 @@ export default function AiPhotoProductsModal({ open, onClose, categoryOptions, o
                       )}
                     </Field>
                     <Field label="বিবরণ (বাংলা)"><textarea rows={4} value={r.description_bn} onChange={(e) => patch(r.key, { description_bn: e.target.value })} className="input text-sm resize-y" /></Field>
-                    <Field label="বিবরণ (English)"><textarea rows={4} value={r.description_en} onChange={(e) => patch(r.key, { description_en: e.target.value })} className="input text-sm resize-y" /></Field>
+                    <div><Field label="বিবরণ (English)"><textarea rows={4} value={r.description_en} onChange={(e) => patch(r.key, { description_en: e.target.value })} className="input text-sm resize-y" /></Field><div className="mt-1"><TranslateButton bn={r.description_bn} onResult={(t) => patch(r.key, { description_en: t })} en={r.description_en} onResultBn={(t) => patch(r.key, { description_bn: t })} /></div></div>
                   </div>
                   <Field label="স্পেসিফিকেশন (যেমন Output: 33W; Port: USB-A)"><input value={r.specsText} onChange={(e) => patch(r.key, { specsText: e.target.value })} className="input text-sm" /></Field>
                   {r.notes && <p className="text-[11px] text-amber-700 dark:text-amber-300">AI-এর নোট: {r.notes}</p>}

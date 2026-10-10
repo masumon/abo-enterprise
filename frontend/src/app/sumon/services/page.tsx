@@ -1436,7 +1436,7 @@ export default function AdminServicesPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="form-label">Custom Label (EN)</label>
+                    <div className="flex items-center justify-between gap-2"><label className="form-label">Custom Label (EN)</label><TranslateButton bn={editing.cta_label_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, cta_label_en: en } : prev)} en={editing.cta_label_en} onResultBn={(b) => setEditing(prev => prev ? { ...prev, cta_label_bn: b } : prev)} /></div>
                     <input
                       value={editing.cta_label_en ?? ""}
                       onChange={(e) => setEditing(prev => prev ? { ...prev, cta_label_en: e.target.value || null } : prev)}

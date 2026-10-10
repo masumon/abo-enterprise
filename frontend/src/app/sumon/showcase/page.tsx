@@ -1,5 +1,6 @@
 "use client";
 
+import TranslateButton from "@/components/admin/TranslateButton";
 import { useCallback, useEffect, useState } from "react";
 import { Trash2, Loader2, FolderKanban, Code2, ExternalLink, Pencil, Copy, X, Save, Send } from "lucide-react";
 import { adminApi, type AiDescription } from "@/lib/api";
@@ -257,11 +258,14 @@ function BiInput({ label, value, onChange, area, required }: { label: string; va
   return (
     <div className="grid sm:grid-cols-2 gap-3">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{label} ({t("বাংলা", "Bangla")}) {required && <span className="text-red-500">*</span>}</label>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label} ({t("বাংলা", "Bangla")}) {required && <span className="text-red-500">*</span>}</label>
         <C className={cn("input text-sm", area && "min-h-[80px] resize-y")} value={value.bn} onChange={(e) => onChange({ ...value, bn: e.target.value })} />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{label} (English)</label>
+        <div className="flex items-center justify-between gap-2 mb-1">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label} (English)</label>
+          <TranslateButton bn={value.bn} onResult={(en) => onChange({ ...value, en })} en={value.en} onResultBn={(b) => onChange({ ...value, bn: b })} />
+        </div>
         <C className={cn("input text-sm", area && "min-h-[80px] resize-y")} value={value.en} onChange={(e) => onChange({ ...value, en: e.target.value })} />
       </div>
     </div>
@@ -445,9 +449,10 @@ function ShowcaseEditor({ editor, projects, services, saving, onClose, onSave, o
         <AiDescribeButton kind="software" name={title.bn || title.en} onResult={applyAi} />
       </div>
       {s.items.map((it, i) => (
-        <div key={i} className="flex gap-2">
-          <input className="input text-sm flex-1" placeholder="বাংলা" value={it.bn} onChange={(e) => setS({ items: s.items.map((x, j) => (j === i ? { ...x, bn: e.target.value } : x)) })} />
-          <input className="input text-sm flex-1" placeholder="English" value={it.en} onChange={(e) => setS({ items: s.items.map((x, j) => (j === i ? { ...x, en: e.target.value } : x)) })} />
+        <div key={i} className="flex flex-wrap sm:flex-nowrap items-center gap-2">
+          <input className="input text-sm flex-1 min-w-[140px]" placeholder="বাংলা" value={it.bn} onChange={(e) => setS({ items: s.items.map((x, j) => (j === i ? { ...x, bn: e.target.value } : x)) })} />
+          <input className="input text-sm flex-1 min-w-[140px]" placeholder="English" value={it.en} onChange={(e) => setS({ items: s.items.map((x, j) => (j === i ? { ...x, en: e.target.value } : x)) })} />
+          <TranslateButton bn={it.bn} onResult={(en) => setS({ items: s.items.map((x, j) => (j === i ? { ...x, en } : x)) })} en={it.en} onResultBn={(b) => setS({ items: s.items.map((x, j) => (j === i ? { ...x, bn: b } : x)) })} />
           <button type="button" onClick={() => setS({ items: s.items.filter((_, j) => j !== i) })} className="p-2 text-gray-400 hover:text-red-500" aria-label={t("সরান", "Remove")}><X className="w-4 h-4" /></button>
         </div>
       ))}
