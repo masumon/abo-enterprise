@@ -80,7 +80,7 @@ export default function AiPhotoStartModal({ open, onClose, onDraft, kind, folder
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE}>
-      <div ref={panelRef} role="dialog" aria-modal="true" className="rounded-2xl w-full max-w-md p-5 space-y-4" style={ADMIN_MODAL_PANEL_STYLE}>
+      <div ref={panelRef} role="dialog" aria-modal="true" className="rounded-2xl w-full max-w-md p-5 space-y-4 max-h-[90vh] overflow-y-auto" style={ADMIN_MODAL_PANEL_STYLE}>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-heading flex items-center gap-2"><Sparkles className="w-5 h-5 text-violet-600" /> {t("ছবি দিয়ে (AI)", "From a photo (AI)")}</h2>
           <button type="button" onClick={onClose} aria-label={t("বন্ধ করুন", "Close")} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
@@ -98,7 +98,7 @@ export default function AiPhotoStartModal({ open, onClose, onDraft, kind, folder
           <input value={hint} onChange={(e) => setHint(e.target.value)} className="input" placeholder={t("যেমন: ভিসা আবেদন, ১ দিনে", "e.g. visa application, same day")} />
         </div>
         <p className="text-xs text-muted">{t("AI শুধু খসড়া লেখে — দাম AI দেয় না। সেভের আগে সব দেখে নিন।", "AI only drafts text — never prices. Check before saving.")}</p>
-        <div className="flex justify-end gap-2">
+        <div className="flex justify-end gap-2 flex-wrap">
           <button type="button" onClick={onClose} className="btn btn-outline btn-sm">{t("বাতিল", "Cancel")}</button>
           <button type="button" onClick={run} disabled={busy || !file} className="btn btn-brand btn-sm gap-1.5">
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} {t("AI দিয়ে খসড়া লিখুন", "Write a draft")}

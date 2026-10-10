@@ -553,7 +553,7 @@ export default function AdminReviewsPage() {
               {/* Customer Info */}
               <section className="space-y-4">
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{tx("Customer Info")}</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="form-label">{tx("Customer Name")}</label>
                     <input
@@ -571,7 +571,7 @@ export default function AdminReviewsPage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="form-label">{tx("Rating")}</label>
                     <div className="flex items-center gap-1 mt-1" role="radiogroup" aria-label="Rating 1 to 5 stars">
@@ -666,7 +666,7 @@ export default function AdminReviewsPage() {
               )}
             </div>
 
-            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-gray-50/50">
+            <div className="flex items-center justify-end gap-2 flex-wrap px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-gray-50/50">
               <button onClick={closeEdit} className="btn btn-outline btn-sm">{tx("Cancel")}</button>
               <button onClick={handleSave} disabled={saving} className="btn btn-primary btn-sm gap-1.5">
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}

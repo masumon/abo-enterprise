@@ -589,7 +589,7 @@ export default function AdminPaymentsPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Commission %</label>
                   <input
@@ -613,7 +613,7 @@ export default function AdminPaymentsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Min Amount (৳)</label>
                   <input
@@ -662,7 +662,7 @@ export default function AdminPaymentsPage() {
               </label>
             </div>
 
-            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 flex-shrink-0">
+            <div className="flex items-center justify-end gap-2 flex-wrap px-6 py-4 border-t border-gray-100 flex-shrink-0">
               <button onClick={closePanel} className="btn btn-outline btn-sm">{tx("Cancel")}</button>
               <button onClick={handleSave} disabled={saving} className="btn btn-primary btn-sm gap-1.5">
                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}

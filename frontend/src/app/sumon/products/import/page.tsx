@@ -496,7 +496,7 @@ export default function AdminProductImportPage() {
             <datalist id="import-cats">{catOpts.map((c) => <option key={c.slug} value={c.slug}>{c.label}</option>)}</datalist>
           </div>
 
-          <div className="flex items-center justify-end gap-2 mt-4 pt-4 border-t border-[var(--line)]">
+          <div className="flex items-center justify-end gap-2 flex-wrap mt-4 pt-4 border-t border-[var(--line)]">
             {committing && (
               <div className="mr-auto flex-1 min-w-[180px]">
                 <div className="h-2 rounded-full bg-gray-100 dark:bg-white/10 overflow-hidden"><div className="h-full bg-emerald-500 transition-all" style={{ width: `${progress}%` }} /></div>

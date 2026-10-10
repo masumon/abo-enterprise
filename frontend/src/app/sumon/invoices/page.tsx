@@ -455,7 +455,7 @@ export default function AdminInvoicesPage() {
 
               {/* Items */}
               {detail.items?.length > 0 && (
-                <div className="border border-gray-100 rounded-xl overflow-hidden">
+                <div className="border border-gray-100 dark:border-white/10 rounded-xl overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50 border-b border-gray-100">
@@ -640,7 +640,7 @@ export default function AdminInvoicesPage() {
                 <span>৳{(createItems.reduce((s, i) => s + i.qty * i.price, 0) + (createForm.tax || 0)).toLocaleString()}</span>
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-6">
+            <div className="flex justify-end gap-2 flex-wrap mt-6">
               <button onClick={() => setShowCreate(false)} className="btn btn-outline btn-md">{tx("Cancel")}</button>
               <button onClick={handleCreate} disabled={creating} className="btn btn-brand btn-md">
                 {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Invoice"}

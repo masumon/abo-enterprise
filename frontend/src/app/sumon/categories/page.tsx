@@ -570,7 +570,7 @@ export default function AdminCategoriesPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-end gap-1 sm:gap-1.5 flex-shrink-0 w-full sm:w-auto">
+                  <div className="flex items-center justify-end gap-1 flex-wrap sm:gap-1.5 flex-shrink-0 w-full sm:w-auto">
                     <MoveBtns
                       disabled={reordering || searchActive || typeTab !== "all"}
                       canUp={rootIdx > 0}
@@ -688,7 +688,7 @@ export default function AdminCategoriesPage() {
             </div>
           </LivePreview>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="নাম (ইংরেজি)">
               <div className="flex items-center gap-2">
                 <input value={form.name_en} onChange={(e) => setForm((p) => ({ ...p, name_en: e.target.value, slug: p.slug || slugify(e.target.value) }))} className={INP_CLS} placeholder="Fast Chargers" />
@@ -712,7 +712,7 @@ export default function AdminCategoriesPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="ওয়েব ঠিকানা (slug)">
               <input value={form.slug} onChange={(e) => setForm((p) => ({ ...p, slug: slugify(e.target.value) }))} className={cn(INP_CLS, "font-mono")} placeholder="auto" />
             </Field>

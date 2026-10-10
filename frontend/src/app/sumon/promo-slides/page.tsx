@@ -366,7 +366,7 @@ export default function AdminPromoSlidesPage() {
                 <p className="text-[11px] text-gray-400 mt-1">এই সাইটের পাতা হলে / দিয়ে শুরু করুন (যেমন /products); অন্য সাইটের পুরো লিংক নতুন ট্যাবে খুলবে।</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="form-label flex items-center justify-between gap-2">
                     লেখা (English)
@@ -391,7 +391,7 @@ export default function AdminPromoSlidesPage() {
                 <input value={editing.alt_text ?? ""} onChange={(e) => set("alt_text", e.target.value)} className="input w-full text-sm" />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="form-label">কখন থেকে <span className="text-gray-400 font-normal text-xs">(ঐচ্ছিক)</span></label>
                   <input type="datetime-local" value={editing.starts_at ?? ""} onChange={(e) => set("starts_at", e.target.value)} className="input w-full text-sm" />
@@ -404,7 +404,7 @@ export default function AdminPromoSlidesPage() {
 
               <p className="text-[11px] text-gray-400 -mt-2">বাংলাদেশ সময়। খালি রাখলে সবসময় দেখাবে (চালু থাকলে)।</p>
 
-              <div className="grid grid-cols-2 gap-3 items-end">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
                 <div>
                   <label className="form-label">ক্রম <span className="text-gray-400 font-normal text-xs">(ছোট = আগে)</span></label>
                   <input type="number" value={editing.sort_order ?? 0} onChange={(e) => set("sort_order", Number(e.target.value))} className="input w-full text-sm" />
@@ -416,7 +416,7 @@ export default function AdminPromoSlidesPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 dark:border-white/10 bg-gray-50/50 dark:bg-white/5">
+            <div className="flex items-center justify-end gap-2 flex-wrap px-6 py-4 border-t border-gray-100 dark:border-white/10 bg-gray-50/50 dark:bg-white/5">
               <button onClick={() => setEditing(null)} className="btn btn-outline btn-sm">বাতিল</button>
               <button onClick={handleSave} disabled={saving} className="btn btn-primary btn-sm gap-1.5">
                 {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}

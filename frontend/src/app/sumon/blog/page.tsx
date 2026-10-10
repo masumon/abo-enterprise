@@ -421,7 +421,7 @@ export default function AdminBlogPage() {
                     </td>
                     <td className="px-5 py-3" data-label={tx("Status")}><StatusBadge status={p.status} /></td>
                     <td className="px-5 py-3 text-right" data-label={tx("Actions")} onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1 flex-wrap">
                         {p.status === "draft" && (
                           <button
                             onClick={async (e) => { e.stopPropagation(); await adminBlogApi.update(p.id!, { status: "published" }); toast("success", "Published!"); load(); }}
@@ -630,7 +630,7 @@ export default function AdminBlogPage() {
               </div>
 
               {/* Category + Author */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{tx("Category")}</label>
                   <select

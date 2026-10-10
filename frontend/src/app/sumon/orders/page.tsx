@@ -610,7 +610,7 @@ export default function AdminOrdersPage() {
 
                 <div className="bg-brand-50 border border-brand-100 rounded-xl p-4 space-y-3">
                   <h3 className="font-semibold text-gray-900 text-sm">{tx("Courier / Delivery")}</h3>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs text-gray-500">{tx("Provider")}</label>
                       <select value={courierProvider} onChange={(e) => setCourierProvider(e.target.value)} className="input text-sm mt-1">

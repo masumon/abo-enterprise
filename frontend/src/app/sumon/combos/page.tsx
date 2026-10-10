@@ -228,14 +228,14 @@ export default function AdminCombosPage() {
               <button type="button" onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">শিরোনাম (EN) *</label><TranslateButton bn={form.title_bn} onResult={(en) => set("title_en", en)} en={form.title_en} onResultBn={(b) => set("title_bn", b)} /></div>
                   <input className="input mt-1" value={form.title_en} onChange={(e) => set("title_en", e.target.value)} />
                 </div>
                 <div><label className="form-label">শিরোনাম (বাংলা) *</label><input className="input" value={form.title_bn} onChange={(e) => set("title_bn", e.target.value)} /></div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">বিবরণ (EN)</label><TranslateButton bn={form.description_bn} onResult={(en) => set("description_en", en)} en={form.description_en} onResultBn={(b) => set("description_bn", b)} /></div>
                   <textarea className="input mt-1" rows={2} value={form.description_en} onChange={(e) => set("description_en", e.target.value)} />
@@ -243,11 +243,11 @@ export default function AdminCombosPage() {
                 <div><label className="form-label">বিবরণ (বাংলা)</label><textarea className="input" rows={2} value={form.description_bn} onChange={(e) => set("description_bn", e.target.value)} /></div>
               </div>
               <ImageUpload value={form.image_url} onChange={(u) => set("image_url", u)} label="কম্বো ছবি" folder="combos" purpose="combo" />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><label className="form-label">কম্বো দাম (৳) *</label><input type="number" className="input" value={form.combo_price} onChange={(e) => set("combo_price", e.target.value)} /></div>
                 <div><label className="form-label">তুলনা দাম (৳)</label><input type="number" className="input" value={form.compare_at_price} onChange={(e) => set("compare_at_price", e.target.value)} placeholder="খালি = পণ্যের যোগফল" /></div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">ব্যাজ (EN)</label><TranslateButton bn={form.badge_bn} onResult={(en) => set("badge_en", en)} en={form.badge_en} onResultBn={(b) => set("badge_bn", b)} /></div>
                   <input className="input mt-1" value={form.badge_en} onChange={(e) => set("badge_en", e.target.value)} placeholder="Save ৳500" />

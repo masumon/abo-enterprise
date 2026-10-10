@@ -229,7 +229,7 @@ export default function AdminProductsPage() {
   };
 
   const rowActions = (p: Product) => (
-    <div className="flex items-center justify-end gap-1">
+    <div className="flex items-center justify-end gap-1 flex-wrap">
       <button type="button" onClick={() => openForm({ type: "clone", product: p })} title={t("কপি করে নতুন বানান", "Copy as new")} aria-label={t("কপি করে নতুন বানান", "Copy as new")}
         className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50 dark:hover:bg-white/10"><Copy className="w-4 h-4" /></button>
       <button type="button" onClick={() => openForm({ type: "edit", product: p })} title={t("সম্পাদনা", "Edit")} aria-label={t("সম্পাদনা", "Edit")}

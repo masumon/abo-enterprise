@@ -700,7 +700,7 @@ export default function AdminServicesPage() {
     setEditing(prev => prev ? { ...prev, [field]: e.target.value ? Number(e.target.value) : undefined } : prev);
 
   const svcRowActions = (s: Service) => (
-    <div className="flex items-center justify-end gap-1">
+    <div className="flex items-center justify-end gap-1 flex-wrap">
       <button type="button" onClick={() => openClone(s)} title={t("কপি করে নতুন বানান", "Copy as new")} aria-label={t("কপি করে নতুন বানান", "Copy as new")}
         className="p-1.5 text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-white/10 rounded-lg"><Copy className="w-4 h-4" /></button>
       <button type="button" onClick={() => openEdit(s)} aria-label={t("সম্পাদনা", "Edit")} title={t("সম্পাদনা", "Edit")}
@@ -1517,7 +1517,7 @@ export default function AdminServicesPage() {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-2 px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-gray-50/50">
+            <div className="flex items-center justify-end gap-2 flex-wrap px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-gray-50/50">
               <button onClick={closeEditor} className="btn btn-outline btn-sm">{tx("Cancel")}</button>
               <button onClick={() => handleSave(false)} disabled={saving} className="btn btn-outline btn-sm gap-1.5">
                 {t("খসড়া হিসেবে সেভ", "Save as draft")}

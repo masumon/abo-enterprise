@@ -198,7 +198,7 @@ export default function AdminEmailTemplatesPage() {
                       </button>
                     </td>
                     <td className="text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex justify-end gap-1">
+                      <div className="flex justify-end gap-1 flex-wrap">
                         <button onClick={() => openEdit(t)} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50">
                           <Pencil className="w-4 h-4" />
                         </button>
@@ -295,7 +295,7 @@ export default function AdminEmailTemplatesPage() {
                   className="input w-full font-mono text-sm disabled:bg-gray-50"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="form-label flex items-center justify-between gap-2">
                     Subject (EN)

@@ -114,7 +114,7 @@ export default function ComposeEmailModal({ open, onClose, to, defaultSubject = 
           <p className="text-[11px] text-gray-400">
             Sent from ABO Enterprise (no-reply@aboenterprise.com) to the customer.
           </p>
-          <div className="flex justify-end gap-2 pt-1">
+          <div className="flex justify-end gap-2 flex-wrap pt-1">
             <button type="button" onClick={onClose} className="btn btn-ghost btn-sm">Cancel</button>
             <button type="submit" disabled={sending} className="btn btn-brand btn-sm disabled:opacity-60">
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

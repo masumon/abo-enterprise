@@ -230,7 +230,7 @@ export default function AdminUsersPage() {
                       {u.last_login ? new Date(u.last_login).toLocaleString("en-BD") : "—"}
                     </td>
                     <td className="text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1 flex-wrap">
                         <button
                           onClick={() => openEdit(u)}
                           aria-label={`Edit ${u.name}`}
@@ -269,7 +269,7 @@ export default function AdminUsersPage() {
           style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={(e) => { if (e.target === e.currentTarget) closeModal(); }}
         >
-          <div ref={modalRef} className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl">
+          <div ref={modalRef} className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-semibold flex items-center gap-2">
                 <Shield className="w-5 h-5 text-brand-600" />
@@ -335,7 +335,7 @@ export default function AdminUsersPage() {
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-6">
+            <div className="flex justify-end gap-2 flex-wrap mt-6">
               <button onClick={closeModal} className="btn btn-outline btn-md">{tx("Cancel")}</button>
               <button onClick={handleSave} disabled={saving} className="btn btn-brand btn-md">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : modal === "create" ? "Create" : "Save"}

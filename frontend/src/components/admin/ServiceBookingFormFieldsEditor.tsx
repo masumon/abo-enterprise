@@ -254,7 +254,7 @@ export default function ServiceBookingFormFieldsEditor({
           )}
           {/* Numeric bounds — enforced server-side for number/integer fields */}
           {["number", "integer"].includes(newField.field_type ?? "") && (
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="form-label text-[11px]">Min Value</label>
                 <input
@@ -347,7 +347,7 @@ export default function ServiceBookingFormFieldsEditor({
               </label>
             </div>
           </div>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 flex-wrap">
             <button onClick={closeFieldEditor} className="btn btn-outline btn-sm text-xs">Cancel</button>
             <button onClick={handleSaveField} disabled={savingField} className="btn btn-primary btn-sm text-xs gap-1">
               {savingField ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}

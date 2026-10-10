@@ -151,7 +151,7 @@ export default function AdminDeliveryZonesPage() {
               <button type="button" onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">নাম (EN) *</label><TranslateButton bn={form.name_bn} onResult={(en) => set("name_en", en)} en={form.name_en} onResultBn={(b) => set("name_bn", b)} /></div>
                   <input className="input mt-1" value={form.name_en} onChange={(e) => set("name_en", e.target.value)} placeholder="Sylhet local" />
@@ -166,7 +166,7 @@ export default function AdminDeliveryZonesPage() {
                 <label className="form-label">উপজেলা <span className="text-muted font-normal">(ঐচ্ছিক — খালি = পুরো জেলা)</span></label>
                 <textarea className="input" rows={2} value={form.upazilas} onChange={(e) => set("upazilas", e.target.value)} placeholder="Beanibazar, Golapganj" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><label className="form-label">চার্জ (৳) *</label><input type="number" className="input" value={form.charge} onChange={(e) => set("charge", e.target.value)} /></div>
                 <div><label className="form-label">ফ্রি ডেলিভারি (৳-এর বেশি)</label><input type="number" className="input" value={form.free_threshold} onChange={(e) => set("free_threshold", e.target.value)} placeholder="খালি = ফ্রি নেই" /></div>
               </div>

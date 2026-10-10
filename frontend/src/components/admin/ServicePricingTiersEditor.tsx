@@ -179,7 +179,7 @@ export default function ServicePricingTiersEditor({
             />
             <span className="text-sm text-gray-700">Active</span>
           </label>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 flex-wrap">
             <button onClick={closeTierEditor} className="btn btn-outline btn-sm text-xs">Cancel</button>
             <button onClick={handleSaveTier} disabled={savingTier} className="btn btn-primary btn-sm text-xs gap-1">
               {savingTier ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}

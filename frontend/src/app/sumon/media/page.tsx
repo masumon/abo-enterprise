@@ -950,7 +950,7 @@ export default function AdminMediaPage() {
 
       {editingAsset && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditingAsset(null)}>
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-heading">Edit Asset</h3>
               <button type="button" onClick={() => setEditingAsset(null)} className="text-gray-400 hover:text-gray-600">
@@ -980,7 +980,7 @@ export default function AdminMediaPage() {
                 placeholder="banner, homepage, promo"
               />
             </div>
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-2 flex-wrap">
               <button type="button" onClick={() => setEditingAsset(null)} className="btn btn-outline btn-sm">Cancel</button>
               <button type="button" onClick={saveAssetEdit} disabled={savingAsset} className="btn btn-brand btn-sm disabled:opacity-60">
                 {savingAsset ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

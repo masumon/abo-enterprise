@@ -172,7 +172,7 @@ export default function AdminPagesPage() {
                     </td>
                     <td className="text-xs text-gray-500" data-label="Updated">{new Date(p.updated_at).toLocaleDateString("en-BD")}</td>
                     <td className="text-right" data-label="Actions">
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1 flex-wrap">
                         {p.status === "published" && (
                           <Link href={`/${p.slug}`} target="_blank" className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400" aria-label="View live">
                             <ExternalLink className="w-4 h-4" />
@@ -213,7 +213,7 @@ export default function AdminPagesPage() {
                 {errors.slug && <p className="text-red-500 text-xs mt-1">{errors.slug.message}</p>}
                 {editing && <p className="text-xs text-gray-400 mt-1">Slug can&apos;t be changed after creation.</p>}
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-1"><label className="text-sm font-medium text-gray-700">Title (English)</label><TranslateButton bn={watch("title_bn")} onResult={(t) => setValue("title_en", t, { shouldValidate: true, shouldDirty: true })} en={watch("title_en")} onResultBn={(t) => setValue("title_bn", t, { shouldDirty: true })} /></div>
                   <input {...register("title_en")} className={cn("input", errors.title_en && "input-error")} />
@@ -233,7 +233,7 @@ export default function AdminPagesPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Content (বাংলা)</label>
                 <textarea {...register("content_bn")} rows={8} className="input" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">SEO Title</label>
                   <input {...register("seo_title")} className="input" />
@@ -250,7 +250,7 @@ export default function AdminPagesPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">SEO Description</label>
                 <textarea {...register("seo_description")} rows={2} className="input" />
               </div>
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 flex-wrap pt-2">
                 <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline btn-md">Cancel</button>
                 <button type="submit" disabled={saving} className="btn btn-brand btn-md">
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editing ? "Save Changes" : "Create Page"}

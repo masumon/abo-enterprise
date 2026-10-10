@@ -460,7 +460,7 @@ export default function AdminAssistantPage() {
                         <td className="px-4 py-3" data-label="Messages">{c.message_count}</td>
                         <td className="px-4 py-3 text-xs text-gray-500" data-label="Updated">{new Date(c.updated_at).toLocaleString()}</td>
                         <td className="px-4 py-3 text-right" data-label="Actions">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-1 flex-wrap">
                             <button onClick={() => viewConversation(c.id)} className="p-1.5 rounded-lg hover:bg-brand-50 text-brand-600" title="View">
                               <span className="sr-only">View conversation</span>
                               <Eye className="w-4 h-4" />
@@ -708,7 +708,7 @@ export default function AdminAssistantPage() {
                       এক লাইনে একটি প্রশ্ন/কিওয়ার্ড — বাংলা, English বা Banglish। গ্রাহক এগুলোর কাছাকাছি কিছু লিখলে এই উত্তরটি দেখানো হবে।
                     </p>
                   </div>
-                  <div className="flex justify-end gap-2 pt-2">
+                  <div className="flex justify-end gap-2 flex-wrap pt-2">
                     <button onClick={() => setFaqEditing(null)} className="px-4 py-2 border border-gray-200 rounded-lg text-sm">Cancel</button>
                     <button
                       onClick={saveFaq}
