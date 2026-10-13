@@ -124,9 +124,9 @@ export default function AdminInventoryPage() {
   return (
     <div className="admin-page">
       <AdminPageHeader title="Inventory & Product Brands" titleBn="স্টক ও পণ্যের ব্র্যান্ড" description="Real stock balances, movement history, low-stock monitoring and product brands (e.g. Samsung)." descriptionBn="কোন পণ্য কতটা আছে, স্টকের ইতিহাস, আর পণ্যের ব্র্যান্ড (যেমন Samsung, Xiaomi)। হোমপেজের ক্লায়েন্ট/পার্টনার লোগো এখানে নয় — সেটি ‘আমাদের সম্পর্কে ও বিশ্বাস’ পাতায়।" />
-      <div className="flex gap-2 border-b border-gray-200 dark:border-white/10">
-        <button className={`px-4 py-2 font-medium ${tab === "inventory" ? "border-b-2 border-brand text-brand" : "text-muted"}`} onClick={() => setTab("inventory")}>স্টক</button>
-        <button className={`px-4 py-2 font-medium ${tab === "brands" ? "border-b-2 border-brand text-brand" : "text-muted"}`} onClick={() => setTab("brands")}>পণ্যের ব্র্যান্ড</button>
+      <div className="flex gap-2 overflow-x-auto border-b border-gray-200 dark:border-white/10" role="tablist" aria-label="Inventory sections">
+        <button role="tab" aria-selected={tab === "inventory"} className={`min-h-11 shrink-0 px-4 py-2 font-medium ${tab === "inventory" ? "border-b-2 border-brand text-brand" : "text-muted"}`} onClick={() => setTab("inventory")}>স্টক</button>
+        <button role="tab" aria-selected={tab === "brands"} className={`min-h-11 shrink-0 px-4 py-2 font-medium ${tab === "brands" ? "border-b-2 border-brand text-brand" : "text-muted"}`} onClick={() => setTab("brands")}>পণ্যের ব্র্যান্ড</button>
       </div>
 
       {tab === "inventory" ? (
@@ -141,14 +141,41 @@ export default function AdminInventoryPage() {
             <div className="relative flex-1"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" /><input className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0f1a2e]" placeholder="Search product, SKU or brand" value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && loadInventory()} /></div>
             <button className="flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-gray-200 p-2 dark:border-white/10" onClick={loadInventory} aria-label="Refresh"><RefreshCw className="w-4 h-4" /></button>
           </AdminToolbar>
-          <div className="rounded-xl border border-gray-200 dark:border-white/10 overflow-x-auto">
-            <table className="w-full text-sm table-responsive min-w-0 "><thead><tr className="border-b border-gray-200 dark:border-white/10 text-left"><th className="p-3">Product</th><th className="p-3">SKU</th><th className="p-3">Brand</th><th className="p-3">Stock</th><th className="p-3">Threshold</th><th className="p-3">Action</th></tr></thead>
-              <tbody>{items.map((p) => <tr key={p.id} className="border-b border-gray-200 dark:border-white/10/60"><td className="p-3" data-label="Product"><div className="font-medium">{p.name_en}</div><div className="text-xs text-muted">{p.name_bn}</div></td><td className="p-3" data-label="SKU">{p.sku || "—"}</td><td className="p-3" data-label="Brand">{p.brand || "—"}</td><td className="p-3" data-label="Stock"><span className="font-semibold">{p.stock_quantity}</span></td><td className="p-3" data-label="Threshold">{p.low_stock_threshold}</td><td className="p-3" data-label="Action"><button className="inline-flex min-h-11 items-center justify-center gap-1 rounded border border-gray-200 px-3 py-2 dark:border-white/10" onClick={() => openMovements(p)}><History className="w-3.5 h-3.5" /> History</button></td></tr>)}</tbody>
-            </table>
-            {loading && <div className="p-8 flex items-center justify-center gap-2 text-muted"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>}
-            {!items.length && !loading && (
-              <div className="p-4"><AdminEmptyState icon={Package} title="No inventory records found" description="Add products first — stock levels appear here automatically." /></div>
-            )}
+          <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-white/10">
+            <div className="space-y-3 p-3 min-[641px]:hidden">
+              {items.map((p) => {
+                const isOut = p.stock_quantity <= 0;
+                const isLow = !isOut && p.stock_quantity <= p.low_stock_threshold;
+                return (
+                  <article key={p.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0f1a2e]">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <h3 className="break-words text-sm font-semibold text-heading">{p.name_en}</h3>
+                        {p.name_bn && <p className="mt-0.5 break-words text-xs text-muted">{p.name_bn}</p>}
+                      </div>
+                      <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${isOut ? "bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-300" : isLow ? "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300" : "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"}`}>
+                        {isOut ? "Out of stock" : isLow ? "Low stock" : "In stock"}
+                      </span>
+                    </div>
+                    <dl className="mt-4 grid grid-cols-2 gap-x-4 gap-y-3">
+                      <div className="min-w-0"><dt className="text-[11px] font-medium uppercase tracking-wide text-muted">SKU</dt><dd className="mt-1 break-words text-sm">{p.sku || "—"}</dd></div>
+                      <div className="min-w-0"><dt className="text-[11px] font-medium uppercase tracking-wide text-muted">Brand</dt><dd className="mt-1 break-words text-sm">{p.brand || "—"}</dd></div>
+                      <div><dt className="text-[11px] font-medium uppercase tracking-wide text-muted">Stock quantity</dt><dd className="mt-1 text-lg font-bold text-heading">{p.stock_quantity}</dd></div>
+                      <div><dt className="text-[11px] font-medium uppercase tracking-wide text-muted">Low-stock threshold</dt><dd className="mt-1 text-sm">{p.low_stock_threshold}</dd></div>
+                    </dl>
+                    <button className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium dark:border-white/10" onClick={() => openMovements(p)}><History className="h-4 w-4" /> View stock history</button>
+                  </article>
+                );
+              })}
+            </div>
+            <div className="hidden min-[641px]:block overflow-x-auto">
+              <table className="w-full text-sm min-w-[640px]">
+                <thead><tr className="border-b border-gray-200 text-left dark:border-white/10"><th className="p-3">Product</th><th className="p-3">SKU</th><th className="p-3">Brand</th><th className="p-3">Stock</th><th className="p-3">Threshold</th><th className="p-3">Action</th></tr></thead>
+                <tbody>{items.map((p) => <tr key={p.id} className="border-b border-gray-100 dark:border-white/10"><td className="p-3"><div className="font-medium">{p.name_en}</div><div className="text-xs text-muted">{p.name_bn}</div></td><td className="p-3">{p.sku || "—"}</td><td className="p-3">{p.brand || "—"}</td><td className="p-3"><span className="font-semibold">{p.stock_quantity}</span></td><td className="p-3">{p.low_stock_threshold}</td><td className="p-3"><button className="inline-flex min-h-11 items-center justify-center gap-1 rounded-lg border border-gray-200 px-3 py-2 dark:border-white/10" onClick={() => openMovements(p)}><History className="h-3.5 w-3.5" /> History</button></td></tr>)}</tbody>
+              </table>
+            </div>
+            {loading && <div className="flex items-center justify-center gap-2 p-8 text-muted"><Loader2 className="h-4 w-4 animate-spin" /> Loading inventory…</div>}
+            {!items.length && !loading && <div className="p-4"><AdminEmptyState icon={Package} title="No inventory records found" description="Add products first — stock levels appear here automatically." /></div>}
           </div>
 
           {selected && <div className="rounded-xl border border-gray-200 dark:border-white/10 p-4 space-y-4">
@@ -164,8 +191,31 @@ export default function AdminInventoryPage() {
         </>
       ) : (
         <>
-          <div className="flex items-center justify-between"><AdminToolbar><div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" /><input className="pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#0f1a2e]" placeholder="পণ্যের ব্র্যান্ড খুঁজুন" value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && loadBrands()} /></div></AdminToolbar><button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-600 px-3 py-2 text-white" onClick={() => openBrand()}><Plus className="w-4 h-4" /> নতুন পণ্যের ব্র্যান্ড</button></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">{brands.map((b) => <div key={b.id} className="rounded-xl border border-gray-200 dark:border-white/10 p-4 space-y-3"><div className="flex items-start justify-between"><div className="flex items-center gap-3">{b.logo_url ? <img src={b.logo_url} alt="" className="w-10 h-10 rounded-lg object-contain border border-gray-200 dark:border-white/10" /> : <div className="w-10 h-10 rounded-lg bg-white dark:bg-[#0f1a2e] flex items-center justify-center"><Tags className="w-5 h-5 text-muted" /></div>}<div><div className="font-semibold">{b.name_en}</div><div className="text-xs text-muted">{b.name_bn || b.slug}</div></div></div><StatusBadge status={b.is_active ? "active" : "inactive"} /></div><div className="text-sm text-muted">Slug: {b.slug} · Products: {b.product_count}</div><div className="flex gap-2"><button className="px-2 py-1 rounded border border-gray-200 dark:border-white/10" onClick={() => openBrand(b)}>Edit</button><button className="px-2 py-1 rounded border border-gray-200 dark:border-white/10 text-red-600" onClick={() => setArchiveBrand(b)}><Archive className="w-3.5 h-3.5 inline mr-1" />Archive</button></div></div>)}</div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+            <AdminToolbar><div className="relative w-full sm:min-w-[260px]"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" /><input className="min-h-11 w-full rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2 dark:border-white/10 dark:bg-[#0f1a2e]" placeholder="পণ্যের ব্র্যান্ড খুঁজুন" value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && loadBrands()} /></div></AdminToolbar>
+            <button className="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-brand-600 px-4 py-2 text-white sm:w-auto" onClick={() => openBrand()}><Plus className="h-4 w-4" /> নতুন পণ্যের ব্র্যান্ড</button>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 sm:gap-4">
+            {brands.map((b) => (
+              <article key={b.id} className="flex min-w-0 flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0f1a2e]">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {b.logo_url ? <img src={b.logo_url} alt="" className="h-12 w-12 shrink-0 rounded-xl border border-gray-200 bg-white object-contain p-1 dark:border-white/10 dark:bg-[#0f1a2e]" /> : <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-white/5"><Tags className="h-5 w-5 text-muted" /></div>}
+                    <div className="min-w-0"><h3 className="break-words font-semibold text-heading">{b.name_en}</h3><p className="mt-0.5 break-words text-xs text-muted">{b.name_bn || b.slug}</p></div>
+                  </div>
+                  <StatusBadge status={b.is_active ? "active" : "inactive"} />
+                </div>
+                <dl className="grid grid-cols-2 gap-3 rounded-xl bg-gray-50 p-3 text-sm dark:bg-white/5">
+                  <div className="min-w-0"><dt className="text-[11px] font-medium uppercase tracking-wide text-muted">Slug</dt><dd className="mt-1 break-words">{b.slug}</dd></div>
+                  <div><dt className="text-[11px] font-medium uppercase tracking-wide text-muted">Products</dt><dd className="mt-1 font-semibold">{b.product_count}</dd></div>
+                </dl>
+                <div className="mt-auto grid grid-cols-2 gap-2">
+                  <button className="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium dark:border-white/10" onClick={() => openBrand(b)}>Edit brand</button>
+                  <button className="inline-flex min-h-11 items-center justify-center gap-1 rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 dark:border-red-500/30" onClick={() => setArchiveBrand(b)}><Archive className="h-4 w-4" /> Archive</button>
+                </div>
+              </article>
+            ))}
+          </div>
           {loading && <div className="p-8 flex items-center justify-center gap-2 text-muted"><Loader2 className="w-4 h-4 animate-spin" /> Loading...</div>}
           {!brands.length && !loading && (
             <AdminEmptyState icon={Tags} title="কোনো পণ্যের ব্র্যান্ড নেই" description="পণ্য কোন কোম্পানির (যেমন Samsung) তা দেখাতে প্রথম ব্র্যান্ড যোগ করুন। ক্লায়েন্ট/পার্টনার লোগো ‘আমাদের সম্পর্কে ও বিশ্বাস’ পাতায়।" action={<button className="btn btn-brand btn-sm" onClick={() => openBrand()}>নতুন পণ্যের ব্র্যান্ড</button>} />
@@ -173,7 +223,7 @@ export default function AdminInventoryPage() {
         </>
       )}
 
-      {brandModal && <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0"><div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#0f1a2e] p-5 shadow-xl space-y-4"><h2 className="text-lg font-semibold">{editingBrand ? "পণ্যের ব্র্যান্ড সম্পাদনা" : "নতুন পণ্যের ব্র্যান্ড"}</h2><div className="grid grid-cols-1 md:grid-cols-2 gap-3">{[["slug","Slug"],["name_en","Name (English)"],["name_bn","Name (বাংলা)"],["website_url","Website URL"],["sort_order","Sort order"]].map(([key,label]) => <label key={key} className="text-sm space-y-1"><span>{label}</span><input className="w-full rounded-lg border border-gray-200 dark:border-white/10 p-2 bg-white dark:bg-[#0f1a2e]" value={key === "sort_order" ? (brandForm.sort_order || "") : (brandForm as Record<string, unknown>)[key] as string | number} placeholder={key === "sort_order" ? "0" : undefined} onChange={(e) => setBrandForm((v) => ({ ...v, [key]: key === "sort_order" ? Number(e.target.value) : e.target.value }))} disabled={key === "slug" && !!editingBrand} /></label>)}</div><div className="text-sm space-y-1"><span>ব্র্যান্ডের লোগো</span><ImageUpload value={brandForm.logo_url} onChange={(url) => setBrandForm((v) => ({ ...v, logo_url: url }))} folder="abo-enterprise/brands" purpose="brand-logo" previewSize="sm" /></div><div className="flex justify-end gap-2 flex-wrap"><TranslateButton bn={brandForm.name_bn} onResult={(t) => setBrandForm((v) => ({ ...v, name_en: t }))} en={brandForm.name_en} onResultBn={(t) => setBrandForm((v) => ({ ...v, name_bn: t }))} label="→ English (নাম)" /></div><label className="text-sm space-y-1 block"><span className="flex items-center justify-between gap-2">Description (English)<TranslateButton bn={brandForm.description_bn} onResult={(t) => setBrandForm((v) => ({ ...v, description_en: t }))} en={brandForm.description_en} onResultBn={(t) => setBrandForm((v) => ({ ...v, description_bn: t }))} /></span><textarea className="w-full rounded-lg border border-gray-200 dark:border-white/10 p-2 bg-white dark:bg-[#0f1a2e]" value={brandForm.description_en} onChange={(e) => setBrandForm((v) => ({ ...v, description_en: e.target.value }))} /></label><label className="text-sm space-y-1 block"><span>Description (বাংলা)</span><textarea className="w-full rounded-lg border border-gray-200 dark:border-white/10 p-2 bg-white dark:bg-[#0f1a2e]" value={brandForm.description_bn} onChange={(e) => setBrandForm((v) => ({ ...v, description_bn: e.target.value }))} /></label><label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={brandForm.is_active} onChange={(e) => setBrandForm((v) => ({ ...v, is_active: e.target.checked }))} /> Active</label><div className="flex justify-end gap-2 flex-wrap"><button className="px-3 py-2 rounded border border-gray-200 dark:border-white/10" onClick={() => setBrandModal(false)}>Cancel</button><button className="px-3 py-2 rounded bg-brand-600 text-white" onClick={saveBrand}>Save</button></div></div></div>}
+      {brandModal && <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0"><div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#0f1a2e] p-5 shadow-xl space-y-4"><h2 className="text-lg font-semibold">{editingBrand ? "পণ্যের ব্র্যান্ড সম্পাদনা" : "নতুন পণ্যের ব্র্যান্ড"}</h2><div className="grid grid-cols-1 md:grid-cols-2 gap-3">{[["slug","Slug"],["name_en","Name (English)"],["name_bn","Name (বাংলা)"],["website_url","Website URL"],["sort_order","Sort order"]].map(([key,label]) => <label key={key} className="text-sm space-y-1"><span>{label}</span><input className="min-h-11 w-full rounded-lg border border-gray-200 dark:border-white/10 p-2 bg-white dark:bg-[#0f1a2e]" value={key === "sort_order" ? (brandForm.sort_order || "") : (brandForm as Record<string, unknown>)[key] as string | number} placeholder={key === "sort_order" ? "0" : undefined} onChange={(e) => setBrandForm((v) => ({ ...v, [key]: key === "sort_order" ? Number(e.target.value) : e.target.value }))} disabled={key === "slug" && !!editingBrand} /></label>)}</div><div className="text-sm space-y-1"><span>ব্র্যান্ডের লোগো</span><ImageUpload value={brandForm.logo_url} onChange={(url) => setBrandForm((v) => ({ ...v, logo_url: url }))} folder="abo-enterprise/brands" purpose="brand-logo" previewSize="sm" /></div><div className="flex justify-end gap-2 flex-wrap"><TranslateButton bn={brandForm.name_bn} onResult={(t) => setBrandForm((v) => ({ ...v, name_en: t }))} en={brandForm.name_en} onResultBn={(t) => setBrandForm((v) => ({ ...v, name_bn: t }))} label="→ English (নাম)" /></div><label className="text-sm space-y-1 block"><span className="flex items-center justify-between gap-2">Description (English)<TranslateButton bn={brandForm.description_bn} onResult={(t) => setBrandForm((v) => ({ ...v, description_en: t }))} en={brandForm.description_en} onResultBn={(t) => setBrandForm((v) => ({ ...v, description_bn: t }))} /></span><textarea className="min-h-11 w-full rounded-lg border border-gray-200 dark:border-white/10 p-2 bg-white dark:bg-[#0f1a2e]" value={brandForm.description_en} onChange={(e) => setBrandForm((v) => ({ ...v, description_en: e.target.value }))} /></label><label className="text-sm space-y-1 block"><span>Description (বাংলা)</span><textarea className="min-h-11 w-full rounded-lg border border-gray-200 dark:border-white/10 p-2 bg-white dark:bg-[#0f1a2e]" value={brandForm.description_bn} onChange={(e) => setBrandForm((v) => ({ ...v, description_bn: e.target.value }))} /></label><label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={brandForm.is_active} onChange={(e) => setBrandForm((v) => ({ ...v, is_active: e.target.checked }))} /> Active</label><div className="flex justify-end gap-2 flex-wrap"><button className="px-3 py-2 rounded border border-gray-200 dark:border-white/10" onClick={() => setBrandModal(false)}>Cancel</button><button className="px-3 py-2 rounded bg-brand-600 text-white" onClick={saveBrand}>Save</button></div></div></div>}
       <ConfirmDialog open={!!archiveBrand} title="Archive brand?" description="This preserves the brand record and existing product data." confirmLabel="Archive" onConfirm={confirmArchive} onCancel={() => setArchiveBrand(null)} />
     </div>
   );

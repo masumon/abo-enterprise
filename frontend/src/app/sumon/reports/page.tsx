@@ -92,58 +92,103 @@ export default function AdminReportsPage() {
         }
       />
 
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Report type">
-        {REPORT_TABS.map((tab) => (
-          <button
-            key={tab.value}
-            type="button"
-            onClick={() => setReport(tab.value)}
-            className={`btn btn-sm min-h-11 px-4 ${report === tab.value ? "btn-brand shadow-sm" : "btn-outline"}`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="admin-card flex flex-wrap items-end gap-3 rounded-2xl border border-gray-100 p-4 shadow-sm">
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Start date</label>
-          <input type="date" value={startDate} max={endDate} onChange={(e) => setStartDate(e.target.value)} className="admin-input min-h-11 w-full text-sm sm:w-auto" />
+      <section aria-label="Choose report" className="min-w-0">
+        <div className="mb-2 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold text-heading">Report type</h2>
+          <span className="text-xs text-gray-500">{REPORT_TABS.length} reports</span>
         </div>
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">End date</label>
-          <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} className="admin-input min-h-11 w-full text-sm sm:w-auto" />
-        </div>
-      </div>
-
-      {summaryRow && (
-        <div className="admin-card p-4 bg-brand-50/40 border-brand-100 text-sm text-brand-800">
-          {Object.entries(summaryRow).filter(([k]) => k !== "summary").map(([k, v]) => (
-            <p key={k}><span className="font-semibold">{k.replace(/_/g, " ")}:</span> {formatCell(v)}</p>
+        <div className="flex gap-2 overflow-x-auto pb-2 min-[641px]:flex-wrap min-[641px]:overflow-visible min-[641px]:pb-0" role="group" aria-label="Report type">
+          {REPORT_TABS.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => setReport(tab.value)}
+              aria-pressed={report === tab.value}
+              className={`btn btn-sm min-h-11 shrink-0 px-4 transition-colors ${report === tab.value ? "btn-brand shadow-sm" : "btn-outline"}`}
+            >
+              {tab.label}
+            </button>
           ))}
         </div>
+      </section>
+
+      <section className="admin-card rounded-2xl border border-gray-100 p-4 shadow-sm" aria-label="Report date range">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+            <BarChart3 className="h-4 w-4" aria-hidden="true" />
+          </div>
+          <div>
+            <h2 className="text-sm font-semibold text-heading">Reporting period</h2>
+            <p className="text-xs text-gray-500">Choose the dates to refresh this report</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 min-[641px]:flex min-[641px]:items-end">
+          <div className="min-w-0">
+            <label htmlFor="report-start-date" className="mb-1.5 block text-xs font-medium text-gray-600">Start date</label>
+            <input id="report-start-date" type="date" value={startDate} max={endDate} onChange={(e) => setStartDate(e.target.value)} className="admin-input min-h-11 w-full text-sm min-[641px]:w-auto" />
+          </div>
+          <div className="min-w-0">
+            <label htmlFor="report-end-date" className="mb-1.5 block text-xs font-medium text-gray-600">End date</label>
+            <input id="report-end-date" type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} className="admin-input min-h-11 w-full text-sm min-[641px]:w-auto" />
+          </div>
+        </div>
+      </section>
+
+      {summaryRow && (
+        <section className="rounded-2xl border border-brand-100 bg-brand-50/50 p-4 text-sm text-brand-900" aria-label="Report summary">
+          <div className="mb-2 flex items-center gap-2 font-semibold">
+            <BarChart3 className="h-4 w-4 shrink-0" aria-hidden="true" />
+            Report note
+          </div>
+          <div className="space-y-2">
+            {Object.entries(summaryRow).filter(([k]) => k !== "summary").map(([k, v]) => (
+              <p key={k} className="break-words">
+                <span className="font-semibold capitalize">{k.replace(/_/g, " ")}:</span>{" "}
+                <span>{formatCell(v)}</span>
+              </p>
+            ))}
+          </div>
+        </section>
       )}
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>
       ) : dataRows.length === 0 ? (
-        <div className="admin-card p-10 text-center text-gray-400">
-          <BarChart3 className="w-8 h-8 mx-auto mb-2 opacity-50" />
-          No data for this report in the selected date range
+        <div className="admin-card rounded-2xl border border-dashed border-gray-200 p-8 text-center sm:p-10">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-50 text-gray-400">
+            <BarChart3 className="h-6 w-6" aria-hidden="true" />
+          </div>
+          <h2 className="text-sm font-semibold text-gray-700">No report data found</h2>
+          <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">There are no records for this report in the selected date range. Try adjusting the dates.</p>
         </div>
       ) : (
         <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
           <div className="space-y-3 p-3 min-[641px]:hidden">
-            {dataRows.map((row, i) => (
-              <article key={i} className="space-y-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                {columns.map((column) => (
-                  <div key={column} className="flex flex-col gap-1">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">{column.replace(/_/g, " ")}</span>
-                    <span className="text-sm text-gray-900 break-words">{formatCell(row[column])}</span>
-                  </div>
-                ))}
-              </article>
-            ))}
+            {dataRows.map((row, i) => {
+              const entries = columns.map((column) => [column, row[column]] as const);
+              const [lead, ...details] = entries;
+              return (
+                <article key={i} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                  {lead && (
+                    <div className="border-b border-gray-100 bg-gradient-to-r from-brand-50/80 to-white px-4 py-3">
+                      <div className="mb-1 flex items-center justify-between gap-3">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-brand-700">{lead[0].replace(/_/g, " ")}</span>
+                        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-gray-500 ring-1 ring-gray-200">#{String(i + 1).padStart(2, "0")}</span>
+                      </div>
+                      <p className="break-words text-base font-semibold leading-snug text-gray-900">{formatCell(lead[1])}</p>
+                    </div>
+                  )}
+                  <dl className="grid grid-cols-1 gap-x-4 gap-y-3 p-4 min-[420px]:grid-cols-2">
+                    {details.map(([column, value]) => (
+                      <div key={column} className="min-w-0">
+                        <dt className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500">{column.replace(/_/g, " ")}</dt>
+                        <dd className="break-words text-sm leading-5 text-gray-800">{formatCell(value)}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                </article>
+              );
+            })}
           </div>
           <div className="hidden min-[641px]:block overflow-x-auto">
             <table className="table-premium min-w-[600px]">
