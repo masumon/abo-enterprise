@@ -174,7 +174,7 @@ export default function AdminEmailTemplatesPage() {
           <AdminEmptyState icon={Mail} title="No email templates yet" description="Create your first template to customize the emails customers receive." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-premium table-responsive min-w-0 min-[641px]:min-w-[560px]">
+            <table className="table-premium table-responsive min-[641px]:min-w-0 min-[641px]:min-w-[560px] min-w-0 min-[641px]:min-w-[560px]">
               <thead>
                 <tr>
                   <th>Template</th>
@@ -222,8 +222,8 @@ export default function AdminEmailTemplatesPage() {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h2 className="text-lg font-semibold">{isNew ? "New Template" : "Edit Template"}</h2>
               <div className="flex items-center gap-2">

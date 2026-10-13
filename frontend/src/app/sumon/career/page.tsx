@@ -163,7 +163,7 @@ export default function CareerAdminPage() {
         <>
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-0 min-[641px]:min-w-[480px] table-responsive">
+            <table className="w-full text-sm min-[641px]:min-w-[480px] table-responsive min-w-0 min-[641px]:min-w-[480px]">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold text-gray-700">Name</th>
@@ -246,8 +246,8 @@ export default function CareerAdminPage() {
 
       {/* Detail Modal */}
       {selectedApp && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 max-[640px]:items-end max-[640px]:p-0">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl">
             <div className="sticky top-0 bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">Application Details</h2>
               <button onClick={() => setSelectedApp(null)} className="text-gray-500 hover:text-gray-700">✕</button>

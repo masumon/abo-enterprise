@@ -85,7 +85,7 @@ export default function AdminNotificationsPage() {
         description={`${total} total — payment failures, low stock, and other alerts that need attention`}
         descriptionBn={`${total}টি — পেমেন্ট ব্যর্থতা, কম স্টক এবং অন্যান্য সতর্কতা`}
         actions={
-          <button type="button" onClick={markAllRead} className="btn btn-outline btn-sm gap-1.5">
+          <button type="button" onClick={markAllRead} className="btn btn-outline btn-sm min-h-11 gap-1.5">
             <CheckCheck className="w-4 h-4" /> Mark all read
           </button>
         }

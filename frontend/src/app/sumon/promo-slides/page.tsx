@@ -289,8 +289,8 @@ export default function AdminPromoSlidesPage() {
       </div>
 
       {editing !== null && (
-        <div className="fixed inset-0 z-50 flex" style={ADMIN_MODAL_BACKDROP_STYLE} role="dialog" aria-modal="true" aria-label="স্লাইড সম্পাদনা">
-          <div ref={editorRef} className="ml-auto w-full max-w-lg h-full flex flex-col bg-white dark:bg-[#111a2e] shadow-2xl animate-slide-in-right">
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/30" style={ADMIN_MODAL_BACKDROP_STYLE} role="dialog" aria-modal="true" aria-label="স্লাইড সম্পাদনা">
+          <div ref={editorRef} className="ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-2xl animate-slide-in-right dark:bg-[#111a2e] max-[640px]:max-w-none max-[640px]:pb-[env(safe-area-inset-bottom)]">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{editing.id ? "স্লাইড বদলান" : "নতুন স্লাইড"}</h2>
               <button onClick={() => setEditing(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>

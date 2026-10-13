@@ -77,7 +77,7 @@ export default function ServiceBookingFormFieldsEditor({
         </h3>
         <button
           onClick={() => (fieldFormOpen ? closeFieldEditor() : openFieldEditor())}
-          className="btn btn-outline btn-sm gap-1 text-xs"
+          className="btn btn-outline btn-sm gap-1 text-xs max-[640px]:min-h-11"
         >
           {fieldFormOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
           {fieldFormOpen ? "Cancel" : "Add Field"}
@@ -117,7 +117,7 @@ export default function ServiceBookingFormFieldsEditor({
           <button
             onClick={() => openFieldEditor(field)}
             aria-label={`Edit ${field.field_label_en}`}
-            className="p-1 text-gray-400 hover:text-brand-600 flex-shrink-0 rounded transition-colors"
+            className="flex min-h-11 min-w-11 flex-shrink-0 items-center justify-center rounded-lg p-1 text-gray-400 transition-colors hover:text-brand-600"
           >
             <Pencil className="w-4 h-4" />
           </button>
@@ -125,7 +125,7 @@ export default function ServiceBookingFormFieldsEditor({
             onClick={() => handleDeleteField(field.id)}
             disabled={deletingFieldId === field.id}
             aria-label={`Delete ${field.field_label_en}`}
-            className="p-1 text-gray-400 hover:text-red-500 flex-shrink-0 rounded transition-colors"
+            className="flex min-h-11 min-w-11 flex-shrink-0 items-center justify-center rounded-lg p-1 text-gray-400 transition-colors hover:text-red-500"
           >
             {deletingFieldId === field.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
           </button>
@@ -231,7 +231,7 @@ export default function ServiceBookingFormFieldsEditor({
                 className="input w-full text-sm"
               />
             </div>
-            <div className="col-span-2">
+            <div className="col-span-1 sm:col-span-2">
               <label className="form-label text-[11px]">Pattern (regex) <span className="text-gray-400 font-normal">e.g. ^\d{"{"}10{"}"}$ for NID</span></label>
               <input
                 value={(newField.validation_rules?.pattern as string | undefined) ?? ""}
@@ -347,9 +347,9 @@ export default function ServiceBookingFormFieldsEditor({
               </label>
             </div>
           </div>
-          <div className="flex justify-end gap-2 flex-wrap">
-            <button onClick={closeFieldEditor} className="btn btn-outline btn-sm text-xs">Cancel</button>
-            <button onClick={handleSaveField} disabled={savingField} className="btn btn-primary btn-sm text-xs gap-1">
+          <div className="flex flex-col-reverse gap-2 min-[641px]:flex-row min-[641px]:justify-end">
+            <button onClick={closeFieldEditor} className="btn btn-outline btn-sm w-full text-xs min-[641px]:w-auto">Cancel</button>
+            <button onClick={handleSaveField} disabled={savingField} className="btn btn-primary btn-sm w-full gap-1 text-xs min-[641px]:w-auto">
               {savingField ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
               {editingFieldId ? "Save Field" : "Add Field"}
             </button>

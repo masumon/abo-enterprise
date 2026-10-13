@@ -260,7 +260,7 @@ export default function AdminInvoicesPage() {
         <select
           value={filter}
           onChange={(e) => { setFilter(e.target.value); setPage(1); }}
-          className="border border-gray-200 rounded-lg text-sm px-3 py-2 text-gray-700 bg-white focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+          className="min-h-11 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-500/30 min-[641px]:w-auto"
         >
           <option value="">{tx("All Status")}</option>
           {PAYMENT_STATUSES.map((s) => (
@@ -304,46 +304,80 @@ export default function AdminInvoicesPage() {
             <p className="text-gray-400 font-medium">{tx("No invoices found")}</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm table-responsive">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/60">
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Invoice")}</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Customer")}</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Total")}</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Date")}</th>
-                  <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Status")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {invoices.map((inv) => (
-                  <tr
-                    key={inv.id}
-                    className="hover:bg-gray-50/50 cursor-pointer transition-colors"
-                    onClick={() => setDetail(inv)}
-                  >
-                    <td className="px-5 py-3" data-label={tx("Invoice")}>
-                      <p className="font-medium text-gray-900">{inv.invoice_number}</p>
+          <>
+            {/* Phone layout: scannable invoice cards with a clear amount, status and customer. */}
+            <div className="space-y-3 p-3 min-[641px]:hidden">
+              {invoices.map((inv) => (
+                <button
+                  key={inv.id}
+                  type="button"
+                  onClick={() => setDetail(inv)}
+                  className="block min-h-11 w-full rounded-xl border border-gray-100 bg-white p-4 text-left shadow-sm transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  aria-label={`${tx("Invoice")} ${inv.invoice_number}, ${inv.customer_name}, ${formatPrice(inv.total)}`}
+                >
+                  <span className="flex min-w-0 items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="block break-words text-sm font-bold text-gray-900">{inv.invoice_number}</span>
                       {inv.payment_method && (
-                        <p className="text-xs text-gray-400 capitalize">{inv.payment_method.replace(/_/g, " ")}</p>
+                        <span className="mt-1 block break-words text-xs capitalize text-gray-500">{inv.payment_method.replace(/_/g, " ")}</span>
                       )}
-                    </td>
-                    <td className="px-5 py-3" data-label={tx("Customer")}>
-                      <p className="text-gray-900">{inv.customer_name}</p>
-                      <p className="text-xs text-gray-400">{inv.customer_email ?? inv.customer_phone ?? "—"}</p>
-                    </td>
-                    <td className="px-5 py-3 font-semibold text-gray-900" data-label={tx("Total")}>{formatPrice(inv.total)}</td>
-                    <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs" data-label={tx("Date")}>
-                      {new Date(inv.created_at).toLocaleDateString("en-BD")}
-                    </td>
-                    <td className="px-5 py-3" data-label={tx("Status")}>
-                      <StatusBadge status={inv.payment_status} />
-                    </td>
+                    </span>
+                    <span className="shrink-0"><StatusBadge status={inv.payment_status} /></span>
+                  </span>
+                  <span className="mt-3 block border-t border-gray-100 pt-3">
+                    <span className="block break-words text-sm font-semibold text-gray-900">{inv.customer_name}</span>
+                    <span className="mt-0.5 block break-all text-xs text-gray-500">{inv.customer_email ?? inv.customer_phone ?? "—"}</span>
+                  </span>
+                  <span className="mt-3 flex flex-wrap items-end justify-between gap-2">
+                    <span className="text-xs text-gray-500">{new Date(inv.created_at).toLocaleDateString("en-BD")}</span>
+                    <span className="text-base font-bold tabular-nums text-brand-700">{formatPrice(inv.total)}</span>
+                  </span>
+                  <span className="mt-2 block text-xs font-medium text-brand-600">{tx("View details")} →</span>
+                </button>
+              ))}
+            </div>
+            {/* Keep the existing table experience unchanged at 641px and wider. */}
+            <div className="hidden overflow-x-auto min-[641px]:block">
+              <table className="w-full text-sm table-responsive min-w-0 ">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/60">
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Invoice")}</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Customer")}</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Total")}</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Date")}</th>
+                    <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Status")}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {invoices.map((inv) => (
+                    <tr
+                      key={inv.id}
+                      className="cursor-pointer transition-colors hover:bg-gray-50/50"
+                      onClick={() => setDetail(inv)}
+                    >
+                      <td className="px-5 py-3" data-label={tx("Invoice")}>
+                        <p className="font-medium text-gray-900">{inv.invoice_number}</p>
+                        {inv.payment_method && (
+                          <p className="text-xs text-gray-400 capitalize">{inv.payment_method.replace(/_/g, " ")}</p>
+                        )}
+                      </td>
+                      <td className="px-5 py-3" data-label={tx("Customer")}>
+                        <p className="text-gray-900">{inv.customer_name}</p>
+                        <p className="text-xs text-gray-400">{inv.customer_email ?? inv.customer_phone ?? "—"}</p>
+                      </td>
+                      <td className="px-5 py-3 font-semibold text-gray-900" data-label={tx("Total")}>{formatPrice(inv.total)}</td>
+                      <td className="px-5 py-3 text-gray-500 whitespace-nowrap text-xs" data-label={tx("Date")}>
+                        {new Date(inv.created_at).toLocaleDateString("en-BD")}
+                      </td>
+                      <td className="px-5 py-3" data-label={tx("Status")}>
+                        <StatusBadge status={inv.payment_status} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
@@ -369,12 +403,12 @@ export default function AdminInvoicesPage() {
 
       {detail && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0"
           style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetail(null)}
         >
           <div
-            className="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col"
+            className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl"
             style={{
               background: "rgba(255,255,255,0.98)",
               boxShadow: "0 24px 64px rgba(30,43,107,0.16), 0 8px 24px rgba(0,0,0,0.08)",
@@ -382,18 +416,18 @@ export default function AdminInvoicesPage() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-6 py-4 max-[640px]:px-4">
               <h2 className="text-lg font-semibold text-gray-900">{detail.invoice_number}</h2>
-              <button onClick={() => setDetail(null)} className="text-gray-400 hover:text-gray-600">
+              <button onClick={() => setDetail(null)} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Body */}
-            <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
+            <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4 max-[640px]:px-4 max-[640px]:pb-[calc(1rem+env(safe-area-inset-bottom))]">
               {/* Status + Actions */}
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1">
+              <div className="flex flex-wrap items-center gap-2 min-[641px]:flex-nowrap">
+                <div className="relative min-w-0 flex-1">
                   <select
                     value={detail.payment_status}
                     onChange={(e) => updateStatus(detail, e.target.value)}
@@ -410,7 +444,7 @@ export default function AdminInvoicesPage() {
                   type="button"
                   onClick={() => handleDownloadPdf(detail)}
                   disabled={pdfLoading === detail.id}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40"
+                  className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-gray-200 px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50 disabled:opacity-40"
                 >
                   {pdfLoading === detail.id ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -423,7 +457,7 @@ export default function AdminInvoicesPage() {
                   onClick={() => handleDelete(detail)}
                   disabled={deleting}
                   title={tx("Delete invoice")}
-                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-red-500 border border-red-100 rounded-lg hover:bg-red-50 transition-colors disabled:opacity-40"
+                  className="flex min-h-11 items-center justify-center gap-1.5 rounded-lg border border-red-100 px-3 py-2 text-xs font-medium text-red-500 transition-colors hover:bg-red-50 disabled:opacity-40"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   {tx("Delete")}
@@ -552,11 +586,11 @@ export default function AdminInvoicesPage() {
       )}
 
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-5">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl max-[640px]:p-4">
+            <div className="mb-5 flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">{tx("Create Invoice")}</h2>
-              <button onClick={() => setShowCreate(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <button type="button" onClick={() => setShowCreate(false)} aria-label={tx("Close")} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="space-y-4">
               <div>
@@ -588,23 +622,23 @@ export default function AdminInvoicesPage() {
                 </div>
                 <div className="space-y-2">
                   {createItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
+                    <div key={idx} className="flex min-w-0 items-center gap-2 max-[640px]:flex-wrap">
                       <input
                         value={item.name}
                         onChange={(e) => setCreateItems((prev) => prev.map((it, i) => i === idx ? { ...it, name: e.target.value } : it))}
-                        className="input flex-1 text-sm"
+                        className="input min-w-0 flex-1 text-sm max-[640px]:w-full"
                         placeholder="Item / Service name"
                       />
                       <input
                         type="number" min={1} value={item.qty}
                         onChange={(e) => setCreateItems((prev) => prev.map((it, i) => i === idx ? { ...it, qty: Number(e.target.value) } : it))}
-                        className="input w-14 text-sm text-center"
+                        className="input w-14 shrink-0 text-sm text-center"
                         title={tx("Qty")}
                       />
                       <input
                         type="number" min={0} value={item.price}
                         onChange={(e) => setCreateItems((prev) => prev.map((it, i) => i === idx ? { ...it, price: Number(e.target.value) } : it))}
-                        className="input w-24 text-sm"
+                        className="input w-24 min-w-0 text-sm max-[640px]:flex-1"
                         placeholder="৳ Price"
                       />
                       {createItems.length > 1 && (
@@ -640,9 +674,9 @@ export default function AdminInvoicesPage() {
                 <span>৳{(createItems.reduce((s, i) => s + i.qty * i.price, 0) + (createForm.tax || 0)).toLocaleString()}</span>
               </div>
             </div>
-            <div className="flex justify-end gap-2 flex-wrap mt-6">
-              <button onClick={() => setShowCreate(false)} className="btn btn-outline btn-md">{tx("Cancel")}</button>
-              <button onClick={handleCreate} disabled={creating} className="btn btn-brand btn-md">
+            <div className="mt-6 flex flex-col-reverse gap-2 min-[641px]:flex-row min-[641px]:justify-end">
+              <button onClick={() => setShowCreate(false)} className="btn btn-outline btn-md w-full min-[641px]:w-auto">{tx("Cancel")}</button>
+              <button onClick={handleCreate} disabled={creating} className="btn btn-brand btn-md w-full min-[641px]:w-auto">
                 {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create Invoice"}
               </button>
             </div>

@@ -95,7 +95,7 @@ export default function AdminSidebar({
     const count = badgeCount(item.badge);
     const Icon = item.icon;
     const linkClass = cn(
-      "flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium transition-all duration-150",
+      "flex items-center gap-3 px-3 py-2 max-[640px]:min-h-[44px] rounded-xl text-[13px] font-medium transition-all duration-150",
       active
         ? "bg-brand-600 text-white shadow-md shadow-brand-900/25"
         : "text-gray-400 hover:bg-white/[0.06] hover:text-gray-100"
@@ -161,7 +161,7 @@ export default function AdminSidebar({
         <button
           type="button"
           onClick={onClose}
-          className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-white/10"
+          className="lg:hidden w-8 h-8 max-[640px]:w-11 max-[640px]:h-11 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-white/10"
           aria-label="Close menu"
         >
           <X className="w-4 h-4" />
@@ -170,7 +170,7 @@ export default function AdminSidebar({
 
       {/* Search */}
       <div className="px-3 pt-3 pb-2 shrink-0">
-        <div className="relative">
+        <div className="relative min-w-0">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500" />
           <input
             type="search"
@@ -178,7 +178,7 @@ export default function AdminSidebar({
             onChange={(e) => setQuery(e.target.value)}
             placeholder={bn ? "মেনু খুঁজুন…" : "Search menu…"}
             aria-label={bn ? "মেনু খুঁজুন" : "Search admin menu"}
-            className="w-full pl-8 pr-3 py-2 text-xs rounded-lg bg-white/[0.06] border border-white/[0.08] text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30"
+            className="w-full max-[640px]:min-h-11 pl-8 pr-3 py-2 text-base sm:text-xs rounded-lg bg-white/[0.06] border border-white/[0.08] text-gray-200 placeholder:text-gray-500 focus:outline-none focus:border-brand-500/50 focus:ring-1 focus:ring-brand-500/30"
           />
         </div>
       </div>
@@ -195,7 +195,7 @@ export default function AdminSidebar({
                 type="button"
                 onClick={() => setCollapsed((p) => ({ ...p, [group.id]: !p[group.id] }))}
                 className={cn(
-                  "w-full flex items-center justify-between px-2 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors",
+                  "w-full max-[640px]:min-h-11 flex items-center justify-between px-2 max-[640px]:px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-lg transition-colors",
                   hasActive ? "text-brand-300" : "text-gray-500 hover:text-gray-400"
                 )}
               >
@@ -223,7 +223,7 @@ export default function AdminSidebar({
                     href={item.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium text-gray-500 hover:bg-white/[0.06] hover:text-gray-200 transition-all"
+                    className="flex max-[640px]:min-h-11 items-center gap-3 px-3 py-2 rounded-xl text-[13px] font-medium text-gray-500 hover:bg-white/[0.06] hover:text-gray-200 transition-all"
                   >
                     <Icon className="w-4 h-4" />
                     {bn ? item.labelBn ?? item.label : item.label}
@@ -247,7 +247,7 @@ export default function AdminSidebar({
           </div>
           <button
             onClick={onLogout}
-            className="p-2 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+            className="p-2 max-[640px]:min-w-[44px] max-[640px]:min-h-[44px] rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
             title="Logout"
           >
             <LogOut className="w-4 h-4" />

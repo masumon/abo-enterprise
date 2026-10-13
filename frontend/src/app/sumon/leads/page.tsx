@@ -286,7 +286,32 @@ export default function AdminLeadsPage() {
               <p className="text-gray-400 font-medium">{tx("No leads found")}</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            <div className="min-[641px]:hidden divide-y divide-gray-100">
+              {leads.map((l) => (
+                <div key={l.id} className="space-y-3 p-4">
+                  <button type="button" onClick={() => openDetail(l.id!)} className="block w-full text-left">
+                    <p className="font-semibold text-gray-900 break-words">{l.name}</p>
+                    <p className="mt-1 text-sm text-gray-500 break-words">{l.phone}{l.company ? ` · ${l.company}` : ""}</p>
+                    <p className="mt-1 text-xs text-gray-500 capitalize">{l.lead_type.replace(/_/g, " ")}</p>
+                    <p className="mt-1 text-xs text-gray-400">{new Date(l.created_at).toLocaleDateString("en-BD")}</p>
+                  </button>
+                  <div className="flex items-center justify-between gap-3 border-t border-gray-100 pt-3">
+                    <span className="text-xs font-medium text-gray-500">{tx("Status")}</span>
+                    <select
+                      aria-label={`${tx("Status")} — ${l.name}`}
+                      value={l.status ?? "new"}
+                      disabled={updatingId === l.id}
+                      onChange={(e) => updateStatus(l.id!, e.target.value)}
+                      className="admin-input min-h-11 w-auto max-w-[65%] text-sm capitalize"
+                    >
+                      {STATUSES_V1.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                    </select>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden min-[641px]:block overflow-x-auto">
               <table className="table-premium min-w-[480px]">
                 <thead>
                   <tr>
@@ -328,6 +353,7 @@ export default function AdminLeadsPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       )}
@@ -343,7 +369,51 @@ export default function AdminLeadsPage() {
               <p className="text-gray-400 font-medium">{tx("No service leads found")}</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            <div className="min-[641px]:hidden divide-y divide-gray-100">
+              {leadsV2.map((l) => (
+                <div key={l.id} className="space-y-3 p-4">
+                  <button type="button" onClick={() => setDetailV2(l)} className="block w-full text-left">
+                    <p className="font-semibold text-gray-900 break-words">{l.name}</p>
+                    <p className="mt-1 text-sm text-gray-500 break-words">{l.phone}{l.company ? ` · ${l.company}` : ""}</p>
+                    <p className="mt-1 text-xs text-gray-500 capitalize">{l.lead_type.replace(/_/g, " ")}</p>
+                  </button>
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <span className={`inline-flex items-center rounded-full px-2 py-1 font-semibold ${scoreColor(l.qualification_score)}`}>
+                      {tx("Score")}: {l.qualification_score}
+                    </span>
+                    <span className="text-gray-500">
+                      {tx("Budget")}: {l.budget_min != null || l.budget_max != null
+                        ? `৳${(l.budget_min ?? 0).toLocaleString()}–৳${(l.budget_max ?? 0).toLocaleString()}`
+                        : l.budget_range ?? "—"}
+                    </span>
+                    <span className="text-gray-400">{new Date(l.created_at).toLocaleDateString("en-BD")}</span>
+                  </div>
+                  <div className="flex items-center gap-2 border-t border-gray-100 pt-3">
+                    <select
+                      aria-label={`${tx("Status")} — ${l.name}`}
+                      value={l.status}
+                      disabled={updatingIdV2 === l.id}
+                      onChange={(e) => updateStatusV2(l.id, e.target.value)}
+                      className="admin-input min-h-11 min-w-0 flex-1 text-sm capitalize"
+                    >
+                      {STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteV2(l.id, l.name)}
+                      disabled={updatingIdV2 === l.id}
+                      aria-label={`${tx("Delete lead")} — ${l.name}`}
+                      title={tx("Delete lead")}
+                      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden min-[641px]:block overflow-x-auto">
               <table className="table-premium min-w-[560px]">
                 <thead>
                   <tr>
@@ -405,6 +475,7 @@ export default function AdminLeadsPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
       )}

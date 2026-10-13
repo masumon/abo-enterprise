@@ -309,7 +309,7 @@ export default function AdminPaymentsPage() {
             <p className="p-8 text-center text-gray-500">{tx("No reconciliation records yet")}</p>
           ) : (
             <div className="overflow-x-auto">
-              <table className="table-premium table-responsive min-w-0 min-[641px]:min-w-[600px]">
+              <table className="table-premium table-responsive min-[641px]:min-w-0 min-[641px]:min-w-[600px] min-w-0 min-[641px]:min-w-[600px]">
                 <thead>
                   <tr>
                     <th>{tx("Date")}</th>
@@ -367,7 +367,7 @@ export default function AdminPaymentsPage() {
             <div className="p-12 text-center text-gray-400">{tx("No transactions found")}</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="table-premium table-responsive min-w-0 min-[641px]:min-w-[520px]">
+              <table className="table-premium table-responsive min-[641px]:min-w-0 min-[641px]:min-w-[520px] min-w-0 min-[641px]:min-w-[520px]">
                 <thead>
                   <tr>
                     <th>{tx("Gateway")}</th>

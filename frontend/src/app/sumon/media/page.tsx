@@ -949,8 +949,8 @@ export default function AdminMediaPage() {
       )}
 
       {editingAsset && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setEditingAsset(null)}>
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 max-[640px]:items-end max-[640px]:p-0" onClick={() => setEditingAsset(null)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-heading">Edit Asset</h3>
               <button type="button" onClick={() => setEditingAsset(null)} className="text-gray-400 hover:text-gray-600">

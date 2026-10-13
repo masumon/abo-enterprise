@@ -132,7 +132,7 @@ export default function AdminAuditPage() {
       ) : (
         <div className="admin-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="table-premium table-responsive min-w-0 min-[641px]:min-w-[500px]">
+            <table className="table-premium table-responsive min-[641px]:min-w-[500px] min-w-0 min-[641px]:min-w-[500px]">
               <thead>
                 <tr>
                   <th>Time</th>

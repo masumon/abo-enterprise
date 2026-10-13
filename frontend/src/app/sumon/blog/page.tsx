@@ -387,7 +387,7 @@ export default function AdminBlogPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-premium table-responsive min-w-0 min-[641px]:min-w-[640px]">
+            <table className="table-premium table-responsive min-[641px]:min-w-[640px] min-w-0 min-[641px]:min-w-[640px]">
               <thead>
                 <tr>
                   <th>{tx("Title")}</th>
