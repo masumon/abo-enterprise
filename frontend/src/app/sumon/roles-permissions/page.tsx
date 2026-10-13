@@ -79,7 +79,17 @@ export default function RolesPermissionsPage() {
         </div>
       ) : (
         <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
-          <div className="overflow-x-auto">
+          <div className="space-y-3 p-3 min-[641px]:hidden">
+            {allPermissions.map((perm) => (
+              <article key={perm} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <h3 className="break-words text-sm font-semibold text-gray-900" title={perm}>{humanizePermission(perm)}</h3>
+                <div className="mt-3 grid grid-cols-2 gap-2 border-t border-gray-100 pt-3 sm:grid-cols-3">
+                  {roles.map((role) => <div key={role} className="flex min-w-0 items-center justify-between gap-2 rounded-lg bg-gray-50 px-3 py-2"><span className="break-words text-xs text-gray-600">{ROLE_LABELS[role] ?? role}</span><span aria-label={`${role} ${grants(role, perm) ? "has permission" : "does not have permission"}`} className={`shrink-0 text-sm font-semibold ${grants(role, perm) ? "text-green-600" : "text-gray-400"}`}>{grants(role, perm) ? "✓" : "—"}</span></div>)}
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="hidden min-[641px]:block overflow-x-auto">
           <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="bg-surface-2 text-left">

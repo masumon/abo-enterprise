@@ -386,7 +386,35 @@ export default function AdminBlogPage() {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <>
+          <div className="space-y-3 p-3 min-[641px]:hidden">
+            {posts.map((p) => (
+              <article key={p.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <button type="button" onClick={() => openEdit(p)} className="block min-h-11 w-full text-left">
+                  <span className="flex items-start justify-between gap-3">
+                    <span className="min-w-0">
+                      <span className="block break-words text-sm font-bold text-gray-900">{p.is_featured && <Star className="mr-1 inline h-3.5 w-3.5 text-amber-400" />}{p.title_en}</span>
+                      <span className="mt-1 block break-all text-xs text-gray-500">{p.slug}</span>
+                    </span>
+                    <span className="shrink-0"><StatusBadge status={p.status} /></span>
+                  </span>
+                </button>
+                <div className="mt-3 grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 text-xs">
+                  <div><p className="text-gray-500">{tx("Category")}</p><p className="mt-1 break-words font-medium text-gray-800">{p.category ?? "—"}</p></div>
+                  <div><p className="text-gray-500">{tx("Author")}</p><p className="mt-1 break-words font-medium text-gray-800">{p.author_name || "—"}</p></div>
+                  <div className="col-span-2"><p className="text-gray-500">{tx("Date")}</p><p className="mt-1 text-gray-700">{p.published_at ? new Date(p.published_at).toLocaleDateString("en-BD") : p.created_at ? new Date(p.created_at).toLocaleDateString("en-BD") : "—"}</p></div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
+                  {p.status === "draft" && <button type="button" onClick={async () => { await adminBlogApi.update(p.id!, { status: "published" }); toast("success", "Published!"); load(); }} className="min-h-11 rounded-lg border border-green-200 bg-green-50 px-3 text-xs font-semibold text-green-700">{tx("Publish")}</button>}
+                  {p.status === "published" && <a href={`/blog/${p.slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-700" onClick={(e) => e.stopPropagation()}>{tx("View on site")}</a>}
+                  <button type="button" onClick={() => handleClone(p)} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-700"><Copy className="h-4 w-4" />{tx("Clone")}</button>
+                  <button type="button" onClick={() => openEdit(p)} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-700"><Pencil className="h-4 w-4" />{tx("Edit")}</button>
+                  <button type="button" onClick={() => handleDelete(p.id!)} disabled={deletingId === p.id} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-red-100 px-3 text-xs font-semibold text-red-600 disabled:opacity-40"><Trash2 className="h-4 w-4" />{tx("Delete")}</button>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="hidden min-[641px]:block overflow-x-auto">
             <table className="table-premium table-responsive min-[641px]:min-w-[640px] min-w-0 min-[641px]:min-w-[640px]">
               <thead>
                 <tr>
@@ -474,6 +502,7 @@ export default function AdminBlogPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 
