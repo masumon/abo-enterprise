@@ -239,7 +239,7 @@ export default function AdminBookingsPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-premium table-responsive min-w-[620px]">
+            <table className="table-premium table-responsive w-full min-w-0">
               <thead>
                 <tr>
                   <th>{tx("Booking")}</th>
