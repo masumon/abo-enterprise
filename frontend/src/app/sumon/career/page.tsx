@@ -163,7 +163,7 @@ export default function CareerAdminPage() {
         <>
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[480px] table-responsive">
+            <table className="w-full text-sm min-w-0 min-[641px]:min-w-[480px] table-responsive">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3 text-left font-semibold text-gray-700">Name</th>
