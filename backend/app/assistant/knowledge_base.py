@@ -8,7 +8,7 @@ from pathlib import Path
 from sqlalchemy import select, and_, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.models import Product, Service, ServicePricingTier, Setting, BlogPost
+from app.models.models import Product, Service, ServicePricingTier, Setting, BlogPost, Coupon
 from app.core.config import settings
 
 _FAQ_PATH = Path(__file__).parent / "data" / "faq_knowledge.json"
@@ -323,20 +323,27 @@ class KnowledgeBase:
         return list(result.scalars().all())
 
     async def load_coupons(self, db: AsyncSession) -> dict[str, dict]:
+        """Load the same active coupon records used by checkout and booking APIs.
+
+        The coupons_json Settings blob is legacy storage; admin CRUD and
+        server-side discount validation now use the Coupon table. Reading the
+        legacy blob here could advertise stale coupons or ignore admin changes.
+        """
         result = await db.execute(
-            select(Setting).where(Setting.key == "coupons_json", Setting.is_deleted == False)  # noqa: E712
+            select(Coupon).where(
+                Coupon.is_active == True,  # noqa: E712
+                Coupon.is_deleted == False,  # noqa: E712
+            ).order_by(Coupon.code.asc())
         )
-        row = result.scalar_one_or_none()
-        if not row or not row.value:
-            # No coupons configured → none. (Never advertise built-in sample codes.)
-            return {}
-        try:
-            parsed = json.loads(row.value)
-            if isinstance(parsed, dict):
-                return parsed
-        except json.JSONDecodeError:
-            pass
-        return {}
+        rows = result.scalars().all()
+        return {
+            row.code: {
+                "discount_percent": float(row.discount_percent),
+                "min_subtotal": float(row.min_subtotal),
+                "active": True,
+            }
+            for row in rows
+        }
 
     async def get_coupon(self, db: AsyncSession, code: str) -> dict | None:
         coupons = await self.load_coupons(db)
