@@ -96,7 +96,7 @@ export default function AdminTrackingPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-premium table-responsive min-w-0 min-[641px]:min-w-[560px]">
+            <table className="table-premium table-responsive min-w-0 min-[641px]:min-w-0 min-[641px]:min-w-[560px]">
               <thead>
                 <tr>
                   <th>Order</th>

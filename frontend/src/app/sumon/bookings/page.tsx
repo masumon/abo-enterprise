@@ -325,7 +325,7 @@ export default function AdminBookingsPage() {
       {/* Booking Detail Modal */}
       {detailV2 && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0"
           style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetailV2(null)}
           role="dialog"
@@ -334,7 +334,7 @@ export default function AdminBookingsPage() {
         >
           <div
             ref={detailV2Ref}
-            className="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in"
+            className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl animate-scale-in max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl"
             style={ADMIN_MODAL_PANEL_STYLE}
             onClick={e => e.stopPropagation()}
           >
@@ -474,7 +474,7 @@ export default function AdminBookingsPage() {
                         type="button"
                         onClick={markAdvanceReceived}
                         disabled={savingV2}
-                        className="btn btn-primary btn-sm text-xs gap-1"
+                        className="btn btn-primary btn-sm w-full gap-1 text-xs min-[641px]:w-auto"
                       >
                         {savingV2 && <Loader2 className="w-3 h-3 animate-spin" />}
                         Mark Received

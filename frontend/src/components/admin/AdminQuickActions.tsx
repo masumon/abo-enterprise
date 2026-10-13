@@ -32,7 +32,7 @@ export default function AdminQuickActions({ actions }: Props) {
           key={href}
           href={href}
           className={cn(
-            "group relative flex flex-col gap-2 rounded-2xl border bg-gradient-to-br p-4 transition-all duration-200",
+            "group relative flex min-w-0 flex-col gap-2 rounded-2xl border bg-gradient-to-br p-4 transition-all duration-200 max-[640px]:min-h-[104px] max-[640px]:p-3",
             "shadow-sm hover:-translate-y-0.5 hover:shadow-md",
             COLOR_MAP[color]
           )}
@@ -42,7 +42,7 @@ export default function AdminQuickActions({ actions }: Props) {
             <ArrowRight className="w-3.5 h-3.5 opacity-0 -translate-x-1 group-hover:opacity-60 group-hover:translate-x-0 transition-all" />
           </div>
           <div>
-            <p className="text-sm font-semibold leading-tight">{labelBn ?? label}</p>
+            <p className="min-w-0 break-words pr-3 text-sm font-semibold leading-snug">{labelBn ?? label}</p>
             {labelBn && <p className="text-[10px] opacity-60 mt-0.5">{label}</p>}
           </div>
           {badge !== undefined && badge > 0 && (

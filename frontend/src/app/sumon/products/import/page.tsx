@@ -422,7 +422,7 @@ export default function AdminProductImportPage() {
 
           {/* Preview table */}
           <div className="overflow-x-auto -mx-1">
-            <table className="w-full text-sm min-w-[640px] table-responsive">
+            <table className="w-full text-sm min-w-0 min-[641px]:min-w-[640px] table-responsive">
               <thead>
                 <tr className="text-left text-[11px] uppercase text-gray-400 border-b border-[var(--line)]">
                   <th className="py-2 px-2">সারি</th>
@@ -552,7 +552,7 @@ export default function AdminProductImportPage() {
           <p className="text-sm text-muted">এখনো কোনো ইমপোর্ট হয়নি।</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[560px] table-responsive">
+            <table className="w-full text-sm min-w-0 min-[641px]:min-w-[560px] table-responsive">
               <thead>
                 <tr className="text-left text-[11px] uppercase text-gray-400 border-b border-[var(--line)]">
                   <th className="py-2 px-2">তারিখ</th><th className="py-2 px-2">ফাইল</th>

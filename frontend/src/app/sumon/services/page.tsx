@@ -724,7 +724,7 @@ export default function AdminServicesPage() {
         <AddEntryChoices thing={{ bn: "সেবা", en: "service" }} onForm={openNew} onAi={() => setAiOpen(true)} />
       )}
       <div className="admin-toolbar flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 min-w-[200px] max-w-xl">
+        <div className="relative w-full min-w-0 max-w-xl min-[641px]:w-auto min-[641px]:flex-1 min-[641px]:min-w-[200px]">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input type="search" value={search} onChange={(e) => { setPage(1); setSearch(e.target.value); }} placeholder={t("সেবা খুঁজুন…", "Search services…")} className="admin-input w-full pl-9" />
         </div>
@@ -783,7 +783,7 @@ export default function AdminServicesPage() {
           )
         ) : (
           <>
-          <ul className="md:hidden divide-y divide-gray-100 dark:divide-white/10">
+          <ul className="min-[641px]:hidden divide-y divide-gray-100 dark:divide-white/10">
             {services.map((s) => (
               <li key={s.id} className="flex gap-3 px-3 py-3">
                 <input type="checkbox" checked={selected.has(s.id)} onChange={() => toggleSelected(s.id)} className="rounded mt-1" aria-label={s.name_bn || s.name_en} />
@@ -799,7 +799,7 @@ export default function AdminServicesPage() {
               </li>
             ))}
           </ul>
-          <div className="hidden md:block overflow-x-auto">
+          <div className="hidden min-[641px]:block overflow-x-auto">
           <table className="table-premium">
             <thead>
               <tr>

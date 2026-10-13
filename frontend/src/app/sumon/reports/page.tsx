@@ -133,7 +133,19 @@ export default function AdminReportsPage() {
         </div>
       ) : (
         <div className="admin-card overflow-hidden">
-          <div className="overflow-x-auto">
+          <div className="min-[641px]:hidden divide-y divide-gray-100">
+            {dataRows.map((row, i) => (
+              <article key={i} className="space-y-3 p-4">
+                {columns.map((column) => (
+                  <div key={column} className="flex flex-col gap-1">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">{column.replace(/_/g, " ")}</span>
+                    <span className="text-sm text-gray-900 break-words">{formatCell(row[column])}</span>
+                  </div>
+                ))}
+              </article>
+            ))}
+          </div>
+          <div className="hidden min-[641px]:block overflow-x-auto">
             <table className="table-premium min-w-[600px]">
               <thead>
                 <tr>

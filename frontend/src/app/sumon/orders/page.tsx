@@ -387,7 +387,7 @@ export default function AdminOrdersPage() {
         ) : (
           <>
           {/* Mobile card view — table stays untouched for sm+ screens */}
-          <div className="sm:hidden divide-y divide-gray-50">
+          <div className="min-[641px]:hidden divide-y divide-gray-50">
             {orders.map((o) => (
               <button
                 key={o.id}
@@ -406,7 +406,7 @@ export default function AdminOrdersPage() {
               </button>
             ))}
           </div>
-          <div className="overflow-x-auto hidden sm:block">
+          <div className="overflow-x-auto hidden min-[641px]:block">
             <table className="table-premium min-w-[580px]">
               <thead>
                 <tr>

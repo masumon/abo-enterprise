@@ -100,22 +100,22 @@ export default function ConfirmDialog({
           <button
             onClick={onCancel}
             aria-label="Close dialog"
-            className="text-gray-400 hover:text-gray-600 flex-shrink-0 mt-0.5"
+            className="text-gray-400 hover:text-gray-600 flex-shrink-0 mt-0.5 max-[640px]:w-11 max-[640px]:h-11 max-[640px]:flex max-[640px]:items-center max-[640px]:justify-center"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="flex justify-end gap-3 flex-wrap mt-6 pt-1 border-t border-gray-100">
+        <div className="flex flex-col-reverse gap-3 mt-6 pt-1 border-t border-gray-100 min-[641px]:flex-row min-[641px]:flex-wrap min-[641px]:justify-end">
           <button
             ref={cancelRef}
             onClick={onCancel}
-            className="btn btn-outline btn-sm"
+            className="btn btn-outline btn-sm w-full min-[641px]:w-auto"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className={`btn btn-sm px-5 ${colors.btn}`}
+            className={`btn btn-sm w-full px-5 min-[641px]:w-auto ${colors.btn}`}
           >
             {confirmLabel}
           </button>

@@ -340,7 +340,7 @@ export default function AdminProductsPage() {
         ) : (
           <>
             {/* Phone: thumbnail cards */}
-            <ul className="md:hidden divide-y divide-gray-100 dark:divide-white/10">
+            <ul className="min-[641px]:hidden divide-y divide-gray-100 dark:divide-white/10">
               <li className="flex items-center gap-2 px-3 py-2 text-xs text-muted">
                 <input type="checkbox" checked={allOnPage} onChange={toggleAll} className="rounded" aria-label={t("এই পাতার সব বাছুন", "Select all on page")} /> {t("সব বাছুন", "Select all")}
               </li>
@@ -364,7 +364,7 @@ export default function AdminProductsPage() {
               ))}
             </ul>
             {/* Tablet / desktop: table */}
-            <div className="hidden md:block overflow-x-auto">
+            <div className="hidden min-[641px]:block overflow-x-auto">
               <table className="table-premium">
                 <thead>
                   <tr>

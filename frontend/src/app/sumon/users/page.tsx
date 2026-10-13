@@ -157,7 +157,7 @@ export default function AdminUsersPage() {
         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>
       ) : (
         <div className="admin-card overflow-hidden">
-          <div className="sm:hidden divide-y divide-gray-100">
+          <div className="min-[641px]:hidden divide-y divide-gray-100">
             {filtered.map((u) => (
               <div key={u.id} className="px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
@@ -193,7 +193,7 @@ export default function AdminUsersPage() {
             ))}
           </div>
 
-          <div className="overflow-x-auto hidden sm:block">
+          <div className="overflow-x-auto hidden min-[641px]:block">
             <table className="table-premium min-w-[500px]">
               <thead>
                 <tr>
@@ -211,7 +211,7 @@ export default function AdminUsersPage() {
                     <td className="font-medium">
                       <div>
                         <p>{u.name}</p>
-                        <p className="text-xs text-gray-400 sm:hidden">{u.email}</p>
+                        <p className="text-xs text-gray-400 min-[641px]:hidden">{u.email}</p>
                       </div>
                     </td>
                     <td className="hidden sm:table-cell">{u.email}</td>

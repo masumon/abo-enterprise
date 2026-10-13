@@ -174,7 +174,7 @@ export default function AdminEmailTemplatesPage() {
           <AdminEmptyState icon={Mail} title="No email templates yet" description="Create your first template to customize the emails customers receive." />
         ) : (
           <div className="overflow-x-auto">
-            <table className="table-premium table-responsive min-w-0 min-[641px]:min-w-[560px]">
+            <table className="table-premium table-responsive min-w-0 min-[641px]:min-w-0 min-[641px]:min-w-[560px]">
               <thead>
                 <tr>
                   <th>Template</th>
