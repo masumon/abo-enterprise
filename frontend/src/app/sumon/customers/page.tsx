@@ -138,6 +138,7 @@ export default function CustomersPage() {
         ) : rows.length === 0 ? (
           <div className="p-12 text-center text-gray-400"><Users className="w-8 h-8 mx-auto mb-2 opacity-50" /><p>{bn ? "কোনো গ্রাহক পাওয়া যায়নি" : "No customer records found"}</p></div>
         ) : (
+          <>
           <div className="space-y-3 p-3 min-[641px]:hidden">
             {rows.map((row) => (
               <article key={row.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -164,6 +165,7 @@ export default function CustomersPage() {
               ))}</tbody>
             </table>
           </div>
+          </>
         )}
         {meta.total_pages > 1 && <div className="flex items-center justify-center gap-3 p-4 border-t border-gray-100"><button disabled={meta.page <= 1} onClick={() => void load(meta.page - 1, query)} className="admin-btn-secondary px-3 py-2 disabled:opacity-40"><ChevronLeft className="w-4 h-4" /></button><span className="text-sm text-gray-500">{bn ? `পৃষ্ঠা ${meta.page} / ${meta.total_pages}` : `Page ${meta.page} / ${meta.total_pages}`}</span><button disabled={meta.page >= meta.total_pages} onClick={() => void load(meta.page + 1, query)} className="admin-btn-secondary px-3 py-2 disabled:opacity-40"><ChevronRight className="w-4 h-4" /></button></div>}
       </div>

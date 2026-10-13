@@ -173,6 +173,7 @@ export default function AdminEmailTemplatesPage() {
         ) : templates.length === 0 ? (
           <AdminEmptyState icon={Mail} title="No email templates yet" description="Create your first template to customize the emails customers receive." />
         ) : (
+          <>
           <div className="space-y-3 p-3 min-[641px]:hidden">
             {templates.map((t) => (
               <article key={t.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -234,6 +235,7 @@ export default function AdminEmailTemplatesPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

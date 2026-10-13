@@ -119,7 +119,7 @@ export default function AdminSystemEventsPage() {
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>
       ) : (
-        <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
+        <>
           <div className="space-y-3 p-3 min-[641px]:hidden">
             {events.map((e) => (
               <article key={e.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -167,6 +167,7 @@ export default function AdminSystemEventsPage() {
             <p className="p-8 text-center text-gray-500">{search || typeFilter || severityFilter ? "No events match your filter" : "No system events recorded yet"}</p>
           )}
         </div>
+        </>
       )}
 
       {totalPages > 1 && (

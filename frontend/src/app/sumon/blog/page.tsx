@@ -386,6 +386,7 @@ export default function AdminBlogPage() {
             </button>
           </div>
         ) : (
+          <>
           <div className="space-y-3 p-3 min-[641px]:hidden">
             {posts.map((p) => (
               <article key={p.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -501,6 +502,7 @@ export default function AdminBlogPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 

@@ -238,6 +238,7 @@ export default function AdminBookingsPage() {
             <p className="text-gray-400 font-medium">{tx("No service bookings found")}</p>
           </div>
         ) : (
+          <>
           <div className="space-y-3 p-3 min-[641px]:hidden">
             {bookingsV2.map((b) => (
               <article key={b.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -322,6 +323,7 @@ export default function AdminBookingsPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
 
