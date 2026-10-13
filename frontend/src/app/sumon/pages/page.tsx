@@ -150,7 +150,7 @@ export default function AdminPagesPage() {
       ) : (
         <div className="admin-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="table-premium table-responsive min-w-0 min-[641px]:min-w-0 min-[641px]:min-w-[600px]">
+            <table className="table-premium table-responsive min-[641px]:min-w-0 min-[641px]:min-w-[600px] min-w-0 min-[641px]:min-w-[600px]">
               <thead>
                 <tr>
                   <th>Title</th>
@@ -203,8 +203,8 @@ export default function AdminPagesPage() {
       )}
 
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowModal(false)}>
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-xl p-6" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 max-[640px]:items-end max-[640px]:p-0" onClick={() => setShowModal(false)}>
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-xl p-6 max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-lg font-bold text-gray-900 mb-4">{editing ? "Edit Page" : "New Page"}</h2>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div>

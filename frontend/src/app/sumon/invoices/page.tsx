@@ -338,7 +338,7 @@ export default function AdminInvoicesPage() {
             </div>
             {/* Keep the existing table experience unchanged at 641px and wider. */}
             <div className="hidden overflow-x-auto min-[641px]:block">
-              <table className="w-full text-sm table-responsive">
+              <table className="w-full text-sm table-responsive min-w-0 ">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/60">
                     <th className="text-left px-5 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">{tx("Invoice")}</th>

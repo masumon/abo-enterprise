@@ -477,7 +477,7 @@ export default function AdminOrdersPage() {
       {/* Order Detail Modal */}
       {(detail || detailLoading) && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0"
           style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetail(null)}
           role="dialog"
@@ -486,7 +486,7 @@ export default function AdminOrdersPage() {
         >
           <div
             ref={detailRef}
-            className="rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col animate-scale-in"
+            className="rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col animate-scale-in max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl"
             style={ADMIN_MODAL_PANEL_STYLE}
             onClick={e => e.stopPropagation()}
           >
