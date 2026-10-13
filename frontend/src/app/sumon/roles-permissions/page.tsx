@@ -78,7 +78,7 @@ export default function RolesPermissionsPage() {
           <Loader2 className="w-6 h-6 animate-spin text-brand-600" />
         </div>
       ) : (
-        <>
+        <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
           <div className="space-y-3 p-3 min-[641px]:hidden">
             {allPermissions.map((perm) => (
               <article key={perm} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -120,7 +120,6 @@ export default function RolesPermissionsPage() {
           </table>
           </div>
         </div>
-        </>
       )}
     </div>
   );
