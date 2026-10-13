@@ -379,6 +379,7 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
       const bookingId = created?.id;
       if (bookingId) {
         const price = Number(created?.quoted_price ?? quotedPrice ?? 0);
+        const discount = Math.max(0, Math.min(price, Number(created?.discount_amount ?? 0)));
         saveOrderSnapshot({
           kind: "booking",
           reference: String(bookingId),
@@ -389,8 +390,9 @@ export default function BookingForm({ service, initialTierId, onSuccess }: Booki
           payment_method: "pending",
           items: [{ name: created?.service_name ?? service.name_en, quantity: 1, price, subtotal: price }],
           subtotal: price,
+          discount_amount: discount,
           delivery_charge: 0,
-          total: price,
+          total: Math.max(0, price - discount),
           created_at: new Date().toISOString(),
         });
         router.push(`/booking-success?booking=${bookingId}&phone=${encodeURIComponent(data.customer_phone)}`);

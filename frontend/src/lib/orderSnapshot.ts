@@ -14,6 +14,7 @@ export interface OrderSnapshot {
   payment_method: string;
   items: { name: string; quantity: number; price: number; subtotal: number }[];
   subtotal: number;
+  discount_amount?: number;
   delivery_charge: number;
   total: number;
   order_number?: string;
@@ -53,6 +54,7 @@ export function snapshotToInvoice(snap: OrderSnapshot): PublicInvoiceData {
     customer_phone: snap.phone,
     items: snap.items,
     subtotal: snap.subtotal,
+    discount_amount: snap.discount_amount ?? 0,
     tax: 0,
     total: snap.total,
     issued_date: snap.created_at,
