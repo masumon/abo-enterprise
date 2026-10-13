@@ -225,7 +225,7 @@ async def _create_unlinked_booking(payload, background_tasks: BackgroundTasks, d
         invoice_id = str(invoice.id)
     except Exception:
         await db.rollback()
-        logger.exception("Auto invoice for booking %s failed", booking.booking_number)
+        logger.exception("Auto invoice for booking %s failed", booking_response["booking_number"])
 
     data = booking_response
     data["invoice_id"] = invoice_id
@@ -513,7 +513,7 @@ async def create_booking(
         invoice_id = str(invoice.id)
     except Exception:
         await db.rollback()
-        logger.exception("Auto invoice for booking %s failed", booking.booking_number)
+        logger.exception("Auto invoice for booking %s failed", booking_response["booking_number"])
 
     data = booking_response
     data["invoice_id"] = invoice_id
