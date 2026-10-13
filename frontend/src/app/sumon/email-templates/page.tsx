@@ -153,21 +153,21 @@ export default function AdminEmailTemplatesPage() {
   };
 
   return (
-    <div className="admin-page">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-3">
-          <Mail className="w-6 h-6 text-brand-600" />
+    <div className="admin-page space-y-5">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="grid h-11 w-11 flex-none place-items-center rounded-xl border border-brand-100 bg-brand-50 text-brand-700"><Mail className="h-5 w-5" /></span>
           <div>
             <AdminTitle en="Email Templates" bn="ইমেইল টেমপ্লেট" />
             <p className="text-gray-500 text-sm">{templates.length} templates</p>
           </div>
         </div>
-        <button onClick={openNew} className="btn btn-brand btn-md flex items-center gap-2">
+        <button onClick={openNew} className="btn btn-brand btn-md min-h-11 flex items-center justify-center gap-2 whitespace-nowrap">
           <Plus className="w-4 h-4" /> New Template
         </button>
       </div>
 
-      <div className="admin-card overflow-hidden">
+      <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
         {loading ? (
           <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
         ) : templates.length === 0 ? (

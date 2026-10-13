@@ -138,7 +138,7 @@ export function buildContentHealth(input: ContentHealthInput): HealthGroup[] {
   push({
     id: "category-empty", titleBn: "খালি ক্যাটাগরি", helpBn: "এই ক্যাটাগরিতে কোনো চালু পণ্য/সেবা নেই — ভিজিটর খালি পাতা দেখবে।",
     items: emptyCategories(input.categories, input.products, input.services)
-      .map((c) => ({ key: c.id, label: c.name_bn || c.name_en || c.slug, href: "/sumon/categories" })),
+      .map((c) => ({ key: c.id, label: c.name_bn || c.name_en || c.slug, href: `/sumon/categories?edit=${encodeURIComponent(c.id)}` })),
   });
 
   return groups;

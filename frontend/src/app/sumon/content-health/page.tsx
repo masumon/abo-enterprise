@@ -55,7 +55,7 @@ export default function ContentHealthPage() {
   const total = (groups ?? []).reduce((n, g) => n + g.items.length, 0);
 
   return (
-    <div className="admin-page admin-page-narrow">
+    <div className="admin-page admin-page-narrow space-y-5">
       <AdminPageHeader
         title="Content Health"
         titleBn="কনটেন্ট স্বাস্থ্য"
@@ -78,7 +78,7 @@ export default function ContentHealthPage() {
               এগুলো লোড করা যায়নি, তাই পরীক্ষা বাদ পড়েছে: {failed.join(", ")}। একটু পরে &quot;আবার দেখুন&quot; চাপুন।
             </p>
           )}
-          <div className="enterprise-card p-4 flex items-center gap-3">
+          <div className="enterprise-card flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
             {total === 0 ? <CheckCircle2 className="w-8 h-8 text-green-600 flex-none" /> : <AlertTriangle className="w-8 h-8 text-amber-500 flex-none" />}
             <div>
               <p className="text-sm font-bold text-heading">{total === 0 ? "সব ঠিক আছে!" : `${toBnDigits(total)}টি জিনিস ঠিক করা দরকার`}</p>
@@ -90,7 +90,7 @@ export default function ContentHealthPage() {
             const isOpen = open[g.id] ?? false;
             const list = isOpen ? g.items : g.items.slice(0, SHOW);
             return (
-              <section key={g.id} className="enterprise-card p-4">
+              <section key={g.id} className="enterprise-card rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <div className="min-w-0">
                     <h2 className="text-sm font-bold text-heading">{g.titleBn} <span className="ml-1 text-xs font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300">{toBnDigits(g.items.length)}</span></h2>
@@ -99,12 +99,12 @@ export default function ContentHealthPage() {
                 </div>
                 <ul className="divide-y divide-gray-100 dark:divide-white/10">
                   {list.map((it) => (
-                    <li key={it.key} className="flex items-center gap-3 py-2">
-                      <span className="flex-1 min-w-0 text-sm text-heading truncate">
+                    <li key={it.key} className="flex flex-col items-stretch gap-2 py-3 sm:flex-row sm:items-center sm:gap-3">
+                      <span className="min-w-0 flex-1 break-words text-sm text-heading">
                         {it.label}
                         {it.note && <span className="ml-2 text-[11px] text-muted">({it.note})</span>}
                       </span>
-                      <Link href={it.href} className="btn btn-outline btn-sm gap-1 flex-none">
+                      <Link href={it.href} className="btn btn-outline btn-sm min-h-11 w-full justify-center gap-1 sm:w-auto sm:flex-none">
                         <Wrench className="w-3.5 h-3.5" /> ঠিক করুন
                       </Link>
                     </li>

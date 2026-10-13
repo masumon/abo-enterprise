@@ -179,14 +179,14 @@ export default function AdminBookingsPage() {
   };
 
   return (
-    <div className="admin-page">
+    <div className="admin-page space-y-5">
       <AdminPageHeader
         title="Bookings"
         titleBn="বুকিং ব্যবস্থাপনা"
         description={`${totalV2} total bookings — service intake, status management, receipts, and fulfillment tracking`}
         descriptionBn={`${String(totalV2).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি বুকিং — সেবা গ্রহণ, স্ট্যাটাস ব্যবস্থাপনা, রসিদ ও কাজের অগ্রগতি`}
         actions={
-          <div className="flex items-center gap-2 rounded-2xl bg-brand-50 px-3 py-2 text-brand-700">
+          <div className="flex min-h-11 items-center gap-2 rounded-xl border border-brand-100 bg-brand-50 px-4 py-2 text-brand-700">
             <Briefcase className="w-4 h-4" />
             <span className="text-sm font-semibold">{totalV2} bookings</span>
           </div>

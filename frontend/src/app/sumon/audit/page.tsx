@@ -88,7 +88,7 @@ export default function AdminAuditPage() {
   const totalPages = Math.ceil(total / PER_PAGE);
 
   return (
-    <div className="admin-page">
+    <div className="admin-page space-y-5">
       <AdminPageHeader
         title="Audit Logs (staff activity)"
         titleBn="অডিট লগ (স্টাফ কার্যকলাপ)"
@@ -130,7 +130,7 @@ export default function AdminAuditPage() {
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-brand-500" /></div>
       ) : (
-        <div className="admin-card overflow-hidden">
+        <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
           <div className="overflow-x-auto">
             <table className="table-premium table-responsive min-[641px]:min-w-[500px] min-w-0 min-[641px]:min-w-[500px]">
               <thead>

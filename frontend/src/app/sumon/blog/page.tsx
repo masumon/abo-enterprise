@@ -344,14 +344,14 @@ export default function AdminBlogPage() {
   };
 
   return (
-    <div className="admin-page">
+    <div className="admin-page space-y-5">
       <AdminPageHeader
         title="Blog"
         titleBn="ব্লগ"
         description={`${total} total posts`}
         descriptionBn={`মোট ${String(total).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি পোস্ট`}
         actions={
-          <button onClick={openNew} className="btn btn-primary btn-sm gap-1.5">
+          <button onClick={openNew} className="btn btn-brand btn-sm min-h-11 gap-1.5 px-4">
             <Plus className="w-4 h-4" />
             {tx("New Post")}
           </button>
@@ -366,7 +366,7 @@ export default function AdminBlogPage() {
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-          className="input w-auto text-sm"
+          className="admin-input min-h-11 w-full text-sm sm:w-auto"
         >
           <option value="">{tx("All Status")}</option>
           <option value="draft">{tx("Draft")}</option>
@@ -374,7 +374,7 @@ export default function AdminBlogPage() {
         </select>
       </AdminToolbar>
 
-      <div className="admin-card overflow-hidden">
+      <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
         {loading ? (
           <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
         ) : posts.length === 0 ? (

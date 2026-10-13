@@ -114,7 +114,7 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="admin-page">
+    <div className="admin-page space-y-5">
       <AdminPageHeader
         title="Customers"
         titleBn="গ্রাহক"
@@ -122,17 +122,17 @@ export default function CustomersPage() {
         descriptionBn="ক্যানোনিকাল গ্রাহক প্রোফাইল এবং অর্ডার, বুকিং ও লিডের ইতিহাস"
       />
 
-      <div className="admin-card p-4 flex flex-col sm:flex-row gap-3">
+      <div className="admin-card flex flex-col gap-3 rounded-2xl border border-gray-100 p-4 shadow-sm sm:flex-row">
         <form className="flex-1 relative" onSubmit={(e) => { e.preventDefault(); setQuery(search); }}>
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={bn ? "নাম, ফোন, ইমেইল বা কোম্পানি" : "Name, phone, email or company"} className="admin-input w-full pl-9" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={bn ? "নাম, ফোন, ইমেইল বা কোম্পানি" : "Name, phone, email or company"} className="admin-input min-h-11 w-full pl-9" />
         </form>
-        <button type="button" onClick={() => void load(meta.page, query)} className="admin-btn-secondary px-3" aria-label={bn ? "রিফ্রেশ" : "Refresh"} title={bn ? "রিফ্রেশ" : "Refresh"}>
+        <button type="button" onClick={() => void load(meta.page, query)} className="admin-btn-secondary min-h-11 min-w-11 px-3" aria-label={bn ? "রিফ্রেশ" : "Refresh"} title={bn ? "রিফ্রেশ" : "Refresh"}>
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
         </button>
       </div>
 
-      <div className="admin-card overflow-hidden">
+      <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
         {loading ? (
           <div className="p-12 flex justify-center"><RefreshCw className="w-6 h-6 text-gray-400 animate-spin" /></div>
         ) : rows.length === 0 ? (

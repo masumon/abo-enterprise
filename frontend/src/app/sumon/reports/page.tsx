@@ -78,41 +78,41 @@ export default function AdminReportsPage() {
   const columns = Array.from(new Set(dataRows.flatMap((r) => Object.keys(r))));
 
   return (
-    <div className="admin-page">
+    <div className="admin-page space-y-5">
       <AdminPageHeader
         title="Reports"
         titleBn="রিপোর্ট"
         description="Sales, revenue, products, services, customers, payments, courier, profit and reconciliation — filterable by date range, exportable as CSV. This is the canonical place to check exact numbers."
         descriptionBn="বিক্রয়, রেভিনিউ, পণ্য, সেবা, গ্রাহক, পেমেন্ট, কুরিয়ার, লাভ এবং রিকনসিলিয়েশন — তারিখ পরিসর অনুযায়ী ফিল্টার এবং CSV এক্সপোর্ট করা যায়। সঠিক সংখ্যা যাচাইয়ের জন্য এটিই মূল জায়গা।"
         actions={
-          <button type="button" onClick={handleExport} disabled={exporting || dataRows.length === 0} className="btn btn-brand btn-sm gap-1.5">
+          <button type="button" onClick={handleExport} disabled={exporting || dataRows.length === 0} className="btn btn-brand btn-sm min-h-11 gap-1.5 px-4">
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             Export CSV
           </button>
         }
       />
 
-      <div className="flex flex-wrap gap-1.5">
+      <div className="flex flex-wrap gap-2" role="group" aria-label="Report type">
         {REPORT_TABS.map((tab) => (
           <button
             key={tab.value}
             type="button"
             onClick={() => setReport(tab.value)}
-            className={`btn btn-sm ${report === tab.value ? "btn-brand" : "btn-outline"}`}
+            className={`btn btn-sm min-h-11 px-4 ${report === tab.value ? "btn-brand shadow-sm" : "btn-outline"}`}
           >
             {tab.label}
           </button>
         ))}
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="admin-card flex flex-wrap items-end gap-3 rounded-2xl border border-gray-100 p-4 shadow-sm">
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Start date</label>
-          <input type="date" value={startDate} max={endDate} onChange={(e) => setStartDate(e.target.value)} className="admin-input text-sm" />
+          <input type="date" value={startDate} max={endDate} onChange={(e) => setStartDate(e.target.value)} className="admin-input min-h-11 w-full text-sm sm:w-auto" />
         </div>
         <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">End date</label>
-          <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} className="admin-input text-sm" />
+          <input type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} className="admin-input min-h-11 w-full text-sm sm:w-auto" />
         </div>
       </div>
 
@@ -132,7 +132,7 @@ export default function AdminReportsPage() {
           No data for this report in the selected date range
         </div>
       ) : (
-        <div className="admin-card overflow-hidden">
+        <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
           <div className="min-[641px]:hidden divide-y divide-gray-100">
             {dataRows.map((row, i) => (
               <article key={i} className="space-y-3 p-4">
