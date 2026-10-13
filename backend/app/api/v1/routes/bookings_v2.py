@@ -162,6 +162,10 @@ async def _create_unlinked_booking(payload, background_tasks: BackgroundTasks, d
     db.add(booking)
     await db.commit()
     await db.refresh(booking)
+    # Snapshot ORM-backed fields before later commits/rollbacks expire them.
+    # Invoice/notification work below may commit or roll back this session;
+    # serializing the expired booking afterward can trigger MissingGreenlet.
+    booking_response = BookingV2Out.model_validate(booking).model_dump()
 
     from app.core.notifications import create_notification
     await create_notification(
@@ -223,7 +227,7 @@ async def _create_unlinked_booking(payload, background_tasks: BackgroundTasks, d
         await db.rollback()
         logger.exception("Auto invoice for booking %s failed", booking.booking_number)
 
-    data = BookingV2Out.model_validate(booking).model_dump()
+    data = booking_response
     data["invoice_id"] = invoice_id
     return ApiResponse(data=data, message="Booking created successfully")
 
@@ -427,6 +431,10 @@ async def create_booking(
     db.add(booking)
     await db.commit()
     await db.refresh(booking)
+    # Snapshot ORM-backed fields before later commits/rollbacks expire them.
+    # Invoice/notification work below may commit or roll back this session;
+    # serializing the expired booking afterward can trigger MissingGreenlet.
+    booking_response = BookingV2Out.model_validate(booking).model_dump()
 
     from app.core.notifications import create_notification
     await create_notification(
@@ -507,7 +515,7 @@ async def create_booking(
         await db.rollback()
         logger.exception("Auto invoice for booking %s failed", booking.booking_number)
 
-    data = BookingV2Out.model_validate(booking).model_dump()
+    data = booking_response
     data["invoice_id"] = invoice_id
 
     return ApiResponse(
