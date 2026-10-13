@@ -43,6 +43,25 @@ describe("buildContentHealth", () => {
     expect(g[3].items[0]).toMatchObject({ href: "/sumon/blog?edit=b1", note: "খসড়া" });
   });
 
+  it("links every empty category directly to its own editor, including subcategories", () => {
+    const cats = [{
+      id: "root-id", slug: "root", name_en: "Root", name_bn: "মূল", is_active: true,
+      subcategories: [{
+        id: "child-id", slug: "child", name_en: "Child", name_bn: "শাখা",
+        category_id: "root-id", parent_id: "root-id", is_active: true, subcategories: [],
+      }],
+    }] as unknown as Category[];
+    const g = buildContentHealth({
+      products: [], services: [], posts: [], categories: cats,
+      settings: fullSettings, slides: [], now: NOW,
+    });
+    const items = g.find((group) => group.id === "category-empty")?.items ?? [];
+    expect(items.map((item) => item.href)).toEqual([
+      "/sumon/categories?edit=root-id",
+      "/sumon/categories?edit=child-id",
+    ]);
+  });
+
   it("a live hero slide covers a missing mobile banner; a used child keeps its parent", () => {
     const cats = [{ id: "c1", slug: "root", name_en: "R", is_active: true, subcategories: [{ id: "c2", slug: "kid", name_en: "K", is_active: true, category_id: "c1", sort_order: 0 }] }] as unknown as Category[];
     const p = { ...good, category_id: null, subcategory_id: "c2", category: "x" } as unknown as Product;

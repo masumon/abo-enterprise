@@ -194,6 +194,39 @@ export default function AdminCategoriesPage() {
   }, [toast]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Content Health deep link: /sumon/categories?edit=<category-or-subcategory-id>
+  // Reuse the existing tree editor so all validation and save behavior stays unchanged.
+  useEffect(() => {
+    const targetId = new URLSearchParams(window.location.search).get("edit");
+    if (!targetId) return;
+    let cancelled = false;
+    categoriesAdminApi.list().then((response) => {
+      if (cancelled) return;
+      const nodes = response.data.data ?? [];
+      const visit = (items: Node[]): Node | undefined => {
+        for (const item of items) {
+          if (item.id === targetId) return item;
+          const found = visit(getChildren(item));
+          if (found) return found;
+        }
+        return undefined;
+      };
+      const target = visit(nodes as unknown as Node[]);
+      if (target) {
+        setRoots(nodes);
+        openEdit(target);
+      } else {
+        toast("error", "ক্যাটাগরিটি পাওয়া যায়নি — তালিকা রিফ্রেশ করে আবার চেষ্টা করুন");
+      }
+    }).catch((err) => {
+      if (!cancelled) toast("error", apiErrorMessage(err, "ক্যাটাগরি খোলা যায়নি — আবার চেষ্টা করুন"));
+    });
+    return () => { cancelled = true; };
+    // This URL is a one-time entry point; existing manual edit controls remain unchanged.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useOpenOnNew(() => openCreate(null));
 
   const openCreate = (parent: Node | null) => {
