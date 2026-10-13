@@ -398,7 +398,7 @@ async def create_booking(
             await _server_side_discount(db, payload.coupon_code, float(trusted_price)),
         )
 
-    booking_fields = payload.model_dump()
+    booking_fields = payload.model_dump(exclude={"service_name"})
     booking_fields["quoted_price"] = trusted_price
     booking_fields["discount_amount"] = trusted_discount
     booking_fields["advance_amount"] = advance_amount
