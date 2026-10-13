@@ -65,7 +65,7 @@ export default function RolesPermissionsPage() {
   };
 
   return (
-    <div className="admin-page">
+    <div className="admin-page space-y-5">
       <AdminPageHeader
         title="Roles & Permissions"
         titleBn="ভূমিকা ও অনুমতি"
@@ -78,13 +78,14 @@ export default function RolesPermissionsPage() {
           <Loader2 className="w-6 h-6 animate-spin text-brand-600" />
         </div>
       ) : (
-        <div className="overflow-x-auto border border-app rounded-xl">
-          <table className="w-full text-sm">
+        <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="bg-surface-2 text-left">
-                <th className="px-3 py-2 font-semibold">Permission</th>
+                <th className="px-4 py-3 font-semibold text-xs uppercase tracking-wide text-gray-500">Permission</th>
                 {roles.map((role) => (
-                  <th key={role} className="px-3 py-2 font-semibold text-center whitespace-nowrap">
+                  <th key={role} className="whitespace-nowrap px-4 py-3 text-center text-xs font-semibold uppercase tracking-wide text-gray-500">
                     {ROLE_LABELS[role] ?? role}
                   </th>
                 ))}
@@ -93,9 +94,9 @@ export default function RolesPermissionsPage() {
             <tbody>
               {allPermissions.map((perm, i) => (
                 <tr key={perm} className={i % 2 ? "bg-surface-2/40" : ""}>
-                  <td className="px-3 py-2 text-sm" title={perm}>{humanizePermission(perm)}</td>
+                  <td className="px-4 py-3 text-sm" title={perm}>{humanizePermission(perm)}</td>
                   {roles.map((role) => (
-                    <td key={role} className="px-3 py-2 text-center">
+                    <td key={role} className="px-4 py-3 text-center">
                       {grants(role, perm) ? (
                         <span className="text-green-600 dark:text-green-400">✓</span>
                       ) : (
@@ -107,6 +108,7 @@ export default function RolesPermissionsPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>
