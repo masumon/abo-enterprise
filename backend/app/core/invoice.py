@@ -575,7 +575,6 @@ class InvoiceService:
             items=items,
             subtotal=subtotal,
             discount_amount=discount,
-            coupon_code=getattr(booking, "coupon_code", None),
             tax=0,
             total=total,
             payment_method=payment_method or booking.payment_method,
