@@ -173,7 +173,23 @@ export default function AdminEmailTemplatesPage() {
         ) : templates.length === 0 ? (
           <AdminEmptyState icon={Mail} title="No email templates yet" description="Create your first template to customize the emails customers receive." />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="space-y-3 p-3 min-[641px]:hidden">
+            {templates.map((t) => (
+              <article key={t.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <button type="button" onClick={() => openEdit(t)} className="block min-h-11 w-full text-left">
+                  <span className="flex items-start justify-between gap-3"><span className="min-w-0 break-all font-mono text-sm font-semibold text-gray-900">{t.template_name}</span><span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${t.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>{t.is_active ? "Active" : "Inactive"}</span></span>
+                  <span className="mt-2 block break-words text-sm text-gray-700">{t.subject_en || "—"}</span>
+                </button>
+                <p className="mt-3 break-words border-t border-gray-100 pt-3 text-xs text-gray-500"><span className="font-semibold text-gray-700">Variables: </span>{(t.variables ?? []).join(", ") || "—"}</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" onClick={() => toggleActive(t)} className="min-h-11 rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-700">{t.is_active ? "Deactivate" : "Activate"}</button>
+                  <button type="button" onClick={() => openEdit(t)} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-700"><Pencil className="h-4 w-4" />Edit</button>
+                  <button type="button" onClick={() => handleDelete(t.id, t.template_name)} disabled={deletingId === t.id} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-amber-100 px-3 text-xs font-semibold text-amber-700 disabled:opacity-40"><Ban className="h-4 w-4" />Deactivate</button>
+                </div>
+              </article>
+            ))}
+          </div>
+          <div className="hidden min-[641px]:block overflow-x-auto">
             <table className="table-premium table-responsive min-[641px]:min-w-0 min-[641px]:min-w-[560px] min-w-0 min-[641px]:min-w-[560px]">
               <thead>
                 <tr>

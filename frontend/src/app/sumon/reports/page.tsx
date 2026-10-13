@@ -133,9 +133,9 @@ export default function AdminReportsPage() {
         </div>
       ) : (
         <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
-          <div className="min-[641px]:hidden divide-y divide-gray-100">
+          <div className="space-y-3 p-3 min-[641px]:hidden">
             {dataRows.map((row, i) => (
-              <article key={i} className="space-y-3 p-4">
+              <article key={i} className="space-y-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
                 {columns.map((column) => (
                   <div key={column} className="flex flex-col gap-1">
                     <span className="text-xs font-semibold uppercase tracking-wide text-gray-500">{column.replace(/_/g, " ")}</span>

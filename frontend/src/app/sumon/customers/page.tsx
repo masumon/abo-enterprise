@@ -138,7 +138,16 @@ export default function CustomersPage() {
         ) : rows.length === 0 ? (
           <div className="p-12 text-center text-gray-400"><Users className="w-8 h-8 mx-auto mb-2 opacity-50" /><p>{bn ? "কোনো গ্রাহক পাওয়া যায়নি" : "No customer records found"}</p></div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="space-y-3 p-3 min-[641px]:hidden">
+            {rows.map((row) => (
+              <article key={row.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+                <button type="button" onClick={() => void openCustomer(row)} className="block min-h-11 w-full text-left"><span className="block break-words text-sm font-bold text-gray-900">{row.name || "—"}</span>{row.company && <span className="mt-1 block break-words text-xs text-gray-500">{row.company}</span>}<span className="mt-2 block break-all text-sm text-gray-700">{row.phone}</span><span className="block break-all text-xs text-gray-500">{row.email || "—"}</span></button>
+                <div className="mt-3 grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 text-sm"><div><p className="text-xs text-gray-500">{bn ? "অর্ডার" : "Orders"}</p><p className="mt-1 font-semibold text-gray-900">{row.order_count}</p></div><div><p className="text-xs text-gray-500">{bn ? "বুকিং" : "Bookings"}</p><p className="mt-1 font-semibold text-gray-900">{row.booking_count}</p></div><div><p className="text-xs text-gray-500">{bn ? "লিড" : "Leads"}</p><p className="mt-1 font-semibold text-gray-900">{row.lead_count}</p></div><div><p className="text-xs text-gray-500">{bn ? "সর্বশেষ" : "Last activity"}</p><p className="mt-1 break-words text-xs text-gray-700">{row.last_activity ? new Date(row.last_activity).toLocaleString("en-BD") : "—"}</p></div><div><p className="text-xs text-gray-500">{bn ? "অর্ডার মূল্য" : "Order value"}</p><p className="mt-1 font-semibold text-gray-900">{formatPrice(row.order_value)}</p></div><div><p className="text-xs text-gray-500">{bn ? "বুকিং মূল্য" : "Booking value"}</p><p className="mt-1 font-semibold text-gray-900">{formatPrice(row.booking_value)}</p></div></div>
+                <button type="button" onClick={() => void openCustomer(row)} className="admin-btn-secondary mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2"><History className="h-4 w-4" />{bn ? "দেখুন" : "View details"}</button>
+              </article>
+            ))}
+          </div>
+          <div className="hidden min-[641px]:block overflow-x-auto">
             <table className="table-premium table-responsive min-[641px]:min-w-[1040px] min-w-0 min-[641px]:min-w-[1040px]">
               <thead><tr>
                 <th>{bn ? "গ্রাহক" : "Customer"}</th><th>{bn ? "যোগাযোগ" : "Contact"}</th><th>{bn ? "অর্ডার" : "Orders"}</th><th>{bn ? "বুকিং" : "Bookings"}</th><th>{bn ? "লিড" : "Leads"}</th><th>{bn ? "অর্ডার মূল্য" : "Order value"}</th><th>{bn ? "বুকিং মূল্য" : "Booking value"}</th><th>{bn ? "সর্বশেষ" : "Last activity"}</th><th>{bn ? "অ্যাকশন" : "Action"}</th>
