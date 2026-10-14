@@ -155,3 +155,9 @@ def test_write_endpoint_validation():
     import pydantic
     with pytest.raises(pydantic.ValidationError):
         WriteIn(task="hack", text="x")
+
+
+def test_category_ideas_normalisation():
+    raw = {"items": [{"name_bn": "চার্জার", "name_en": "Chargers", "icon": "🔌"}, {"name_bn": "কেবল", "name_en": "Cables"}, {"name_en": "Chargers"}, "x"]}
+    out = ac.normalize_category_ideas(raw, ["Cables"])
+    assert out == [{"name_bn": "চার্জার", "name_en": "Chargers", "icon": "🔌"}]

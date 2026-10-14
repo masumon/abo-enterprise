@@ -1487,6 +1487,9 @@ export const aiCatalogApi = {
   describe: (data: { kind: "product" | "service" | "software" | "showcase"; name: string; notes?: string }) =>
     api.post<ApiResponse<AiDescription>>("/api/v1/admin/ai-catalog/describe", data, { timeout: 120000 }),
   /** Suggested booking-form questions for a service (nothing is saved). */
+  /** Suggested sub-categories for a category (nothing saved). */
+  categoryIdeas: (data: { name: string; kind: "product" | "service" | "both"; existing: string[] }) =>
+    api.post<ApiResponse<{ items: { name_bn: string; name_en: string; icon: string }[] }>>("/api/v1/admin/ai-catalog/category-ideas", data, { timeout: 120000 }),
   /** General AI writer for any admin text (improve / fix / translate / write …). */
   write: (data: { task: AiWriteTask; text?: string; instruction?: string; context?: string }) =>
     api.post<ApiResponse<{ text: string }>>("/api/v1/admin/ai-catalog/write", data, { timeout: 120000 }),

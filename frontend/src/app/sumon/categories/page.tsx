@@ -18,9 +18,11 @@ import {
   X,
 } from "lucide-react";
 import Image from "next/image";
-import { categoriesAdminApi, adminBlogApi } from "@/lib/api";
+import { categoriesAdminApi, adminBlogApi, aiCatalogApi } from "@/lib/api";
+import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
+import SeoAutoPanel from "@/components/admin/catalog/SeoAutoPanel";
 import TranslateButton from "@/components/admin/TranslateButton";
-import { translateBnToEn } from "@/lib/translate";
+import { translateBnToEn, translateEnToBn } from "@/lib/translate";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import type { Category, Subcategory } from "@/types";
@@ -52,7 +54,7 @@ const ACCENTS = [
 ];
 
 type Node = Category | Subcategory;
-type StatusFilter = "all" | "active" | "inactive";
+type StatusFilter = "all" | "active" | "inactive" | "empty" | "nobn";
 
 interface EditorState {
   node: Node | null;
@@ -113,6 +115,16 @@ function selfAndDescendantIds(node: Node, out: Set<string> = new Set()): Set<str
   return out;
 }
 type Counted = Node & { product_count?: number; service_count?: number };
+/** No products or services in this node or below it. */
+function isEmptyNode(node: Node): boolean {
+  const c = subtreeItemCount(node);
+  return c.products + c.services === 0;
+}
+/** Every node of the tree, flat. */
+function flatNodes(nodes: Node[], out: Node[] = []): Node[] {
+  for (const n of nodes) { out.push(n); flatNodes(getChildren(n), out); }
+  return out;
+}
 /** Products + services in this node and everything under it. */
 function subtreeItemCount(node: Node): { products: number; services: number } {
   const n = node as Counted;
@@ -351,6 +363,75 @@ export default function AdminCategoriesPage() {
   const normalizedQuery = searchValue.trim().toLowerCase();
   const searchActive = normalizedQuery.length > 0;
 
+  // ── Quick tools: fill missing Bangla names, hide empty categories ──
+  const noBn = allNodes.filter((n) => !(n.name_bn ?? "").trim() && n.name_en.trim());
+  const emptyActive = allNodes.filter((n) => n.is_active && isEmptyNode(n));
+  const [toolBusy, setToolBusy] = useState("");
+  const fillBangla = async () => {
+    if (!noBn.length || !window.confirm(`${noBn.length}টি ক্যাটাগরির বাংলা নাম ইংরেজি থেকে অনুবাদ করে বসানো হবে। চালাবেন?`)) return;
+    setToolBusy("bn");
+    let ok = 0;
+    for (const n of noBn) {
+      try {
+        const bn = await translateEnToBn(n.name_en.replace(/[-_]+/g, " "));
+        if (bn) { await categoriesAdminApi.update(n.id, { name_bn: bn }); ok += 1; }
+      } catch { /* skip this one */ }
+    }
+    setToolBusy("");
+    toast("success", `${ok}টি বাংলা নাম বসানো হয়েছে — দরকার হলে ✏️ চেপে ঠিক করুন`);
+    await load();
+  };
+  const hideEmpty = async () => {
+    if (!emptyActive.length || !window.confirm(`${emptyActive.length}টি খালি ক্যাটাগরি (কোনো পণ্য/সেবা নেই) সাইটে লুকানো হবে। কিছু মুছবে না — পরে সুইচ চেপে আবার দেখানো যাবে। চালাবেন?`)) return;
+    setToolBusy("hide");
+    let ok = 0;
+    for (const n of emptyActive) {
+      try { await categoriesAdminApi.update(n.id, { is_active: false }); ok += 1; } catch { /* skip */ }
+    }
+    setToolBusy("");
+    toast("success", `${ok}টি খালি ক্যাটাগরি লুকানো হয়েছে`);
+    await load();
+  };
+
+  // ── AI: sub-category ideas for the category being edited ──
+  const [ideas, setIdeas] = useState<{ name_bn: string; name_en: string; icon: string; pick: boolean }[] | null>(null);
+  const [ideasBusy, setIdeasBusy] = useState(false);
+  const askIdeas = async () => {
+    const node = editor?.node;
+    if (!node) return;
+    setIdeasBusy(true);
+    try {
+      const top = (roots as unknown as Node[]).find((r) => flatNodes([r]).some((x) => x.id === node.id));
+      const kinds = ((top as Category | undefined)?.applies_to ?? []) as string[];
+      const kind = kinds.length === 1 ? (kinds[0] as "product" | "service") : "both";
+      const existing = getChildren(node).flatMap((c) => [c.name_en, c.name_bn ?? ""]).filter(Boolean);
+      const r = await aiCatalogApi.categoryIdeas({ name: node.name_bn || node.name_en, kind, existing });
+      setIdeas((r.data.data?.items ?? []).map((i) => ({ ...i, pick: true })));
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "AI প্রস্তাব আনা যায়নি — AI সেটিংস দেখুন"));
+    } finally {
+      setIdeasBusy(false);
+    }
+  };
+  const createIdeas = async () => {
+    const node = editor?.node;
+    if (!node || !ideas) return;
+    const chosen = ideas.filter((i) => i.pick);
+    setIdeasBusy(true);
+    let ok = 0;
+    let order = getChildren(node).length;
+    for (const i of chosen) {
+      try {
+        await categoriesAdminApi.create({ name_en: i.name_en, name_bn: i.name_bn, slug: slugify(i.name_en), icon: i.icon || undefined, parent_id: node.id, is_active: true, sort_order: order++ });
+        ok += 1;
+      } catch { /* duplicate slug etc. — skip */ }
+    }
+    setIdeasBusy(false);
+    setIdeas(null);
+    toast("success", `${ok}টি সাব-ক্যাটাগরি তৈরি হয়েছে`);
+    await load();
+  };
+
   const filterTree = useCallback(
     (nodes: Node[]): Node[] => {
       const out: Node[] = [];
@@ -358,7 +439,12 @@ export default function AdminCategoriesPage() {
         const children = filterTree(getChildren(node));
         const haystack = `${node.name_en} ${node.name_bn ?? ""} ${node.slug}`.toLowerCase();
         const matchesQuery = !searchActive || haystack.includes(normalizedQuery);
-        const matchesStatus = statusFilter === "all" || (statusFilter === "active" ? node.is_active : !node.is_active);
+        const matchesStatus =
+          statusFilter === "all" ? true
+            : statusFilter === "active" ? node.is_active
+            : statusFilter === "inactive" ? !node.is_active
+            : statusFilter === "empty" ? isEmptyNode(node)
+            : !(node.name_bn ?? "").trim();
         if ((matchesQuery && matchesStatus) || children.length > 0) {
           out.push({ ...node, subcategories: children as unknown as Subcategory[] });
         }
@@ -508,7 +594,7 @@ export default function AdminCategoriesPage() {
           />
         </div>
         <div className="inline-flex bg-[var(--surface,#fff)] dark:bg-white/5 border border-[var(--border,#e2e8f3)] dark:border-white/10 rounded-xl p-1">
-          {(["all", "active", "inactive"] as StatusFilter[]).map((s) => (
+          {(["all", "active", "inactive", "empty", "nobn"] as StatusFilter[]).map((s) => (
             <button
               key={s}
               type="button"
@@ -520,11 +606,28 @@ export default function AdminCategoriesPage() {
                   : "text-gray-500 hover:text-gray-700 dark:text-gray-400"
               )}
             >
-              {s === "all" ? "সব" : s === "active" ? "দেখায়" : "লুকানো"}
+              {s === "all" ? "সব" : s === "active" ? "দেখায়" : s === "inactive" ? "লুকানো" : s === "empty" ? "খালি" : "বাংলা নাম নেই"}
             </button>
           ))}
         </div>
       </div>
+
+      {(noBn.length > 0 || emptyActive.length > 0) && (
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 p-2">
+          <span className="text-xs font-semibold text-muted px-1">⚡ দ্রুত কাজ:</span>
+          {noBn.length > 0 && (
+            <button type="button" onClick={fillBangla} disabled={!!toolBusy} className="btn btn-outline btn-sm min-h-11 gap-1.5">
+              {toolBusy === "bn" ? <Loader2 className="w-4 h-4 animate-spin" /> : "🇧🇩"} {noBn.length}টির বাংলা নাম পূরণ করুন
+            </button>
+          )}
+          {emptyActive.length > 0 && (
+            <button type="button" onClick={hideEmpty} disabled={!!toolBusy} className="btn btn-outline btn-sm min-h-11 gap-1.5">
+              {toolBusy === "hide" ? <Loader2 className="w-4 h-4 animate-spin" /> : "🙈"} {emptyActive.length}টি খালি ক্যাটাগরি লুকান
+            </button>
+          )}
+          <span className="text-[11px] text-muted px-1">খালি = কোনো পণ্য/সেবা নেই। লুকালে মুছে না, পরে আবার দেখানো যায়।</span>
+        </div>
+      )}
 
       {/* ---------- List ---------- */}
       {loading ? (
@@ -703,15 +806,15 @@ export default function AdminCategoriesPage() {
           </LivePreview>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="নাম (ইংরেজি)">
+            <Field label="নাম (বাংলা) — শুধু এটা লিখলেই চলবে">
+              <div className="flex items-center gap-2">
+                <input value={form.name_bn} onChange={(e) => setForm((p) => ({ ...p, name_bn: e.target.value }))} className={INP_CLS} placeholder="ফাস্ট চার্জার" />
+              </div>
+            </Field>
+            <Field label="নাম (ইংরেজি) — খালি থাকলে নিজে থেকে অনুবাদ">
               <div className="flex items-center gap-2">
                 <input value={form.name_en} onChange={(e) => setForm((p) => ({ ...p, name_en: e.target.value, slug: p.slug || slugify(e.target.value) }))} className={INP_CLS} placeholder="Fast Chargers" />
                 <TranslateButton bn={form.name_bn} onResult={(en) => setForm((p) => ({ ...p, name_en: en, slug: p.slug || slugify(en) }))} en={form.name_en} onResultBn={(b) => setForm((p) => ({ ...p, name_bn: b }))} className="btn btn-outline btn-sm gap-1 flex-shrink-0" label="EN" />
-              </div>
-            </Field>
-            <Field label="নাম (বাংলা)">
-              <div className="flex items-center gap-2">
-                <input value={form.name_bn} onChange={(e) => setForm((p) => ({ ...p, name_bn: e.target.value }))} className={INP_CLS} placeholder="ফাস্ট চার্জার" />
               </div>
             </Field>
           </div>
@@ -761,8 +864,39 @@ export default function AdminCategoriesPage() {
           </Field>
 
           <Field label="বর্ণনা (ঐচ্ছিক)">
+            <div className="flex justify-end -mt-1 mb-1"><AiTextMenu text={form.description_bn} context={`category description: ${form.name_bn || form.name_en}`} onApply={(v) => setForm((p) => ({ ...p, description_bn: v }))} /></div>
             <textarea rows={2} value={form.description_bn} onChange={(e) => setForm((p) => ({ ...p, description_bn: e.target.value }))} className={cn(INP_CLS, "resize-none")} />
           </Field>
+
+          {editor?.node && (
+            <div className="rounded-[11px] border border-brand-200 dark:border-brand-500/30 bg-brand-50/40 dark:bg-brand-500/5 p-3 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-heading">✨ AI দিয়ে সাব-ক্যাটাগরি প্রস্তাব</p>
+                <button type="button" onClick={askIdeas} disabled={ideasBusy} className="btn btn-outline btn-sm min-h-10 gap-1.5">
+                  {ideasBusy && !ideas ? <Loader2 className="w-4 h-4 animate-spin" /> : null} প্রস্তাব আনুন
+                </button>
+              </div>
+              {ideas && (
+                <>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ideas.map((i, k) => (
+                      <label key={k} className={cn("flex items-center gap-1.5 rounded-full border px-3 min-h-10 text-sm cursor-pointer", i.pick ? "border-brand-500 bg-white dark:bg-white/10" : "border-[var(--line)] opacity-60")}>
+                        <input type="checkbox" className="rounded" checked={i.pick} onChange={() => setIdeas((cur) => cur?.map((x, j) => (j === k ? { ...x, pick: !x.pick } : x)) ?? null)} />
+                        {i.icon} {i.name_bn}{i.name_en && i.name_en !== i.name_bn ? <span className="text-muted text-xs">({i.name_en})</span> : null}
+                      </label>
+                    ))}
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <button type="button" className="btn btn-outline btn-sm min-h-10" onClick={() => setIdeas(null)}>বাতিল</button>
+                    <button type="button" className="btn btn-brand btn-sm min-h-10 gap-1.5" disabled={ideasBusy || !ideas.some((i) => i.pick)} onClick={createIdeas}>
+                      {ideasBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : null} বাছাই করা {ideas.filter((i) => i.pick).length}টি তৈরি করুন
+                    </button>
+                  </div>
+                </>
+              )}
+              {!ideas && <p className="text-[11px] text-muted">এই ক্যাটাগরির নিচে গ্রাহকেরা যা খোঁজেন এমন সাব-ক্যাটাগরি AI প্রস্তাব করবে — টিক দিয়ে এক চাপে তৈরি করুন।</p>}
+            </div>
+          )}
 
           {/* SEO overrides — category landing pages are often the highest-intent
               entry point, and until now their metadata could only be derived
@@ -772,6 +906,9 @@ export default function AdminCategoriesPage() {
               SEO (ঐচ্ছিক)
             </summary>
             <div className="mt-3 space-y-3">
+              <SeoAutoPanel name={form.name_bn || form.name_en} desc={form.description_bn} tags={[]} path={`/…/${form.slug || slugify(form.name_en || "") || "…"}`}
+                title={form.seo_title} description={form.seo_description} keywords={form.seo_keywords}
+                onChange={(v) => setForm((p) => ({ ...p, ...v }))} />
               <Field label="SEO Title">
                 <input
                   value={form.seo_title}

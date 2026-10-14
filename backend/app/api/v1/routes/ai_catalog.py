@@ -220,3 +220,23 @@ async def ai_write(payload: WriteIn, _admin: str = Depends(require_admin), db: A
     if not out:
         raise HTTPException(status_code=502, detail="AI কিছু লেখেনি — আবার চেষ্টা করুন।")
     return ApiResponse(data={"text": out})
+
+
+class CategoryIdeasIn(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    kind: str = Field("product", pattern="^(product|service|both)$")
+    existing: list[str] = Field(default_factory=list, max_length=200)
+
+
+@router.post("/category-ideas", response_model=ApiResponse)
+async def category_ideas(payload: CategoryIdeasIn, _admin: str = Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    """Suggested sub-categories for a category (nothing is saved)."""
+    user = "Category: " + payload.name.strip() + " (" + payload.kind + ")\nAlready exists: " + (", ".join(payload.existing[:200]) or "(none)")
+    try:
+        raw = await ai_gemini.generate_json(db, ac.CATEGORY_IDEAS_SYSTEM, user, max_tokens=2048)
+    except ai_gemini.AiUnavailable as exc:
+        raise _fail(exc)
+    items = ac.normalize_category_ideas(raw, payload.existing)
+    if not items:
+        raise HTTPException(status_code=502, detail="AI নতুন কিছু প্রস্তাব করতে পারেনি।")
+    return ApiResponse(data={"items": items})

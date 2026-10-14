@@ -272,3 +272,29 @@ def normalize_service_details(raw: Any, parts: list[str]) -> dict[str, list]:
             })
         out["packages"] = pk
     return out
+
+
+# ── Category ideas: sub-categories for a category ────────────────────────────
+CATEGORY_IDEAS_SYSTEM = (
+    "You organise the online catalogue of ABO Enterprise, a mobile-accessories, electronics, printing and "
+    "digital-services shop in Bangladesh. Given a category (and what already exists under it), suggest 4-10 "
+    "useful sub-categories customers in Bangladesh actually search for. Do not repeat existing ones. Names short "
+    "(1-3 words), natural Bangla and clear English, plus one fitting emoji. "
+    'Reply as JSON: {"items": [{"name_bn": "", "name_en": "", "icon": ""}]}'
+)
+
+
+def normalize_category_ideas(raw: Any, existing: list[str]) -> list[dict]:
+    items = raw.get("items") if isinstance(raw, dict) else raw
+    have = {e.strip().lower() for e in existing if e}
+    out: list[dict] = []
+    for it in items if isinstance(items, list) else []:
+        if not isinstance(it, dict):
+            continue
+        bn = str(it.get("name_bn") or "").strip()[:60]
+        en = str(it.get("name_en") or "").strip()[:60]
+        if not (bn or en) or bn.lower() in have or en.lower() in have:
+            continue
+        have.update({bn.lower(), en.lower()})
+        out.append({"name_bn": bn or en, "name_en": en or bn, "icon": str(it.get("icon") or "").strip()[:4]})
+    return out[:12]
