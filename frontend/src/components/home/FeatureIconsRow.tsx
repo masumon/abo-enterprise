@@ -71,25 +71,32 @@ const FEATURES = [
 export default function FeatureIconsRow() {
   const { lang } = useLanguageStore();
 
+  const item = ({ icon: Icon, label, color, href }: (typeof FEATURES)[number]) => (
+    <Link
+      href={href}
+      className="flex flex-col items-center justify-center gap-1.5 py-1.5 sm:py-3 px-3 sm:px-5 w-20 sm:w-24 min-h-11 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group touch-manipulation"
+    >
+      <Icon className={`w-6 sm:w-8 h-6 sm:h-8 ${color} group-hover:scale-110 transition-transform`} aria-hidden />
+      <span className="text-[11px] sm:text-xs font-semibold text-center text-heading leading-tight">
+        {lang === "bn" ? label.bn : label.en}
+      </span>
+    </Link>
+  );
+
   return (
     <section className="py-3 sm:py-4 bg-white dark:bg-[var(--surface)]">
-      <div className="container mx-auto px-4 [mask-image:linear-gradient(to_right,transparent,#000_6%,#000_94%,transparent)]">
+      {/* Desktop: everything fits, so a calm centred row (no repeated icons). */}
+      <div className="hidden lg:flex container mx-auto px-4 flex-wrap justify-center gap-2">
+        {FEATURES.map((f) => <div key={f.id}>{item(f)}</div>)}
+      </div>
+      {/* Phones/tablets: gentle auto-scroll. */}
+      <div className="lg:hidden container mx-auto px-4 [mask-image:linear-gradient(to_right,transparent,#000_6%,#000_94%,transparent)]">
         <AutoScrollRow
           items={FEATURES}
           keyExtractor={(f) => f.id}
           spaceBetween={8}
           minSlides={24}
-          renderItem={({ icon: Icon, label, color, href }) => (
-            <Link
-              href={href}
-              className="flex flex-col items-center justify-center gap-1.5 py-1.5 sm:py-3 px-3 sm:px-5 w-20 sm:w-24 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group touch-manipulation"
-            >
-              <Icon className={`w-6 sm:w-8 h-6 sm:h-8 ${color} group-hover:scale-110 transition-transform`} aria-hidden />
-              <span className="text-[11px] sm:text-xs font-semibold text-center text-heading leading-tight">
-                {lang === "bn" ? label.bn : label.en}
-              </span>
-            </Link>
-          )}
+          renderItem={item}
         />
       </div>
     </section>

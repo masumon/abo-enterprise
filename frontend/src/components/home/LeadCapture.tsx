@@ -349,8 +349,8 @@ export default function LeadCapture() {
           </div>
 
           {/* Right side - AI Illustration (hidden on mobile) */}
-          <div className="hidden lg:flex items-center justify-center relative h-[500px]">
-            <div className="relative w-full h-full bg-gradient-to-br from-brand-700 via-brand-600 to-accent-600 rounded-3xl p-8 flex items-center justify-center overflow-hidden">
+          <div className="hidden lg:flex items-stretch justify-center relative">
+            <div className="relative w-full min-h-[280px] bg-gradient-to-br from-brand-700 via-brand-600 to-accent-600 rounded-3xl p-8 flex items-center justify-center overflow-hidden">
               {/* AI Illustration - Placeholder */}
               <div className="relative z-10 text-center">
                 <div className="text-6xl mb-6" aria-hidden>🤖</div>
@@ -362,6 +362,12 @@ export default function LeadCapture() {
                     ? "আমাদের AI সমাধান আপনার ব্যবসা স্বয়ংক্রিয় করতে সাহায্য করে"
                     : "Our AI solutions help automate your business"}
                 </p>
+                <ul className="mt-5 space-y-2 text-left text-sm text-white/90 inline-block">
+                  {(lang === "bn"
+                    ? ["২৪ ঘণ্টায় বিনামূল্যে পরামর্শ", "আপনার ব্যবসা অনুযায়ী সমাধান", "বাংলা ও ইংরেজি সাপোর্ট"]
+                    : ["Free consultation within 24 hours", "Solutions tailored to your business", "Bangla & English support"]
+                  ).map((t) => <li key={t}>✓ {t}</li>)}
+                </ul>
               </div>
               {/* Decorative circles */}
               <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20" aria-hidden />

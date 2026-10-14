@@ -31,8 +31,11 @@ export default function ReviewStatsCard({
 
   // Hide any metric that is 0 or missing — a "0" tile reads as unfinished.
   const positive = (n: number | null | undefined): n is number => typeof n === "number" && Number.isFinite(n) && n > 0;
+  // Rating and review count need at least 5 reviews — "3 reviews" or a rating
+  // from 3 reviews hurts trust more than it helps.
+  const enoughReviews = totalReviews >= 5;
   const stats = [
-    positive(averageRating) && {
+    enoughReviews && positive(averageRating) && {
       icon: Star,
       label: lang === "bn" ? "গড় রেটিং" : "Average Rating",
       value: averageRating.toFixed(1),
@@ -53,7 +56,7 @@ export default function ReviewStatsCard({
       color: "text-brand-600",
       bgColor: "bg-brand-50 dark:bg-brand-500/10",
     },
-    positive(totalReviews) && {
+    enoughReviews && positive(totalReviews) && {
       icon: MessageCircle,
       label: lang === "bn" ? "মোট রিভিউ" : "Total Reviews",
       value: totalReviews.toLocaleString(),

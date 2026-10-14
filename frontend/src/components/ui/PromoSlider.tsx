@@ -48,7 +48,7 @@ function resolveSlideLink(raw?: string | null): { path: string | null; external:
  * placeholder until it has decoded, then fades in. Fixes the "black flash" a
  * slow banner image used to leave while the browser fetched it.
  */
-function PromoImage({ src, alt, eager, sizes }: { src: string; alt: string; eager?: boolean; sizes?: string }) {
+function PromoImage({ src, alt, eager, sizes, contain }: { src: string; alt: string; eager?: boolean; sizes?: string; contain?: boolean }) {
   const [loaded, setLoaded] = useState(false);
   const imgRef = useRef<HTMLImageElement>(null);
   // Server-rendered images can finish loading before React hydrates and
@@ -66,6 +66,13 @@ function PromoImage({ src, alt, eager, sizes }: { src: string; alt: string; eage
           <Loader2 className="w-7 h-7 sm:w-8 sm:h-8 text-brand-500 dark:text-brand-300 animate-spin" />
         </div>
       )}
+      {/* contain: the whole banner is shown (no text cut off when the upload is
+          not the exact box ratio); a blurred copy fills the side space. */}
+      {contain && (
+        // eslint-disable-next-line @next/next/no-img-element -- decorative blur fill
+        <img src={cloudinaryWidthUrl(src, 320)} alt="" aria-hidden loading="lazy" decoding="async"
+          className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-70" />
+      )}
       {/* eslint-disable-next-line @next/next/no-img-element -- admin-supplied promo art at arbitrary CDN sizes */}
       <img
         ref={imgRef}
@@ -77,7 +84,8 @@ function PromoImage({ src, alt, eager, sizes }: { src: string; alt: string; eage
         onLoad={() => setLoaded(true)}
         onError={() => setLoaded(true)}
         className={cn(
-          "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
+          "absolute inset-0 w-full h-full transition-opacity duration-300",
+          contain ? "object-contain" : "object-cover",
           loaded ? "opacity-100" : "opacity-0"
         )}
         loading={eager ? "eager" : "lazy"}
@@ -171,6 +179,7 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
                   alt={slide.alt_text || title || ""}
                   eager={eagerFirstSlide && index === 0}
                   sizes={sizes}
+                  contain={placement === "flash_sale"}
                 />
               )}
             </div>

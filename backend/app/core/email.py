@@ -71,20 +71,6 @@ def _send_sync(
     logger.info("Email sent successfully to %s", to)
 
 
-async def _resolve_cfg() -> dict:
-    """Effective SMTP config: DB admin overrides, else env. Never raises."""
-    from app.core.email_config import env_email_config, resolve_email_config
-
-    try:
-        from app.core.database import AsyncSessionLocal
-
-        async with AsyncSessionLocal() as db:
-            return await resolve_email_config(db)
-    except Exception:  # noqa: BLE001 — fall back to env if DB is unavailable
-        logger.warning("Email config: DB unavailable, using env values", exc_info=True)
-        return env_email_config()
-
-
 async def send_email(
     to: str,
     subject: str,
@@ -128,52 +114,6 @@ async def send_email(
                 to, attempt + 1, e, delays[attempt],
             )
             await asyncio.sleep(delays[attempt])
-
-
-async def send_template_email(
-    db: AsyncSession,
-    template_name: str,
-    to: str,
-    variables: Dict[str, Any],
-    language: str = "en",
-    attachments: Optional[list] = None,
-) -> bool:
-    """Send email using configurable template"""
-    try:
-        # Get template from database
-        result = await db.execute(
-            select(EmailTemplate).where(
-                EmailTemplate.template_name == template_name,
-                EmailTemplate.is_active == True,
-            )
-        )
-        template = result.scalar_one_or_none()
-
-        if not template:
-            logger.warning(f"Email template '{template_name}' not found")
-            return False
-
-        # Get subject and body based on language
-        if language == "bn":
-            subject = template.subject_bn
-            body = template.body_bn
-        else:
-            subject = template.subject_en
-            body = template.body_en
-
-        # Replace variables in subject and body
-        for key, value in variables.items():
-            placeholder = f"{{{{{key}}}}}"
-            subject = subject.replace(placeholder, str(value))
-            body = body.replace(placeholder, str(value))
-
-        # Send email
-        await send_email(to, subject, body, attachments)
-        return True
-
-    except Exception as e:
-        logger.error(f"Template email failed: {str(e)}")
-        return False
 
 
 def order_notification_html(

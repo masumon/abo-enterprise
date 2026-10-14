@@ -12,6 +12,8 @@ import GlassCard from "@/components/ui/GlassCard";
 
 const FEATURED_REVIEWS_CACHE_KEY = "reviews:featured";
 
+export const MIN_REVIEWS_TO_SHOW = 5;
+
 export default function CustomerReviews() {
   const { lang } = useLanguageStore();
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -46,7 +48,9 @@ export default function CustomerReviews() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (!loading && reviews.length === 0) return null;
+  // Shown only once there are enough real reviews to build trust; a couple of
+  // reviews (or the owner's own test ones) reads as thin, so it hides itself.
+  if (!loading && reviews.length < MIN_REVIEWS_TO_SHOW) return null;
 
   return (
     <section className="py-5 lg:py-7 bg-white dark:bg-[var(--surface)]">
