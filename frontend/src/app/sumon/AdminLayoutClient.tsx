@@ -1,5 +1,6 @@
 "use client";
 
+import AdminAiAssistant from "@/components/admin/AdminAiAssistant";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { getAdminPageTitle } from "@/lib/adminNav";
@@ -92,6 +93,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
       </div>
 
       <AdminCommandPalette role={user.role} />
+      <AdminAiAssistant />
       <ToastProvider />
       <DynamicFavicon />
     </div>

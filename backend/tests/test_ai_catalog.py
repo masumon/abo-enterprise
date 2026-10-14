@@ -145,3 +145,13 @@ def test_service_details_normalisation():
     assert out["faq"][0]["answer_bn"] == "১ দিন"
     assert out["packages"] == [{"tier_name": "Basic", "description_bn": "", "description_en": "", "duration_days": 2, "features": ["A4"]}]
     assert "requirements" not in out
+
+
+def test_write_endpoint_validation():
+    from app.api.v1.routes.ai_catalog import WriteIn, _WRITE_TASKS
+
+    assert {"improve", "to_en", "to_bn", "write", "seo"} <= set(_WRITE_TASKS)
+    assert WriteIn(task="to_bn", text="Hello").task == "to_bn"
+    import pydantic
+    with pytest.raises(pydantic.ValidationError):
+        WriteIn(task="hack", text="x")

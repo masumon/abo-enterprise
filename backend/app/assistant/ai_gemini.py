@@ -33,7 +33,11 @@ ENABLED_SETTING = "ai_gemini_enabled"
 CAP_SETTING = "ai_gemini_daily_cap"
 HINT_SETTING = "ai_gemini_key_hint"
 VERIFIED_SETTING = "ai_gemini_verified_at"
-ALL_SETTINGS = [KEY_SETTING, MODEL_SETTING, ENABLED_SETTING, CAP_SETTING, HINT_SETTING, VERIFIED_SETTING]
+# Any provider (see ai_providers.py). Unset = Google Gemini, so existing setups keep working.
+PROVIDER_SETTING = "ai_provider"
+BASE_SETTING = "ai_base_url"
+ALL_SETTINGS = [KEY_SETTING, MODEL_SETTING, ENABLED_SETTING, CAP_SETTING, HINT_SETTING, VERIFIED_SETTING,
+                PROVIDER_SETTING, BASE_SETTING]
 DEFAULT_DAILY_CAP = 300
 # Newest free-tier "flash" models first; whatever the key can actually use is picked at verify time.
 PREFERRED_MODELS = ("gemini-flash-latest", "gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash",
@@ -123,7 +127,34 @@ def _reason(exc: httpx.HTTPStatusError) -> str:
         return ""
 
 
-async def verify_key(key: str) -> VerifyResult:
+async def verify_key(key: str, provider: str = "auto", base_url: str = "", model: str = "") -> VerifyResult:
+    """Check a key with any provider. Gemini keeps its own probing; others try the
+    given model, else the provider's preferred/listed models."""
+    from app.assistant import ai_providers as ap
+
+    key = (key or "").strip()
+    prov = ap.detect(key) if provider in ("", "auto") else provider
+    if prov == "gemini":
+        res = await _verify_gemini(key)
+        if res.ok and model:
+            res.model = model if "@" not in res.model else f"{model}@{res.model.split('@')[1]}"
+        return res
+    if not re.fullmatch(r"\S{8,400}", key):
+        return VerifyResult(False, message_bn="কী-এর গঠন ঠিক নেই — পুরো কী কপি করে বসান।", message_en="That doesn't look like an API key.")
+    try:
+        found, err = await ap.find_model(prov, key, base_url, model.strip())
+    except Exception as exc:  # noqa: BLE001 — network problems
+        logger.warning("AI verify failed (%s): %s", prov, exc)
+        return VerifyResult(False, message_bn="AI সার্ভারে সংযোগ হয়নি — ঠিকানা/ইন্টারনেট দেখে আবার চেষ্টা করুন।", message_en="Could not reach the AI server.")
+    if not found:
+        return VerifyResult(False, message_bn=err, message_en=err)
+    label = ap.PROVIDERS.get(prov, ap.PROVIDERS["custom"])["label"]
+    res = VerifyResult(True, found, f"সফল! {label} কাজ করছে ({found})।", f"Success! {label} is working ({found}).")
+    res.provider = prov  # type: ignore[attr-defined]
+    return res
+
+
+async def _verify_gemini(key: str) -> VerifyResult:
     """Find a model + auth style that works for this key. The working pair is returned as
     "model" or "model@bearer" (stored as-is; `load_config` splits it)."""
     key = (key or "").strip()
@@ -177,7 +208,7 @@ async def _settings(db: AsyncSession) -> dict[str, str]:
     return {s.key: s.value for s in rows.scalars().all()}
 
 
-async def save_key(db: AsyncSession, key: str, model: str) -> None:
+async def save_key(db: AsyncSession, key: str, model: str, provider: str = "gemini", base_url: str = "") -> None:
     from datetime import datetime, timezone
 
     values = {
@@ -186,6 +217,8 @@ async def save_key(db: AsyncSession, key: str, model: str) -> None:
         HINT_SETTING: (key_hint(key), False),
         ENABLED_SETTING: ("true", False),
         VERIFIED_SETTING: (datetime.now(timezone.utc).isoformat(timespec="seconds"), False),
+        PROVIDER_SETTING: (provider or "gemini", False),
+        BASE_SETTING: (base_url or "", False),
     }
     await _write(db, values)
     invalidate()
@@ -242,6 +275,8 @@ async def load_config(db: AsyncSession) -> dict[str, Any]:
         "daily_cap": cap,
         "hint": s.get(HINT_SETTING) or "",
         "verified_at": s.get(VERIFIED_SETTING) or "",
+        "provider": s.get(PROVIDER_SETTING) or "gemini",
+        "base_url": s.get(BASE_SETTING) or "",
     }
     _cache.update(at=time.monotonic(), cfg=cfg)
     return cfg
@@ -293,8 +328,14 @@ async def answer(db: AsyncSession, question: str, lang: str, facts_text: str, fa
     try:
         _usage["count"] = usage_today() + 1
         # Gemini 3.x "thinks" before answering, which can take well over 10 s.
-        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0)) as client:
-            text = await _generate(client, cfg["key"], cfg["model"], system, user, auth=cfg["auth"])
+        if cfg.get("provider", "gemini") != "gemini":
+            from app.assistant import ai_providers as ap
+
+            text = await ap.generate(cfg["provider"], cfg["key"], cfg["model_raw"] or cfg["model"], system, user,
+                                     base_url=cfg.get("base_url", ""), timeout=30.0)
+        else:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0)) as client:
+                text = await _generate(client, cfg["key"], cfg["model"], system, user, auth=cfg["auth"])
     except httpx.HTTPStatusError as exc:  # quota, model gone, auth: fall back quietly, remember why
         _note_error(f"Google {exc.response.status_code}: {_reason(exc) or 'error'}")
         logger.warning("Gemini answer failed: %s", exc)
@@ -378,6 +419,8 @@ async def generate_json(db: AsyncSession, system: str, user: str,
     if cfg["daily_cap"] and usage_today() >= cfg["daily_cap"]:
         raise AiUnavailable("আজকের AI ব্যবহারের সীমা শেষ — কাল আবার চেষ্টা করুন।",
                             "Today's AI limit is used up — try again tomorrow.", 429)
+    if cfg.get("provider", "gemini") != "gemini":
+        return await _generate_json_other(cfg, system, user, images, max_tokens)
     parts: list[dict] = [{"text": user}]
     for mime, data in images or []:
         parts.append({"inline_data": {"mime_type": mime, "data": base64.b64encode(data).decode("ascii")}})
@@ -407,3 +450,35 @@ async def generate_json(db: AsyncSession, system: str, user: str,
     except ValueError as exc:
         _note_error("Google অবোধ্য উত্তর দিয়েছে (unreadable reply)")
         raise AiUnavailable("AI-এর উত্তর বোঝা যায়নি — আবার চেষ্টা করুন।", "The AI reply could not be read — try again.", 502) from exc
+
+
+async def _generate_json_other(cfg: dict[str, Any], system: str, user: str,
+                               images: list[tuple[str, bytes]] | None, max_tokens: int) -> Any:
+    """generate_json for non-Gemini providers (OpenAI-compatible / Claude)."""
+    from app.assistant import ai_providers as ap
+
+    _usage["count"] = usage_today() + 1
+    try:
+        text = await ap.generate(cfg["provider"], cfg["key"], cfg["model_raw"] or cfg["model"], system, user,
+                                 base_url=cfg.get("base_url", ""), max_tokens=max_tokens, json_mode=True, images=images)
+    except httpx.HTTPStatusError as exc:
+        why = ap.reason(exc)
+        _note_error(f"AI {exc.response.status_code}: {why or 'error'}")
+        bn, en = _error_text(exc.response.status_code, exc.response.text)
+        raise AiUnavailable(f"{bn} ({why})" if why else bn, en, 502) from exc
+    except Exception as exc:  # noqa: BLE001 — network problems, timeouts
+        _note_error(f"{type(exc).__name__}: সময়মতো উত্তর আসেনি / connection problem")
+        raise AiUnavailable("AI সময়মতো উত্তর দেয়নি — একটু পরে আবার চেষ্টা করুন।", "The AI did not answer in time — try again.") from exc
+    try:
+        return parse_json_text(text)
+    except ValueError as exc:
+        _note_error("AI অবোধ্য উত্তর দিয়েছে (unreadable reply)")
+        raise AiUnavailable("AI-এর উত্তর বোঝা যায়নি — আবার চেষ্টা করুন।", "The AI reply could not be read — try again.", 502) from exc
+
+
+async def generate_text(db: AsyncSession, system: str, user: str, max_tokens: int = 2048) -> str:
+    """Plain-text helper for admin writing tools (any provider). Raises AiUnavailable."""
+    raw = await generate_json(db, system + '\nReply as JSON: {"text": "..."}', user, max_tokens=max_tokens)
+    if isinstance(raw, dict) and isinstance(raw.get("text"), str):
+        return raw["text"].strip()
+    raise AiUnavailable("AI-এর উত্তর বোঝা যায়নি — আবার চেষ্টা করুন।", "The AI reply could not be read — try again.", 502)

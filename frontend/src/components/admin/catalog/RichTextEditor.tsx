@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import RichText, { ICONS } from "@/components/ui/RichText";
 import MediaLibraryPicker from "@/components/admin/MediaLibraryPicker";
+import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { cn } from "@/lib/utils";
 
 /*
@@ -105,7 +106,8 @@ export default function RichTextEditor({ value, onChange, rows = 5, placeholder,
         <button type="button" className={btn} title="ছবি" onClick={() => setMediaOpen(true)}><ImageIcon className="w-4 h-4" /></button>
         <button type="button" className={btn} title="ইমোজি" onClick={() => toggle("emoji")}><Smile className="w-4 h-4" /></button>
         <button type="button" className={btn} title="আইকন" onClick={() => toggle("icon")}><Sparkles className="w-4 h-4" /></button>
-        <button type="button" className={cn(btn, "ml-auto gap-1 px-2 text-xs font-medium", preview && "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200")}
+        <AiTextMenu text={value ?? ""} onApply={onChange} context={label} className="ml-auto" />
+        <button type="button" className={cn(btn, "gap-1 px-2 text-xs font-medium", preview && "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200")}
           onClick={() => setPreview((p) => !p)}>
           {preview ? <Pencil className="w-4 h-4" /> : <Eye className="w-4 h-4" />} {preview ? "লিখুন" : "প্রিভিউ"}
         </button>

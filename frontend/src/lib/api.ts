@@ -1378,12 +1378,16 @@ export interface GeminiStatus {
   verified_at: string;
   last_error?: string;
   last_error_at?: string;
+  provider?: string;
+  provider_label?: string;
+  base_url?: string;
+  providers?: { id: string; label: string }[];
 }
 
 export const assistantAdminApi = {
   getAi: () => api.get<ApiResponse<GeminiStatus>>("/api/v1/assistant/admin/ai"),
   // Verifying a key calls Google (model list + a test reply), so allow extra time.
-  updateAi: (data: { api_key?: string; enabled?: boolean; daily_cap?: number }) =>
+  updateAi: (data: { api_key?: string; enabled?: boolean; daily_cap?: number; provider?: string; base_url?: string; model?: string }) =>
     api.put<ApiResponse<GeminiStatus>>("/api/v1/assistant/admin/ai", data, { timeout: 60000 }),
   verifyAi: () => api.post<ApiResponse<GeminiStatus>>("/api/v1/assistant/admin/ai/verify", {}, { timeout: 60000 }),
   removeAi: () => api.delete<ApiResponse<GeminiStatus>>("/api/v1/assistant/admin/ai"),
@@ -1483,6 +1487,9 @@ export const aiCatalogApi = {
   describe: (data: { kind: "product" | "service" | "software" | "showcase"; name: string; notes?: string }) =>
     api.post<ApiResponse<AiDescription>>("/api/v1/admin/ai-catalog/describe", data, { timeout: 120000 }),
   /** Suggested booking-form questions for a service (nothing is saved). */
+  /** General AI writer for any admin text (improve / fix / translate / write …). */
+  write: (data: { task: AiWriteTask; text?: string; instruction?: string; context?: string }) =>
+    api.post<ApiResponse<{ text: string }>>("/api/v1/admin/ai-catalog/write", data, { timeout: 120000 }),
   /** Steps, benefits, requirements, documents, FAQ and/or packages for a service (nothing saved). */
   serviceDetails: (data: { name: string; notes?: string; parts: string[] }) =>
     api.post<ApiResponse<ServiceDetailsDraft>>("/api/v1/admin/ai-catalog/service-details", data, { timeout: 150000 }),
@@ -1492,6 +1499,7 @@ export const aiCatalogApi = {
   bookingFields: (data: { name: string; notes?: string }) =>
     api.post<ApiResponse<{ fields: AiBookingField[] }>>("/api/v1/admin/ai-catalog/booking-fields", data, { timeout: 120000 }),
 };
+export type AiWriteTask = "improve" | "shorten" | "expand" | "fix" | "to_en" | "to_bn" | "bullets" | "seo" | "write";
 export interface ServiceDetailsDraft {
   process_steps?: { step: number; title: string; title_bn: string; description: string; description_bn: string }[];
   benefits?: { en: string; bn: string }[];
