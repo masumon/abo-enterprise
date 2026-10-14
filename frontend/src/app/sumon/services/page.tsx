@@ -5,8 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import {
   Loader2, Briefcase, Plus, Pencil, Trash2, X,
-  ToggleLeft, ToggleRight, Star, StarOff, Check, Ban, ChevronDown, ChevronUp, Languages,
-} from "lucide-react";
+  ToggleLeft, ToggleRight, Star, StarOff, Check, Ban, ChevronDown, ChevronUp, } from "lucide-react";
 import { servicesAdminApi, categoriesApi, adminBlogApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -133,14 +132,6 @@ function slugify(t: string) {
   return t.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
 }
 
-// ── Bilingual content helpers ────────────────────────────────────────────────
-// The extended list blocks (benefits/requirements/documents/process/faq) are
-// stored as arrays of objects on the service. They're edited with the friendly
-// row-based JsonListEditor, so these just wrap/unwrap the JSON string it uses —
-// no raw text/pipe encoding for the admin, and the stored shape is unchanged.
-const arrToJson = (items: unknown[] | undefined): string => JSON.stringify(items ?? []);
-function jsonToArr<T = Record<string, unknown>>(json: string): T[] {
-  try { const v = JSON.parse(json); return Array.isArray(v) ? (v as T[]) : []; } catch { return []; }
 }
 
 export default function AdminServicesPage() {
@@ -157,7 +148,6 @@ export default function AdminServicesPage() {
   const [editing, setEditing] = useState<Partial<Service> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [translating, setTranslating] = useState<null | "basic" | "extended">(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [extOpen, setExtOpen] = useState(false);
@@ -311,67 +301,7 @@ export default function AdminServicesPage() {
     }
   };
 
-  const autoTranslateBasic = async () => {
-    if (!editing || translating) return;
-    setTranslating("basic");
-    try {
-      const e = editing;
-      const [name, shortD, desc, longD] = await Promise.all([
-        !e.name_bn?.trim() && e.name_en?.trim() ? translateOne(e.name_en) : Promise.resolve(""),
-        !e.short_description_bn?.trim() && e.short_description_en?.trim() ? translateOne(e.short_description_en) : Promise.resolve(""),
-        !e.description_bn?.trim() && e.description_en?.trim() ? translateOne(e.description_en) : Promise.resolve(""),
-        !e.long_description_bn?.trim() && e.long_description_en?.trim() ? translateOne(e.long_description_en) : Promise.resolve(""),
-      ]);
-      setEditing((prev) => prev ? {
-        ...prev,
-        name_bn: name || prev.name_bn,
-        short_description_bn: shortD || prev.short_description_bn,
-        description_bn: desc || prev.description_bn,
-        long_description_bn: longD || prev.long_description_bn,
-      } : prev);
-      toast("success", "বাংলা অনুবাদ পূরণ হয়েছে — সেভ করার আগে দেখে নিন");
-    } catch {
-      toast("error", "অনুবাদ ব্যর্থ — আবার চেষ্টা করুন");
-    } finally {
-      setTranslating(null);
-    }
-  };
 
-  const autoTranslateExtended = async () => {
-    if (!editing || translating) return;
-    setTranslating("extended");
-    try {
-      const e = editing;
-      // Process steps — fill title_bn/description_bn where empty.
-      const steps = await Promise.all((e.process_steps ?? []).map(async (s) => ({
-        ...s,
-        title_bn: s.title_bn?.trim() ? s.title_bn : await translateOne(s.title ?? ""),
-        description_bn: s.description_bn?.trim() ? s.description_bn : await translateOne(s.description ?? ""),
-      })));
-      // Benefits/requirements/documents — items {en,bn} (or legacy strings).
-      const fillList = (items: (string | { en?: string; bn?: string })[] | undefined) =>
-        Promise.all((items ?? []).map(async (it) => {
-          const en = typeof it === "string" ? it : (it.en ?? "");
-          const bn = typeof it === "string" ? "" : (it.bn ?? "");
-          return { en, bn: bn.trim() ? bn : await translateOne(en) };
-        }));
-      const [benefits, requirements, documents] = await Promise.all([
-        fillList(e.benefits), fillList(e.requirements), fillList(e.required_documents),
-      ]);
-      // FAQ — fill question_bn/answer_bn where empty.
-      const faq = await Promise.all((e.faq ?? []).map(async (f) => ({
-        ...f,
-        question_bn: f.question_bn?.trim() ? f.question_bn : await translateOne(f.question ?? ""),
-        answer_bn: f.answer_bn?.trim() ? f.answer_bn : await translateOne(f.answer ?? ""),
-      })));
-      setEditing((prev) => prev ? { ...prev, process_steps: steps, benefits, requirements, required_documents: documents, faq } : prev);
-      toast("success", "কন্টেন্ট বাংলায় অনুবাদ হয়েছে — সেভ করার আগে দেখে নিন");
-    } catch {
-      toast("error", "অনুবাদ ব্যর্থ — আবার চেষ্টা করুন");
-    } finally {
-      setTranslating(null);
-    }
-  };
 
   const closeEditor = () => { setEditing(null); setIsNew(false); };
 
@@ -1275,11 +1205,6 @@ export default function AdminServicesPage() {
                     onResult={applyAiDescription}
                     className="btn btn-outline btn-sm gap-1.5"
                   />
-                  <button type="button" onClick={autoTranslateBasic} disabled={translating !== null} className="btn btn-outline btn-sm gap-1.5"
-                    title={t("নাম ও বিবরণের খালি বাংলা ঘরগুলো English থেকে পূরণ করবে", "Fill empty Bangla boxes from English")}>
-                    {translating === "basic" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
-                    {t("বাংলা অনুবাদ", "Translate to Bangla")}
-                  </button>
                 </div>
                 <BnEnText label={t("ছোট বিবরণ — কার্ডে দেখাবে", "Short description — shown on cards")} rows={2}
                   bn={editing.short_description_bn} en={editing.short_description_en}
