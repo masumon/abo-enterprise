@@ -50,7 +50,7 @@ export default function ImageSearchButton({ lang, onResult, className }: Props) 
         disabled={busy}
         aria-label={bn ? "ছবি দিয়ে সার্চ" : "Search by image"}
         title={bn ? "ছবি দিয়ে খুঁজুন" : "Search by photo"}
-        className={className ?? "text-[var(--ink-muted)] hover:text-brand-600 disabled:opacity-50"}
+        className={className ?? "relative after:absolute after:-inset-2.5 after:content-[''] text-[var(--ink-muted)] hover:text-brand-600 disabled:opacity-50"}
       >
         {busy ? <Loader2 className="w-4 h-4 animate-spin text-brand-500" /> : <Camera className="w-4 h-4" />}
       </button>

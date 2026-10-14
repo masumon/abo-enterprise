@@ -515,6 +515,9 @@
   .promo-swiper .swiper-slide { width: 100% !important; flex-shrink: 0; height: auto; }
   .promo-swiper .swiper-pagination-bullet { @apply bg-white/60; }
   .promo-swiper .swiper-pagination-bullet-active { @apply bg-white; }
+  /* Bigger invisible tap area for the 8px dots (looks the same). */
+  .swiper-pagination-bullet { position: relative; }
+  .swiper-pagination-bullet::after { content: ""; position: absolute; inset: -8px; }
   .footer-pay-card {
     @apply h-10 min-w-[62px] px-2.5 grid place-items-center flex-shrink-0
            rounded-xl bg-white shadow-md shadow-black/25 ring-1 ring-black/10

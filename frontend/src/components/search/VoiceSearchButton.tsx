@@ -67,7 +67,7 @@ export default function VoiceSearchButton({ lang, onResult, className }: Props) 
       onClick={listening ? stop : start}
       aria-label={lang === "bn" ? "ভয়েস সার্চ" : "Voice search"}
       title={lang === "bn" ? "কথা বলে খুঁজুন" : "Search by voice"}
-      className={className ?? "text-[var(--ink-muted)] hover:text-brand-600"}
+      className={className ?? "relative after:absolute after:-inset-2.5 after:content-[''] text-[var(--ink-muted)] hover:text-brand-600"}
     >
       <Mic className={`w-4 h-4 ${listening ? "text-red-500 animate-pulse" : ""}`} />
     </button>

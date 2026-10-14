@@ -112,7 +112,7 @@ export default function CookieConsent() {
         <button
           type="button"
           onClick={dismiss}
-          className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex-shrink-0"
+          className="relative after:absolute after:-inset-2.5 after:content-[''] text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex-shrink-0"
           aria-label={lang === "bn" ? "পরবর্তীতে" : "Dismiss for now"}
         >
           <X className="w-4 h-4" />
