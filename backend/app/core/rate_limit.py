@@ -38,11 +38,27 @@ class RateLimiter:
         return False
 
 
+def _valid_ip(value: str | None) -> str | None:
+    import ipaddress
+
+    try:
+        return str(ipaddress.ip_address((value or "").strip()))
+    except ValueError:
+        return None
+
+
 def client_ip(request: Request) -> str:
-    """Real client IP behind Render's proxy (first X-Forwarded-For hop)."""
+    """Real client IP. All public traffic arrives through Cloudflare, which sets
+    CF-Connecting-IP itself (a visitor cannot forge it), so it wins; then the
+    first X-Forwarded-For hop (Render's proxy), then the socket address."""
+    cf = _valid_ip(request.headers.get("cf-connecting-ip"))
+    if cf:
+        return cf
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        first = _valid_ip(forwarded.split(",")[0])
+        if first:
+            return first
     return request.client.host if request.client else "unknown"
 
 

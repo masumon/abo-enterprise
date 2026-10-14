@@ -90,6 +90,18 @@ async def _mark_booking_paid(db: AsyncSession, booking_id) -> BookingV2 | None:
     return booking
 
 
+def ipn_amount_ok(post_data: dict, expected_amount, expected_currency: str = "BDT") -> bool:
+    """A signed IPN must also carry exactly the amount/currency we initiated —
+    otherwise a valid-but-different payment could mark an order paid."""
+    try:
+        paid = float(post_data.get("amount") or post_data.get("currency_amount") or "nan")
+        want = float(expected_amount)
+    except (TypeError, ValueError):
+        return False
+    currency = (post_data.get("currency") or post_data.get("currency_type") or expected_currency).upper()
+    return currency == expected_currency.upper() and abs(paid - want) < 0.01
+
+
 def _verify_bkash_webhook(body: bytes, signature: str) -> bool:
     """HMAC-SHA256 verification using BKASH_APP_SECRET as key."""
     if not settings.BKASH_APP_SECRET:
@@ -657,6 +669,11 @@ async def sslcommerz_webhook(
             logger.warning("sslcommerz webhook: unknown tran_id %s", tran_id)
             return {"success": False, "error": "transaction not found"}
 
+        if is_valid and not ipn_amount_ok(post_data, transaction.amount):
+            logger.error("sslcommerz IPN amount/currency mismatch for %s: got %s %s, expected %s BDT",
+                         tran_id, post_data.get("amount"), post_data.get("currency"), transaction.amount)
+            is_valid = False
+            gateway_status = "AMOUNT_MISMATCH"
         transaction.status = "Completed" if is_valid else "Failed"
         transaction.val_id = post_data.get("val_id") or transaction.val_id
         transaction.bank_tran_id = post_data.get("bank_tran_id") or transaction.bank_tran_id

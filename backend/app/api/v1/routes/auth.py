@@ -41,10 +41,10 @@ _login_failures: dict[str, deque] = defaultdict(lambda: deque(maxlen=_MAX_FAILUR
 
 
 def _client_ip(request: Request) -> str:
-    forwarded = request.headers.get("X-Forwarded-For")
-    if forwarded:
-        return forwarded.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
+    # One source of truth (Cloudflare-aware) for login lockouts and rate limits.
+    from app.core.rate_limit import client_ip
+
+    return client_ip(request)
 
 
 def _is_locked(ip: str) -> bool:

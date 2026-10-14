@@ -335,7 +335,17 @@ async def answer(db: AsyncSession, question: str, lang: str, facts_text: str, fa
                                      base_url=cfg.get("base_url", ""), timeout=30.0)
         else:
             async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=10.0)) as client:
-                text = await _generate(client, cfg["key"], cfg["model"], system, user, auth=cfg["auth"])
+                text = ""
+                for i, cand in enumerate([cfg["model"], cfg["model"], *[m for m in PREFERRED_MODELS if m != cfg["model"]][:2]]):
+                    try:
+                        text = await _generate(client, cfg["key"], cand, system, user, auth=cfg["auth"])
+                        break
+                    except httpx.HTTPStatusError as busy:  # 503 "overloaded" etc.: retry, then another model
+                        if busy.response.status_code not in _BUSY and busy.response.status_code != 404 or i == 3:
+                            raise
+                        if i == 0:
+                            import asyncio
+                            await asyncio.sleep(1.5)
     except httpx.HTTPStatusError as exc:  # quota, model gone, auth: fall back quietly, remember why
         _note_error(f"Google {exc.response.status_code}: {_reason(exc) or 'error'}")
         logger.warning("Gemini answer failed: %s", exc)
@@ -433,7 +443,7 @@ async def generate_json(db: AsyncSession, system: str, user: str,
     _usage["count"] = usage_today() + 1
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(90.0, connect=10.0)) as client:
-            r = await client.post(f"{API_BASE}/models/{cfg['model']}:generateContent", params=params, headers=headers, json=body)
+            r = await _post_with_fallback(client, cfg["model"], params, headers, body)
     except Exception as exc:  # noqa: BLE001 — network problems, timeouts
         _note_error(f"{type(exc).__name__}: সময়মতো উত্তর আসেনি / connection problem")
         raise AiUnavailable("Google AI সময়মতো উত্তর দেয়নি — একটু পরে আবার চেষ্টা করুন।",
@@ -482,3 +492,24 @@ async def generate_text(db: AsyncSession, system: str, user: str, max_tokens: in
     if isinstance(raw, dict) and isinstance(raw.get("text"), str):
         return raw["text"].strip()
     raise AiUnavailable("AI-এর উত্তর বোঝা যায়নি — আবার চেষ্টা করুন।", "The AI reply could not be read — try again.", 502)
+
+
+
+_BUSY = (429, 500, 502, 503, 504)
+
+
+async def _post_with_fallback(client: httpx.AsyncClient, model: str, params, headers, body) -> httpx.Response:
+    """Google often answers 503 "model overloaded" for a few seconds. Retry the
+    same model once, then try other fast models before giving up."""
+    import asyncio
+
+    tried: list[str] = []
+    r = None
+    for cand in [model, model, *[m for m in PREFERRED_MODELS if m != model][:3]]:
+        if tried and tried[-1] == cand:
+            await asyncio.sleep(2.0)
+        tried.append(cand)
+        r = await client.post(f"{API_BASE}/models/{cand}:generateContent", params=params, headers=headers, json=body)
+        if r.status_code not in _BUSY and r.status_code != 404:
+            return r
+    return r  # last response (still an error) — caller reports it
