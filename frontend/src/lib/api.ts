@@ -977,6 +977,7 @@ export interface NewsletterSubscriberRecord {
   email: string;
   subscribed_at: string;
   source: string | null;
+  unsubscribed_at?: string | null;
 }
 
 export const newsletterAdminApi = {
@@ -985,6 +986,14 @@ export const newsletterAdminApi = {
 
   remove: (id: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/admin/newsletter/subscribers/${id}`),
+  listByStatus: (params: { page?: number; per_page?: number; search?: string; status: "active" | "unsubscribed" }) =>
+    api.get<PaginatedResponse<NewsletterSubscriberRecord>>("/api/v1/admin/newsletter/subscribers", { params }),
+  stats: () => api.get<ApiResponse<{ active: number; unsubscribed: number; new_30_days: number }>>("/api/v1/admin/newsletter/stats"),
+  add: (emails: string) =>
+    api.post<ApiResponse<{ added: number; restored: number; already: number; invalid: number }>>("/api/v1/admin/newsletter/subscribers", { emails }),
+  restore: (id: string) => api.post<ApiResponse<null>>(`/api/v1/admin/newsletter/subscribers/${id}/restore`, {}),
+  send: (data: { subject: string; body: string; test_email?: string }) =>
+    api.post<ApiResponse<{ queued: number; test: boolean }>>("/api/v1/admin/newsletter/send", data, { timeout: 60000 }),
 };
 
 export const emailTemplatesAdminApi = {
