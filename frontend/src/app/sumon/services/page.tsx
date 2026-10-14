@@ -132,8 +132,6 @@ function slugify(t: string) {
   return t.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
 }
 
-}
-
 export default function AdminServicesPage() {
   const tx = useAdminT();
   const t = useBnEn();
