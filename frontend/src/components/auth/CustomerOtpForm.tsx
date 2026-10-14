@@ -1,8 +1,9 @@
 "use client";
 
+import { deviceName, passkeyError, passkeySupported, registerPasskey, signInWithPasskey } from "@/lib/passkey";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { User, KeyRound, Loader2, ArrowLeft, Mail } from "lucide-react";
+import { User, KeyRound, Loader2, ArrowLeft, Mail, Fingerprint } from "lucide-react";
 import { BD_PHONE_REGEX } from "@/lib/phone";
 import PhoneField, { PHONE_COUNTRIES, composePhone, type PhoneCountry } from "@/components/ui/PhoneField";
 import { customerOtpApi } from "@/lib/api";
@@ -89,6 +90,24 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
     }
   };
 
+  const [canPasskey, setCanPasskey] = useState(false);
+  useEffect(() => { setCanPasskey(passkeySupported()); }, []);
+  const passkeyLogin = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const r = await signInWithPasskey("customer");
+      const d = r.data.data as { access_token?: string; phone?: string } | undefined;
+      if (!d?.access_token || !d.phone) throw new Error("no token");
+      login(d.phone, "", d.access_token);
+      router.push(redirectTo);
+    } catch (err) {
+      setError(passkeyError(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const verifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -102,6 +121,10 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
       const token = r.data.data?.access_token;
       if (!token) throw new Error("no token");
       login(fullPhone, name.trim(), token);
+      // Offer one-touch sign-in next time (fingerprint / face / screen lock).
+      if (passkeySupported() && window.confirm(bn ? "পরের বার এই ফোনে কোড ছাড়াই আঙুলের ছাপ/মুখ দিয়ে ঢুকতে চান?" : "Sign in with fingerprint / face on this device next time?")) {
+        try { await registerPasskey("customer", deviceName(), token); } catch { /* optional — code sign-in still works */ }
+      }
       router.push(redirectTo);
     } catch (err) {
       setError(apiErrorMessage(err, bn ? "কোডটি সঠিক নয় বা মেয়াদ শেষ" : "Invalid or expired code"));
@@ -216,6 +239,11 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
         {bn ? "OTP পাঠান" : "Send OTP"}
       </button>
+      {canPasskey && (
+        <button type="button" onClick={passkeyLogin} disabled={loading} className="btn btn-outline btn-lg w-full flex items-center justify-center gap-2">
+          <Fingerprint className="w-5 h-5" /> {bn ? "আঙুলের ছাপ / মুখ দিয়ে ঢুকুন" : "Sign in with fingerprint / face"}
+        </button>
+      )}
       <p className="text-xs text-muted text-center">
         {bn
           ? "OTP আপনার ইমেইলে যাবে; যাচাইয়ের পরই অর্ডার হিস্ট্রি দেখা যাবে"
