@@ -29,17 +29,21 @@ const MAX_TIMEOUT = 2_147_000_000;
  * itself when a scheduled start arrives, and re-reads the admin settings every
  * 60 s (and when the tab regains focus).
  */
-export default function FlashSaleSection() {
+export default function FlashSaleSection({ initialSettings = null, initialProducts = null }: {
+  /** Server-fetched settings/products so the band appears right after mount, not after two API round-trips. */
+  initialSettings?: Record<string, string> | null;
+  initialProducts?: Product[] | null;
+} = {}) {
   const { lang } = useLanguageStore();
   const { settings: hookSettings, loading: settingsLoading } = usePublicSettings();
-  const [polled, setPolled] = useState<Record<string, string> | null>(null);
+  const [polled, setPolled] = useState<Record<string, string> | null>(initialSettings);
   const settings = polled ?? hookSettings;
   // null until mounted → identical (empty) output on server and first paint.
   const [now, setNow] = useState<number | null>(null);
   // null = not loaded yet; [] = loaded, nothing on sale.
-  const [products, setProducts] = useState<Product[] | null>(null);
+  const [products, setProducts] = useState<Product[] | null>(initialProducts ? initialProducts.slice(0, 8) : null);
 
-  const settingsReady = !settingsLoading && Object.keys(settings).length > 0;
+  const settingsReady = (!settingsLoading || !!polled) && Object.keys(settings).length > 0;
   const status = now !== null && settingsReady ? getFlashSaleStatus(settings, now) : null;
   const state = status?.state;
   const live = state === "live";

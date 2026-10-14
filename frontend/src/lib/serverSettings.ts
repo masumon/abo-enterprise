@@ -53,3 +53,23 @@ export async function fetchPromoSlides(placement: "hero" | "flash_sale"): Promis
     return null;
   }
 }
+
+
+/** Generic cached server GET returning `data` as an array, or null when the
+ * API is slow/down (the client component then fetches on its own). */
+async function fetchList<T>(path: string): Promise<T[] | null> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}${path}`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(3000) });
+    if (!res.ok) return null;
+    const json = await res.json();
+    return Array.isArray(json.data) ? (json.data as T[]) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Homepage combo packs, rendered with the HTML (no 3-5 s pop-in). */
+export const fetchCombos = <T>() => fetchList<T>("/api/v1/combos");
+
+/** Homepage flash-sale products, rendered with the HTML. */
+export const fetchFlashProducts = <T>() => fetchList<T>("/api/v1/products?flash_sale=true&per_page=8&page=1");

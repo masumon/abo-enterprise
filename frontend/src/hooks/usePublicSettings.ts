@@ -32,9 +32,25 @@ async function loadCachedSettings(): Promise<Record<string, string> | null> {
  * request. Because the cache can live for 7 days, an admin image change could
  * remain invisible on the public site until the cache expired.
  */
-async function fetchSettings(): Promise<Record<string, string>> {
-  if (pending) return pending;
+/** When the in-memory copy was last fetched; reused for FRESH_MS so a page
+ * with 20+ components using settings makes ONE request, not one per component. */
+let fetchedAt = 0;
+const FRESH_MS = 30_000;
 
+function fetchSettings(force = false): Promise<Record<string, string>> {
+  if (pending) return pending;
+  if (!force && memoryCache && Object.keys(memoryCache).length > 0 && Date.now() - fetchedAt < FRESH_MS) {
+    return Promise.resolve(memoryCache);
+  }
+  // `pending` is set synchronously (before any await) so callers that arrive
+  // in the same tick share this one request instead of starting their own.
+  pending = doFetchSettings().finally(() => {
+    pending = null;
+  });
+  return pending;
+}
+
+async function doFetchSettings(): Promise<Record<string, string>> {
   const cached = await loadCachedSettings();
 
   if (isOffline()) {
@@ -42,12 +58,13 @@ async function fetchSettings(): Promise<Record<string, string>> {
     return cached ?? {};
   }
 
-  pending = axios
+  return axios
     .get<{ data: Record<string, string> }>(`${getApiBaseUrl()}/api/v1/settings`, {
       timeout: 60000,
     })
     .then(async (r) => {
       memoryCache = r.data.data ?? {};
+      fetchedAt = Date.now();
       await cacheApiResponse(SETTINGS_CACHE_KEY, memoryCache, 7 * 24 * 60);
       return memoryCache;
     })
@@ -63,19 +80,14 @@ async function fetchSettings(): Promise<Record<string, string>> {
       if (seeded) return seeded;
       memoryCache = {};
       return memoryCache;
-    })
-    .finally(() => {
-      pending = null;
     });
-
-  return pending;
 }
 
 /** Re-fetch the public settings from the API right now (shared with every
  * usePublicSettings caller). Used by sections that must react to admin
  * changes without a reload, e.g. the flash sale. Offline → cached values. */
 export function refreshPublicSettings(): Promise<Record<string, string>> {
-  return fetchSettings();
+  return fetchSettings(true);
 }
 
 /** Fetch public CMS settings (stale cache + background revalidation). Safe for client components. */

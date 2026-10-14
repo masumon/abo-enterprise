@@ -19,7 +19,7 @@ interface ComboItem {
   image_url?: string | null;
   price: number;
 }
-interface Combo {
+export interface Combo {
   id: string;
   slug: string;
   title_en: string;
@@ -41,12 +41,13 @@ interface Combo {
  * no space until an admin creates one. Ordering is taken over WhatsApp for now
  * (zero money-path risk); a cart/checkout combo flow can follow.
  */
-export default function ComboSection() {
+export default function ComboSection({ initialCombos = null }: { initialCombos?: Combo[] | null } = {}) {
   const { lang } = useLanguageStore();
   const bn = lang === "bn";
   const addCombo = useCartStore((s) => s.addCombo);
   const openCart = useCartStore((s) => s.openCart);
-  const [combos, setCombos] = useState<Combo[]>([]);
+  // Server-rendered list shows instantly; the effect below still refreshes it.
+  const [combos, setCombos] = useState<Combo[]>(initialCombos ?? []);
   const [detail, setDetail] = useState<Combo | null>(null);
 
   useEffect(() => {

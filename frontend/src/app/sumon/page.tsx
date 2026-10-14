@@ -62,7 +62,7 @@ export default function AdminDashboard() {
   const [error, setError] = useState(false);
   // "Website" shortcuts: folded on phones, open on desktop.
   const [webOpen, setWebOpen] = useState(false);
-  useEffect(() => { if (window.matchMedia("(min-width: 1024px)").matches) setWebOpen(true); }, []);
+  useEffect(() => { if (typeof window.matchMedia === "function" && window.matchMedia("(min-width: 1024px)").matches) setWebOpen(true); }, []);
   const { lastUpdated, pendingOrders, pendingBookings, newLeads } = useAlertStore();
   const { lang } = useLanguageStore();
   const bn = lang === "bn";
