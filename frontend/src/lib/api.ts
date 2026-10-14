@@ -1483,12 +1483,23 @@ export const aiCatalogApi = {
   describe: (data: { kind: "product" | "service" | "software" | "showcase"; name: string; notes?: string }) =>
     api.post<ApiResponse<AiDescription>>("/api/v1/admin/ai-catalog/describe", data, { timeout: 120000 }),
   /** Suggested booking-form questions for a service (nothing is saved). */
+  /** Steps, benefits, requirements, documents, FAQ and/or packages for a service (nothing saved). */
+  serviceDetails: (data: { name: string; notes?: string; parts: string[] }) =>
+    api.post<ApiResponse<ServiceDetailsDraft>>("/api/v1/admin/ai-catalog/service-details", data, { timeout: 150000 }),
   /** Product/service draft from a supplier or maker web page (nothing saved). */
   fromLink: (data: { url: string; kind: "product" | "service" }) =>
     api.post<ApiResponse<LinkDraft>>("/api/v1/admin/ai-catalog/from-link", data, { timeout: 120000 }),
   bookingFields: (data: { name: string; notes?: string }) =>
     api.post<ApiResponse<{ fields: AiBookingField[] }>>("/api/v1/admin/ai-catalog/booking-fields", data, { timeout: 120000 }),
 };
+export interface ServiceDetailsDraft {
+  process_steps?: { step: number; title: string; title_bn: string; description: string; description_bn: string }[];
+  benefits?: { en: string; bn: string }[];
+  requirements?: { en: string; bn: string }[];
+  required_documents?: { en: string; bn: string }[];
+  faq?: { question: string; question_bn: string; answer: string; answer_bn: string }[];
+  packages?: { tier_name: string; description_bn: string; description_en: string; duration_days: number | null; features: string[] }[];
+}
 export interface LinkDraft {
   name_bn: string; name_en: string; short_bn: string; short_en: string;
   description_bn: string; description_en: string; brand: string;

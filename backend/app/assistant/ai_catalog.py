@@ -206,3 +206,69 @@ def normalize_booking_fields(raw: Any) -> list[dict]:
         if len(out) >= 10:
             break
     return out
+
+
+# ── Service details: steps, benefits, requirements, documents, FAQ, packages ──
+SERVICE_DETAILS_SYSTEM = (
+    "You write service-page content for ABO Enterprise, a shop in Beanibazar, Sylhet, Bangladesh. "
+    "Given a service name and notes, write ONLY the requested parts, each in natural Bangla (polite আপনি, "
+    "standard spelling) and clear English. Be practical and honest: never invent prices, guarantees, legal "
+    "promises or times that the notes do not support. Keep items short (one line; FAQ answers 1-3 sentences). "
+    "Counts: steps 4-6, benefits 4-6, requirements 3-6, documents 2-6, faq 4-8, packages exactly 3 "
+    "(Basic/Standard/Premium style, features 3-6 each, no price). "
+    'Reply as JSON with any of these keys: {"steps": [{"title_bn":"","title_en":"","desc_bn":"","desc_en":""}], '
+    '"benefits": [{"bn":"","en":""}], "requirements": [{"bn":"","en":""}], "documents": [{"bn":"","en":""}], '
+    '"faq": [{"q_bn":"","q_en":"","a_bn":"","a_en":""}], '
+    '"packages": [{"name":"","desc_bn":"","desc_en":"","days": null, "features": [""]}]}'
+)
+
+SERVICE_DETAILS_PARTS = ("steps", "benefits", "requirements", "documents", "faq", "packages")
+
+
+def normalize_service_details(raw: Any, parts: list[str]) -> dict[str, list]:
+    """Model reply → the exact shapes the service record stores."""
+    d = raw if isinstance(raw, dict) else {}
+
+    def s(v: Any, n: int = 600) -> str:
+        return str(v or "").strip()[:n]
+
+    def pairs(key: str) -> list[dict]:
+        out = []
+        for it in d.get(key) or []:
+            if isinstance(it, dict) and (it.get("bn") or it.get("en")):
+                out.append({"en": s(it.get("en") or it.get("bn"), 200), "bn": s(it.get("bn") or it.get("en"), 200)})
+            elif isinstance(it, str) and it.strip():
+                out.append({"en": s(it, 200), "bn": s(it, 200)})
+        return out[:10]
+
+    out: dict[str, list] = {}
+    if "steps" in parts:
+        steps = [x for x in d.get("steps") or [] if isinstance(x, dict) and (x.get("title_bn") or x.get("title_en"))][:8]
+        out["process_steps"] = [{
+            "step": i + 1, "title": s(x.get("title_en") or x.get("title_bn"), 150), "title_bn": s(x.get("title_bn"), 150),
+            "description": s(x.get("desc_en")), "description_bn": s(x.get("desc_bn")),
+        } for i, x in enumerate(steps)]
+    if "benefits" in parts:
+        out["benefits"] = pairs("benefits")
+    if "requirements" in parts:
+        out["requirements"] = pairs("requirements")
+    if "documents" in parts:
+        out["required_documents"] = pairs("documents")
+    if "faq" in parts:
+        out["faq"] = [{
+            "question": s(x.get("q_en") or x.get("q_bn"), 250), "question_bn": s(x.get("q_bn"), 250),
+            "answer": s(x.get("a_en") or x.get("a_bn"), 1000), "answer_bn": s(x.get("a_bn"), 1000),
+        } for x in d.get("faq") or [] if isinstance(x, dict) and (x.get("q_bn") or x.get("q_en"))][:10]
+    if "packages" in parts:
+        pk = []
+        for x in (d.get("packages") or [])[:4]:
+            if not isinstance(x, dict) or not s(x.get("name")):
+                continue
+            days = x.get("days")
+            pk.append({
+                "tier_name": s(x.get("name"), 80), "description_bn": s(x.get("desc_bn")), "description_en": s(x.get("desc_en")),
+                "duration_days": int(days) if isinstance(days, (int, float)) and 0 < days < 366 else None,
+                "features": [s(f, 120) for f in x.get("features") or [] if s(f)][:8],
+            })
+        out["packages"] = pk
+    return out

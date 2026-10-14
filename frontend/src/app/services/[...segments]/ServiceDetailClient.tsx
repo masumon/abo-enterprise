@@ -117,11 +117,11 @@ export default function ServiceDetailClient({ service }: Props) {
 
   // Structured content the admin already maintains. Defensive filters keep a
   // half-filled row (e.g. a step with no title) from rendering an empty block.
-  const process = (service.process_steps ?? []).filter((s) => s?.title);
+  const process = (service.process_steps ?? []).filter((s) => s?.title || s?.title_bn);
   const benefits = (service.benefits ?? []).filter(Boolean);
   const requirements = (service.requirements ?? []).filter(Boolean);
   const documents = (service.required_documents ?? []).filter(Boolean);
-  const faq = (service.faq ?? []).filter((f) => f?.question && f?.answer);
+  const faq = (service.faq ?? []).filter((f) => (f?.question || f?.question_bn) && (f?.answer || f?.answer_bn));
 
   // Bilingual content pickers with an English fallback, tolerant of legacy
   // shapes (plain strings; steps/faq without _bn). So nothing breaks: an item
@@ -131,7 +131,7 @@ export default function ServiceDetailClient({ service }: Props) {
       ? item
       : (lang === "bn" ? item.bn || item.en || "" : item.en || item.bn || "");
   const pick = (en?: string, bn?: string): string =>
-    (lang === "bn" ? bn || en : en) ?? "";
+    (lang === "bn" ? bn || en : en || bn) ?? "";
 
   const hasTiers =
     service.pricing_tiers && service.pricing_tiers.length > 0;
@@ -283,14 +283,14 @@ export default function ServiceDetailClient({ service }: Props) {
                       </p>
                     )}
                     {tierDesc && (
-                      <p className="text-sm text-muted mb-3">{tierDesc}</p>
+                      <div className="mb-3"><RichText text={tierDesc} className="space-y-1.5 text-sm leading-6 text-gray-600 dark:text-gray-300" /></div>
                     )}
                     {tier.features && tier.features.length > 0 && (
                       <ul className="space-y-1">
                         {tier.features.map((f, i) => (
                           <li key={i} className="flex items-start gap-2 text-[15px] leading-7 text-gray-700 dark:text-gray-200">
                             <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
-                            {f}
+                            <span><InlineText text={f} /></span>
                           </li>
                         ))}
                       </ul>
