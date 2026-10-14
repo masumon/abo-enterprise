@@ -6,6 +6,7 @@ import { aiCatalogApi, type AiWriteTask } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { AI_TASKS } from "@/components/admin/catalog/AiTextMenu";
 import { useToastStore } from "@/store/toast";
+import AiBlogWriter from "@/components/admin/AiBlogWriter";
 
 const IDEAS = [
   "নতুন অফারের জন্য Facebook পোস্ট লেখো",
@@ -22,7 +23,7 @@ const IDEAS = [
 export default function AdminAiAssistant() {
   const toast = useToastStore((s) => s.push);
   const [open, setOpen] = useState(false);
-  const [task, setTask] = useState<AiWriteTask>("write");
+  const [task, setTask] = useState<AiWriteTask | "blog">("write");
   const [instruction, setInstruction] = useState("");
   const [text, setText] = useState("");
   const [result, setResult] = useState("");
@@ -32,6 +33,7 @@ export default function AdminAiAssistant() {
     setBusy(true);
     setResult("");
     try {
+      if (task === "blog") return;
       const r = await aiCatalogApi.write({ task, text, instruction: task === "write" ? instruction : "", context: "admin assistant" });
       setResult(r.data.data?.text ?? "");
     } catch (e) {
@@ -58,12 +60,13 @@ export default function AdminAiAssistant() {
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
               <label className="block text-xs font-medium text-gray-600 dark:text-gray-300">
                 কী করবেন?
-                <select value={task} onChange={(e) => setTask(e.target.value as AiWriteTask)} className="input w-full text-sm mt-1">
+                <select value={task} onChange={(e) => setTask(e.target.value as AiWriteTask | "blog")} className="input w-full text-sm mt-1">
                   {AI_TASKS.map((t) => <option key={t.id} value={t.id}>{t.bn}</option>)}
                   <option value="seo">🔎 Google-এর জন্য ছোট বিবরণ (SEO)</option>
+                  <option value="blog">📰 ব্লগ লিখুন (পণ্য/সেবাসহ)</option>
                 </select>
               </label>
-              {task === "write" ? (
+              {task === "blog" ? <AiBlogWriter /> : task === "write" ? (
                 <>
                   <textarea value={instruction} onChange={(e) => setInstruction(e.target.value)} rows={4} className="input w-full text-sm" dir="auto"
                     placeholder="AI-কে কী লিখতে বলবেন — বাংলা বা ইংরেজিতে" aria-label="নির্দেশ" />
@@ -75,9 +78,9 @@ export default function AdminAiAssistant() {
                 <textarea value={text} onChange={(e) => setText(e.target.value)} rows={6} className="input w-full text-sm" dir="auto"
                   placeholder="যে লেখা বদলাতে/অনুবাদ করতে চান, এখানে পেস্ট করুন" aria-label="লেখা" />
               )}
-              <button type="button" onClick={run} disabled={busy || (task === "write" ? !instruction.trim() : !text.trim())} className="btn btn-brand w-full min-h-11 gap-2">
+              {task !== "blog" && <button type="button" onClick={run} disabled={busy || (task === "write" ? !instruction.trim() : !text.trim())} className="btn btn-brand w-full min-h-11 gap-2">
                 {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />} {busy ? "AI লিখছে…" : "চালান"}
-              </button>
+              </button>}
               {result && (
                 <div className="space-y-2">
                   <div className="rounded-xl bg-gray-50 dark:bg-white/5 p-3 text-sm whitespace-pre-wrap" dir="auto">{result}</div>

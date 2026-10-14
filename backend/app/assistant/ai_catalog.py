@@ -298,3 +298,38 @@ def normalize_category_ideas(raw: Any, existing: list[str]) -> list[dict]:
         have.update({bn.lower(), en.lower()})
         out.append({"name_bn": bn or en, "name_en": en or bn, "icon": str(it.get("icon") or "").strip()[:4]})
     return out[:12]
+
+
+
+# ── Blog draft from a short idea / photo, plus catalogue items to feature ────
+BLOG_SYSTEM = (
+    "You are the content writer of ABO Enterprise (mobile accessories, electronics, printing and digital "
+    "services; Beanibazar, Sylhet, Bangladesh). From the admin's idea (and photo, if any) write a professional, "
+    "helpful blog post for Bangladeshi customers, in natural Bangla (polite আপনি) and clear English. Honest: never "
+    "invent prices, guarantees or facts. Structure the content with these plain marks: '## ' section headings, "
+    "short paragraphs, '• ' bullet lines, '1. ' steps, **bold** for key words, and end with a friendly call to "
+    "action (visit the shop / WhatsApp). 500-900 words per language. Then pick, ONLY from the CATALOGUE list given, "
+    "up to 4 products and up to 3 services that genuinely fit the post (use their exact ids). "
+    'Reply as JSON: {"title_bn": "", "title_en": "", "excerpt_bn": "", "excerpt_en": "", "content_bn": "", '
+    '"content_en": "", "category": "", "tags": [""], "seo_title": "", "seo_description": "", '
+    '"product_ids": [""], "service_ids": [""], "why_bn": ""}'
+)
+
+
+def normalize_blog(raw: Any, allowed_products: set[str], allowed_services: set[str]) -> dict:
+    d = raw if isinstance(raw, dict) else {}
+
+    def s(k: str, n: int = 20000) -> str:
+        return str(d.get(k) or "").strip()[:n]
+
+    return {
+        "title_bn": s("title_bn", 200), "title_en": s("title_en", 200) or s("title_bn", 200),
+        "excerpt_bn": s("excerpt_bn", 400), "excerpt_en": s("excerpt_en", 400),
+        "content_bn": s("content_bn"), "content_en": s("content_en") or s("content_bn"),
+        "category": s("category", 60) or "tips",
+        "tags": [str(t).strip()[:40] for t in d.get("tags") or [] if str(t).strip()][:10],
+        "seo_title": s("seo_title", 70), "seo_description": s("seo_description", 160),
+        "product_ids": [str(i) for i in d.get("product_ids") or [] if str(i) in allowed_products][:4],
+        "service_ids": [str(i) for i in d.get("service_ids") or [] if str(i) in allowed_services][:3],
+        "why_bn": s("why_bn", 500),
+    }

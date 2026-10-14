@@ -1496,6 +1496,13 @@ export const aiCatalogApi = {
   describe: (data: { kind: "product" | "service" | "software" | "showcase"; name: string; notes?: string }) =>
     api.post<ApiResponse<AiDescription>>("/api/v1/admin/ai-catalog/describe", data, { timeout: 120000 }),
   /** Suggested booking-form questions for a service (nothing is saved). */
+  /** Full blog draft (+ products/services to feature) from a short idea and optional photo. */
+  blogDraft: (idea: string, image?: File | null) => {
+    const fd = new FormData();
+    fd.append("idea", idea);
+    if (image) fd.append("image", image);
+    return api.post<ApiResponse<AiBlogDraft>>("/api/v1/admin/ai-catalog/blog-draft", fd, { headers: { "Content-Type": "multipart/form-data" }, timeout: 180000 });
+  },
   /** Suggested sub-categories for a category (nothing saved). */
   categoryIdeas: (data: { name: string; kind: "product" | "service" | "both"; existing: string[] }) =>
     api.post<ApiResponse<{ items: { name_bn: string; name_en: string; icon: string }[] }>>("/api/v1/admin/ai-catalog/category-ideas", data, { timeout: 120000 }),
@@ -1512,6 +1519,11 @@ export const aiCatalogApi = {
     api.post<ApiResponse<{ fields: AiBookingField[] }>>("/api/v1/admin/ai-catalog/booking-fields", data, { timeout: 120000 }),
 };
 export type AiWriteTask = "improve" | "shorten" | "expand" | "fix" | "to_en" | "to_bn" | "bullets" | "seo" | "write";
+export interface AiBlogDraft {
+  title_bn: string; title_en: string; excerpt_bn: string; excerpt_en: string; content_bn: string; content_en: string;
+  category: string; tags: string[]; seo_title: string; seo_description: string; why_bn: string;
+  product_ids: string[]; service_ids: string[]; suggested: { id: string; kind: "product" | "service"; name: string }[];
+}
 export interface ServiceDetailsDraft {
   process_steps?: { step: number; title: string; title_bn: string; description: string; description_bn: string }[];
   benefits?: { en: string; bn: string }[];
