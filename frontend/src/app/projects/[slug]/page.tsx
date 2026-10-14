@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { stripMarks } from "@/lib/productText";
 import { notFound } from "next/navigation";
 import ProjectDetailClient from "./ProjectDetailClient";
 import { fetchPublicSettings } from "@/lib/serverSettings";
@@ -18,7 +19,7 @@ export async function generateMetadata(
   }
 
   const title = `${project.title.en} | ABO Enterprise Portfolio`;
-  const description = project.result.en || project.solution.en || project.problem.en;
+  const description = stripMarks(project.result.en || project.solution.en || project.problem.en).slice(0, 160);
   const url = `${SITE_URL}/projects/${project.slug}`;
   const ogImg = project.image || DEFAULT_OG_IMAGE;
 

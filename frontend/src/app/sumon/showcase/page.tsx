@@ -1,6 +1,10 @@
 "use client";
 
+import BnEnText from "@/components/admin/catalog/BnEnText";
 import TranslateButton from "@/components/admin/TranslateButton";
+import LinkImportBox from "@/components/admin/catalog/LinkImportBox";
+import type { LinkDraft } from "@/lib/api";
+import { translateBnToEn } from "@/lib/translate";
 import { useCallback, useEffect, useState } from "react";
 import { Trash2, Loader2, FolderKanban, Code2, ExternalLink, Pencil, Copy, X, Save, Send } from "lucide-react";
 import { adminApi, type AiDescription } from "@/lib/api";
@@ -30,6 +34,26 @@ import {
 } from "@/lib/showcaseContent";
 
 type Tab = "projects" | "services";
+
+const TECH_CHIPS = ["Next.js", "React", "Laravel", "PHP", "WordPress", "Flutter", "Node.js", "Python", "MySQL", "PostgreSQL", "Firebase", "Tailwind CSS", "Android", "AI"];
+
+/** Fill every blank English half of {en, bn} pairs from Bangla (deep, never overwrites). */
+async function fillEnglish<T>(v: T): Promise<T> {
+  if (Array.isArray(v)) return (await Promise.all(v.map((x) => fillEnglish(x)))) as unknown as T;
+  if (v && typeof v === "object") {
+    const o = v as Record<string, unknown>;
+    if (typeof o.bn === "string" && typeof o.en === "string" && Object.keys(o).length <= 3) {
+      if (o.bn.trim() && !o.en.trim()) {
+        try { return { ...o, en: await translateBnToEn(o.bn) } as T; } catch { return v; }
+      }
+      return v;
+    }
+    const out: Record<string, unknown> = {};
+    for (const [k, x] of Object.entries(o)) out[k] = await fillEnglish(x);
+    return out as T;
+  }
+  return v;
+}
 type Bi = { en: string; bn: string };
 
 // Named color presets so the admin picks a swatch, not a Tailwind class.
@@ -120,7 +144,8 @@ export default function AdminShowcasePage() {
     } finally { setSaving(false); }
   };
 
-  const saveEditor = async (e: Editor) => {
+  const saveEditor = async (e0: Editor) => {
+    const e = { ...e0, item: await fillEnglish(e0.item) } as Editor;
     if (e.kind === "project") {
       const list = [...projects];
       if (e.index === null) list.push(e.item); else list[e.index] = e.item;
@@ -253,22 +278,11 @@ export default function AdminShowcasePage() {
 }
 
 function BiInput({ label, value, onChange, area, required }: { label: string; value: Bi; onChange: (v: Bi) => void; area?: boolean; required?: boolean }) {
-  const t = useBnEn();
-  const C = area ? "textarea" : "input";
+  // Bangla first; English sits in a fold and is translated on save when blank.
   return (
-    <div className="grid sm:grid-cols-2 gap-3">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label} ({t("বাংলা", "Bangla")}) {required && <span className="text-red-500">*</span>}</label>
-        <C className={cn("input text-sm", area && "min-h-[80px] resize-y")} value={value.bn} onChange={(e) => onChange({ ...value, bn: e.target.value })} />
-      </div>
-      <div>
-        <div className="flex items-center justify-between gap-2 mb-1">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">{label} (English)</label>
-          <TranslateButton bn={value.bn} onResult={(en) => onChange({ ...value, en })} en={value.en} onResultBn={(b) => onChange({ ...value, bn: b })} />
-        </div>
-        <C className={cn("input text-sm", area && "min-h-[80px] resize-y")} value={value.en} onChange={(e) => onChange({ ...value, en: e.target.value })} />
-      </div>
-    </div>
+    <BnEnText label={label} required={required} rich={area} rows={area ? 4 : undefined}
+      bn={value.bn} en={value.en}
+      onBn={(bn) => onChange({ ...value, bn })} onEn={(en) => onChange({ ...value, en })} />
   );
 }
 
@@ -386,6 +400,14 @@ function ShowcaseEditor({ editor, projects, services, saving, onClose, onSave, o
 
   const steps = isProject ? [
     { id: "basic", bn: "মূল তথ্য", en: "Basics", status: (title.bn || title.en ? "ok" : "warn") as "ok" | "warn", content: (<>
+      <div className="flex flex-wrap gap-2"><LinkImportBox kind="service" onDraft={(d: LinkDraft) => setP({
+        title: { bn: p.title.bn || d.name_bn, en: p.title.en || d.name_en },
+        problem: { bn: p.problem.bn || d.short_bn, en: p.problem.en || d.short_en },
+        solution: { bn: p.solution.bn || d.description_bn, en: p.solution.en || d.description_en },
+        technologies: p.technologies.length ? p.technologies : d.tags.slice(0, 8),
+        image: p.image || d.image_url,
+        liveUrl: p.liveUrl || d.source_url,
+      })} /></div>
       <BiInput label={t("প্রজেক্টের নাম", "Project name")} value={p.title} onChange={(v) => setP({ title: v })} required />
       <DuplicateNotice result={dup} onOpen={openDup} />
       <BiInput label={t("ক্লায়েন্ট", "Client")} value={p.client} onChange={(v) => setP({ client: v })} />
@@ -394,6 +416,12 @@ function ShowcaseEditor({ editor, projects, services, saving, onClose, onSave, o
         <div><label className="block text-sm font-medium text-gray-700 mb-1">{t("সাল", "Year")}</label><input type="number" className="input" value={p.year || ""} onChange={(e) => setP({ year: Number(e.target.value) })} /></div>
         <div><label className="block text-sm font-medium text-gray-700 mb-1">{t("প্রযুক্তি (কমা দিয়ে)", "Technologies (comma-separated)")}</label>
           <input className="input" value={p.technologies.join(", ")} onChange={(e) => setP({ technologies: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) })} /></div>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        <span className="text-[11px] text-gray-400 self-center">{t("এক চাপে যোগ:", "Quick add:")}</span>
+        {TECH_CHIPS.filter((x) => !p.technologies.includes(x)).map((x) => (
+          <button key={x} type="button" onClick={() => setP({ technologies: [...p.technologies, x] })} className="rounded-full border border-[var(--line)] px-2.5 min-h-9 text-xs hover:border-brand-400">+ {x}</button>
+        ))}
       </div>
     </>) },
     { id: "photos", bn: "ছবি ও ভিডিও", en: "Photos & video", status: (p.image ? "ok" : "warn") as "ok" | "warn", content: (<>

@@ -1,5 +1,6 @@
 "use client";
 
+import RichText from "@/components/ui/RichText";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ArrowRight, ExternalLink, Play } from "lucide-react";
@@ -64,7 +65,7 @@ export default function ProjectDetailClient({ project }: { project: ShowcaseProj
           ].map((block) => (
             <GlassCard key={block.label.en} className="p-5">
               <h3 className="font-bold text-brand-600 mb-2">{t(block.label)}</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">{t(block.text)}</p>
+              <RichText text={t(block.text)} className="space-y-2 text-[15px] leading-7 text-gray-700 dark:text-gray-200" />
             </GlassCard>
           ))}
         </div>
