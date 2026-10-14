@@ -1,4 +1,5 @@
 "use client";
+import AiBlogWriter from "@/components/admin/AiBlogWriter";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
@@ -353,6 +354,10 @@ export default function AdminBlogPage() {
         actions={
           <button onClick={openNew} className="btn btn-brand btn-sm min-h-11 gap-1.5 px-4">
             <Plus className="w-4 h-4" />
+      <details className="rounded-xl border border-brand-200 dark:border-brand-500/30 bg-brand-50/40 dark:bg-brand-500/5">
+        <summary className="cursor-pointer select-none px-4 min-h-12 flex items-center text-sm font-semibold text-heading">✨ AI দিয়ে ব্লগ লিখুন — অল্প কথা বা একটি ছবি দিলেই পুরো ব্লগ + কোন পণ্য/সেবা নিচে দেখাবে</summary>
+        <div className="px-4 pb-4"><AiBlogWriter /></div>
+      </details>
             {tx("New Post")}
           </button>
         }

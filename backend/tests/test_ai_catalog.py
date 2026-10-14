@@ -161,3 +161,10 @@ def test_category_ideas_normalisation():
     raw = {"items": [{"name_bn": "চার্জার", "name_en": "Chargers", "icon": "🔌"}, {"name_bn": "কেবল", "name_en": "Cables"}, {"name_en": "Chargers"}, "x"]}
     out = ac.normalize_category_ideas(raw, ["Cables"])
     assert out == [{"name_bn": "চার্জার", "name_en": "Chargers", "icon": "🔌"}]
+
+
+def test_blog_normalisation_keeps_only_catalogue_ids():
+    raw = {"title_bn": "চার্জার গাইড", "content_bn": "## শুরু", "product_ids": ["p1", "zzz"], "service_ids": ["s9"], "tags": ["a", ""]}
+    out = ac.normalize_blog(raw, {"p1", "p2"}, {"s1"})
+    assert out["product_ids"] == ["p1"] and out["service_ids"] == []
+    assert out["title_en"] == "চার্জার গাইড" and out["content_en"] == "## শুরু" and out["tags"] == ["a"]

@@ -1,5 +1,6 @@
 "use client";
 
+import RichText from "@/components/ui/RichText";
 import { useState } from "react";
 import { Printer, Languages } from "lucide-react";
 
@@ -53,10 +54,10 @@ export default function BlogPostActions({ contentEn, contentBn, titleEn, titleBn
           installed, so styling stays token-based (theme-aware) rather than
           relying on `prose`. */}
       <article
-        className="max-w-none whitespace-pre-line text-[15px] sm:text-base leading-[1.9] text-[var(--ink)]"
+        className="max-w-none text-[15px] sm:text-base leading-[1.9] text-[var(--ink)]"
         dir={lang === "bn" ? "auto" : "ltr"}
       >
-        {content}
+        <RichText text={content} className="space-y-4" />
       </article>
     </>
   );

@@ -240,3 +240,42 @@ async def category_ideas(payload: CategoryIdeasIn, _admin: str = Depends(require
     if not items:
         raise HTTPException(status_code=502, detail="AI নতুন কিছু প্রস্তাব করতে পারেনি।")
     return ApiResponse(data={"items": items})
+
+
+
+@router.post("/blog-draft", response_model=ApiResponse)
+async def blog_draft(
+    idea: str = Form(..., min_length=3, max_length=2000),
+    image: UploadFile | None = File(None),
+    _admin: str = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Short idea (+ optional photo) -> full blog draft and matching products/services. Nothing saved."""
+    from app.models.models import Product, Service
+
+    images = []
+    if image is not None and image.filename:
+        if image.content_type not in _IMAGE_TYPES:
+            raise HTTPException(status_code=400, detail="শুধু JPG/PNG/WebP ছবি দিন।")
+        data = await image.read()
+        if len(data) > 8 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="ছবি ৮MB-এর কম হতে হবে।")
+        images.append((image.content_type, data))
+    prods = (await db.execute(select(Product.id, Product.name_en, Product.name_bn).where(
+        Product.is_active == True, Product.is_deleted == False).limit(300))).all()  # noqa: E712
+    svcs = (await db.execute(select(Service.id, Service.name_en, Service.name_bn).where(
+        Service.is_active == True, Service.is_deleted == False).limit(150))).all()  # noqa: E712
+    catalogue = "PRODUCTS:\n" + "\n".join(f"{p.id} | {p.name_bn or ''} | {p.name_en}" for p in prods)
+    catalogue += "\nSERVICES:\n" + "\n".join(f"{x.id} | {x.name_bn or ''} | {x.name_en}" for x in svcs)
+    user = "IDEA: " + ai_gemini._mask(idea.strip()) + "\n\nCATALOGUE:\n" + catalogue
+    try:
+        raw = await ai_gemini.generate_json(db, ac.BLOG_SYSTEM, user, images=images or None, max_tokens=8192)
+    except ai_gemini.AiUnavailable as exc:
+        raise _fail(exc)
+    out = ac.normalize_blog(raw, {str(p.id) for p in prods}, {str(x.id) for x in svcs})
+    if not (out["content_bn"] or out["content_en"]):
+        raise HTTPException(status_code=502, detail="AI ব্লগ লিখতে পারেনি — আবার চেষ্টা করুন।")
+    names = {str(p.id): (p.name_bn or p.name_en) for p in prods} | {str(x.id): (x.name_bn or x.name_en) for x in svcs}
+    out["suggested"] = [{"id": i, "kind": "product", "name": names.get(i, "")} for i in out["product_ids"]] + \
+        [{"id": i, "kind": "service", "name": names.get(i, "")} for i in out["service_ids"]]
+    return ApiResponse(data=out)
