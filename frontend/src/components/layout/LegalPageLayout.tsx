@@ -43,7 +43,7 @@ export default function LegalPageLayout({ title, sections, showTitle = true, las
   }, [sections]);
 
   return (
-    <div className="container mx-auto px-4 py-10 max-w-5xl">
+    <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-10 max-w-5xl">
       <div className="grid lg:grid-cols-[220px_1fr] gap-8 items-start">
         <aside className="hidden lg:block sticky top-[calc(var(--navbar-offset)+1.5rem)]">
           <nav aria-label={isBn ? "বিষয়সূচি" : "Table of contents"} className="enterprise-card p-4 space-y-1">
@@ -65,15 +65,15 @@ export default function LegalPageLayout({ title, sections, showTitle = true, las
           </nav>
         </aside>
 
-        <article className="enterprise-card p-6 md:p-10 min-w-0">
-          <nav aria-label={isBn ? "মোবাইল বিষয়সূচি" : "Mobile table of contents"} className="lg:hidden mb-5">
-            <div className="flex gap-2 overflow-x-auto pb-1">
+        <article className="enterprise-card px-4 py-5 sm:p-6 md:p-10 min-w-0">
+          <nav aria-label={isBn ? "মোবাইল বিষয়সূচি" : "Mobile table of contents"} className="lg:hidden sticky top-[var(--navbar-offset)] z-10 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 mb-5 bg-[var(--surface-card)] dark:bg-gray-900/95 backdrop-blur border-b border-gray-100 dark:border-white/10">
+            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
               {sections.map((s) => (
                 <a
                   key={s.id}
                   href={`#${s.id}`}
                   className={cn(
-                    "whitespace-nowrap px-3 py-1.5 rounded-full text-xs border transition-colors",
+                    "whitespace-nowrap px-3 min-h-9 inline-flex items-center rounded-full text-[13px] border transition-colors",
                     activeId === s.id
                       ? "bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300 border-brand-200 dark:border-brand-700"
                       : "text-muted border-gray-200 dark:border-white/10"
@@ -84,7 +84,7 @@ export default function LegalPageLayout({ title, sections, showTitle = true, las
               ))}
             </div>
           </nav>
-          {showTitle && <h1 className="text-3xl font-bold text-heading mb-3">{title}</h1>}
+          {showTitle && <h1 className="text-2xl sm:text-3xl font-bold text-heading mb-3 leading-tight">{title}</h1>}
           {lastUpdated && (
             <p className="text-xs text-muted mb-8">
               {isBn ? "সর্বশেষ হালনাগাদ: " : "Last updated: "}
@@ -95,13 +95,21 @@ export default function LegalPageLayout({ title, sections, showTitle = true, las
               })}
             </p>
           )}
-          <div className="legal-prose max-w-[68ch] space-y-8 sm:space-y-10 text-[15px] sm:text-base text-gray-700 dark:text-gray-300">
-            {sections.map((s) => (
-              <section key={s.id} id={s.id} className="scroll-mt-28">
-                <h2 className="text-lg sm:text-xl font-bold text-heading mb-3">{s.title}</h2>
+          <div className="legal-prose max-w-[68ch] space-y-8 sm:space-y-10 text-[15px] sm:text-base leading-7 text-gray-700 dark:text-gray-300">
+            {sections.map((s, i) => (
+              <section key={s.id} id={s.id} className="scroll-mt-40 lg:scroll-mt-28">
+                <h2 className="text-lg sm:text-xl font-bold text-heading mb-3 flex items-baseline gap-2">
+                  <span aria-hidden className="text-sm font-semibold text-brand-600 tabular-nums">{(isBn ? (i + 1).toLocaleString("bn-BD") : i + 1)}.</span>
+                  <span>{s.title}</span>
+                </h2>
                 <div className="space-y-3">{s.content}</div>
               </section>
             ))}
+          </div>
+          <div className="mt-10 pt-5 border-t border-gray-100 dark:border-white/10 text-center">
+            <button type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="btn btn-outline btn-sm min-h-11">
+              ↑ {isBn ? "উপরে যান" : "Back to top"}
+            </button>
           </div>
         </article>
       </div>

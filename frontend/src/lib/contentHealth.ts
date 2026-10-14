@@ -48,9 +48,12 @@ function emptyCategories(categories: Category[], products: Product[], services: 
   }
   const out: Node[] = [];
   const walk = (n: Node): boolean => {
+    // Reserve the parent's slot first so it is listed before its subcategories.
+    const at = out.length;
+    out.push(n);
     let has = used.has(n.id) || used.has(`slug:${n.slug}`);
     for (const c of n.subcategories ?? []) if (walk(c)) has = true;
-    if (!has && n.is_active !== false) out.push(n);
+    if (has || n.is_active === false) out.splice(at, 1);
     return has;
   };
   categories.forEach(walk);
