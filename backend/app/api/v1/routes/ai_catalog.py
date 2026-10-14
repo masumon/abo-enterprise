@@ -160,9 +160,8 @@ class ServiceDetailsIn(BaseModel):
 async def service_details(payload: ServiceDetailsIn, _admin: str = Depends(require_admin), db: AsyncSession = Depends(get_db)):
     """Service name + notes -> steps, benefits, requirements, documents, FAQ and/or packages (nothing saved)."""
     parts = [p for p in payload.parts if p in ac.SERVICE_DETAILS_PARTS] or list(ac.SERVICE_DETAILS_PARTS)
-    user = f"Service: {payload.name.strip()}
-Notes: {ai_gemini._mask(payload.notes.strip()) or '(none)'}
-Write these parts: {', '.join(parts)}"
+    notes = ai_gemini._mask(payload.notes.strip()) or "(none)"
+    user = "Service: " + payload.name.strip() + "\nNotes: " + notes + "\nWrite these parts: " + ", ".join(parts)
     try:
         raw = await ai_gemini.generate_json(db, ac.SERVICE_DETAILS_SYSTEM, user, max_tokens=8192)
     except ai_gemini.AiUnavailable as exc:
