@@ -55,6 +55,9 @@ export interface Product {
   canonical_url?: string;
   og_image?: string;
   video_url?: string | null;
+  /** Products sharing a group are shown as colour/size choices of each other. */
+  variant_group?: string | null;
+  variant_label?: string | null;
   created_at?: string;
   updated_at?: string;
   /** Blog posts this product is linked to (many-to-many). Sent on save to

@@ -39,6 +39,8 @@ import { useBnEn } from "@/components/admin/catalog/useBnEn";
 import BnEnText from "@/components/admin/catalog/BnEnText";
 import SeoAutoPanel from "@/components/admin/catalog/SeoAutoPanel";
 import VideoUrlField from "@/components/admin/catalog/VideoUrlField";
+import LinkImportBox from "@/components/admin/catalog/LinkImportBox";
+import type { LinkDraft } from "@/lib/api";
 import { nameFromLabel, type FieldDraft } from "@/lib/bookingFieldKit";
 import { fixBoldMarks, stripMarks } from "@/lib/productText";
 import { Copy, FilterX, Search } from "lucide-react";
@@ -405,6 +407,23 @@ export default function AdminServicesPage() {
       }
       return next;
     });
+  };
+
+  /** Link draft → service fields (empty ones; asks before replacing text). */
+  const applyLinkDraft = (d: LinkDraft) => {
+    const cur = editing;
+    if (!cur) return;
+    const replace = !(cur.name_bn?.trim() || cur.long_description_bn?.trim()) || window.confirm("আগের নাম/বিবরণ লিংকের তথ্য দিয়ে বদলে দেবেন?");
+    const pick = (old: string | undefined, val: string) => (val && (replace || !old?.trim()) ? val : old);
+    setEditing((prev) => prev ? {
+      ...prev,
+      name_bn: pick(prev.name_bn, d.name_bn) ?? "", name_en: pick(prev.name_en, d.name_en) ?? "",
+      short_description_bn: pick(prev.short_description_bn, d.short_bn), short_description_en: pick(prev.short_description_en, d.short_en),
+      long_description_bn: pick(prev.long_description_bn, d.description_bn), long_description_en: pick(prev.long_description_en, d.description_en),
+      featured_image_url: prev.featured_image_url || d.image_url,
+      tags: prev.tags?.length ? prev.tags : d.tags,
+      slug: isNew && !prev.slug && d.name_en ? slugify(d.name_en) : prev.slug,
+    } : prev);
   };
 
   // /sumon/services?edit=<id> opens that service's editor directly.
@@ -973,6 +992,7 @@ export default function AdminServicesPage() {
                   placeholderBn="যেমন: প্রিন্টিং ও ফটোকপি সেবা" placeholderEn="e.g. Printing & Photocopy"
                   hint={t("শুধু বাংলা লিখলেই চলবে — সেভের সময় ইংরেজি নাম ও ওয়েব ঠিকানা নিজে থেকে তৈরি হবে।", "Bangla is enough — the English name and web address are made on save.")} />
                 <DuplicateNotice result={svcDup} onOpen={(m) => openEdit({ id: m.id } as Service)} />
+                <div className="flex flex-wrap gap-2"><LinkImportBox kind="service" onDraft={applyLinkDraft} /></div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* One classification. The taxonomy is authoritative; the
                       legacy `category` string is derived from the chosen node

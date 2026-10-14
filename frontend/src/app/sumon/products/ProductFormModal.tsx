@@ -32,6 +32,8 @@ import BnEnText from "@/components/admin/catalog/BnEnText";
 import SeoAutoPanel from "@/components/admin/catalog/SeoAutoPanel";
 import VideoUrlField from "@/components/admin/catalog/VideoUrlField";
 import BarcodeScanButton from "@/components/admin/catalog/BarcodeScanButton";
+import LinkImportBox from "@/components/admin/catalog/LinkImportBox";
+import type { LinkDraft } from "@/lib/api";
 
 const BADGES: { v: string; bn: string; en: string }[] = [
   { v: "", bn: "নেই", en: "None" },
@@ -84,6 +86,8 @@ const schema = z.object({
   is_best_seller: z.boolean().optional(),
   is_bookable: z.boolean().optional(),
   video_url: z.string().optional(),
+  variant_group: z.string().optional(),
+  variant_label: z.string().optional(),
 }).refine(
   (d) => !d.original_price || d.original_price >= d.price,
   { message: "আগের দাম বিক্রয়মূল্যের সমান বা বেশি হতে হবে (Original price must be ≥ sale price)", path: ["original_price"] }
@@ -144,6 +148,9 @@ function fromProduct(p: Product, clone: boolean): Partial<FormData> {
     is_best_seller: clone ? false : p.is_best_seller ?? false,
     is_bookable: p.is_bookable ?? false,
     video_url: p.video_url ?? "",
+    // A copy joins the original's group only when the admin ticks it (below).
+    variant_group: clone ? "" : p.variant_group ?? "",
+    variant_label: clone ? "" : p.variant_label ?? "",
   };
 }
 
@@ -272,6 +279,8 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
         ...rest,
         slug: rest.slug || undefined,
         video_url: rest.video_url?.trim() || null,
+        variant_group: rest.variant_group?.trim() || (rest.variant_label?.trim() && editing?.id ? editing.id : null),
+        variant_label: rest.variant_label?.trim() || null,
         category_id: category_id ? category_id : null,
         subcategory_id: subcategory_id ? subcategory_id : null,
         // checked → also bookable; unchecked → null (never disables ordering).
@@ -287,6 +296,10 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
         toast("success", t("পণ্য আপডেট হয়েছে", "Product updated"));
       } else {
         await productsApi.create(payload);
+        // Copy saved as a variant: make sure the original joins the same group.
+        if (mode.type === "clone" && payload.variant_group && !mode.product.variant_group && mode.product.id) {
+          await productsApi.update(mode.product.id, { variant_group: payload.variant_group }).catch(() => undefined);
+        }
         toast("success", data.is_active ? t("পণ্য প্রকাশ হয়েছে", "Product published") : t("খসড়া সেভ হয়েছে", "Draft saved"));
       }
       onSaved();
@@ -333,6 +346,22 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
     toast("success", t(`বারকোড পাওয়া গেছে: ${code}`, `Barcode: ${code}`));
   }, [setValue, toast, t]);
 
+  /** Link draft → empty fields only (asks before replacing a name/description). */
+  const applyLinkDraft = (d: LinkDraft) => {
+    const v = getValues();
+    const replace = !(v.name_bn?.trim() || v.description_bn?.trim()) || window.confirm("আগের নাম/বিবরণ লিংকের তথ্য দিয়ে বদলে দেবেন?");
+    const put = (k: keyof FormData, val: string | undefined, force = replace) => {
+      if (val && (force || !String(v[k] ?? "").trim())) setValue(k, val as never, { shouldDirty: true });
+    };
+    put("name_bn", d.name_bn); put("name_en", d.name_en);
+    put("description_bn", d.description_bn); put("description_en", d.description_en);
+    put("brand", d.brand, false); put("image_url", d.image_url, false);
+    if (d.tags.length && !v.tags?.trim()) setValue("tags", d.tags.join(", "), { shouldDirty: true });
+    const rows = Object.entries(d.specs).map(([k, val]) => ({ k, v: val }));
+    if (rows.length) setSpecs((cur) => [...cur.filter((r) => r.k.trim() || r.v.trim()), ...rows.filter((r) => !cur.some((c) => c.k.trim() === r.k))]);
+    if (d.source_price) toast("info", `উৎস পাতার দাম: ${d.source_price} ${d.source_currency} — নিজের বিক্রয়মূল্য যাচাই করে দিন`);
+  };
+
   const sale = Number(w.price) || 0;
   const cost = Number(w.cost_price) || 0;
   const fieldErr = (m?: string) => (m ? <p className="text-red-500 text-xs mt-1">{m}</p> : null);
@@ -370,6 +399,7 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
             </div>
           </div>
           <DuplicateNotice result={mergedNames} onOpen={onOpenExisting} />
+          <div className="flex flex-wrap gap-2"><LinkImportBox kind="product" onDraft={applyLinkDraft} /></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={lbl}>{t("ক্যাটাগরি", "Category")} <span className="text-red-500">*</span></label>
@@ -448,6 +478,23 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
                   </div>
                 ))}
               </div>
+            )}
+          </div>
+          <div className="rounded-xl border border-[var(--line)] p-3 space-y-2">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">🎨 {t("রং / সাইজ (ভ্যারিয়েন্ট)", "Colour / size (variants)")} {opt}</p>
+            <input {...register("variant_label")} className="input" placeholder={t("এই পণ্যের রং বা সাইজ — যেমন: কালো, ২ মিটার, 64GB", "This item's colour or size — e.g. Black, 2 m")} />
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              {t("একই পণ্যের অন্য রং/সাইজ যোগ করতে পণ্যের তালিকা থেকে এটির “কপি” চাপুন — কপির ফরমে “এটি মূল পণ্যের আরেকটি রং/সাইজ” টিক দিন, তারপর রং/সাইজ, দাম, স্টক ও ছবি বদলান। সাইটে গ্রাহক বোতাম চেপে রং/সাইজ বাছতে পারবেন।", "To add another colour/size, use “Copy” on this product in the list — tick “another colour/size”, then change label, price, stock and photo. Customers pick it with buttons on the product page.")}
+            </p>
+            {mode.type === "clone" && (
+              <label className="flex items-start gap-2 text-sm cursor-pointer min-h-11">
+                <input type="checkbox" className="rounded mt-0.5" checked={!!w.variant_group}
+                  onChange={(e) => setValue("variant_group", e.target.checked ? (mode.product.variant_group || mode.product.id || "") : "", { shouldDirty: true })} />
+                <span>{t("এটি মূল পণ্যের আরেকটি রং/সাইজ", "This is another colour/size of the original")}<span className="block text-[11px] text-gray-400">{t("টিক দিলে সাইটে দুটি পণ্য রং/সাইজ বোতাম হিসেবে একসাথে দেখাবে।", "Both show as colour/size buttons on the site.")}</span></span>
+              </label>
+            )}
+            {mode.type !== "clone" && w.variant_group && (
+              <p className="text-[11px] text-brand-700 dark:text-brand-300">✓ {t("একই গ্রুপের অন্য রং/সাইজের সাথে যুক্ত", "Linked with the other colours/sizes in its group")}</p>
             )}
           </div>
           <VideoUrlField value={w.video_url} onChange={(v) => setValue("video_url", v, { shouldDirty: true })} folder="abo-enterprise/products" />
@@ -679,6 +726,11 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">{t("ডেলিভারি চার্জ ৳ (আলাদা হলে)", "Delivery charge ৳ (override)")}</label>
                 <input type="number" step="1" min="0" {...register("delivery_charge")} className="input text-sm" placeholder={t("খালি = এলাকার চার্জ", "blank = zone charge")} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1">{t("ভ্যারিয়েন্ট গ্রুপ কোড", "Variant group code")}</label>
+                <input {...register("variant_group")} className="input font-mono text-xs" placeholder={t("খালি = নিজে থেকে", "blank = automatic")} />
+                <p className="text-[11px] text-gray-400 mt-1">{t("দুটি আলাদা পণ্যকে এক গ্রুপে আনতে একটির কোড অন্যটিতে বসান।", "Paste one product's code into another to group them.")}</p>
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-xs font-medium text-gray-600 mb-1">{t("ট্যাগ (কমা দিয়ে)", "Tags (comma-separated)")}</label>

@@ -336,6 +336,28 @@ async def related_products(slug: str, db: AsyncSession = Depends(get_db)):
     return ApiResponse(data=[PublicProductOut.model_validate(p) for p in items])
 
 
+@router.get("/{slug}/variants", response_model=ApiResponse)
+async def product_variants(slug: str, db: AsyncSession = Depends(get_db)):
+    """Other colours/sizes of this product (live products in the same variant group)."""
+    product = (await db.execute(
+        select(Product).where(Product.slug == slug, Product.is_deleted == False)  # noqa: E712
+    )).scalar_one_or_none()
+    if not product or not product.variant_group:
+        return ApiResponse(data=[])
+    rows = (await db.execute(
+        select(Product).where(
+            Product.variant_group == product.variant_group,
+            Product.is_active == True,  # noqa: E712
+            Product.is_deleted == False,  # noqa: E712
+        ).order_by(Product.sort_order.asc(), Product.price.asc()).limit(30)
+    )).scalars().all()
+    return ApiResponse(data=[{
+        "slug": p.slug, "label": p.variant_label or p.name_bn or p.name_en, "label_en": p.variant_label or p.name_en,
+        "price": float(p.price) if p.price is not None else None, "image_url": p.image_url,
+        "in_stock": (p.stock_quantity or 0) > 0, "current": p.id == product.id,
+    } for p in rows])
+
+
 @router.get("/{slug}", response_model=ApiResponse)
 async def get_product(slug: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(

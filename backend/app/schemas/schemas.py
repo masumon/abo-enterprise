@@ -65,6 +65,8 @@ class ProductBase(BaseModel):
     canonical_url: str | None = None
     og_image: str | None = None
     video_url: str | None = Field(None, max_length=1000)
+    variant_group: str | None = Field(None, max_length=64)
+    variant_label: str | None = Field(None, max_length=80)
     sku: str | None = None
     barcode: str | None = None
     brand: str | None = None
@@ -118,6 +120,8 @@ class ProductUpdate(BaseModel):
     canonical_url: str | None = None
     og_image: str | None = None
     video_url: str | None = Field(None, max_length=1000)
+    variant_group: str | None = Field(None, max_length=64)
+    variant_label: str | None = Field(None, max_length=80)
     sku: str | None = None
     barcode: str | None = None
     brand: str | None = None

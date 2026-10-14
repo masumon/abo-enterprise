@@ -112,6 +112,7 @@ export function isQueuedResponse(
   return response.status === 202 || data?.queued === true;
 }
 
+export interface ProductVariant { slug: string; label: string; label_en: string; price: number | null; image_url?: string | null; in_stock: boolean; current: boolean }
 export const productsApi = {
   list: (params?: { category?: string; category_slug?: string; subcategory_slug?: string; featured?: boolean; flash_sale?: boolean; search?: string; sort_by?: string; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
     api.get<PaginatedResponse<Product>>("/api/v1/products", { params, ...opts }),
@@ -124,6 +125,9 @@ export const productsApi = {
 
   related: (slug: string) =>
     api.get<ApiResponse<Product[]>>(`/api/v1/products/${slug}/related`),
+  /** Other colours/sizes in the same variant group (empty when none). */
+  variants: (slug: string) =>
+    api.get<ApiResponse<ProductVariant[]>>(`/api/v1/products/${slug}/variants`),
 
   suggest: (q: string) =>
     api.get<ApiResponse<{ slug: string; name_en: string; name_bn: string; price: number; image_url?: string }[]>>("/api/v1/products/suggest", { params: { q } }),
@@ -759,6 +763,7 @@ export const categoriesAdminApi = {
     api.delete<ApiResponse<{ id: string }>>(`/api/v1/categories/admin/subcategories/${id}`),
 };
 
+export interface MediaUse { table: string; kind: string; id: string; name: string; admin_url: string | null }
 export interface MediaAssetRecord {
   id: string;
   url: string;
@@ -895,6 +900,14 @@ export const adminApi = {
 
   deleteMediaAsset: (id: string) =>
     api.delete<ApiResponse<null>>(`/api/v1/media/assets/${id}`),
+  /** Where each file is used on the site (products, services, settings…). */
+  mediaUsage: (ids: string[]) =>
+    api.post<ApiResponse<Record<string, MediaUse[]>>>("/api/v1/media/assets-usage", { ids }),
+  /** Ids of library files not used anywhere. */
+  mediaUnused: () => api.get<ApiResponse<{ ids: string[]; checked: number }>>("/api/v1/media/assets-unused", { timeout: 60000 }),
+  /** Delete several files (library + Cloudinary); files in use are skipped. */
+  mediaBulkDelete: (ids: string[]) =>
+    api.post<ApiResponse<{ deleted: string[]; skipped_in_use: string[]; cloudinary_failed: string[] }>>("/api/v1/media/assets-bulk-delete", { ids }, { timeout: 120000 }),
 
   saveSettings: (items: { key: string; value: string; data_type?: string }[]) =>
     api.post<ApiResponse<{ key: string; value: string }[]>>("/api/v1/settings/upsert", items),
@@ -1470,9 +1483,18 @@ export const aiCatalogApi = {
   describe: (data: { kind: "product" | "service" | "software" | "showcase"; name: string; notes?: string }) =>
     api.post<ApiResponse<AiDescription>>("/api/v1/admin/ai-catalog/describe", data, { timeout: 120000 }),
   /** Suggested booking-form questions for a service (nothing is saved). */
+  /** Product/service draft from a supplier or maker web page (nothing saved). */
+  fromLink: (data: { url: string; kind: "product" | "service" }) =>
+    api.post<ApiResponse<LinkDraft>>("/api/v1/admin/ai-catalog/from-link", data, { timeout: 120000 }),
   bookingFields: (data: { name: string; notes?: string }) =>
     api.post<ApiResponse<{ fields: AiBookingField[] }>>("/api/v1/admin/ai-catalog/booking-fields", data, { timeout: 120000 }),
 };
+export interface LinkDraft {
+  name_bn: string; name_en: string; short_bn: string; short_en: string;
+  description_bn: string; description_en: string; brand: string;
+  specs: Record<string, string>; tags: string[]; image_url: string;
+  source_price: string; source_currency: string; source_url: string; ai_used: boolean;
+}
 export interface AiBookingField {
   field_label_en: string;
   field_label_bn: string;

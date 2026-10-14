@@ -397,3 +397,87 @@ async def delete_asset(
     await db.commit()
 
     return {"success": True, "message": "Asset deleted"}
+
+
+# ── Where-used, unused filter and bulk delete ────────────────────────────────
+class AssetIdsIn(BaseModel):
+    ids: list[str]
+    force: bool = False
+
+
+def _uuids(ids: list[str]) -> list[uuid.UUID]:
+    out = []
+    for i in ids[:200]:
+        try:
+            out.append(uuid.UUID(str(i)))
+        except ValueError:
+            continue
+    return out
+
+
+@router.post("/assets-usage")
+async def assets_usage(
+    payload: AssetIdsIn,
+    db: AsyncSession = Depends(get_db),
+    admin=Depends(require_role("media.read")),
+):
+    """{asset_id: [{kind, name, admin_url}, …]} — where each file is used on the site."""
+    from app.core.media_usage import usage_for
+
+    rows = (await db.execute(
+        select(MediaAsset).where(MediaAsset.id.in_(_uuids(payload.ids)), MediaAsset.is_deleted == False)  # noqa: E712
+    )).scalars().all()
+    data = await usage_for(db, [(str(a.id), a.url, a.cloudinary_public_id) for a in rows])
+    return {"success": True, "data": data}
+
+
+@router.get("/assets-unused")
+async def assets_unused(
+    db: AsyncSession = Depends(get_db),
+    admin=Depends(require_role("media.read")),
+):
+    """Ids of library files not found anywhere in the site's content."""
+    from app.core.media_usage import usage_for
+
+    rows = (await db.execute(
+        select(MediaAsset.id, MediaAsset.url, MediaAsset.cloudinary_public_id)
+        .where(MediaAsset.is_deleted == False)  # noqa: E712
+        .limit(5000)
+    )).all()
+    data = await usage_for(db, [(str(r[0]), r[1], r[2]) for r in rows])
+    unused = [aid for aid, hits in data.items() if not hits]
+    return {"success": True, "data": {"ids": unused, "checked": len(rows)}}
+
+
+@router.post("/assets-bulk-delete")
+async def assets_bulk_delete(
+    payload: AssetIdsIn,
+    db: AsyncSession = Depends(get_db),
+    admin: str = Depends(require_role("media.write")),
+):
+    """Delete several files from the library AND Cloudinary. Files still used
+    somewhere are skipped unless `force` is true."""
+    from app.core.media_usage import invalidate, usage_for
+
+    assets = (await db.execute(
+        select(MediaAsset).where(MediaAsset.id.in_(_uuids(payload.ids)), MediaAsset.is_deleted == False)  # noqa: E712
+    )).scalars().all()
+    usage = {} if payload.force else await usage_for(db, [(str(a.id), a.url, a.cloudinary_public_id) for a in assets])
+    deleted, skipped, cloud_failed = [], [], []
+    for asset in assets:
+        if usage.get(str(asset.id)):
+            skipped.append(str(asset.id))
+            continue
+        if asset.cloudinary_public_id:
+            resource_type = "video" if (asset.mime_type or "").startswith("video/") else "image"
+            try:
+                cloudinary.uploader.destroy(asset.cloudinary_public_id, resource_type=resource_type)
+            except Exception as exc:  # noqa: BLE001 — DB soft-delete must still proceed
+                cloud_failed.append(str(asset.id))
+                logging.getLogger(__name__).warning("Cloudinary destroy failed for %s: %s", asset.cloudinary_public_id, exc)
+        asset.is_deleted = True
+        db.add(ActivityLog(admin_id=uuid.UUID(admin), action="delete", entity_type="media_asset", entity_id=asset.id))
+        deleted.append(str(asset.id))
+    await db.commit()
+    invalidate()
+    return {"success": True, "data": {"deleted": deleted, "skipped_in_use": skipped, "cloudinary_failed": cloud_failed}}
