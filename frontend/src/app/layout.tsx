@@ -11,11 +11,11 @@ import RouteProgress from "@/components/layout/RouteProgress";
 import GoogleAnalytics from "@/components/analytics/GoogleAnalytics";
 import UtmTracker from "@/lib/utm";
 import { DEFAULT_OG_IMAGE, SITE_URL, getBrandFullTitle } from "@/lib/tokens";
-import { getApiBaseUrl } from "@/lib/apiBase";
+import { getApiBaseUrl, getBrowserApiBaseUrl } from "@/lib/apiBase";
 import { fetchPublicSettings, settingValue, pickHeroSettings } from "@/lib/serverSettings";
 import PublicSettingsSeed from "@/components/providers/PublicSettingsSeed";
 
-const API_ORIGIN = getApiBaseUrl();
+const API_ORIGIN = getBrowserApiBaseUrl();
 
 // Self-hosted at build time (audit H2) - was a render-blocking cross-origin
 // @import in globals.css. Bengali-only: Latin already runs on the system

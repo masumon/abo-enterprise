@@ -59,7 +59,7 @@ export async function fetchPromoSlides(placement: "hero" | "flash_sale"): Promis
  * API is slow/down (the client component then fetches on its own). */
 async function fetchList<T>(path: string): Promise<T[] | null> {
   try {
-    const res = await fetch(`${getApiBaseUrl()}${path}`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(3000) });
+    const res = await fetch(`${getApiBaseUrl()}${path}`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(5000) });
     if (!res.ok) return null;
     const json = await res.json();
     return Array.isArray(json.data) ? (json.data as T[]) : null;
