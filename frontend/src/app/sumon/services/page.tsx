@@ -36,6 +36,11 @@ import AddEntryChoices from "@/components/admin/catalog/AddEntryChoices";
 import AiPhotoStartModal from "@/components/admin/catalog/AiPhotoStartModal";
 import ActiveSwitch from "@/components/admin/catalog/ActiveSwitch";
 import { useBnEn } from "@/components/admin/catalog/useBnEn";
+import BnEnText from "@/components/admin/catalog/BnEnText";
+import SeoAutoPanel from "@/components/admin/catalog/SeoAutoPanel";
+import VideoUrlField from "@/components/admin/catalog/VideoUrlField";
+import { nameFromLabel, type FieldDraft } from "@/lib/bookingFieldKit";
+import { fixBoldMarks, stripMarks } from "@/lib/productText";
 import { Copy, FilterX, Search } from "lucide-react";
 import { useAdminT } from "@/lib/i18n/adminText";
 
@@ -71,11 +76,19 @@ const PRICING_TYPES = ["fixed", "hourly", "package", "custom", "custom_quote"] a
 
 // Call-To-Action options; "" = Auto (inferred from pricing type + capabilities).
 const CTA_TYPES: { value: string; label: string }[] = [
-  { value: "", label: "Auto (recommended)" },
-  { value: "book", label: "Book Now" },
-  { value: "order", label: "Order Now" },
-  { value: "quote", label: "Request Quote" },
-  { value: "contact", label: "Contact Us" },
+  { value: "", label: "নিজে থেকে (প্রস্তাবিত)" },
+  { value: "book", label: "এখনই বুক করুন (Book Now)" },
+  { value: "order", label: "অর্ডার করুন (Order Now)" },
+  { value: "quote", label: "কোটেশন নিন (Request Quote)" },
+  { value: "contact", label: "যোগাযোগ করুন (Contact Us)" },
+];
+
+// How the price is charged — big cards instead of a raw "pricing_type" list.
+const PRICE_CARDS: { value: string; icon: string; bn: string; help: string }[] = [
+  { value: "fixed", icon: "💵", bn: "নির্দিষ্ট দাম", help: "একটাই দাম, সাইটে দেখাবে" },
+  { value: "hourly", icon: "⏱️", bn: "ঘণ্টা হিসেবে", help: "প্রতি ঘণ্টার চার্জ" },
+  { value: "package", icon: "📦", bn: "প্যাকেজ", help: "বেসিক / স্ট্যান্ডার্ড / প্রিমিয়াম" },
+  { value: "custom_quote", icon: "💬", bn: "কোটেশন / আলোচনা", help: "কাজ দেখে দাম জানাবেন" },
 ];
 
 const EMPTY_SERVICE: Partial<Service> = {
@@ -420,6 +433,20 @@ export default function AdminServicesPage() {
     // Bangla-first: fill empty English name/descriptions from Bangla siblings
     // before validation, so the admin never types English by hand.
     let ed = publish === undefined ? editing : { ...editing, is_active: publish };
+    // Repair half-typed bold marks, and fill a blank listing description from
+    // the full one (first real paragraph) — nothing the admin typed is dropped.
+    const tidy = (v?: string) => (v ? fixBoldMarks(v) : v);
+    const firstPara = (v?: string) => {
+      const paras = (v ?? "").split(/\n\s*\n/).map(stripMarks).filter(Boolean);
+      return (paras.find((x) => x.length > 30) ?? paras[0] ?? "").slice(0, 400);
+    };
+    ed = {
+      ...ed,
+      description_bn: tidy(ed.description_bn), description_en: tidy(ed.description_en),
+      long_description_bn: tidy(ed.long_description_bn), long_description_en: tidy(ed.long_description_en),
+    };
+    if (!ed.description_bn?.trim() && ed.long_description_bn?.trim()) ed = { ...ed, description_bn: firstPara(ed.long_description_bn) };
+    if (!ed.description_en?.trim() && ed.long_description_en?.trim()) ed = { ...ed, description_en: firstPara(ed.long_description_en) };
     setSaving(true);
     try {
       const patch: Partial<Service> = {};
@@ -630,13 +657,77 @@ export default function AdminServicesPage() {
     setCondition({ field: "", op: "equals", value: "" });
   };
 
+  /** Fill the English label (translated) and machine name when left blank. */
+  const completeDraft = async (d: FieldDraft, taken: string[]): Promise<FieldDraft> => {
+    let en = d.field_label_en?.trim() || "";
+    const bn = d.field_label_bn?.trim() || "";
+    if (!en && bn) { try { en = await translateBnToEn(bn); } catch { en = bn; } }
+    return { ...d, field_label_en: en, field_label_bn: bn || en, field_name: d.field_name?.trim() || nameFromLabel(en || bn, taken) };
+  };
+
+  /** Add several questions (templates / AI) in order, after the existing ones. */
+  const addManyFields = async (drafts: FieldDraft[]) => {
+    if (!editing?.id || !drafts.length) return;
+    const existing = editing.booking_forms ?? [];
+    const taken = existing.map((f) => f.field_name);
+    let order = existing.reduce((m, f) => Math.max(m, f.sort_order ?? 0), 0);
+    const added: ServiceBookingFormField[] = [];
+    try {
+      for (const d of drafts) {
+        const full = await completeDraft(d, taken);
+        taken.push(full.field_name!);
+        order += 1;
+        const r = await servicesAdminApi.createFormField(editing.id, {
+          ...EMPTY_FIELD, ...full, sort_order: order,
+          validation_rules: full.validation_rules && Object.keys(full.validation_rules).length ? full.validation_rules : null,
+        });
+        added.push(r.data.data as ServiceBookingFormField);
+      }
+      toast("success", t(`${added.length}টি প্রশ্ন যোগ হয়েছে`, `${added.length} questions added`));
+    } catch (e) {
+      toast("error", apiErrorMessage(e, t("সব প্রশ্ন যোগ করা যায়নি", "Could not add all questions")));
+    } finally {
+      if (added.length) setEditing(prev => prev ? { ...prev, booking_forms: [...(prev.booking_forms ?? []), ...added] } : prev);
+    }
+  };
+
+  /** Swap a question with its neighbour (renumbers sort_order 1..n). */
+  const moveField = async (fieldId: string, dir: -1 | 1) => {
+    if (!editing?.id) return;
+    const list = [...(editing.booking_forms ?? [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    const i = list.findIndex((f) => f.id === fieldId);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    const renum = list.map((f, k) => ({ ...f, sort_order: k + 1 }));
+    const changed = renum.filter((f) => f.sort_order !== (editing.booking_forms ?? []).find((o) => o.id === f.id)?.sort_order);
+    setEditing(prev => prev ? { ...prev, booking_forms: renum } : prev);
+    try {
+      await Promise.all(changed.map((f) => servicesAdminApi.updateFormField(editing.id!, f.id, { sort_order: f.sort_order })));
+    } catch (e) {
+      toast("error", apiErrorMessage(e, t("ক্রম সেভ হয়নি", "Order not saved")));
+    }
+  };
+
   const handleSaveField = async () => {
     if (!editing?.id) return;
-    if (!newField.field_name?.trim()) { toast("error", "Field name is required"); return; }
-    if (!newField.field_label_en?.trim()) { toast("error", "Label (EN) is required"); return; }
-    if (condition.field && !condition.value.trim()) {
-      toast("error", "Enter the value the condition compares against"); return;
+    if (!newField.field_label_bn?.trim() && !newField.field_label_en?.trim()) { toast("error", t("প্রশ্নটি লিখুন", "Write the question")); return; }
+    if (["select", "multiselect", "radio"].includes(newField.field_type ?? "") && (newField.options ?? []).filter((o) => o.trim()).length < 2) {
+      toast("error", t("কমপক্ষে ২টি অপশন দিন", "Add at least 2 options")); return;
     }
+    const filled = await completeDraft(
+      { ...newField, options: (newField.options ?? []).map((o) => o.trim()).filter(Boolean) },
+      (editing.booking_forms ?? []).filter((f) => f.id !== editingFieldId).map((f) => f.field_name),
+    );
+    // A new question goes to the end unless a position was typed.
+    const nextOrder = !editingFieldId && !newField.sort_order
+      ? (editing.booking_forms ?? []).reduce((m, f) => Math.max(m, f.sort_order ?? 0), 0) + 1
+      : newField.sort_order;
+
+    if (condition.field && !condition.value.trim()) {
+      toast("error", t("“কখন দেখাবে”-এর উত্তরটি দিন", "Enter the value the condition compares against")); return;
+    }
+
 
     // Strip empty rule keys so a cleared input doesn't persist as undefined.
     const rules = Object.fromEntries(
@@ -644,9 +735,11 @@ export default function AdminServicesPage() {
     );
     const payload = {
       ...newField,
+      ...filled,
+      sort_order: nextOrder,
       // Label (BN) is NOT NULL on the model — fall back to the EN label so a
       // field saved without a translation doesn't 500.
-      field_label_bn: newField.field_label_bn?.trim() || newField.field_label_en,
+      field_label_bn: filled.field_label_bn?.trim() || filled.field_label_en,
       validation_rules: Object.keys(rules).length > 0 ? rules : null,
       conditional_logic: writeCondition(condition),
     };
@@ -664,7 +757,7 @@ export default function AdminServicesPage() {
           : [...(prev.booking_forms ?? []), saved],
       } : prev);
       closeFieldEditor();
-      toast("success", editingFieldId ? "Field updated" : "Field added");
+      toast("success", editingFieldId ? t("প্রশ্ন সেভ হয়েছে", "Question saved") : t("প্রশ্ন যোগ হয়েছে", "Question added"));
     } catch (e) {
       toast("error", apiErrorMessage(e, editingFieldId ? "Failed to update field" : "Failed to add field"));
     } finally {
@@ -859,7 +952,7 @@ export default function AdminServicesPage() {
           <div ref={editorRef} className="ml-auto w-full max-w-2xl h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
-              <h2 className="text-lg font-semibold text-gray-900">{isNew ? "New Service" : "Edit Service"}</h2>
+              <h2 className="text-lg font-semibold text-heading">{isNew ? t("নতুন সেবা", "New service") : t("সেবা সম্পাদনা", "Edit service")}</h2>
               <button onClick={closeEditor} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
 
@@ -873,18 +966,12 @@ export default function AdminServicesPage() {
               </LivePreview>
               <StepForm steps={[
                 { id: "basic", bn: "মূল তথ্য", en: "Basics", status: (editing.name_bn || editing.name_en) && (editing.category_id || editing.category) ? "ok" : "warn", content: (<>
-                <div>
-                  <label className="form-label flex items-center justify-between gap-2">
-                    <span>সেবার নাম (English) <span className="text-red-400">*</span></span>
-                    <TranslateButton bn={editing.name_bn} onResult={(en) => handleNameChange(en)} en={editing.name_en} onResultBn={(b) => setEditing(prev => prev ? { ...prev, name_bn: b } : prev)} />
-                  </label>
-                  <input value={editing.name_en ?? ""} onChange={e => handleNameChange(e.target.value)} placeholder={tx("Service name")} className="input w-full" />
-                </div>
-                <div>
-                  <label className="form-label">সেবার নাম (বাংলা)</label>
-                  <input value={editing.name_bn ?? ""} onChange={f("name_bn")} placeholder="সার্ভিসের নাম" className="input w-full" dir="auto" />
-                  <p className="text-[11px] text-gray-400 mt-1">শুধু বাংলা লিখলেও চলবে — সেভের সময় ইংরেজি নাম নিজে থেকে তৈরি হবে।</p>
-                </div>
+                <BnEnText label={t("সেবার নাম", "Service name")} required
+                  bn={editing.name_bn} en={editing.name_en}
+                  onBn={(v) => setEditing(prev => prev ? { ...prev, name_bn: v } : prev)}
+                  onEn={handleNameChange}
+                  placeholderBn="যেমন: প্রিন্টিং ও ফটোকপি সেবা" placeholderEn="e.g. Printing & Photocopy"
+                  hint={t("শুধু বাংলা লিখলেই চলবে — সেভের সময় ইংরেজি নাম ও ওয়েব ঠিকানা নিজে থেকে তৈরি হবে।", "Bangla is enough — the English name and web address are made on save.")} />
                 <DuplicateNotice result={svcDup} onOpen={(m) => openEdit({ id: m.id } as Service)} />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* One classification. The taxonomy is authoritative; the
@@ -895,7 +982,7 @@ export default function AdminServicesPage() {
                     <div>
                       <label className="form-label">
                         {tx("Category")} <span className="text-red-400">*</span>{" "}
-                        <span className="text-gray-400 font-normal text-xs">(any depth)</span>
+
                       </label>
                       <select
                         value={editing.category_id ?? ""}
@@ -921,8 +1008,9 @@ export default function AdminServicesPage() {
                     </div>
                   )}
                   <div>
-                    <label className="form-label">Sort Order</label>
+                    <label className="form-label">{t("তালিকায় ক্রম", "Sort order")}</label>
                     <input type="number" value={editing.sort_order ?? 0} onChange={fNum("sort_order")} className="input w-full" />
+                    <p className="text-[11px] text-gray-400 mt-1">{t("ছোট সংখ্যা আগে দেখাবে (০ = স্বাভাবিক)।", "Lower shows first.")}</p>
                   </div>
                 </div>
 
@@ -955,7 +1043,7 @@ export default function AdminServicesPage() {
                 { id: "photos", bn: "ছবি", en: "Photos", status: editing.featured_image_url || editing.icon_url ? "ok" : "warn", content: (<>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <ImageUpload
-                    label="Icon"
+                    label={t("আইকন (ছোট ছবি)", "Icon")}
                     value={editing.icon_url ?? ""}
                     onChange={(url) => setEditing(prev => prev ? { ...prev, icon_url: url } : prev)}
                     folder="abo-enterprise/services"
@@ -963,105 +1051,115 @@ export default function AdminServicesPage() {
                     purpose="service-icon"
                   />
                   <ImageUpload
-                    label="Featured Image"
+                    label={t("মূল ছবি", "Main image")}
                     value={editing.featured_image_url ?? ""}
                     onChange={(url) => setEditing(prev => prev ? { ...prev, featured_image_url: url } : prev)}
                     folder="abo-enterprise/services"
                     purpose="service-image"
                   />
                 </div>
+                <VideoUrlField value={editing.video_url} onChange={(v) => setEditing(prev => prev ? { ...prev, video_url: v || null } : prev)} folder="abo-enterprise/services" />
                 </>) },
                 { id: "price", bn: "দাম", en: "Price", status: svcChecks[1].ok ? "ok" : "warn", content: (<>
-                <label className="flex items-start gap-3 rounded-xl border border-[var(--line)] p-3 cursor-pointer">
-                  <input type="checkbox" className="rounded mt-0.5" checked={isNegotiable}
-                    onChange={(e) => setEditing(prev => prev ? { ...prev, pricing_type: e.target.checked ? "custom_quote" : "fixed" } : prev)} />
-                  <span>
-                    <span className="block text-sm font-semibold text-heading">{t("দাম আলোচনা সাপেক্ষে", "Price on request")}</span>
-                    <span className="block text-xs text-muted">{t("টিক দিলে সাইটে দাম না দেখিয়ে \"দাম জানতে যোগাযোগ / কোটেশন নিন\" দেখাবে।", "Shows \"request a quote\" instead of a price.")}</span>
-                  </span>
-                </label>
-              {/* ── Pricing ─────────────────────────────── */}
               <section className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{tx("Pricing")}</h3>
+                <div>
+                  <p className="text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">{t("কীভাবে দাম নেবেন?", "How is it priced?")} <span className="text-red-500">*</span></p>
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                    {PRICE_CARDS.map((c) => {
+                      const on = editing.pricing_type === c.value || (c.value === "custom_quote" && editing.pricing_type === "custom");
+                      return (
+                        <button key={c.value} type="button" aria-pressed={on}
+                          onClick={() => setEditing(prev => prev ? { ...prev, pricing_type: on ? prev.pricing_type : c.value as Service["pricing_type"] } : prev)}
+                          className={`rounded-xl border p-3 text-left min-h-11 transition-colors ${on ? "border-brand-500 bg-brand-50 dark:bg-brand-500/15 ring-1 ring-brand-500" : "border-[var(--line)] bg-white dark:bg-white/5 hover:border-brand-300"}`}>
+                          <span className="text-xl" aria-hidden>{c.icon}</span>
+                          <span className="block text-sm font-semibold text-heading mt-1">{c.bn}</span>
+                          <span className="block text-[11px] text-muted">{c.help}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {isNegotiable && <p className="text-xs text-muted mt-2">{t("সাইটে দামের জায়গায় “দাম জানতে যোগাযোগ / কোটেশন নিন” দেখাবে।", "The site shows “request a quote” instead of a price.")}</p>}
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">Pricing Type <span className="text-red-400">*</span></label>
-                    <select value={editing.pricing_type ?? "fixed"} onChange={f("pricing_type")} className="input w-full text-sm">
-                      {PRICING_TYPES.map(pt => <option key={pt} value={pt} className="capitalize">{pt}</option>)}
-                    </select>
+                  {(editing.pricing_type === "fixed" || editing.pricing_type === "package" || editing.pricing_type === "hourly") && (
+                    <div>
+                      <label className="form-label">
+                        {editing.pricing_type === "fixed" ? t("দাম (৳)", "Price (৳)") : editing.pricing_type === "package" ? t("শুরু ৳… থেকে (ঐচ্ছিক)", "From ৳ (optional)") : t("সর্বনিম্ন চার্জ ৳ (ঐচ্ছিক)", "Minimum charge ৳ (optional)")}
+                      </label>
+                      <input type="number" inputMode="numeric" value={editing.base_price ?? ""} onChange={fNum("base_price")} placeholder="0" className="input w-full" />
+                      <p className="text-[11px] text-gray-400 mt-1">{t("খালি রাখলে সাইটে “দাম জানতে যোগাযোগ” দেখাবে।", "Blank = “contact for price”.")}</p>
+                    </div>
+                  )}
+                  {editing.pricing_type === "hourly" && (
+                    <div>
+                      <label className="form-label">{t("প্রতি ঘণ্টা ৳", "Per hour ৳")}</label>
+                      <input type="number" inputMode="numeric" value={editing.hourly_rate ?? ""} onChange={fNum("hourly_rate")} placeholder="0" className="input w-full" />
+                    </div>
+                  )}
+                  {editing.pricing_type === "package" && (
+                    <p className="text-xs text-muted sm:col-span-2 rounded-lg bg-gray-50 dark:bg-white/5 px-3 py-2">📦 {t("নিচের “প্যাকেজ” অংশে বেসিক/স্ট্যান্ডার্ড/প্রিমিয়াম দাম যোগ করুন।", "Add the package prices in the Packages section below.")}</p>
+                  )}
+                </div>
+                <details className="rounded-xl border border-[var(--line)]" open={isNegotiable || editing.min_price != null || editing.max_price != null}>
+                  <summary className="cursor-pointer select-none px-3 py-2.5 text-sm font-medium text-heading min-h-11">↔️ {t("দামের সীমা (ঐচ্ছিক)", "Price range (optional)")}</summary>
+                  <div className="px-3 pb-3 grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="form-label text-xs">{t("সর্বনিম্ন ৳", "Minimum ৳")}</label>
+                      <input type="number" inputMode="numeric" value={editing.min_price ?? ""} onChange={fNum("min_price")} placeholder="0" className="input w-full" />
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">{t("সর্বোচ্চ ৳", "Maximum ৳")}</label>
+                      <input type="number" inputMode="numeric" value={editing.max_price ?? ""} onChange={fNum("max_price")} placeholder="0" className="input w-full" />
+                    </div>
+                    <p className="col-span-2 text-[11px] text-gray-400">{t("আনুমানিক খরচ বোঝাতে, যেমন ৳৫০০–৳২,০০০।", "An estimate, e.g. ৳500–৳2,000.")}</p>
                   </div>
-                  {/* GAP-15 — where the service is completed. Left blank, the
-                      public pages say nothing, which is the pre-0008 behaviour. */}
-                  <div>
-                    <label className="form-label">{tx("Fulfilment")}</label>
-                    <select
-                      value={editing.fulfilment ?? ""}
-                      onChange={(e) => setEditing(prev => prev ? { ...prev, fulfilment: (e.target.value || null) as ServiceFulfilment } : prev)}
-                      className="input w-full text-sm"
-                    >
-                      <option value="">Unspecified (say nothing)</option>
-                      <option value="remote">Remote — no visit needed</option>
-                      <option value="at_shop">At shop — customer must come in</option>
-                      <option value="hybrid">Hybrid — starts online, finishes at shop</option>
-                    </select>
+                </details>
+                <details className="rounded-xl border border-[var(--line)]" open={!!(editing.delivery_charge || editing.consultancy_fee || editing.requires_advance)}>
+                  <summary className="cursor-pointer select-none px-3 py-2.5 text-sm font-medium text-heading min-h-11">💳 {t("অতিরিক্ত চার্জ ও অগ্রিম (ঐচ্ছিক)", "Extra charges & advance (optional)")}</summary>
+                  <div className="px-3 pb-3 space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="form-label text-xs">{t("ডেলিভারি চার্জ ৳", "Delivery charge ৳")}</label>
+                        <input type="number" inputMode="numeric" value={editing.delivery_charge ?? ""} onChange={fNum("delivery_charge")} placeholder="0" className="input w-full" />
+                      </div>
+                      <div>
+                        <label className="form-label text-xs">{t("পরামর্শ ফি / অগ্রিম ৳", "Consultancy fee / advance ৳")}</label>
+                        <input type="number" inputMode="numeric" value={editing.consultancy_fee ?? ""} onChange={fNum("consultancy_fee")} placeholder="0" className="input w-full" />
+                      </div>
+                    </div>
+                    <label className="flex items-start gap-2 text-sm cursor-pointer min-h-11">
+                      <input type="checkbox" checked={!!editing.requires_advance} onChange={e => setEditing(prev => prev ? { ...prev, requires_advance: e.target.checked } : prev)} className="rounded mt-0.5" />
+                      <span>{t("অগ্রিম/পরামর্শ ফি লাগবে", "Requires advance / consultancy fee")}<span className="block text-[11px] text-gray-400">{t("টাকা পাওয়ার পর বুকিং নিশ্চিত হবে।", "Booking is confirmed after payment.")}</span></span>
+                    </label>
                   </div>
-                  {/* Screen 08c — published turnaround, in working days. Leave
-                      both blank and the public pages say nothing about time. */}
-                  <div>
-                    <label className="form-label">Turnaround (working days)</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number" min={1} max={365}
-                        value={editing.turnaround_days_min ?? ""}
-                        onChange={fNum("turnaround_days_min")}
-                        placeholder="min" className="input w-full"
-                      />
-                      <span className="text-gray-400">–</span>
-                      <input
-                        type="number" min={1} max={365}
-                        value={editing.turnaround_days_max ?? ""}
-                        onChange={fNum("turnaround_days_max")}
-                        placeholder="max" className="input w-full"
-                      />
+                </details>
+                <details className="rounded-xl border border-[var(--line)]" open={!!(editing.fulfilment || editing.turnaround_days_min || editing.turnaround_days_max)}>
+                  <summary className="cursor-pointer select-none px-3 py-2.5 text-sm font-medium text-heading min-h-11">🕒 {t("কাজ কোথায় ও কত দিনে (ঐচ্ছিক)", "Where & how long (optional)")}</summary>
+                  <div className="px-3 pb-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="form-label text-xs">{t("কাজ কোথায় হবে", "Where the work happens")}</label>
+                      <select value={editing.fulfilment ?? ""} onChange={(e) => setEditing(prev => prev ? { ...prev, fulfilment: (e.target.value || null) as ServiceFulfilment } : prev)} className="input w-full text-sm">
+                        <option value="">{t("উল্লেখ নেই", "Not stated")}</option>
+                        <option value="remote">{t("অনলাইনে — দোকানে আসতে হবে না", "Remote — no visit needed")}</option>
+                        <option value="at_shop">{t("দোকানে — গ্রাহককে আসতে হবে", "At shop — customer comes in")}</option>
+                        <option value="hybrid">{t("দুটোই — অনলাইনে শুরু, দোকানে শেষ", "Hybrid — online, finished at shop")}</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">{t("কত কর্মদিবসে শেষ হবে", "Working days to finish")}</label>
+                      <div className="flex items-center gap-2">
+                        <input type="number" min={1} max={365} value={editing.turnaround_days_min ?? ""} onChange={fNum("turnaround_days_min")} placeholder={t("কম", "min")} className="input w-full" />
+                        <span className="text-gray-400">–</span>
+                        <input type="number" min={1} max={365} value={editing.turnaround_days_max ?? ""} onChange={fNum("turnaround_days_max")} placeholder={t("বেশি", "max")} className="input w-full" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="form-label text-xs">{t("গুরুত্ব (১-১০)", "Lead priority (1-10)")}</label>
+                      <input type="number" min={1} max={10} value={editing.lead_priority ?? 5} onChange={fNum("lead_priority")} className="input w-full" />
+                      <p className="text-[11px] text-gray-400 mt-1">{t("বেশি হলে নতুন অনুরোধ অ্যাডমিন তালিকায় আগে আসে।", "Higher = new requests listed first.")}</p>
                     </div>
                   </div>
-                  <div>
-                    <label className="form-label">Lead Priority (1-10)</label>
-                    <input type="number" min={1} max={10} value={editing.lead_priority ?? 5} onChange={fNum("lead_priority")} className="input w-full" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">Base Price (BDT) <span className="text-gray-400 font-normal text-xs">— শুরুর দাম; খালি = &quot;দাম জানতে যোগাযোগ&quot;</span></label>
-                    <input type="number" value={editing.base_price ?? ""} onChange={fNum("base_price")} placeholder="0" className="input w-full" />
-                  </div>
-                  <div>
-                    <label className="form-label">Hourly Rate (BDT)</label>
-                    <input type="number" value={editing.hourly_rate ?? ""} onChange={fNum("hourly_rate")} placeholder="0" className="input w-full" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">Min Price (BDT)</label>
-                    <input type="number" value={editing.min_price ?? ""} onChange={fNum("min_price")} placeholder="0" className="input w-full" />
-                  </div>
-                  <div>
-                    <label className="form-label">Max Price (BDT)</label>
-                    <input type="number" value={editing.max_price ?? ""} onChange={fNum("max_price")} placeholder="0" className="input w-full" />
-                  </div>
-                  <div>
-                    <label className="form-label">Delivery Charge (৳)</label>
-                    <input type="number" value={editing.delivery_charge ?? ""} onChange={fNum("delivery_charge")} placeholder="0" className="input w-full" />
-                  </div>
-                  <div>
-                    <label className="form-label">Consultancy Fee (৳) — advance</label>
-                    <input type="number" value={editing.consultancy_fee ?? ""} onChange={fNum("consultancy_fee")} placeholder="0" className="input w-full" />
-                  </div>
-                </div>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={!!editing.requires_advance} onChange={e => setEditing(prev => prev ? { ...prev, requires_advance: e.target.checked } : prev)} className="rounded" />
-                  Requires advance / consultancy fee (booking confirmed after payment)
-                </label>
+                </details>
               </section>
               {/* ── Pricing Tiers (edit only) ────────────── */}
               <ServicePricingTiersEditor
@@ -1080,67 +1178,52 @@ export default function AdminServicesPage() {
               />
                 </>) },
                 { id: "desc", bn: "বিবরণ", en: "Description", status: svcChecks[2].ok ? "ok" : "warn", content: (<>
-              {/* ── Descriptions ────────────────────────── */}
+              {/* ── Descriptions ─────────────────────────── */}
               <section className="space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Descriptions <span className="normal-case font-normal">(বিবরণ)</span></h3>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-xs text-muted flex-1 min-w-[12rem]">{t("✨ AI নাম দেখে বিবরণ, সুবিধা ও প্রশ্নোত্তর লিখে দেবে — আপনি দেখে বদলাতে পারবেন।", "✨ AI writes the description, benefits and FAQ from the name.")}</p>
                   <AiDescribeButton
                     kind="service"
                     name={editing.name_bn || editing.name_en}
                     notes={[editing.short_description_bn, editing.short_description_en, editing.description_bn].filter(Boolean).join("\n")}
                     onResult={applyAiDescription}
-                    className="btn btn-outline btn-sm gap-1.5 ml-auto"
-                  />
-                  <button
-                    type="button"
-                    onClick={autoTranslateBasic}
-                    disabled={translating !== null}
                     className="btn btn-outline btn-sm gap-1.5"
-                    title="নাম ও বিবরণের খালি বাংলা ঘরগুলো English থেকে অটো-পূরণ করবে"
-                  >
+                  />
+                  <button type="button" onClick={autoTranslateBasic} disabled={translating !== null} className="btn btn-outline btn-sm gap-1.5"
+                    title={t("নাম ও বিবরণের খালি বাংলা ঘরগুলো English থেকে পূরণ করবে", "Fill empty Bangla boxes from English")}>
                     {translating === "basic" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
-                    বাংলা অনুবাদ
+                    {t("বাংলা অনুবাদ", "Translate to Bangla")}
                   </button>
                 </div>
+                <BnEnText label={t("ছোট বিবরণ — কার্ডে দেখাবে", "Short description — shown on cards")} rows={2}
+                  bn={editing.short_description_bn} en={editing.short_description_en}
+                  onBn={(v) => setEditing(prev => prev ? { ...prev, short_description_bn: v } : prev)}
+                  onEn={(v) => setEditing(prev => prev ? { ...prev, short_description_en: v } : prev)}
+                  placeholderBn="এক-দুই লাইনে সেবাটি কী" placeholderEn="One-line summary…" />
+                <BnEnText label={t("বিস্তারিত বিবরণ — সেবার পাতায় দেখাবে", "Full description — shown on the service page")} rich rows={8}
+                  bn={editing.long_description_bn} en={editing.long_description_en}
+                  onBn={(v) => setEditing(prev => prev ? { ...prev, long_description_bn: v } : prev)}
+                  onEn={(v) => setEditing(prev => prev ? { ...prev, long_description_en: v } : prev)}
+                  placeholderBn="সেবার বিস্তারিত — টুলবার দিয়ে শিরোনাম, তালিকা, রঙ, লিংক, ছবি দিন" placeholderEn="In-depth write-up…"
+                  hint={t("“প্রিভিউ” চাপলে সাইটে যেমন দেখাবে তেমন দেখা যাবে।", "Tap Preview to see it as on the site.")} />
+                <details className="rounded-xl border border-[var(--line)]" open={!!(editing.description_bn?.trim() && !editing.long_description_bn?.trim())}>
+                  <summary className="cursor-pointer select-none px-3 py-2.5 text-sm font-medium text-heading min-h-11">
+                    📝 {t("তালিকার বিবরণ (ঐচ্ছিক)", "Listing description (optional)")}
+                    <span className="block text-[11px] font-normal text-muted">{t("খালি রাখলে বিস্তারিত বিবরণের প্রথম অংশ নিজে থেকে বসবে।", "Blank = the first part of the full description is used.")}</span>
+                  </summary>
+                  <div className="px-3 pb-3">
+                    <BnEnText label={t("তালিকার বিবরণ", "Listing description")} rich rows={4}
+                      bn={editing.description_bn} en={editing.description_en}
+                      onBn={(v) => setEditing(prev => prev ? { ...prev, description_bn: v } : prev)}
+                      onEn={(v) => setEditing(prev => prev ? { ...prev, description_en: v } : prev)} />
+                  </div>
+                </details>
                 <div>
-                  <label className="form-label flex items-center justify-between gap-2">
-                    <span>Short Description (EN)</span>
-                    <TranslateButton bn={editing.short_description_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, short_description_en: en } : prev)} en={editing.short_description_en} onResultBn={(b) => setEditing(prev => prev ? { ...prev, short_description_bn: b } : prev)} />
-                  </label>
-                  <textarea value={editing.short_description_en ?? ""} onChange={f("short_description_en")} rows={2} placeholder="One-line summary…" className="input w-full resize-none text-sm" />
-                </div>
-                <div>
-                  <label className="form-label flex items-center justify-between gap-2">
-                    <span>Full Description (EN)</span>
-                    <TranslateButton bn={editing.description_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, description_en: en } : prev)} en={editing.description_en} onResultBn={(b) => setEditing(prev => prev ? { ...prev, description_bn: b } : prev)} />
-                  </label>
-                  <textarea value={editing.description_en ?? ""} onChange={f("description_en")} rows={4} placeholder="Detailed description…" className="input w-full resize-y text-sm" />
-                </div>
-                <div>
-                  <label className="form-label">Short Description (বাংলা)</label>
-                  <textarea value={editing.short_description_bn ?? ""} onChange={f("short_description_bn")} rows={2} placeholder="সংক্ষিপ্ত বিবরণ…" className="input w-full resize-none text-sm" dir="auto" />
-                </div>
-                <div>
-                  <label className="form-label">Full Description (বাংলা)</label>
-                  <textarea value={editing.description_bn ?? ""} onChange={f("description_bn")} rows={4} placeholder="বিস্তারিত বিবরণ…" className="input w-full resize-y text-sm" dir="auto" />
-                </div>
-                <div>
-                  <label className="form-label flex items-center justify-between gap-2">
-                    <span>Long Description (EN) <span className="text-gray-400 font-normal text-xs">(optional — detail page body)</span></span>
-                    <TranslateButton bn={editing.long_description_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, long_description_en: en } : prev)} en={editing.long_description_en} onResultBn={(b) => setEditing(prev => prev ? { ...prev, long_description_bn: b } : prev)} />
-                  </label>
-                  <textarea value={editing.long_description_en ?? ""} onChange={f("long_description_en")} rows={5} placeholder="In-depth service write-up shown on the service detail page…" className="input w-full resize-y text-sm" />
-                </div>
-                <div>
-                  <label className="form-label">Long Description (বাংলা) <span className="text-gray-400 font-normal text-xs">(ঐচ্ছিক)</span></label>
-                  <textarea value={editing.long_description_bn ?? ""} onChange={f("long_description_bn")} rows={5} placeholder="সার্ভিস পেজের বিস্তারিত লেখা…" className="input w-full resize-y text-sm" dir="auto" />
-                </div>
-                <div>
-                  <label className="form-label">{tx("Tags")} <span className="text-gray-400 font-normal text-xs">(comma-separated — search &amp; related services)</span></label>
+                  <label className="form-label">{t("ট্যাগ", "Tags")} <span className="text-gray-400 font-normal text-xs">({t("কমা দিয়ে — সার্চ ও “এরকম আরও সেবা”-তে কাজে লাগে", "comma-separated — search & related services")})</span></label>
                   <input
                     value={editing.tags?.join(", ") ?? ""}
-                    onChange={(e) => setEditing((prev) => prev ? { ...prev, tags: e.target.value.split(",").map((t) => t.trim()).filter(Boolean) } : prev)}
-                    placeholder="printing, business card, design…"
+                    onChange={(e) => setEditing((prev) => prev ? { ...prev, tags: e.target.value.split(",").map((x) => x.trim()).filter(Boolean) } : prev)}
+                    placeholder="printing, photocopy, প্রিন্ট…"
                     className="input w-full text-sm"
                   />
                 </div>
@@ -1152,7 +1235,7 @@ export default function AdminServicesPage() {
                   onClick={() => setExtOpen(o => !o)}
                   className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
                 >
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Extended Details</span>
+                  <span className="text-sm font-semibold text-heading">📋 {t("আরও তথ্য: কাজের ধাপ, সুবিধা, শর্ত, কাগজপত্র, প্রশ্নোত্তর", "More: steps, benefits, requirements, documents, FAQ")}<span className="block text-[11px] font-normal text-muted">{t("এখানে লিংক (https://…) বা ছবির লিংক দিলে সাইটে ক্লিকযোগ্য হবে; **বোল্ড** ও ইমোজিও চলবে।", "Links and image links become clickable on the site; **bold** and emoji work too.")}</span></span>
                   <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${extOpen ? "rotate-180" : ""}`} />
                 </button>
                 {extOpen && (
@@ -1253,15 +1336,15 @@ export default function AdminServicesPage() {
                 </>) },
                 { id: "publish", bn: "প্রকাশ", en: "Publish", status: svcChecks.every((c) => c.ok) ? "ok" : "warn", content: (<>
                 <PublishChecklist items={svcChecks} />
-                <div className="flex items-center gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+                  <label className="flex items-center gap-2 cursor-pointer select-none min-h-11">
                     <div className="relative">
                       <input type="checkbox" className="sr-only" checked={!!editing.is_active}
                         onChange={e => setEditing(prev => prev ? { ...prev, is_active: e.target.checked } : prev)} />
                       <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_active ? "bg-green-500" : "bg-gray-300"}`} />
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_active ? "translate-x-5" : "translate-x-1"}`} />
                     </div>
-                    <span className="text-sm text-gray-700">{tx("Active")}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-200">{t("সাইটে দেখাবে", "Live on site")}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer select-none">
                     <div className="relative">
@@ -1270,7 +1353,7 @@ export default function AdminServicesPage() {
                       <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_featured ? "bg-amber-400" : "bg-gray-300"}`} />
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_featured ? "translate-x-5" : "translate-x-1"}`} />
                     </div>
-                    <span className="text-sm text-gray-700">{tx("Featured")}</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-200">{t("⭐ হোমপেজে দেখান", "⭐ Featured")}</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer select-none" title="Also let customers buy/order this service like a product">
                     <div className="relative">
@@ -1279,7 +1362,7 @@ export default function AdminServicesPage() {
                       <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_orderable ? "bg-brand-500" : "bg-gray-300"}`} />
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_orderable ? "translate-x-5" : "translate-x-1"}`} />
                     </div>
-                    <span className="text-sm text-gray-700">Also orderable</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-200">{t("🛒 পণ্যের মতো অর্ডারও নেওয়া যাবে", "🛒 Also orderable")}</span>
                   </label>
                   {/* Turning this off makes the CTA "Contact Us" and the booking
                       endpoint reject submissions — unless the service is also
@@ -1291,7 +1374,7 @@ export default function AdminServicesPage() {
                       <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_bookable !== false ? "bg-brand-500" : "bg-gray-300"}`} />
                       <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_bookable !== false ? "translate-x-5" : "translate-x-1"}`} />
                     </div>
-                    <span className="text-sm text-gray-700">Bookable</span>
+                    <span className="text-sm text-gray-700 dark:text-gray-200">{t("📅 অনলাইনে বুকিং নেওয়া যাবে", "📅 Bookable online")}</span>
                   </label>
                 </div>
                 {/* Linked blog posts — many-to-many. Ticking a blog features
@@ -1299,20 +1382,20 @@ export default function AdminServicesPage() {
                     editor too. */}
                 <div>
                   <label className="form-label">
-                    Blog
+                    {t("ব্লগে দেখান", "Show in blog posts")}
                     {(editing.blog_ids?.length ?? 0) > 0 && (
                       <span className="ml-2 inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-brand-600 text-white text-[10px] font-bold align-middle">
                         {editing.blog_ids?.length}
                       </span>
                     )}
                   </label>
-                  <p className="text-xs text-gray-500 mb-2">Tick the blog posts to feature this service in.</p>
+                  <p className="text-xs text-gray-500 mb-2">{t("যে ব্লগ পোস্টের নিচে এই সেবা দেখাতে চান, টিক দিন।", "Tick the blog posts to feature this service in.")}</p>
                   <LinkChecklist
                     options={blogOptions}
                     selected={editing.blog_ids ?? []}
                     loading={blogOptionsLoading || linkedBlogsLoading}
                     emptyText={tx("No blog posts")}
-                    searchPlaceholder="Search blog posts…"
+                    searchPlaceholder={t("ব্লগ খুঁজুন…", "Search blog posts…")}
                     onToggle={(id) => setEditing(prev => {
                       if (!prev) return prev;
                       const cur = prev.blog_ids ?? [];
@@ -1329,7 +1412,7 @@ export default function AdminServicesPage() {
                 <DuplicateNotice result={svcDup} onOpen={(m) => openEdit({ id: m.id } as Service)} show="codes" />
               {/* ── Scheduling (optional) ───────────────── */}
               <section className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Appointment Scheduling</h3>
+                <h3 className="text-sm font-semibold text-heading">📅 {t("সময় নির্ধারণ (অ্যাপয়েন্টমেন্ট)", "Appointment scheduling")}</h3>
                 <label className="flex items-center gap-2 text-sm cursor-pointer">
                   <input
                     type="checkbox"
@@ -1337,42 +1420,41 @@ export default function AdminServicesPage() {
                     onChange={e => setEditing(prev => prev ? { ...prev, scheduling_enabled: e.target.checked } : prev)}
                     className="rounded"
                   />
-                  Take appointments for this service
+                  {t("এই সেবার জন্য নির্দিষ্ট সময়ের স্লট নেবেন", "Take time-slot appointments for this service")}
                 </label>
                 <p className="text-xs text-gray-400 -mt-2">
-                  Off (default) keeps the current behaviour: customers pick a preferred date with no
-                  time slots and no availability checks.
+                  {t("বন্ধ থাকলে (স্বাভাবিক) গ্রাহক শুধু পছন্দের তারিখ দেন — সময়ের স্লট বা খালি আছে কিনা যাচাই হয় না।", "Off (default): customers just pick a preferred date — no slots or availability checks.")}
                 </p>
 
                 {editing.scheduling_enabled && (
                   <div className="space-y-4 border border-gray-100 rounded-xl p-4">
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div>
-                        <label className="form-label text-[11px]">Slot Length (min)</label>
+                        <label className="form-label text-[11px]">{t("প্রতি স্লট (মিনিট)", "Slot length (min)")}</label>
                         <input type="number" min={5} value={editing.slot_duration_minutes ?? 60}
                           onChange={fNum("slot_duration_minutes")} className="input w-full text-sm" />
                       </div>
                       <div>
-                        <label className="form-label text-[11px]">Capacity / Slot</label>
+                        <label className="form-label text-[11px]">{t("প্রতি স্লটে কতজন", "Capacity / slot")}</label>
                         <input type="number" min={1} value={editing.slot_capacity ?? 1}
                           onChange={fNum("slot_capacity")} className="input w-full text-sm" />
                       </div>
                       <div>
-                        <label className="form-label text-[11px]">Min Notice (hrs)</label>
+                        <label className="form-label text-[11px]">{t("কত ঘণ্টা আগে বুক করতে হবে", "Min notice (hrs)")}</label>
                         <input type="number" min={0} value={editing.min_notice_hours ?? 0}
                           onChange={fNum("min_notice_hours")} className="input w-full text-sm" />
                       </div>
                       <div>
-                        <label className="form-label text-[11px]">Book Ahead (days)</label>
+                        <label className="form-label text-[11px]">{t("কত দিন আগে পর্যন্ত বুক", "Book ahead (days)")}</label>
                         <input type="number" min={1} value={editing.booking_horizon_days ?? 60}
                           onChange={fNum("booking_horizon_days")} className="input w-full text-sm" />
                       </div>
                     </div>
 
                     <div>
-                      <label className="form-label text-[11px]">Working Hours</label>
+                      <label className="form-label text-[11px]">{t("কাজের সময়", "Working hours")}</label>
                       <p className="text-[11px] text-gray-400 mb-2">
-                        Leave a day blank to close it. Multiple ranges: 09:00-13:00, 14:00-18:00
+                        {t("কোনো দিন বন্ধ হলে খালি রাখুন। একাধিক সময়: 09:00-13:00, 14:00-18:00", "Leave a day blank to close it. Multiple ranges: 09:00-13:00, 14:00-18:00")}
                       </p>
                       <div className="space-y-2">
                         {WEEKDAYS.map(({ key, label }) => {
@@ -1402,7 +1484,7 @@ export default function AdminServicesPage() {
                     </div>
 
                     <div>
-                      <label className="form-label text-[11px]">Holidays (one date per line, YYYY-MM-DD)</label>
+                      <label className="form-label text-[11px]">{t("ছুটির দিন (প্রতি লাইনে একটি তারিখ, YYYY-MM-DD)", "Holidays (one date per line, YYYY-MM-DD)")}</label>
                       <textarea
                         rows={3}
                         value={(editing.holidays ?? []).join("\n")}
@@ -1419,14 +1501,13 @@ export default function AdminServicesPage() {
               </section>
               {/* ── Call-To-Action ──────────────────────── */}
               <section className="space-y-4">
-                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">Call-To-Action Button</h3>
+                <h3 className="text-sm font-semibold text-heading">🔘 {t("সেবার পাতার মূল বোতাম", "Main button on the service page")}</h3>
                 <p className="text-xs text-gray-400 -mt-2">
-                  Controls the button shown on the public service page. &quot;Auto&quot; infers it:
-                  custom-quote pricing → Request Quote, orderable → Order Now, otherwise Book Now.
+                  {t("“নিজে থেকে” রাখলে: কোটেশন হলে “কোটেশন নিন”, অর্ডার নেওয়া গেলে “অর্ডার করুন”, নইলে “বুক করুন” দেখাবে।", "“Auto”: quote → Request Quote, orderable → Order Now, otherwise Book Now.")}
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div>
-                    <label className="form-label">CTA Type</label>
+                    <label className="form-label">{t("বোতামের ধরন", "Button type")}</label>
                     <select
                       value={editing.cta_type ?? ""}
                       onChange={(e) => setEditing(prev => prev ? { ...prev, cta_type: e.target.value || null } : prev)}
@@ -1436,7 +1517,7 @@ export default function AdminServicesPage() {
                     </select>
                   </div>
                   <div>
-                    <div className="flex items-center justify-between gap-2"><label className="form-label">Custom Label (EN)</label><TranslateButton bn={editing.cta_label_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, cta_label_en: en } : prev)} en={editing.cta_label_en} onResultBn={(b) => setEditing(prev => prev ? { ...prev, cta_label_bn: b } : prev)} /></div>
+                    <div className="flex items-center justify-between gap-2"><label className="form-label">{t("নিজস্ব লেখা (English)", "Custom label (EN)")}</label><TranslateButton bn={editing.cta_label_bn} onResult={(en) => setEditing(prev => prev ? { ...prev, cta_label_en: en } : prev)} en={editing.cta_label_en} onResultBn={(b) => setEditing(prev => prev ? { ...prev, cta_label_bn: b } : prev)} /></div>
                     <input
                       value={editing.cta_label_en ?? ""}
                       onChange={(e) => setEditing(prev => prev ? { ...prev, cta_label_en: e.target.value || null } : prev)}
@@ -1445,7 +1526,7 @@ export default function AdminServicesPage() {
                     />
                   </div>
                   <div>
-                    <label className="form-label">Custom Label (বাংলা)</label>
+                    <label className="form-label">{t("নিজস্ব লেখা (বাংলা)", "Custom label (বাংলা)")}</label>
                     <input
                       value={editing.cta_label_bn ?? ""}
                       onChange={(e) => setEditing(prev => prev ? { ...prev, cta_label_bn: e.target.value || null } : prev)}
@@ -1472,16 +1553,25 @@ export default function AdminServicesPage() {
                 editingFieldId={editingFieldId}
                 savingField={savingField}
                 handleSaveField={handleSaveField}
+                onAddMany={addManyFields}
+                onMove={moveField}
+                serviceName={editing.name_bn || editing.name_en}
+                serviceNotes={stripMarks(editing.short_description_bn || editing.short_description_en || editing.description_bn || "")}
               />
               {/* ── SEO ─────────────────────────────────── */}
               <section>
                 <button type="button" onClick={() => setSeoOpen(o => !o)}
                   className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl text-left">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">SEO Settings</span>
+                  <span className="text-sm font-semibold text-heading">🔎 {t("Google-এ দেখানো (SEO)", "SEO (Google)")}</span>
                   {seoOpen ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                 </button>
                 {seoOpen && (
                   <div className="mt-2 space-y-3 px-1">
+                    <SeoAutoPanel name={editing.name_bn || editing.name_en || ""}
+                      desc={editing.short_description_bn || editing.long_description_bn || editing.description_bn || editing.short_description_en || ""}
+                      tags={editing.tags ?? []} path={`/services/${editing.slug || "…"}`}
+                      title={editing.seo_title} description={editing.seo_description} keywords={editing.seo_keywords}
+                      onChange={(v) => setEditing(prev => prev ? { ...prev, ...v } : prev)} />
                     <div>
                       <label className="form-label text-xs">SEO Title <span className="text-gray-400 font-normal">(defaults to service name)</span></label>
                       <input value={editing.seo_title ?? ""} onChange={f("seo_title")} placeholder="Custom SEO title..." className="input w-full text-sm" />

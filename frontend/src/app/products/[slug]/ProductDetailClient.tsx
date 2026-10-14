@@ -28,7 +28,9 @@ import ProductReviews from "@/components/features/ProductReviews";
 import GlassCard from "@/components/ui/GlassCard";
 import CountdownTimer, { getWeeklySaleEnd } from "@/components/ui/CountdownTimer";
 import { parseDhakaDateTime } from "@/lib/flashSale";
-import { parseDescription, specRows } from "@/lib/productText";
+import { fixBoldMarks, parseDescription, specRows } from "@/lib/productText";
+import RichText from "@/components/ui/RichText";
+import VideoEmbed from "@/components/ui/VideoEmbed";
 
 const ProductBookingModal = dynamic(() => import("@/components/products/ProductBookingModal"), { ssr: false });
 
@@ -151,7 +153,7 @@ export default function ProductDetailClient({ product }: Props) {
   const productId = product.id ?? product.slug;
   const waMsg = encodeURIComponent(`${lang === "bn" ? "অর্ডার করতে চাই" : "I want to order"}: ${name} - ${formatPrice(effectivePrice)}`);
   const savings = strikePrice ? strikePrice - effectivePrice : 0;
-  const descBlocks = parseDescription(desc);
+  const descBlocks = parseDescription(fixBoldMarks(desc ?? ""));
   const specs = specRows(product.specifications);
   const categoryHref = product.category ? `/products?category=${encodeURIComponent(product.category)}` : "/products";
   const categoryLabel = product.category ? product.category.replace(/[-_]+/g, " ") : "";
@@ -386,23 +388,15 @@ export default function ProductDetailClient({ product }: Props) {
                 ))}
               </nav>
 
+              {product.video_url && (
+                <div className="mb-6">
+                  <VideoEmbed url={product.video_url} title={name} />
+                </div>
+              )}
               {descBlocks.length > 0 && (
                 <div id="overview" className="scroll-mt-24 mb-6 space-y-3 text-sm leading-relaxed text-gray-600 dark:text-gray-300 break-words">
                   <h2 className="font-semibold text-sm text-heading">{lang === "bn" ? "পণ্যের বিবরণ" : "Description"}</h2>
-                  {descBlocks.map((b, i) =>
-                    b.type === "p" ? (
-                      <p key={i}>{b.text}</p>
-                    ) : (
-                      <ul key={i} className="space-y-1.5">
-                        {b.items.map((it, j) => (
-                          <li key={j} className="flex gap-2">
-                            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-brand-500" aria-hidden />
-                            <span className="min-w-0">{it}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )
-                  )}
+                  <RichText text={desc} className="space-y-3 text-[15px] leading-7 text-gray-700 dark:text-gray-200" />
                 </div>
               )}
               {specs.length > 0 && (

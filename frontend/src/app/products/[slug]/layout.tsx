@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { stripMarks } from "@/lib/productText";
 import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Props {
@@ -19,7 +20,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
     if (!data) return {};
 
     const name = data.name_en ?? data.name_bn ?? "Product";
-    const description = data.description_en ?? data.description_bn ?? "";
+    const description = stripMarks(data.description_en ?? data.description_bn ?? "");
     const image = data.image_url;
 
     return {

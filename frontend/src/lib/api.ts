@@ -1469,4 +1469,15 @@ export const aiCatalogApi = {
   },
   describe: (data: { kind: "product" | "service" | "software" | "showcase"; name: string; notes?: string }) =>
     api.post<ApiResponse<AiDescription>>("/api/v1/admin/ai-catalog/describe", data, { timeout: 120000 }),
+  /** Suggested booking-form questions for a service (nothing is saved). */
+  bookingFields: (data: { name: string; notes?: string }) =>
+    api.post<ApiResponse<{ fields: AiBookingField[] }>>("/api/v1/admin/ai-catalog/booking-fields", data, { timeout: 120000 }),
 };
+export interface AiBookingField {
+  field_label_en: string;
+  field_label_bn: string;
+  field_type: string;
+  is_required: boolean;
+  placeholder: string | null;
+  options: { en: string; bn: string }[];
+}

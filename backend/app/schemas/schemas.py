@@ -64,6 +64,7 @@ class ProductBase(BaseModel):
     seo_keywords: str | None = None
     canonical_url: str | None = None
     og_image: str | None = None
+    video_url: str | None = Field(None, max_length=1000)
     sku: str | None = None
     barcode: str | None = None
     brand: str | None = None
@@ -116,6 +117,7 @@ class ProductUpdate(BaseModel):
     seo_keywords: str | None = None
     canonical_url: str | None = None
     og_image: str | None = None
+    video_url: str | None = Field(None, max_length=1000)
     sku: str | None = None
     barcode: str | None = None
     brand: str | None = None
@@ -618,6 +620,7 @@ class ServiceBase(BaseModel):
     seo_keywords: str | None = None
     canonical_url: str | None = None
     og_image: str | None = None
+    video_url: str | None = Field(None, max_length=1000)
     # Content blocks. Items may be plain strings (legacy, treated as English) or
     # bilingual objects ({en, bn} for lists; title_bn/description_bn on steps;
     # question_bn/answer_bn on faq). Kept untyped so both shapes are accepted
@@ -717,6 +720,7 @@ class ServiceUpdate(BaseModel):
     seo_keywords: str | None = None
     canonical_url: str | None = None
     og_image: str | None = None
+    video_url: str | None = Field(None, max_length=1000)
     sort_order: int | None = None
     icon_url: str | None = None
     featured_image_url: str | None = None

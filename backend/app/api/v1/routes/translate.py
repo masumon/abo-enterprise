@@ -8,11 +8,12 @@ to fill an English field from Bangla. It writes nothing to the database.
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.security import require_admin
-from app.core.translate import translate_text
+from app.core.database import get_db
+from app.core.translate_smart import smart_translate
 from app.schemas.schemas import ApiResponse
 
 logger = logging.getLogger(__name__)
@@ -26,12 +27,13 @@ class TranslateIn(BaseModel):
 
 
 @router.post("/translate", response_model=ApiResponse)
-async def admin_translate(payload: TranslateIn, _admin: str = Depends(require_admin)):
+async def admin_translate(payload: TranslateIn, _admin: str = Depends(require_admin), db: AsyncSession = Depends(get_db)):
     """Translate arbitrary admin text. Returns {translated}; 502 on failure so
     the UI can prompt for a manual entry instead of saving the source text."""
     try:
-        # Blocking HTTP calls: keep them off the event loop (Render runs one worker).
-        translated = await run_in_threadpool(translate_text, payload.text, payload.source, payload.target)
+        # Gemini first (context-aware, professional), free providers as fallback;
+        # links, numbers and formatting marks are protected either way.
+        translated = await smart_translate(db, payload.text, payload.source, payload.target)
     except Exception as exc:  # noqa: BLE001
         logger.warning("Admin translate failed: %s", exc)
         raise HTTPException(status_code=502, detail="Translation service unavailable")
