@@ -130,6 +130,8 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
             <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
             <input
               id="otp-code"
+              name="one-time-code"
+              autoComplete="one-time-code"
               value={code}
               onChange={(e) => setCode(e.target.value)}
               className="input pl-10 tracking-[0.4em] font-mono"
@@ -199,6 +201,7 @@ export default function CustomerOtpForm({ redirectTo = "/orders" }: { redirectTo
           <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
           <input
             id="cust-email"
+            name="email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}

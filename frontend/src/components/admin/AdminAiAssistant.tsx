@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Copy, Loader2, Sparkles, X } from "lucide-react";
 import { aiCatalogApi, type AiWriteTask } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -29,6 +29,13 @@ export default function AdminAiAssistant() {
   const [result, setResult] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // Phones open the assistant from the top bar (no floating button over content).
+  useEffect(() => {
+    const open = () => setOpen(true);
+    window.addEventListener("abo:open-ai", open);
+    return () => window.removeEventListener("abo:open-ai", open);
+  }, []);
+
   const run = async () => {
     setBusy(true);
     setResult("");
@@ -46,7 +53,7 @@ export default function AdminAiAssistant() {
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} aria-label="AI সহকারী খুলুন"
-        className="fixed z-40 right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] lg:bottom-6 flex items-center gap-1.5 rounded-full bg-brand-600 text-white shadow-lg px-4 min-h-12 text-sm font-semibold hover:bg-brand-700">
+        className="hidden lg:flex fixed z-40 right-4 bottom-6 items-center gap-1.5 rounded-full bg-brand-600 text-white shadow-lg px-4 min-h-12 text-sm font-semibold hover:bg-brand-700">
         <Sparkles className="w-4 h-4" /> AI
       </button>
       {open && (

@@ -1,41 +1,24 @@
 """Shared tabular PDF report generator for admin exports.
 
 Mirrors the CSV exports (orders / leads / bookings / products) as clean,
-branded, landscape A4 PDF tables. Uses the same reportlab dependency the
-invoice generator already ships with — no new packages.
+branded, landscape A4 PDF tables.
+
+Rendered with fpdf2 + HarfBuzz text shaping and the bundled FreeSans font —
+the same stack as the invoice — so Bangla names/addresses and the ৳ sign
+print correctly (reportlab's Helvetica showed them as empty boxes).
 """
 from __future__ import annotations
 
-import io
 from datetime import datetime, timezone
+from pathlib import Path
 
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.styles import ParagraphStyle
-from reportlab.lib.units import mm
-from reportlab.platypus import (
-    Paragraph,
-    SimpleDocTemplate,
-    Spacer,
-    Table,
-    TableStyle,
-)
+BRAND = (29, 78, 216)
+BRAND_DARK = (30, 58, 138)
+ROW_ALT = (243, 246, 253)
+GRID = (219, 227, 240)
+MUTED = (107, 114, 128)
 
-BRAND = colors.HexColor("#1d4ed8")
-BRAND_DARK = colors.HexColor("#1e3a8a")
-ROW_ALT = colors.HexColor("#f3f6fd")
-GRID = colors.HexColor("#dbe3f0")
-MUTED = colors.HexColor("#6b7280")
-
-_title_style = ParagraphStyle("rpt-title", fontName="Helvetica-Bold", fontSize=15, textColor=BRAND_DARK)
-_sub_style = ParagraphStyle("rpt-sub", fontName="Helvetica", fontSize=8.5, textColor=MUTED)
-_cell_style = ParagraphStyle("rpt-cell", fontName="Helvetica", fontSize=7.5, leading=9.5)
-_head_style = ParagraphStyle("rpt-head", fontName="Helvetica-Bold", fontSize=8, textColor=colors.white, leading=10)
-
-
-def _cell(text: str) -> Paragraph:
-    safe = (text or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    return Paragraph(safe, _cell_style)
+_FONTS_DIR = Path(__file__).resolve().parents[2] / "assets" / "fonts"
 
 
 def build_table_report(
@@ -47,47 +30,67 @@ def build_table_report(
     col_widths: list[float] | None = None,
 ) -> bytes:
     """Render a branded landscape-A4 PDF table and return the bytes."""
-    buf = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buf,
-        pagesize=landscape(A4),
-        leftMargin=12 * mm,
-        rightMargin=12 * mm,
-        topMargin=14 * mm,
-        bottomMargin=12 * mm,
-        title=title,
-        author="ABO Enterprise",
-    )
+    from fpdf import FPDF
+    from fpdf.fonts import FontFace
 
+    pdf = FPDF(orientation="L", unit="pt", format="A4")
+    margin = 34.0
+    pdf.set_margins(margin, 40.0, margin)
+    pdf.set_auto_page_break(True, margin=34.0)
+    pdf.set_title(title)
+    pdf.set_author("ABO Enterprise")
+
+    regular, bold = _FONTS_DIR / "FreeSans.ttf", _FONTS_DIR / "FreeSansBold.ttf"
+    if regular.is_file() and bold.is_file():
+        pdf.add_font("rpt", "", str(regular))
+        pdf.add_font("rpt", "B", str(bold))
+        # FreeSansBold has no Bengali glyphs or ৳ — borrow them from regular.
+        pdf.add_font("rptbn", "", str(regular))
+        pdf.set_fallback_fonts(["rptbn"], exact_match=False)
+        pdf.set_text_shaping(True)
+        font = "rpt"
+    else:  # pragma: no cover — fonts ship in the repo
+        font = "helvetica"
+
+    pdf.add_page()
     generated = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC")
     meta = subtitle or f"{len(rows)} records"
-    story = [
-        Paragraph("ABO Enterprise", ParagraphStyle("brand", fontName="Helvetica-Bold", fontSize=9, textColor=BRAND)),
-        Spacer(1, 2),
-        Paragraph(title, _title_style),
-        Spacer(1, 2),
-        Paragraph(f"{meta} · Generated {generated}", _sub_style),
-        Spacer(1, 8),
-    ]
 
-    data = [[Paragraph(h, _head_style) for h in headers]]
-    for r in rows:
-        data.append([_cell(str(c)) for c in r])
+    pdf.set_font(font, "B", 9)
+    pdf.set_text_color(*BRAND)
+    pdf.cell(0, 12, "ABO Enterprise", new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font(font, "B", 15)
+    pdf.set_text_color(*BRAND_DARK)
+    pdf.cell(0, 20, title, new_x="LMARGIN", new_y="NEXT")
+    pdf.set_font(font, "", 8.5)
+    pdf.set_text_color(*MUTED)
+    pdf.cell(0, 12, f"{meta} · Generated {generated}", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(6)
 
-    usable = doc.width
-    widths = [usable * w for w in col_widths] if col_widths else [usable / len(headers)] * len(headers)
+    usable = pdf.w - 2 * margin
+    n = max(1, len(headers))
+    widths = [usable * w for w in col_widths] if col_widths else [usable / n] * n
 
-    table = Table(data, colWidths=widths, repeatRows=1)
-    table.setStyle(TableStyle([
-        ("BACKGROUND", (0, 0), (-1, 0), BRAND),
-        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, ROW_ALT]),
-        ("GRID", (0, 0), (-1, -1), 0.4, GRID),
-        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-        ("LEFTPADDING", (0, 0), (-1, -1), 4),
-        ("RIGHTPADDING", (0, 0), (-1, -1), 4),
-        ("TOPPADDING", (0, 0), (-1, -1), 3.5),
-        ("BOTTOMPADDING", (0, 0), (-1, -1), 3.5),
-    ]))
-    story.append(table)
-    doc.build(story)
-    return buf.getvalue()
+    pdf.set_text_color(0, 0, 0)
+    pdf.set_font(font, "", 7.5)
+    pdf.set_draw_color(*GRID)
+    pdf.set_line_width(0.4)
+    with pdf.table(
+        col_widths=tuple(widths),
+        headings_style=FontFace(emphasis="BOLD", color=(255, 255, 255), fill_color=BRAND, size_pt=8),
+        cell_fill_color=ROW_ALT,
+        cell_fill_mode="ROWS",
+        line_height=10,
+        padding=3.5,
+        text_align="LEFT",
+        repeat_headings=1,
+        first_row_as_headings=True,
+    ) as table:
+        head = table.row()
+        for h in headers:
+            head.cell(str(h))
+        for r in rows:
+            row = table.row()
+            for c in r:
+                row.cell("" if c is None else str(c))
+    return bytes(pdf.output())

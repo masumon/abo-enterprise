@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users, AlertTriangle, MoreVertical } from "lucide-react";
+import { Search, Sparkles, ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users, AlertTriangle, MoreVertical } from "lucide-react";
 import { getAdminPageTitle } from "@/lib/adminNav";
 import AdminInstallButton from "@/components/admin/AdminInstallButton";
 import { useAlertStore } from "@/store/alerts";
@@ -116,6 +116,16 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
           >
             <Search className="w-4 h-4" />
             <span className="hidden md:inline">{lang === "bn" ? "খুঁজুন" : "Search"}</span>
+          </button>
+          {/* Phones/tablets: AI assistant lives here instead of a floating button. */}
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event("abo:open-ai"))}
+            className="lg:hidden h-10 min-w-[40px] px-2.5 flex items-center justify-center rounded-xl text-brand-600 hover:bg-brand-50 transition-colors"
+            aria-label={lang === "bn" ? "AI সহকারী" : "AI assistant"}
+            title={lang === "bn" ? "AI সহকারী" : "AI assistant"}
+          >
+            <Sparkles className="w-5 h-5" />
           </button>
           <div className="hidden sm:flex items-center gap-2">
           {onToggleTheme && (

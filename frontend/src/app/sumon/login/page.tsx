@@ -151,8 +151,12 @@ function LoginForm() {
             <label className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
             <input
               {...register("email")}
+              id="admin-email"
               type="email"
-              autoComplete="email"
+              // "username" lets Google Password Manager / iCloud Keychain pair this
+              // with the password below, save it, and refill it after a fingerprint.
+              autoComplete="username"
+              inputMode="email"
               className={cn(
                 "w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40 transition-colors",
                 errors.email ? "border-red-500" : "border-white/10"
