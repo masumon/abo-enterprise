@@ -60,6 +60,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(false);
+  // "Website" shortcuts: folded on phones, open on desktop.
+  const [webOpen, setWebOpen] = useState(false);
+  useEffect(() => { if (window.matchMedia("(min-width: 1024px)").matches) setWebOpen(true); }, []);
   const { lastUpdated, pendingOrders, pendingBookings, newLeads } = useAlertStore();
   const { lang } = useLanguageStore();
   const bn = lang === "bn";
@@ -133,15 +136,24 @@ export default function AdminDashboard() {
       </div>}
 
       <section>
+        <div className="flex items-center gap-2 mb-3"><Clock className="w-4 h-4 text-gray-400" /><h2 className="text-sm font-semibold text-gray-700">{bn ? "এখন মনোযোগ দরকার" : "Needs attention"}</h2></div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+          <Link href="/sumon/orders" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "অপেক্ষমান অর্ডার" : "Pending orders"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.pending_orders ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "অর্ডার দেখুন →" : "Review orders →"}</p></Link>
+          <Link href="/sumon/bookings" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "অপেক্ষমান বুকিং" : "Pending bookings"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.pending_bookings ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "বুকিং দেখুন →" : "Review bookings →"}</p></Link>
+          <Link href="/sumon/leads" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "নতুন লিড" : "New leads"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.new_leads ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "লিড দেখুন →" : "Follow up leads →"}</p></Link>
+          <Link href="/sumon/payments" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5" />{bn ? "ব্যর্থ পেমেন্ট" : "Failed payments"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : failedPayments === null ? "—" : failedPayments}</p><p className="text-xs text-brand-600 mt-1">{bn ? "পেমেন্ট দেখুন →" : "Review payments →"}</p></Link>
+          <Link href="/sumon/inventory" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500 flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{bn ? "কম স্টক" : "Low stock"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : lowStock === null ? "—" : lowStock}</p><p className="text-xs text-brand-600 mt-1">{outOfStock !== null && outOfStock > 0 ? (bn ? `${outOfStock}টি স্টক শেষ` : `${outOfStock} out of stock`) : (bn ? "ইনভেন্টরি দেখুন →" : "Review inventory →")}</p></Link>
+        </div>
+      </section>
+      <section>
         <div className="flex items-center gap-2 mb-3"><Sparkles className="w-4 h-4 text-brand-500" /><h2 className="text-sm font-semibold text-gray-700">{bn ? "দ্রুত কাজ" : "Quick Actions"}</h2></div>
         <AdminQuickActions actions={quickActions} />
       </section>
-
-      <section>
-        <div className="flex items-center gap-2 mb-1"><Sparkles className="w-4 h-4 text-accent-500" /><h2 className="text-sm font-semibold text-gray-700">{bn ? "ওয়েবসাইট সাজান" : "Make the website yours"}</h2></div>
+      <details className="group lg:[&>summary]:pointer-events-none" open={webOpen} onToggle={(e) => setWebOpen((e.target as HTMLDetailsElement).open)}>
+        <summary className="list-none cursor-pointer min-h-11 flex items-center"><div className="flex items-center gap-2 mb-1"><Sparkles className="w-4 h-4 text-accent-500" /><h2 className="text-sm font-semibold text-gray-700">{bn ? "ওয়েবসাইট সাজান" : "Make the website yours"}</h2></div><span className="ml-auto text-xs text-brand-600 lg:hidden group-open:hidden">দেখুন ▾</span></summary>
         <p className="text-xs text-gray-500 mb-3">{bn ? "ব্যানার, ছবি, ভিডিও, লেখা বদলান — বদলালে সাইটে সাথে সাথে দেখা যাবে।" : "Change banners, photos, videos and text — updates show on the site right away."}</p>
         <AdminQuickActions actions={ADMIN_WEBSITE_ACTIONS} />
-      </section>
+      </details>
 
       <section>
         <div className="flex items-center gap-2 mb-3"><Clock className="w-4 h-4 text-gray-400" /><h2 className="text-sm font-semibold text-gray-700">{bn ? "এখন মনোযোগ দরকার" : "Needs attention"}</h2></div>

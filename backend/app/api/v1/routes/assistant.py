@@ -483,11 +483,17 @@ async def assistant_health():
 from pydantic import BaseModel as _BaseModel, Field as _Field  # noqa: E402
 
 from app.assistant import ai_gemini  # noqa: E402
+from app.assistant import ai_providers as _ap  # noqa: E402
 from app.core.security import require_role  # noqa: E402
 
 
 class GeminiSettingsIn(_BaseModel):
-    api_key: str | None = _Field(default=None, max_length=200)
+    api_key: str | None = _Field(default=None, max_length=400)
+    # Any provider: "auto" (detect from the key), gemini, openai, anthropic, openrouter, groq,
+    # deepseek, xai, mistral or custom (any OpenAI-compatible server at base_url).
+    provider: str | None = _Field(default=None, max_length=30)
+    base_url: str | None = _Field(default=None, max_length=300)
+    model: str | None = _Field(default=None, max_length=120)
     enabled: bool | None = None
     daily_cap: int | None = _Field(default=None, ge=0, le=5000)
 
@@ -505,7 +511,15 @@ async def _gemini_status(db: AsyncSession) -> dict:
         "last_error": ai_gemini.last_error().get("text", ""),
         "last_error_at": ai_gemini.last_error().get("at", ""),
         "verified_at": cfg["verified_at"],
+        "provider": cfg.get("provider", "gemini"),
+        "provider_label": _provider_label(cfg.get("provider", "gemini")),
+        "base_url": cfg.get("base_url", ""),
+        "providers": [{"id": k, "label": v["label"]} for k, v in _ap.PROVIDERS.items()],
     }
+
+
+def _provider_label(pid: str) -> str:
+    return _ap.PROVIDERS.get(pid, _ap.PROVIDERS["custom"])["label"]
 
 
 @router.get("/admin/ai", response_model=ApiResponse)
@@ -524,11 +538,15 @@ async def update_gemini_settings(
     db: AsyncSession = Depends(get_db),
 ):
     """Admin — save a Google AI key (verified first; an invalid key is never saved) and options."""
+    if payload.base_url and not payload.base_url.strip().lower().startswith("https://"):
+        raise HTTPException(status_code=400, detail="API ঠিকানা https:// দিয়ে শুরু হতে হবে।")
     if payload.api_key:
-        result = await ai_gemini.verify_key(payload.api_key)
+        provider = (payload.provider or "auto").strip().lower()
+        result = await ai_gemini.verify_key(payload.api_key, provider, (payload.base_url or "").strip(), (payload.model or "").strip())
         if not result.ok:
             raise HTTPException(status_code=400, detail=result.message_bn or result.message_en)
-        await ai_gemini.save_key(db, payload.api_key, result.model)
+        prov = getattr(result, "provider", None) or (_ap.detect(payload.api_key) if provider == "auto" else provider)
+        await ai_gemini.save_key(db, payload.api_key, result.model, prov, (payload.base_url or "").strip())
     if payload.enabled is not None or payload.daily_cap is not None:
         await ai_gemini.update_options(db, payload.enabled, payload.daily_cap)
     await db.commit()
@@ -544,11 +562,13 @@ async def verify_gemini_settings(
     cfg = await ai_gemini.load_config(db)
     if not cfg["key"]:
         raise HTTPException(status_code=400, detail="কোনো API কী সংরক্ষিত নেই।")
-    result = await ai_gemini.verify_key(cfg["key"])
+    prov = cfg.get("provider", "gemini")
+    keep = "" if prov == "gemini" else (cfg.get("model_raw") or "")
+    result = await ai_gemini.verify_key(cfg["key"], prov, cfg.get("base_url", ""), keep)
     if not result.ok:
         raise HTTPException(status_code=400, detail=result.message_bn)
     if result.model and result.model != cfg.get("model_raw"):
-        await ai_gemini.save_key(db, cfg["key"], result.model)
+        await ai_gemini.save_key(db, cfg["key"], result.model, prov, cfg.get("base_url", ""))
         await db.commit()
     return ApiResponse(data=await _gemini_status(db), message=result.message_bn)
 

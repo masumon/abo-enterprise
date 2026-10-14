@@ -7,7 +7,6 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
-import { useAdminT } from "@/lib/i18n/adminText";
 
 interface Coupon {
   id?: string;
@@ -21,7 +20,6 @@ interface Coupon {
  *  Same UI as before; Save now diffs rows against what loaded and issues
  *  create/update/delete calls instead of overwriting one Settings blob. */
 export default function AdminCouponsPage() {
-  const tx = useAdminT();
   const [rows, setRows] = useState<Coupon[]>([]);
   const [original, setOriginal] = useState<AdminCoupon[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +42,7 @@ export default function AdminCouponsPage() {
         }))
       );
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Failed to load coupons"));
+      toast("error", apiErrorMessage(err, "কুপন আনা যায়নি"));
     } finally {
       setLoading(false);
     }
@@ -68,20 +66,20 @@ export default function AdminCouponsPage() {
     for (const r of rows) {
       const code = r.code.trim().toUpperCase();
       if (!code) {
-        toast("error", "Every coupon needs a code");
+        toast("error", "প্রতিটি কুপনের কোড দিন");
         return;
       }
       if (seen.has(code)) {
-        toast("error", `Duplicate code: ${code}`);
+        toast("error", `একই কোড দুবার: ${code}`);
         return;
       }
       seen.add(code);
       if (r.discount_percent < 0 || r.discount_percent > 100) {
-        toast("error", `${code}: discount must be 0–100%`);
+        toast("error", `${code}: ছাড় ০–১০০% এর মধ্যে দিন`);
         return;
       }
       if (r.min_subtotal < 0) {
-        toast("error", `${code}: min subtotal can't be negative`);
+        toast("error", `${code}: ন্যূনতম অর্ডার ঋণাত্মক হতে পারে না`);
         return;
       }
     }
@@ -102,115 +100,102 @@ export default function AdminCouponsPage() {
           return r.id ? couponsApi.adminUpdate(r.id, payload) : couponsApi.adminCreate(payload);
         })
       );
-      toast("success", `Saved ${rows.length} coupon${rows.length === 1 ? "" : "s"}`);
+      toast("success", "কুপন সেভ হয়েছে");
       await load();
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Save failed"));
+      toast("error", apiErrorMessage(err, "সেভ হয়নি"));
     } finally {
       setSaving(false);
     }
   };
 
+  const bnNum = (n: number) => Math.round(n).toLocaleString("bn-BD");
+  const dirty = JSON.stringify(rows) !== JSON.stringify(original.map((c) => ({ id: c.id, code: c.code, discount_percent: c.discount_percent, min_subtotal: c.min_subtotal, active: c.is_active })));
+  const randomCode = () => `ABO${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
   return (
-    <div className="admin-page">
+    <div className="admin-page pb-24">
       <AdminPageHeader
         title="Coupons"
-        titleBn="কুপন ম্যানেজার"
-        description={`${rows.length} coupon${rows.length === 1 ? "" : "s"} — code, discount %, minimum order, active flag`}
-        descriptionBn={`${String(rows.length).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি কুপন — কোড, ছাড় %, ন্যূনতম অর্ডার, সক্রিয় কিনা`}
+        titleBn="কুপন (ছাড়ের কোড)"
+        description={`${rows.length} coupons`}
+        descriptionBn={`${bnNum(rows.length)}টি কুপন — গ্রাহক চেকআউটে কোড লিখলে ছাড় পান। বদলের পর নিচের “সেভ করুন” চাপুন।`}
       />
 
-      <div className="admin-card p-4 sm:p-5">
-        <div className="flex items-center justify-between mb-4">
-          <button onClick={addRow} className="admin-btn-secondary gap-1.5">
-            <Plus className="w-4 h-4" />
-            {tx("Add Coupon")}
-          </button>
-          <button onClick={save} disabled={saving} className="btn btn-brand btn-sm gap-1.5">
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Save Changes
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="p-12 flex justify-center">
-            <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
-          </div>
-        ) : rows.length === 0 ? (
-          <AdminEmptyState
-            icon={Percent}
-            title={tx("No coupons yet")}
-            description={tx("Add a coupon to give customers a discount at checkout.")}
-          />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="table-premium table-responsive min-[641px]:min-w-[560px] min-w-0 min-[641px]:min-w-[560px]">
-              <thead>
-                <tr>
-                  <th>{tx("Code")}</th>
-                  <th className="w-32">{tx("Discount %")}</th>
-                  <th className="w-40">{tx("Min Subtotal (৳)")}</th>
-                  <th className="w-24">{tx("Active")}</th>
-                  <th className="w-16"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => (
-                  <tr key={i}>
-                    <td className="px-4 py-2" data-label={tx("Code")}>
-                      <input
-                        value={r.code}
-                        onChange={(e) => updateRow(i, { code: e.target.value.toUpperCase() })}
-                        className="admin-input text-sm w-full uppercase font-mono"
-                        placeholder="ABO10"
-                      />
-                    </td>
-                    <td className="px-4 py-2" data-label={tx("Discount %")}>
-                      <input
-                        type="number"
-                        value={r.discount_percent}
-                        onChange={(e) => updateRow(i, { discount_percent: Number(e.target.value) })}
-                        min={0}
-                        max={100}
-                        className="admin-input text-sm w-full"
-                      />
-                    </td>
-                    <td className="px-4 py-2" data-label={tx("Min Subtotal (৳)")}>
-                      <input
-                        type="number"
-                        value={r.min_subtotal}
-                        onChange={(e) => updateRow(i, { min_subtotal: Number(e.target.value) })}
-                        min={0}
-                        className="admin-input text-sm w-full"
-                      />
-                    </td>
-                    <td className="px-4 py-2" data-label={tx("Active")}>
-                      <label className="inline-flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={r.active}
-                          onChange={(e) => updateRow(i, { active: e.target.checked })}
-                          className="w-4 h-4 accent-brand-600"
-                        />
-                        <span className="text-xs text-muted">{r.active ? "On" : "Off"}</span>
-                      </label>
-                    </td>
-                    <td className="px-4 py-2">
-                      <button
-                        onClick={() => removeRow(i)}
-                        className="text-gray-400 hover:text-red-500 p-1"
-                        aria-label={`Remove ${r.code || "coupon"}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      <div className="flex flex-wrap gap-2">
+        <button type="button" onClick={addRow} className="btn btn-brand btn-sm min-h-11 gap-1.5"><Plus className="w-4 h-4" /> নতুন কুপন</button>
       </div>
+
+      {loading ? (
+        <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
+      ) : rows.length === 0 ? (
+        <AdminEmptyState icon={Percent} title="এখনো কোনো কুপন নেই" description="“নতুন কুপন” চেপে একটি ছাড়ের কোড বানান — যেমন ABO10 দিলে ১০% ছাড়।" />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+          {rows.map((r, i) => (
+            <article key={r.id ?? `new-${i}`} className={`rounded-2xl border p-4 space-y-3 bg-white dark:bg-white/5 ${r.active ? "border-gray-200 dark:border-white/10" : "border-dashed border-gray-300 opacity-80"}`}>
+              <div className="flex items-start gap-2">
+                <div className="flex-1 min-w-0">
+                  <label className="text-[11px] font-semibold text-muted">কুপন কোড</label>
+                  <div className="flex gap-1.5 mt-1">
+                    <input value={r.code} onChange={(e) => updateRow(i, { code: e.target.value.toUpperCase().replace(/\s+/g, "") })}
+                      className="input flex-1 uppercase font-mono text-base font-bold tracking-wider" placeholder="ABO10" aria-label="কুপন কোড" />
+                    {!r.code && <button type="button" onClick={() => updateRow(i, { code: randomCode() })} className="btn btn-outline btn-sm min-h-11 text-xs">নিজে বানাও</button>}
+                  </div>
+                </div>
+                <button type="button" onClick={() => { if (!r.id || window.confirm(`কুপন ${r.code} মুছবেন? (সেভ করলে মুছে যাবে)`)) removeRow(i); }}
+                  className="min-h-11 min-w-11 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 mt-5" aria-label={`মুছুন ${r.code || "কুপন"}`}>
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-muted">কত % ছাড়</label>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                  {[5, 10, 15, 20, 25].map((n) => (
+                    <button key={n} type="button" onClick={() => updateRow(i, { discount_percent: n })}
+                      className={`rounded-full border px-3 min-h-10 text-sm ${r.discount_percent === n ? "bg-brand-600 text-white border-brand-600 font-semibold" : "border-gray-200 dark:border-white/10"}`}>{bnNum(n)}%</button>
+                  ))}
+                  <input type="number" min={0} max={100} inputMode="numeric" value={r.discount_percent} onChange={(e) => updateRow(i, { discount_percent: Number(e.target.value) })}
+                    className="input w-20 text-sm" aria-label="ছাড় %" />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-muted">কমপক্ষে কত টাকার অর্ডারে (০ = যেকোনো)</label>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                  {[0, 500, 1000, 2000].map((n) => (
+                    <button key={n} type="button" onClick={() => updateRow(i, { min_subtotal: n })}
+                      className={`rounded-full border px-3 min-h-10 text-sm ${r.min_subtotal === n ? "bg-brand-600 text-white border-brand-600 font-semibold" : "border-gray-200 dark:border-white/10"}`}>{n ? `৳${bnNum(n)}` : "যেকোনো"}</button>
+                  ))}
+                  <input type="number" min={0} inputMode="numeric" value={r.min_subtotal} onChange={(e) => updateRow(i, { min_subtotal: Number(e.target.value) })}
+                    className="input w-24 text-sm" aria-label="ন্যূনতম অর্ডার ৳" />
+                </div>
+              </div>
+              <label className="flex items-center justify-between gap-2 rounded-xl bg-gray-50 dark:bg-white/5 px-3 min-h-11 cursor-pointer">
+                <span className="text-sm">{r.active ? "✅ চালু — গ্রাহক ব্যবহার করতে পারবেন" : "⏸️ বন্ধ"}</span>
+                <input type="checkbox" checked={r.active} onChange={(e) => updateRow(i, { active: e.target.checked })} className="w-5 h-5 accent-brand-600" />
+              </label>
+              {r.code && (
+                <p className="text-xs text-muted">
+                  🧾 গ্রাহক <b className="font-mono text-heading">{r.code}</b> লিখলে {r.min_subtotal ? `৳${bnNum(r.min_subtotal)} বা বেশি দামের অর্ডারে ` : ""}<b className="text-heading">{bnNum(r.discount_percent)}% ছাড়</b> পাবেন।
+                  <button type="button" onClick={() => { void navigator.clipboard?.writeText(r.code); toast("success", "কোড কপি হয়েছে"); }} className="ml-1 text-brand-600 underline">কপি</button>
+                </p>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
+
+      {(dirty || saving) && (
+        <div className="fixed bottom-0 left-0 right-0 lg:left-64 z-30 border-t border-gray-200 dark:border-white/10 bg-white/95 dark:bg-gray-900/95 backdrop-blur pl-4 pr-24 py-3 flex items-center justify-between gap-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+          <p className="text-sm text-amber-700 dark:text-amber-300">⚠️ সেভ করা হয়নি এমন পরিবর্তন আছে</p>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => void load()} disabled={saving} className="btn btn-outline btn-sm min-h-11">বাতিল</button>
+            <button type="button" onClick={save} disabled={saving} className="btn btn-brand btn-sm min-h-11 gap-1.5">
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} সেভ করুন
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

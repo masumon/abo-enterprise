@@ -170,3 +170,73 @@ async def service_details(payload: ServiceDetailsIn, _admin: str = Depends(requi
     if not any(out.values()):
         raise HTTPException(status_code=502, detail="AI লিখতে পারেনি — আবার চেষ্টা করুন।")
     return ApiResponse(data=out)
+
+
+# ── General AI writer: used by every text box in the admin (toolbar ✨) ──────
+_WRITE_TASKS = {
+    "improve": "Rewrite the text so it reads professionally and naturally for customers. Keep the meaning, facts, numbers, links and formatting marks.",
+    "shorten": "Make the text shorter and clearer (about half). Keep key facts, numbers, links and formatting marks.",
+    "expand": "Expand the text with helpful, honest detail for customers (about double). Do not invent prices, guarantees or facts.",
+    "fix": "Fix spelling, grammar and punctuation only. Change nothing else.",
+    "to_en": "Translate the text into clear, natural English for customers. Keep links, numbers, brand names and formatting marks.",
+    "to_bn": "Translate the text into natural Bangladeshi Bangla (polite আপনি). Keep links, numbers, brand names and formatting marks.",
+    "bullets": "Turn the text into short bullet lines, each starting with '• '. Keep facts and links.",
+    "seo": "Write an SEO meta description (max 155 characters) from the text, in the same language.",
+    "write": "Follow the instruction to write new text for the shop's website or admin. Be honest; never invent prices or facts.",
+}
+WRITE_SYSTEM = (
+    "You are the in-house copywriter of ABO Enterprise, a mobile-accessories, electronics, printing and "
+    "digital-services shop in Beanibazar, Sylhet, Bangladesh. Bangla must be natural and correctly spelt; "
+    "English clear. Formatting marks like **bold**, {red}…{/red}, :icon:, '• ', '# ' and [label](url) must be kept "
+    "exactly when present. Unless translating, reply in the same language as the input text. Task: "
+)
+
+
+class WriteIn(BaseModel):
+    task: str = Field("improve", pattern="^(" + "|".join(_WRITE_TASKS) + ")$")
+    text: str = Field("", max_length=8000)
+    instruction: str = Field("", max_length=1000)
+    context: str = Field("", max_length=300)
+
+
+@router.post("/write", response_model=ApiResponse)
+async def ai_write(payload: WriteIn, _admin: str = Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    """Improve / shorten / expand / fix / translate / bullet / SEO / free-write any admin text. Nothing saved."""
+    if payload.task != "write" and not payload.text.strip():
+        raise HTTPException(status_code=400, detail="আগে কিছু লিখুন, তারপর AI চাপুন।")
+    if payload.task == "write" and not (payload.instruction.strip() or payload.text.strip()):
+        raise HTTPException(status_code=400, detail="AI-কে কী লিখতে হবে তা লিখুন।")
+    parts = []
+    if payload.context.strip():
+        parts.append("Where it is used: " + payload.context.strip())
+    if payload.instruction.strip():
+        parts.append("Instruction: " + ai_gemini._mask(payload.instruction.strip()))
+    if payload.text.strip():
+        parts.append("TEXT:\n" + payload.text.strip())
+    try:
+        out = await ai_gemini.generate_text(db, WRITE_SYSTEM + _WRITE_TASKS[payload.task], "\n\n".join(parts), max_tokens=4096)
+    except ai_gemini.AiUnavailable as exc:
+        raise _fail(exc)
+    if not out:
+        raise HTTPException(status_code=502, detail="AI কিছু লেখেনি — আবার চেষ্টা করুন।")
+    return ApiResponse(data={"text": out})
+
+
+class CategoryIdeasIn(BaseModel):
+    name: str = Field(..., min_length=1, max_length=120)
+    kind: str = Field("product", pattern="^(product|service|both)$")
+    existing: list[str] = Field(default_factory=list, max_length=200)
+
+
+@router.post("/category-ideas", response_model=ApiResponse)
+async def category_ideas(payload: CategoryIdeasIn, _admin: str = Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    """Suggested sub-categories for a category (nothing is saved)."""
+    user = "Category: " + payload.name.strip() + " (" + payload.kind + ")\nAlready exists: " + (", ".join(payload.existing[:200]) or "(none)")
+    try:
+        raw = await ai_gemini.generate_json(db, ac.CATEGORY_IDEAS_SYSTEM, user, max_tokens=2048)
+    except ai_gemini.AiUnavailable as exc:
+        raise _fail(exc)
+    items = ac.normalize_category_ideas(raw, payload.existing)
+    if not items:
+        raise HTTPException(status_code=502, detail="AI নতুন কিছু প্রস্তাব করতে পারেনি।")
+    return ApiResponse(data={"items": items})

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import TranslateButton from "@/components/admin/TranslateButton";
 import RichTextEditor from "@/components/admin/catalog/RichTextEditor";
+import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { cn } from "@/lib/utils";
 
 /**
@@ -38,9 +39,12 @@ export default function BnEnText({
   };
   return (
     <div className="space-y-1.5">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-        {label} {required && <span className="text-red-500">*</span>}
-      </label>
+      <div className="flex items-center justify-between gap-2">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+          {label} {required && <span className="text-red-500">*</span>}
+        </label>
+        {!rich && <AiTextMenu text={bn ?? ""} onApply={onBn} context={label} compact />}
+      </div>
       {box(bn ?? "", onBn, placeholderBn, true)}
       {hint && <p className="text-[11px] text-gray-500 dark:text-gray-400">{hint}</p>}
       <div className="rounded-lg border border-[var(--line)]">
