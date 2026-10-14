@@ -216,7 +216,7 @@ export default function InvoiceCard({ invoice, lang }: Props) {
         )}
 
         {/* ── Items ── */}
-        <div className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-hidden">
+        <div className="border border-gray-100 dark:border-gray-800 rounded-xl overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-800/60 text-[10px] uppercase tracking-wider text-muted">

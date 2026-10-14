@@ -74,7 +74,7 @@ export default function ShippingPage() {
           </div>
 
           <h2 className="text-xl font-bold text-heading mb-4">{t({ en: "Delivery Charges", bn: "ডেলিভারি চার্জ" })}</h2>
-          <div className="enterprise-card overflow-hidden mb-12">
+          <div className="enterprise-card overflow-x-auto mb-12">
             <table className="table-premium">
               <thead>
                 <tr>
