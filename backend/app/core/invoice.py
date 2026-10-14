@@ -38,38 +38,6 @@ def _find_logo_path() -> Path | None:
     return None
 
 
-# PDF fonts: reportlab's built-in Helvetica has no ৳ (U+09F3) glyph — it used
-# to render as a dingbat box on every invoice. GNU FreeSans (GPL + font
-# exception, embedding permitted) ships in assets/fonts and includes the taka
-# sign. Falls back to Helvetica if the files are ever missing.
-_FONT = "Helvetica"
-_FONT_BOLD = "Helvetica-Bold"
-
-
-def _register_pdf_fonts() -> None:
-    global _FONT, _FONT_BOLD
-    if _FONT == "InvoiceSans":
-        return
-    try:
-        from reportlab.pdfbase import pdfmetrics
-        from reportlab.pdfbase.ttfonts import TTFont
-
-        fonts_dir = Path(__file__).resolve().parents[2] / "assets" / "fonts"
-        regular = fonts_dir / "FreeSans.ttf"
-        bold = fonts_dir / "FreeSansBold.ttf"
-        if regular.is_file() and bold.is_file():
-            pdfmetrics.registerFont(TTFont("InvoiceSans", str(regular)))
-            pdfmetrics.registerFont(TTFont("InvoiceSans-Bold", str(bold)))
-            pdfmetrics.registerFontFamily(
-                "InvoiceSans", normal="InvoiceSans", bold="InvoiceSans-Bold",
-                italic="InvoiceSans", boldItalic="InvoiceSans-Bold",
-            )
-            _FONT = "InvoiceSans"
-            _FONT_BOLD = "InvoiceSans-Bold"
-    except Exception:
-        pass  # keep Helvetica fallback
-
-
 def generate_invoice_number():
     """Generate unique invoice number INV-YYYY-XXXXXX (hex — collision-safe)."""
     import secrets

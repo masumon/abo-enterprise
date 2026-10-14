@@ -1,6 +1,8 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { passkeyError, passkeySupported, signInWithPasskey } from "@/lib/passkey";
+import { Fingerprint } from "lucide-react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -76,6 +78,18 @@ function LoginForm() {
     setErrorInfo(null);
     try {
       const res = await authApi.login(data.email, data.password, totpCode || undefined);
+      await finishLogin(res.data.data);
+    } catch (e: unknown) {
+      handleLoginError(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Shared by password and passkey sign-in.
+  const finishLogin = async (payload: { access_token?: string; mfa_setup_required?: boolean; recovery_code_used?: boolean; recovery_codes_remaining?: number | null } | undefined) => {
+    {
+      const res = { data: { data: payload } };
       const token = res.data.data?.access_token;
       if (!token) throw new Error("No token received");
       // Cookie-session probe: localStorage has no token yet, so this getMe
@@ -115,17 +129,34 @@ function LoginForm() {
           ? redirect
           : "/sumon";
       router.replace(safeRedirect);
-    } catch (e: unknown) {
-      const info = getErrorInfo(e);
-      // Password correct, account has 2FA — reveal the code field.
-      if (info.msg === "totp_required") {
-        setTotpRequired(true);
-        setErrorInfo(null);
-      } else {
-        setErrorInfo(info);
-      }
+    }
+  };
+
+  const handleLoginError = (e: unknown) => {
+    const info = getErrorInfo(e);
+    // Password correct, account has 2FA — reveal the code field.
+    if (info.msg === "totp_required") {
+      setTotpRequired(true);
+      setErrorInfo(null);
+    } else {
+      setErrorInfo(info);
+    }
+  };
+
+  // Fingerprint / face / screen-lock sign-in (passkey added in Admin → Security).
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const [canPasskey, setCanPasskey] = useState(false);
+  useEffect(() => { setCanPasskey(passkeySupported()); }, []);
+  const passkeyLogin = async () => {
+    setPasskeyBusy(true);
+    setErrorInfo(null);
+    try {
+      const res = await signInWithPasskey("admin");
+      await finishLogin(res.data.data);
+    } catch (e) {
+      setErrorInfo({ type: "auth", msg: passkeyError(e) } as ReturnType<typeof getErrorInfo>);
     } finally {
-      setLoading(false);
+      setPasskeyBusy(false);
     }
   };
 
@@ -151,8 +182,12 @@ function LoginForm() {
             <label className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
             <input
               {...register("email")}
+              id="admin-email"
               type="email"
-              autoComplete="email"
+              // "username" lets Google Password Manager / iCloud Keychain pair this
+              // with the password below, save it, and refill it after a fingerprint.
+              autoComplete="username"
+              inputMode="email"
               className={cn(
                 "w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40 transition-colors",
                 errors.email ? "border-red-500" : "border-white/10"
@@ -236,6 +271,16 @@ function LoginForm() {
             )}
           </button>
         </form>
+        {canPasskey && (
+          <div className="mt-4">
+            <div className="flex items-center gap-3 text-xs text-gray-500 my-3"><span className="flex-1 h-px bg-white/10" />অথবা<span className="flex-1 h-px bg-white/10" /></div>
+            <button type="button" onClick={passkeyLogin} disabled={passkeyBusy}
+              className="w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 text-white font-semibold hover:bg-white/10 disabled:opacity-60">
+              {passkeyBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Fingerprint className="w-5 h-5" />} আঙুলের ছাপ / মুখ দিয়ে লগইন
+            </button>
+            <p className="mt-2 text-[11px] text-center text-gray-500">প্রথমবার পাসওয়ার্ড দিয়ে ঢুকে “নিরাপত্তা” পাতায় এই ডিভাইস যোগ করুন।</p>
+          </div>
+        )}
       </div>
 
       <p className="text-center text-gray-600 text-xs mt-6 flex items-center justify-center gap-1.5">

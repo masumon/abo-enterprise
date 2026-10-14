@@ -73,6 +73,8 @@ api_router.include_router(media.router)
 api_router.include_router(categories.router)
 api_router.include_router(newsletter.router)
 api_router.include_router(newsletter.public_router)
+from app.api.v1.routes import passkeys  # noqa: E402
+api_router.include_router(passkeys.router)
 api_router.include_router(combos.router)
 api_router.include_router(delivery_zones.router)
 api_router.include_router(translate.router)

@@ -1,5 +1,6 @@
 "use client";
 
+import PasskeyCard from "@/components/admin/PasskeyCard";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -274,6 +275,9 @@ function SecurityInner() {
       )}
 
       {newCodes && <RecoveryCodesPanel codes={newCodes} onDone={afterFullSetup} doneLabel={setupMode ? "শেষ করে প্যানেলে যান" : "শেষ করুন"} />}
+
+      {/* ------------------------------------- passkeys (fingerprint) */}
+      <PasskeyCard className={card} />
 
       {/* ----------------------------------------------------- my 2FA */}
       <section className={card} aria-labelledby="mfa-title">

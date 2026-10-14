@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CheckCircle2, ChevronDown, Circle } from "lucide-react";
-import { adminApi, authApi, paymentMethodsAdminApi } from "@/lib/api";
+import api, { adminApi, assistantAdminApi, authApi, paymentMethodsAdminApi } from "@/lib/api";
 import { sanitizeBusinessHours } from "@/lib/businessHours";
 import { normalizeBdPhoneDigits } from "@/lib/phone";
 import { useLanguageStore } from "@/store/language";
@@ -42,10 +42,12 @@ export default function SetupChecklist({ totalProducts }: { totalProducts?: numb
           return Promise.resolve(null);
         }
       };
-      const [settingsRes, payRes, twoFaRes] = await Promise.all([
+      const [settingsRes, payRes, twoFaRes, aiRes, statsRes] = await Promise.all([
         safe(() => adminApi.getSettings()),
         safe(() => paymentMethodsAdminApi.list()),
         safe(() => authApi.totpStatus()),
+        safe(() => assistantAdminApi.getAi()),
+        safe(() => api.get<{ data?: { reviews?: number } }>("/api/v1/public/stats")),
       ]);
       const out: Item[] = [];
       const s = settingsRes?.data?.data;
@@ -106,6 +108,35 @@ export default function SetupChecklist({ totalProducts }: { totalProducts?: numb
           href: "/sumon/products",
         });
       }
+      // ── Professional live-site readiness ──
+      if (s) {
+        const has = (k: string) => !!(s[k] ?? "").trim();
+        let realLogos = 0;
+        try {
+          const list = JSON.parse(s.client_logos_json || "[]") as { image?: string }[];
+          realLogos = list.filter((c) => c.image && !c.image.includes("images.unsplash.com")).length;
+        } catch { /* ignore */ }
+        out.push(
+          { id: "logo", done: has("logo_url") && has("favicon_url"), bn: "লোগো ও ব্রাউজার-আইকন (favicon) দিন", en: "Add your logo and favicon",
+            hintBn: "সাইট, ইনভয়েস ও ব্রাউজার ট্যাবে দেখায় — পেশাদার দেখাতে দরকার।", hintEn: "Shown on the site, invoices and browser tab.", href: "/sumon/settings" },
+          { id: "social", done: ["facebook_url", "instagram_url", "youtube_url", "tiktok_url"].some(has), bn: "সোশ্যাল মিডিয়া লিংক দিন", en: "Add social media links",
+            hintBn: "Facebook/YouTube লিংক থাকলে গ্রাহকের আস্থা বাড়ে।", hintEn: "Social links build trust.", href: "/sumon/settings" },
+          { id: "partners", done: realLogos > 0, bn: "আসল ক্লায়েন্ট/পার্টনারের লোগো যোগ করুন", en: "Add real client / partner logos",
+            hintBn: "যোগ না করা পর্যন্ত হোমপেজে “পার্টনার” অংশ লুকানো থাকে।", hintEn: "The partners section stays hidden until you add real ones.", href: "/sumon/about-trust" },
+          { id: "analytics", done: !!process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || has("gtm_id"), bn: "Google Analytics যুক্ত করুন", en: "Connect Google Analytics",
+            hintBn: "কতজন সাইটে আসছেন ও কী দেখছেন জানা যায়।", hintEn: "See who visits and what they view.", href: "/sumon/analytics" },
+        );
+      }
+      const ai = aiRes?.data?.data;
+      if (ai) {
+        out.push({ id: "ai", done: !!(ai.has_key && ai.enabled), bn: "AI চালু করুন (যেকোনো ফ্রি/পেইড কী)", en: "Turn on AI (any free or paid key)",
+          hintBn: "লেখা, অনুবাদ, ব্লগ, পণ্যের বিবরণ ও চ্যাট সহকারী — সব AI দিয়ে দ্রুত হয়।", hintEn: "Writing, translation, blogs and the chat assistant.", href: "/sumon/assistant" });
+      }
+      const reviews = statsRes?.data?.data?.reviews;
+      if (typeof reviews === "number") {
+        out.push({ id: "reviews", done: reviews >= 5, bn: `অন্তত ৫টি আসল গ্রাহক-রিভিউ সংগ্রহ করুন (এখন ${reviews.toLocaleString("bn-BD")}টি)`, en: `Collect at least 5 real customer reviews (now ${reviews})`,
+          hintBn: "৫টি হলে হোমপেজে রিভিউ ও রেটিং নিজে থেকে দেখাবে। অর্ডারের পর গ্রাহককে রিভিউ দিতে বলুন।", hintEn: "Reviews and rating appear on the homepage at 5+.", href: "/sumon/reviews" });
+      }
       const tf = twoFaRes?.data?.data;
       if (tf) {
         out.push({
@@ -130,7 +161,7 @@ export default function SetupChecklist({ totalProducts }: { totalProducts?: numb
     <section className="enterprise-card p-4 sm:p-5 mb-5" aria-labelledby="setup-guide-title">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 id="setup-guide-title" className="font-bold text-heading">
-          {bn ? "সেটআপ গাইড — কী কী বাকি আছে" : "Setup guide — what is still missing"}
+          {bn ? "লাইভ সাইট প্রস্তুতি — পেশাদার সাইটের জন্য যা বাকি" : "Live-site readiness — what is still missing"}
         </h2>
         <span className="text-xs font-semibold text-muted">
           {bn ? `${done.length}/${items.length} সম্পন্ন` : `${done.length}/${items.length} done`}

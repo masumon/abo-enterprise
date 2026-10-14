@@ -1155,3 +1155,27 @@ class AppDownloadEvent(Base):
     ip_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     user_agent: Mapped[str | None] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+
+
+class Passkey(Base):
+    """WebAuthn passkey (fingerprint / face / phone screen-lock sign-in).
+
+    owner_type 'admin' → owner_ref = admin_users.id (text);
+    owner_type 'customer' → owner_ref = the verified phone/e-mail the customer
+    token is issued for. Only the PUBLIC key is stored — the private key never
+    leaves the user's device.
+    """
+
+    __tablename__ = "passkeys"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    owner_type: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    owner_ref: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    credential_id: Mapped[str] = mapped_column(String(512), nullable=False, unique=True, index=True)
+    public_key: Mapped[str] = mapped_column(Text, nullable=False)
+    sign_count: Mapped[int] = mapped_column(BigInteger, default=0)
+    transports: Mapped[list] = mapped_column(JSON, default=list)
+    name: Mapped[str | None] = mapped_column(String(120))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    last_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
