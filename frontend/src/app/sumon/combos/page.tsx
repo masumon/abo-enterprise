@@ -1,18 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Plus, Pencil, Trash2, X, Package } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, X, Package, Minus, Search } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ImageUpload from "@/components/admin/ImageUpload";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
-import TranslateButton from "@/components/admin/TranslateButton";
+import BnEnText from "@/components/admin/catalog/BnEnText";
 import { combosApi, productsApi, type Combo } from "@/lib/api";
 import { translateBnToEn } from "@/lib/translate";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import { formatPrice } from "@/lib/utils";
 
-interface ProdLite { id: string; name_en: string; name_bn?: string; price?: number }
+interface ProdLite { id: string; name_en: string; name_bn?: string; price?: number; image_url?: string | null }
 interface Line { product_id: string; quantity: number }
 interface Form {
   id?: string;
@@ -40,6 +40,7 @@ export default function AdminCombosPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Form>(EMPTY);
   const [delId, setDelId] = useState<string | null>(null);
+  const [pick, setPick] = useState("");
 
   // Products fill the combo picker and MUST load even if the combos fetch
   // fails (e.g. the combos table isn't migrated yet), so the two are fetched
@@ -81,7 +82,7 @@ export default function AdminCombosPage() {
 
   const prodName = useMemo(() => {
     const m = new Map<string, string>();
-    for (const p of products) m.set(p.id, p.name_en);
+    for (const p of products) m.set(p.id, p.name_bn || p.name_en);
     return m;
   }, [products]);
 
@@ -204,7 +205,8 @@ export default function AdminCombosPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-heading truncate">{c.title_bn || c.title_en}</p>
-                  <p className="text-xs text-muted">{c.items?.length ?? 0} টি পণ্য · {formatPrice(c.combo_price)}</p>
+                  <p className="text-xs text-muted">{c.items?.length ?? 0} টি পণ্য · <b className="text-heading">{formatPrice(c.combo_price)}</b>{c.compare_at_price ? <> · <s>{formatPrice(c.compare_at_price)}</s></> : null}</p>
+                  <p className="text-[11px] text-muted line-clamp-2 mt-0.5">{(c.items ?? []).map((i) => `${prodName.get(i.product_id) ?? "পণ্য"}${i.quantity > 1 ? ` ×${i.quantity}` : ""}`).join(" + ")}</p>
                   <div className="flex gap-1.5 mt-1">
                     {!c.is_active && <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/10 text-muted">নিষ্ক্রিয়</span>}
                     {c.free_delivery && <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">ফ্রি ডেলিভারি</span>}
@@ -212,8 +214,8 @@ export default function AdminCombosPage() {
                 </div>
               </div>
               <div className="flex gap-2 mt-3">
-                <button type="button" onClick={() => openEdit(c)} className="btn btn-outline btn-sm flex-1"><Pencil className="w-3.5 h-3.5" /> এডিট</button>
-                <button type="button" onClick={() => setDelId(c.id)} className="btn btn-outline btn-sm text-red-600 border-red-200"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button type="button" onClick={() => openEdit(c)} className="btn btn-outline btn-sm flex-1 min-h-11"><Pencil className="w-3.5 h-3.5" /> সম্পাদনা</button>
+                <button type="button" onClick={() => setDelId(c.id)} aria-label="মুছুন" className="btn btn-outline btn-sm min-h-11 min-w-11 text-red-600 border-red-200"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             </div>
           ))}
@@ -228,58 +230,78 @@ export default function AdminCombosPage() {
               <button type="button" onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">শিরোনাম (EN) *</label><TranslateButton bn={form.title_bn} onResult={(en) => set("title_en", en)} en={form.title_en} onResultBn={(b) => set("title_bn", b)} /></div>
-                  <input className="input mt-1" value={form.title_en} onChange={(e) => set("title_en", e.target.value)} />
-                </div>
-                <div><label className="form-label">শিরোনাম (বাংলা) *</label><input className="input" value={form.title_bn} onChange={(e) => set("title_bn", e.target.value)} /></div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">বিবরণ (EN)</label><TranslateButton bn={form.description_bn} onResult={(en) => set("description_en", en)} en={form.description_en} onResultBn={(b) => set("description_bn", b)} /></div>
-                  <textarea className="input mt-1" rows={2} value={form.description_en} onChange={(e) => set("description_en", e.target.value)} />
-                </div>
-                <div><label className="form-label">বিবরণ (বাংলা)</label><textarea className="input" rows={2} value={form.description_bn} onChange={(e) => set("description_bn", e.target.value)} /></div>
-              </div>
+              <BnEnText label="কম্বোর নাম" required bn={form.title_bn} en={form.title_en} onBn={(v) => set("title_bn", v)} onEn={(v) => set("title_en", v)} placeholderBn="যেমন: চার্জার + কেবল কম্বো" />
+              <BnEnText label="বিবরণ (ঐচ্ছিক)" rows={2} bn={form.description_bn} en={form.description_en} onBn={(v) => set("description_bn", v)} onEn={(v) => set("description_en", v)} />
               <ImageUpload value={form.image_url} onChange={(u) => set("image_url", u)} label="কম্বো ছবি" folder="combos" purpose="combo" />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><label className="form-label">কম্বো দাম (৳) *</label><input type="number" className="input" value={form.combo_price} onChange={(e) => set("combo_price", e.target.value)} /></div>
-                <div><label className="form-label">তুলনা দাম (৳)</label><input type="number" className="input" value={form.compare_at_price} onChange={(e) => set("compare_at_price", e.target.value)} placeholder="খালি = পণ্যের যোগফল" /></div>
+                <div><label className="form-label">তুলনা দাম (৳) <span className="text-gray-400 font-normal text-xs">— কেটে দেখাবে</span></label><input type="number" className="input" value={form.compare_at_price} onChange={(e) => set("compare_at_price", e.target.value)} placeholder="খালি = পণ্যের যোগফল" /></div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <div className="flex items-center justify-between gap-2"><label className="form-label !mb-0">ব্যাজ (EN)</label><TranslateButton bn={form.badge_bn} onResult={(en) => set("badge_en", en)} en={form.badge_en} onResultBn={(b) => set("badge_bn", b)} /></div>
-                  <input className="input mt-1" value={form.badge_en} onChange={(e) => set("badge_en", e.target.value)} placeholder="Save ৳500" />
-                </div>
-                <div><label className="form-label">ব্যাজ (বাংলা)</label><input className="input" value={form.badge_bn} onChange={(e) => set("badge_bn", e.target.value)} placeholder="৳৫০০ সাশ্রয়" /></div>
-              </div>
+              <BnEnText label="ব্যাজ (ছবির কোণে ছোট লেখা — ঐচ্ছিক)" bn={form.badge_bn} en={form.badge_en} onBn={(v) => set("badge_bn", v)} onEn={(v) => set("badge_en", v)} placeholderBn="যেমন: ৳৫০০ সাশ্রয়" />
               <div className="flex flex-wrap items-center gap-4">
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.free_delivery} onChange={(e) => set("free_delivery", e.target.checked)} /> ফ্রি ডেলিভারি</label>
-                <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.is_active} onChange={(e) => set("is_active", e.target.checked)} /> সক্রিয়</label>
+                <label className="flex items-center gap-2 text-sm min-h-11"><input type="checkbox" className="w-5 h-5" checked={form.free_delivery} onChange={(e) => set("free_delivery", e.target.checked)} /> 🚚 ফ্রি ডেলিভারি</label>
+                <label className="flex items-center gap-2 text-sm min-h-11"><input type="checkbox" className="w-5 h-5" checked={form.is_active} onChange={(e) => set("is_active", e.target.checked)} /> সাইটে দেখাবে</label>
                 <div className="flex items-center gap-2 text-sm">ক্রম <input type="number" className="input w-20 py-1" value={form.sort_order} onChange={(e) => set("sort_order", e.target.value)} /></div>
               </div>
 
-              {/* Product lines */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="form-label !mb-0">কম্বোর পণ্য *</label>
-                  <button type="button" onClick={addLine} className="btn btn-outline btn-sm"><Plus className="w-3.5 h-3.5" /> পণ্য যোগ</button>
+              {/* Product lines — search to add (no long dropdown on phones) */}
+              <div className="space-y-2">
+                <label className="form-label !mb-0">কম্বোর পণ্য *</label>
+                <div className="relative">
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input value={pick} onChange={(e) => setPick(e.target.value)} className="input w-full pl-9" placeholder="পণ্যের নাম লিখে খুঁজুন ও যোগ করুন…" aria-label="পণ্য খুঁজুন" />
                 </div>
+                {pick.trim() && (
+                  <div className="rounded-xl border border-[var(--line)] divide-y divide-[var(--line)] max-h-60 overflow-y-auto">
+                    {products.filter((p) => `${p.name_bn ?? ""} ${p.name_en}`.toLowerCase().includes(pick.trim().toLowerCase())).slice(0, 10).map((p) => {
+                      const has = form.items.some((i) => i.product_id === p.id);
+                      return (
+                        <button key={p.id} type="button" disabled={has} onClick={() => { set("items", [...form.items, { product_id: p.id, quantity: 1 }]); setPick(""); }}
+                          className="w-full flex items-center gap-2 px-3 min-h-11 text-left text-sm hover:bg-brand-50 dark:hover:bg-white/5 disabled:opacity-50">
+                          {p.image_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={p.image_url} alt="" className="w-8 h-8 rounded object-cover bg-white" />
+                          ) : <Package className="w-5 h-5 text-gray-400" />}
+                          <span className="flex-1 min-w-0 truncate">{p.name_bn || p.name_en}</span>
+                          <span className="text-xs text-muted">{p.price != null ? `৳${p.price}` : ""}</span>
+                          <span className="text-xs font-semibold text-brand-600">{has ? "যোগ আছে" : "+ যোগ"}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
                 {form.items.length === 0 ? (
-                  <p className="text-xs text-muted">অন্তত একটি পণ্য যোগ করুন।</p>
+                  <p className="text-xs text-muted">উপরে পণ্যের নাম লিখে অন্তত একটি পণ্য যোগ করুন।</p>
                 ) : (
                   <div className="space-y-2">
-                    {form.items.map((it, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <select className="input flex-1" value={it.product_id} onChange={(e) => setLine(idx, { product_id: e.target.value })}>
-                          {products.map((p) => <option key={p.id} value={p.id}>{p.name_en}{p.price != null ? ` — ৳${p.price}` : ""}</option>)}
-                        </select>
-                        <input type="number" min={1} className="input w-20" value={it.quantity || ""} onBlur={() => { if (!it.quantity || it.quantity < 1) setLine(idx, { quantity: 1 }); }} onChange={(e) => setLine(idx, { quantity: Math.max(0, Number(e.target.value) || 1) })} />
-                        <button type="button" onClick={() => removeLine(idx)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
-                      </div>
-                    ))}
-                    <p className="text-[11px] text-muted">পণ্যের যোগফল: {formatPrice(form.items.reduce((s, it) => { const p = products.find((x) => x.id === it.product_id); return s + (p?.price || 0) * it.quantity; }, 0))} {prodName.size ? "" : ""}</p>
+                    {form.items.map((it, idx) => {
+                      const p = products.find((x) => x.id === it.product_id);
+                      return (
+                        <div key={idx} className="flex items-center gap-2 rounded-xl border border-[var(--line)] p-2">
+                          <span className="flex-1 min-w-0 text-sm"><span className="block truncate font-medium">{p ? (p.name_bn || p.name_en) : "পণ্য"}</span><span className="text-xs text-muted">{p?.price != null ? `৳${p.price} × ${it.quantity}` : ""}</span></span>
+                          <button type="button" aria-label="কমান" onClick={() => setLine(idx, { quantity: Math.max(1, it.quantity - 1) })} className="min-h-10 min-w-10 rounded-lg border border-[var(--line)] flex items-center justify-center"><Minus className="w-4 h-4" /></button>
+                          <span className="w-6 text-center font-semibold">{it.quantity}</span>
+                          <button type="button" aria-label="বাড়ান" onClick={() => setLine(idx, { quantity: it.quantity + 1 })} className="min-h-10 min-w-10 rounded-lg border border-[var(--line)] flex items-center justify-center"><Plus className="w-4 h-4" /></button>
+                          <button type="button" aria-label="সরান" onClick={() => removeLine(idx)} className="min-h-10 min-w-10 text-red-500 hover:bg-red-50 rounded-lg flex items-center justify-center"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                      );
+                    })}
+                    {(() => {
+                      const sum = form.items.reduce((s2, it) => s2 + (products.find((x) => x.id === it.product_id)?.price || 0) * it.quantity, 0);
+                      const price = Number(form.combo_price) || 0;
+                      const save = sum - price;
+                      return (
+                        <div className="rounded-xl bg-gray-50 dark:bg-white/5 p-3 text-sm space-y-2">
+                          <p>আলাদা কিনলে মোট: <b>{formatPrice(sum)}</b>{price > 0 && <> · কম্বো দাম: <b>{formatPrice(price)}</b></>}</p>
+                          {price > 0 && save > 0 && <p className="text-emerald-700 dark:text-emerald-300">🎉 গ্রাহকের সাশ্রয়: <b>{formatPrice(save)}</b> ({Math.round((save / sum) * 100)}%)</p>}
+                          {price > 0 && save <= 0 && <p className="text-amber-700">⚠️ কম্বো দাম আলাদা দামের সমান বা বেশি — গ্রাহক সাশ্রয় পাবেন না।</p>}
+                          <div className="flex flex-wrap gap-2">
+                            {sum > 0 && <button type="button" onClick={() => set("compare_at_price", String(sum))} className="btn btn-outline btn-sm min-h-10 text-xs">আলাদা দাম “তুলনা দাম”-এ বসান</button>}
+                            {price > 0 && save > 0 && <button type="button" onClick={() => { set("badge_bn", `৳${Math.round(save).toLocaleString("bn-BD")} সাশ্রয়`); set("badge_en", `Save ৳${Math.round(save)}`); }} className="btn btn-outline btn-sm min-h-10 text-xs">“সাশ্রয়” ব্যাজ বানান</button>}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
