@@ -119,7 +119,7 @@ export default function FeaturedProducts() {
         <DemoModeBanner show={catalogSource === "cache" && !loading} source={catalogSource} />
 
         {loading ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="flex flex-wrap justify-center gap-3 [&>*]:w-[calc(50%-6px)] md:[&>*]:w-[calc(33.333%-8px)] lg:[&>*]:w-[calc(25%-9px)]">
             {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
           </div>
         ) : error ? (
@@ -134,7 +134,7 @@ export default function FeaturedProducts() {
             {lang === "bn" ? "এই ক্যাটেগরিতে কোনো পণ্য নেই।" : "No products in this category."}
           </p>
         ) : (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+          <div className="flex flex-wrap justify-center gap-3 [&>*]:w-[calc(50%-6px)] md:[&>*]:w-[calc(33.333%-8px)] lg:[&>*]:w-[calc(25%-9px)]">
             {filteredProducts.slice(0, filteredProducts.length >= 8 ? 8 : Math.max(1, filteredProducts.length - (filteredProducts.length % 2))).map((product) => (
               <ProductCard key={product.id} product={product} onAddToCart={openCart} density="compact" />
             ))}

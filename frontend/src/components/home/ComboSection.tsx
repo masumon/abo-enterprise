@@ -88,7 +88,7 @@ export default function ComboSection({ initialCombos = null }: { initialCombos?:
           </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="flex flex-wrap justify-center gap-3 [&>*]:w-[calc(50%-6px)] md:[&>*]:w-[calc(33.333%-8px)] lg:[&>*]:w-[calc(25%-9px)]">
           {combos.map((c) => {
             const title = bn ? c.title_bn : c.title_en;
             const badge = bn ? c.badge_bn : c.badge_en;

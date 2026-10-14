@@ -253,7 +253,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
                     <span className="truncate">{t("hero_cta_services")}</span>
                     <ArrowRight className="w-4 h-4 flex-none" aria-hidden />
                   </Link>
-                  <Link href={heroCtaUrl.startsWith("/") ? heroCtaUrl : "/products"} className="btn btn-lg btn-outline !border-white/50 !bg-black/20 backdrop-blur-sm !text-white hover:!bg-white/10 btn-ripple flex-1 justify-center min-w-0 px-6 text-base">
+                  <Link href={heroCtaUrl.startsWith("/") ? heroCtaUrl : "/products"} className="btn btn-lg btn-outline !border-white/80 !bg-white/15 backdrop-blur-sm !text-white font-semibold hover:!bg-white/25 btn-ripple flex-1 justify-center min-w-0 px-6 text-base">
                     <ShoppingBag className="w-5 h-5 flex-none" aria-hidden />
                     <span className="truncate">{heroCtaText || t("hero_cta_products")}</span>
                   </Link>

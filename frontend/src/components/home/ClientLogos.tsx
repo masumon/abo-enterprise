@@ -43,7 +43,11 @@ function ClientBadge({ client }: { client: CmsClientLogo }) {
 export default function ClientLogos() {
   const { lang } = useLanguageStore();
   const { settings } = usePublicSettings([CLIENT_LOGOS_KEY]);
-  const clients = getClientLogos(settings, FALLBACK);
+  // Only REAL partner logos: the built-in sample list and stock (Unsplash)
+  // pictures are placeholders, so the section hides until the admin adds real ones.
+  const clients = getClientLogos(settings, FALLBACK).filter(
+    (c) => !(c.image ?? "").includes("images.unsplash.com") && !FALLBACK.some((f) => f.name === c.name && !c.image),
+  );
   const [active, setActive] = useState<CmsClientLogo | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -94,6 +98,8 @@ export default function ClientLogos() {
   const activeDesc = active
     ? (lang === "bn" ? active.desc_bn || active.desc_en : active.desc_en || active.desc_bn) || ""
     : "";
+
+  if (clients.length === 0) return null;
 
   const baseCls =
     "flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 transition-all";
