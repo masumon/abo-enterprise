@@ -130,3 +130,18 @@ def test_booking_fields_normalisation():
     assert out[0]["field_type"] == "select" and out[0]["is_required"] and len(out[0]["options"]) == 2
     assert out[1]["field_type"] == "text" and out[1]["options"] == []
     assert out[2]["field_type"] == "text" and out[2]["field_label_bn"] == "File"
+
+
+def test_service_details_normalisation():
+    raw = {
+        "steps": [{"title_bn": "অর্ডার", "title_en": "Order", "desc_bn": "জানান", "desc_en": "Tell us"}, {"x": 1}],
+        "benefits": [{"bn": "দ্রুত", "en": "Fast"}, "Cheap"],
+        "faq": [{"q_bn": "কত সময়?", "a_bn": "১ দিন", "q_en": "How long?", "a_en": "1 day"}],
+        "packages": [{"name": "Basic", "features": ["A4", ""], "days": 2}, {"name": ""}],
+    }
+    out = ac.normalize_service_details(raw, ["steps", "benefits", "faq", "packages"])
+    assert out["process_steps"] == [{"step": 1, "title": "Order", "title_bn": "অর্ডার", "description": "Tell us", "description_bn": "জানান"}]
+    assert out["benefits"][1] == {"en": "Cheap", "bn": "Cheap"}
+    assert out["faq"][0]["answer_bn"] == "১ দিন"
+    assert out["packages"] == [{"tier_name": "Basic", "description_bn": "", "description_en": "", "duration_days": 2, "features": ["A4"]}]
+    assert "requirements" not in out

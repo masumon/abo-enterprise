@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { X, Loader2, Languages, Save, Send } from "lucide-react";
+import { X, Loader2, Save, Send } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -169,7 +169,6 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
   const source = mode.type === "new" ? null : mode.product;
   const modalRef = useFocusTrap(true, onClose);
   const [saving, setSaving] = useState(false);
-  const [translating, setTranslating] = useState(false);
   const [galleryImages, setGalleryImages] = useState<string[]>(() => (mode.type === "edit" ? mode.product.images ?? [] : []));
   const [specs, setSpecs] = useState<{ k: string; v: string }[]>(() =>
     Object.entries((source?.specifications as Record<string, string>) ?? {}).map(([k, v]) => ({ k, v: String(v) })));
@@ -240,22 +239,6 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
     { bn: "ক্যাটাগরি", en: "Category", ok: !!w.category },
   ];
 
-  const autoTranslate = async () => {
-    if (translating) return;
-    setTranslating(true);
-    try {
-      const v = getValues();
-      const [name, desc] = await Promise.all([
-        !v.name_bn?.trim() && v.name_en?.trim() ? adminBlogApi.translate(v.name_en, "en", "bn").then((r) => r.data?.data?.translated?.trim() || "").catch(() => "") : Promise.resolve(""),
-        !v.description_bn?.trim() && v.description_en?.trim() ? adminBlogApi.translate(v.description_en, "en", "bn").then((r) => r.data?.data?.translated?.trim() || "").catch(() => "") : Promise.resolve(""),
-      ]);
-      if (name) setValue("name_bn", name, { shouldDirty: true });
-      if (desc) setValue("description_bn", desc, { shouldDirty: true });
-      toast("success", t("বাংলা অনুবাদ পূরণ হয়েছে — সেভের আগে দেখে নিন", "Bangla filled in — check before saving"));
-    } finally {
-      setTranslating(false);
-    }
-  };
 
   // AI description → fields. Asks before replacing text the admin wrote.
   const applyAiDescription = (d: AiDescription) => {
@@ -602,10 +585,6 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
                 notes={[w.brand && `Brand: ${w.brand}`, specs.filter((r) => r.k.trim()).map((r) => `${r.k}: ${r.v}`).join("; "), w.description_bn].filter(Boolean).join("\n")}
                 onResult={applyAiDescription}
               />
-              <button type="button" onClick={autoTranslate} disabled={translating} className="btn btn-outline btn-sm gap-1.5"
-                title={t("নাম ও বিবরণের খালি বাংলা ঘর English থেকে পূরণ করবে", "Fill empty Bangla boxes from English")}>
-                {translating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />} {t("বাংলা অনুবাদ", "Translate to Bangla")}
-              </button>
             </div>
           </div>
           <BnEnText label={t("বিবরণ", "Description")} rich rows={6}

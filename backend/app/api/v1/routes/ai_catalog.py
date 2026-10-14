@@ -148,3 +148,26 @@ async def from_link(payload: FromLinkIn, _admin: str = Depends(require_admin), d
         except ai_gemini.AiUnavailable:
             raw = {}
     return ApiResponse(data={**li.normalize_draft(raw, facts), "ai_used": ai_used})
+
+
+class ServiceDetailsIn(BaseModel):
+    name: str = Field(..., min_length=2, max_length=200)
+    notes: str = Field("", max_length=2000)
+    parts: list[str] = Field(default_factory=lambda: list(ac.SERVICE_DETAILS_PARTS))
+
+
+@router.post("/service-details", response_model=ApiResponse)
+async def service_details(payload: ServiceDetailsIn, _admin: str = Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    """Service name + notes -> steps, benefits, requirements, documents, FAQ and/or packages (nothing saved)."""
+    parts = [p for p in payload.parts if p in ac.SERVICE_DETAILS_PARTS] or list(ac.SERVICE_DETAILS_PARTS)
+    user = f"Service: {payload.name.strip()}
+Notes: {ai_gemini._mask(payload.notes.strip()) or '(none)'}
+Write these parts: {', '.join(parts)}"
+    try:
+        raw = await ai_gemini.generate_json(db, ac.SERVICE_DETAILS_SYSTEM, user, max_tokens=8192)
+    except ai_gemini.AiUnavailable as exc:
+        raise _fail(exc)
+    out = ac.normalize_service_details(raw, parts)
+    if not any(out.values()):
+        raise HTTPException(status_code=502, detail="AI লিখতে পারেনি — আবার চেষ্টা করুন।")
+    return ApiResponse(data=out)

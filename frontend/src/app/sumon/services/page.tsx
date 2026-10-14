@@ -5,8 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import {
   Loader2, Briefcase, Plus, Pencil, Trash2, X,
-  ToggleLeft, ToggleRight, Star, StarOff, Check, Ban, ChevronDown, ChevronUp, Languages,
-} from "lucide-react";
+  ToggleLeft, ToggleRight, Star, StarOff, Check, Ban, ChevronDown, ChevronUp, } from "lucide-react";
 import { servicesAdminApi, categoriesApi, adminBlogApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -40,6 +39,9 @@ import BnEnText from "@/components/admin/catalog/BnEnText";
 import SeoAutoPanel from "@/components/admin/catalog/SeoAutoPanel";
 import VideoUrlField from "@/components/admin/catalog/VideoUrlField";
 import LinkImportBox from "@/components/admin/catalog/LinkImportBox";
+import ServiceDetailsEditor from "@/components/admin/catalog/ServiceDetailsEditor";
+import { fillEnglish, toPair, type DetailLists } from "@/lib/serviceDetailKit";
+import type { TierDraft } from "@/components/admin/ServicePricingTiersEditor";
 import type { LinkDraft } from "@/lib/api";
 import { nameFromLabel, type FieldDraft } from "@/lib/bookingFieldKit";
 import { fixBoldMarks, stripMarks } from "@/lib/productText";
@@ -115,18 +117,19 @@ const EMPTY_FIELD: Partial<ServiceBookingFormField> = {
   default_value: "", validation_rules: {}, conditional_logic: null,
 };
 
-function slugify(t: string) {
-  return t.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
+/** The service's five detail lists in the editor's shape (legacy strings → pairs). */
+function detailLists(s: Partial<Service>): DetailLists {
+  return {
+    process_steps: (s.process_steps ?? []) as DetailLists["process_steps"],
+    benefits: (s.benefits ?? []).map(toPair),
+    requirements: (s.requirements ?? []).map(toPair),
+    required_documents: (s.required_documents ?? []).map(toPair),
+    faq: (s.faq ?? []) as DetailLists["faq"],
+  };
 }
 
-// ── Bilingual content helpers ────────────────────────────────────────────────
-// The extended list blocks (benefits/requirements/documents/process/faq) are
-// stored as arrays of objects on the service. They're edited with the friendly
-// row-based JsonListEditor, so these just wrap/unwrap the JSON string it uses —
-// no raw text/pipe encoding for the admin, and the stored shape is unchanged.
-const arrToJson = (items: unknown[] | undefined): string => JSON.stringify(items ?? []);
-function jsonToArr<T = Record<string, unknown>>(json: string): T[] {
-  try { const v = JSON.parse(json); return Array.isArray(v) ? (v as T[]) : []; } catch { return []; }
+function slugify(t: string) {
+  return t.toLowerCase().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").trim();
 }
 
 export default function AdminServicesPage() {
@@ -143,7 +146,6 @@ export default function AdminServicesPage() {
   const [editing, setEditing] = useState<Partial<Service> | null>(null);
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [translating, setTranslating] = useState<null | "basic" | "extended">(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [extOpen, setExtOpen] = useState(false);
@@ -297,67 +299,7 @@ export default function AdminServicesPage() {
     }
   };
 
-  const autoTranslateBasic = async () => {
-    if (!editing || translating) return;
-    setTranslating("basic");
-    try {
-      const e = editing;
-      const [name, shortD, desc, longD] = await Promise.all([
-        !e.name_bn?.trim() && e.name_en?.trim() ? translateOne(e.name_en) : Promise.resolve(""),
-        !e.short_description_bn?.trim() && e.short_description_en?.trim() ? translateOne(e.short_description_en) : Promise.resolve(""),
-        !e.description_bn?.trim() && e.description_en?.trim() ? translateOne(e.description_en) : Promise.resolve(""),
-        !e.long_description_bn?.trim() && e.long_description_en?.trim() ? translateOne(e.long_description_en) : Promise.resolve(""),
-      ]);
-      setEditing((prev) => prev ? {
-        ...prev,
-        name_bn: name || prev.name_bn,
-        short_description_bn: shortD || prev.short_description_bn,
-        description_bn: desc || prev.description_bn,
-        long_description_bn: longD || prev.long_description_bn,
-      } : prev);
-      toast("success", "বাংলা অনুবাদ পূরণ হয়েছে — সেভ করার আগে দেখে নিন");
-    } catch {
-      toast("error", "অনুবাদ ব্যর্থ — আবার চেষ্টা করুন");
-    } finally {
-      setTranslating(null);
-    }
-  };
 
-  const autoTranslateExtended = async () => {
-    if (!editing || translating) return;
-    setTranslating("extended");
-    try {
-      const e = editing;
-      // Process steps — fill title_bn/description_bn where empty.
-      const steps = await Promise.all((e.process_steps ?? []).map(async (s) => ({
-        ...s,
-        title_bn: s.title_bn?.trim() ? s.title_bn : await translateOne(s.title ?? ""),
-        description_bn: s.description_bn?.trim() ? s.description_bn : await translateOne(s.description ?? ""),
-      })));
-      // Benefits/requirements/documents — items {en,bn} (or legacy strings).
-      const fillList = (items: (string | { en?: string; bn?: string })[] | undefined) =>
-        Promise.all((items ?? []).map(async (it) => {
-          const en = typeof it === "string" ? it : (it.en ?? "");
-          const bn = typeof it === "string" ? "" : (it.bn ?? "");
-          return { en, bn: bn.trim() ? bn : await translateOne(en) };
-        }));
-      const [benefits, requirements, documents] = await Promise.all([
-        fillList(e.benefits), fillList(e.requirements), fillList(e.required_documents),
-      ]);
-      // FAQ — fill question_bn/answer_bn where empty.
-      const faq = await Promise.all((e.faq ?? []).map(async (f) => ({
-        ...f,
-        question_bn: f.question_bn?.trim() ? f.question_bn : await translateOne(f.question ?? ""),
-        answer_bn: f.answer_bn?.trim() ? f.answer_bn : await translateOne(f.answer ?? ""),
-      })));
-      setEditing((prev) => prev ? { ...prev, process_steps: steps, benefits, requirements, required_documents: documents, faq } : prev);
-      toast("success", "কন্টেন্ট বাংলায় অনুবাদ হয়েছে — সেভ করার আগে দেখে নিন");
-    } catch {
-      toast("error", "অনুবাদ ব্যর্থ — আবার চেষ্টা করুন");
-    } finally {
-      setTranslating(null);
-    }
-  };
 
   const closeEditor = () => { setEditing(null); setIsNew(false); };
 
@@ -466,6 +408,8 @@ export default function AdminServicesPage() {
     };
     if (!ed.description_bn?.trim() && ed.long_description_bn?.trim()) ed = { ...ed, description_bn: firstPara(ed.long_description_bn) };
     if (!ed.description_en?.trim() && ed.long_description_en?.trim()) ed = { ...ed, description_en: firstPara(ed.long_description_en) };
+    // English of steps/benefits/requirements/documents/FAQ from Bangla (blank ones only).
+    try { ed = { ...ed, ...(await fillEnglish(detailLists(ed), translateBnToEn)) } as Partial<Service>; } catch { /* English stays blank; Bangla still shows */ }
     setSaving(true);
     try {
       const patch: Partial<Service> = {};
@@ -614,17 +558,63 @@ export default function AdminServicesPage() {
     setNewTier(EMPTY_TIER);
   };
 
+  /** English description from Bangla when blank; features trimmed. */
+  const completeTier = async (d: TierDraft): Promise<TierDraft> => {
+    let en = d.description_en?.trim() || "";
+    const bn = d.description_bn?.trim() || "";
+    if (!en && bn) { try { en = await translateBnToEn(bn); } catch { /* optional */ } }
+    return { ...d, description_en: en, features: (d.features ?? []).map((f) => f.trim()).filter(Boolean) };
+  };
+
+  /** Add several packages (starter / AI) after the existing ones. */
+  const addManyTiers = async (drafts: TierDraft[]) => {
+    if (!editing?.id || !drafts.length) return;
+    let order = (editing.pricing_tiers ?? []).reduce((m, x) => Math.max(m, x.sort_order ?? 0), 0);
+    const added: ServicePricingTier[] = [];
+    try {
+      for (const d of drafts) {
+        order += 1;
+        const r = await servicesAdminApi.createTier(editing.id, { ...EMPTY_TIER, ...(await completeTier(d)), sort_order: order });
+        added.push(r.data.data as ServicePricingTier);
+      }
+      toast("success", t(`${added.length}টি প্যাকেজ যোগ হয়েছে — দাম বসিয়ে “সাইটে দেখাবে” টিক দিন`, `${added.length} packages added — set prices and switch them on`));
+    } catch (e) {
+      toast("error", apiErrorMessage(e, t("সব প্যাকেজ যোগ করা যায়নি", "Could not add all packages")));
+    } finally {
+      if (added.length) setEditing(prev => prev ? { ...prev, pricing_tiers: [...(prev.pricing_tiers ?? []), ...added] } : prev);
+    }
+  };
+
+  /** Swap a package with its neighbour (renumbers sort_order 1..n). */
+  const moveTier = async (tierId: string, dir: -1 | 1) => {
+    if (!editing?.id) return;
+    const list = [...(editing.pricing_tiers ?? [])].sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    const i = list.findIndex((x) => x.id === tierId);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    [list[i], list[j]] = [list[j], list[i]];
+    const renum = list.map((x, k) => ({ ...x, sort_order: k + 1 }));
+    const changed = renum.filter((x) => x.sort_order !== (editing.pricing_tiers ?? []).find((o) => o.id === x.id)?.sort_order);
+    setEditing(prev => prev ? { ...prev, pricing_tiers: renum } : prev);
+    try {
+      await Promise.all(changed.map((x) => servicesAdminApi.updateTier(editing.id!, x.id, { sort_order: x.sort_order })));
+    } catch (e) {
+      toast("error", apiErrorMessage(e, t("ক্রম সেভ হয়নি", "Order not saved")));
+    }
+  };
+
   const handleSaveTier = async () => {
     if (!editing?.id) return;
-    if (!newTier.tier_name?.trim()) { toast("error", "Tier name is required"); return; }
-    if (!newTier.price && newTier.price !== 0) { toast("error", "Price is required"); return; }
-    if (newTier.price < 0) { toast("error", "Price cannot be negative"); return; }
+    if (!newTier.tier_name?.trim()) { toast("error", t("প্যাকেজের নাম দিন", "Tier name is required")); return; }
+    if (!newTier.price && newTier.price !== 0) { toast("error", t("দাম দিন", "Price is required")); return; }
+    if (newTier.price < 0) { toast("error", t("দাম ঋণাত্মক হতে পারে না", "Price cannot be negative")); return; }
+    const tierData = await completeTier(newTier);
 
     setSavingTier(true);
     try {
       const r = editingTierId
-        ? await servicesAdminApi.updateTier(editing.id, editingTierId, newTier)
-        : await servicesAdminApi.createTier(editing.id, newTier);
+        ? await servicesAdminApi.updateTier(editing.id, editingTierId, tierData)
+        : await servicesAdminApi.createTier(editing.id, tierData);
       const saved = r.data.data as ServicePricingTier;
       setEditing(prev => prev ? {
         ...prev,
@@ -633,7 +623,7 @@ export default function AdminServicesPage() {
           : [...(prev.pricing_tiers ?? []), saved],
       } : prev);
       closeTierEditor();
-      toast("success", editingTierId ? "Tier updated" : "Tier added");
+      toast("success", editingTierId ? t("প্যাকেজ সেভ হয়েছে", "Package saved") : t("প্যাকেজ যোগ হয়েছে", "Package added"));
     } catch (e) {
       toast("error", apiErrorMessage(e, editingTierId ? "Failed to update tier" : "Failed to add tier"));
     } finally {
@@ -1195,6 +1185,10 @@ export default function AdminServicesPage() {
                 savingTier={savingTier}
                 handleSaveTier={handleSaveTier}
                 editingTierId={editingTierId}
+                onAddMany={addManyTiers}
+                onMove={moveTier}
+                serviceName={editing.name_bn || editing.name_en}
+                notes={stripMarks(editing.short_description_bn || editing.long_description_bn || "").slice(0, 1500)}
               />
                 </>) },
                 { id: "desc", bn: "বিবরণ", en: "Description", status: svcChecks[2].ok ? "ok" : "warn", content: (<>
@@ -1209,11 +1203,6 @@ export default function AdminServicesPage() {
                     onResult={applyAiDescription}
                     className="btn btn-outline btn-sm gap-1.5"
                   />
-                  <button type="button" onClick={autoTranslateBasic} disabled={translating !== null} className="btn btn-outline btn-sm gap-1.5"
-                    title={t("নাম ও বিবরণের খালি বাংলা ঘরগুলো English থেকে পূরণ করবে", "Fill empty Bangla boxes from English")}>
-                    {translating === "basic" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
-                    {t("বাংলা অনুবাদ", "Translate to Bangla")}
-                  </button>
                 </div>
                 <BnEnText label={t("ছোট বিবরণ — কার্ডে দেখাবে", "Short description — shown on cards")} rows={2}
                   bn={editing.short_description_bn} en={editing.short_description_en}
@@ -1248,111 +1237,14 @@ export default function AdminServicesPage() {
                   />
                 </div>
               </section>
-              {/* ── Extended Details ────────────────────── */}
-              <section className="border border-gray-100 rounded-xl overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setExtOpen(o => !o)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left"
-                >
-                  <span className="text-sm font-semibold text-heading">📋 {t("আরও তথ্য: কাজের ধাপ, সুবিধা, শর্ত, কাগজপত্র, প্রশ্নোত্তর", "More: steps, benefits, requirements, documents, FAQ")}<span className="block text-[11px] font-normal text-muted">{t("এখানে লিংক (https://…) বা ছবির লিংক দিলে সাইটে ক্লিকযোগ্য হবে; **বোল্ড** ও ইমোজিও চলবে।", "Links and image links become clickable on the site; **bold** and emoji work too.")}</span></span>
-                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${extOpen ? "rotate-180" : ""}`} />
-                </button>
-                {extOpen && (
-                  <div className="px-4 py-4 space-y-4">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <p className="text-[11px] text-brand-600 bg-brand-50 dark:bg-brand-500/10 rounded-lg px-3 py-2 flex-1 min-w-[12rem]">
-                        বাইলিঙ্গুয়াল: প্রতিটি লাইনে <b>English | বাংলা</b> — বাংলা অংশ ঐচ্ছিক। বাংলা দিলে সাইটে ভাষা টগলে বাংলা দেখাবে, না দিলে ইংরেজি থাকবে।
-                      </p>
-                      <button
-                        type="button"
-                        onClick={autoTranslateExtended}
-                        disabled={translating !== null}
-                        className="btn btn-outline btn-sm gap-1.5 flex-shrink-0"
-                        title="খালি বাংলা ঘরগুলো English থেকে অটো-পূরণ করবে (আগের লেখা মুছবে না)"
-                      >
-                        {translating === "extended" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Languages className="w-4 h-4" />}
-                        বাংলা অনুবাদ
-                      </button>
-                    </div>
-
-                    {/* Process Steps — friendly row editor (was pipe-encoded) */}
-                    <div>
-                      <label className="form-label">Process Steps <span className="text-gray-400 font-normal text-xs">(ধাপে ধাপে কীভাবে কাজ হয়)</span></label>
-                      <JsonListEditor
-                        value={arrToJson(editing.process_steps)}
-                        onChange={(json) => setEditing(prev => prev ? { ...prev, process_steps: jsonToArr(json) } : prev)}
-                        fields={[
-                          { path: "step", label: "Step #", labelBn: "ধাপ নং", type: "number" },
-                          { path: "title", label: "Title (EN)", labelBn: "শিরোনাম (EN)", translateFrom: "title_bn" },
-                          { path: "title_bn", label: "Title (বাংলা)", labelBn: "শিরোনাম (বাংলা)" },
-                          { path: "description", label: "Description (EN)", labelBn: "বিবরণ (EN)", type: "textarea", translateFrom: "description_bn" },
-                          { path: "description_bn", label: "Description (বাংলা)", labelBn: "বিবরণ (বাংলা)", type: "textarea" },
-                        ]}
-                        newItem={() => ({ step: (editing.process_steps?.length ?? 0) + 1, title: "", description: "", title_bn: "", description_bn: "" })}
-                      />
-                    </div>
-
-                    {/* Benefits — friendly row editor (EN + বাংলা) */}
-                    <div>
-                      <label className="form-label">Benefits <span className="text-gray-400 font-normal text-xs">(সুবিধা)</span></label>
-                      <JsonListEditor
-                        value={arrToJson(editing.benefits)}
-                        onChange={(json) => setEditing(prev => prev ? { ...prev, benefits: jsonToArr(json) } : prev)}
-                        fields={[
-                          { path: "en", label: "Benefit (EN)", labelBn: "সুবিধা (EN)", translateFrom: "bn" },
-                          { path: "bn", label: "Benefit (বাংলা)", labelBn: "সুবিধা (বাংলা)" },
-                        ]}
-                        newItem={() => ({ en: "", bn: "" })}
-                      />
-                    </div>
-
-                    {/* Requirements */}
-                    <div>
-                      <label className="form-label">Requirements <span className="text-gray-400 font-normal text-xs">(প্রয়োজনীয় শর্ত)</span></label>
-                      <JsonListEditor
-                        value={arrToJson(editing.requirements)}
-                        onChange={(json) => setEditing(prev => prev ? { ...prev, requirements: jsonToArr(json) } : prev)}
-                        fields={[
-                          { path: "en", label: "Requirement (EN)", labelBn: "শর্ত (EN)", translateFrom: "bn" },
-                          { path: "bn", label: "Requirement (বাংলা)", labelBn: "শর্ত (বাংলা)" },
-                        ]}
-                        newItem={() => ({ en: "", bn: "" })}
-                      />
-                    </div>
-
-                    {/* Required Documents */}
-                    <div>
-                      <label className="form-label">Required Documents <span className="text-gray-400 font-normal text-xs">(প্রয়োজনীয় কাগজপত্র)</span></label>
-                      <JsonListEditor
-                        value={arrToJson(editing.required_documents)}
-                        onChange={(json) => setEditing(prev => prev ? { ...prev, required_documents: jsonToArr(json) } : prev)}
-                        fields={[
-                          { path: "en", label: "Document (EN)", labelBn: "কাগজ (EN)", translateFrom: "bn" },
-                          { path: "bn", label: "Document (বাংলা)", labelBn: "কাগজ (বাংলা)" },
-                        ]}
-                        newItem={() => ({ en: "", bn: "" })}
-                      />
-                    </div>
-
-                    {/* FAQ — friendly row editor (was q|a|q_bn|a_bn) */}
-                    <div>
-                      <label className="form-label">FAQ <span className="text-gray-400 font-normal text-xs">(প্রশ্ন-উত্তর)</span></label>
-                      <JsonListEditor
-                        value={arrToJson(editing.faq)}
-                        onChange={(json) => setEditing(prev => prev ? { ...prev, faq: jsonToArr(json) } : prev)}
-                        fields={[
-                          { path: "question", label: "Question (EN)", labelBn: "প্রশ্ন (EN)", translateFrom: "question_bn" },
-                          { path: "question_bn", label: "Question (বাংলা)", labelBn: "প্রশ্ন (বাংলা)" },
-                          { path: "answer", label: "Answer (EN)", labelBn: "উত্তর (EN)", type: "textarea", translateFrom: "answer_bn" },
-                          { path: "answer_bn", label: "Answer (বাংলা)", labelBn: "উত্তর (বাংলা)", type: "textarea" },
-                        ]}
-                        newItem={() => ({ question: "", answer: "", question_bn: "", answer_bn: "" })}
-                      />
-                    </div>
-                  </div>
-                )}
-              </section>
+              <ServiceDetailsEditor
+                value={detailLists(editing)}
+                onChange={(next) => setEditing(prev => prev ? { ...prev, ...next } as Service : prev)}
+                serviceName={editing.name_bn || editing.name_en}
+                notes={stripMarks(editing.short_description_bn || editing.long_description_bn || editing.description_bn || "").slice(0, 1500)}
+                otherServices={services.filter((x) => x.id !== editing.id).map((x) => ({ id: x.id, name: x.name_bn || x.name_en }))}
+                loadService={async (id) => { try { return detailLists((await servicesAdminApi.get(id)).data.data as Service); } catch { return null; } }}
+              />
                 </>) },
                 { id: "publish", bn: "প্রকাশ", en: "Publish", status: svcChecks.every((c) => c.ok) ? "ok" : "warn", content: (<>
                 <PublishChecklist items={svcChecks} />
