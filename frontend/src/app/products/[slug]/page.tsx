@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { stripMarks } from "@/lib/productText";
 import type { Product } from "@/types";
 import ProductDetailShell from "./ProductDetailShell";
 
@@ -35,8 +36,8 @@ export async function generateMetadata(
   const title = product.seo_title ?? `${product.name_en} | ABO Enterprise`;
   const description =
     product.seo_description ??
-    product.description_en ??
-    `Buy ${product.name_en} at the best price in Bangladesh. Fast delivery from ABO Enterprise, Sylhet.`;
+    (stripMarks(product.description_en) ||
+    `Buy ${product.name_en} at the best price in Bangladesh. Fast delivery from ABO Enterprise, Sylhet.`);
   const url = product.canonical_url ?? `${SITE_URL}/products/${product.slug}`;
   const ogImg = product.og_image ?? product.image_url ?? DEFAULT_OG_IMAGE;
 
@@ -66,7 +67,7 @@ function buildJsonLd(product: Product) {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name_en,
-    description: product.description_en ?? product.name_en,
+    description: stripMarks(product.description_en) || product.name_en,
     url: `${SITE_URL}/products/${product.slug}`,
     brand: {
       "@type": "Brand",

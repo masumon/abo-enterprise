@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { X, Loader2, Languages, Save, Send } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -28,8 +28,22 @@ import PublishChecklist from "@/components/admin/catalog/PublishChecklist";
 import AdvancedSection from "@/components/admin/catalog/AdvancedSection";
 import DuplicateNotice, { useDuplicateCheck } from "@/components/admin/catalog/DuplicateNotice";
 import { useBnEn } from "@/components/admin/catalog/useBnEn";
+import BnEnText from "@/components/admin/catalog/BnEnText";
+import SeoAutoPanel from "@/components/admin/catalog/SeoAutoPanel";
+import VideoUrlField from "@/components/admin/catalog/VideoUrlField";
+import BarcodeScanButton from "@/components/admin/catalog/BarcodeScanButton";
+import LinkImportBox from "@/components/admin/catalog/LinkImportBox";
+import type { LinkDraft } from "@/lib/api";
 
-const BADGES = ["", "HOT", "NEW", "SALE"];
+const BADGES: { v: string; bn: string; en: string }[] = [
+  { v: "", bn: "নেই", en: "None" },
+  { v: "NEW", bn: "🆕 নতুন", en: "🆕 New" },
+  { v: "HOT", bn: "🔥 জনপ্রিয়", en: "🔥 Hot" },
+  { v: "SALE", bn: "🏷️ অফার", en: "🏷️ Sale" },
+];
+const SPEC_KEYS = ["মডেল", "রং", "আউটপুট (W)", "ইনপুট", "পোর্ট", "কেবলের দৈর্ঘ্য", "ব্যাটারি", "যেসব ফোনে চলবে", "উপাদান", "মাপ", "বক্সে যা আছে"];
+const WARRANTY_CHIPS = ["ওয়ারেন্টি নেই", "৭ দিনের রিপ্লেসমেন্ট গ্যারান্টি", "৩ মাসের ওয়ারেন্টি", "৬ মাসের ওয়ারেন্টি", "১ বছরের ওয়ারেন্টি"];
+const DELIVERY_CHIPS = ["বিয়ানীবাজারে একই দিনে ডেলিভারি", "সিলেটে ১-২ দিনে ডেলিভারি", "সারা দেশে ২-৪ দিনে ডেলিভারি", "ক্যাশ অন ডেলিভারি সুবিধা আছে"];
 
 const schema = z.object({
   // Filled from the English name on save when left blank.
@@ -71,6 +85,9 @@ const schema = z.object({
   low_stock_threshold: z.coerce.number().min(0).optional(),
   is_best_seller: z.boolean().optional(),
   is_bookable: z.boolean().optional(),
+  video_url: z.string().optional(),
+  variant_group: z.string().optional(),
+  variant_label: z.string().optional(),
 }).refine(
   (d) => !d.original_price || d.original_price >= d.price,
   { message: "আগের দাম বিক্রয়মূল্যের সমান বা বেশি হতে হবে (Original price must be ≥ sale price)", path: ["original_price"] }
@@ -87,7 +104,7 @@ export interface CategoryOpt { slug: string; label: string; id?: string }
 const NEW_DEFAULTS: Partial<FormData> = {
   is_active: true, is_featured: false, stock_quantity: 0, image_url: "", slug: "",
   seo_title: "", seo_description: "", seo_keywords: "", canonical_url: "", og_image: "",
-  low_stock_threshold: 5, is_flash_sale: false, is_best_seller: false, requires_advance: false,
+  low_stock_threshold: 5, is_flash_sale: false, is_best_seller: false, requires_advance: false, video_url: "",
 };
 
 function fromProduct(p: Product, clone: boolean): Partial<FormData> {
@@ -130,6 +147,10 @@ function fromProduct(p: Product, clone: boolean): Partial<FormData> {
     low_stock_threshold: p.low_stock_threshold ?? 5,
     is_best_seller: clone ? false : p.is_best_seller ?? false,
     is_bookable: p.is_bookable ?? false,
+    video_url: p.video_url ?? "",
+    // A copy joins the original's group only when the admin ticks it (below).
+    variant_group: clone ? "" : p.variant_group ?? "",
+    variant_label: clone ? "" : p.variant_label ?? "",
   };
 }
 
@@ -257,6 +278,9 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
       const payload: Partial<Product> = {
         ...rest,
         slug: rest.slug || undefined,
+        video_url: rest.video_url?.trim() || null,
+        variant_group: rest.variant_group?.trim() || (rest.variant_label?.trim() && editing?.id ? editing.id : null),
+        variant_label: rest.variant_label?.trim() || null,
         category_id: category_id ? category_id : null,
         subcategory_id: subcategory_id ? subcategory_id : null,
         // checked → also bookable; unchecked → null (never disables ordering).
@@ -272,6 +296,10 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
         toast("success", t("পণ্য আপডেট হয়েছে", "Product updated"));
       } else {
         await productsApi.create(payload);
+        // Copy saved as a variant: make sure the original joins the same group.
+        if (mode.type === "clone" && payload.variant_group && !mode.product.variant_group && mode.product.id) {
+          await productsApi.update(mode.product.id, { variant_group: payload.variant_group }).catch(() => undefined);
+        }
         toast("success", data.is_active ? t("পণ্য প্রকাশ হয়েছে", "Product published") : t("খসড়া সেভ হয়েছে", "Draft saved"));
       }
       onSaved();
@@ -313,6 +341,27 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
     handleSubmit(onSubmit, () => toast("error", t("লাল চিহ্নিত ঘরগুলো ঠিক করুন", "Fix the fields marked in red")))();
   };
 
+  const onBarcode = useCallback((code: string) => {
+    setValue("barcode", code, { shouldDirty: true });
+    toast("success", t(`বারকোড পাওয়া গেছে: ${code}`, `Barcode: ${code}`));
+  }, [setValue, toast, t]);
+
+  /** Link draft → empty fields only (asks before replacing a name/description). */
+  const applyLinkDraft = (d: LinkDraft) => {
+    const v = getValues();
+    const replace = !(v.name_bn?.trim() || v.description_bn?.trim()) || window.confirm("আগের নাম/বিবরণ লিংকের তথ্য দিয়ে বদলে দেবেন?");
+    const put = (k: keyof FormData, val: string | undefined, force = replace) => {
+      if (val && (force || !String(v[k] ?? "").trim())) setValue(k, val as never, { shouldDirty: true });
+    };
+    put("name_bn", d.name_bn); put("name_en", d.name_en);
+    put("description_bn", d.description_bn); put("description_en", d.description_en);
+    put("brand", d.brand, false); put("image_url", d.image_url, false);
+    if (d.tags.length && !v.tags?.trim()) setValue("tags", d.tags.join(", "), { shouldDirty: true });
+    const rows = Object.entries(d.specs).map(([k, val]) => ({ k, v: val }));
+    if (rows.length) setSpecs((cur) => [...cur.filter((r) => r.k.trim() || r.v.trim()), ...rows.filter((r) => !cur.some((c) => c.k.trim() === r.k))]);
+    if (d.source_price) toast("info", `উৎস পাতার দাম: ${d.source_price} ${d.source_currency} — নিজের বিক্রয়মূল্য যাচাই করে দিন`);
+  };
+
   const sale = Number(w.price) || 0;
   const cost = Number(w.cost_price) || 0;
   const fieldErr = (m?: string) => (m ? <p className="text-red-500 text-xs mt-1">{m}</p> : null);
@@ -350,6 +399,7 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
             </div>
           </div>
           <DuplicateNotice result={mergedNames} onOpen={onOpenExisting} />
+          <div className="flex flex-wrap gap-2"><LinkImportBox kind="product" onDraft={applyLinkDraft} /></div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={lbl}>{t("ক্যাটাগরি", "Category")} <span className="text-red-500">*</span></label>
@@ -366,19 +416,26 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
             </div>
             {treeOptions.length > 0 && (
               <div>
-                <label className={lbl}>{t("ক্যাটালগ গাছের অবস্থান", "Catalog tree position")} {opt}</label>
+                <label className={lbl}>{t("বিস্তারিত ক্যাটাগরি (গাছে অবস্থান)", "Detailed category (tree)")} {opt}</label>
                 <select {...register("category_id")} className="input"
                   onChange={(e) => { setValue("category_id", e.target.value); setValue("subcategory_id", ""); }}>
                   <option value="">— None —</option>
                   {treeOptions.map((o) => <option key={o.id} value={o.id}>{o.label}</option>)}
                 </select>
+                <p className="text-[11px] text-gray-400 mt-1">{t("যেমন: মোবাইল এক্সেসরিজ › চার্জার — ক্যাটাগরি পাতায় সঠিক জায়গায় দেখাবে।", "e.g. Mobile accessories › Chargers — shows in the right place on category pages.")}</p>
               </div>
             )}
             <div>
               <label className={lbl}>{t("ব্যাজ", "Badge")} {opt}</label>
-              <select {...register("badge")} className="input">
-                {BADGES.map((b) => <option key={b} value={b}>{b || t("নেই", "None")}</option>)}
-              </select>
+              <div className="flex flex-wrap gap-1.5">
+                {BADGES.map((b) => (
+                  <button key={b.v} type="button" onClick={() => setValue("badge", b.v, { shouldDirty: true })}
+                    className={cn("rounded-full border px-3 min-h-10 text-sm", (w.badge || "") === b.v ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200 font-semibold" : "border-[var(--line)]")}>
+                    {t(b.bn, b.en)}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] text-gray-400 mt-1">{t("পণ্যের ছবির কোণে ছোট লেবেল হিসেবে দেখাবে।", "Small label on the product photo.")}</p>
             </div>
           </div>
         </>
@@ -423,6 +480,24 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
               </div>
             )}
           </div>
+          <div className="rounded-xl border border-[var(--line)] p-3 space-y-2">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-200">🎨 {t("রং / সাইজ (ভ্যারিয়েন্ট)", "Colour / size (variants)")} {opt}</p>
+            <input {...register("variant_label")} className="input" placeholder={t("এই পণ্যের রং বা সাইজ — যেমন: কালো, ২ মিটার, 64GB", "This item's colour or size — e.g. Black, 2 m")} />
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">
+              {t("একই পণ্যের অন্য রং/সাইজ যোগ করতে পণ্যের তালিকা থেকে এটির “কপি” চাপুন — কপির ফরমে “এটি মূল পণ্যের আরেকটি রং/সাইজ” টিক দিন, তারপর রং/সাইজ, দাম, স্টক ও ছবি বদলান। সাইটে গ্রাহক বোতাম চেপে রং/সাইজ বাছতে পারবেন।", "To add another colour/size, use “Copy” on this product in the list — tick “another colour/size”, then change label, price, stock and photo. Customers pick it with buttons on the product page.")}
+            </p>
+            {mode.type === "clone" && (
+              <label className="flex items-start gap-2 text-sm cursor-pointer min-h-11">
+                <input type="checkbox" className="rounded mt-0.5" checked={!!w.variant_group}
+                  onChange={(e) => setValue("variant_group", e.target.checked ? (mode.product.variant_group || mode.product.id || "") : "", { shouldDirty: true })} />
+                <span>{t("এটি মূল পণ্যের আরেকটি রং/সাইজ", "This is another colour/size of the original")}<span className="block text-[11px] text-gray-400">{t("টিক দিলে সাইটে দুটি পণ্য রং/সাইজ বোতাম হিসেবে একসাথে দেখাবে।", "Both show as colour/size buttons on the site.")}</span></span>
+              </label>
+            )}
+            {mode.type !== "clone" && w.variant_group && (
+              <p className="text-[11px] text-brand-700 dark:text-brand-300">✓ {t("একই গ্রুপের অন্য রং/সাইজের সাথে যুক্ত", "Linked with the other colours/sizes in its group")}</p>
+            )}
+          </div>
+          <VideoUrlField value={w.video_url} onChange={(v) => setValue("video_url", v, { shouldDirty: true })} folder="abo-enterprise/products" />
         </>
       ),
     },
@@ -442,6 +517,11 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
               <label className={lbl}>{t("আগের দাম ৳", "Old price ৳")} {opt}</label>
               <input {...register("original_price")} type="number" inputMode="numeric" className="input" placeholder="1490" />
               <p className="text-[11px] text-gray-400 mt-1">{t("দিলে কেটে দেখানো হবে (ছাড় বোঝাতে)।", "Shown crossed out (a discount).")}</p>
+              {sale > 0 && Number(w.original_price) > sale && (
+                <p className="mt-1 inline-flex rounded-full bg-red-50 text-red-700 dark:bg-red-500/15 dark:text-red-300 px-2 py-0.5 text-xs font-semibold">
+                  {t(`${Math.round(((Number(w.original_price) - sale) / Number(w.original_price)) * 100)}% ছাড় · ৳${Math.round(Number(w.original_price) - sale)} কম`, `${Math.round(((Number(w.original_price) - sale) / Number(w.original_price)) * 100)}% off`)}
+                </p>
+              )}
               {fieldErr(errors.original_price?.message)}
             </div>
             <div>
@@ -473,6 +553,11 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
                 <>
                   <input {...register("stock_quantity")} type="number" inputMode="numeric" className="input" placeholder="0" />
                   <p className="text-xs text-gray-400 mt-1">{t("শুরুর স্টক।", "Opening stock.")}</p>
+                  {!(Number(w.stock_quantity) > 0) && (
+                    <p className="text-xs mt-1 rounded-lg bg-amber-50 text-amber-800 dark:bg-amber-500/15 dark:text-amber-200 px-2 py-1">
+                      {t("স্টক ০ — প্রকাশ করলে সাইটে “স্টক নেই” দেখাবে (গ্রাহক “নোটিফাই” চাপতে পারবেন)।", "Stock 0 — the site will show “out of stock”.")}
+                    </p>
+                  )}
                 </>
               )}
             </div>
@@ -509,7 +594,7 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
       content: (
         <>
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-muted">{t("বুলেট লাইন \"• \" দিয়ে শুরু করুন।", "Start bullet lines with \"• \".")}</p>
+            <p className="text-xs text-muted">{t("✨ AI নাম ও স্পেসিফিকেশন দেখে বাংলা-ইংরেজি বিবরণ লিখে দেবে।", "✨ AI writes the description from the name and specs.")}</p>
             <div className="flex flex-wrap gap-2">
               <AiDescribeButton
                 kind="product"
@@ -523,17 +608,12 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
               </button>
             </div>
           </div>
-          <div>
-            <label className={lbl}>{t("বিবরণ (বাংলা)", "Description (Bangla)")}</label>
-            <textarea {...register("description_bn")} rows={5} className="input resize-y" placeholder="পণ্যের বিবরণ..." />
-          </div>
-          <div>
-            <label className="flex items-center justify-between gap-2 text-sm font-medium text-gray-700 mb-1">
-              {t("বিবরণ (English)", "Description (English)")} {opt}
-              <TranslateButton bn={w.description_bn} onResult={(en) => setValue("description_en", en, { shouldDirty: true })} en={w.description_en} onResultBn={(b) => setValue("description_bn", b, { shouldDirty: true })} />
-            </label>
-            <textarea {...register("description_en")} rows={4} className="input resize-y" placeholder="Product description..." />
-          </div>
+          <BnEnText label={t("বিবরণ", "Description")} rich rows={6}
+            bn={w.description_bn} en={w.description_en}
+            onBn={(v) => setValue("description_bn", v, { shouldDirty: true })}
+            onEn={(v) => setValue("description_en", v, { shouldDirty: true })}
+            placeholderBn={"যেমন:\n• ৩৩W দ্রুত চার্জ\n• Type-C পোর্ট"} placeholderEn="Product description…"
+            hint={t("টুলবার দিয়ে শিরোনাম, বোল্ড, রঙ, তালিকা, লিংক, ছবি, ইমোজি ও আইকন দিন — “প্রিভিউ” চাপলে সাইটের মতো দেখাবে।", "Use the toolbar for headings, bold, colours, lists, links, images, emoji and icons — tap Preview to see it as on the site.")} />
           <div>
             <label className={lbl}>{t("স্পেসিফিকেশন (পণ্যের পাতায় টেবিল হিসেবে দেখাবে)", "Specifications (shown as a table)")} {opt}</label>
             <div className="space-y-2">
@@ -544,17 +624,35 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
                   <button type="button" onClick={() => setSpecs((p) => p.filter((_, j) => j !== i))} className="p-2 text-gray-400 hover:text-red-500 rounded-lg" aria-label={t("সরান", "Remove")}><X className="w-4 h-4" /></button>
                 </div>
               ))}
-              <button type="button" onClick={() => setSpecs((p) => [...p, { k: "", v: "" }])} className="text-xs font-medium text-brand-600 hover:underline">+ {t("স্পেসিফিকেশন যোগ করুন", "Add specification")}</button>
+              <button type="button" onClick={() => setSpecs((p) => [...p, { k: "", v: "" }])} className="text-xs font-medium text-brand-600 hover:underline min-h-10">+ {t("স্পেসিফিকেশন যোগ করুন", "Add specification")}</button>
+              <div className="flex flex-wrap gap-1.5">
+                <span className="text-[11px] text-gray-400 self-center">{t("এক চাপে যোগ:", "Quick add:")}</span>
+                {SPEC_KEYS.filter((k) => !specs.some((r) => r.k.trim() === k)).map((k) => (
+                  <button key={k} type="button" onClick={() => setSpecs((p) => [...p.filter((r) => r.k.trim() || r.v.trim()), { k, v: "" }])}
+                    className="rounded-full border border-[var(--line)] px-2.5 min-h-9 text-xs hover:border-brand-400">+ {k}</button>
+                ))}
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className={lbl}>{t("ওয়ারেন্টি", "Warranty")} {opt}</label>
               <textarea {...register("warranty_info")} rows={2} className="input resize-none text-sm" placeholder={t("৬ মাসের ওয়ারেন্টি…", "6 months warranty…")} />
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {WARRANTY_CHIPS.map((c) => (
+                  <button key={c} type="button" onClick={() => setValue("warranty_info", c, { shouldDirty: true })} className="rounded-full border border-[var(--line)] px-2.5 min-h-9 text-xs hover:border-brand-400">{c}</button>
+                ))}
+              </div>
             </div>
             <div>
               <label className={lbl}>{t("ডেলিভারি তথ্য", "Delivery info")} {opt}</label>
               <textarea {...register("delivery_info")} rows={2} className="input resize-none text-sm" placeholder={t("২-৩ দিনে ডেলিভারি…", "Delivered in 2-3 days…")} />
+              <div className="flex flex-wrap gap-1.5 mt-1.5">
+                {DELIVERY_CHIPS.map((c) => (
+                  <button key={c} type="button" onClick={() => { const cur = (getValues("delivery_info") || "").trim(); setValue("delivery_info", cur && !cur.includes(c) ? `${cur}\n${c}` : c, { shouldDirty: true }); }}
+                    className="rounded-full border border-[var(--line)] px-2.5 min-h-9 text-xs hover:border-brand-400">+ {c}</button>
+                ))}
+              </div>
             </div>
           </div>
         </>
@@ -572,10 +670,17 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
               ? (editing.is_active ? t("এখন অবস্থা: প্রকাশিত (সাইটে দেখা যাচ্ছে)।", "Status now: live on the site.") : t("এখন অবস্থা: খসড়া (সাইটে লুকানো)।", "Status now: draft (hidden)."))
               : t("নিচের বোতাম দিয়ে খসড়া হিসেবে রাখুন বা সরাসরি প্রকাশ করুন।", "Use the buttons below to keep it as a draft or publish it.")}
           </p>
-          <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <label className="flex items-center gap-2 cursor-pointer text-sm"><input {...register("is_featured")} type="checkbox" className="rounded" /> {t("হোমপেজে ফিচার করুন", "Featured")}</label>
-            <label className="flex items-center gap-2 cursor-pointer text-sm"><input {...register("is_best_seller")} type="checkbox" className="rounded" /> {t("বেস্ট সেলার", "Best seller")}</label>
-            <label className="flex items-center gap-2 cursor-pointer text-sm" title="Also let customers book/request this item as a service"><input {...register("is_bookable")} type="checkbox" className="rounded" /> {t("বুকিংও নেওয়া যাবে", "Also bookable")}</label>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {([
+              ["is_featured", t("⭐ হোমপেজে দেখান", "⭐ Featured"), t("হোমপেজের বাছাই করা পণ্যের তালিকায় আসবে।", "Shown in the homepage picks.")],
+              ["is_best_seller", t("🏆 বেস্ট সেলার", "🏆 Best seller"), t("“বেশি বিক্রি” তালিকা ও ব্যাজে দেখাবে।", "Shown in best-seller lists.")],
+              ["is_bookable", t("📅 বুকিংও নেওয়া যাবে", "📅 Also bookable"), t("কেনার পাশাপাশি গ্রাহক এটি সার্ভিস হিসেবে বুক/অনুরোধ করতে পারবেন।", "Customers can also book/request it as a service.")],
+            ] as const).map(([name, title, help]) => (
+              <label key={name} className="flex items-start gap-2 cursor-pointer rounded-xl border border-[var(--line)] p-3 min-h-11">
+                <input {...register(name)} type="checkbox" className="rounded mt-0.5" />
+                <span><span className="block text-sm font-medium">{title}</span><span className="block text-[11px] text-gray-500 dark:text-gray-400">{help}</span></span>
+              </label>
+            ))}
           </div>
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -601,31 +706,47 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
                 <input {...register("sku")} className="input font-mono text-sm" placeholder={t("খালি = নিজে থেকে তৈরি", "blank = auto")} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Barcode</label>
-                <input {...register("barcode")} className="input" placeholder="8901234567890" />
+                <label className="block text-xs font-medium text-gray-600 mb-1">{t("বারকোড", "Barcode")}</label>
+                <div className="flex gap-2">
+                  <input {...register("barcode")} className="input flex-1" placeholder="8901234567890" inputMode="numeric" />
+                  <BarcodeScanButton onResult={onBarcode} />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">{t("সাব-ক্যাটাগরি (লেখা)", "Sub-category (text)")}</label>
                 <input {...register("sub_category")} className="input" placeholder="Cables, Cases..." />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">{t("ওজন (কেজি)", "Weight (kg)")}</label>
-                <input {...register("weight")} type="number" step="0.001" className="input" placeholder="0.250" />
+                <label className="block text-xs font-medium text-gray-600 mb-1">{t("ওজন (গ্রামে লিখুন)", "Weight (grams)")}</label>
+                <input type="number" inputMode="numeric" min={0} className="input" placeholder="250"
+                  value={w.weight != null && String(w.weight) !== "" && !Number.isNaN(Number(w.weight)) ? Math.round(Number(w.weight) * 1000) : ""}
+                  onChange={(e) => setValue("weight", (e.target.value === "" ? undefined : Number(e.target.value) / 1000) as unknown as number, { shouldDirty: true })} />
+                <p className="text-[11px] text-gray-400 mt-1">{t("ডেলিভারি চার্জ হিসাবে কাজে লাগে (১০০০ গ্রাম = ১ কেজি)।", "Used for delivery charges (1000 g = 1 kg).")}</p>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">{t("ডেলিভারি চার্জ ৳ (আলাদা হলে)", "Delivery charge ৳ (override)")}</label>
                 <input type="number" step="1" min="0" {...register("delivery_charge")} className="input text-sm" placeholder={t("খালি = এলাকার চার্জ", "blank = zone charge")} />
               </div>
               <div className="sm:col-span-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1">{t("ভ্যারিয়েন্ট গ্রুপ কোড", "Variant group code")}</label>
+                <input {...register("variant_group")} className="input font-mono text-xs" placeholder={t("খালি = নিজে থেকে", "blank = automatic")} />
+                <p className="text-[11px] text-gray-400 mt-1">{t("দুটি আলাদা পণ্যকে এক গ্রুপে আনতে একটির কোড অন্যটিতে বসান।", "Paste one product's code into another to group them.")}</p>
+              </div>
+              <div className="sm:col-span-2">
                 <label className="block text-xs font-medium text-gray-600 mb-1">{t("ট্যাগ (কমা দিয়ে)", "Tags (comma-separated)")}</label>
                 <input {...register("tags")} className="input" placeholder="phone, accessories, black..." />
+                <p className="text-[11px] text-gray-400 mt-1">{t("সার্চ ও “এরকম আরও পণ্য” খুঁজতে কাজে লাগে।", "Helps search and related products.")}</p>
               </div>
               <label className="flex items-center gap-2 text-sm cursor-pointer sm:col-span-2">
                 <input type="checkbox" {...register("requires_advance")} className="rounded" /> {t("অগ্রিম পেমেন্ট লাগবে", "Requires advance payment")}
+                <span className="text-[11px] text-gray-400">{t("— টিক দিলে আগে টাকা দিয়ে অর্ডার নিশ্চিত করতে হবে।", "— customer pays before the order is confirmed.")}</span>
               </label>
             </div>
             <div className="border-t border-[var(--line)] pt-3 space-y-3">
-              <p className="text-xs font-semibold text-gray-600">SEO <span className="font-normal text-gray-400">— {t("খালি থাকলে নাম, বিবরণ ও মূল ছবি নিজে থেকে ব্যবহার হয়", "blank = name, description and main photo are used")}</span></p>
+              <SeoAutoPanel name={w.name_bn || w.name_en || ""} desc={w.description_bn || w.description_en || ""}
+                tags={(w.tags || "").split(",").map((x) => x.trim()).filter(Boolean)} path={`/products/${w.slug || toSlug(w.name_en || "") || "…"}`}
+                title={w.seo_title} description={w.seo_description} keywords={w.seo_keywords}
+                onChange={(v) => { setValue("seo_title", v.seo_title, { shouldDirty: true }); setValue("seo_description", v.seo_description, { shouldDirty: true }); setValue("seo_keywords", v.seo_keywords, { shouldDirty: true }); }} />
               <input {...register("seo_title")} className="input text-sm" placeholder={t("SEO শিরোনাম", "SEO title")} />
               <textarea {...register("seo_description")} rows={2} maxLength={160} className="input resize-none text-sm" placeholder={t("SEO বিবরণ (১৬০ অক্ষর)", "SEO description (160 chars)")} />
               <input {...register("seo_keywords")} className="input text-sm" placeholder={t("কিওয়ার্ড (কমা দিয়ে)", "Keywords (comma-separated)")} />

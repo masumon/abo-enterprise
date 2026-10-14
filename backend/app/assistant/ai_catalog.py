@@ -153,3 +153,56 @@ def normalize_description(raw: Any) -> dict:
         "features_en": _bullets(raw.get("features_en")),
         "faq": faq[:6],
     }
+
+
+# ── Booking-form questions for a service ────────────────────────────────────
+BOOKING_FIELD_TYPES = ("text", "textarea", "number", "email", "phone", "url", "date", "datetime",
+                       "select", "multiselect", "radio", "checkbox", "file")
+
+BOOKING_FIELDS_SYSTEM = (
+    "You design short, friendly booking/order request forms for ABO Enterprise, a shop in Beanibazar, Sylhet, "
+    "Bangladesh. Given a service name and notes, propose the 3-8 questions the shop really needs to quote or do "
+    "the job. Do NOT ask for name, phone, e-mail or address (the form already has them). Prefer choices "
+    "(select/radio) over free text where the answers are predictable. Allowed field_type values: "
+    + ", ".join(BOOKING_FIELD_TYPES) + ". Use 'file' when the customer must send a document or photo. "
+    "Labels: natural Bangla (আপনি tone) and clear English. Options: short, in Bangla and English pairs. "
+    'Reply as JSON: {"fields": [{"label_bn": "", "label_en": "", "field_type": "", "required": true, '
+    '"placeholder_bn": "", "options": [{"bn": "", "en": ""}]}]}'
+)
+
+BOOKING_FIELDS_USER = "Service: {name}\nNotes: {notes}"
+
+
+def normalize_booking_fields(raw: Any) -> list[dict]:
+    """Model reply → safe field drafts the admin can review before saving."""
+    items = raw.get("fields") if isinstance(raw, dict) else raw
+    out: list[dict] = []
+    seen: set[str] = set()
+    for it in items if isinstance(items, list) else []:
+        if not isinstance(it, dict):
+            continue
+        en = str(it.get("label_en") or "").strip()[:120]
+        bn = str(it.get("label_bn") or "").strip()[:120]
+        if not (en or bn) or (en or bn).lower() in seen:
+            continue
+        seen.add((en or bn).lower())
+        ftype = str(it.get("field_type") or "text").strip().lower()
+        if ftype not in BOOKING_FIELD_TYPES:
+            ftype = "text"
+        opts: list[dict] = []
+        for o in it.get("options") or []:
+            if isinstance(o, dict) and (o.get("en") or o.get("bn")):
+                opts.append({"en": str(o.get("en") or o.get("bn")).strip()[:80], "bn": str(o.get("bn") or o.get("en")).strip()[:80]})
+            elif isinstance(o, str) and o.strip():
+                opts.append({"en": o.strip()[:80], "bn": o.strip()[:80]})
+        if ftype in ("select", "multiselect", "radio") and len(opts) < 2:
+            ftype, opts = "text", []
+        out.append({
+            "field_label_en": en or bn, "field_label_bn": bn or en, "field_type": ftype,
+            "is_required": bool(it.get("required", False)),
+            "placeholder": str(it.get("placeholder_bn") or "").strip()[:120] or None,
+            "options": opts[:12],
+        })
+        if len(out) >= 10:
+            break
+    return out

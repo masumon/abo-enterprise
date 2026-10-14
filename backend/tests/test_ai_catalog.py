@@ -114,3 +114,19 @@ def test_describe_normalisation():
     out = ac.normalize_description({"description_bn": "ভালো", "description_en": "Good", "features_bn": ["• এক", ""],
                                     "faq": [{"q_bn": "প্রশ্ন", "a_bn": "উত্তর"}, {"x": 1}]})
     assert out["features_bn"] == ["এক"] and len(out["faq"]) == 1 and out["faq"][0]["q_en"] == ""
+
+
+def test_booking_fields_normalisation():
+    raw = {"fields": [
+        {"label_bn": "কাগজের সাইজ", "label_en": "Paper size", "field_type": "select", "required": True,
+         "options": [{"bn": "A4", "en": "A4"}, {"bn": "A3", "en": "A3"}]},
+        {"label_bn": "কাগজের সাইজ", "label_en": "Paper size", "field_type": "select"},  # duplicate
+        {"label_bn": "রঙ", "label_en": "Colour", "field_type": "radio", "options": ["Colour"]},  # 1 option → text
+        {"label_en": "File", "field_type": "weird"},
+        "junk",
+    ]}
+    out = ac.normalize_booking_fields(raw)
+    assert [f["field_label_en"] for f in out] == ["Paper size", "Colour", "File"]
+    assert out[0]["field_type"] == "select" and out[0]["is_required"] and len(out[0]["options"]) == 2
+    assert out[1]["field_type"] == "text" and out[1]["options"] == []
+    assert out[2]["field_type"] == "text" and out[2]["field_label_bn"] == "File"

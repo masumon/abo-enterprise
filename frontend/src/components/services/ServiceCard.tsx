@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { stripMarks } from "@/lib/productText";
 import Image from "next/image";
 import type { Service } from "@/types";
 import type { Language } from "@/types";
@@ -17,10 +18,10 @@ interface ServiceCardProps {
 export default function ServiceCard({ service, lang = "en", categoryLabel }: ServiceCardProps) {
   const tag = categoryLabel ?? service.category;
   const name = lang === "bn" && service.name_bn ? service.name_bn : service.name_en;
-  const description =
+  const description = stripMarks(
     (lang === "bn" ? service.short_description_bn || service.description_bn : null) ||
     service.short_description_en ||
-    service.description_en;
+    service.description_en);
 
   // Only a real, admin-set photo is shown. When none exists we render a branded
   // panel below instead of a mismatched stock/demo image.

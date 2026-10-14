@@ -54,6 +54,10 @@ export interface Product {
   seo_keywords?: string;
   canonical_url?: string;
   og_image?: string;
+  video_url?: string | null;
+  /** Products sharing a group are shown as colour/size choices of each other. */
+  variant_group?: string | null;
+  variant_label?: string | null;
   created_at?: string;
   updated_at?: string;
   /** Blog posts this product is linked to (many-to-many). Sent on save to
@@ -265,6 +269,7 @@ export interface Service {
   seo_keywords?: string;
   canonical_url?: string;
   og_image?: string;
+  video_url?: string | null;
   // Content blocks are bilingual & backward-compatible: an item may be a plain
   // string (legacy = English) or carry optional Bengali (_bn / {en,bn}). The
   // service detail page picks the language with an English fallback.

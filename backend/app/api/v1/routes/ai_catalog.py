@@ -97,3 +97,54 @@ async def describe(payload: DescribeIn, _admin: str = Depends(require_admin), db
     if not (out["description_bn"] or out["description_en"]):
         raise HTTPException(status_code=502, detail="AI বিবরণ লিখতে পারেনি — আবার চেষ্টা করুন।")
     return ApiResponse(data=out)
+
+
+class BookingFieldsIn(BaseModel):
+    name: str = Field(..., min_length=2, max_length=200)
+    notes: str = Field("", max_length=1500)
+
+
+@router.post("/booking-fields", response_model=ApiResponse)
+async def booking_fields(payload: BookingFieldsIn, _admin: str = Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    """Service name + notes -> suggested booking-form questions (nothing is saved)."""
+    user = ac.BOOKING_FIELDS_USER.format(name=payload.name.strip(), notes=ai_gemini._mask(payload.notes.strip()) or "(none)")
+    try:
+        raw = await ai_gemini.generate_json(db, ac.BOOKING_FIELDS_SYSTEM, user, max_tokens=4096)
+    except ai_gemini.AiUnavailable as exc:
+        raise _fail(exc)
+    fields = ac.normalize_booking_fields(raw)
+    if not fields:
+        raise HTTPException(status_code=502, detail="AI প্রশ্ন প্রস্তাব করতে পারেনি — আবার চেষ্টা করুন।")
+    return ApiResponse(data={"fields": fields})
+
+
+class FromLinkIn(BaseModel):
+    url: str = Field(..., min_length=8, max_length=1000)
+    kind: str = Field("product", pattern="^(product|service)$")
+
+
+@router.post("/from-link", response_model=ApiResponse)
+async def from_link(payload: FromLinkIn, _admin: str = Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    """Web link (supplier/maker page) -> product/service draft. Nothing is saved.
+    Without AI the page's own title, description and image are still returned."""
+    from app.assistant import link_import as li
+
+    try:
+        final_url, page = await li.fetch_page(payload.url)
+    except li.LinkError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception:  # noqa: BLE001 — network trouble
+        raise HTTPException(status_code=502, detail="পাতাটি খোলা যায়নি — একটু পরে আবার চেষ্টা করুন বা অন্য লিংক দিন।")
+    facts = li.extract(final_url, page)
+    if not (facts["title"] or facts["text"]):
+        raise HTTPException(status_code=422, detail="এই পাতায় কাজে লাগার মতো তথ্য পাওয়া যায়নি।")
+    raw: dict = {}
+    ai_used = False
+    if await ai_gemini.is_available(db):
+        user = "FACTS:\n" + "\n".join(f"{k}: {v}" for k, v in facts.items() if v and k != "image_url")
+        try:
+            raw = await ai_gemini.generate_json(db, li.LINK_SYSTEM.format(kind=payload.kind), ai_gemini._mask(user), max_tokens=4096)
+            ai_used = True
+        except ai_gemini.AiUnavailable:
+            raw = {}
+    return ApiResponse(data={**li.normalize_draft(raw, facts), "ai_used": ai_used})

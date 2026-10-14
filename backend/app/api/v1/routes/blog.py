@@ -9,7 +9,8 @@ from sqlalchemy import select, func, and_, or_
 from app.core.database import get_db
 from app.core.search import build_search_condition
 from app.core.security import require_role
-from app.core.translate import translate_text
+from app.core.translate import translate_text  # noqa: F401 — kept for callers
+from app.core.translate_smart import smart_translate
 from app.core.blog_links import (
     set_products_for_blog,
     set_services_for_blog,
@@ -45,13 +46,14 @@ class TranslateRequest(BaseModel):
 async def translate_blog_text(
     payload: TranslateRequest,
     admin_id: str = Depends(require_role("blog.write")),
+    db: AsyncSession = Depends(get_db),
 ):
     """Translate blog text (admin only). Returns {translated}; 502 on failure so
     the admin UI can prompt for a manual English entry instead of saving Bangla.
 
     Kept for backward compatibility; the shared endpoint is /admin/translate."""
     try:
-        translated = translate_text(payload.text, payload.source, payload.target)
+        translated = await smart_translate(db, payload.text, payload.source, payload.target)
     except Exception as exc:  # noqa: BLE001
         logger.warning("Blog translate failed: %s", exc)
         raise HTTPException(status_code=502, detail="Translation service unavailable")

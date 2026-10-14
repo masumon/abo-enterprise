@@ -29,6 +29,7 @@ import {
   productsApi,
   servicesAdminApi,
   type MediaAssetRecord,
+  type MediaUse,
 } from "@/lib/api";
 import api from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -256,6 +257,14 @@ export default function AdminMediaPage() {
   const [editTags, setEditTags] = useState("");
   const [savingAsset, setSavingAsset] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<MediaAssetRecord | null>(null);
+  // Where-used, unused filter and bulk delete.
+  const [usage, setUsage] = useState<Record<string, MediaUse[]>>({});
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [unusedIds, setUnusedIds] = useState<Set<string> | null>(null);
+  const [unusedOnly, setUnusedOnly] = useState(false);
+  const [unusedLoading, setUnusedLoading] = useState(false);
+  const [bulkIds, setBulkIds] = useState<string[] | null>(null);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [deletingAsset, setDeletingAsset] = useState(false);
   const [bulkDragOver, setBulkDragOver] = useState(false);
   const [bulkUploading, setBulkUploading] = useState(false);
@@ -406,13 +415,60 @@ export default function AdminMediaPage() {
     }
   };
 
+  // Load "where used" for the files on this page.
+  useEffect(() => {
+    const ids = libraryAssets.map((a) => a.id).filter((id) => !(id in usage));
+    if (!ids.length) return;
+    let alive = true;
+    adminApi.mediaUsage(ids)
+      .then((r) => { if (alive) setUsage((u) => ({ ...u, ...(r.data.data ?? {}) })); })
+      .catch(() => { /* badge just stays hidden */ });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [libraryAssets]);
+
+  const toggleUnused = async () => {
+    if (unusedOnly) { setUnusedOnly(false); return; }
+    setUnusedLoading(true);
+    try {
+      const r = await adminApi.mediaUnused();
+      setUnusedIds(new Set(r.data.data?.ids ?? []));
+      setUnusedOnly(true);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "অব্যবহৃত ফাইল খোঁজা যায়নি"));
+    } finally {
+      setUnusedLoading(false);
+    }
+  };
+
+  const confirmBulkDelete = async () => {
+    if (!bulkIds?.length) return;
+    setBulkDeleting(true);
+    try {
+      const r = await adminApi.mediaBulkDelete(bulkIds);
+      const d = r.data.data;
+      const gone = new Set(d?.deleted ?? []);
+      setLibraryAssets((prev) => prev.filter((a) => !gone.has(a.id)));
+      setSelected(new Set());
+      setUnusedIds((u) => (u ? new Set([...u].filter((id) => !gone.has(id))) : u));
+      toast("success", `${gone.size}টি ফাইল মুছে ফেলা হয়েছে (Cloudinary থেকেও)` + ((d?.skipped_in_use.length ?? 0) ? ` · ব্যবহৃত ${d?.skipped_in_use.length}টি রাখা হয়েছে` : ""));
+      setBulkIds(null);
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "মুছে ফেলা যায়নি"));
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  const shownAssets = unusedOnly && unusedIds ? libraryAssets.filter((a) => unusedIds.has(a.id)) : libraryAssets;
+
   const confirmDeleteAsset = async () => {
     if (!deleteTarget) return;
     setDeletingAsset(true);
     try {
       await adminApi.deleteMediaAsset(deleteTarget.id);
       setLibraryAssets((prev) => prev.filter((a) => a.id !== deleteTarget.id));
-      toast("success", "Asset deleted");
+      toast("success", "ফাইল মুছে ফেলা হয়েছে (Cloudinary থেকেও)");
       setDeleteTarget(null);
     } catch (e) {
       toast("error", apiErrorMessage(e, "Failed to delete asset"));
@@ -871,7 +927,31 @@ export default function AdminMediaPage() {
             <div className="flex justify-center py-16">
               <Loader2 className="w-7 h-7 animate-spin text-brand-500" />
             </div>
-          ) : libraryAssets.length === 0 ? (
+          ) : (
+            <div className="flex flex-wrap items-center gap-2 mb-4 rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 p-2">
+              <label className="flex items-center gap-2 text-sm px-2 min-h-11 cursor-pointer">
+                <input type="checkbox" className="rounded" checked={shownAssets.length > 0 && shownAssets.every((a) => selected.has(a.id))}
+                  onChange={(e) => setSelected(e.target.checked ? new Set(shownAssets.map((a) => a.id)) : new Set())} />
+                সব বাছাই
+              </label>
+              <button type="button" onClick={toggleUnused} disabled={unusedLoading}
+                className={`btn btn-sm min-h-11 gap-1.5 ${unusedOnly ? "btn-brand" : "btn-outline"}`}>
+                {unusedLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null} ⚪ শুধু অব্যবহৃত {unusedIds ? `(${unusedIds.size})` : ""}
+              </button>
+              {selected.size > 0 && (
+                <button type="button" onClick={() => setBulkIds([...selected])} className="btn btn-sm min-h-11 gap-1.5 border border-red-300 text-red-600 hover:bg-red-50">
+                  <Trash2 className="w-4 h-4" /> বাছাই করা {selected.size}টি মুছুন
+                </button>
+              )}
+              {unusedOnly && unusedIds && unusedIds.size > 0 && (
+                <button type="button" onClick={() => setBulkIds([...unusedIds])} className="btn btn-sm min-h-11 gap-1.5 border border-red-300 text-red-600 hover:bg-red-50">
+                  <Trash2 className="w-4 h-4" /> সব অব্যবহৃত ({unusedIds.size}টি) মুছুন
+                </button>
+              )}
+              <p className="w-full text-[11px] text-muted px-2">মুছলে Cloudinary থেকেও মুছে যায়। একসাথে মোছার সময় সাইটে ব্যবহৃত ফাইল নিজে থেকে বাদ থাকে।</p>
+            </div>
+          )}
+          {libraryLoading && !libraryLoaded ? null : shownAssets.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-gray-400 gap-2">
               <ImageOff className="w-8 h-8" />
               <p className="text-sm">{siteImages.length > 0 ? "অ্যাডমিন থেকে আপলোড করা আলাদা কোনো ছবি নেই" : "No uploaded assets found"}</p>
@@ -879,10 +959,14 @@ export default function AdminMediaPage() {
           ) : (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {libraryAssets.map((asset) => (
-                  <div key={asset.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
+                {shownAssets.map((asset) => (
+                  <div key={asset.id} className={`bg-white rounded-xl border shadow-sm overflow-hidden ${selected.has(asset.id) ? "border-brand-500 ring-1 ring-brand-500" : "border-gray-100"}`}>
+                    <div className="relative aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
                       <MediaEl url={asset.url} className="w-full h-full object-cover" />
+                      <label className="absolute top-1 left-1 flex items-center justify-center min-h-11 min-w-11 cursor-pointer" aria-label={`বাছাই: ${asset.filename}`}>
+                        <input type="checkbox" className="w-5 h-5 rounded shadow" checked={selected.has(asset.id)}
+                          onChange={() => setSelected((cur) => { const n = new Set(cur); if (n.has(asset.id)) n.delete(asset.id); else n.add(asset.id); return n; })} />
+                      </label>
                     </div>
                     <div className="p-3 space-y-1.5">
                       <p className="text-xs font-medium text-gray-800 truncate" title={asset.filename}>
@@ -892,6 +976,18 @@ export default function AdminMediaPage() {
                         {formatBytes(asset.size)}
                         {asset.width && asset.height ? ` · ${asset.width}×${asset.height}` : ""}
                       </p>
+                      {usage[asset.id] && (
+                        usage[asset.id].length > 0 ? (
+                          <p className="text-[11px] text-emerald-700 dark:text-emerald-400 leading-snug" title={usage[asset.id].map((u) => `${u.kind}: ${u.name}`).join("\n")}>
+                            ✅ ব্যবহৃত: {usage[asset.id][0].admin_url
+                              ? <a href={usage[asset.id][0].admin_url!} className="underline">{usage[asset.id][0].kind}{usage[asset.id][0].name ? ` — ${usage[asset.id][0].name}` : ""}</a>
+                              : <>{usage[asset.id][0].kind}{usage[asset.id][0].name ? ` — ${usage[asset.id][0].name}` : ""}</>}
+                            {usage[asset.id].length > 1 ? ` +${usage[asset.id].length - 1}` : ""}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-gray-400">⚪ কোথাও ব্যবহার হচ্ছে না</p>
+                        )
+                      )}
                       {asset.tags.length > 0 && (
                         <div className="flex flex-wrap gap-1">
                           {asset.tags.slice(0, 3).map((tag) => (
@@ -994,11 +1090,22 @@ export default function AdminMediaPage() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete Asset"
-        message={`Delete "${deleteTarget?.filename}"? This removes it from the media library (existing pages still using its URL will show a broken image).`}
+        message={deleteTarget && usage[deleteTarget.id]?.length
+          ? `সাবধান! “${deleteTarget.filename}” এখন ব্যবহার হচ্ছে: ${usage[deleteTarget.id].map((u) => `${u.kind}${u.name ? ` (${u.name})` : ""}`).join(", ")}। মুছলে সেখানে ছবি ভাঙা দেখাবে, আর Cloudinary থেকেও মুছে যাবে।`
+          : `“${deleteTarget?.filename}” মুছবেন? লাইব্রেরি ও Cloudinary — দুই জায়গা থেকেই মুছে যাবে।`}
         confirmLabel={deletingAsset ? "Deleting…" : "Delete"}
         variant="danger"
         onConfirm={confirmDeleteAsset}
         onCancel={() => setDeleteTarget(null)}
+      />
+      <ConfirmDialog
+        open={!!bulkIds}
+        title={`${bulkIds?.length ?? 0}টি ফাইল মুছবেন?`}
+        message="লাইব্রেরি ও Cloudinary — দুই জায়গা থেকেই মুছে যাবে। সাইটে ব্যবহৃত কোনো ফাইল থাকলে সেটি নিরাপত্তার জন্য রেখে দেওয়া হবে।"
+        confirmLabel={bulkDeleting ? "মুছছে…" : "মুছে ফেলুন"}
+        variant="danger"
+        onConfirm={confirmBulkDelete}
+        onCancel={() => setBulkIds(null)}
       />
     </div>
   );

@@ -28,7 +28,10 @@ import ProductReviews from "@/components/features/ProductReviews";
 import GlassCard from "@/components/ui/GlassCard";
 import CountdownTimer, { getWeeklySaleEnd } from "@/components/ui/CountdownTimer";
 import { parseDhakaDateTime } from "@/lib/flashSale";
-import { parseDescription, specRows } from "@/lib/productText";
+import { fixBoldMarks, parseDescription, specRows } from "@/lib/productText";
+import RichText from "@/components/ui/RichText";
+import type { ProductVariant } from "@/lib/api";
+import VideoEmbed from "@/components/ui/VideoEmbed";
 
 const ProductBookingModal = dynamic(() => import("@/components/products/ProductBookingModal"), { ssr: false });
 
@@ -39,6 +42,7 @@ interface Props {
 export default function ProductDetailClient({ product }: Props) {
   const router = useRouter();
   const [related, setRelated] = useState<Product[]>([]);
+  const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [added, setAdded] = useState(false);
   const [selectedImage, setSelectedImage] = useState(0);
   const [reviewCount, setReviewCount] = useState(product.review_count ?? 0);
@@ -62,6 +66,11 @@ export default function ProductDetailClient({ product }: Props) {
   const contact = useContactInfo();
   const t = useT();
   const toast = useToastStore((s) => s.push);
+
+  useEffect(() => {
+    if (!product.variant_group) { setVariants([]); return; }
+    productsApi.variants(product.slug).then((r) => setVariants(r.data.data ?? [])).catch(() => setVariants([]));
+  }, [product.slug, product.variant_group]);
 
   useEffect(() => {
     productsApi.related(product.slug)
@@ -151,7 +160,7 @@ export default function ProductDetailClient({ product }: Props) {
   const productId = product.id ?? product.slug;
   const waMsg = encodeURIComponent(`${lang === "bn" ? "অর্ডার করতে চাই" : "I want to order"}: ${name} - ${formatPrice(effectivePrice)}`);
   const savings = strikePrice ? strikePrice - effectivePrice : 0;
-  const descBlocks = parseDescription(desc);
+  const descBlocks = parseDescription(fixBoldMarks(desc ?? ""));
   const specs = specRows(product.specifications);
   const categoryHref = product.category ? `/products?category=${encodeURIComponent(product.category)}` : "/products";
   const categoryLabel = product.category ? product.category.replace(/[-_]+/g, " ") : "";
@@ -290,6 +299,24 @@ export default function ProductDetailClient({ product }: Props) {
                 <Link href={categoryHref} className="self-start text-xs uppercase tracking-wider text-brand-500 font-semibold mb-1 hover:underline">{categoryLabel}</Link>
               )}
               <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-snug text-gray-900 dark:text-white mb-2 break-words [overflow-wrap:anywhere]">{name}</h1>
+              {variants.length > 1 && (
+                <div className="mb-3">
+                  <p className="text-xs font-semibold text-muted mb-1.5">{lang === "bn" ? "রং / সাইজ বাছুন" : "Choose colour / size"}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {variants.map((v) => (
+                      <Link key={v.slug} href={`/products/${v.slug}`} aria-current={v.current ? "true" : undefined}
+                        className={`inline-flex items-center gap-2 rounded-xl border px-3 min-h-11 text-sm ${v.current ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200 font-semibold" : "border-gray-200 dark:border-white/10 hover:border-brand-400"} ${v.in_stock ? "" : "opacity-60"}`}>
+                        {v.image_url && (
+                          // eslint-disable-next-line @next/next/no-img-element -- tiny thumb
+                          <img src={v.image_url} alt="" className="w-7 h-7 rounded-md object-cover bg-white" loading="lazy" />
+                        )}
+                        <span>{lang === "bn" ? v.label : v.label_en}</span>
+                        {!v.in_stock && <span className="text-[10px]">{lang === "bn" ? "(স্টক নেই)" : "(out)"}</span>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              )}
               {(product.brand || product.sku) && (
                 <p className="text-xs text-muted mb-3">
                   {product.brand && <>{lang === "bn" ? "ব্র্যান্ড" : "Brand"}: <span className="font-semibold text-heading">{product.brand}</span></>}
@@ -386,23 +413,15 @@ export default function ProductDetailClient({ product }: Props) {
                 ))}
               </nav>
 
+              {product.video_url && (
+                <div className="mb-6">
+                  <VideoEmbed url={product.video_url} title={name} />
+                </div>
+              )}
               {descBlocks.length > 0 && (
                 <div id="overview" className="scroll-mt-24 mb-6 space-y-3 text-sm leading-relaxed text-gray-600 dark:text-gray-300 break-words">
                   <h2 className="font-semibold text-sm text-heading">{lang === "bn" ? "পণ্যের বিবরণ" : "Description"}</h2>
-                  {descBlocks.map((b, i) =>
-                    b.type === "p" ? (
-                      <p key={i}>{b.text}</p>
-                    ) : (
-                      <ul key={i} className="space-y-1.5">
-                        {b.items.map((it, j) => (
-                          <li key={j} className="flex gap-2">
-                            <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-brand-500" aria-hidden />
-                            <span className="min-w-0">{it}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )
-                  )}
+                  <RichText text={desc} className="space-y-3 text-[15px] leading-7 text-gray-700 dark:text-gray-200" />
                 </div>
               )}
               {specs.length > 0 && (

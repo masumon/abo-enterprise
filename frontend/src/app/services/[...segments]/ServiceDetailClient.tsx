@@ -1,5 +1,7 @@
 "use client";
 
+import RichText, { InlineText } from "@/components/ui/RichText";
+import VideoEmbed from "@/components/ui/VideoEmbed";
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -237,9 +239,12 @@ export default function ServiceDetailClient({ service }: Props) {
             <h2 className="text-2xl font-bold text-heading mb-4">
               {t("About This Service", "এই সেবা সম্পর্কে")}
             </h2>
-            <div className="prose prose-gray dark:prose-invert max-w-none text-muted leading-relaxed whitespace-pre-line">
-              {description}
-            </div>
+            <RichText text={description} />
+            {service.video_url && (
+              <div className="mt-5 max-w-2xl">
+                <VideoEmbed url={service.video_url} title={name} />
+              </div>
+            )}
           </section>
         )}
 
@@ -283,7 +288,7 @@ export default function ServiceDetailClient({ service }: Props) {
                     {tier.features && tier.features.length > 0 && (
                       <ul className="space-y-1">
                         {tier.features.map((f, i) => (
-                          <li key={i} className="flex items-start gap-2 text-sm text-muted">
+                          <li key={i} className="flex items-start gap-2 text-[15px] leading-7 text-gray-700 dark:text-gray-200">
                             <CheckCircle className="w-4 h-4 text-green-500 flex-shrink-0 mt-0.5" />
                             {f}
                           </li>
@@ -331,9 +336,9 @@ export default function ServiceDetailClient({ service }: Props) {
                     {s.step ?? i + 1}
                   </span>
                   <div className="pt-1">
-                    <p className="font-semibold text-heading">{pick(s.title, s.title_bn)}</p>
+                    <p className="font-semibold text-heading"><InlineText text={pick(s.title, s.title_bn)} /></p>
                     {(s.description || s.description_bn) && (
-                      <p className="text-sm text-muted mt-0.5">{pick(s.description, s.description_bn)}</p>
+                      <div className="text-sm mt-0.5"><RichText text={pick(s.description, s.description_bn)} className="space-y-2 text-sm leading-6 text-gray-600 dark:text-gray-300" /></div>
                     )}
                   </div>
                 </li>
@@ -350,9 +355,9 @@ export default function ServiceDetailClient({ service }: Props) {
             </h2>
             <ul className="grid sm:grid-cols-2 gap-3">
               {benefits.map((b, i) => (
-                <li key={i} className="flex items-start gap-2 text-muted">
+                <li key={i} className="flex items-start gap-2 text-[15px] leading-7 text-gray-700 dark:text-gray-200">
                   <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span>{listText(b)}</span>
+                  <span><InlineText text={listText(b)} /></span>
                 </li>
               ))}
             </ul>
@@ -378,9 +383,9 @@ export default function ServiceDetailClient({ service }: Props) {
                 </div>
                 <ul className="space-y-2">
                   {requirements.map((r, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted">
+                    <li key={i} className="flex items-start gap-2 text-[15px] leading-7 text-gray-700 dark:text-gray-200">
                       <span aria-hidden className="mt-1.5 w-1.5 h-1.5 rounded-full bg-brand-400 flex-shrink-0" />
-                      {listText(r)}
+                      <InlineText text={listText(r)} />
                     </li>
                   ))}
                 </ul>
@@ -396,9 +401,9 @@ export default function ServiceDetailClient({ service }: Props) {
                 </div>
                 <ul className="space-y-2">
                   {documents.map((d, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm text-muted">
+                    <li key={i} className="flex items-start gap-2 text-[15px] leading-7 text-gray-700 dark:text-gray-200">
                       <CheckCircle className="w-4 h-4 text-brand-500 flex-shrink-0 mt-0.5" />
-                      {listText(d)}
+                      <InlineText text={listText(d)} />
                     </li>
                   ))}
                 </ul>
@@ -423,10 +428,10 @@ export default function ServiceDetailClient({ service }: Props) {
               {faq.map((item, i) => (
                 <details key={i} className="enterprise-card p-5 group">
                   <summary className="font-semibold text-heading cursor-pointer list-none flex items-center justify-between gap-3">
-                    {pick(item.question, item.question_bn)}
+                    <InlineText text={pick(item.question, item.question_bn)} />
                     <ChevronDown className="w-4 h-4 text-muted flex-shrink-0 transition-transform group-open:rotate-180" />
                   </summary>
-                  <p className="text-sm text-muted mt-3 leading-relaxed">{pick(item.answer, item.answer_bn)}</p>
+                  <div className="mt-3"><RichText text={pick(item.answer, item.answer_bn)} className="space-y-2 text-[15px] leading-7 text-gray-700 dark:text-gray-200" /></div>
                 </details>
               ))}
             </div>

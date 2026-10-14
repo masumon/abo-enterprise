@@ -43,6 +43,12 @@ class Product(Base):
     seo_keywords: Mapped[str | None] = mapped_column(String(500))
     canonical_url: Mapped[str | None] = mapped_column(String(500))
     og_image: Mapped[str | None] = mapped_column(Text)
+    # Optional product/service video (YouTube, Facebook, Vimeo or a Cloudinary upload).
+    video_url: Mapped[str | None] = mapped_column(Text)
+    # Variants: products sharing a group are shown as colour/size choices of each
+    # other; each stays a normal product with its own price and stock.
+    variant_group: Mapped[str | None] = mapped_column(String(64), index=True)
+    variant_label: Mapped[str | None] = mapped_column(String(80))
     sku: Mapped[str | None] = mapped_column(String(100), index=True)
     barcode: Mapped[str | None] = mapped_column(String(100))
     brand: Mapped[str | None] = mapped_column(String(100))
@@ -325,6 +331,8 @@ class Service(Base):
     seo_keywords: Mapped[str | None] = mapped_column(String(500))
     canonical_url: Mapped[str | None] = mapped_column(String(500))
     og_image: Mapped[str | None] = mapped_column(Text)
+    # Optional product/service video (YouTube, Facebook, Vimeo or a Cloudinary upload).
+    video_url: Mapped[str | None] = mapped_column(Text)
     process_steps: Mapped[list] = mapped_column(JSON, default=list)
     benefits: Mapped[list] = mapped_column(JSON, default=list)
     requirements: Mapped[list] = mapped_column(JSON, default=list)
