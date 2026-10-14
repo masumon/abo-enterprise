@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from "react";
 import AdminTitle from "@/components/admin/AdminTitle";
 import { Loader2, Mail, Plus, Pencil, Ban, X, CheckCircle, XCircle, Eye, Code } from "lucide-react";
 import { emailTemplatesAdminApi, type EmailTemplateRecord } from "@/lib/api";
-import TranslateButton from "@/components/admin/TranslateButton";
+import BnEnText from "@/components/admin/catalog/BnEnText";
+import { fillSamples, templateInfo, varLabel } from "@/lib/emailTemplateKit";
 import { translateBnToEn } from "@/lib/translate";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -66,7 +67,7 @@ export default function AdminEmailTemplatesPage() {
     // Safe: only admin-authored text + variable placeholders, no untrusted input
     let result = body;
     for (const v of variables) {
-      result = result.replace(new RegExp(`\\{\\{\\s*${v}\\s*\\}\\}`, "g"), `<span class="bg-yellow-100 text-yellow-800 rounded px-1 font-mono text-xs">[${v}]</span>`);
+      result = result.replace(new RegExp(`\\{\\{\\s*${v}\\s*\\}\\}`, "g"), `<span class="bg-yellow-100 text-yellow-800 rounded px-1">${fillSamples(`{{${v}}}`, [v])}</span>`);
     }
     result = result.replace(/\n/g, "<br/>");
     return result;
@@ -159,11 +160,11 @@ export default function AdminEmailTemplatesPage() {
           <span className="grid h-11 w-11 flex-none place-items-center rounded-xl border border-brand-100 bg-brand-50 text-brand-700"><Mail className="h-5 w-5" /></span>
           <div>
             <AdminTitle en="Email Templates" bn="ইমেইল টেমপ্লেট" />
-            <p className="text-gray-500 text-sm">{templates.length} templates</p>
+            <p className="text-gray-500 text-sm">গ্রাহকের কাছে নিজে থেকে যে ইমেইলগুলো যায় — {templates.length}টি। লেখা বদলাতে কার্ডে চাপুন।</p>
           </div>
         </div>
         <button onClick={openNew} className="btn btn-brand btn-md min-h-11 flex items-center justify-center gap-2 whitespace-nowrap">
-          <Plus className="w-4 h-4" /> New Template
+          <Plus className="w-4 h-4" /> নতুন টেমপ্লেট
         </button>
       </div>
 
@@ -174,66 +175,34 @@ export default function AdminEmailTemplatesPage() {
           <AdminEmptyState icon={Mail} title="No email templates yet" description="Create your first template to customize the emails customers receive." />
         ) : (
           <>
-          <div className="space-y-3 p-3 min-[641px]:hidden">
-            {templates.map((t) => (
-              <article key={t.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-                <button type="button" onClick={() => openEdit(t)} className="block min-h-11 w-full text-left">
-                  <span className="flex items-start justify-between gap-3"><span className="min-w-0 break-all font-mono text-sm font-semibold text-gray-900">{t.template_name}</span><span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${t.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>{t.is_active ? "Active" : "Inactive"}</span></span>
-                  <span className="mt-2 block break-words text-sm text-gray-700">{t.subject_en || "—"}</span>
-                </button>
-                <p className="mt-3 break-words border-t border-gray-100 pt-3 text-xs text-gray-500"><span className="font-semibold text-gray-700">Variables: </span>{(t.variables ?? []).join(", ") || "—"}</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => toggleActive(t)} className="min-h-11 rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-700">{t.is_active ? "Deactivate" : "Activate"}</button>
-                  <button type="button" onClick={() => openEdit(t)} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-700"><Pencil className="h-4 w-4" />Edit</button>
-                  <button type="button" onClick={() => handleDelete(t.id, t.template_name)} disabled={deletingId === t.id} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-amber-100 px-3 text-xs font-semibold text-amber-700 disabled:opacity-40"><Ban className="h-4 w-4" />Deactivate</button>
-                </div>
-              </article>
-            ))}
-          </div>
-          <div className="hidden min-[641px]:block overflow-x-auto">
-            <table className="table-premium table-responsive min-[641px]:min-w-0 min-[641px]:min-w-[560px] min-w-0 min-[641px]:min-w-[560px]">
-              <thead>
-                <tr>
-                  <th>Template</th>
-                  <th>Subject (EN)</th>
-                  <th>Variables</th>
-                  <th>Status</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {templates.map((t) => (
-                  <tr key={t.id} onClick={() => openEdit(t)} className="cursor-pointer hover:bg-brand-50/40 transition-colors">
-                    <td className="font-mono text-sm" data-label="Template">{t.template_name}</td>
-                    <td className="text-gray-700 max-w-xs truncate" data-label="Subject (EN)">{t.subject_en}</td>
-                    <td className="text-xs text-gray-400" data-label="Variables">{(t.variables ?? []).join(", ") || "—"}</td>
-                    <td data-label="Status" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => toggleActive(t)} title={t.is_active ? "Deactivate" : "Activate"}>
-                        {t.is_active
-                          ? <CheckCircle className="w-5 h-5 text-green-500" />
-                          : <XCircle className="w-5 h-5 text-gray-300" />}
-                      </button>
-                    </td>
-                    <td className="text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex justify-end gap-1 flex-wrap">
-                        <button onClick={() => openEdit(t)} className="p-1.5 text-gray-400 hover:text-brand-600 rounded-lg hover:bg-brand-50">
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(t.id, t.template_name)}
-                          disabled={deletingId === t.id}
-                          aria-label={`Deactivate ${t.template_name} template`}
-                          title="Deactivate (keeps the template and its history)"
-                          className="p-1.5 text-gray-400 hover:text-amber-600 rounded-lg hover:bg-amber-50 disabled:opacity-40"
-                        >
-                          {deletingId === t.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Ban className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3">
+            {templates.map((t) => {
+              const info = templateInfo(t.template_name);
+              return (
+                <article key={t.id} className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 shadow-sm">
+                  <button type="button" onClick={() => openEdit(t)} className="block min-h-11 w-full text-left">
+                    <span className="flex items-start justify-between gap-3">
+                      <span className="min-w-0">
+                        <span className="block text-base font-semibold text-heading">{info.icon} {info.bn}</span>
+                        <span className="block text-xs text-muted mt-0.5">🕒 {info.when}</span>
+                      </span>
+                      <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${t.is_active ? "bg-green-50 text-green-700" : "bg-gray-100 text-gray-500"}`}>{t.is_active ? "চালু" : "বন্ধ"}</span>
+                    </span>
+                    <span className="mt-2 block break-words text-sm text-gray-700 dark:text-gray-200"><span className="text-muted">বিষয়: </span>{fillSamples(t.subject_bn || t.subject_en, t.variables ?? []) || "—"}</span>
+                  </button>
+                  {(t.variables ?? []).length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-1 border-t border-gray-100 dark:border-white/10 pt-3">
+                      <span className="text-[11px] text-muted mr-1">যে তথ্য নিজে বসে:</span>
+                      {(t.variables ?? []).map((v) => <span key={v} className="rounded-full bg-brand-50 dark:bg-brand-500/15 text-brand-700 dark:text-brand-200 px-2 py-0.5 text-[11px]">{varLabel(v)}</span>)}
+                    </div>
+                  )}
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => openEdit(t)} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-gray-200 dark:border-white/10 px-3 text-xs font-semibold"><Pencil className="h-4 w-4" />লেখা বদলান</button>
+                    <button type="button" onClick={() => toggleActive(t)} className="min-h-11 rounded-lg border border-gray-200 dark:border-white/10 px-3 text-xs font-semibold">{t.is_active ? "পাঠানো বন্ধ করুন" : "আবার চালু করুন"}</button>
+                  </div>
+                </article>
+              );
+            })}
           </div>
           </>
         )}
@@ -243,7 +212,7 @@ export default function AdminEmailTemplatesPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0" style={{ background: "rgba(0,0,0,0.5)" }}>
           <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b">
-              <h2 className="text-lg font-semibold">{isNew ? "New Template" : "Edit Template"}</h2>
+              <h2 className="text-lg font-semibold">{isNew ? "নতুন টেমপ্লেট" : `${templateInfo(editing.template_name).icon} ${templateInfo(editing.template_name).bn}`}</h2>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
@@ -251,7 +220,7 @@ export default function AdminEmailTemplatesPage() {
                   className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-lg border transition-colors ${previewMode ? "bg-brand-50 border-brand-200 text-brand-700" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}
                 >
                   {previewMode ? <Code className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  {previewMode ? "Edit" : "Preview"}
+                  {previewMode ? "লিখুন" : "প্রিভিউ"}
                 </button>
                 <button onClick={close} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
               </div>
@@ -299,67 +268,53 @@ export default function AdminEmailTemplatesPage() {
                     )}
                   </div>
                 )}
-                <p className="text-xs text-gray-400">Variables shown as <span className="bg-yellow-100 text-yellow-800 rounded px-1 font-mono">[name]</span> placeholders.</p>
+                <p className="text-xs text-gray-400">হলুদ অংশে নমুনা তথ্য দেখানো হয়েছে — আসল ইমেইলে গ্রাহকের নিজের তথ্য বসবে।</p>
               </div>
             ) : (
             <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
-              <div>
-                <label className="form-label">Template Name (unique key)</label>
-                <input
-                  value={editing.template_name ?? ""}
-                  onChange={(e) => setEditing((p) => p ? { ...p, template_name: e.target.value } : p)}
-                  disabled={!isNew}
-                  placeholder="order_confirmation"
-                  className="input w-full font-mono text-sm disabled:bg-gray-50"
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="form-label flex items-center justify-between gap-2">
-                    Subject (EN)
-                    <TranslateButton bn={editing.subject_bn} onResult={(en) => setEditing((p) => p ? { ...p, subject_en: en } : p)} en={editing.subject_en} onResultBn={(b) => setEditing((p) => p ? { ...p, subject_bn: b } : p)} />
-                  </label>
-                  <input value={editing.subject_en ?? ""} onChange={(e) => setEditing((p) => p ? { ...p, subject_en: e.target.value } : p)} className="input w-full text-sm" />
-                </div>
-                <div>
-                  <label className="form-label">Subject (বাংলা)</label>
-                  <input value={editing.subject_bn ?? ""} onChange={(e) => setEditing((p) => p ? { ...p, subject_bn: e.target.value } : p)} className="input w-full text-sm" dir="auto" />
-                </div>
-              </div>
-              <div>
-                <label className="form-label flex items-center justify-between gap-2">
-                  Body (EN)
-                  <TranslateButton bn={editing.body_bn} onResult={(en) => setEditing((p) => p ? { ...p, body_en: en } : p)} en={editing.body_en} onResultBn={(b) => setEditing((p) => p ? { ...p, body_bn: b } : p)} />
-                </label>
-                <textarea rows={6} value={editing.body_en ?? ""} onChange={(e) => setEditing((p) => p ? { ...p, body_en: e.target.value } : p)} className="input w-full resize-y text-sm font-mono" placeholder="Hello {{customer_name}}, ..." />
-              </div>
-              <div>
-                <label className="form-label">Body (বাংলা)</label>
-                <textarea rows={5} value={editing.body_bn ?? ""} onChange={(e) => setEditing((p) => p ? { ...p, body_bn: e.target.value } : p)} className="input w-full resize-y text-sm" dir="auto" />
-              </div>
-              <div>
-                <label className="form-label">Variables <span className="text-gray-400 font-normal">(comma-separated)</span></label>
-                <input value={varsInput} onChange={(e) => setVarsInput(e.target.value)} placeholder="customer_name, order_number, total" className="input w-full text-sm" disabled={!isNew} />
-                {varsInput.trim() && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    Use in body:{" "}
-                    {varsInput.split(",").map((v) => v.trim()).filter(Boolean).map((v) => (
-                      <code key={v} className="bg-gray-100 px-1 rounded mr-1">{`{{${v}}}`}</code>
+              {!isNew && <p className="text-xs text-muted rounded-lg bg-gray-50 dark:bg-white/5 px-3 py-2">🕒 {templateInfo(editing.template_name).when}</p>}
+              <BnEnText label="ইমেইলের বিষয় (Subject)" required bn={editing.subject_bn} en={editing.subject_en}
+                onBn={(v) => setEditing((p) => p ? { ...p, subject_bn: v } : p)} onEn={(v) => setEditing((p) => p ? { ...p, subject_en: v } : p)}
+                placeholderBn="যেমন: আপনার অর্ডার পেয়েছি — {{order_number}}" />
+              <BnEnText label="ইমেইলের লেখা" required rows={8} bn={editing.body_bn} en={editing.body_en}
+                onBn={(v) => setEditing((p) => p ? { ...p, body_bn: v } : p)} onEn={(v) => setEditing((p) => p ? { ...p, body_en: v } : p)}
+                placeholderBn="প্রিয় {{customer_name}}, ..." />
+              {(isNew ? varsInput.split(",").map((v) => v.trim()).filter(Boolean) : editing.variables ?? []).length > 0 && (
+                <div className="rounded-xl border border-[var(--line)] p-3">
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-1.5">গ্রাহকের তথ্য বসান <span className="font-normal text-muted">(চাপলে বাংলা লেখার শেষে যোগ হবে — ইমেইলে আসল তথ্য দেখাবে)</span></p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {(isNew ? varsInput.split(",").map((v) => v.trim()).filter(Boolean) : editing.variables ?? []).map((v) => (
+                      <button key={v} type="button" onClick={() => setEditing((p) => p ? { ...p, body_bn: `${(p.body_bn ?? "").replace(/\s*$/, "")} {{${v}}}` } : p)}
+                        className="rounded-full border border-brand-200 bg-brand-50 dark:bg-brand-500/15 text-brand-700 dark:text-brand-200 px-3 min-h-10 text-xs">+ {varLabel(v)}</button>
                     ))}
-                  </p>
-                )}
-              </div>
+                  </div>
+                </div>
+              )}
+              <details className="rounded-xl border border-[var(--line)]" open={isNew}>
+                <summary className="cursor-pointer select-none px-3 py-2.5 text-sm text-heading min-h-11 flex items-center">🛠️ টেকনিক্যাল (সাধারণত বদলাতে হয় না)</summary>
+                <div className="px-3 pb-3 space-y-3">
+                  <div>
+                    <label className="form-label">কোড নাম <span className="text-gray-400 font-normal">(সিস্টেম এই নামে ইমেইল খোঁজে — সেভের পর বদলায় না)</span></label>
+                    <input value={editing.template_name ?? ""} onChange={(e) => setEditing((p) => p ? { ...p, template_name: e.target.value } : p)} disabled={!isNew}
+                      placeholder="order_confirmation" className="input w-full font-mono text-sm disabled:bg-gray-50" />
+                  </div>
+                  <div>
+                    <label className="form-label">তথ্যের নাম <span className="text-gray-400 font-normal">(কমা দিয়ে)</span></label>
+                    <input value={varsInput} onChange={(e) => setVarsInput(e.target.value)} placeholder="customer_name, order_number, total" className="input w-full text-sm font-mono" disabled={!isNew} />
+                  </div>
+                </div>
+              </details>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={editing.is_active ?? true} onChange={(e) => setEditing((p) => p ? { ...p, is_active: e.target.checked } : p)} className="rounded border-gray-300 text-brand-600" />
-                <span className="text-sm text-gray-700">Active</span>
+                <span className="text-sm text-gray-700">এই ইমেইল পাঠানো চালু</span>
               </label>
             </div>
             )}
             <div className="px-6 py-4 border-t flex justify-end gap-2">
-              <button onClick={close} className="btn btn-outline btn-md">Cancel</button>
+              <button onClick={close} className="btn btn-outline btn-md">বাতিল</button>
               {!previewMode && (
                 <button onClick={handleSave} disabled={saving} className="btn btn-brand btn-md">
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : isNew ? "Create" : "Save"}
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : isNew ? "তৈরি করুন" : "সেভ করুন"}
                 </button>
               )}
             </div>
@@ -371,7 +326,7 @@ export default function AdminEmailTemplatesPage() {
         open={!!confirmState}
         title={confirmState?.title ?? ""}
         message={confirmState?.message ?? ""}
-        confirmLabel="Deactivate"
+        confirmLabel="বন্ধ করুন"
         variant="danger"
         onConfirm={() => confirmState?.action()}
         onCancel={() => setConfirmState(null)}
