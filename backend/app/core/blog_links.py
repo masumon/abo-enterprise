@@ -102,6 +102,24 @@ async def get_linked_products_for_blog(
     return list(rows.scalars().all())
 
 
+async def get_linked_services_for_blog(
+    db: AsyncSession, blog_post_id: uuid.UUID, limit: int = 6
+) -> list[Service]:
+    """Active, non-deleted services explicitly linked to a post."""
+    rows = await db.execute(
+        select(Service)
+        .join(BlogPostLink, BlogPostLink.service_id == Service.id)
+        .where(
+            BlogPostLink.blog_post_id == blog_post_id,
+            Service.is_active == True,  # noqa: E712
+            Service.is_deleted == False,  # noqa: E712
+        )
+        .order_by(Service.sort_order.asc())
+        .limit(limit)
+    )
+    return list(rows.scalars().all())
+
+
 # ---- write helpers (replace the full set for one side) ------------------
 
 async def set_blogs_for_product(db: AsyncSession, product_id: uuid.UUID, blog_ids: list) -> None:

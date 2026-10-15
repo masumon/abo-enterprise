@@ -19,6 +19,7 @@ from app.core.blog_links import (
     get_blog_ids_for_product,
     get_blog_ids_for_service,
     get_linked_products_for_blog,
+    get_linked_services_for_blog,
 )
 from app.models.models import BlogPost, ActivityLog
 from app.schemas.schemas import (
@@ -151,6 +152,24 @@ async def get_post_products(slug: str, db: AsyncSession = Depends(get_db)):
         return ApiResponse(data=[], message="No linked products")
     products = await get_linked_products_for_blog(db, post_id)
     return ApiResponse(data=[PublicProductOut.model_validate(p) for p in products])
+
+
+@router.get("/{slug}/services", response_model=ApiResponse)
+async def get_post_services(slug: str, db: AsyncSession = Depends(get_db)):
+    """Active services explicitly linked to a published post (cards under the article)."""
+    post_id = (await db.execute(
+        select(BlogPost.id).where(
+            and_(BlogPost.slug == slug, BlogPost.is_deleted == False, BlogPost.status == "published")  # noqa: E712
+        )
+    )).scalar_one_or_none()
+    if not post_id:
+        return ApiResponse(data=[], message="No linked services")
+    services = await get_linked_services_for_blog(db, post_id)
+    return ApiResponse(data=[{
+        "slug": s.slug, "name_bn": s.name_bn, "name_en": s.name_en,
+        "featured_image_url": getattr(s, "featured_image_url", None), "icon_url": getattr(s, "icon_url", None),
+        "base_price": float(s.base_price) if getattr(s, "base_price", None) is not None else None,
+    } for s in services])
 
 
 # ==================== ADMIN ENDPOINTS ====================

@@ -813,6 +813,11 @@ export default function AdminBlogPage() {
                       Tick the products &amp; services to feature with this post. They appear in the
                       product rail under the article, and the link also shows in each item&apos;s own form.
                     </p>
+                    <p className="text-xs text-brand-800 bg-brand-50 rounded-lg p-2">
+                      টিক দেওয়া পণ্য ও সেবা লেখার নিচে কার্ড হিসেবে সবসময় দেখাবে। লেখার <b>মাঝখানে</b> কার্ড চাইলে বাংলা বা ইংরেজি লেখায়
+                      পণ্য/সেবার লিংকটি <b>আলাদা একটি লাইনে</b> পেস্ট করুন, যেমন: <code>https://www.aboenterprise.com/products/pon-er-slug</code> —
+                      সেখানেই ছবি-দামসহ কার্ড দেখাবে।
+                    </p>
                     <div>
                       <label className="block text-xs font-semibold text-gray-600 mb-1.5">{tx("Products")}</label>
                       <LinkChecklist

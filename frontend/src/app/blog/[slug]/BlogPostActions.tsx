@@ -1,6 +1,7 @@
 "use client";
 
 import RichText from "@/components/ui/RichText";
+import BlogEmbedCard, { splitEmbeds } from "@/components/blog/BlogEmbedCard";
 import { useState } from "react";
 import { Printer, Languages } from "lucide-react";
 
@@ -57,7 +58,12 @@ export default function BlogPostActions({ contentEn, contentBn, titleEn, titleBn
         className="max-w-none text-[15px] sm:text-base leading-[1.9] text-[var(--ink)]"
         dir={lang === "bn" ? "auto" : "ltr"}
       >
-        <RichText text={content} className="space-y-4" />
+        {/* A product/service link alone on a line becomes a card right there. */}
+        {splitEmbeds(content).map((part, i) =>
+          "text" in part
+            ? (part.text.trim() ? <RichText key={i} text={part.text} className="space-y-4" /> : null)
+            : <BlogEmbedCard key={i} kind={part.kind} slug={part.slug} lang={lang} />
+        )}
       </article>
     </>
   );

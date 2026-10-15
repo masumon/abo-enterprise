@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import ProductCard from "@/components/features/ProductCard";
 import { useLanguageStore } from "@/store/language";
 import type { Product } from "@/types";
+import { EmbedCard, type EmbedItem } from "@/components/blog/BlogEmbedCard";
 
 /**
  * GAP-17 — a blog article ended at its last paragraph. The reader who had just
@@ -19,12 +20,14 @@ import type { Product } from "@/types";
 export default function BlogProductRail({
   products,
   matched = false,
+  services = [],
 }: {
   products: Product[];
   matched?: boolean;
+  services?: EmbedItem[];
 }) {
   const { lang } = useLanguageStore();
-  if (products.length === 0) return null;
+  if (products.length === 0 && services.length === 0) return null;
 
   const heading = matched
     ? lang === "bn" ? "এই বিষয়ে আমাদের পণ্য" : "Related products from our store"
@@ -45,13 +48,18 @@ export default function BlogProductRail({
 
       {/* Rail on phones (the article column is too narrow for a grid), plain
           grid from sm up where there is width for three cards. */}
-      <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:overflow-visible">
+      {services.length > 0 && (
+        <div className="grid sm:grid-cols-2 gap-x-4 mb-4">
+          {services.map((s) => <EmbedCard key={s.slug} item={s} lang={lang === "en" ? "en" : "bn"} />)}
+        </div>
+      )}
+      {products.length > 0 && <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-3 sm:overflow-visible">
         {products.map((p) => (
           <div key={p.id ?? p.slug} className="snap-start flex-shrink-0 w-[15rem] sm:w-auto">
             <ProductCard product={p} />
           </div>
         ))}
-      </div>
+      </div>}
     </section>
   );
 }

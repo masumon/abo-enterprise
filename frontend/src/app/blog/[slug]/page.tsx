@@ -7,6 +7,7 @@ import { SITE_URL, DEFAULT_OG_IMAGE } from "@/lib/tokens";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { fetchPublicSettings, settingValue } from "@/lib/serverSettings";
 import BlogProductRail from "@/components/blog/BlogProductRail";
+import { toEmbed, type EmbedItem } from "@/components/blog/BlogEmbedCard";
 import BlogPostActions from "./BlogPostActions";
 import BlogPostBreadcrumb from "./BlogPostBreadcrumb";
 import BlogPostMeta from "./BlogPostMeta";
@@ -37,7 +38,7 @@ async function fetchPost(slug: string): Promise<BlogPost | null> {
 async function fetchRailProducts(
   slug: string,
   category?: string | null
-): Promise<{ products: Product[]; matched: boolean }> {
+): Promise<{ products: Product[]; matched: boolean; linked: boolean }> {
   const get = async (qs: string): Promise<Product[]> => {
     try {
       const res = await fetch(`${API_BASE}/api/v1/products?${qs}`, {
@@ -59,7 +60,7 @@ async function fetchRailProducts(
     });
     if (res.ok) {
       const linked = ((await res.json()).data ?? []) as Product[];
-      if (linked.length > 0) return { products: linked.slice(0, 3), matched: true };
+      if (linked.length > 0) return { products: linked.slice(0, 3), matched: true, linked: true };
     }
   } catch {
     /* fall through to category match */
@@ -71,9 +72,20 @@ async function fetchRailProducts(
     const matchedProducts = await get(
       `page=1&per_page=3&search=${encodeURIComponent(category)}`
     );
-    if (matchedProducts.length > 0) return { products: matchedProducts, matched: true };
+    if (matchedProducts.length > 0) return { products: matchedProducts, matched: true, linked: false };
   }
-  return { products: await get("page=1&per_page=3"), matched: false };
+  return { products: await get("page=1&per_page=3"), matched: false, linked: false };
+}
+
+async function fetchLinkedServices(slug: string): Promise<EmbedItem[]> {
+  try {
+    const res = await fetch(`${API_BASE}/api/v1/blog/${encodeURIComponent(slug)}/services`, { next: { revalidate: 300 } });
+    if (!res.ok) return [];
+    const rows = ((await res.json()).data ?? []) as Record<string, unknown>[];
+    return rows.map((r) => toEmbed("service", r));
+  } catch {
+    return [];
+  }
 }
 
 export async function generateMetadata(
@@ -156,10 +168,14 @@ export default async function BlogPostPage(
   // Admin → Products has a toggle for this rail; default on so existing
   // articles keep their current behavior until an admin turns it off.
   const settings = await fetchPublicSettings();
+  // The switch only hides the AUTOMATIC suggestions; products/services the admin
+  // linked to this post by hand are always shown.
   const railEnabled = settingValue(settings, "feature_blog_product_rail", "true") !== "false";
-  const rail = railEnabled
-    ? await fetchRailProducts(params.slug, post.category)
-    : { products: [], matched: false };
+  const [railAll, linkedServices] = await Promise.all([
+    fetchRailProducts(params.slug, post.category),
+    fetchLinkedServices(params.slug),
+  ]);
+  const rail = railEnabled || railAll.linked ? railAll : { products: [], matched: false, linked: false };
   const jsonLd = buildArticleJsonLd(post);
 
   return (
@@ -210,7 +226,7 @@ export default async function BlogPostPage(
             contentBn={post.content_bn ?? null}
           />
 
-          <BlogProductRail products={rail.products} matched={rail.matched} />
+          <BlogProductRail products={rail.products} matched={rail.matched} services={linkedServices} />
 
           {/* Back link after the article (it used to sit between the meta row
               and the title, leaving a large gap above the headline). */}
