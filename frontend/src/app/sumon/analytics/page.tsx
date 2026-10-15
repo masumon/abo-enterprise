@@ -143,7 +143,7 @@ export default function AnalyticsPage() {
     }
   }
 
-  useEffect(() => { if (tab === "business") fetchAll(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [days, tab]);
+  useEffect(() => { if (tab === "business") fetchAll();   }, [days, tab]);
 
   async function fetchAll() {
     setLoading(true);

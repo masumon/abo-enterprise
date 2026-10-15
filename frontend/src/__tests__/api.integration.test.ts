@@ -89,7 +89,7 @@ describe("API client", () => {
 });
 
 declare global {
-  // eslint-disable-next-line no-var
+   
   var __mockAxiosInstance: {
     get: jest.Mock;
     post: jest.Mock;

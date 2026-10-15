@@ -193,7 +193,7 @@ export default function AdminBlogPage() {
     adminBlogApi.get(id)
       .then((r) => { const post = r.data.data as unknown as BlogPost | undefined; if (post?.id) void openEdit(post); })
       .catch(() => { /* post gone — the list is still shown */ });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- run once on mount
+     
   }, []);
 
   const closeEditor = (discardDraft = false) => {

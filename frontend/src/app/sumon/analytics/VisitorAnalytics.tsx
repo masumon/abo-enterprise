@@ -272,13 +272,13 @@ export default function VisitorAnalytics({ days }: { days: number }) {
     }
   };
 
-  useEffect(() => { loadHistorical(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [days]);
+  useEffect(() => { loadHistorical();   }, [days]);
   useEffect(() => {
     if (!data?.configured) return;
     loadLive();
     const t = window.setInterval(loadLive, refreshSeconds * 1000);
     return () => window.clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [refreshSeconds, data?.configured]);
 
   if (loading) return <Skeleton />;

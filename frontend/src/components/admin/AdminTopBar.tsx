@@ -47,7 +47,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
       loadNotifications();
     }, 30_000);
     return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-time poll setup
+     
   }, []);
 
   const markNotificationRead = (id: string) => {

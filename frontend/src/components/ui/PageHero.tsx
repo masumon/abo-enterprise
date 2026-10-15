@@ -88,7 +88,7 @@ export default function PageHero({
             media="(max-width: 1199px)"
             srcSet={responsiveMediaUrl(resolvedImage!, "page-banner", "tablet")}
           />
-          {/* eslint-disable-next-line @next/next/no-img-element -- responsive Cloudinary background layer */}
+          { }
           <img
             src={responsiveMediaUrl(resolvedImage!, "page-banner", "desktop")}
             alt=""

@@ -374,7 +374,7 @@ export default function AdminServicesPage() {
     const id = qs.get("edit");
     if (id) openEdit({ id } as Service);
     else if (qs.get("new") === "1") openNew();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const handleNameChange = (v: string) => {

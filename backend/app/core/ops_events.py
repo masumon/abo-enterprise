@@ -41,7 +41,7 @@ def _capture_persistent_event(
             return
         import sentry_sdk
 
-        with sentry_sdk.push_scope() as scope:
+        with sentry_sdk.new_scope() as scope:  # push_scope is deprecated in sentry-sdk 2.x
             scope.set_tag("ops_event", event_type)
             if metadata:
                 for key, value in metadata.items():
