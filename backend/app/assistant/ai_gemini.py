@@ -315,7 +315,8 @@ async def answer(db: AsyncSession, question: str, lang: str, facts_text: str, fa
     except Exception as exc:  # noqa: BLE001
         logger.warning("Gemini config load failed: %s", exc)
         return None
-    if not (cfg["enabled"] and cfg["key"]):
+    hub_ok = await _hub_ready(db)
+    if not (cfg["enabled"] and (cfg["key"] or hub_ok)):
         return None
     if cfg["daily_cap"] and usage_today() >= cfg["daily_cap"]:
         return None
@@ -325,6 +326,21 @@ async def answer(db: AsyncSession, question: str, lang: str, facts_text: str, fa
     system = SYSTEM_PROMPT.format(site=facts.get("site") or "ABO Enterprise", phone=facts.get("phone") or "",
                                   whatsapp=facts.get("whatsapp") or "", lang_rule=lang_rule)
     user = f"FACTS:\n{facts_text}\n\nCUSTOMER QUESTION:\n{_mask(question)[:600]}"
+    if hub_ok:  # AI Hub: free → paid, fastest healthy model first; None → rule-based reply
+        from app.assistant import ai_hub
+
+        _usage["count"] = usage_today() + 1
+        try:
+            text = await ai_hub.run(db, "chat", system, user, max_tokens=2048)
+        except ai_hub.HubError:
+            return None
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("AI hub chat failed: %s", exc)
+            return None
+        text = re.sub(r"^#+\s*", "", text, flags=re.M).replace("**", "").strip()
+        if text:
+            _last_error.update(text="", at="")
+        return text[:1200] or None
     try:
         _usage["count"] = usage_today() + 1
         # Gemini 3.x "thinks" before answering, which can take well over 10 s.
@@ -393,7 +409,17 @@ async def is_available(db: AsyncSession) -> bool:
         cfg = await load_config(db)
     except Exception:  # noqa: BLE001
         return False
-    return bool(cfg["enabled"] and cfg["key"])
+    return bool(cfg["enabled"] and (cfg["key"] or await _hub_ready(db)))
+
+
+async def _hub_ready(db: AsyncSession) -> bool:
+    try:
+        from app.assistant import ai_hub
+
+        return await ai_hub.has_connections(db)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("AI hub unavailable: %s", exc)
+        return False
 
 
 def parse_json_text(text: str) -> Any:
@@ -417,18 +443,37 @@ def parse_json_text(text: str) -> Any:
 
 
 async def generate_json(db: AsyncSession, system: str, user: str,
-                        images: list[tuple[str, bytes]] | None = None, max_tokens: int = 8192) -> Any:
+                        images: list[tuple[str, bytes]] | None = None, max_tokens: int = 8192,
+                        task: str | None = None) -> Any:
     """One JSON-mode Gemini call with optional inline images. Counts toward the
     daily cap. Raises AiUnavailable with a Bangla message on any problem."""
     import base64
 
     cfg = await load_config(db)
-    if not (cfg["enabled"] and cfg["key"]):
+    hub_ok = await _hub_ready(db)
+    if not (cfg["enabled"] and (cfg["key"] or hub_ok)):
         raise AiUnavailable("AI চালু নেই — Admin → AI Assistant-এ Google AI কী যোগ করুন।",
                             "AI is not set up — add a Google AI key in Admin → AI Assistant.", 400)
     if cfg["daily_cap"] and usage_today() >= cfg["daily_cap"]:
         raise AiUnavailable("আজকের AI ব্যবহারের সীমা শেষ — কাল আবার চেষ্টা করুন।",
                             "Today's AI limit is used up — try again tomorrow.", 429)
+    if hub_ok:
+        from app.assistant import ai_hub
+
+        task = task or ("vision" if images else "writing" if max_tokens >= 8192 else "json")
+        _usage["count"] = usage_today() + 1
+        try:
+            text = await ai_hub.run(db, task, system, user, images=images, json_mode=True, max_tokens=max_tokens)
+        except ai_hub.HubError as exc:
+            raise AiUnavailable(exc.message_bn, exc.message_en, exc.status) from exc
+        try:
+            return parse_json_text(text)
+        except ValueError as exc:
+            _note_error("AI অবোধ্য উত্তর দিয়েছে (unreadable reply)")
+            raise AiUnavailable("AI-এর উত্তর বোঝা যায়নি — আবার চেষ্টা করুন।", "The AI reply could not be read — try again.", 502) from exc
+    if not cfg["key"]:
+        raise AiUnavailable("AI চালু নেই — Admin → AI সংযোগ-এ একটি AI কী যোগ করুন।",
+                            "AI is not set up — add an AI key in Admin → AI connections.", 400)
     if cfg.get("provider", "gemini") != "gemini":
         return await _generate_json_other(cfg, system, user, images, max_tokens)
     parts: list[dict] = [{"text": user}]
@@ -488,7 +533,7 @@ async def _generate_json_other(cfg: dict[str, Any], system: str, user: str,
 
 async def generate_text(db: AsyncSession, system: str, user: str, max_tokens: int = 2048) -> str:
     """Plain-text helper for admin writing tools (any provider). Raises AiUnavailable."""
-    raw = await generate_json(db, system + '\nReply as JSON: {"text": "..."}', user, max_tokens=max_tokens)
+    raw = await generate_json(db, system + '\nReply as JSON: {"text": "..."}', user, max_tokens=max_tokens, task="writing")
     if isinstance(raw, dict) and isinstance(raw.get("text"), str):
         return raw["text"].strip()
     raise AiUnavailable("AI-এর উত্তর বোঝা যায়নি — আবার চেষ্টা করুন।", "The AI reply could not be read — try again.", 502)

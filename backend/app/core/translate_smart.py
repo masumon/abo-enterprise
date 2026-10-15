@@ -99,7 +99,7 @@ async def _ai_translate(db: AsyncSession, text: str, source: str, target: str) -
     if not await ai_gemini.is_available(db):
         return None
     system = SYSTEM.format(src=_LANG.get(source, source), dst=_LANG.get(target, target))
-    raw = await ai_gemini.generate_json(db, system, text, max_tokens=max(1024, min(8192, len(text) * 4)))
+    raw = await ai_gemini.generate_json(db, system, text, max_tokens=max(1024, min(8192, len(text) * 4)), task="translate")
     out = (raw or {}).get("translated") if isinstance(raw, dict) else None
     return out.strip() if isinstance(out, str) and out.strip() else None
 

@@ -28,6 +28,13 @@ PROVIDERS: dict[str, dict[str, Any]] = {
     "deepseek": {"label": "DeepSeek", "kind": "openai", "base": "https://api.deepseek.com/v1", "models": ("deepseek-chat",)},
     "xai": {"label": "xAI Grok", "kind": "openai", "base": "https://api.x.ai/v1", "models": ("grok-4-fast", "grok-3-mini")},
     "mistral": {"label": "Mistral", "kind": "openai", "base": "https://api.mistral.ai/v1", "models": ("mistral-small-latest", "mistral-large-latest")},
+    "nvidia": {"label": "NVIDIA", "kind": "openai", "base": "https://integrate.api.nvidia.com/v1",
+               "models": ("meta/llama-3.3-70b-instruct", "qwen/qwen3-235b-a22b", "google/gemma-3-27b-it")},
+    "cloudflare": {"label": "Cloudflare Workers AI", "kind": "openai", "base": "",
+                   "models": ("@cf/meta/llama-3.3-70b-instruct-fp8-fast", "@cf/google/gemma-3-12b-it", "@cf/qwen/qwen3-30b-a3b-fp8")},
+    "vercel": {"label": "Vercel AI Gateway", "kind": "openai", "base": "https://ai-gateway.vercel.sh/v1",
+               "models": ("google/gemini-2.5-flash", "openai/gpt-4o-mini", "meta/llama-3.3-70b")},
+    "local": {"label": "নিজের কম্পিউটার (Ollama/LM Studio)", "kind": "openai", "base": "", "models": ()},
     "custom": {"label": "অন্য (OpenAI-সামঞ্জস্যপূর্ণ)", "kind": "openai", "base": "", "models": ()},
 }
 
