@@ -33,8 +33,11 @@ export const tokens = {
   },
 } as const;
 
-export const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.aboenterprise.com";
+// The apex domain 308-redirects to www, so canonical/sitemap/OG URLs must use the final
+// www address (an apex value in the Vercel env made Google see "page with redirect").
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.aboenterprise.com")
+  .replace(/\/+$/, "")
+  .replace(/^https?:\/\/aboenterprise\.com$/, "https://www.aboenterprise.com");
 
 export const SOCIAL_PROFILES = [
   "https://www.facebook.com/abo.enterprise",

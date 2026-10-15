@@ -24,6 +24,7 @@ const STATIC_PATHS: { path: string; priority: number; changeFrequency: MetadataR
   { path: "/career", priority: 0.55, changeFrequency: "monthly" },
   { path: "/shipping", priority: 0.5, changeFrequency: "monthly" },
   { path: "/legal/privacy", priority: 0.4, changeFrequency: "yearly" },
+  { path: "/google-drive-backup", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/terms", priority: 0.4, changeFrequency: "yearly" },
   { path: "/legal/refund", priority: 0.4, changeFrequency: "yearly" },
   { path: "/legal/cookies", priority: 0.4, changeFrequency: "yearly" },

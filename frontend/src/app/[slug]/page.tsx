@@ -35,7 +35,9 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const params = await props.params;
   const page = await fetchPage(params.slug);
-  if (!page) return { title: "Page Not Found | ABO Enterprise" };
+  // notFound() here (not only in the page) so a missing slug answers HTTP 404 instead of
+  // a "soft 404" (200 + noindex) — Google counts those against the site.
+  if (!page) notFound();
 
   const title = page.seo_title ?? `${page.title_en} | ABO Enterprise`;
   const description = page.seo_description ?? page.content_en.slice(0, 160);
