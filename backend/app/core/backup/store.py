@@ -21,6 +21,7 @@ from app.core.totp_crypto import decrypt_totp_secret, encrypt_totp_secret
 from app.models.models import Setting
 
 K_CONFIG, K_SECRETS, K_KEYS, K_HISTORY = "backup.config", "backup.secrets", "backup.keys", "backup.history"
+K_APPS = "backup.app_clients"  # one-click OAuth clients uploaded in the admin (encrypted)
 HISTORY_MAX = 150
 
 DEFAULT_CONFIG: dict[str, Any] = {
@@ -101,3 +102,11 @@ async def upsert_run(db: AsyncSession, run: dict[str, Any]) -> None:
     hist.insert(0, run)
     hist.sort(key=lambda r: r.get("started_at", ""), reverse=True)
     await _put(db, K_HISTORY, hist[:HISTORY_MAX])
+
+
+async def get_app_clients(db: AsyncSession) -> dict[str, dict[str, str]]:
+    return await _get(db, K_APPS, {}, encrypted=True)
+
+
+async def put_app_clients(db: AsyncSession, apps: dict[str, dict[str, str]]) -> None:
+    await _put(db, K_APPS, apps, encrypted=True)

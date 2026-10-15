@@ -65,3 +65,6 @@ backend/demo_cleanup_backups/
 /*.jpeg
 /*.jpg
 /*.png
+
+# Google OAuth client files (secrets) — never commit
+client_secret*.json

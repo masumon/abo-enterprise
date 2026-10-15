@@ -23,6 +23,23 @@ const STATUS: Record<string, { bn: string; cls: string }> = {
   running: { bn: "চলছে…", cls: "bg-blue-50 text-blue-700 ring-blue-200" },
 };
 const MAIN_DRIVES: DestKind[] = ["google_drive", "onedrive", "dropbox"];
+const DRIVE_STYLE: Record<string, { letter: string; cls: string }> = {
+  google_drive: { letter: "G", cls: "from-blue-500 to-emerald-500" },
+  onedrive: { letter: "O", cls: "from-sky-500 to-blue-700" },
+  dropbox: { letter: "D", cls: "from-blue-600 to-indigo-600" },
+  s3: { letter: "S3", cls: "from-orange-500 to-amber-500" },
+  webdav: { letter: "W", cls: "from-slate-500 to-slate-700" },
+};
+const BORDER: Record<string, string> = { ok: "border-l-emerald-500", partial: "border-l-amber-500", failed: "border-l-red-500", running: "border-l-blue-500" };
+
+function DriveAvatar({ kind, big = false }: { kind: string; big?: boolean }) {
+  const st = DRIVE_STYLE[kind] ?? DRIVE_STYLE.webdav;
+  return (
+    <span aria-hidden className={`${big ? "w-11 h-11 text-base" : "w-9 h-9 text-sm"} rounded-xl bg-gradient-to-br ${st.cls} text-white font-bold flex items-center justify-center flex-none shadow-sm`}>
+      {st.letter}
+    </span>
+  );
+}
 const input = "input w-full min-h-11 text-base";
 
 type Ask = { title: string; note?: string; danger?: boolean; onOk: (password: string) => Promise<void> };
@@ -31,17 +48,24 @@ type Ask = { title: string; note?: string; danger?: boolean; onOk: (password: st
 function PasswordDialog({ ask, onClose }: { ask: Ask; onClose: () => void }) {
   const [pw, setPw] = useState("");
   const [busy, setBusy] = useState(false);
+  const submit = async () => { if (!pw || busy) return; setBusy(true); try { await ask.onOk(pw); onClose(); } finally { setBusy(false); } };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !busy) onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [busy, onClose]);
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={ask.title}>
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={ask.title}
+      onClick={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
       <div className="bg-white rounded-2xl w-full max-w-md p-5 space-y-3 shadow-xl">
         <p className="font-semibold text-gray-900">{ask.title}</p>
         {ask.note && <p className={`text-sm ${ask.danger ? "text-red-700" : "text-gray-600"}`}>{ask.note}</p>}
         <input className={input} type="password" autoFocus placeholder="আপনার অ্যাডমিন লগইন পাসওয়ার্ড" value={pw}
-          onChange={(e) => setPw(e.target.value)} autoComplete="current-password" />
-        <div className="flex gap-2 justify-end">
-          <button type="button" className="btn btn-outline min-h-11" onClick={onClose} disabled={busy}>বাতিল</button>
-          <button type="button" className={`btn min-h-11 ${ask.danger ? "bg-red-600 text-white hover:bg-red-700" : "btn-brand"}`} disabled={!pw || busy}
-            onClick={async () => { setBusy(true); try { await ask.onOk(pw); onClose(); } finally { setBusy(false); } }}>
+          onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") submit(); }} autoComplete="current-password" />
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" className="btn btn-outline min-h-12" onClick={onClose} disabled={busy}>বাতিল</button>
+          <button type="button" className={`btn min-h-12 ${ask.danger ? "bg-red-600 text-white hover:bg-red-700" : "btn-brand"}`} disabled={!pw || busy}
+            onClick={submit}>
             {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "নিশ্চিত করুন"}
           </button>
         </div>
@@ -50,15 +74,18 @@ function PasswordDialog({ ask, onClose }: { ask: Ask; onClose: () => void }) {
   );
 }
 
-function Step({ n, title, done, open, children }: { n: number; title: string; done: boolean; open: boolean; children: React.ReactNode }) {
+function Step({ n, title, summary, done, open, children }: { n: number; title: string; summary?: string; done: boolean; open: boolean; children: React.ReactNode }) {
   return (
     <details open={open} className="card p-4 sm:p-5 group">
       <summary className="list-none cursor-pointer flex items-center gap-3 min-h-11">
         <span className={`w-8 h-8 rounded-full text-sm font-bold flex items-center justify-center flex-none text-white ${done ? "bg-emerald-600" : "bg-brand-600"}`}>
           {done ? "✓" : n.toLocaleString("bn-BD")}
         </span>
-        <span className="font-semibold text-gray-900 flex-1">{title}</span>
-        {done && <span className="text-xs text-emerald-700">সম্পন্ন</span>}
+        <span className="flex-1 min-w-0">
+          <span className="block font-semibold text-gray-900">{title}</span>
+          {summary && <span className="block text-xs text-gray-600 truncate">{summary}</span>}
+        </span>
+        {done && <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">সম্পন্ন</span>}
         <ChevronDown className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" />
       </summary>
       <div className="pt-3 space-y-3">{children}</div>
@@ -75,6 +102,7 @@ export default function BackupPage() {
   const [testing, setTesting] = useState<{ run?: BackupRun; destId?: string; fileId?: string } | null>(null);
   const [ask, setAsk] = useState<Ask | null>(null);
   const [oauth, setOauth] = useState<{ ok: boolean; reason: string } | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const localRef = useRef<string | null>(null); // mirrors localRun for use inside load()
 
@@ -144,39 +172,45 @@ export default function BackupPage() {
 
       {/* status */}
       <div className={`card p-4 sm:p-5 border-l-4 ${h.ok ? "border-emerald-500" : "border-red-500"}`}>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          <div className="flex-1 space-y-1">
-            <p className={`font-semibold text-lg flex items-center gap-2 ${h.ok ? "text-emerald-700" : "text-red-700"}`}>
-              {h.ok ? <CheckCircle2 className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}{h.message_bn}
-            </p>
-            <p className="text-sm text-gray-600">শেষ নিরাপদ backup: <b>{when(h.last_success_at)}</b></p>
-            <p className="text-sm text-gray-600 flex items-center gap-1"><Clock className="w-4 h-4" /> পরের স্বয়ংক্রিয় backup: <b>{h.next_run_at ? when(h.next_run_at) : "বন্ধ আছে"}</b></p>
+        <div className="flex items-start gap-3">
+          <span className={`w-12 h-12 rounded-full flex items-center justify-center flex-none ${h.ok ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"}`}>
+            {h.ok ? <ShieldCheck className="w-7 h-7" /> : <AlertTriangle className="w-7 h-7" />}
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className={`font-semibold text-lg leading-snug ${h.ok ? "text-emerald-800" : "text-red-800"}`}>{h.message_bn}</p>
+            <div className="grid sm:grid-cols-2 gap-2 mt-2">
+              <div className="rounded-lg bg-gray-50 px-3 py-2"><p className="text-xs text-gray-600 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> শেষ নিরাপদ backup</p><p className="font-semibold text-gray-900">{when(h.last_success_at)}</p></div>
+              <div className="rounded-lg bg-gray-50 px-3 py-2"><p className="text-xs text-gray-600 flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> পরের স্বয়ংক্রিয় backup</p><p className="font-semibold text-gray-900">{h.next_run_at ? when(h.next_run_at) : "বন্ধ আছে"}</p></div>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" className="btn btn-brand min-h-12 gap-1.5 text-base" disabled={running || !data.keys.set || !data.destinations.length}
+        </div>
+        <div className="grid sm:flex gap-2 mt-4">
+          <div className="contents">
+            <button type="button" className="btn btn-brand min-h-12 gap-1.5 text-base w-full sm:w-auto justify-center" disabled={running || !data.keys.set || !data.destinations.length}
               onClick={() => act("run", backupApi.runNow, "Backup শুরু হয়েছে — কয়েক মিনিট লাগতে পারে")}>
               {running ? <Loader2 className="w-5 h-5 animate-spin" /> : <Cloud className="w-5 h-5" />} এখনই Backup নিন
             </button>
-            <button type="button" className="btn btn-outline min-h-12 gap-1.5 text-base" disabled={running || !data.keys.set}
+            <button type="button" className="btn btn-outline min-h-12 gap-1.5 text-base w-full sm:w-auto justify-center" disabled={running || !data.keys.set}
               onClick={() => act("local", async () => { const r = await backupApi.runLocal(); const id = r.data.data?.run_id ?? null; localRef.current = id; setLocalRun(id); }, "তৈরি হচ্ছে — শেষ হলে নিজেই ডাউনলোড হবে")}>
               <Download className="w-5 h-5" /> কম্পিউটারে নিন
             </button>
           </div>
         </div>
+        {running && <p className="mt-2 text-sm text-blue-700 flex items-center gap-1.5"><Loader2 className="w-4 h-4 animate-spin" /> Backup চলছে — পাতা খোলা রাখতে হবে না, শেষ হলে ইতিহাসে দেখা যাবে।</p>}
         {!ready && <p className="mt-3 text-sm bg-brand-50 text-brand-800 rounded-lg p-2">শুরু করতে নিচের <b>৩টি ধাপ</b> শেষ করুন ({done.filter(Boolean).length.toLocaleString("bn-BD")}/৩ সম্পন্ন)।</p>}
       </div>
 
-      <Step n={1} title="Backup পাসওয়ার্ড দিন" done={done[0]} open={!done[0]}>
+      <Step n={1} title="Backup পাসওয়ার্ড দিন" summary={done[0] ? `সেট করা আছে · কী-চিহ্ন ${data.keys.fingerprint}` : "সব backup এই পাসওয়ার্ডে তালাবদ্ধ থাকবে"} done={done[0]} open={!done[0]}>
         <KeysSection data={data} busy={busy} act={act} />
       </Step>
 
-      <Step n={2} title="ড্রাইভ যুক্ত করুন (যেখানে backup জমা হবে)" done={done[1]} open={(done[0] && !done[1]) || adding !== null}>
+      <Step n={2} title="ড্রাইভ যুক্ত করুন (যেখানে backup জমা হবে)" summary={done[1] ? data.destinations.map((d) => d.label).join(" · ") : "Google Drive, OneDrive বা Dropbox"} done={done[1]} open={(done[0] && !done[1]) || adding !== null}>
         {data.destinations.length > 0 && (
           <div className="grid sm:grid-cols-2 gap-3">
             {data.destinations.map((d) => (
               <div key={d.id} className="rounded-xl border border-gray-200 p-3 space-y-2">
-                <div className="flex items-start gap-2">
-                  <Cloud className="w-5 h-5 text-brand-600 mt-0.5" />
+                <div className="flex items-start gap-3">
+                  <DriveAvatar kind={d.kind} />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{d.label}</p>
                     <p className="text-xs text-gray-500 truncate">{d.cfg.account || guideOf(d.kind)?.name}</p>
@@ -184,24 +218,24 @@ export default function BackupPage() {
                   </div>
                   <span className={`text-xs px-2 py-0.5 rounded-full ring-1 ${d.enabled ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : "bg-gray-50 text-gray-600 ring-gray-200"}`}>{d.enabled ? "চালু" : "বন্ধ"}</span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" className="btn btn-outline btn-sm min-h-11 gap-1" disabled={!!busy}
+                <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+                  <button type="button" className="btn btn-outline btn-sm min-h-11 gap-1 justify-center" disabled={!!busy}
                     onClick={() => act(`t${d.id}`, () => backupApi.testDest(d.id), "ড্রাইভ ঠিকমতো কাজ করছে")}>
                     {busy === `t${d.id}` ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />} পরীক্ষা
                   </button>
-                  <button type="button" className="btn btn-outline btn-sm min-h-11 gap-1" disabled={!!busy}
+                  <button type="button" className="btn btn-outline btn-sm min-h-11 gap-1 justify-center" disabled={!!busy}
                     onClick={() => act(`e${d.id}`, () => backupApi.patchDest(d.id, { enabled: !d.enabled }))}>
                     <Power className="w-4 h-4" /> {d.enabled ? "বন্ধ করুন" : "চালু করুন"}
                   </button>
                   {guideOf(d.kind)?.oauth && (
-                    <button type="button" className="btn btn-outline btn-sm min-h-11" disabled={!!busy}
+                    <button type="button" className="btn btn-outline btn-sm min-h-11 gap-1 justify-center" disabled={!!busy}
                       onClick={() => setAsk({ title: "আবার সংযোগ করুন", note: "ড্রাইভের লগইন পাতায় নিয়ে যাওয়া হবে।", onOk: async (pw) => {
                         try { const r = await backupApi.reconnect(d.id, pw); window.location.href = r.data.data!.authorize_url; } catch (e) { toast("error", errText(e, "হয়নি")); }
                       } })}>
-                      আবার সংযোগ
+                      <RefreshCw className="w-4 h-4" /> আবার সংযোগ
                     </button>
                   )}
-                  <button type="button" className="btn btn-outline btn-sm min-h-11 gap-1 text-red-600" disabled={!!busy}
+                  <button type="button" className="btn btn-outline btn-sm min-h-11 gap-1 justify-center text-red-700 border-red-200 hover:bg-red-50" disabled={!!busy}
                     onClick={() => setAsk({ title: `“${d.label}” সংযোগ সরাবেন?`, note: "ড্রাইভে থাকা পুরোনো backup ফাইল মুছবে না — শুধু সংযোগ সরবে।", danger: true,
                       onOk: (pw) => act(`x${d.id}`, () => backupApi.removeDest(d.id, pw), "সংযোগ সরানো হয়েছে") })}>
                     <Trash2 className="w-4 h-4" /> সরান
@@ -212,7 +246,7 @@ export default function BackupPage() {
           </div>
         )}
         {adding === null ? (
-          <button type="button" className="btn btn-brand min-h-11 gap-1.5" disabled={!data.keys.set} onClick={() => setAdding("")}>
+          <button type="button" className="btn btn-brand min-h-12 gap-1.5 w-full sm:w-auto justify-center" disabled={!data.keys.set} onClick={() => setAdding("")}>
             <Plus className="w-4 h-4" /> {data.destinations.length ? "আরেকটি ড্রাইভ যোগ করুন" : "ড্রাইভ যোগ করুন"}
           </button>
         ) : (
@@ -221,16 +255,20 @@ export default function BackupPage() {
         {!data.keys.set && <p className="text-xs text-gray-500">আগে ধাপ ১ (পাসওয়ার্ড) শেষ করুন।</p>}
       </Step>
 
-      <Step n={3} title="প্রতিদিন নিজে Backup চালু করুন" done={done[2]} open={done[0] && done[1] && !done[2]}>
+      <Step n={3} title="প্রতিদিন নিজে Backup চালু করুন" summary={done[2] ? `প্রতিদিন ${String(data.schedule.hour).padStart(2, "0")}:${String(data.schedule.minute).padStart(2, "0")} (বাংলাদেশ সময়)` : "বন্ধ আছে"} done={done[2]} open={done[0] && done[1] && !done[2]}>
         <ScheduleSection data={data} busy={busy} act={act} />
       </Step>
 
       <section className="card p-4 sm:p-5 space-y-3">
         <h2 className="font-semibold text-gray-900">Backup-এর ইতিহাস</h2>
-        {data.history.length === 0 && <p className="text-sm text-gray-600">এখনো কোনো backup হয়নি।</p>}
+        {data.history.length === 0 && (
+          <div className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-600">
+            <Cloud className="w-8 h-8 mx-auto text-gray-400 mb-2" />এখনো কোনো backup হয়নি — ধাপগুলো শেষ করে “এখনই Backup নিন” চাপুন।
+          </div>
+        )}
         <div className="space-y-2">
-          {data.history.map((r) => (
-            <div key={r.id} className="rounded-xl border border-gray-200 p-3 text-sm">
+          {(showAll ? data.history : data.history.slice(0, 10)).map((r) => (
+            <div key={r.id} className={`rounded-xl border border-gray-200 border-l-4 ${BORDER[r.status] ?? ""} p-3 text-sm`}>
               <div className="flex flex-wrap items-center gap-2">
                 <span className={`text-xs px-2 py-0.5 rounded-full ring-1 ${STATUS[r.status]?.cls}`}>{STATUS[r.status]?.bn}</span>
                 <span className="font-medium">{TRIGGER[r.trigger] ?? r.trigger}</span>
@@ -251,7 +289,10 @@ export default function BackupPage() {
             </div>
           ))}
         </div>
-        <button type="button" className="btn btn-outline min-h-11 gap-1.5" onClick={() => setTesting({})}><Upload className="w-4 h-4" /> কম্পিউটারের backup ফাইল পরীক্ষা করুন</button>
+        {data.history.length > 10 && !showAll && (
+          <button type="button" className="text-sm text-brand-700 underline min-h-11" onClick={() => setShowAll(true)}>আরও {(data.history.length - 10).toLocaleString("bn-BD")}টি দেখুন</button>
+        )}
+        <button type="button" className="btn btn-outline min-h-11 gap-1.5 w-full sm:w-auto justify-center" onClick={() => setTesting({})}><Upload className="w-4 h-4" /> কম্পিউটারের backup ফাইল পরীক্ষা করুন</button>
       </section>
 
       {testing && <TestPanel src={testing} onClose={() => { setTesting(null); load(); }} />}
@@ -353,15 +394,18 @@ function AddDrive({ kind, setKind, redirectUri, oneClick, onDone }: {
     } finally { setBusy(false); }
   };
   const card = (d: (typeof DRIVE_GUIDES)[number]) => (
-    <button key={d.kind} type="button" className="text-left rounded-xl border border-gray-200 bg-white p-3 min-h-14 hover:border-brand-400" onClick={() => setKind(d.kind)}>
+    <button key={d.kind} type="button" className="text-left rounded-xl border border-gray-200 bg-white p-3 min-h-16 hover:border-brand-400 hover:shadow-sm transition flex items-center gap-3" onClick={() => setKind(d.kind)}>
+      <DriveAvatar kind={d.kind} big />
+      <span className="min-w-0">
       <p className="font-medium flex flex-wrap items-center gap-1.5">{d.name}{oneClick[d.kind] && <span className="text-[11px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 inline-flex items-center gap-0.5"><Zap className="w-3 h-3" />এক ক্লিকে</span>}</p>
       <p className="text-xs text-gray-600">{d.free}</p>
+      </span>
     </button>
   );
   return (
     <div className="rounded-xl border border-brand-200 bg-brand-50/40 p-3 space-y-3">
       <div className="flex items-center justify-between">
-        <p className="font-medium">{g ? g.name : "কোন ড্রাইভে backup রাখবেন?"}</p>
+        <p className="font-medium flex items-center gap-2">{g && <DriveAvatar kind={g.kind} />}{g ? g.name : "কোন ড্রাইভে backup রাখবেন?"}</p>
         <button type="button" aria-label="বন্ধ" className="min-h-11 min-w-11 flex items-center justify-center" onClick={() => setKind(null)}><X className="w-5 h-5" /></button>
       </div>
       {!g ? (
@@ -375,6 +419,7 @@ function AddDrive({ kind, setKind, redirectUri, oneClick, onDone }: {
         </>
       ) : (
         <>
+          {kind === "google_drive" && !oneClick.google_drive && <AppFileBox onDone={onDone} />}
           {easy ? (
             <p className="text-sm text-gray-700">“সংযুক্ত করুন” চাপলে {g.name}-এর লগইন পাতা খুলবে → আপনার অ্যাকাউন্ট বেছে <b>Allow</b> চাপুন → নিজেই এখানে ফিরে আসবে। আর কিছু করতে হবে না।</p>
           ) : (
@@ -400,7 +445,7 @@ function AddDrive({ kind, setKind, redirectUri, oneClick, onDone }: {
             {field("password", "আপনার অ্যাডমিন লগইন পাসওয়ার্ড", "password")}
           </div>
           <div className="flex flex-wrap gap-2">
-            <button type="button" className="btn btn-brand min-h-11" disabled={busy || !f.password} onClick={submit}>{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : g.oauth ? "সংযুক্ত করুন" : "যোগ ও পরীক্ষা করুন"}</button>
+            <button type="button" className="btn btn-brand min-h-12 w-full sm:w-auto justify-center" disabled={busy || !f.password} onClick={submit}>{busy ? <Loader2 className="w-4 h-4 animate-spin" /> : g.oauth ? "সংযুক্ত করুন" : "যোগ ও পরীক্ষা করুন"}</button>
             <button type="button" className="btn btn-outline min-h-11" onClick={() => setKind("")}>অন্য ড্রাইভ</button>
             {g.oauth && oneClick[g.kind] && (
               <button type="button" className="text-sm text-gray-600 underline min-h-11" onClick={() => setOwn(!own)}>{own ? "এক ক্লিকে সংযোগে ফিরুন" : "নিজের Client ID দিয়ে (উন্নত)"}</button>
@@ -408,6 +453,41 @@ function AddDrive({ kind, setKind, redirectUri, oneClick, onDone }: {
           </div>
         </>
       )}
+    </div>
+  );
+}
+
+/** Upload the client_secret_….json Google gave once → one-click connect from then on. */
+function AppFileBox({ onDone }: { onDone: () => void }) {
+  const toast = useToastStore((s) => s.push);
+  const [file, setFile] = useState<File | null>(null);
+  const [pw, setPw] = useState("");
+  const [busy, setBusy] = useState(false);
+  const send = async () => {
+    if (!file) return;
+    setBusy(true);
+    try {
+      const fd = new FormData();
+      fd.append("kind", "google_drive");
+      fd.append("password", pw);
+      fd.append("file", file);
+      await backupApi.setAppClient(fd);
+      toast("success", "এক-ক্লিক সংযোগ চালু হয়েছে — এখন “সংযুক্ত করুন” চাপুন");
+      onDone();
+    } catch (e) {
+      toast("error", errText(e, "ফাইলটি নেওয়া যায়নি"));
+    } finally { setBusy(false); }
+  };
+  return (
+    <div className="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-3 space-y-2">
+      <p className="font-medium text-emerald-900 flex items-center gap-1.5"><Zap className="w-4 h-4" /> সহজ উপায়: Google থেকে ডাউনলোড করা JSON ফাইলটি একবার দিন</p>
+      <p className="text-sm text-emerald-900">ফাইলের নাম “client_secret_….json”। একবার দিলে এরপর সবসময় শুধু “সংযুক্ত করুন → Allow”। নিচের লম্বা ধাপগুলো আর লাগবে না।</p>
+      <input type="file" accept=".json,application/json" className="block min-h-11" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+      <input className={input} type="password" placeholder="আপনার অ্যাডমিন লগইন পাসওয়ার্ড" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="current-password" />
+      <button type="button" className="btn btn-brand min-h-11" disabled={!file || !pw || busy} onClick={send}>
+        {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : "ফাইল দিন ও চালু করুন"}
+      </button>
+      <p className="text-xs text-emerald-900">মনে রাখবেন: Google Cloud-এ “Google Auth Platform → Audience → Publish app” একবার চাপা থাকতে হবে, নইলে Allow-এর সময় 403 আসবে।</p>
     </div>
   );
 }

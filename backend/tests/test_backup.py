@@ -302,3 +302,25 @@ def test_oauth_denied_redirect_carries_reason():
                                     "expires": 9e18}
     r = TestClient(app).get("/api/v1/backup/oauth/callback?state=st&error=access_denied", follow_redirects=False)
     assert r.status_code in (302, 307) and "oauth=denied&reason=access_denied" in r.headers["location"]
+
+
+def test_app_client_env_first_then_uploaded_file(monkeypatch):
+    from app.api.v1.routes import backup as backup_routes
+
+    saved = {"google_drive": {"client_id": "db-id.apps.googleusercontent.com", "client_secret": "db-sec"}}
+
+    async def get_apps(db):
+        return saved
+
+    monkeypatch.setattr(store, "get_app_clients", get_apps)
+    assert asyncio.run(backup_routes._app_client(None, "google_drive")) == ("db-id.apps.googleusercontent.com", "db-sec", False)
+    assert asyncio.run(backup_routes._app_client(None, "dropbox")) is None
+    monkeypatch.setenv("BACKUP_GOOGLE_CLIENT_ID", "env-id")
+    monkeypatch.setenv("BACKUP_GOOGLE_CLIENT_SECRET", "env-sec")
+    assert asyncio.run(backup_routes._app_client(None, "google_drive")) == ("env-id", "env-sec", True)
+
+
+def test_app_client_key_is_write_protected():
+    from app.api.v1.routes.settings import _is_protected_setting_key
+
+    assert _is_protected_setting_key(store.K_APPS)

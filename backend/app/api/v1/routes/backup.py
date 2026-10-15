@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import hmac
+import json
 import hashlib
 import os
 import secrets
@@ -67,6 +68,18 @@ def _audit(db: AsyncSession, admin_id: str, action: str, values: dict[str, Any])
     db.add(ActivityLog(admin_id=UUID(admin_id), action=action[:50], entity_type="backup", new_values=values))
 
 
+async def _app_client(db: AsyncSession, kind: str) -> tuple[str, str, bool] | None:
+    """(client_id, client_secret, from_env) for one-click connect: Render env first, else the
+    file uploaded once in Admin → Backup (stored encrypted in the database)."""
+    env = providers.app_client(kind)
+    if env:
+        return env[0], env[1], True
+    saved = (await store.get_app_clients(db)).get(kind) or {}
+    if saved.get("client_id") and saved.get("client_secret"):
+        return saved["client_id"], saved["client_secret"], False
+    return None
+
+
 # ── summary ──────────────────────────────────────────────────────────────────
 
 @router.get("/admin/backup", response_model=ApiResponse)
@@ -82,7 +95,7 @@ async def summary(db: AsyncSession = Depends(get_db), admin_id: str = Depends(re
         "health": engine.health(cfg, hist), "history": hist[:60],
         "cron_url": f"{_api_base()}/api/v1/backup/cron?token={cron_token()}",
         "redirect_uri": redirect_uri(), "custom_db_url": bool(os.environ.get("BACKUP_DATABASE_URL")),
-        "one_click": {k: bool(providers.app_client(k)) for k in ("google_drive", "onedrive", "dropbox")},
+        "one_click": {k: bool(await _app_client(db, k)) for k in ("google_drive", "onedrive", "dropbox")},
     })
 
 
@@ -130,14 +143,13 @@ class DestIn(BaseModel):
     folder: str = Field(default="", max_length=100)
 
 
-def _start_oauth(admin_id: str, kind: str, label: str, client_id: str, client_secret: str, dest_id: str | None) -> str:
+def _start_oauth(admin_id: str, kind: str, label: str, client_id: str, client_secret: str, dest_id: str | None,
+                 use_app: bool = False) -> str:
+    """use_app=True: the client lives in Render env, so only the refresh token is stored per drive."""
     now = time.time()
     for k, v in list(_pending.items()):
         if v["expires"] < now:
             _pending.pop(k, None)
-    use_app = not client_id
-    if use_app:
-        client_id, client_secret = providers.app_client(kind) or ("", "")
     verifier, challenge = providers.pkce_pair()
     state = secrets.token_urlsafe(24)
     _pending[state] = {"admin_id": admin_id, "kind": kind, "label": label, "client_id": client_id,
@@ -154,12 +166,15 @@ async def add_destination(body: DestIn, db: AsyncSession = Depends(get_db), admi
     label = body.label.strip() or {"google_drive": "Google Drive", "onedrive": "OneDrive", "dropbox": "Dropbox",
                                    "s3": "S3 Storage", "webdav": "WebDAV"}[body.kind]
     if providers.KINDS[body.kind].oauth:
-        cid, csec = body.client_id.strip(), body.client_secret.strip()
-        if not cid and not csec and providers.app_client(body.kind):
-            cid = csec = ""  # one-click: the server's own app client is used
+        cid, csec, use_app = body.client_id.strip(), body.client_secret.strip(), False
+        if not cid and not csec:
+            app = await _app_client(db, body.kind)
+            if not app:
+                raise HTTPException(status_code=400, detail="এই ড্রাইভের এক-ক্লিক সংযোগ এখনো চালু হয়নি — Google-এর JSON ফাইলটি দিন বা Client ID/Secret দিন।")
+            cid, csec, use_app = app
         elif not cid or not csec:
             raise HTTPException(status_code=400, detail="Client ID ও Client Secret দুটোই দিন।")
-        url = _start_oauth(admin_id, body.kind, label, cid, csec, None)
+        url = _start_oauth(admin_id, body.kind, label, cid, csec, None, use_app)
         return ApiResponse(data={"authorize_url": url}, message="ড্রাইভে লগইন করে অনুমতি দিন")
     try:
         if body.kind == "s3":
@@ -270,9 +285,11 @@ async def reconnect_destination(dest_id: str, body: PasswordIn, db: AsyncSession
     conf, secs = await store.get_config(db), await store.get_secrets(db)
     d = next((x for x in conf["destinations"] if x["id"] == dest_id), None)
     s = secs.get(dest_id, {})
-    if not d or not providers.KINDS[d["kind"]].oauth or not (s.get("client_id") or providers.app_client(d["kind"])):
+    app = await _app_client(db, d["kind"]) if d and not s.get("client_id") else None
+    if not d or not providers.KINDS[d["kind"]].oauth or not (s.get("client_id") or app):
         raise HTTPException(status_code=400, detail="এই ড্রাইভটি আবার সংযোগ করা যায় না — মুছে নতুন করে যোগ করুন।")
-    url = _start_oauth(admin_id, d["kind"], d["label"], s.get("client_id", ""), s.get("client_secret", ""), dest_id)
+    cid, csec, use_app = (s["client_id"], s.get("client_secret", ""), False) if s.get("client_id") else app
+    url = _start_oauth(admin_id, d["kind"], d["label"], cid, csec, dest_id, use_app)
     return ApiResponse(data={"authorize_url": url})
 
 
@@ -288,6 +305,58 @@ async def remove_destination(dest_id: str, body: PasswordIn, db: AsyncSession = 
     _audit(db, admin_id, "backup_dest_remove", {"dest": dest_id})
     await db.commit()
     return ApiResponse(data=None, message="ড্রাইভ সংযোগ সরানো হয়েছে (ড্রাইভের ফাইল মোছা হয়নি)")
+
+
+# ── one-click app client (upload the JSON file Google gives, once) ─────────
+
+@router.post("/admin/backup/app-client", response_model=ApiResponse)
+async def set_app_client(kind: str = Form(default="google_drive", max_length=20), password: str = Form(max_length=200),
+                         client_id: str = Form(default="", max_length=300), client_secret: str = Form(default="", max_length=300),
+                         file: UploadFile | None = File(default=None),
+                         db: AsyncSession = Depends(get_db), admin_id: str = Depends(require_role(PERM))):
+    await _confirm_password(db, admin_id, password)
+    if kind not in ("google_drive", "onedrive", "dropbox"):
+        raise HTTPException(status_code=400, detail="এই ড্রাইভের জন্য এটি দরকার নেই।")
+    if file is not None:
+        try:
+            data = json.loads(await file.read(20_000))
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail="এটি Google-এর JSON ফাইল নয়।") from exc
+        if "installed" in data:
+            raise HTTPException(status_code=400, detail="ভুল ধরনের client — Google-এ “Web application” ধরনের client বানান।")
+        web = data.get("web") or {}
+        client_id, client_secret = web.get("client_id", ""), web.get("client_secret", "")
+        if redirect_uri() not in (web.get("redirect_uris") or []):
+            raise HTTPException(status_code=400, detail="এই ফাইলে সঠিক Redirect URI নেই — Google-এ client-এর “Authorized redirect URIs”-এ "
+                                f"{redirect_uri()} যোগ করে নতুন ফাইল ডাউনলোড করুন।")
+    client_id, client_secret = client_id.strip(), client_secret.strip()
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=400, detail="Client ID ও Client Secret পাওয়া যায়নি।")
+    if kind == "google_drive" and not client_id.endswith(".apps.googleusercontent.com"):
+        raise HTTPException(status_code=400, detail="এটি Google-এর Client ID নয়।")
+    apps = await store.get_app_clients(db)
+    apps[kind] = {"client_id": client_id, "client_secret": client_secret, "set_at": store.now_iso()}
+    await store.put_app_clients(db, apps)
+    _audit(db, admin_id, "backup_app_client_set", {"kind": kind, "client": client_id[:12] + "…"})
+    await db.commit()
+    return ApiResponse(data={"kind": kind}, message="এক-ক্লিক সংযোগ চালু হয়েছে")
+
+
+class AppClientRemove(BaseModel):
+    kind: str = Field(max_length=20)
+    password: str = Field(max_length=200)
+
+
+@router.post("/admin/backup/app-client/remove", response_model=ApiResponse)
+async def remove_app_client(body: AppClientRemove, db: AsyncSession = Depends(get_db),
+                            admin_id: str = Depends(require_role(PERM))):
+    await _confirm_password(db, admin_id, body.password)
+    apps = await store.get_app_clients(db)
+    apps.pop(body.kind, None)
+    await store.put_app_clients(db, apps)
+    _audit(db, admin_id, "backup_app_client_remove", {"kind": body.kind})
+    await db.commit()
+    return ApiResponse(data=None, message="সরানো হয়েছে")
 
 
 # ── schedule ─────────────────────────────────────────────────────────────────

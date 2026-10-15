@@ -50,6 +50,7 @@ export const backupApi = {
   runLocal: () => api.post<ApiResponse<{ run_id: string }>>(`${B}/local`, {}),
   downloadLocal: (runId: string, name: string) => downloadCsv(`${B}/local/${runId}`, name),
   verify: (form: FormData) => api.post<ApiResponse<{ job_id: string }>>(`${B}/verify`, form, LONG),
+  setAppClient: (form: FormData) => api.post<ApiResponse<{ kind: string }>>(`${B}/app-client`, form),
   restoreTest: (form: FormData) => api.post<ApiResponse<{ job_id: string }>>(`${B}/restore-test`, form, LONG),
   job: (id: string) => api.get<ApiResponse<JobState>>(`${B}/jobs/${id}`),
 };
