@@ -23,6 +23,7 @@
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
     "@hookform/resolvers": "^3.6.0",
+    "@sentry/browser": "11.1.0",
     "autoprefixer": "^10.4.0",
     "axios": "^1.20.0",
     "clsx": "^2.1.1",

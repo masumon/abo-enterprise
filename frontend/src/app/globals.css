@@ -1450,3 +1450,9 @@
   .admin-shell input[type="checkbox"]:not(.sr-only),
   .admin-shell input[type="radio"]:not(.sr-only) { width: 1.25rem; height: 1.25rem; }
 }
+
+/* Readability (WCAG AA contrast, 2026-10-16): on public pages in light mode the lightest
+   greys were too faint on white/tinted cards (axe color-contrast). One step darker each;
+   dark mode keeps its own overrides above. */
+html:not(.dark) #page-content :is(.text-gray-400) { color: rgb(107 114 128); }
+html:not(.dark) #page-content :is(.text-gray-500, .text-muted) { color: rgb(75 85 99); }

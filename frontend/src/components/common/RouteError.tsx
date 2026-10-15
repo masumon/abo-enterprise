@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { reportError } from "@/lib/errorReporting";
 import { AlertTriangle, RefreshCw, Home, MessageCircle } from "lucide-react";
 import { trackEvent } from "@/components/analytics/GoogleAnalytics";
 import { useContactInfo } from "@/hooks/useContactInfo";
@@ -21,6 +22,7 @@ export default function RouteError({
   const contact = useContactInfo();
   useEffect(() => {
     console.error(error);
+    reportError(error, "route");
     // Surfaces client crashes in GA4 (exception event) — free error telemetry.
     trackEvent("exception", { description: error.digest ?? error.message?.slice(0, 100) ?? "unknown", fatal: 0 });
   }, [error]);
