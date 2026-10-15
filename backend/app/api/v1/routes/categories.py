@@ -68,6 +68,12 @@ def _serialize_tree(cat: Category, by_parent: dict) -> dict:
 
 # ==================== PUBLIC ENDPOINTS ====================
 
+# The public tree is read on almost every page (Supabase showed ~20k calls/day); keep it
+# for 60 s. Every admin category write below clears it, so edits still show at once.
+_public_cache: dict[tuple, tuple[float, list]] = {}
+_PUBLIC_TTL = 60.0
+
+
 @router.get("", response_model=ApiResponse)
 async def list_categories(
     applies_to: str | None = Query(None, description="Filter: 'product' or 'service'"),
@@ -75,12 +81,20 @@ async def list_categories(
     db: AsyncSession = Depends(get_db),
 ):
     """Return the taxonomy tree (roots with recursively nested children)."""
+    import time as _time
+
+    ck = (applies_to, include_inactive)
+    hit = _public_cache.get(ck)
+    if hit and _time.monotonic() - hit[0] < _PUBLIC_TTL:
+        return ApiResponse(data=hit[1], message="ok")
     cats = await load_categories(db, include_inactive=include_inactive)
     by_parent = children_map(cats)
     roots = by_parent.get(None, [])
     if applies_to:
         roots = [c for c in roots if applies_to in (c.applies_to or [])]
-    return ApiResponse(data=[_serialize_tree(c, by_parent) for c in roots], message="ok")
+    data = [_serialize_tree(c, by_parent) for c in roots]
+    _public_cache[ck] = (_time.monotonic(), data)
+    return ApiResponse(data=data, message="ok")
 
 
 @router.get("/{slug}", response_model=ApiResponse)
@@ -191,6 +205,7 @@ async def create_category(
         entity_type="category", entity_id=cat.id, new_values=payload.model_dump(mode="json"),
     ))
     await db.commit()
+    _public_cache.clear()
     return ApiResponse(data=_node_dict(cat) | {"subcategories": []}, message="Category created")
 
 
@@ -217,6 +232,7 @@ async def update_category(
         new_values=payload.model_dump(exclude_unset=True, mode="json"),
     ))
     await db.commit()
+    _public_cache.clear()
     return ApiResponse(data=_node_dict(cat), message="Category updated")
 
 
@@ -261,6 +277,7 @@ async def delete_category(
         entity_type="category", entity_id=cat.id,
     ))
     await db.commit()
+    _public_cache.clear()
     return ApiResponse(data={"id": str(category_id)}, message="Category deleted")
 
 
@@ -287,6 +304,7 @@ async def create_subcategory(
         entity_type="category", entity_id=cat.id, new_values=payload.model_dump(mode="json"),
     ))
     await db.commit()
+    _public_cache.clear()
     return ApiResponse(data=_node_dict(cat), message="Subcategory created")
 
 
@@ -310,6 +328,7 @@ async def update_subcategory(
         entity_type="category", entity_id=cat.id, new_values=changes,
     ))
     await db.commit()
+    _public_cache.clear()
     return ApiResponse(data=_node_dict(cat), message="Subcategory updated")
 
 
