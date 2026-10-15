@@ -21,6 +21,7 @@ from app.models.models import Order, OrderItem, Product, ActivityLog, Setting, C
 from app.schemas.schemas import OrderCreate, OrderOut, OrderStatusUpdate, OrderCourierUpdate, ApiResponse, PaginatedResponse, PaginatedMeta
 
 import logging
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
 
@@ -30,6 +31,56 @@ router = APIRouter(prefix="/orders", tags=["orders"])
 def generate_order_number() -> str:
     now = datetime.now()
     return f"ABO-{now.year}{now.month:02d}-{secrets.token_hex(3).upper()}"
+
+
+REFUND_METHODS = {"cash", "bkash", "nagad", "rocket", "bank", "card", "other"}
+
+
+class RefundIn(BaseModel):
+    amount: float = Field(gt=0, le=10_000_000)
+    method: str = Field(default="cash", max_length=30)
+    note: str = Field(default="", max_length=1000)
+    restock: bool = False  # the goods came back → put them back in stock, mark order "returned"
+
+
+@router.post("/{order_id}/refund", response_model=ApiResponse)
+async def refund_order(
+    order_id: UUID,
+    payload: RefundIn,
+    admin_id: str = Depends(require_role("orders.write")),
+    db: AsyncSession = Depends(get_db),
+):
+    """Record a refund (full or partial) and, optionally, a return of the goods.
+
+    Money is recorded only — the actual transfer (cash/bKash/bank…) is done by the shop.
+    Revenue reports use total − refund_amount, so a full refund drops out of revenue."""
+    order = (await db.execute(select(Order).where(Order.id == order_id, Order.is_deleted == False))).scalar_one_or_none()  # noqa: E712
+    if not order:
+        raise HTTPException(status_code=404, detail="অর্ডার পাওয়া যায়নি")
+    if payload.method not in REFUND_METHODS:
+        raise HTTPException(status_code=400, detail="রিফান্ডের মাধ্যম ঠিক নয়")
+    already = float(order.refund_amount or 0)
+    total = float(order.total)
+    if already + payload.amount > total + 0.01:
+        raise HTTPException(status_code=400, detail=f"রিফান্ড মোট টাকার বেশি হতে পারে না (বাকি সর্বোচ্চ ৳{max(0.0, total - already):,.0f})")
+    old = {"payment_status": order.payment_status, "order_status": order.order_status, "refund_amount": already}
+    order.refund_amount = round(already + payload.amount, 2)
+    order.refund_method = payload.method
+    stamp = datetime.now(timezone.utc)
+    line = f"[{stamp:%Y-%m-%d}] ৳{payload.amount:,.0f} ({payload.method}){': ' + payload.note.strip() if payload.note.strip() else ''}"
+    order.refund_note = f"{order.refund_note}\n{line}" if order.refund_note else line
+    order.refunded_at = stamp
+    order.payment_status = "refunded" if order.refund_amount >= total - 0.01 else "partially_refunded"
+    if payload.restock and order.order_status not in ("returned", "cancelled"):
+        await _restore_stock(db, order.id)  # cancelled orders already got their stock back
+        order.order_status = "returned"
+    db.add(ActivityLog(admin_id=uuid.UUID(admin_id), action="order_refund", entity_type="order", entity_id=order.id,
+                       old_values=old, new_values={"amount": payload.amount, "method": payload.method,
+                                                   "restock": payload.restock, "payment_status": order.payment_status,
+                                                   "order_status": order.order_status}))
+    await db.commit()
+    await db.refresh(order)
+    return ApiResponse(data=OrderOut.model_validate(order), message="রিফান্ড সংরক্ষিত হয়েছে")
 
 
 async def _restore_stock(db: AsyncSession, order_id) -> None:
@@ -736,7 +787,7 @@ async def update_order_status(
     db: AsyncSession = Depends(get_db),
     admin_id: str = Depends(require_role("orders.write")),
 ):
-    valid_statuses = {"pending", "confirmed", "processing", "shipped", "delivered", "cancelled"}
+    valid_statuses = {"pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "returned"}
     if payload.status not in valid_statuses:
         raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {valid_statuses}")
     result = await db.execute(

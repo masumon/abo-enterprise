@@ -3,6 +3,7 @@ fallback, N4 courier-cancel stock, N6 public tracking leak."""
 import asyncio
 import inspect
 from datetime import datetime, timezone
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -78,3 +79,66 @@ def test_n6_track_hides_money_without_phone_and_shows_with_it():
     assert "total" not in wrong
     ok = asyncio.run(orders.track_order(number="ABO-202610-0001", phone="5678", db=FakeDB([_order()]))).data
     assert ok["total"] == 1500.0 and ok["payment_status"] == "pending"
+
+
+# ── N5 refund / return ──────────────────────────────────────────────────────
+
+class _RefundDB(FakeDB):
+    def __init__(self, order, *answers):
+        super().__init__([order], *answers)
+        self.added = []
+
+    def add(self, obj):
+        self.added.append(obj)
+
+    async def commit(self):
+        return None
+
+    async def refresh(self, _obj):
+        return None
+
+
+def _paid_order(**kw):
+    import uuid as _u
+    base = dict(id=_u.uuid4(), order_number="ABO-1", customer_name="C", customer_phone="017", customer_email=None,
+                delivery_address="A", payment_method="cod", payment_status="completed", order_status="delivered",
+                subtotal=1000, discount_amount=0, delivery_charge=0, total=1000, coupon_code=None, notes=None,
+                items=[], created_at=datetime(2026, 10, 1, tzinfo=timezone.utc), refund_amount=None,
+                refund_method=None, refund_note=None, refunded_at=None)
+    base.update(kw)
+    return SimpleNamespace(**base)
+
+
+def _refund(order, amount, restock=False, *answers):
+    from unittest.mock import patch
+    db = _RefundDB(order, *answers)
+    body = orders.RefundIn(amount=amount, method="bkash", note="ফেরত", restock=restock)
+    with patch.object(orders.OrderOut, "model_validate", lambda o: o):
+        return asyncio.run(orders.refund_order(order.id, body, admin_id="00000000-0000-0000-0000-000000000001", db=db)), db
+
+
+def test_n5_partial_then_full_refund():
+    order = _paid_order()
+    _refund(order, 300)
+    assert order.refund_amount == 300 and order.payment_status == "partially_refunded" and order.order_status == "delivered"
+    _refund(order, 700)
+    assert order.refund_amount == 1000 and order.payment_status == "refunded" and "৳700" in order.refund_note
+
+
+def test_n5_refund_cannot_exceed_total():
+    with pytest.raises(HTTPException) as exc:
+        _refund(_paid_order(refund_amount=900), 200)
+    assert exc.value.status_code == 400
+
+
+def test_n5_restock_marks_returned_and_restores_stock():
+    product = SimpleNamespace(stock_quantity=1)
+    order = _paid_order()
+    _refund(order, 1000, True, [SimpleNamespace(product_id="p", quantity=2)], [product])
+    assert order.order_status == "returned" and product.stock_quantity == 3
+
+
+def test_n5_revenue_is_net_of_refunds():
+    for mod in ("reports", "analytics"):
+        src = (Path(__file__).resolve().parents[1] / "app/api/v1/routes" / f"{mod}.py").read_text(encoding="utf-8")
+        assert "func.sum(Order.total)" not in src

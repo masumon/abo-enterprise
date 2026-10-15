@@ -190,6 +190,9 @@ export const ordersApi = {
   updateStatus: (id: string, status: string) =>
     api.patch<ApiResponse<Order>>(`/api/v1/orders/${id}/status`, { status }),
 
+  refund: (id: string, data: { amount: number; method: string; note?: string; restock?: boolean }) =>
+    api.post<ApiResponse<Order>>(`/api/v1/orders/${id}/refund`, data),
+
   updateCourier: (id: string, data: { courier_provider?: string; courier_tracking_id?: string }) =>
     api.patch<ApiResponse<Order>>(`/api/v1/orders/${id}/courier`, data),
 

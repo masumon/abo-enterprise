@@ -36,6 +36,38 @@ def missing_admin_security_statements(existing_columns: set[str]) -> list[str]:
     ]
 
 
+ORDER_REFUND_COLUMNS: dict[str, str] = {
+    "refund_amount": "NUMERIC(10,2)",
+    "refund_method": "VARCHAR(30)",
+    "refund_note": "TEXT",
+    "refunded_at": "TIMESTAMPTZ",
+}
+
+
+async def ensure_order_refund_columns(engine) -> list[str]:
+    """Add any missing refund columns on orders (manual_sql/0048). Never blocks start-up."""
+    if getattr(engine.dialect, "name", "") != "postgresql":
+        return []
+    try:
+        async with engine.begin() as conn:
+            rows = await conn.execute(text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name = 'orders' AND table_schema = current_schema()"))
+            existing = {r[0] for r in rows}
+            if not existing:
+                return []
+            statements = [f"ALTER TABLE orders ADD COLUMN IF NOT EXISTS {n} {d}"
+                          for n, d in ORDER_REFUND_COLUMNS.items() if n not in existing]
+            for stmt in statements:
+                await conn.execute(text(stmt))
+        if statements:
+            logger.warning("orders was missing %d refund column(s); added them. Run manual_sql/0048.", len(statements))
+        return statements
+    except Exception:  # never stop the API from starting
+        logger.exception("Schema guard could not check/patch orders refund columns")
+        return []
+
+
 async def ensure_admin_security_columns(engine) -> list[str]:
     """Add any missing admin-security columns. Returns the statements that were run."""
     if getattr(engine.dialect, "name", "") != "postgresql":

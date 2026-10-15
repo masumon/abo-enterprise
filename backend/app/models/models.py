@@ -150,6 +150,11 @@ class Order(Base):
     # *_approval_pending). NULL until the first callback arrives.
     courier_status: Mapped[str | None] = mapped_column(String(50))
     courier_status_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Refund / return (manual_sql/0048). refund_amount is cumulative; NULL = never refunded.
+    refund_amount: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    refund_method: Mapped[str | None] = mapped_column(String(30))
+    refund_note: Mapped[str | None] = mapped_column(Text)
+    refunded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # Institutional invoice identity (manual_sql/0009). All NULL on a personal
     # order, which is exactly how every existing row behaves.
     company_name: Mapped[str | None] = mapped_column(String(255))

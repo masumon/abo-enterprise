@@ -56,7 +56,7 @@ async def _report_sales(db: AsyncSession, start: datetime, end: datetime) -> lis
         select(
             func.date(Order.created_at).label("day"),
             func.count(Order.id).label("orders"),
-            func.coalesce(func.sum(Order.total), 0).label("orders_total"),
+            func.coalesce(func.sum(Order.total - func.coalesce(Order.refund_amount, 0)), 0).label("orders_total"),
         )
         .where(Order.created_at >= start, Order.created_at < end, Order.is_deleted == False)  # noqa: E712
         .group_by(func.date(Order.created_at)).order_by(func.date(Order.created_at))
@@ -92,7 +92,7 @@ async def _report_revenue(db: AsyncSession, start: datetime, end: datetime) -> l
     rows = (await db.execute(
         select(
             func.date(Order.created_at).label("day"),
-            func.coalesce(func.sum(Order.total), 0).label("revenue"),
+            func.coalesce(func.sum(Order.total - func.coalesce(Order.refund_amount, 0)), 0).label("revenue"),
         )
         .where(
             Order.created_at >= start, Order.created_at < end, Order.is_deleted == False,  # noqa: E712
@@ -141,13 +141,13 @@ async def _report_customers(db: AsyncSession, start: datetime, end: datetime) ->
     top = (await db.execute(
         select(
             Customer.name, Customer.phone,
-            func.coalesce(func.sum(Order.total), 0).label("order_value"),
+            func.coalesce(func.sum(Order.total - func.coalesce(Order.refund_amount, 0)), 0).label("order_value"),
             func.count(func.distinct(Order.id)).label("order_count"),
         )
         .join(Order, Order.customer_id == Customer.id)
         .where(Order.created_at >= start, Order.created_at < end, Order.is_deleted == False, Customer.is_deleted == False)  # noqa: E712
         .group_by(Customer.id, Customer.name, Customer.phone)
-        .order_by(func.sum(Order.total).desc())
+        .order_by(func.sum(Order.total - func.coalesce(Order.refund_amount, 0)).desc())
         .limit(20)
     )).all()
     return [{"summary": True, "new_customers": new_customers}] + [

@@ -25,13 +25,15 @@ interface AdminOrder {
   order_status: string; subtotal: number; delivery_charge: number; total: number;
   advance_amount?: number; advance_paid?: boolean;
   courier_provider?: string | null; courier_tracking_id?: string | null; courier_status?: string | null;
+  refund_amount?: number | null; refund_method?: string | null; refund_note?: string | null; refunded_at?: string | null;
   /** Institutional invoice identity (manual_sql/0009); all null on a personal order. */
   company_name?: string | null; company_bin?: string | null; company_tin?: string | null;
   po_number?: string | null; billing_address?: string | null;
   notes?: string; items: AdminOrderItem[]; created_at: string;
 }
 
-const STATUSES = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled"];
+const STATUSES = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "returned"];
+const REFUND_METHODS: [string, string][] = [["cash", "নগদ"], ["bkash", "bKash"], ["nagad", "Nagad"], ["rocket", "Rocket"], ["bank", "ব্যাংক"], ["card", "কার্ড"], ["other", "অন্যান্য"]];
 const COURIERS = ["pathao", "steadfast", "redx", "other"];
 
 export default function AdminOrdersPage() {
@@ -58,6 +60,8 @@ export default function AdminOrdersPage() {
   const [composeEmail, setComposeEmail] = useState<{ to: string; subject: string; context: string } | null>(null);
   const [pdfLoading, setPdfLoading] = useState<string | null>(null);
   const [courierSaving, setCourierSaving] = useState(false);
+  const [refundForm, setRefundForm] = useState<{ amount: string; method: string; note: string; restock: boolean } | null>(null);
+  const [refundSaving, setRefundSaving] = useState(false);
   const [courierProvider, setCourierProvider] = useState("");
   const [courierTracking, setCourierTracking] = useState("");
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -239,6 +243,25 @@ export default function AdminOrdersPage() {
       toast("error", apiErrorMessage(err, "Could not update courier"));
     } finally {
       setCourierSaving(false);
+    }
+  };
+
+  const saveRefund = async () => {
+    if (!detail || !refundForm) return;
+    const amount = Number(refundForm.amount);
+    if (!(amount > 0)) { toast("error", "রিফান্ডের টাকার পরিমাণ লিখুন"); return; }
+    setRefundSaving(true);
+    try {
+      const r = await ordersApi.refund(detail.id, { amount, method: refundForm.method, note: refundForm.note, restock: refundForm.restock });
+      const u = r.data.data as unknown as AdminOrder;
+      setDetail((prev) => prev ? { ...prev, ...u, items: prev.items } : prev);
+      setOrders((prev) => prev.map((o) => o.id === detail.id ? { ...o, order_status: u.order_status, payment_status: u.payment_status } : o));
+      setRefundForm(null);
+      toast("success", "রিফান্ড সংরক্ষিত হয়েছে");
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "রিফান্ড সংরক্ষণ করা যায়নি"));
+    } finally {
+      setRefundSaving(false);
     }
   };
 
@@ -647,6 +670,58 @@ export default function AdminOrdersPage() {
                     )}
                   </div>
                 </div>
+
+                {/* Refund / return — money is only recorded here; the shop sends it by cash/bKash/bank. */}
+                {(() => {
+                  const refunded = Number(detail.refund_amount ?? 0);
+                  const left = Math.max(0, Number(detail.total) - refunded);
+                  return (
+                    <div className="rounded-xl border border-orange-200 bg-orange-50/50 p-4 space-y-3">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium text-gray-900 flex-1">রিফান্ড / ফেরত</p>
+                        {refunded > 0 && <span className="text-sm text-orange-800">ফেরত দেওয়া হয়েছে: <b>{formatPrice(refunded)}</b></span>}
+                      </div>
+                      {detail.refund_note && <p className="text-xs text-gray-700 whitespace-pre-line">{detail.refund_note}</p>}
+                      {!refundForm ? (
+                        left > 0 && (
+                          <button type="button" className="btn btn-outline btn-sm min-h-11"
+                            onClick={() => setRefundForm({ amount: String(left), method: "cash", note: "", restock: false })}>
+                            {refunded > 0 ? "আরও রিফান্ড দিন" : "রিফান্ড / ফেরত নিন"}
+                          </button>
+                        )
+                      ) : (
+                        <div className="grid sm:grid-cols-2 gap-3">
+                          <label className="text-sm">কত টাকা ফেরত দিচ্ছেন (সর্বোচ্চ {formatPrice(left)})
+                            <input type="number" inputMode="decimal" min={1} max={left} className="input w-full min-h-11 text-base"
+                              value={refundForm.amount} onChange={(e) => setRefundForm({ ...refundForm, amount: e.target.value })} />
+                          </label>
+                          <label className="text-sm">কীভাবে ফেরত দিয়েছেন
+                            <select className="input w-full min-h-11 text-base" value={refundForm.method}
+                              onChange={(e) => setRefundForm({ ...refundForm, method: e.target.value })}>
+                              {REFUND_METHODS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                            </select>
+                          </label>
+                          <label className="text-sm sm:col-span-2">কারণ / নোট (ঐচ্ছিক)
+                            <input className="input w-full min-h-11 text-base" value={refundForm.note} maxLength={500}
+                              placeholder="যেমন: পণ্য ভাঙা ছিল, ট্রানজেকশন আইডি…" onChange={(e) => setRefundForm({ ...refundForm, note: e.target.value })} />
+                          </label>
+                          <label className="flex items-start gap-2 text-sm sm:col-span-2 min-h-11">
+                            <input type="checkbox" className="w-5 h-5 mt-0.5" checked={refundForm.restock}
+                              onChange={(e) => setRefundForm({ ...refundForm, restock: e.target.checked })} />
+                            পণ্য ফেরত এসেছে — স্টকে যোগ করুন ও অর্ডারকে “Returned” করুন
+                          </label>
+                          <p className="text-xs text-gray-600 sm:col-span-2">টাকা আপনি নিজে পাঠাবেন (নগদ/bKash/ব্যাংক)। এখানে শুধু হিসাব রাখা হয় — রিপোর্টে আয় থেকে এই টাকা বাদ যাবে।</p>
+                          <div className="flex gap-2 sm:col-span-2">
+                            <button type="button" className="btn btn-brand min-h-11" disabled={refundSaving} onClick={saveRefund}>
+                              {refundSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "সংরক্ষণ করুন"}
+                            </button>
+                            <button type="button" className="btn btn-outline min-h-11" onClick={() => setRefundForm(null)}>বাতিল</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {detail.notes && (
                   <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">

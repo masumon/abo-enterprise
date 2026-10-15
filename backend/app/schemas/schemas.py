@@ -339,7 +339,10 @@ class OrderOut(BaseModel):
     notes: str | None
     items: list[OrderItemOut]
     created_at: datetime
-
+    refund_amount: float | None = None
+    refund_method: str | None = None
+    refund_note: str | None = None
+    refunded_at: datetime | None = None
     model_config = {"from_attributes": True}
 
 

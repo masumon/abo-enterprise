@@ -26,7 +26,7 @@ async def get_analytics_today(
     local_midnight = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
     today_start_utc = local_midnight - BD_UTC_OFFSET
 
-    order_rev = await db.scalar(select(func.sum(Order.total)).where(
+    order_rev = await db.scalar(select(func.sum(Order.total - func.coalesce(Order.refund_amount, 0))).where(
         Order.created_at >= today_start_utc,
         or_(Order.payment_status == "completed", Order.order_status == "delivered"),
         Order.is_deleted == False,  # noqa: E712
@@ -78,7 +78,7 @@ async def get_analytics_overview(
                 conds.append(col < end)
             return conds
 
-        order_rev = await db.scalar(select(func.sum(Order.total)).where(
+        order_rev = await db.scalar(select(func.sum(Order.total - func.coalesce(Order.refund_amount, 0))).where(
             *in_window(Order.created_at),
             # COD orders never reach payment_status="completed"; count delivered ones too.
             or_(Order.payment_status == "completed", Order.order_status == "delivered"),
@@ -210,7 +210,7 @@ async def get_revenue_chart(
     order_result = await db.execute(
         select(
             cast(Order.created_at, Date).label("day"),
-            func.sum(Order.total).label("revenue"),
+            func.sum(Order.total - func.coalesce(Order.refund_amount, 0)).label("revenue"),
         ).where(
             Order.created_at >= since,
             or_(Order.payment_status == "completed", Order.order_status == "delivered"),

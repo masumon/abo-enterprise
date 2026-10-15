@@ -46,8 +46,9 @@ async def lifespan(app: FastAPI):
     await _init_db_and_bootstrap()
     # Safety net for the hand-applied admin-security SQL (see core/schema_guard.py).
     from app.core.database import engine as _engine
-    from app.core.schema_guard import ensure_admin_security_columns
+    from app.core.schema_guard import ensure_admin_security_columns, ensure_order_refund_columns
     await ensure_admin_security_columns(_engine)
+    await ensure_order_refund_columns(_engine)
 
     from app.core.contact import load_from_db as load_contact_numbers
     await load_contact_numbers()
