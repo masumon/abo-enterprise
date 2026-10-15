@@ -829,7 +829,12 @@ export const adminApi = {
     api.put<ApiResponse<{ key: string; value: string }>>(`/api/v1/settings/${key}`, data),
 
   upsertSettings: (items: { key: string; value: string; data_type?: string; description?: string }[]) =>
-    api.post<ApiResponse<{ key: string; value: string }[]>>("/api/v1/settings/upsert", items),
+    api.post<ApiResponse<{ key: string; value: string; linked?: boolean }[]>>("/api/v1/settings/upsert", items)
+      .then((r) => {
+        // Linked settings: tell the admin what else changed (rules in lib/linkedSettings.ts).
+        void import("@/lib/linkedSettings").then((m) => m.notifyLinkedSettings(items, r.data.data ?? undefined)).catch(() => {});
+        return r;
+      }),
 
   listUsers: (page = 1) =>
     api.get<PaginatedResponse<{ id: string; email: string; name: string; role: string; is_active: boolean; last_login: string | null; created_at?: string }>>("/api/v1/admin/users", { params: { page } }),

@@ -257,10 +257,28 @@ async def upsert_settings(
             db.add(setting)
         results.append({"key": item.key, "value": item.value})
 
+    # Linked settings (core/linked_settings.py): a switch turned off also turns off the
+    # settings that cannot work without it — enforced here so every admin page obeys.
+    from app.core.linked_settings import mandatory_followers
+
+    linked_off = mandatory_followers({r["key"]: r["value"] for r in results})
+    for dep_key, dep_value in linked_off.items():
+        row = (await db.execute(
+            select(Setting).where((Setting.key == dep_key) & (Setting.is_deleted == False))  # noqa: E712
+        )).scalar_one_or_none()
+        if row:
+            if str(row.value).strip().lower() in ("false", "0", "off", "no", ""):
+                continue
+            row.value = dep_value
+        else:
+            db.add(Setting(key=dep_key, value=dep_value, data_type="boolean"))
+        results.append({"key": dep_key, "value": dep_value, "linked": True})
+
     db.add(ActivityLog(
         admin_id=UUID(admin_id), action="update",
         entity_type="setting", entity_id=None,
-        new_values={"keys": [r["key"] for r in results], "skipped_keys": skipped},
+        new_values={"keys": [r["key"] for r in results], "skipped_keys": skipped,
+                    "linked_off": list(linked_off)},
     ))
     await db.commit()
     update_contact_numbers(results)
