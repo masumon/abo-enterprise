@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import hmac
+import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -113,9 +114,30 @@ async def try_task(payload: TryIn, _admin: str = Depends(require_role("settings.
     return ApiResponse(data={"text": text[:1500], **meta})
 
 
+_cron = {"running": False}
+logger = logging.getLogger(__name__)
+
+
+async def _run_daily_check() -> None:
+    from app.core.database import AsyncSessionLocal
+
+    try:
+        async with AsyncSessionLocal() as s:
+            logger.info("AI hub daily check: %s", await hub.daily_check(s))
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("AI hub daily check failed: %s", exc)
+    finally:
+        _cron["running"] = False
+
+
 @router.get("/ai-hub/cron", response_model=ApiResponse)
-async def daily_cron(token: str = Query(default="", max_length=64), db: AsyncSession = Depends(get_db)):
-    """Daily health check for cron-job.org (secret token in the URL)."""
+async def daily_cron(background: BackgroundTasks, token: str = Query(default="", max_length=64)):
+    """Daily health check for cron-job.org (secret token in the URL). Answers at
+    once and checks in the background — real AI test calls take longer than the
+    30 s cron-job.org waits."""
     if not hmac.compare_digest(token, hub.cron_token()):
         raise HTTPException(status_code=403, detail="forbidden")
-    return ApiResponse(data=await hub.daily_check(db))
+    if not _cron["running"]:
+        _cron["running"] = True
+        background.add_task(_run_daily_check)
+    return ApiResponse(data={"started": True}, message="AI পরীক্ষা শুরু হয়েছে")
