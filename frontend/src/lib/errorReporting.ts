@@ -20,6 +20,12 @@ function load(): Promise<SentryModule | null> {
           tracesSampleRate: 0, // errors only — keeps us far inside the free quota
           ignoreErrors: ["ResizeObserver loop", "Non-Error promise rejection captured", "AbortError"],
           denyUrls: [/extensions\//i, /^chrome-extension:\/\//i, /^moz-extension:\/\//i],
+          // The PWA service-worker registration is rejected by crawlers (e.g. Googlebot) and
+          // some locked-down browsers — harmless (the site works without it), so not an issue.
+          beforeSend(event) {
+            const frames = event.exception?.values?.flatMap((v) => v.stacktrace?.frames ?? []) ?? [];
+            return frames.some((f) => (f.function ?? "").includes("ServiceWorkerContainer")) ? null : event;
+          },
         });
         return Sentry;
       })
