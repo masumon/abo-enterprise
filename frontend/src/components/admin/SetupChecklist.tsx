@@ -130,7 +130,7 @@ export default function SetupChecklist({ totalProducts }: { totalProducts?: numb
       const ai = aiRes?.data?.data;
       if (ai) {
         out.push({ id: "ai", done: !!(ai.has_key && ai.enabled), bn: "AI চালু করুন (যেকোনো ফ্রি/পেইড কী)", en: "Turn on AI (any free or paid key)",
-          hintBn: "লেখা, অনুবাদ, ব্লগ, পণ্যের বিবরণ ও চ্যাট সহকারী — সব AI দিয়ে দ্রুত হয়।", hintEn: "Writing, translation, blogs and the chat assistant.", href: "/sumon/assistant" });
+          hintBn: "লেখা, অনুবাদ, ব্লগ, পণ্যের বিবরণ ও চ্যাট সহকারী — সব AI দিয়ে দ্রুত হয়।", hintEn: "Writing, translation, blogs and the chat assistant.", href: "/sumon/ai" });
       }
       const reviews = statsRes?.data?.data?.reviews;
       if (typeof reviews === "number") {

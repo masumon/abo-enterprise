@@ -16,7 +16,8 @@ import {
 } from "@/lib/api";
 import { useToastStore } from "@/store/toast";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
-import GeminiAiCard from "@/components/admin/GeminiAiCard";
+import Link from "next/link";
+import { ArrowRight, Sparkles } from "lucide-react";
 import StatusBadge from "@/components/admin/StatusBadge";
 import TranslateButton from "@/components/admin/TranslateButton";
 import { translateBnToEn } from "@/lib/translate";
@@ -304,7 +305,12 @@ export default function AdminAssistantPage() {
       {/* Settings Tab */}
       {tab === "settings" && (
         <div className="space-y-6 admin-page-narrow">
-          <GeminiAiCard />
+          <Link href="/sumon/ai" className="flex items-center gap-3 rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-4 hover:border-brand-300">
+            <span className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center flex-none"><Sparkles className="w-5 h-5" /></span>
+            <span className="flex-1 min-w-0"><span className="block font-semibold text-heading">AI কী ও মডেল — “AI সংযোগ” পাতায়</span>
+              <span className="block text-xs text-muted">Gemini, Groq, ChatGPT ইত্যাদি সব কী সেখানে যোগ ও পরীক্ষা করুন। এই সহকারী সেখান থেকে নিজে সেরা AI ব্যবহার করে।</span></span>
+            <ArrowRight className="w-4 h-4 text-brand-600 flex-none" />
+          </Link>
 
           {/* Integration overview */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">

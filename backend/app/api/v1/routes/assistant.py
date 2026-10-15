@@ -501,8 +501,10 @@ class GeminiSettingsIn(_BaseModel):
 async def _gemini_status(db: AsyncSession) -> dict:
     ai_gemini.invalidate()
     cfg = await ai_gemini.load_config(db)
+    hub_ok = await ai_gemini._hub_ready(db)  # AI Hub connections count as "AI is set up"
     return {
-        "has_key": bool(cfg["key"]),
+        "has_key": bool(cfg["key"]) or hub_ok,
+        "hub_connections": hub_ok,
         "key_hint": cfg["hint"],
         "enabled": cfg["enabled"],
         "model": cfg["model"] if cfg["key"] else "",

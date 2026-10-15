@@ -47,7 +47,7 @@ export default function AiStatusCard() {
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={() => window.dispatchEvent(new Event("abo:open-ai"))} className="btn btn-brand btn-sm min-h-11 gap-1.5"><Sparkles className="w-4 h-4" /> AI সহকারী</button>
             <Link href="/sumon/blog" className="btn btn-outline btn-sm min-h-11 gap-1.5"><PenLine className="w-4 h-4" /> ব্লগ লিখুন</Link>
-            <Link href="/sumon/assistant" className="btn btn-outline btn-sm min-h-11 gap-1.5"><Settings2 className="w-4 h-4" /> AI সেটিংস</Link>
+            <Link href="/sumon/ai" className="btn btn-outline btn-sm min-h-11 gap-1.5"><Settings2 className="w-4 h-4" /> AI সংযোগ</Link>
           </div>
         </div>
       )}

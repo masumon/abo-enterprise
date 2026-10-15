@@ -107,6 +107,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     { href: "/sumon/users", icon: Users, label: "Users", labelBn: "অ্যাডমিন ব্যবহারকারী", minRole: "admin", permission: "users.read", descBn: "কে অ্যাডমিনে ঢুকতে পারবে", keywords: "user admin staff ইউজার কর্মী" },
     { href: "/sumon/roles-permissions", icon: ShieldCheck, label: "Roles & Permissions", labelBn: "কে কী করতে পারবে", minRole: "admin", permission: "users.read", descBn: "ভূমিকা ও অনুমতির তালিকা", keywords: "role permission ভূমিকা অনুমতি" },
     { href: "/sumon/help", icon: BookOpen, label: "Help Guide", labelBn: "সহায়তা গাইড", descBn: "ধাপে ধাপে বাংলা নির্দেশনা", keywords: "help guide সাহায্য গাইড" },
+    { href: "/sumon/ai", icon: Sparkles, label: "AI Connections", labelBn: "AI সংযোগ (কী ও মডেল)", minRole: "admin", descBn: "সব AI কী এক জায়গায় — আগে ফ্রি, পরে পেইড, নিজে বদলায়", keywords: "ai key api gemini groq openrouter chatgpt model মডেল কী সংযোগ" },
     { href: "/sumon/assistant", icon: Bot, label: "AI Assistant", labelBn: "AI সহকারী", minRole: "admin", descBn: "ওয়েবসাইটের চ্যাট সহকারীর সেটিং", keywords: "ai chatbot assistant সহকারী চ্যাট" },
     { href: "/sumon/audit", icon: Shield, label: "Audit Logs", labelBn: "কে কী বদলেছে (অডিট)", minRole: "admin", permission: "audit_logs.read", descBn: "অ্যাডমিনের কাজের ইতিহাস", keywords: "audit log ইতিহাস লগ" },
     { href: "/sumon/events", icon: History, label: "System Events", labelBn: "সিস্টেমের ঘটনা", minRole: "admin", permission: "ops.read", descBn: "সার্ভারের ত্রুটি ও সতর্কতা", keywords: "events error system ত্রুটি" },
