@@ -7,7 +7,7 @@ import PageHero from "@/components/ui/PageHero";
 import { useLegalPageOverride } from "@/hooks/useLegalPageOverride";
 import { BulletList, ComplianceOfficerBlock } from "@/components/legal/LegalShared";
 
-const LAST_UPDATED = "2026-10-07";
+const LAST_UPDATED = "2026-10-16";
 
 export default function PrivacyPage() {
   const { lang } = useLanguageStore();
@@ -264,6 +264,44 @@ export default function PrivacyPage() {
             ? "আপনার ক্ষতির আশঙ্কা তৈরি করে এমন কোনো তথ্য-লঙ্ঘন ঘটলে আমরা অযথা বিলম্ব না করে ক্ষতিগ্রস্তদের এবং আইনানুযায়ী কর্তৃপক্ষকে জানাব এবং আপনার করণীয় ব্যাখ্যা করব। শিশুদের (১৮ বছরের কম) তথ্য আমরা অভিভাবকের সম্মতি ছাড়া জেনেশুনে সংগ্রহ করি না এবং কখনোই প্রোফাইলিং বা টার্গেটেড বিজ্ঞাপনে ব্যবহার করি না।"
             : "If a breach is likely to harm you, we will notify affected users and, where the law requires, the authorities without undue delay, and explain what you can do. We do not knowingly collect data from children under 18 without a parent or guardian's consent and never use it for profiling or targeted advertising."}
         </p>
+      ),
+    },
+    {
+      // Required by Google OAuth app verification (Drive backup). Shown in English in both
+      // languages because Google's reviewers read it; Bangla summary follows.
+      id: "google-user-data",
+      title: isBn ? "Google ব্যবহারকারীর ডেটা (Google Drive backup)" : "Google User Data (Google Drive Backup)",
+      content: (
+        <div className="space-y-3">
+          <p>
+            ABO Enterprise&apos;s admin panel can optionally connect to the site owner&apos;s own Google Drive to store
+            encrypted backups of our database. Only the site administrator connects a Google account; customers are
+            never asked to sign in with Google.
+          </p>
+          <BulletList
+            items={[
+              "Data accessed: (1) the drive.file permission, which lets the app create, read and delete only the backup files it creates itself in an \"ABO Backups\" folder — never any other file in the Drive; (2) the Google account's email address, to show which account is connected.",
+              "How it is used: only to upload, verify (read back) and remove our own encrypted backup files according to the backup schedule.",
+              "Protection: backups are encrypted before upload and can be opened only with the owner's backup password. Access tokens are stored encrypted on our server and are never shown in the browser.",
+              "Sharing: Google user data is not sold, not shared with third parties, not used for advertising and not used to train AI or machine-learning models.",
+              "Retention & deletion: tokens are kept only while the connection exists. The owner can disconnect at any time in the admin panel (Backup → Remove) or at https://myaccount.google.com/permissions; the token is then deleted from our server.",
+            ]}
+          />
+          <p>
+            ABO Enterprise&apos;s use and transfer of information received from Google APIs adheres to the{" "}
+            <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" className="text-brand-600 underline">
+              Google API Services User Data Policy
+            </a>
+            , including the Limited Use requirements.
+          </p>
+          {isBn && (
+            <p>
+              সংক্ষেপে: শুধু ওয়েবসাইটের মালিক নিজের Google Drive-এ এনক্রিপ্ট করা ডাটাবেস backup রাখার জন্য সংযোগ দেন।
+              অ্যাপটি শুধু নিজের তৈরি backup ফাইল দেখতে পারে, Drive-এর অন্য কোনো ফাইল নয়। এই ডেটা বিক্রি, শেয়ার, বিজ্ঞাপন বা AI
+              প্রশিক্ষণে ব্যবহার করা হয় না, এবং যেকোনো সময় সংযোগ বাতিল করা যায়।
+            </p>
+          )}
+        </div>
       ),
     },
     {
