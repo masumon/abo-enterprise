@@ -52,14 +52,8 @@ const nextConfig = {
           },
         ],
       },
-      {
-        source: "/icons/(.*)",
-        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
-      },
-      {
-        source: "/_next/static/(.*)",
-        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
-      },
+      // No custom Cache-Control here: Vercel already serves /_next/static immutably and
+      // revalidates /public files with ETags; custom values only triggered a build warning.
     ];
   },
   async redirects() {
