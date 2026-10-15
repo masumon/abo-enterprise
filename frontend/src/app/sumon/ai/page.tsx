@@ -80,6 +80,14 @@ export default function AiHubPage() {
         description="All AI keys in one place — free first, paid last, automatic switch-over"
         descriptionBn="সব AI কী এক জায়গায় — আগে ফ্রি, পরে পেইড; একটা কাজ না করলে নিজে অন্যটায় যায়"
         actions={<Link href="/sumon/assistant" className="btn btn-outline btn-sm min-h-11 gap-1.5"><Bot className="w-4 h-4" /> AI সহকারী</Link>} />
+      <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 flex items-start gap-2" role="note">
+        <AlertTriangle className="w-4 h-4 mt-0.5 flex-none" aria-hidden />
+        <span>
+          <b>সাবধান:</b> Google Cloud / <b>Vertex AI</b> / <b>Gemini Enterprise Agent Platform</b>-এর key <b>পেইড</b> — কার্ড যুক্ত করতে হয়, ব্যবহারে বিল আসে।
+          ফ্রিতে Gemini ব্যবহার করতে <b>Google AI Studio</b>-র key (<code>AIza…</code> দিয়ে শুরু) নিন:{" "}
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="underline font-medium">aistudio.google.com/apikey</a>
+        </span>
+      </p>
 
       {!data ? (
         <div className="space-y-3">{[0, 1, 2].map((i) => <div key={i} className="h-28 rounded-3xl bg-white/70 animate-pulse" />)}</div>
