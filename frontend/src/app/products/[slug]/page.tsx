@@ -1,3 +1,4 @@
+import { ogImageUrl } from "@/lib/responsiveMediaUrl";
 import type { Metadata } from "next";
 import { stripMarks } from "@/lib/productText";
 import type { Product } from "@/types";
@@ -39,7 +40,7 @@ export async function generateMetadata(
     (stripMarks(product.description_en) ||
     `Buy ${product.name_en} at the best price in Bangladesh. Fast delivery from ABO Enterprise, Sylhet.`);
   const url = product.canonical_url ?? `${SITE_URL}/products/${product.slug}`;
-  const ogImg = product.og_image ?? product.image_url ?? DEFAULT_OG_IMAGE;
+  const ogImg = ogImageUrl(product.og_image ?? product.image_url ?? DEFAULT_OG_IMAGE);
 
   return {
     title,

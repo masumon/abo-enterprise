@@ -1,3 +1,4 @@
+import { ogImageUrl } from "@/lib/responsiveMediaUrl";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Image from "next/image";
@@ -100,7 +101,7 @@ export async function generateMetadata(
   const title = post.seo_title ?? `${post.title_en} | ABO Enterprise Blog`;
   const description = post.seo_description ?? post.excerpt_en ?? post.content_en.slice(0, 160);
   const url = post.canonical_url ?? `${SITE_URL}/blog/${post.slug}`;
-  const ogImg = post.og_image ?? post.featured_image_url ?? DEFAULT_OG_IMAGE;
+  const ogImg = ogImageUrl(post.og_image ?? post.featured_image_url ?? DEFAULT_OG_IMAGE);
 
   return {
     title,

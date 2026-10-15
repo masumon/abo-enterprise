@@ -71,6 +71,14 @@ export function cloudinaryWidthUrl(value: string, width: number): string {
   return url.replace("/image/upload/", `/image/upload/f_auto,q_auto,c_limit,w_${width}/`);
 }
 
+/** Social-share (OG) image: any uploaded photo becomes exactly 1200×630 JPG, cropped
+ * around the most important part (g_auto) — no separate OG upload needed. */
+export function ogImageUrl(value: string | null | undefined): string {
+  const url = (value ?? "").trim();
+  if (!url || !isCloudinaryImageUrl(url) || /\/image\/upload\/[^/]*c_fill/.test(url)) return url;
+  return url.replace("/image/upload/", "/image/upload/f_jpg,q_auto,c_fill,g_auto,w_1200,h_630/");
+}
+
 /** `srcset` string for a Cloudinary image at the given widths, or undefined
  * for non-Cloudinary URLs (callers then use the plain `src`). */
 export function cloudinarySrcSet(value: string, widths: number[]): string | undefined {

@@ -230,8 +230,8 @@ export default function ImageUpload({
                 {fmtBytes(pending.file.size)}
               </p>
               {purposeGuide && pending.width && pending.height && ratioMismatch(purposeGuide, pending.width, pending.height) && (
-                <p className="text-[11px] text-amber-700 dark:text-amber-300 mt-1">
-                  ⚠️ ছবির অনুপাত প্রস্তাবিত {purposeGuide.ratioLabel}-এর সাথে মিলছে না — কিছু অংশ কেটে যেতে পারে বা ফাঁকা দেখাতে পারে। চাইলে তবুও আপলোড করতে পারেন।
+                <p className="text-[11px] text-brand-700 dark:text-brand-300 mt-1">
+                  ℹ️ ছবির অনুপাত {purposeGuide.ratioLabel} নয় — সমস্যা নেই, ওয়েবসাইট নিজেই প্রতিটি জায়গায় মাপমতো কেটে বসাবে (ছবির গুরুত্বপূর্ণ অংশ মাঝখানে রেখে)। আলাদা মাপের ছবি বানাতে হবে না।
                 </p>
               )}
               <p className="text-[11px] text-brand-600 mt-1 flex items-center gap-1">

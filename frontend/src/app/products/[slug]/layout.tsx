@@ -1,3 +1,4 @@
+import { ogImageUrl } from "@/lib/responsiveMediaUrl";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { stripMarks } from "@/lib/productText";
@@ -21,7 +22,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
     const name = data.name_en ?? data.name_bn ?? "Product";
     const description = stripMarks(data.description_en ?? data.description_bn ?? "");
-    const image = data.image_url;
+    const image = ogImageUrl(data.og_image ?? data.image_url);
 
     return {
       title: name,

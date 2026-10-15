@@ -1,3 +1,4 @@
+import { ogImageUrl } from "@/lib/responsiveMediaUrl";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import type { PageRecord } from "@/lib/api";
@@ -42,7 +43,7 @@ export async function generateMetadata(
   const title = page.seo_title ?? `${page.title_en} | ABO Enterprise`;
   const description = page.seo_description ?? page.content_en.slice(0, 160);
   const url = page.canonical_url ?? `${SITE_URL}/${page.slug}`;
-  const ogImg = page.og_image ?? DEFAULT_OG_IMAGE;
+  const ogImg = ogImageUrl(page.og_image ?? DEFAULT_OG_IMAGE);
 
   return {
     title,

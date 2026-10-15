@@ -1,3 +1,4 @@
+import { ogImageUrl } from "@/lib/responsiveMediaUrl";
 import { notFound } from "next/navigation";
 import { stripMarks } from "@/lib/productText";
 import type { Metadata } from "next";
@@ -118,7 +119,7 @@ function serviceMetadata(service: Service): Metadata {
     (stripMarks(service.short_description_en ?? service.description_en) ||
     `Professional ${service.name_en} service by ABO Enterprise, Bangladesh.`);
   const url = service.canonical_url ?? `${SITE_URL}/services/${service.slug}`;
-  const ogImg = service.og_image ?? service.featured_image_url ?? DEFAULT_OG_IMAGE;
+  const ogImg = ogImageUrl(service.og_image ?? service.featured_image_url ?? DEFAULT_OG_IMAGE);
 
   return {
     title,
@@ -158,7 +159,7 @@ function taxonomyMetadata(
     node.description_en ??
     `${node.name_en} services by ABO Enterprise, Bangladesh.`;
   const canonical = node.canonical_url ?? url;
-  const ogImg = node.og_image ?? node.image_url ?? DEFAULT_OG_IMAGE;
+  const ogImg = ogImageUrl(node.og_image ?? node.image_url ?? DEFAULT_OG_IMAGE);
   return {
     title,
     description,
