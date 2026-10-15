@@ -1,5 +1,6 @@
 "use client";
 
+import RichTextEditor from "@/components/admin/catalog/RichTextEditor";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -226,12 +227,17 @@ export default function AdminPagesPage() {
               </div>
               <div>
                 <div className="flex items-center justify-between gap-2 mb-1"><label className="text-sm font-medium text-gray-700">Content (English)</label><TranslateButton bn={watch("content_bn")} onResult={(t) => setValue("content_en", t, { shouldValidate: true, shouldDirty: true })} en={watch("content_en")} onResultBn={(t) => setValue("content_bn", t, { shouldDirty: true })} /></div>
-                <textarea {...register("content_en")} rows={8} className={cn("input", errors.content_en && "input-error")} />
+                <input type="hidden" {...register("content_en")} />
+                <RichTextEditor value={watch("content_en") ?? ""} rows={8} dir="ltr"
+                  onChange={(v) => setValue("content_en", v, { shouldValidate: true, shouldDirty: true })}
+                  className={cn(errors.content_en && "ring-1 ring-red-400 rounded-xl")} />
                 {errors.content_en && <p className="text-red-500 text-xs mt-1">{errors.content_en.message}</p>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Content (বাংলা)</label>
-                <textarea {...register("content_bn")} rows={8} className="input" />
+                <input type="hidden" {...register("content_bn")} />
+                <RichTextEditor value={watch("content_bn") ?? ""} rows={8} dir="auto"
+                  onChange={(v) => setValue("content_bn", v, { shouldDirty: true })} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>

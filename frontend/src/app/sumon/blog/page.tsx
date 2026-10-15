@@ -1,4 +1,5 @@
 "use client";
+import RichTextEditor from "@/components/admin/catalog/RichTextEditor";
 import AiBlogWriter from "@/components/admin/AiBlogWriter";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
@@ -736,12 +737,11 @@ export default function AdminBlogPage() {
                     → English
                   </button>
                 </div>
-                <textarea
+                <RichTextEditor
                   value={editing.content_bn ?? ""}
-                  onChange={e => setEditing(prev => prev ? { ...prev, content_bn: e.target.value } : prev)}
+                  onChange={(v) => setEditing(prev => prev ? { ...prev, content_bn: v } : prev)}
                   placeholder="বাংলায় পূর্ণ নিবন্ধ লিখুন..."
                   rows={10}
-                  className="input w-full resize-y text-sm leading-relaxed"
                   dir="auto"
                 />
               </div>
@@ -779,12 +779,12 @@ export default function AdminBlogPage() {
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-600 mb-1">Content (English)</label>
-                      <textarea
+                      <RichTextEditor
                         value={editing.content_en ?? ""}
-                        onChange={e => setEditing(prev => prev ? { ...prev, content_en: e.target.value } : prev)}
+                        onChange={(v) => setEditing(prev => prev ? { ...prev, content_en: v } : prev)}
                         placeholder="Auto-filled from Bangla on save"
                         rows={8}
-                        className="input w-full resize-y text-sm leading-relaxed"
+                        dir="ltr"
                       />
                     </div>
                   </div>

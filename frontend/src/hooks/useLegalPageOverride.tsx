@@ -1,3 +1,4 @@
+import RichText from "@/components/ui/RichText";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import type { LegalSection } from "@/components/layout/LegalPageLayout";
 
@@ -15,5 +16,5 @@ export function useLegalPageOverride(pageKey: string, title: string, isBn: boole
   const bn = getSettingValue(settings, bnKey);
   const text = (isBn ? bn || en : en || bn).trim();
   if (!text) return null;
-  return [{ id: "content", title, content: <div className="whitespace-pre-line leading-relaxed">{text}</div> }];
+  return [{ id: "content", title, content: <RichText text={text} className="space-y-3 leading-relaxed" /> }];
 }

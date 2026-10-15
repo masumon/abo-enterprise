@@ -1,5 +1,6 @@
 "use client";
 
+import RichTextEditor from "@/components/admin/catalog/RichTextEditor";
 import { useEffect, useState } from "react";
 import TranslateButton from "@/components/admin/TranslateButton";
 import AdminTitle from "@/components/admin/AdminTitle";
@@ -126,22 +127,22 @@ export default function LegalPagesAdmin() {
 
           <div>
             <div className="flex items-center justify-between gap-2 mb-1"><label className="text-xs font-semibold text-muted">English</label><TranslateButton bn={bn} onResult={setEn} en={en} onResultBn={setBn} /></div>
-            <textarea
+            <RichTextEditor
               value={en}
-              onChange={(e) => setEn(e.target.value)}
+              onChange={setEn}
               rows={10}
               placeholder="(খালি = ওয়েবসাইটের ডিফল্ট ইংরেজি লেখা ব্যবহৃত হবে)"
-              className="admin-input w-full text-sm font-normal leading-relaxed"
+              dir="ltr"
             />
           </div>
           <div>
             <label className="text-xs font-semibold text-muted mb-1 block">বাংলা</label>
-            <textarea
+            <RichTextEditor
               value={bn}
-              onChange={(e) => setBn(e.target.value)}
+              onChange={setBn}
               rows={10}
               placeholder="(খালি = ওয়েবসাইটের ডিফল্ট বাংলা লেখা ব্যবহৃত হবে)"
-              className="admin-input w-full text-sm font-normal leading-relaxed"
+              dir="auto"
             />
           </div>
 
