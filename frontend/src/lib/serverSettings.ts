@@ -2,6 +2,17 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 import type { PromoSlide } from "@/types";
 
 /** Server-side public settings (short-lived cache). */
+/** Homepage trust figures (server side, so the stats card renders in the first paint). */
+export async function fetchPublicStats(): Promise<{ average_rating?: number | null; reviews?: number; orders?: number; products?: number } | null> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/public/stats`, { next: { revalidate: 300 }, signal: AbortSignal.timeout(4000) });
+    if (!res.ok) return null;
+    return (await res.json())?.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
 /** Whether the Apon app has a published build (server side, so the home card never "jumps in"). */
 export async function fetchAponEnabled(): Promise<boolean> {
   try {

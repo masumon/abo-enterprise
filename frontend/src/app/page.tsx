@@ -16,7 +16,7 @@ import ReviewStatsCard from "@/components/home/ReviewStatsCard";
 import Reveal from "@/components/ui/Reveal";
 import { SITE_URL, DEFAULT_OG_IMAGE, getBrandFullTitle } from "@/lib/tokens";
 import { jsonLdString } from "@/lib/metadata";
-import { fetchPublicSettings, fetchPromoSlides, fetchCombos, fetchFlashProducts, fetchAponEnabled, settingValue } from "@/lib/serverSettings";
+import { fetchPublicSettings, fetchPromoSlides, fetchCombos, fetchFlashProducts, fetchAponEnabled, fetchPublicStats, settingValue } from "@/lib/serverSettings";
 import { cloudinarySrcSet, HERO_BG_WIDTHS, PROMO_WIDTHS } from "@/lib/responsiveMediaUrl";
 import { isVideoUrl } from "@/lib/media";
 import { getLegacyHomeLaneTarget } from "@/lib/legacyHomeLane";
@@ -157,8 +157,9 @@ export default async function HomePage(
   const legacyTarget = getLegacyHomeLaneTarget(legacyLane);
   if (legacyTarget) redirect(legacyTarget);
 
-  const [settings, heroSlides, initialCombos, initialFlash, aponEnabled] = await Promise.all([
+  const [settings, heroSlides, initialCombos, initialFlash, aponEnabled, stats] = await Promise.all([
     fetchPublicSettings(), fetchPromoSlides("hero"), fetchCombos<Combo>(), fetchFlashProducts<Product>(), fetchAponEnabled(),
+    fetchPublicStats(),
   ]);
   // Preload the LCP image per breakpoint so the fetch starts with the HTML:
   // ≥1024px the desktop hero background, <1024px the first promo slide (the
@@ -257,7 +258,9 @@ export default async function HomePage(
           <CustomerReviews />
           <section className="py-5 lg:py-7">
             <div className="container mx-auto px-4">
-              <ReviewStatsCard />
+              {/* Figures come from the server so the card is there in the first paint (no layout shift). */}
+              <ReviewStatsCard averageRating={stats?.average_rating ?? null} totalReviews={stats?.reviews ?? 0}
+                totalOrders={stats?.orders ?? 0} totalProducts={stats?.products ?? 0} />
             </div>
           </section>
         </Reveal>

@@ -49,7 +49,9 @@ function resolveSlideLink(raw?: string | null): { path: string | null; external:
  * slow banner image used to leave while the browser fetched it.
  */
 function PromoImage({ src, alt, eager, sizes, contain }: { src: string; alt: string; eager?: boolean; sizes?: string; contain?: boolean }) {
-  const [loaded, setLoaded] = useState(false);
+  // The first (eager) slide is the page's LCP image: show it from the server HTML at once.
+  // Hiding it until React hydrated (opacity-0 + spinner) delayed it ~9 s on slow phones.
+  const [loaded, setLoaded] = useState(!!eager);
   const imgRef = useRef<HTMLImageElement>(null);
   // Server-rendered images can finish loading before React hydrates and
   // attaches onLoad — check `complete` so the spinner never sticks.
@@ -156,7 +158,9 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
       <Swiper
         modules={[Autoplay, Pagination, A11y]}
         slidesPerView={1}
-        loop={slides.length > 1}
+        // rewind instead of loop: loop clones the slides after hydration, which re-created the
+        // first (LCP) image and delayed it by seconds on phones.
+        rewind={slides.length > 1}
         autoplay={slides.length > 1 ? { delay: 4500, disableOnInteraction: false, pauseOnMouseEnter: true } : false}
         pagination={slides.length > 1 ? { clickable: true } : false}
         a11y={{ enabled: true }}

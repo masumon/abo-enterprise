@@ -36,7 +36,16 @@ function load(): Promise<SentryModule | null> {
 
 /** Start catching uncaught errors and unhandled promise rejections. */
 export function initErrorReporting(): void {
-  void load();
+  // Start after the page has loaded and the browser is idle, so the Sentry SDK never
+  // competes with the first paint on slow phones (it cost ~2.5 s of main-thread time).
+  if (typeof window === "undefined" || !process.env.NEXT_PUBLIC_SENTRY_DSN) return;
+  const start = () => {
+    const idle = (window as Window & { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback;
+    if (idle) idle(() => void load());
+    else setTimeout(() => void load(), 2000);
+  };
+  if (document.readyState === "complete") start();
+  else window.addEventListener("load", start, { once: true });
 }
 
 /** Report an error caught by an error boundary (the page showed "Something went wrong"). */
