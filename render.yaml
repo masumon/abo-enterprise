@@ -2,10 +2,12 @@ services:
   - type: web
     name: abo-enterprise-api
     runtime: python
-    plan: starter
+    plan: free
     rootDir: backend
-    buildCommand: pip install -r requirements.txt && alembic upgrade head
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    # Matches the live Render dashboard (verified 2026-10-16). Migrations are NOT run on
+    # deploy: schema changes are applied by hand from backend/manual_sql/ in Supabase.
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     autoDeploy: true
     envVars:
