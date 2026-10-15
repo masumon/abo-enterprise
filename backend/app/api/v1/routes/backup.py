@@ -20,6 +20,7 @@ from uuid import UUID
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse
+from urllib.parse import quote
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -81,6 +82,7 @@ async def summary(db: AsyncSession = Depends(get_db), admin_id: str = Depends(re
         "health": engine.health(cfg, hist), "history": hist[:60],
         "cron_url": f"{_api_base()}/api/v1/backup/cron?token={cron_token()}",
         "redirect_uri": redirect_uri(), "custom_db_url": bool(os.environ.get("BACKUP_DATABASE_URL")),
+        "one_click": {k: bool(providers.app_client(k)) for k in ("google_drive", "onedrive", "dropbox")},
     })
 
 
@@ -133,10 +135,13 @@ def _start_oauth(admin_id: str, kind: str, label: str, client_id: str, client_se
     for k, v in list(_pending.items()):
         if v["expires"] < now:
             _pending.pop(k, None)
+    use_app = not client_id
+    if use_app:
+        client_id, client_secret = providers.app_client(kind) or ("", "")
     verifier, challenge = providers.pkce_pair()
     state = secrets.token_urlsafe(24)
     _pending[state] = {"admin_id": admin_id, "kind": kind, "label": label, "client_id": client_id,
-                       "client_secret": client_secret, "verifier": verifier, "dest_id": dest_id,
+                       "client_secret": client_secret, "verifier": verifier, "dest_id": dest_id, "app": use_app,
                        "expires": now + OAUTH_TTL}
     return providers.authorize_url(kind, client_id, redirect_uri(), state, challenge)
 
@@ -149,9 +154,12 @@ async def add_destination(body: DestIn, db: AsyncSession = Depends(get_db), admi
     label = body.label.strip() or {"google_drive": "Google Drive", "onedrive": "OneDrive", "dropbox": "Dropbox",
                                    "s3": "S3 Storage", "webdav": "WebDAV"}[body.kind]
     if providers.KINDS[body.kind].oauth:
-        if not body.client_id.strip() or not body.client_secret.strip():
+        cid, csec = body.client_id.strip(), body.client_secret.strip()
+        if not cid and not csec and providers.app_client(body.kind):
+            cid = csec = ""  # one-click: the server's own app client is used
+        elif not cid or not csec:
             raise HTTPException(status_code=400, detail="Client ID ও Client Secret দুটোই দিন।")
-        url = _start_oauth(admin_id, body.kind, label, body.client_id.strip(), body.client_secret.strip(), None)
+        url = _start_oauth(admin_id, body.kind, label, cid, csec, None)
         return ApiResponse(data={"authorize_url": url}, message="ড্রাইভে লগইন করে অনুমতি দিন")
     try:
         if body.kind == "s3":
@@ -200,18 +208,20 @@ async def oauth_callback(state: str = Query(default="", max_length=100), code: s
     if not p or p["expires"] < time.time():
         return RedirectResponse(f"{site}/sumon/backup?oauth=expired")
     if error or not code:
-        return RedirectResponse(f"{site}/sumon/backup?oauth=denied")
+        return RedirectResponse(f"{site}/sumon/backup?oauth=denied&reason={quote(error[:40] or 'access_denied')}")
     try:
         tok = await providers.exchange_code(p["kind"], p["client_id"], p["client_secret"], code, redirect_uri(), p["verifier"])
         account = providers.account_from_tokens(p["kind"], tok) or await providers.fetch_account(p["kind"], tok["access_token"])
-        secret = {"client_id": p["client_id"], "client_secret": p["client_secret"], "refresh_token": tok["refresh_token"]}
+        # One-click (server app client): only the refresh token is stored; the client comes from env.
+        secret = ({"refresh_token": tok["refresh_token"]} if p.get("app") else
+                  {"client_id": p["client_id"], "client_secret": p["client_secret"], "refresh_token": tok["refresh_token"]})
         prov = providers.make(p["kind"], {"account": account}, dict(secret))
         await prov.check()  # creates the app folder and proves access before saving
         dest = await _save_destination(db, p["dest_id"], p["kind"], p["label"], {**prov.cfg, "account": account}, secret)
         _audit(db, p["admin_id"], "backup_dest_oauth", {"kind": p["kind"], "dest": dest["id"]})
         await db.commit()
-    except providers.ProviderError:
-        return RedirectResponse(f"{site}/sumon/backup?oauth=failed")
+    except providers.ProviderError as exc:
+        return RedirectResponse(f"{site}/sumon/backup?oauth=failed&reason={quote(exc.code or 'failed')}")
     return RedirectResponse(f"{site}/sumon/backup?oauth=ok")
 
 
@@ -260,9 +270,9 @@ async def reconnect_destination(dest_id: str, body: PasswordIn, db: AsyncSession
     conf, secs = await store.get_config(db), await store.get_secrets(db)
     d = next((x for x in conf["destinations"] if x["id"] == dest_id), None)
     s = secs.get(dest_id, {})
-    if not d or not providers.KINDS[d["kind"]].oauth or not s.get("client_id"):
+    if not d or not providers.KINDS[d["kind"]].oauth or not (s.get("client_id") or providers.app_client(d["kind"])):
         raise HTTPException(status_code=400, detail="এই ড্রাইভটি আবার সংযোগ করা যায় না — মুছে নতুন করে যোগ করুন।")
-    url = _start_oauth(admin_id, d["kind"], d["label"], s["client_id"], s["client_secret"], dest_id)
+    url = _start_oauth(admin_id, d["kind"], d["label"], s.get("client_id", ""), s.get("client_secret", ""), dest_id)
     return ApiResponse(data={"authorize_url": url})
 
 

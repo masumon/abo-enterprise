@@ -251,3 +251,54 @@ def test_backup_settings_are_write_protected():
 
     assert _is_protected_setting_key("backup.keys") and _is_protected_setting_key("backup.secrets")
     assert not _is_protected_setting_key("site_name")
+
+
+# ── v2: one-click OAuth, scheduler, next run, error reasons ─────────────────
+
+def test_one_click_app_client_from_env(monkeypatch):
+    assert providers.app_client("google_drive") is None
+    monkeypatch.setenv("BACKUP_GOOGLE_CLIENT_ID", "cid")
+    monkeypatch.setenv("BACKUP_GOOGLE_CLIENT_SECRET", "csec")
+    assert providers.app_client("google_drive") == ("cid", "csec")
+    assert providers.app_client("s3") is None
+
+
+def test_refresh_uses_app_client_when_no_own_client(monkeypatch):
+    import httpx
+
+    monkeypatch.setenv("BACKUP_DROPBOX_CLIENT_ID", "app-id")
+    monkeypatch.setenv("BACKUP_DROPBOX_CLIENT_SECRET", "app-secret")
+    sent = {}
+
+    async def fake_post(self, url, data=None, **kw):
+        sent.update(data)
+        return httpx.Response(200, json={"access_token": "at", "expires_in": 3600}, request=httpx.Request("POST", url))
+
+    monkeypatch.setattr(httpx.AsyncClient, "post", fake_post)
+    prov = providers.make("dropbox", {}, {"refresh_token": "rt"})
+    assert asyncio.run(prov.access_token()) == "at"
+    assert sent["client_id"] == "app-id" and sent["client_secret"] == "app-secret"
+
+
+def test_next_run_and_scheduler_off_outside_production():
+    cfg = {"schedule": {"enabled": True, "hour": 3, "minute": 30}, "destinations": [{"id": "d"}]}
+    now = dt.datetime(2026, 10, 15, 4, 0, tzinfo=engine.BDT)
+    assert engine.next_run(cfg, now).startswith("2026-10-16T03:30")
+    assert engine.next_run({**cfg, "destinations": []}, now) is None
+
+    async def start():
+        return engine.start_scheduler()
+
+    assert asyncio.run(start()) is None  # tests run with APP_ENV=test
+
+
+def test_oauth_denied_redirect_carries_reason():
+    from fastapi.testclient import TestClient
+    from app.api.v1.routes import backup as backup_routes
+    from app.main import app
+
+    backup_routes._pending["st"] = {"admin_id": "a", "kind": "google_drive", "label": "G", "client_id": "",
+                                    "client_secret": "", "verifier": "v", "dest_id": None, "app": True,
+                                    "expires": 9e18}
+    r = TestClient(app).get("/api/v1/backup/oauth/callback?state=st&error=access_denied", follow_redirects=False)
+    assert r.status_code in (302, 307) and "oauth=denied&reason=access_denied" in r.headers["location"]

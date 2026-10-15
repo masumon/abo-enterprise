@@ -24,8 +24,9 @@ export type BackupSummary = {
   destinations: BackupDest[];
   schedule: { enabled: boolean; hour: number; minute: number };
   retention: { daily: number; weekly: number; monthly: number };
-  health: { ok: boolean; message_bn: string; last_success_at: string | null; running: boolean; schedule_enabled: boolean };
+  health: { ok: boolean; message_bn: string; last_success_at: string | null; next_run_at: string | null; running: boolean; schedule_enabled: boolean };
   history: BackupRun[]; cron_url: string; redirect_uri: string; custom_db_url: boolean;
+  one_click: Partial<Record<DestKind, boolean>>;
 };
 export type JobState = { id: string; status: "running" | "ok" | "failed"; error_bn?: string; result?: Record<string, unknown> };
 
@@ -63,11 +64,12 @@ export const DRIVE_GUIDES: DriveGuide[] = [
     kind: "google_drive", name: "Google Drive", free: "১৫ GB ফ্রি (Gmail-এর সাথে ভাগ)", oauth: true,
     link: "https://console.cloud.google.com/apis/credentials", linkLabel: "Google Cloud Console",
     steps: [
-      "Google Cloud Console-এ আপনার Gmail দিয়ে ঢুকে একটি নতুন Project বানান।",
-      "“APIs & Services → Library” থেকে “Google Drive API” খুঁজে Enable করুন।",
-      "“OAuth consent screen” → External → App-এর নাম ও আপনার ইমেইল দিন → Save। তারপর “Publish app” চাপুন (না চাপলে ৭ দিন পর সংযোগ কেটে যায়)।",
-      "“Credentials → Create credentials → OAuth client ID” → Web application → “Authorized redirect URIs”-এ নিচের Redirect URI পেস্ট করুন।",
-      "Client ID ও Client Secret কপি করে নিচে বসান → “সংযুক্ত করুন” → Google-এ অনুমতি দিন।",
+      "Google Cloud Console-এ আপনার Gmail দিয়ে ঢুকে উপরে “Select a project → New project” দিয়ে একটি Project বানান।",
+      "উপরের খোঁজার ঘরে “Google Drive API” লিখে খুলুন → Enable চাপুন।",
+      "বাম মেনু “Google Auth Platform” → Branding: App-এর নাম ও আপনার ইমেইল দিন → Save।",
+      "Audience → User type “External” → তারপর অবশ্যই “Publish app” → Confirm চাপুন। (না চাপলে “access_denied / app is being tested” দেখাবে এবং ৭ দিন পর সংযোগ কেটে যাবে।)",
+      "Clients → Create client → Web application → “Authorized redirect URIs”-এ নিচের Redirect URI পেস্ট করুন → Create।",
+      "দেখানো Client ID ও Client Secret কপি করে নিচে বসান → “সংযুক্ত করুন” → Google-এ আপনার Gmail বেছে Allow চাপুন।",
     ],
     note: "শুধু এই app-এর বানানো “ABO Backups” ফোল্ডার দেখতে পারে — আপনার অন্য কোনো ফাইল নয়।",
   },
@@ -115,3 +117,30 @@ export const DRIVE_GUIDES: DriveGuide[] = [
 ];
 
 export const guideOf = (k: string) => DRIVE_GUIDES.find((g) => g.kind === k);
+
+/** Exact Bangla fix for each error a drive login can return (shown after coming back). */
+export const OAUTH_HELP: Record<string, { title: string; steps: string[] }> = {
+  access_denied: {
+    title: "Google/Microsoft অনুমতি দেয়নি (access_denied)",
+    steps: [
+      "যদি “app is being tested / has not completed verification” লেখা দেখে থাকেন: Google Cloud Console → Google Auth Platform → Audience → “Publish app” → Confirm চাপুন।",
+      "তারপর এখানে ফিরে আবার “সংযুক্ত করুন” চাপুন।",
+      "“Google hasn't verified this app” দেখালে Advanced → “Go to … (unsafe)” চাপুন — এটি আপনার নিজের app, নিরাপদ।",
+      "Allow-এর বদলে Cancel চেপে থাকলে আবার চেষ্টা করে Allow চাপুন।",
+    ],
+  },
+  redirect_uri_mismatch: {
+    title: "Redirect URI মেলেনি",
+    steps: ["Google/Microsoft/Dropbox-এর app সেটিংয়ে “Redirect URI”-তে এই পাতার Redirect URI হুবহু (শেষে কোনো স্পেস/স্ল্যাশ ছাড়া) বসান, Save করুন, তারপর আবার চেষ্টা করুন।"],
+  },
+  invalid_client: {
+    title: "Client ID বা Client Secret ভুল",
+    steps: ["Client ID ও Secret আবার কপি করুন (শুরু/শেষে স্পেস যেন না থাকে)। Microsoft হলে Secret-এর “Value” কপি করুন, “Secret ID” নয়।"],
+  },
+  invalid_grant: {
+    title: "অনুমতির কোড পুরোনো হয়ে গেছে",
+    steps: ["আবার “সংযুক্ত করুন” চাপুন এবং ১০ মিনিটের মধ্যে Allow চাপুন।"],
+  },
+  expired: { title: "সময় শেষ হয়ে গেছে", steps: ["আবার “সংযুক্ত করুন” চাপুন।"] },
+  failed: { title: "সংযোগ হয়নি", steps: ["Client ID/Secret ও Redirect URI দেখে আবার চেষ্টা করুন। না হলে ডেভেলপারকে এই পাতার স্ক্রিনশট পাঠান।"] },
+};

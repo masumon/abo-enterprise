@@ -51,7 +51,11 @@ async def lifespan(app: FastAPI):
 
     from app.core.contact import load_from_db as load_contact_numbers
     await load_contact_numbers()
+    from app.core.backup.engine import start_scheduler
+    backup_task = start_scheduler()
     yield
+    if backup_task:
+        backup_task.cancel()
     logger.info(f"Shutting down {settings.APP_NAME}")
 
 

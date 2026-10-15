@@ -297,7 +297,17 @@ async def _mark_destination(dest_id: str, res: dict[str, Any]) -> None:
         await s.commit()
 
 
+_last_email = {"at": 0.0}
+EMAIL_GAP = 6 * 3600
+
+
 def _alert(run: dict[str, Any]) -> None:
+    try:
+        if time.time() - _last_email["at"] > EMAIL_GAP:
+            _last_email["at"] = time.time()
+            asyncio.get_running_loop().create_task(_email_alert(run))
+    except RuntimeError:
+        pass
     try:
         from app.core.ops_events import _persist_system_event
 
@@ -307,6 +317,54 @@ def _alert(run: dict[str, Any]) -> None:
                               {"run_id": run["id"], "trigger": run["trigger"]})
     except Exception:  # noqa: BLE001
         pass
+
+
+async def _email_alert(run: dict[str, Any]) -> None:
+    """Plain Bangla e-mail to the owner when a backup fails (at most every 6 h)."""
+    try:
+        from app.core.config import settings
+        from app.core.email import send_email
+
+        to = settings.ADMIN_NOTIFY_EMAIL or getattr(settings, "BUSINESS_EMAIL", "")
+        if not to:
+            return
+        word = "ব্যর্থ হয়েছে" if run["status"] == "failed" else "আংশিক হয়েছে"
+        html = (f"<p>আজকের ডাটাবেস backup <b>{word}</b>।</p><p>কারণ: {run.get('error_bn') or '—'}</p>"
+                f"<p>Admin → ডাটাবেস Backup পাতায় গিয়ে “এখনই Backup নিন” চাপুন। সমস্যা থাকলে ডেভেলপারকে জানান।</p>")
+        await send_email(to, f"⚠️ ABO Backup {word}", html, retries=1)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("backup alert e-mail failed: %s", exc)
+
+
+# ── built-in scheduler ───────────────────────────────────────────────────────
+# Render free sleeps when idle, but the existing cron-job.org ping keeps it
+# awake, so a light in-process check every 10 minutes is enough — no extra
+# cron job for the owner. /api/v1/backup/cron stays as an optional backup trigger.
+
+CHECK_EVERY = 600
+
+
+async def scheduler_loop() -> None:
+    from app.core.database import AsyncSessionLocal
+
+    await asyncio.sleep(120)  # let the app finish starting
+    while True:
+        try:
+            async with AsyncSessionLocal() as s:
+                cfg, hist = await store.get_config(s), _settle_stale(await store.get_history(s))
+            if not _lock.locked() and is_due(cfg, hist):
+                await run_backup("auto")
+        except Exception as exc:  # noqa: BLE001 — the loop must never die
+            logger.warning("backup scheduler check failed: %s", exc)
+        await asyncio.sleep(CHECK_EVERY)
+
+
+def start_scheduler() -> asyncio.Task | None:
+    from app.core.config import settings
+
+    if settings.APP_ENV.strip().lower() != "production" or os.environ.get("BACKUP_SCHEDULER", "on") == "off":
+        return None
+    return asyncio.get_running_loop().create_task(scheduler_loop())
 
 
 # ── local downloads ──────────────────────────────────────────────────────────
@@ -352,6 +410,17 @@ def _ts(r: dict[str, Any]) -> datetime:
         return datetime.min.replace(tzinfo=BDT)
 
 
+def next_run(cfg: dict[str, Any], now: datetime | None = None) -> str | None:
+    sch = cfg.get("schedule") or {}
+    if not sch.get("enabled") or not cfg.get("destinations"):
+        return None
+    now = (now or datetime.now(timezone.utc)).astimezone(BDT)
+    slot = now.replace(hour=int(sch.get("hour", 3)), minute=int(sch.get("minute", 30)), second=0, microsecond=0)
+    if slot <= now:
+        slot += timedelta(days=1)
+    return slot.isoformat()
+
+
 def health(cfg: dict[str, Any], history: list[dict[str, Any]], now: datetime | None = None) -> dict[str, Any]:
     """Honest status for the dashboard: only a verified cloud copy counts."""
     now = now or datetime.now(timezone.utc)
@@ -368,6 +437,7 @@ def health(cfg: dict[str, Any], history: list[dict[str, Any]], now: datetime | N
     else:
         msg = "Backup ঠিক আছে।"
     return {"ok": ok, "message_bn": msg, "last_success_at": good.get("finished_at") if good else None,
+            "next_run_at": next_run(cfg, now),
             "last_success_age_hours": round(age_h, 1) if age_h is not None else None,
             "last_status": last.get("status") if last else None, "schedule_enabled": bool(cfg["schedule"].get("enabled")),
             "running": is_running()}

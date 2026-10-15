@@ -33,9 +33,27 @@ FOLDER_NAME = "ABO Backups"
 
 
 class ProviderError(Exception):
-    def __init__(self, message: str, message_bn: str | None = None):
+    def __init__(self, message: str, message_bn: str | None = None, code: str = ""):
         super().__init__(message)
         self.message_bn = message_bn or message
+        self.code = code  # provider error code (e.g. invalid_client) → exact Bangla help in the admin
+
+
+_APP_ENV = {"google_drive": "GOOGLE", "onedrive": "ONEDRIVE", "dropbox": "DROPBOX"}
+
+
+def app_client(kind: str) -> tuple[str, str] | None:
+    """One-click connect: an OAuth client set once on the server (Render env
+    BACKUP_GOOGLE_CLIENT_ID/_SECRET, BACKUP_ONEDRIVE_…, BACKUP_DROPBOX_…), so the
+    admin only clicks "connect" and allows. Never stored in the database."""
+    import os
+
+    name = _APP_ENV.get(kind)
+    if not name:
+        return None
+    cid = os.environ.get(f"BACKUP_{name}_CLIENT_ID", "").strip()
+    sec = os.environ.get(f"BACKUP_{name}_CLIENT_SECRET", "").strip()
+    return (cid, sec) if cid and sec else None
 
 
 SaveFn = Callable[[dict[str, Any], dict[str, Any]], Awaitable[None]]  # (cfg_updates, secret_updates)
@@ -160,8 +178,12 @@ async def exchange_code(kind: str, client_id: str, client_secret: str, code: str
     async with httpx.AsyncClient(timeout=30) as c:
         r = await c.post(OAUTH[kind]["token"], data=data)
     if r.status_code >= 400:
+        try:
+            code = str(r.json().get("error", ""))[:40]
+        except ValueError:
+            code = ""
         raise ProviderError(f"token exchange failed: {r.text[:300]}",
-                            "অনুমতি নেওয়া যায়নি — Client ID/Secret ও Redirect URI ঠিক আছে কি না দেখুন।")
+                            "অনুমতি নেওয়া যায়নি — Client ID/Secret ও Redirect URI ঠিক আছে কি না দেখুন।", code or "failed")
     tok = r.json()
     if not tok.get("refresh_token"):
         raise ProviderError("no refresh token returned",
@@ -175,8 +197,11 @@ class _OAuthProvider(Provider):
     async def access_token(self) -> str:
         if self._token and self._token[1] > time.time() + 60:
             return self._token[0]
+        cid, csec = self.secret.get("client_id", ""), self.secret.get("client_secret", "")
+        if not cid:
+            cid, csec = app_client(self.kind) or ("", "")
         data = {"grant_type": "refresh_token", "refresh_token": self.secret.get("refresh_token", ""),
-                "client_id": self.secret.get("client_id", ""), "client_secret": self.secret.get("client_secret", "")}
+                "client_id": cid, "client_secret": csec}
         if self.kind == "onedrive":
             data["scope"] = OAUTH["onedrive"]["scope"]
         async with httpx.AsyncClient(timeout=30) as c:
