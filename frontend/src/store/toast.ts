@@ -31,6 +31,9 @@ interface ToastStore {
 export const useToastStore = create<ToastStore>((set, get) => ({
   toasts: [],
   push: (type, message, action) => {
+    // A non-string (e.g. a FastAPI 422 detail list) rendered as a React child would crash the
+    // root layout — always store plain text.
+    if (typeof message !== "string") message = "কিছু একটা সমস্যা হয়েছে — আবার চেষ্টা করুন।";
     const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     set({ toasts: [...get().toasts, { id, type, message, action }] });
     // Toasts with an action stay a bit longer so the admin can click it.

@@ -32,6 +32,7 @@ export type JobState = { id: string; status: "running" | "ok" | "failed"; error_
 
 const B = "/api/v1/admin/backup";
 const LONG = { timeout: 120000 };
+const FORM = { timeout: 300000, headers: { "Content-Type": "multipart/form-data" } };
 
 export const backupApi = {
   get: () => api.get<ApiResponse<BackupSummary>>(B),
@@ -49,9 +50,9 @@ export const backupApi = {
   runNow: () => api.post<ApiResponse<{ run_id: string }>>(`${B}/run`, {}),
   runLocal: () => api.post<ApiResponse<{ run_id: string }>>(`${B}/local`, {}),
   downloadLocal: (runId: string, name: string) => downloadCsv(`${B}/local/${runId}`, name),
-  verify: (form: FormData) => api.post<ApiResponse<{ job_id: string }>>(`${B}/verify`, form, LONG),
-  setAppClient: (form: FormData) => api.post<ApiResponse<{ kind: string }>>(`${B}/app-client`, form),
-  restoreTest: (form: FormData) => api.post<ApiResponse<{ job_id: string }>>(`${B}/restore-test`, form, LONG),
+  verify: (form: FormData) => api.post<ApiResponse<{ job_id: string }>>(`${B}/verify`, form, FORM),
+  setAppClient: (form: FormData) => api.post<ApiResponse<{ kind: string }>>(`${B}/app-client`, form, FORM),
+  restoreTest: (form: FormData) => api.post<ApiResponse<{ job_id: string }>>(`${B}/restore-test`, form, FORM),
   job: (id: string) => api.get<ApiResponse<JobState>>(`${B}/jobs/${id}`),
 };
 

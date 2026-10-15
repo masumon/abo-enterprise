@@ -11,8 +11,12 @@ import {
   backupApi, DRIVE_GUIDES, guideOf, OAUTH_HELP, type BackupRun, type BackupSummary, type DestKind, type JobState,
 } from "@/lib/backup";
 
-const errText = (e: unknown, fb: string) =>
-  (e as { response?: { data?: { detail?: string } } })?.response?.data?.detail || fb;
+const errText = (e: unknown, fb: string): string => {
+  const d = (e as { response?: { data?: { detail?: unknown } } })?.response?.data?.detail;
+  if (typeof d === "string" && d) return d;
+  if (Array.isArray(d)) return "তথ্য ঠিকমতো পৌঁছায়নি — পাতা রিফ্রেশ করে আবার চেষ্টা করুন।";
+  return fb;
+};
 const when = (iso?: string | null) => (iso ? new Date(iso).toLocaleString("bn-BD", { timeZone: "Asia/Dhaka", dateStyle: "medium", timeStyle: "short" }) : "—");
 const size = (n?: number) => (n == null ? "—" : n > 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
 const TRIGGER: Record<string, string> = { auto: "স্বয়ংক্রিয়", manual: "ম্যানুয়াল", local: "কম্পিউটারে", restore_test: "Restore পরীক্ষা" };

@@ -470,6 +470,9 @@ async def _source(dest_id: str, file_id: str, upload: UploadFile | None) -> Path
                     raise HTTPException(status_code=413, detail="ফাইল অনেক বড় (সর্বোচ্চ ৩০০ MB)।")
                 f.write(chunk)
         return path
+    if not (dest_id and file_id):
+        shutil.rmtree(work, ignore_errors=True)
+        raise HTTPException(status_code=400, detail="কোনো backup ফাইল পৌঁছায়নি — ফাইলটি আবার বেছে নিয়ে চেষ্টা করুন।")
     try:
         await engine.fetch_file(dest_id, file_id, path)
     except Exception as exc:  # noqa: BLE001
