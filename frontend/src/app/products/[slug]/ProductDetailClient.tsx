@@ -442,10 +442,10 @@ export default function ProductDetailClient({ product }: Props) {
                 </div>
               )}
               <div className="flex gap-2 mb-4">
-                <button type="button" onClick={() => toggleWish({ product_id: productId, slug: product.slug, name_en: product.name_en, name_bn: product.name_bn, price: product.price, image_url: product.image_url })} className={cn("btn btn-outline btn-sm", wished(productId) && "text-accent-500 border-accent-300")}>
+                <button type="button" onClick={() => toggleWish({ product_id: productId, slug: product.slug, name_en: product.name_en, name_bn: product.name_bn, price: product.price, image_url: product.image_url })} className={cn("btn btn-outline btn-sm", wished(productId) && "text-accent-500 border-accent-300")} aria-label={lang === "bn" ? (wished(productId) ? "পছন্দের তালিকা থেকে সরান" : "পছন্দের তালিকায় রাখুন") : (wished(productId) ? "Remove from wishlist" : "Add to wishlist")} aria-pressed={wished(productId)}>
                   <Heart className={cn("w-4 h-4", wished(productId) && "fill-current")} />
                 </button>
-                <button type="button" onClick={() => { addCompare(product); toast("info", lang === "bn" ? "তুলনায় যোগ হয়েছে" : "Added to compare"); }} disabled={compared(productId)} className="btn btn-outline btn-sm">
+                <button type="button" onClick={() => { addCompare(product); toast("info", lang === "bn" ? "তুলনায় যোগ হয়েছে" : "Added to compare"); }} disabled={compared(productId)} className="btn btn-outline btn-sm" aria-label={lang === "bn" ? "তুলনায় যোগ করুন" : "Add to compare"}>
                   <GitCompare className="w-4 h-4" />
                 </button>
                 <button type="button" onClick={handleShare} className="btn btn-outline btn-sm gap-1.5" aria-label={lang === "bn" ? "শেয়ার করুন" : "Share"}>

@@ -80,6 +80,7 @@ export default function BookPageClient({ serviceSlug, tierId, mode }: BookPageCl
   if (!service || error) {
     return (
       <div className="container mx-auto px-4 py-16 max-w-lg text-center">
+        <h1 className="text-2xl font-bold text-heading mb-2">{lang === "bn" ? "সেবা বুকিং" : "Book a Service"}</h1>
         <p className="text-muted mb-6">{error ?? (lang === "bn" ? "সেবা পাওয়া যায়নি।" : "Service not found.")}</p>
         <Link href="/services" className="btn btn-brand btn-md inline-flex items-center gap-2">
           <ArrowLeft className="w-4 h-4" />

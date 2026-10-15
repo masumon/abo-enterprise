@@ -16,6 +16,8 @@ export default function GlassCard({ children, className, hover = false, dark = f
     <div
       onClick={onClick}
       aria-hidden={ariaHidden}
+      // A hidden marquee clone must not be keyboard-focusable either (axe: aria-hidden-focus).
+      inert={ariaHidden || undefined}
       className={cn(
         "rounded-2xl transition-all duration-300 text-gray-900 dark:text-gray-100",
         dark ? "glass-dark" : "glass bg-white/80 dark:bg-[#141930]/90",

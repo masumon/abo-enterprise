@@ -32,23 +32,33 @@ def generate_order_number() -> str:
     return f"ABO-{now.year}{now.month:02d}-{secrets.token_hex(3).upper()}"
 
 
+async def _restore_stock(db: AsyncSession, order_id) -> None:
+    """Give back the stock an order reserved (used when it is cancelled automatically)."""
+    items = (await db.execute(select(OrderItem).where(OrderItem.order_id == order_id))).scalars().all()
+    for item in items:
+        if item.product_id:
+            product = (await db.execute(select(Product).where(Product.id == item.product_id))).scalar_one_or_none()
+            if product:
+                product.stock_quantity += item.quantity
+
+
 async def _validate_and_reserve_stock(db: AsyncSession, items: list) -> dict[str, float]:
     """Validate stock, decrement quantities, and return the SERVER-trusted
     unit price per line (keyed by list index) taken from the database.
 
-    Client-supplied prices are never trusted for the money math — only used
-    as a fallback for custom line items that have no matching product row.
+    Client-supplied prices are never trusted: every line must be a real,
+    active product (a line without a valid product id used to take the
+    client's price, so an API client could order anything for ৳1).
     """
     trusted_prices: dict[str, float] = {}
     for idx, item_data in enumerate(items):
-        if not item_data.product_id:
-            trusted_prices[str(idx)] = float(item_data.product_price)
-            continue
         try:
-            product_uuid = UUID(str(item_data.product_id))
+            product_uuid = UUID(str(item_data.product_id or ""))
         except (ValueError, TypeError):
-            trusted_prices[str(idx)] = float(item_data.product_price)
-            continue
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Invalid product in cart: {item_data.product_name}",
+            )
         result = await db.execute(
             select(Product)
             .where(
@@ -334,7 +344,9 @@ async def create_order(
     product_ids = [i.product_id for i in payload.items if i.product_id]
     if combo_free_delivery:
         trusted_delivery = 0.0
-    elif (payload.district or "").strip():
+    else:
+        # No district (non-browser API client): the empty district falls to the
+        # "outside" tier — the client's own delivery_charge is never trusted.
         max_product_charge = 0.0
         if product_ids:
             max_product_charge = float((await db.execute(
@@ -348,8 +360,6 @@ async def create_order(
             delivery_zones, _dsettings, payload.district, payload.upazila,
             product_subtotal - trusted_discount, max_product_charge,
         )
-    else:
-        trusted_delivery = max(0.0, float(payload.delivery_charge or 0))
     trusted_total = trusted_subtotal - trusted_discount + trusted_delivery
 
     # Advance / prepaid: if any ordered product is admin-flagged
@@ -518,9 +528,10 @@ async def create_order(
 
 
 # Public order tracking endpoint
-@router.get("/track", response_model=ApiResponse)
+@router.get("/track", response_model=ApiResponse, dependencies=[Depends(rate_limit("order_track", 30, 600))])
 async def track_order(
     number: str = Query(..., description="Order number e.g. ABO-202406-1234"),
+    phone: str = Query(default="", max_length=20, description="Customer phone (or its last 4+ digits)"),
     db: AsyncSession = Depends(get_db),
 ):
     result = await db.execute(
@@ -530,17 +541,20 @@ async def track_order(
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
-    return ApiResponse(data={
+    data = {
         "order_number": order.order_number,
         "order_status": order.order_status,
-        "payment_method": order.payment_method,
-        "payment_status": order.payment_status,
-        "total": float(order.total),
         "items_count": len(order.items),
         "created_at": order.created_at.isoformat(),
         "courier_provider": order.courier_provider,
         "courier_tracking_id": order.courier_tracking_id,
-    })
+    }
+    # Order numbers are guessable (ABO-YYYYMM-NNNN): amounts and payment details only
+    # for someone who also knows the customer's phone.
+    digits = "".join(ch for ch in phone if ch.isdigit())
+    if len(digits) >= 4 and "".join(ch for ch in (order.customer_phone or "") if ch.isdigit()).endswith(digits):
+        data.update(payment_method=order.payment_method, payment_status=order.payment_status, total=float(order.total))
+    return ApiResponse(data=data)
 
 
 @router.get("/by-phone", response_model=ApiResponse)
@@ -992,5 +1006,6 @@ async def steadfast_status_webhook(
         order.order_status = "delivered"
     elif courier_status in FAILED_STATUSES and order.order_status not in ("delivered", "cancelled"):
         order.order_status = "cancelled"
+        await _restore_stock(db, order.id)
     await db.commit()
     return ApiResponse(success=True, message="ok")

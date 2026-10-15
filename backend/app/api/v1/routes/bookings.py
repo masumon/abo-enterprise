@@ -135,7 +135,7 @@ async def update_booking_status(
     booking_id: UUID,
     payload: BookingStatusUpdate,
     db: AsyncSession = Depends(get_db),
-    _admin: str = Depends(require_role("bookings.read")),
+    _admin: str = Depends(require_role("bookings.write")),
 ):
     """Reject legacy mutations; BookingV2 is the canonical write path."""
     raise HTTPException(

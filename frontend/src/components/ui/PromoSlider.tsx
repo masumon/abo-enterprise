@@ -200,9 +200,9 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
             <SwiperSlide key={slide.id}>
               {(() => {
                 const { path, external } = resolveSlideLink(slide.link_url);
-                if (path) return <Link href={path} className="block">{body}</Link>;
+                if (path) return <Link href={path} className="block" aria-label={title || slide.alt_text || undefined}>{body}</Link>;
                 if (external) return (
-                  <a href={external} target="_blank" rel="noopener noreferrer" className="block">
+                  <a href={external} target="_blank" rel="noopener noreferrer" className="block" aria-label={title || slide.alt_text || undefined}>
                     {body}
                   </a>
                 );
