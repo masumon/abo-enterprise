@@ -1,13 +1,13 @@
 # Disaster Recovery Runbook — ABO Enterprise
 
 **Goal:** restore the full platform after data loss or provider failure.
-**RPO target:** ≤ 7 days (weekly dump) · **RTO target:** ≤ 4 hours.
+**RPO target:** ≤ 1 day (daily encrypted dump, Admin → ডাটাবেস Backup) · **RTO target:** ≤ 4 hours.
 
 ## What lives where
 
 | Asset | Location | Backup |
 |---|---|---|
-| Database (orders, customers, CMS) | Postgres (`DATABASE_URL` on Render) | Provider backups + weekly `pg_dump` artifact (GitHub Actions → repo → Actions → "Weekly DB Backup") |
+| Database (orders, customers, CMS) | Postgres (`DATABASE_URL` on Render) | Admin → **ডাটাবেস Backup** (`/sumon/backup`): daily + manual encrypted `pg_dump` to the owner's drives (Google Drive / OneDrive / Dropbox / S3 / WebDAV) or download to PC. Supabase free has no managed backups. GitHub Actions "Daily DB Backup" is an optional extra (needs a working GitHub billing account). |
 | Media (product/blog images) | Cloudinary | Managed by Cloudinary; URLs + metadata in `media_assets` table |
 | Code & schema | GitHub (`masumon/abo-enterprise`) | Git history; schema = `backend/migrations` + Alembic |
 | Backend infra config | `render.yaml` (IaC) | In repo; secret VALUES are not — keep an encrypted copy in a password manager |
@@ -15,14 +15,29 @@
 
 ## Restore: database
 
-1. Download the latest dump: GitHub → Actions → **Weekly DB Backup** → latest run → artifact.
-2. Create a fresh Postgres database (same provider or any Postgres 15+).
-3. Restore:
+**Always test first:** Admin → ডাটাবেস Backup → history → “যাচাই / Restore পরীক্ষা” restores into a separate
+test database (e.g. a second free Supabase project) and compares every table's row count. The system refuses
+the production database there.
+
+Real (production) restore — only with the owner's explicit decision, by hand:
+
+1. Get the newest verified `.abobak` file (from the drive's “ABO Backups”/Apps folder, or the PC download).
+2. Decrypt it offline (needs only the file + Backup password):
    ```bash
-   pg_restore --no-owner --no-privileges -d "postgresql://USER:PASS@HOST/DBNAME" abo-db-YYYYMMDD.dump
+   cd backend && python scripts/decrypt_backup.py abo-db-YYYY-MM-DD_HHMM-auto.abobak
    ```
-4. If restoring schema-only from scratch instead: set `DATABASE_URL`, then run `alembic upgrade head` from `backend/`.
-5. Point Render env `DATABASE_URL` at the new database → **Manual Deploy**.
+   It must print “dump checksum matches”.
+3. Take one more fresh backup of the current database first (Admin → “এখনই Backup নিন”), if it is still reachable.
+4. Restore into a fresh/empty database (same provider or any Postgres of the same major version, use the
+   Supabase **session pooler, port 5432**):
+   ```bash
+   pg_restore --no-owner --no-privileges --clean --if-exists -d "postgresql://USER:PASS@HOST:5432/postgres" abo-db-….dump
+   ```
+5. Point Render env `DATABASE_URL` at the restored database → **Manual Deploy** → run the checks below.
+
+Limits: the dump covers the app's `public` schema (all app tables). Supabase-internal schemas (auth, storage)
+are not used by this app. Single tables can be restored with `pg_restore -t <table>`, but foreign keys
+(orders → customers, items → orders) mean related tables usually have to come back together.
 
 ## Restore: services
 

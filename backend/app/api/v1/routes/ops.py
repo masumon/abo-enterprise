@@ -203,11 +203,15 @@ async def system_health(
         checks["storage"] = {"ok": False, "error": str(exc)[:200]}
 
     # Cron/backup — the scheduled dump runs in GitHub Actions (external)
-    checks["backup_cron"] = {
-        "ok": True,
-        "note": "Weekly pg_dump runs in GitHub Actions (repo → Actions → Weekly DB Backup). Requires BACKUP_DATABASE_URL secret.",
-        "external": True,
-    }
+    # Real status from Admin → Backup run history (only a verified cloud copy counts).
+    try:
+        from app.core.backup import engine as backup_engine, store as backup_store
+
+        _bh = backup_engine.health(await backup_store.get_config(db), await backup_store.get_history(db))
+        checks["backup_cron"] = {"ok": _bh["ok"], "note": _bh["message_bn"],
+                                 "last_success_at": _bh["last_success_at"], "external": False}
+    except Exception as exc:  # noqa: BLE001
+        checks["backup_cron"] = {"ok": False, "error": f"backup status unavailable: {exc}"[:200]}
 
     healthy = sum(1 for c in checks.values() if c.get("ok"))
     return {"success": True, "data": {"checks": checks, "healthy": healthy, "total": len(checks)}}
@@ -423,7 +427,7 @@ async def backup_export(
     payload: dict = {"exported_at": datetime.now(timezone.utc).isoformat(), "version": 1}
     for name, model in _EXPORT_TABLES.items():
         rows = (await db.execute(select(model))).scalars().all()
-        payload[name] = [_row_to_dict(r) for r in rows]
+        payload[name] = [_row_to_dict(r) for r in rows if not (name == "settings" and r.key.startswith("backup."))]
 
     from uuid import UUID as _UUID
     db.add(ActivityLog(admin_id=_UUID(admin_id), action="backup_export", entity_type="ops",
@@ -460,7 +464,7 @@ async def backup_restore_settings(
     to_update, to_create = [], []
     for row in rows:
         key = row.get("key")
-        if not key:
+        if not key or str(key).startswith("backup."):  # backup keys/drives are managed only in Admin → Backup
             continue
         value = row.get("value")
         if key in existing:

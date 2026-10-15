@@ -208,7 +208,7 @@ export default function OperationsPanel() {
                   {key === "database" && c.ok ? `${String(c.latency_ms)}ms latency` : null}
                   {key === "storage" && c.ok ? `DB ${String(c.database_mb)}MB · Media ${String(c.media_files)} files (${String(c.media_mb)}MB)` : null}
                   {key === "cache" && c.ok ? `${String(c.ga4_cached_reports)} GA4 reports cached` : null}
-                  {key === "backup_cron" ? "Weekly (GitHub Actions)" : null}
+                  {key === "backup_cron" ? "Admin → Backup" : null}
                   {key === "smtp" && c.ok ? String(c.email || c.host || "connected") : null}
                   {(key === "cloudinary" || key === "ga4" || key === "sentry") && c.ok ? "Connected" : null}
                   {!c.ok ? String(c.error ?? "Unavailable") : null}
@@ -296,15 +296,15 @@ export default function OperationsPanel() {
       <Card title="Backup & Restore" icon={Database}>
         <div className="grid md:grid-cols-3 gap-4 text-xs">
           <div className="rounded-lg border border-gray-100 p-4">
-            <p className="font-semibold text-gray-800 mb-1 flex items-center gap-1.5"><HardDrive className="w-3.5 h-3.5" /> Full Database (Scheduled)</p>
-            <p className="text-gray-500 leading-relaxed mb-2">প্রতি শুক্রবার GitHub Actions-এ সম্পূর্ণ pg_dump (৩০ দিন সংরক্ষিত)।</p>
-            <a href="https://github.com/masumon/abo-enterprise/actions/workflows/db-backup.yml" target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline font-medium">
-              Backup History (GitHub) →
+            <p className="font-semibold text-gray-800 mb-1 flex items-center gap-1.5"><HardDrive className="w-3.5 h-3.5" /> পূর্ণ ডাটাবেস Backup</p>
+            <p className="text-gray-500 leading-relaxed mb-2">অর্ডার, কাস্টমার, বুকিংসহ সব টেবিল — আপনার ড্রাইভে স্বয়ংক্রিয়/ম্যানুয়াল বা কম্পিউটারে, এনক্রিপ্ট করা ও যাচাই করা।</p>
+            <a href="/sumon/backup" className="text-brand-600 hover:underline font-medium">
+              Backup খুলুন →
             </a>
           </div>
           <div className="rounded-lg border border-gray-100 p-4">
-            <p className="font-semibold text-gray-800 mb-1 flex items-center gap-1.5"><Download className="w-3.5 h-3.5" /> Manual Content Backup</p>
-            <p className="text-gray-500 leading-relaxed mb-2">সেটিংস + পণ্য + সেবা — JSON ফাইলে এখনই ডাউনলোড।</p>
+            <p className="font-semibold text-gray-800 mb-1 flex items-center gap-1.5"><Download className="w-3.5 h-3.5" /> কনটেন্ট এক্সপোর্ট (পূর্ণ backup নয়)</p>
+            <p className="text-gray-500 leading-relaxed mb-2">শুধু সেটিংস + পণ্য + সেবা — JSON ফাইল। অর্ডার/কাস্টমার এতে নেই; পূর্ণ backup-এর জন্য উপরের Backup ব্যবহার করুন।</p>
             <button type="button" onClick={exportBackup} disabled={exporting} className="btn btn-brand btn-sm inline-flex items-center gap-1.5">
               {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Download Backup
             </button>
