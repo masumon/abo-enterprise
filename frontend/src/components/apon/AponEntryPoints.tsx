@@ -6,7 +6,7 @@ import { ArrowRight, Download, Smartphone } from "lucide-react";
 import { useAponInfo } from "@/hooks/useAponInfo";
 import { useLanguageStore } from "@/store/language";
 import { getSettingValue } from "@/lib/settingValue";
-import { aponText, DEFAULT_NAME, DEFAULT_TAGLINE } from "@/lib/apon";
+import { aponText, DEFAULT_NAME, DEFAULT_TAGLINE, flag } from "@/lib/apon";
 
 /**
  * Small, self-hiding doors to the /apon page. Each one renders nothing unless the admin has
@@ -41,10 +41,18 @@ export function useAponDrawerRow() {
 }
 
 /** Slim promo band for the homepage. */
-export function AponHomeBand() {
-  const { visible, settings } = useAponInfo();
+export function AponHomeBand({ initialEnabled, initialSettings }: {
+  initialEnabled?: boolean; initialSettings?: Record<string, string>;
+} = {}) {
+  const live = useAponInfo();
   const { lang } = useLanguageStore();
-  if (!visible("home")) return null;
+  // The server already knows whether the card shows, so the first paint matches the final
+  // one (no layout jump); the live hook takes over once it has loaded.
+  const settings = Object.keys(live.settings ?? {}).length ? live.settings : (initialSettings ?? live.settings);
+  const show = live.loading && initialEnabled !== undefined
+    ? initialEnabled && flag(settings, "apon_show_home", true)
+    : live.visible("home");
+  if (!show) return null;
   const bn = lang === "bn";
   const name = aponText(settings, "apon_name", DEFAULT_NAME, bn);
   const tagline = aponText(settings, "apon_tagline", DEFAULT_TAGLINE, bn);

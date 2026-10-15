@@ -2,6 +2,18 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 import type { PromoSlide } from "@/types";
 
 /** Server-side public settings (short-lived cache). */
+/** Whether the Apon app has a published build (server side, so the home card never "jumps in"). */
+export async function fetchAponEnabled(): Promise<boolean> {
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/v1/app/info`, { next: { revalidate: 60 }, signal: AbortSignal.timeout(4000) });
+    if (!res.ok) return false;
+    const json = await res.json();
+    return !!json?.data?.enabled;
+  } catch {
+    return false;
+  }
+}
+
 export async function fetchPublicSettings(): Promise<Record<string, string>> {
   try {
     const res = await fetch(`${getApiBaseUrl()}/api/v1/settings`, {

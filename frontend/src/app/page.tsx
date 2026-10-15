@@ -16,7 +16,7 @@ import ReviewStatsCard from "@/components/home/ReviewStatsCard";
 import Reveal from "@/components/ui/Reveal";
 import { SITE_URL, DEFAULT_OG_IMAGE, getBrandFullTitle } from "@/lib/tokens";
 import { jsonLdString } from "@/lib/metadata";
-import { fetchPublicSettings, fetchPromoSlides, fetchCombos, fetchFlashProducts, settingValue } from "@/lib/serverSettings";
+import { fetchPublicSettings, fetchPromoSlides, fetchCombos, fetchFlashProducts, fetchAponEnabled, settingValue } from "@/lib/serverSettings";
 import { cloudinarySrcSet, HERO_BG_WIDTHS, PROMO_WIDTHS } from "@/lib/responsiveMediaUrl";
 import { isVideoUrl } from "@/lib/media";
 import { getLegacyHomeLaneTarget } from "@/lib/legacyHomeLane";
@@ -157,8 +157,8 @@ export default async function HomePage(
   const legacyTarget = getLegacyHomeLaneTarget(legacyLane);
   if (legacyTarget) redirect(legacyTarget);
 
-  const [settings, heroSlides, initialCombos, initialFlash] = await Promise.all([
-    fetchPublicSettings(), fetchPromoSlides("hero"), fetchCombos<Combo>(), fetchFlashProducts<Product>(),
+  const [settings, heroSlides, initialCombos, initialFlash, aponEnabled] = await Promise.all([
+    fetchPublicSettings(), fetchPromoSlides("hero"), fetchCombos<Combo>(), fetchFlashProducts<Product>(), fetchAponEnabled(),
   ]);
   // Preload the LCP image per breakpoint so the fetch starts with the HTML:
   // ≥1024px the desktop hero background, <1024px the first promo slide (the
@@ -217,7 +217,7 @@ export default async function HomePage(
       <FeatureIconsRow />
 
       {/* Apon app promo — renders nothing until the admin publishes the app */}
-      <AponHomeBand />
+      <AponHomeBand initialEnabled={aponEnabled} initialSettings={settings} />
 
       {/* Flash Sale Section */}
       <FlashSaleSection initialSettings={Object.keys(settings).length ? settings : null} initialProducts={initialFlash} />
