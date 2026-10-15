@@ -6,23 +6,26 @@ import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import AnnouncementBar from "@/components/layout/AnnouncementBar";
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
-import CartDrawer from "@/components/features/CartDrawer";
-import AssistantWidget from "@/components/ui/AssistantWidget";
-import CompareBar from "@/components/ui/CompareBar";
 import ToastProvider from "@/components/ui/ToastProvider";
-import BackToTop from "@/components/ui/BackToTop";
-import CookieConsent from "@/components/ui/CookieConsent";
 import SkipToContent from "@/components/ui/SkipToContent";
-import StickyCTA from "@/components/ui/StickyCTA";
 import DelayedMount from "@/components/ui/DelayedMount";
 import FacebookPixel from "@/components/analytics/FacebookPixel";
 import GoogleTagManager from "@/components/analytics/GoogleTagManager";
 import GscVerification from "@/components/analytics/GscVerification";
-import ScrollProgress from "@/components/ui/ScrollProgress";
 import HtmlLangSync from "@/components/ui/HtmlLangSync";
 import DynamicFavicon from "@/components/ui/DynamicFavicon";
 import { offlineSync } from "@/lib/offlineSync";
-import OfflineSubmissionBadge from "@/components/network/OfflineSubmissionBadge";
+import dynamic from "next/dynamic";
+
+// Not needed for the first paint — loaded after it so phones get a smaller first bundle.
+const CartDrawer = dynamic(() => import("@/components/features/CartDrawer"), { ssr: false });
+const AssistantWidget = dynamic(() => import("@/components/ui/AssistantWidget"), { ssr: false });
+const CompareBar = dynamic(() => import("@/components/ui/CompareBar"), { ssr: false });
+const BackToTop = dynamic(() => import("@/components/ui/BackToTop"), { ssr: false });
+const CookieConsent = dynamic(() => import("@/components/ui/CookieConsent"), { ssr: false });
+const StickyCTA = dynamic(() => import("@/components/ui/StickyCTA"), { ssr: false });
+const ScrollProgress = dynamic(() => import("@/components/ui/ScrollProgress"), { ssr: false });
+const OfflineSubmissionBadge = dynamic(() => import("@/components/network/OfflineSubmissionBadge"), { ssr: false });
 
 export default function PublicShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
