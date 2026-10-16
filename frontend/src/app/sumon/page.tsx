@@ -141,7 +141,7 @@ export default function AdminDashboard() {
       </div>}
 
       <section>
-        <div className="flex items-center gap-2 mb-3"><Clock className="w-4 h-4 text-gray-400" /><h2 className="text-sm font-semibold text-gray-700">{bn ? "এখন মনোযোগ দরকার" : "Needs attention"}</h2></div>
+        <div className="flex items-center gap-2 mb-3"><Clock className="w-4 h-4 text-sky-500" /><h2 className="text-sm font-semibold text-gray-700">{bn ? "এখন মনোযোগ দরকার" : "Needs attention"}</h2></div>
         <div className="admin-pair-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <Link href="/sumon/orders" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "অপেক্ষমান অর্ডার" : "Pending orders"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.pending_orders ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "অর্ডার দেখুন →" : "Review orders →"}</p></Link>
           <Link href="/sumon/bookings" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "অপেক্ষমান বুকিং" : "Pending bookings"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.pending_bookings ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "বুকিং দেখুন →" : "Review bookings →"}</p></Link>
@@ -170,14 +170,14 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         <div className="admin-card lg:col-span-2">
-          <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-gray-100"><h2 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base"><Clock className="w-4 h-4 text-gray-400" />{bn ? "সাম্প্রতিক অর্ডার" : "Recent Orders"}</h2><Link href="/sumon/orders" className="text-xs text-brand-600 hover:underline font-medium">{bn ? "সব দেখুন" : "View all"} →</Link></div>
+          <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-gray-100"><h2 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base"><Clock className="w-4 h-4 text-sky-500" />{bn ? "সাম্প্রতিক অর্ডার" : "Recent Orders"}</h2><Link href="/sumon/orders" className="text-xs text-brand-600 hover:underline font-medium">{bn ? "সব দেখুন" : "View all"} →</Link></div>
           <div className="divide-y divide-gray-50">
             {loading ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="px-5 py-3 flex gap-3"><div className="flex-1 h-4 bg-gray-100 rounded animate-pulse" /></div>) : stats?.recent_orders?.length === 0 ? <p className="px-5 py-10 text-center text-gray-400 text-sm">{bn ? "এখনও কোনো অর্ডার নেই" : "No orders yet"}</p> : stats?.recent_orders?.map((order) => <Link key={order.id} href={`/sumon/orders?open=${order.id}`} className="px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-gray-50/80 transition-colors"><div className="min-w-0"><p className="text-sm font-medium text-gray-900 truncate">{order.customer_name}</p><p className="text-xs text-gray-400">{order.order_number}</p></div><div className="text-right shrink-0"><p className="text-sm font-semibold text-gray-900">{formatPrice(order.total)}</p><StatusBadge status={order.order_status} /></div></Link>)}
           </div>
         </div>
 
         <div className="admin-card">
-          <div className="px-4 sm:px-5 py-4 border-b border-gray-100"><h2 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base"><BarChart3 className="w-4 h-4 text-gray-400" />{bn ? "ব্যবসার পালস" : "Business pulse"}</h2></div>
+          <div className="px-4 sm:px-5 py-4 border-b border-gray-100"><h2 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base"><BarChart3 className="w-4 h-4 text-brand-500" />{bn ? "ব্যবসার পালস" : "Business pulse"}</h2></div>
           <div className="p-4 sm:p-5 space-y-4">
             <Link href="/sumon/leads" className="admin-link-row block rounded-xl -mx-2 px-2 py-1"><p className="text-xs text-gray-500">{bn ? "লিড → জয় রূপান্তর" : "Lead → won conversion"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{conversionRate == null ? "—" : `${conversionRate}%`}</p></Link>
             <Link href="/sumon/leads" className="admin-link-row block rounded-xl -mx-2 px-2 py-1"><p className="text-xs text-gray-500">{bn ? "৩০ দিনে লিড" : "Leads in 30d"}</p><p className="text-lg font-semibold text-gray-900 mt-1">{analytics?.counts?.leads ?? "—"}</p></Link>
@@ -190,7 +190,7 @@ export default function AdminDashboard() {
       <DashboardOperationsPanel />
 
       <div className="admin-card">
-        <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-gray-100"><h2 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base"><TrendingUp className="w-4 h-4 text-gray-400" />{bn ? "সাম্প্রতিক লিড" : "Recent Leads"}</h2><Link href="/sumon/leads" className="text-xs text-brand-600 hover:underline font-medium">{bn ? "সব দেখুন" : "View all"} →</Link></div>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-gray-100"><h2 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base"><TrendingUp className="w-4 h-4 text-emerald-500" />{bn ? "সাম্প্রতিক লিড" : "Recent Leads"}</h2><Link href="/sumon/leads" className="text-xs text-brand-600 hover:underline font-medium">{bn ? "সব দেখুন" : "View all"} →</Link></div>
         <div className="divide-y divide-gray-50 grid grid-cols-1 md:grid-cols-2">
           {loading ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="px-5 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></div>) : stats?.recent_leads?.length === 0 ? <p className="px-5 py-10 text-center text-gray-400 text-sm md:col-span-2">{bn ? "এখনও কোনো লিড নেই" : "No leads yet"}</p> : stats?.recent_leads?.map((lead) => <Link key={lead.id} href={`/sumon/leads?open=${lead.id}`} className="px-4 sm:px-5 py-3 flex items-center justify-between gap-3 hover:bg-gray-50/80 transition-colors"><div className="min-w-0"><p className="text-sm font-medium text-gray-900 truncate">{lead.name}</p><p className="text-xs text-gray-400 truncate">{lead.phone} · {lead.lead_type.replace(/_/g, " ")}</p></div><StatusBadge status={lead.status} /></Link>)}
         </div>

@@ -182,7 +182,7 @@ export default function DashboardOperationsPanel() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="admin-card lg:col-span-2">
           <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><Clock className="w-4 h-4 text-gray-400" />{bn ? "মনোযোগ প্রয়োজন" : "Needs attention"}</h3>
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><Clock className="w-4 h-4 text-sky-500" />{bn ? "মনোযোগ প্রয়োজন" : "Needs attention"}</h3>
             <Link href="/sumon/analytics" className="text-xs text-brand-600 hover:underline">{bn ? "বিস্তারিত →" : "Details →"}</Link>
           </div>
           <div className="divide-y divide-gray-50">
@@ -201,7 +201,7 @@ export default function DashboardOperationsPanel() {
 
         <div className="admin-card">
           <div className="px-4 sm:px-5 py-4 border-b border-gray-100">
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><BarChart3 className="w-4 h-4 text-gray-400" aria-hidden="true" />{bn ? "শীর্ষ সার্ভিস (৭ দিন)" : "Top services · 7d"}</h3>
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><BarChart3 className="w-4 h-4 text-brand-500" aria-hidden="true" />{bn ? "শীর্ষ সার্ভিস (৭ দিন)" : "Top services · 7d"}</h3>
           </div>
           <div className="divide-y divide-gray-50">
             {last7d === null ? (
@@ -218,7 +218,7 @@ export default function DashboardOperationsPanel() {
 
       <div className="admin-card">
         <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><Activity className="w-4 h-4 text-gray-400" aria-hidden="true" />{bn ? "সিস্টেম হেলথ" : "System health"}</h3>
+          <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><Activity className="w-4 h-4 text-emerald-500" aria-hidden="true" />{bn ? "সিস্টেম হেলথ" : "System health"}</h3>
           <Link href="/sumon/analytics" className="text-xs text-brand-600 hover:underline">{bn ? "মনিটরিং →" : "Monitoring →"}</Link>
         </div>
         <div className="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -228,9 +228,11 @@ export default function DashboardOperationsPanel() {
             if (health && !c) return null;
             const bad = !!c && !c.ok && !c.skipped;
             return (
-              <Link key={k} href={`/sumon/system-health#${k}`} className={`rounded-lg border p-3 min-h-11 ${bad ? "border-red-300 bg-red-50/60" : "border-gray-100"}`}>
+              <Link key={k} href={`/sumon/system-health#${k}`} className={`rounded-lg border p-3 min-h-11 ${bad ? "border-red-300 bg-red-50/60" : c?.ok && !c.skipped ? "border-emerald-200 bg-emerald-50/40" : "border-gray-100"}`}>
                 <p className="text-xs text-gray-500">{label}</p>
-                <p className={`text-lg font-bold mt-1 ${bad ? "text-red-600" : c?.skipped ? "text-gray-400" : "text-gray-900"}`}>{!c ? "—" : c.skipped ? (bn ? "বাদ" : "Skip") : c.ok ? "✓" : "✗"}</p>
+                <p className="mt-1 h-7 flex items-center">
+                  {!c ? <span className="text-lg font-bold text-gray-400">—</span> : c.skipped ? <span className="text-sm font-semibold text-gray-400">{bn ? "বাদ" : "Skip"}</span> : c.ok ? <CheckCircle2 className="w-7 h-7 text-emerald-500" aria-label={bn ? "ঠিক আছে" : "OK"} /> : <XCircle className="w-6 h-6 text-red-500" aria-label={bn ? "সমস্যা" : "Failed"} />}
+                </p>
               </Link>
             );
           })}
