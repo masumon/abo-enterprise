@@ -13,16 +13,22 @@ import AdminCommandPalette from "@/components/admin/AdminCommandPalette";
 import ToastProvider from "@/components/ui/ToastProvider";
 import DynamicFavicon from "@/components/ui/DynamicFavicon";
 import { Loader2 } from "lucide-react";
+import { useLanguageStore } from "@/store/language";
 
 export default function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, loading, logout } = useAdmin(pathname !== "/sumon/login");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dark, setDark] = useState(false);
+  const lang = useLanguageStore((s) => s.lang);
 
   useEffect(() => {
     setDark(localStorage.getItem("abo_admin_theme") === "dark");
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = lang === "bn" ? "bn" : "en";
+  }, [lang]);
 
   // The admin PWA manifest is now server-rendered for /sumon routes (see the
   // server layout's `metadata.manifest`), so it is the ONLY manifest Chrome
@@ -34,9 +40,9 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
   // Per-page browser tab title — every admin page used to share the site title.
   useEffect(() => {
     if (pathname !== "/sumon/login") {
-      document.title = `${getAdminPageTitle(pathname)} · ABO Admin`;
+      document.title = `${getAdminPageTitle(pathname, lang)} · ABO Admin`;
     }
-  }, [pathname]);
+  }, [pathname, lang]);
 
   const toggleTheme = () => {
     setDark((d) => {
@@ -55,7 +61,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
       <div className="min-h-screen admin-auth-loading flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-8 h-8 text-brand-500 animate-spin mx-auto mb-3" />
-          <p className="text-gray-400 text-sm">যাচাই করছি…</p>
+          <p className="text-gray-400 text-sm">{lang === "bn" ? "যাচাই করছি…" : "Verifying…"}</p>
         </div>
       </div>
     );
@@ -68,7 +74,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
         <button
           type="button"
           className="fixed inset-0 z-30 bg-black/50 lg:hidden backdrop-blur-sm"
-          aria-label="Close sidebar"
+          aria-label={lang === "bn" ? "সাইডবার বন্ধ করুন" : "Close sidebar"}
           onClick={() => setSidebarOpen(false)}
         />
       )}
