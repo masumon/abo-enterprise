@@ -127,7 +127,7 @@ const HERO_SCRIM = "linear-gradient(90deg, rgba(12,17,38,0.86) 0%, rgba(12,17,38
 
 function Media({ url, className }: { url: string; className?: string }) {
   if (isVideoUrl(url)) return <AutoVideo src={url} className={className} aria-hidden />;
-  // eslint-disable-next-line @next/next/no-img-element -- admin preview of an arbitrary uploaded URL
+   
   return <img src={url} alt="" className={className} />;
 }
 

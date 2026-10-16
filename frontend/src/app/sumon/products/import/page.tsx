@@ -454,7 +454,7 @@ export default function AdminProductImportPage() {
                         {(r.images ?? []).slice(0, 3).map((n) => {
                           const src = thumbs.get(imgKey(n));
                           return src
-                            // eslint-disable-next-line @next/next/no-img-element
+                             
                             ? <img key={n} src={src} alt={n} title={n} className="w-9 h-9 rounded-md object-cover border border-[var(--line)]" />
                             : <span key={n} title={`${n} — পাওয়া যায়নি`} className="w-9 h-9 rounded-md border border-dashed border-red-300 text-red-400 flex items-center justify-center text-[10px]">?</span>;
                         })}

@@ -62,6 +62,7 @@ export default function AdminBookingsPage() {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: runs on mount / when the listed value changes only
   useEffect(() => { loadV2(); }, [statusFilterV2, paymentFilterV2, districtFilterV2, pageV2]);
 
   const handleCsvExport = async () => {

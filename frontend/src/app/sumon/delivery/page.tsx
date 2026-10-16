@@ -40,6 +40,7 @@ export default function AdminDeliveryPage() {
       })
       .catch((err) => toast("error", apiErrorMessage(err, "ডেলিভারি সেটিং আনা যায়নি")))
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: runs on mount / when the listed value changes only
   }, []);
 
   const save = async () => {

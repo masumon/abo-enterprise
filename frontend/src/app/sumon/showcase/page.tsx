@@ -186,7 +186,7 @@ export default function AdminShowcasePage() {
   }, [loading]);
 
   const thumb = (src?: string) => src
-    // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail
+     
     ? <img src={src} alt="" className="w-16 h-12 sm:w-20 sm:h-14 rounded-lg object-cover border border-[var(--line)] flex-shrink-0" />
     : <div className="w-16 h-12 sm:w-20 sm:h-14 rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center flex-shrink-0"><FolderKanban className="w-5 h-5 text-gray-400" /></div>;
   const iconBtn = "p-1.5 rounded-lg text-gray-400 hover:text-brand-600 hover:bg-brand-50 dark:hover:bg-white/10";
@@ -372,7 +372,7 @@ function ShowcaseEditor({ editor, projects, services, saving, onClose, onSave, o
             {p.videoUrl && isVideoUrl(p.videoUrl) && !/youtu|vimeo/i.test(p.videoUrl) ? (
               <AutoVideo src={p.videoUrl} poster={p.image || undefined} className="absolute inset-0 w-full h-full object-cover" />
             ) : p.image ? (
-              // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+               
               <img src={p.image} alt="" className="absolute inset-0 w-full h-full object-cover" />
             ) : null}
             {p.videoUrl && <span className="absolute top-2 right-2 text-[10px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full">▶ ভিডিও</span>}
@@ -391,7 +391,7 @@ function ShowcaseEditor({ editor, projects, services, saving, onClose, onSave, o
         <article className="enterprise-card overflow-hidden">
           <div className={cn("h-2 bg-gradient-to-r", s.color)} />
           {s.image && (
-            // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+             
             <img src={s.image} alt="" className="w-full aspect-video object-cover" />
           )}
           <div className="p-4">

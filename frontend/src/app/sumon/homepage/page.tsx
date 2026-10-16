@@ -193,6 +193,7 @@ export default function AdminHomepageContentPage() {
     promoSlidesApi.adminList()
       .then((r) => setSlides(r.data.data ?? []))
       .catch(() => setSlides([]));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: runs on mount / when the listed value changes only
   }, []);
 
   // Warn before leaving the page with unsaved edits.
@@ -374,7 +375,7 @@ export default function AdminHomepageContentPage() {
             <div key={sl.id} className="w-32 flex-none">
               <div className="aspect-video rounded-lg overflow-hidden bg-gray-100 dark:bg-white/10 flex items-center justify-center">
                 {sl.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail
+                   
                   <img src={sl.image_url} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <span className="text-[10px] text-muted">{bn ? "ভিডিও" : "Video"}</span>
@@ -552,7 +553,7 @@ export default function AdminHomepageContentPage() {
             <LivePreview showDevice={false} defaultDevice="desktop" className="mb-4" titleBn={bn ? "ডেস্কটপ হিরো — যেমন দেখাবে" : "Desktop hero — as it will look"}>
               <div className="pointer-events-none relative rounded-xl overflow-hidden gradient-hero aspect-[16/9] sm:aspect-[16/7] max-h-[420px] w-full">
                 {heroDesktop && !isVideoUrl(heroDesktop) && (
-                  // eslint-disable-next-line @next/next/no-img-element -- admin preview
+                   
                   <img src={heroDesktop} alt="" className="absolute inset-0 w-full h-full object-cover" />
                 )}
                 <div
@@ -580,7 +581,7 @@ export default function AdminHomepageContentPage() {
                   <div className="absolute right-[4%] top-1/2 -translate-y-1/2 w-[28%] space-y-2">
                     <div className="aspect-video rounded-lg bg-white/15 border border-white/30 overflow-hidden">
                       {heroPromo && !isVideoUrl(heroPromo) && (
-                        // eslint-disable-next-line @next/next/no-img-element -- admin preview
+                         
                         <img src={heroPromo} alt="" className="w-full h-full object-cover" />
                       )}
                     </div>

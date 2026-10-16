@@ -557,7 +557,7 @@ export default function AdminReviewsPage() {
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center overflow-hidden flex-shrink-0">
                         {draft.photo_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+                           
                           <img src={draft.photo_url} alt="" className="w-full h-full object-cover" />
                         ) : (
                           <span className="text-brand-700 font-bold text-sm">{(draft.customer_name || "?").charAt(0)}</span>

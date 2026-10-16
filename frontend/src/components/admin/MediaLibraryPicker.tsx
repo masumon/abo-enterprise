@@ -20,7 +20,7 @@ interface Props {
 
 function Thumb({ url, className }: { url: string; className?: string }) {
   if (isVideoUrl(url)) return <AutoVideo src={url} className={className} />;
-  // eslint-disable-next-line @next/next/no-img-element -- remote Cloudinary thumbnail
+   
   return <img src={url} alt="" className={className} />;
 }
 

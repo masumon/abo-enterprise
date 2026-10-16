@@ -1571,6 +1571,6 @@ export default function AdminServicesPage() {
 function ServiceThumb({ src, small }: { src?: string | null; small?: boolean }) {
   const box = small ? "w-10 h-10" : "w-16 h-16";
   if (!src) return <div className={`${box} rounded-lg bg-gray-100 dark:bg-white/10 flex items-center justify-center flex-shrink-0`}><Briefcase className="w-4 h-4 text-gray-400" /></div>;
-  // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail from any upload host
+   
   return <img src={src} alt="" className={`${box} rounded-lg object-cover border border-gray-100 dark:border-white/10 flex-shrink-0`} />;
 }

@@ -71,7 +71,7 @@ export default function SearchSuggestions({ query, onSelect, className, listboxI
               >
                 <span className="w-9 h-9 flex-shrink-0 rounded-lg bg-brand-50 dark:bg-brand-500/10 overflow-hidden flex items-center justify-center">
                   {item.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- small dropdown thumbnail, next/image overhead not worth it here
+                     
                     <img src={item.image_url} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <Package className="w-4 h-4 text-brand-500" />

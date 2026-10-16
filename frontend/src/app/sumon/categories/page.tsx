@@ -784,7 +784,7 @@ export default function AdminCategoriesPage() {
               <div className="enterprise-card p-4 text-center">
                 <div className="admin-category-badge-gradient w-14 h-14 mx-auto mb-3 rounded-2xl grid place-items-center text-white text-2xl overflow-hidden">
                   {form.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+                     
                     <img src={form.image_url} alt="" className="w-full h-full object-cover" />
                   ) : form.icon && [...form.icon].length <= 2 ? (
                     form.icon

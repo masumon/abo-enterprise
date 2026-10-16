@@ -219,7 +219,7 @@ export default function ImageUpload({
               {pending.file.type.startsWith("video/") ? (
                 <AutoVideo src={pending.previewUrl} className="absolute inset-0 w-full h-full object-cover" />
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element -- local object URL preview
+                 
                 <img src={pending.previewUrl} alt="Upload preview" className="absolute inset-0 w-full h-full object-cover" />
               )}
             </div>

@@ -179,7 +179,7 @@ export default function AiPhotoProductsModal({ open, onClose, categoryOptions, o
             <div className="flex flex-wrap gap-2">
               {previews.map((src, i) => (
                 <div key={src} className="relative w-20 h-20 rounded-xl overflow-hidden border border-[var(--line)]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  { }
                   <img src={src} alt={`ছবি ${i + 1}`} className="w-full h-full object-cover" />
                   <span className="absolute bottom-0 left-0 text-[10px] bg-black/60 text-white px-1 rounded-tr">{i + 1}</span>
                   <button type="button" aria-label="ছবি সরান" onClick={() => { setFiles((f) => f.filter((_, j) => j !== i)); setRows([]); }}
@@ -230,7 +230,7 @@ export default function AiPhotoProductsModal({ open, onClose, categoryOptions, o
                     <input type="checkbox" checked={r.include} disabled={r.status === "saved"} onChange={(e) => patch(r.key, { include: e.target.checked })} className="mt-1 rounded" aria-label="এই পণ্য সেভ করুন" />
                     <div className="flex gap-1 flex-wrap">
                       {r.image_indexes.map((i) => previews[i] && (
-                        // eslint-disable-next-line @next/next/no-img-element
+                         
                         <img key={i} src={previews[i]} alt="" className="w-12 h-12 rounded-lg object-cover border border-[var(--line)]" />
                       ))}
                     </div>

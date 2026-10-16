@@ -564,7 +564,7 @@ export default function AdminBlogPage() {
                   <article className="enterprise-card overflow-hidden max-w-sm mx-auto">
                     <div className="relative aspect-video bg-brand-50 dark:bg-white/5">
                       {editing.featured_image_url && (
-                        // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+                         
                         <img src={editing.featured_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
                       )}
                     </div>

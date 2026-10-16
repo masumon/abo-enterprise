@@ -79,7 +79,7 @@ export default function PageHero({
       )}
     >
       {hasImage && !isVideo && (
-        <picture className="absolute inset-0 block" aria-hidden="true">
+        <picture className="absolute inset-0 block">
           <source
             media="(max-width: 767px)"
             srcSet={responsiveMediaUrl(resolvedImage!, "page-banner", "mobile")}

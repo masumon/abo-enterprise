@@ -77,7 +77,7 @@ function Anchor({ href, children }: { href: string; children: ReactNode }) {
 function Img({ src, alt }: { src: string; alt: string }) {
   return (
     <a href={src} target="_blank" rel="noopener noreferrer" className="block my-2">
-      {/* eslint-disable-next-line @next/next/no-img-element -- admin-supplied URL of any host */}
+      { }
       <img src={src} alt={alt} loading="lazy" decoding="async" className="max-w-full max-h-96 rounded-xl border border-gray-200 dark:border-white/10 object-contain bg-white" />
     </a>
   );

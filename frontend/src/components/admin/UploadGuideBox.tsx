@@ -32,7 +32,7 @@ export function GuidePreviewFrame({ guide, src }: { guide: UploadGuide; src?: st
           isVideoUrl(src) ? (
             <video src={src} muted playsInline className={cn("absolute inset-0 w-full h-full", guide.fit === "contain" ? "object-contain" : "object-cover")} />
           ) : (
-            // eslint-disable-next-line @next/next/no-img-element -- tiny admin preview, any origin
+             
             <img src={src} alt="" className={cn("absolute inset-0 w-full h-full", guide.fit === "contain" ? "object-contain p-1" : "object-cover")} />
           )
         ) : (

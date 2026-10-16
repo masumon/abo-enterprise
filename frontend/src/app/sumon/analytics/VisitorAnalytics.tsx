@@ -272,6 +272,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
     }
   };
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: runs on mount / when the listed value changes only
   useEffect(() => { loadHistorical();   }, [days]);
   useEffect(() => {
     if (!data?.configured) return;

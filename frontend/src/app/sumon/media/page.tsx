@@ -64,7 +64,7 @@ function formatBytes(bytes: number): string {
 
 function MediaEl({ url, className }: { url: string; className?: string }) {
   if (isVideoUrl(url)) return <AutoVideo src={url} className={className} />;
-  // eslint-disable-next-line @next/next/no-img-element -- live admin context preview
+   
   return <img src={url} alt="" className={className} />;
 }
 

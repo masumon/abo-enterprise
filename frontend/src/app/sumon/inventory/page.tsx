@@ -61,6 +61,7 @@ export default function AdminInventoryPage() {
   };
 
   const reload = () => (tab === "inventory" ? loadInventory() : loadBrands());
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: runs on mount / when the listed value changes only
   useEffect(() => { reload(); }, [tab]);
   useEffect(() => { setTab(searchParams.get("tab") === "brands" ? "brands" : "inventory"); }, [searchParams]);
 

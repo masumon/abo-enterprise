@@ -217,7 +217,7 @@ export default function CombosManager({ embedded = false }: { embedded?: boolean
               <div className="flex min-w-0 items-start gap-3">
                 <div className="w-14 h-14 rounded-lg bg-brand-50 dark:bg-white/5 overflow-hidden flex-shrink-0 flex items-center justify-center">
                   {c.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
+                     
                     <img src={c.image_url} alt="" className="w-full h-full object-cover" />
                   ) : <Package className="w-6 h-6 text-brand-400" />}
                 </div>
@@ -288,7 +288,7 @@ export default function CombosManager({ embedded = false }: { embedded?: boolean
                         <button key={p.id} type="button" disabled={has} onClick={() => { set("items", [...form.items, { product_id: p.id, quantity: 1 }]); setPick(""); }}
                           className="w-full flex items-center gap-2 px-3 min-h-11 text-left text-sm hover:bg-brand-50 dark:hover:bg-white/5 disabled:opacity-50">
                           {p.image_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
+                             
                             <img src={p.image_url} alt="" className="w-8 h-8 rounded object-cover bg-white" />
                           ) : <Package className="w-5 h-5 text-gray-400" />}
                           <span className="flex-1 min-w-0 truncate">{productName(p)}</span>

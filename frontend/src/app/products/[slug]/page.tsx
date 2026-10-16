@@ -1,5 +1,6 @@
 import { ogImageUrl } from "@/lib/responsiveMediaUrl";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { stripMarks } from "@/lib/productText";
 import type { Product } from "@/types";
 import ProductDetailShell from "./ProductDetailShell";
@@ -15,10 +16,14 @@ async function fetchProduct(slug: string): Promise<Product | null> {
     const res = await fetch(`${API_BASE}/api/v1/products/${slug}`, {
       next: { revalidate: 60 },
     });
+    // A confirmed "no such product" must answer a real 404 (not a soft 200 page).
+    if (res.status === 404) notFound();
     if (!res.ok) return null;
     const json = await res.json();
     return (json.data ?? null) as Product | null;
-  } catch {
+  } catch (e) {
+    // notFound() works by throwing — let it through.
+    if (e && typeof e === "object" && "digest" in e) throw e;
     return null;
   }
 }

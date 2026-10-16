@@ -208,7 +208,7 @@ export default function PromoSlidesManager({ only, embedded = false }: { only?: 
               <div key={slide.id} className="flex flex-wrap sm:flex-nowrap items-center gap-3 sm:gap-4 p-4">
                 <div className="w-24 h-14 rounded-lg overflow-hidden bg-gray-100 dark:bg-white/10 flex-shrink-0">
                   {slide.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element -- admin thumbnail
+                     
                     <img src={slide.image_url} alt="" className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full grid place-items-center text-[10px] text-gray-400">VIDEO</div>
@@ -314,7 +314,7 @@ export default function PromoSlidesManager({ only, embedded = false }: { only?: 
                         <p className="text-xs font-semibold text-gray-600 dark:text-gray-300 mb-1">ওয়েবসাইটে যেমন দেখাবে</p>
                         <div className={cn("relative rounded-xl overflow-hidden bg-gray-100 dark:bg-white/10", editing.placement === "flash_sale" ? "aspect-[3/1]" : "aspect-video")}>
                           {editing.image_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element -- admin preview
+                             
                             <img src={editing.image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
                           ) : (
                             <div className="absolute inset-0 grid place-items-center text-xs text-gray-500">ভিডিও স্লাইড</div>

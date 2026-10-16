@@ -71,11 +71,11 @@ function PromoImage({ src, alt, eager, sizes, contain }: { src: string; alt: str
       {/* contain: the whole banner is shown (no text cut off when the upload is
           not the exact box ratio); a blurred copy fills the side space. */}
       {contain && (
-        // eslint-disable-next-line @next/next/no-img-element -- decorative blur fill
+         
         <img src={cloudinaryWidthUrl(src, 320)} alt="" aria-hidden loading="lazy" decoding="async"
           className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-70" />
       )}
-      {/* eslint-disable-next-line @next/next/no-img-element -- admin-supplied promo art at arbitrary CDN sizes */}
+      { }
       <img
         ref={imgRef}
         // Cloudinary resizes + picks AVIF/WebP; other hosts get the raw URL.

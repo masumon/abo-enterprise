@@ -54,7 +54,7 @@ export default function VideoEmbed({ url, title }: { url?: string | null; title:
       ) : (
         <button type="button" onClick={() => setPlaying(true)} className="absolute inset-0 w-full h-full group" aria-label={`ভিডিও চালান: ${title}`}>
           {poster ? (
-            // eslint-disable-next-line @next/next/no-img-element -- third-party thumbnail
+             
             <img src={poster} alt="" loading="lazy" className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100" />
           ) : (
             <span className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-950" />

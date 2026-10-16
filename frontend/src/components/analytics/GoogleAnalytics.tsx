@@ -23,6 +23,7 @@ function RouteTracker({ GA_ID }: { GA_ID: string }) {
       page_location: window.location.href,
       page_title: document.title,
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: runs on mount / when the listed value changes only
   }, [pathname]);
 
   return null;

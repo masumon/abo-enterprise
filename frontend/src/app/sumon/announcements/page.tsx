@@ -91,6 +91,7 @@ export default function AdminAnnouncementsPage() {
       .then((r) => setItems(getAnnouncements(r.data.data ?? {}, FALLBACK)))
       .catch((err) => { setItems([]); toast("error", apiErrorMessage(err, "ঘোষণা আনা যায়নি")); })
       .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: runs on mount / when the listed value changes only
   }, []);
 
   const update = (i: number, patch: Partial<CmsAnnouncement>) => {

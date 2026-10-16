@@ -34,7 +34,7 @@ export const ABOUT_TRUST_EDITORS: Record<string, TrustEditor> = {
       <div className="text-center max-w-[180px] mx-auto">
         <div className="w-16 h-16 mx-auto mb-2 rounded-full bg-brand-100 overflow-hidden flex items-center justify-center text-brand-700 font-bold">
           {s(item, "image") ? (
-            // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+             
             <img src={s(item, "image")} alt="" className="w-full h-full object-cover" />
           ) : ((s(item, "name") || "?").charAt(0))}
         </div>
@@ -57,7 +57,7 @@ export const ABOUT_TRUST_EDITORS: Record<string, TrustEditor> = {
     previewRow: (item) => (
       <div className="admin-surface flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 w-fit mx-auto">
         {s(item, "image") ? (
-          // eslint-disable-next-line @next/next/no-img-element -- live admin preview
+           
           <img src={s(item, "image")} alt="" className="w-8 h-8 rounded-lg object-cover" />
         ) : (
           <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 text-white text-xs font-bold flex items-center justify-center">{s(item, "abbr")}</span>

@@ -88,7 +88,7 @@ export default function AiPhotoStartModal({ open, onClose, onDraft, kind, folder
         <button type="button" onClick={() => inputRef.current?.click()}
           className="w-full aspect-video rounded-xl border-2 border-dashed border-[var(--line)] hover:border-brand-400 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-white/5">
           {preview
-            // eslint-disable-next-line @next/next/no-img-element -- local preview
+             
             ? <img src={preview} alt="" className="w-full h-full object-contain" />
             : <span className="text-sm text-muted flex flex-col items-center gap-2"><Camera className="w-8 h-8 text-brand-400" />{t("ছবি বাছুন বা তুলুন", "Choose or take a photo")}</span>}
         </button>

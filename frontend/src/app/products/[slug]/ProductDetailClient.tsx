@@ -307,7 +307,7 @@ export default function ProductDetailClient({ product }: Props) {
                       <Link key={v.slug} href={`/products/${v.slug}`} aria-current={v.current ? "true" : undefined}
                         className={`inline-flex items-center gap-2 rounded-xl border px-3 min-h-11 text-sm ${v.current ? "border-brand-500 bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200 font-semibold" : "border-gray-200 dark:border-white/10 hover:border-brand-400"} ${v.in_stock ? "" : "opacity-60"}`}>
                         {v.image_url && (
-                          // eslint-disable-next-line @next/next/no-img-element -- tiny thumb
+                           
                           <img src={v.image_url} alt="" className="w-7 h-7 rounded-md object-cover bg-white" loading="lazy" />
                         )}
                         <span>{lang === "bn" ? v.label : v.label_en}</span>

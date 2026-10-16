@@ -49,7 +49,7 @@ export default function ContentHealthPage() {
     setLoading(false);
   }, []);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- initial fetch
+   
   useEffect(() => { void load(); }, [load]);
 
   const total = (groups ?? []).reduce((n, g) => n + g.items.length, 0);

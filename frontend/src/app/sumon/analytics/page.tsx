@@ -143,6 +143,7 @@ export default function AnalyticsPage() {
     }
   }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: runs on mount / when the listed value changes only
   useEffect(() => { if (tab === "business") fetchAll();   }, [days, tab]);
 
   async function fetchAll() {

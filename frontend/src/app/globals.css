@@ -1762,3 +1762,7 @@ a.admin-card:focus-visible, a.admin-surface:focus-visible, .admin-link-row:focus
 @media (hover: hover) { .admin-sidebar nav a:not([aria-current="page"]):hover { transform: translateX(2px); } }
 .admin-sidebar-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.18) transparent; }
 .admin-sidebar nav [class*="uppercase"], .admin-sidebar nav [class*="tracking-wider"] { letter-spacing: 0.06em; }
+
+/* Admin dark mode: lift the faintest greys (hints, placeholders, small captions) to WCAG AA. */
+.admin-dark :is([class~="text-gray-400"], [class~="text-gray-500"], [class~="text-slate-400"], [class~="text-slate-500"], [class~="text-muted"], .form-help) { color: rgb(170 184 204); }
+.admin-dark :is(input, textarea, select)::placeholder { color: rgb(148 163 184); opacity: 1; }
