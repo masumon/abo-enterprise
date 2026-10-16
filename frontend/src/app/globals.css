@@ -1718,3 +1718,10 @@ body:has(.admin-overlay) { overflow: hidden; }
 @media (min-width: 640px) {
   .admin-fill-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 24rem), 1fr)) !important; }
 }
+
+/* Admin dark mode: remaining faint texts (2026-10-16). Brand-blue and slate texts that stayed dark
+   on dark cards get a readable tint; explicit dark: text classes still win by being later in the cascade
+   only when they set a lighter colour — so this uses the same light tones. */
+.admin-dark main :is([class~="text-brand-500"], [class~="text-brand-600"], [class~="text-brand-700"], [class~="text-brand-800"], [class~="text-brand-900"], [class~="text-indigo-600"]) { color: rgb(165 180 252); }
+.admin-dark main :is([class~="text-slate-500"], [class~="text-slate-600"], [class~="text-gray-600"], [class~="text-gray-700"]) { color: rgb(203 213 225); }
+.admin-dark main :is([class~="text-center"][class~="text-sm"], [class~="text-center"][class~="text-xs"]):not([class*="text-white"]):not([class*="text-brand"]):not([class*="text-red"]):not([class*="text-emerald"]):not([class*="text-amber"]) { color: rgb(148 163 184); }

@@ -1,5 +1,6 @@
 "use client";
 
+import TrackingSetup from "@/components/admin/TrackingSetup";
 import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { useUnsavedGuard } from "@/hooks/useUnsavedGuard";
 import Link from "next/link";
@@ -212,7 +213,6 @@ const SECTIONS: Section[] = [
     title: "মার্কেটিং ও অ্যানালিটিক্স",
     icon: <Zap className="w-4 h-4" />,
     fields: [
-      { key: "facebook_pixel_id", label: "Facebook Pixel ID", placeholder: "1234567890", hint: "Conversion tracking" },
       { key: "seo_gtm_id", label: "Google Tag Manager ID", placeholder: "GTM-XXXXXXX", hint: "Container ID from tagmanager.google.com" },
       { key: "seo_gsc_verification", label: "Google Search Console Verification", placeholder: "abc123...", hint: "The content value from GSC's HTML tag verification method (not the whole <meta> tag)" },
     ],
@@ -648,6 +648,12 @@ export default function AdminSettingsPage() {
           <div className="space-y-6 min-w-0">
             {q && visibleSections.length === 0 && (
               <div className="admin-card p-8 text-center text-gray-500">“{query}” — এমন কোনো সেটিং পাওয়া যায়নি</div>
+            )}
+            {!q && activeGroup === "marketing" && (
+              <section aria-label="অ্যানালিটিক্স ও পিক্সেল" className="space-y-2">
+                <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100 px-1">ভিজিটর গোনা ও বিজ্ঞাপন মাপা</h2>
+                <TrackingSetup />
+              </section>
             )}
             {visibleSections.map((section) => (
               <SectionCard

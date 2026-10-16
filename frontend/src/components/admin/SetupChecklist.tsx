@@ -123,7 +123,7 @@ export default function SetupChecklist({ totalProducts }: { totalProducts?: numb
             hintBn: "Facebook/YouTube লিংক থাকলে গ্রাহকের আস্থা বাড়ে।", hintEn: "Social links build trust.", href: "/sumon/settings" },
           { id: "partners", done: realLogos > 0, bn: "আসল ক্লায়েন্ট/পার্টনারের লোগো যোগ করুন", en: "Add real client / partner logos",
             hintBn: "যোগ না করা পর্যন্ত হোমপেজে “পার্টনার” অংশ লুকানো থাকে।", hintEn: "The partners section stays hidden until you add real ones.", href: "/sumon/about-trust" },
-          { id: "analytics", done: !!process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || has("gtm_id"), bn: "Google Analytics যুক্ত করুন", en: "Connect Google Analytics",
+          { id: "analytics", done: !!process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || has("seo_ga4_id") || has("seo_gtm_id") || has("gtm_id"), bn: "Google Analytics যুক্ত করুন", en: "Connect Google Analytics",
             hintBn: "কতজন সাইটে আসছেন ও কী দেখছেন জানা যায়।", hintEn: "See who visits and what they view.", href: "/sumon/analytics" },
         );
       }

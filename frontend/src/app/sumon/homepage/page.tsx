@@ -1,5 +1,6 @@
 "use client";
 
+import { QUICK_CATEGORY_DEFAULTS } from "@/lib/cmsContent";
 import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { useEffect, useState, type JSX, type ReactNode } from "react";
 import Link from "next/link";
@@ -329,6 +330,12 @@ export default function AdminHomepageContentPage() {
     return (
       <>
         {descBn && <p className="text-xs text-muted mb-2">{descBn}</p>}
+        {ed.key === "site_quick_categories_json" && !(values[ed.key] ?? "").trim().replace(/\[\s*\]/, "") && (
+          <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/70 dark:bg-amber-500/10 p-3 mb-3 space-y-2">
+            <p className="text-sm text-gray-800 dark:text-gray-100">এখন ওয়েবসাইটে ডিফল্ট ৩টি কার্ড (দোকান, সেবা, সফটওয়্যার) দেখাচ্ছে। ছবি বসাতে আগে এই ৩টিকে এখানে আনুন, তারপর প্রতিটির “ছবি” ঘরে ছবি দিন।</p>
+            <button type="button" onClick={() => setValue(ed.key, JSON.stringify(QUICK_CATEGORY_DEFAULTS, null, 2))} className="btn btn-brand btn-sm min-h-11">ডিফল্ট ৩টি কার্ড এখানে আনুন</button>
+          </div>
+        )}
         <JsonListEditor
           value={values[ed.key] ?? ""}
           onChange={(json) => setValue(ed.key, json)}

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { ShoppingBag, Wrench, Laptop, ArrowRight, type LucideIcon } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
-import { SITE_QUICK_CATEGORIES_KEY, getQuickCategories, type CmsQuickCategory } from "@/lib/cmsContent";
+import { SITE_QUICK_CATEGORIES_KEY, QUICK_CATEGORY_DEFAULTS, getQuickCategories, type CmsQuickCategory } from "@/lib/cmsContent";
 
 /** Icon names usable from the admin JSON (site_quick_categories_json). */
 const ICONS: Record<string, LucideIcon> = {
@@ -29,26 +29,7 @@ const TINTS = [
   { card: "from-violet-50 to-white border-violet-200/70 dark:from-violet-500/10 dark:to-white/[0.02] dark:border-violet-500/25", cta: "bg-gradient-to-r from-brand-500 to-accent-500 text-white" },
 ];
 
-const FALLBACK: CmsQuickCategory[] = [
-  {
-    icon: "shopping-bag",
-    label_en: "Shop", label_bn: "দোকান",
-    desc_en: "Accessories, gadgets & electronics", desc_bn: "এক্সেসরিজ, গ্যাজেট ও ইলেকট্রনিক্স",
-    href: "/products",
-  },
-  {
-    icon: "wrench",
-    label_en: "Services", label_bn: "সেবা",
-    desc_en: "Passport, NID, printing, repairs", desc_bn: "পাসপোর্ট, NID, প্রিন্টিং, সার্ভিসিং",
-    href: "/services",
-  },
-  {
-    icon: "laptop",
-    label_en: "Software", label_bn: "সফটওয়্যার",
-    desc_en: "POS, ERP, AI & custom software", desc_bn: "POS, ERP, AI ও কাস্টম সফটওয়্যার",
-    href: "/projects",
-  },
-];
+const FALLBACK = QUICK_CATEGORY_DEFAULTS;
 
 export default function CategoryCards() {
   const { lang } = useLanguageStore();
