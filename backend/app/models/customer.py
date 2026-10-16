@@ -29,6 +29,8 @@ class Customer(Base):
     email: Mapped[str | None] = mapped_column(String(255))
     company: Mapped[str | None] = mapped_column(String(255))
     address: Mapped[str | None] = mapped_column(Text)
+    # Customer's own profile photo (backend/manual_sql/0051_customer_avatar.sql)
+    avatar_url: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, index=True)

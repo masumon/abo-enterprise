@@ -3,6 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Camera, Loader2, Trash2 } from "lucide-react";
 import { useCustomerProfileStore } from "@/store/customerProfile";
+import { useCustomerStore } from "@/store/customer";
+import { getBrowserApiBaseUrl } from "@/lib/apiBase";
+
+const api = (path: string) => `${getBrowserApiBaseUrl()}/api/v1/customer/avatar${path}`;
 
 /** Shrink a photo to a small square JPEG (keeps the browser storage tiny). */
 async function toSquareDataUrl(file: File, size = 192): Promise<string> {
@@ -27,7 +31,8 @@ async function toSquareDataUrl(file: File, size = 192): Promise<string> {
   }
 }
 
-/** The customer's own profile photo (saved on this device, like the other profile settings). */
+/** The customer's own profile photo — saved on the server (shows on every device); a copy is kept on
+ * this device so it appears instantly and still works if the server is unreachable. */
 export default function CustomerAvatar({ bn }: { bn: boolean }) {
   const avatar = useCustomerProfileStore((s) => s.avatar);
   const setAvatar = useCustomerProfileStore((s) => s.setAvatar);
@@ -35,14 +40,33 @@ export default function CustomerAvatar({ bn }: { bn: boolean }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => { void useCustomerProfileStore.persist.rehydrate(); }, []);
+  const token = useCustomerStore((s) => s.session?.token ?? "");
+
+  useEffect(() => {
+    void useCustomerProfileStore.persist.rehydrate();
+    if (!token) return;
+    fetch(api(""), { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { const url = j?.data?.avatar_url; if (typeof url === "string" && url) setAvatar(url); })
+      .catch(() => {});
+  }, [token, setAvatar]);
 
   const pick = async (file?: File) => {
     if (!file) return;
     if (!file.type.startsWith("image/")) { setError(bn ? "শুধু ছবি দিন" : "Please choose an image"); return; }
     setBusy(true); setError("");
     try {
-      setAvatar(await toSquareDataUrl(file));
+      const small = await toSquareDataUrl(file);
+      setAvatar(small);
+      if (token) {
+        const blob = await (await fetch(small)).blob();
+        const fd = new FormData();
+        fd.append("file", new File([blob], "avatar.jpg", { type: "image/jpeg" }));
+        const r = await fetch(api(""), { method: "POST", headers: { Authorization: `Bearer ${token}` }, body: fd }).catch(() => null);
+        const j = r && r.ok ? await r.json().catch(() => null) : null;
+        if (j?.data?.avatar_url) setAvatar(j.data.avatar_url);
+        else setError(bn ? "এই ডিভাইসে সংরক্ষিত — সার্ভারে পাঠানো যায়নি" : "Saved on this device only");
+      }
     } catch {
       setError(bn ? "ছবিটি পড়া যায়নি — অন্য ছবি দিন" : "Could not read that image");
     } finally {
@@ -64,7 +88,7 @@ export default function CustomerAvatar({ bn }: { bn: boolean }) {
         </span>
       </button>
       {avatar && (
-        <button type="button" onClick={() => setAvatar("")} className="inline-flex items-center gap-1 text-[11px] text-muted hover:text-red-600 min-h-6">
+        <button type="button" onClick={() => { setAvatar(""); if (token) void fetch(api(""), { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }).catch(() => {}); }} className="inline-flex items-center gap-1 text-[11px] text-muted hover:text-red-600 min-h-6">
           <Trash2 className="w-3 h-3" aria-hidden />{bn ? "সরান" : "Remove"}
         </button>
       )}

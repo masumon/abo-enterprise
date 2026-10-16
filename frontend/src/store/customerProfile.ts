@@ -38,7 +38,8 @@ export const useCustomerProfileStore = create<CustomerProfileStore>()(
       notifyOrders: true,
       notifyOffers: false,
       avatar: "",
-      setAvatar: (avatar) => set({ avatar }),
+      // Only our Cloudinary URLs or a locally made JPEG are accepted (never arbitrary links/markup).
+      setAvatar: (avatar) => set({ avatar: avatar === "" || avatar.startsWith("https://res.cloudinary.com/") || avatar.startsWith("data:image/jpeg;base64,") ? avatar : "" }),
       addAddress: (addr) => {
         const id = `addr-${Date.now()}`;
         const addresses = get().addresses.map((a) =>
