@@ -1725,3 +1725,20 @@ body:has(.admin-overlay) { overflow: hidden; }
 .admin-dark main :is([class~="text-brand-500"], [class~="text-brand-600"], [class~="text-brand-700"], [class~="text-brand-800"], [class~="text-brand-900"], [class~="text-indigo-600"]) { color: rgb(165 180 252); }
 .admin-dark main :is([class~="text-slate-500"], [class~="text-slate-600"], [class~="text-gray-600"], [class~="text-gray-700"]) { color: rgb(203 213 225); }
 .admin-dark main :is([class~="text-center"][class~="text-sm"], [class~="text-center"][class~="text-xs"]):not([class*="text-white"]):not([class*="text-brand"]):not([class*="text-red"]):not([class*="text-emerald"]):not([class*="text-amber"]) { color: rgb(148 163 184); }
+
+/* ══ Dashboard polish (2026-10-16) ═══════════════════════════════════════════
+   Phone: cards sit two by two; an odd last card spans the row so nothing is left alone.
+   Every card that links somewhere lifts slightly and shows a clear focus ring. */
+@media (max-width: 639px) {
+  .admin-pair-grid > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+  .admin-pair-grid { gap: 0.625rem; }
+}
+a.admin-card, a.admin-surface, .admin-link-row { transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background-color 0.15s ease; }
+@media (hover: hover) {
+  a.admin-card:hover, a.admin-surface:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(15, 23, 42, 0.1); }
+}
+a.admin-card:focus-visible, a.admin-surface:focus-visible, .admin-link-row:focus-visible { outline: 2px solid rgb(99 123 255); outline-offset: 2px; }
+.admin-link-row:hover { background-color: rgba(99, 123, 255, 0.08); }
+/* Whole card opens its editor/preview (buttons inside keep their own action). */
+[data-open-card] { cursor: pointer; }
+@media (hover: hover) { [data-open-card]:hover { border-color: rgba(99, 123, 255, 0.45); } }

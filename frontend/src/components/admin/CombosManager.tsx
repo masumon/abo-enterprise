@@ -213,7 +213,7 @@ export default function CombosManager({ embedded = false }: { embedded?: boolean
       ) : (
         <div className="admin-fill-grid grid grid-cols-1 gap-4">
           {combos.map((c) => (
-            <div key={c.id} className="enterprise-card min-w-0 p-4">
+            <div key={c.id} data-open-card onClick={(e) => { if ((e.target as HTMLElement).closest("button, a, input, select, label")) return; openEdit(c); }} className="enterprise-card min-w-0 p-4">
               <div className="flex min-w-0 items-start gap-3">
                 <div className="w-14 h-14 rounded-lg bg-brand-50 dark:bg-white/5 overflow-hidden flex-shrink-0 flex items-center justify-center">
                   {c.image_url ? (

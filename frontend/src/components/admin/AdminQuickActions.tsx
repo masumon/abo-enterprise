@@ -26,7 +26,7 @@ interface Props {
 
 export default function AdminQuickActions({ actions }: Props) {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div className="admin-pair-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
       {actions.map(({ href, label, labelBn, icon: Icon, color = "brand", badge }) => (
         <Link
           key={href}

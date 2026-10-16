@@ -100,6 +100,17 @@ export default function AdminLeadsPage() {
 
   useEffect(() => { if (tab === "v1") load(); }, [load, tab]);
   useEffect(() => { if (tab === "v2") loadV2(); }, [loadV2, tab]);
+  // Deep link from the dashboard: /sumon/leads?open=<lead id> opens that lead's card.
+  const wantedLead = useRef<string | null>(null);
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("open");
+    if (id) { wantedLead.current = id; setTab("v2"); }
+  }, []);
+  useEffect(() => {
+    if (!wantedLead.current) return;
+    const hit = leadsV2.find((l) => l.id === wantedLead.current);
+    if (hit) { wantedLead.current = null; setDetailV2(hit); }
+  }, [leadsV2]);
 
   const handleSearchChange = (v: string) => {
     setSearchInput(v);

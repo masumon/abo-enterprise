@@ -439,6 +439,8 @@ export default function AdminPaymentsPage() {
                 return (
                   <div
                     key={m.id}
+                    data-open-card
+                    onClick={(e) => { if ((e.target as HTMLElement).closest("button, a, input, select, label")) return; openEdit(m); }}
                     className={cn(
                       "bg-white rounded-2xl border p-5 transition-all",
                       m.is_active ? "border-gray-100 shadow-sm" : "border-gray-200 opacity-60"
