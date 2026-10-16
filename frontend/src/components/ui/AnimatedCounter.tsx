@@ -9,6 +9,8 @@ interface AnimatedCounterProps {
   prefix?: string;
   duration?: number;
   className?: string;
+  /** Show 0 first and count up to the real number (never flashes the final value first). */
+  fromZero?: boolean;
 }
 
 export default function AnimatedCounter({
@@ -17,14 +19,16 @@ export default function AnimatedCounter({
   prefix = "",
   duration = 2000,
   className,
+  fromZero = false,
 }: AnimatedCounterProps) {
-  const [value, setValue] = useState(end);
+  const [value, setValue] = useState(fromZero ? 0 : end);
   const ref = useRef<HTMLSpanElement>(null);
   const started = useRef(false);
 
   useEffect(() => {
-    setValue(end);
+    setValue(fromZero ? 0 : end);
     started.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [end]);
 
   useEffect(() => {

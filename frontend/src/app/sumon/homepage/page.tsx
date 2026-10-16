@@ -586,8 +586,8 @@ export default function AdminHomepageContentPage() {
                       ))}
                     </div>
                   </div>
-                  <div className="absolute right-[4%] top-1/2 -translate-y-1/2 w-[28%] space-y-2">
-                    <div className="aspect-[4/3] rounded-lg bg-white/15 border border-white/30 overflow-hidden">
+                  <div className="absolute right-[4%] top-1/2 -translate-y-1/2 w-[36%] space-y-2">
+                    <div className="aspect-[16/10] rounded-lg bg-white/15 border border-white/30 overflow-hidden">
                       {heroPromo && !isVideoUrl(heroPromo) && (
                          
                         <img src={heroPromo} alt="" className="w-full h-full object-cover" />

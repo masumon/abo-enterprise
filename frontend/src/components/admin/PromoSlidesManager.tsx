@@ -26,8 +26,8 @@ const PLACEMENTS: { value: PromoSlide["placement"]; label: string; help: string 
 /** Rendered size per surface, so uploads match the box they land in. */
 const SPECS: Record<PromoSlide["placement"], { size: string; ratio: string; note: string }> = {
   hero: {
-    size: "১২০০ × ৯০০ px (ডেস্কটপ) · মোবাইলে মাঝখান ঠিক রেখে ১৬:১০ বাক্সে দেখায়",
-    ratio: "৪:৩",
+    size: "১২৮০ × ৮০০ px (ডেস্কটপ, চওড়া) · মোবাইলে মাঝখান ঠিক রেখে কম উচ্চতার পট্টিতে দেখায়",
+    ratio: "১৬:১০",
     note: "হোমপেজের একদম উপরে দেখায় — মোবাইলে উপরের বারের নিচে, ডেস্কটপে শিরোনামের পাশে। যে মাপেরই দিন, পুরো ছবি কার্ডে ঠিকঠাক বসে — কাটে না, পাশে ফাঁকা রং থাকে না; এই মাপ দিলে সবচেয়ে সুন্দর হয়।",
   },
   flash_sale: {

@@ -205,7 +205,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
         </div>
 
         <div className="container mx-auto px-4 xl:px-6 pt-3 pb-20 xl:pt-4 relative z-10">
-          <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] xl:grid-cols-[minmax(0,42rem)_minmax(0,34rem)] xl:justify-center gap-8 xl:gap-10 items-center">
+          <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] xl:grid-cols-[minmax(0,38rem)_minmax(0,42rem)] xl:justify-center gap-8 xl:gap-10 items-center">
             <div className="text-white flex flex-col gap-4 animate-slide-up [text-shadow:0_2px_14px_rgba(0,0,0,0.35)]">
               <div className={cn("relative z-10 flex flex-col gap-4", heroAlignClass(hstyle))}>
                 <div className="flex flex-wrap items-center gap-2 [text-shadow:none]">
@@ -276,18 +276,18 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
                       </Link>
                     ))}
                   </div>
-                  <div className="flex items-center gap-2.5 min-h-[44px]">
+                  <div className="flex items-center gap-2.5 min-h-[68px]">
                     {statsLoading && tiles.length === 0 ? (
                       // Same height as the real numbers, so nothing jumps when they arrive.
-                      <div className="flex gap-2" aria-hidden>{[0, 1, 2, 3].map((i) => <div key={i} className="h-11 w-[84px] rounded-xl bg-white/10 animate-pulse" />)}</div>
+                      <div className="flex gap-2" aria-hidden>{[0, 1, 2, 3].map((i) => <div key={i} className="h-[68px] w-[112px] rounded-2xl bg-white/10 animate-pulse" />)}</div>
                     ) : tiles.length > 0 ? (
                       <div className="flex flex-wrap gap-2">
                         {tiles.map((item) => (
-                          <div key={item.label} className="flex items-center gap-2 rounded-xl bg-[#0c1330]/70 backdrop-blur-md border border-white/15 px-3 h-11">
-                            <span className="text-base leading-none" aria-hidden>{item.icon}</span>
+                          <div key={item.label} className="flex items-center gap-3 rounded-2xl bg-gradient-to-b from-[#16205a]/85 to-[#0c1330]/80 backdrop-blur-md border border-white/20 shadow-lg shadow-black/25 px-4 h-[68px]">
+                            <span className="text-3xl leading-none" aria-hidden>{item.icon}</span>
                             <span className="leading-tight">
-                              <b className="block text-white text-sm tabular-nums"><AnimatedCounter end={item.end as number} />+</b>
-                              <span className="block text-white/75 text-[10px]">{item.label}</span>
+                              <b className="block text-white text-2xl font-extrabold tabular-nums"><AnimatedCounter end={item.end as number} suffix="+" fromZero duration={1800} /></b>
+                              <span className="block text-white/85 text-xs font-semibold">{item.label}</span>
                             </span>
                           </div>
                         ))}
@@ -299,15 +299,15 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
             </div>
 
             <div className="flex justify-end xl:justify-start animate-fade-in">
-              <div className="relative w-full max-w-[30rem] xl:max-w-[34rem] flex flex-col gap-4">
+              <div className="relative w-full lg:max-w-none xl:max-w-[42rem] flex flex-col gap-4">
                 <PromoSlider
                   placement="hero"
-                  aspect="aspect-[4/3]"
+                  aspect="aspect-[16/10]"
                   eagerFirstSlide
                   initialSlides={initialHeroSlides}
                   // Hidden below 1024px: "1px" keeps phones from fetching this copy at full size.
-                  sizes="(max-width: 1023px) 1px, 512px"
-                  fallback={heroPromoMedia ? mediaCard(heroPromoMedia, "512px") : null}
+                  sizes="(max-width: 1023px) 1px, 672px"
+                  fallback={heroPromoMedia ? mediaCard(heroPromoMedia, "672px") : null}
                 />
 
               </div>
