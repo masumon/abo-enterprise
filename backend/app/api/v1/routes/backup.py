@@ -359,6 +359,70 @@ async def remove_app_client(body: AppClientRemove, db: AsyncSession = Depends(ge
     return ApiResponse(data=None, message="সরানো হয়েছে")
 
 
+# ── GitHub Actions extra copy (on/off + status) ──────────────────────────────
+
+_GH_REPO = os.environ.get("GITHUB_REPO", "masumon/abo-enterprise")
+_GH_WORKFLOW = "db-backup.yml"
+_gh_cache: dict[str, Any] = {"at": 0.0, "data": None}
+
+
+@router.get("/backup/github-enabled", response_model=None)
+async def github_enabled(db: AsyncSession = Depends(get_db)):
+    """Asked by .github/workflows/db-backup.yml before it dumps (a plain yes/no)."""
+    return {"enabled": bool((await store.get_config(db))["github"].get("enabled", True))}
+
+
+async def _github_status() -> dict[str, Any]:
+    """Last runs of the workflow from the public GitHub API (cached 10 min — 60 calls/h limit)."""
+    import httpx
+
+    if _gh_cache["data"] is not None and time.time() - _gh_cache["at"] < 600:
+        return _gh_cache["data"]
+    base = f"https://api.github.com/repos/{_GH_REPO}"
+    out: dict[str, Any] = {"runs": [], "reason_bn": "", "url": f"https://github.com/{_GH_REPO}/actions/workflows/{_GH_WORKFLOW}"}
+    try:
+        async with httpx.AsyncClient(timeout=15, headers={"Accept": "application/vnd.github+json"}) as c:
+            r = await c.get(f"{base}/actions/workflows/{_GH_WORKFLOW}/runs", params={"per_page": 5})
+            runs = r.json().get("workflow_runs", []) if r.status_code == 200 else []
+            out["runs"] = [{"at": x.get("created_at"), "status": x.get("status"), "result": x.get("conclusion"),
+                            "url": x.get("html_url")} for x in runs]
+            last = runs[0] if runs else None
+            if last and last.get("conclusion") == "failure":
+                jr = await c.get(f"{base}/actions/runs/{last['id']}/jobs")
+                jobs = jr.json().get("jobs", []) if jr.status_code == 200 else []
+                if jobs:
+                    ar = await c.get(f"{base}/check-runs/{jobs[0]['id']}/annotations")
+                    msgs = " ".join(a.get("message", "") for a in (ar.json() if ar.status_code == 200 else []))
+                    if "billing" in msgs.lower():
+                        out["reason_bn"] = "GitHub অ্যাকাউন্টে বিলিং সমস্যা (account locked) — github.com/settings/billing-এ ঠিক না করা পর্যন্ত GitHub backup চলবে না। ওয়েবসাইটের নিজস্ব Drive backup আলাদাভাবে চলছে।"
+                    elif msgs:
+                        out["reason_bn"] = msgs[:200]
+    except Exception:  # noqa: BLE001 — status is informational only
+        out["reason_bn"] = "GitHub-এর অবস্থা এখন আনা যায়নি — পরে আবার দেখুন।"
+    _gh_cache.update(at=time.time(), data=out)
+    return out
+
+
+@router.get("/admin/backup/github", response_model=ApiResponse)
+async def github_status(db: AsyncSession = Depends(get_db), admin_id: str = Depends(require_role(PERM))):
+    return ApiResponse(data={"enabled": bool((await store.get_config(db))["github"].get("enabled", True)),
+                             **(await _github_status())})
+
+
+class GithubIn(BaseModel):
+    enabled: bool
+
+
+@router.put("/admin/backup/github", response_model=ApiResponse)
+async def set_github(body: GithubIn, db: AsyncSession = Depends(get_db), admin_id: str = Depends(require_role(PERM))):
+    conf = await store.get_config(db)
+    conf["github"] = {"enabled": body.enabled}
+    await store.put_config(db, conf)
+    _audit(db, admin_id, "backup_github_toggle", {"enabled": body.enabled})
+    await db.commit()
+    return ApiResponse(data={"enabled": body.enabled}, message="GitHub backup চালু হলো" if body.enabled else "GitHub backup বন্ধ হলো")
+
+
 # ── schedule ─────────────────────────────────────────────────────────────────
 
 class ScheduleIn(BaseModel):

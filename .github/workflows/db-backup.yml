@@ -15,7 +15,7 @@ jobs:
   backup:
     runs-on: ubuntu-latest
     steps:
-      - name: Check secret is configured
+      - name: Check secret is configured and the admin switch is on
         id: check
         env:
           DB_URL: ${{ secrets.BACKUP_DATABASE_URL }}
@@ -23,6 +23,14 @@ jobs:
           if [ -z "$DB_URL" ]; then
             echo "configured=false" >> "$GITHUB_OUTPUT"
             echo "BACKUP_DATABASE_URL secret not set — skipping backup."
+            exit 0
+          fi
+          # Admin → ডাটাবেস Backup → "GitHub কপি" on/off. If the site cannot be reached
+          # (e.g. waking up), back up anyway — a missed backup is worse than an extra one.
+          FLAG=$(curl -fsS --retry 3 --retry-delay 20 --max-time 90             https://api.aboenterprise.com/api/v1/backup/github-enabled || echo '{"enabled":true}')
+          if echo "$FLAG" | grep -q '"enabled":false'; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "GitHub backup switched OFF in the admin — skipping."
           else
             echo "configured=true" >> "$GITHUB_OUTPUT"
           fi

@@ -8,7 +8,7 @@ import {
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useToastStore } from "@/store/toast";
 import {
-  backupApi, DRIVE_GUIDES, guideOf, OAUTH_HELP, type BackupRun, type BackupSummary, type DestKind, type JobState,
+  backupApi, DRIVE_GUIDES, guideOf, OAUTH_HELP, type BackupRun, type BackupSummary, type DestKind, type GithubStatus, type JobState,
 } from "@/lib/backup";
 
 const errText = (e: unknown, fb: string): string => {
@@ -89,7 +89,7 @@ function Step({ n, title, summary, done, open, children }: { n: number; title: s
           <span className="block font-semibold text-gray-900">{title}</span>
           {summary && <span className="block text-xs text-gray-600 truncate">{summary}</span>}
         </span>
-        {done && <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">সম্পন্ন</span>}
+        {done && <span className="hidden sm:inline-flex text-xs font-medium px-2.5 py-1 leading-normal rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">হয়ে গেছে</span>}
         <ChevronDown className="w-5 h-5 text-gray-400 group-open:rotate-180 transition-transform" />
       </summary>
       <div className="pt-3 space-y-3">{children}</div>
@@ -190,11 +190,11 @@ export default function BackupPage() {
         </div>
         <div className="grid sm:flex gap-2 mt-4">
           <div className="contents">
-            <button type="button" className="btn btn-brand min-h-12 gap-1.5 text-base w-full sm:w-auto justify-center" disabled={running || !data.keys.set || !data.destinations.length}
+            <button type="button" className="btn btn-brand min-h-12 gap-1.5 text-base w-full sm:w-auto justify-center px-5 whitespace-nowrap" disabled={running || !data.keys.set || !data.destinations.length}
               onClick={() => act("run", backupApi.runNow, "Backup শুরু হয়েছে — কয়েক মিনিট লাগতে পারে")}>
               {running ? <Loader2 className="w-5 h-5 animate-spin" /> : <Cloud className="w-5 h-5" />} এখনই Backup নিন
             </button>
-            <button type="button" className="btn btn-outline min-h-12 gap-1.5 text-base w-full sm:w-auto justify-center" disabled={running || !data.keys.set}
+            <button type="button" className="btn btn-outline min-h-12 gap-1.5 text-base w-full sm:w-auto justify-center px-5 whitespace-nowrap" disabled={running || !data.keys.set}
               onClick={() => act("local", async () => { const r = await backupApi.runLocal(); const id = r.data.data?.run_id ?? null; localRef.current = id; setLocalRun(id); }, "তৈরি হচ্ছে — শেষ হলে নিজেই ডাউনলোড হবে")}>
               <Download className="w-5 h-5" /> কম্পিউটারে নিন
             </button>
@@ -263,6 +263,8 @@ export default function BackupPage() {
         <ScheduleSection data={data} busy={busy} act={act} />
       </Step>
 
+      <GithubCopy />
+
       <section className="card p-4 sm:p-5 space-y-3">
         <h2 className="font-semibold text-gray-900">Backup-এর ইতিহাস</h2>
         {data.history.length === 0 && (
@@ -296,7 +298,7 @@ export default function BackupPage() {
         {data.history.length > 10 && !showAll && (
           <button type="button" className="text-sm text-brand-700 underline min-h-11" onClick={() => setShowAll(true)}>আরও {(data.history.length - 10).toLocaleString("bn-BD")}টি দেখুন</button>
         )}
-        <button type="button" className="btn btn-outline min-h-11 gap-1.5 w-full sm:w-auto justify-center" onClick={() => setTesting({})}><Upload className="w-4 h-4" /> কম্পিউটারের backup ফাইল পরীক্ষা করুন</button>
+        <button type="button" className="btn btn-outline min-h-11 gap-1.5 w-full sm:w-auto justify-center px-5" onClick={() => setTesting({})}><Upload className="w-4 h-4" /> কম্পিউটারের backup ফাইল পরীক্ষা করুন</button>
       </section>
 
       {testing && <TestPanel src={testing} onClose={() => { setTesting(null); load(); }} />}
@@ -306,6 +308,61 @@ export default function BackupPage() {
 }
 
 type Act = (key: string, fn: () => Promise<unknown>, ok?: string) => Promise<void>;
+
+/** GitHub Actions daily copy — an extra, independent backup with its own on/off switch. */
+function GithubCopy() {
+  const toast = useToastStore((s) => s.push);
+  const [g, setG] = useState<GithubStatus | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    backupApi.github().then((r) => setG(r.data.data ?? null)).catch(() => setG(null));
+  }, []);
+  if (!g) return null;
+  const toggle = async () => {
+    setBusy(true);
+    try {
+      const r = await backupApi.setGithub(!g.enabled);
+      setG({ ...g, enabled: !!r.data.data?.enabled });
+      toast("success", r.data.message || "সংরক্ষিত হয়েছে");
+    } catch (e) {
+      toast("error", errText(e, "বদলানো যায়নি"));
+    } finally {
+      setBusy(false);
+    }
+  };
+  const last = g.runs[0];
+  return (
+    <section className="card p-4 sm:p-5 space-y-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <span aria-hidden className="w-9 h-9 rounded-xl bg-gray-900 text-white font-bold flex items-center justify-center flex-none">GH</span>
+        <div className="flex-1 min-w-0">
+          <h2 className="font-semibold text-gray-900">GitHub — অতিরিক্ত কপি</h2>
+          <p className="text-xs text-gray-600">প্রতিদিন রাত ৩:৩০-এ GitHub নিজের সার্ভারে আলাদা একটি কপি রাখে (১৪ দিন)। ড্রাইভের backup-এর বাইরে বাড়তি নিরাপত্তা।</p>
+        </div>
+        <button type="button" role="switch" aria-checked={g.enabled} disabled={busy} onClick={toggle}
+          className={`relative inline-flex h-8 w-14 flex-none items-center rounded-full transition min-h-8 ${g.enabled ? "bg-emerald-600" : "bg-gray-300"}`}>
+          <span className="sr-only">GitHub backup {g.enabled ? "চালু" : "বন্ধ"}</span>
+          <span className={`inline-block h-6 w-6 rounded-full bg-white shadow transition ${g.enabled ? "translate-x-7" : "translate-x-1"}`} />
+        </button>
+      </div>
+      <p className="text-sm">{g.enabled ? "✓ চালু" : "বন্ধ — GitHub আর কপি নেবে না"}{last ? ` · শেষ চেষ্টা: ${when(last.at)} — ${last.result === "success" ? "সফল" : last.result === "failure" ? "ব্যর্থ" : "চলছে"}` : ""}</p>
+      {g.reason_bn && last?.result === "failure" && (
+        <p className="text-sm rounded-lg bg-amber-50 border border-amber-200 text-amber-900 p-2">⚠️ {g.reason_bn}</p>
+      )}
+      {g.runs.length > 0 && (
+        <div className="flex flex-wrap gap-1.5" aria-label="শেষ ৫টি চেষ্টা">
+          {g.runs.map((r) => (
+            <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer" title={when(r.at)}
+              className={`text-xs px-2 py-1 rounded-full ring-1 min-h-8 inline-flex items-center ${r.result === "success" ? "bg-emerald-50 text-emerald-700 ring-emerald-200" : r.result === "failure" ? "bg-red-50 text-red-700 ring-red-200" : "bg-gray-50 text-gray-600 ring-gray-200"}`}>
+              {r.result === "success" ? "✓" : r.result === "failure" ? "✗" : "…"} {new Date(r.at).toLocaleDateString("bn-BD", { day: "numeric", month: "short" })}
+            </a>
+          ))}
+        </div>
+      )}
+      <a href={g.url} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-700 underline inline-flex items-center gap-1 min-h-11">GitHub-এ সব দেখুন <ExternalLink className="w-3.5 h-3.5" /></a>
+    </section>
+  );
+}
 
 function printRecoveryCard(passphrase: string, fingerprint: string) {
   const w = window.open("", "_blank", "width=600,height=700");
