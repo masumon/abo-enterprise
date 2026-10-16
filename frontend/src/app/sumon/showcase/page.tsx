@@ -494,7 +494,7 @@ function ShowcaseEditor({ editor, projects, services, saving, onClose, onSave, o
   ];
   steps.push({ id: "publish", bn: "প্রকাশ", en: "Publish", status: (checks.every((c) => c.ok) ? "ok" : "warn") as "ok" | "warn", content: (<>
     {preview}
-    <PublishChecklist items={checks} />
+    <PublishChecklist items={checks} tips={[{ bn: "ইংরেজি নাম", en: "English name", ok: !!ed.item.title?.en?.trim(), hint: "নামের পাশের অনুবাদ বোতাম চাপুন" }]} />
     {isProject && <label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" className="rounded" checked={!!p.featured} onChange={(e) => setP({ featured: e.target.checked })} /> {t("ফিচার করুন", "Featured")}</label>}
     <AdvancedSection>
       {isProject ? (

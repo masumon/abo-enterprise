@@ -4,19 +4,28 @@ import { CheckCircle2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useBnEn } from "./useBnEn";
 
-export interface CheckItem { bn: string; en: string; ok: boolean }
+export interface CheckItem { bn: string; en: string; ok: boolean; /** How to fix it (shown when missing). */ hint?: string }
 
 /** Pre-publish checklist: ছবি ✓ দাম ✓ বিবরণ ✓ ক্যাটাগরি ✓ — warns, never blocks a draft. */
-export default function PublishChecklist({ items, className }: { items: CheckItem[]; className?: string }) {
+export default function PublishChecklist({ items, tips = [], className }: { items: CheckItem[]; /** Quality extras — counted in the score, never block. */ tips?: CheckItem[]; className?: string }) {
   const t = useBnEn();
   const missing = items.filter((i) => !i.ok);
+  const all = [...items, ...tips];
+  const score = all.length ? Math.round((all.filter((i) => i.ok).length / all.length) * 100) : 100;
+  const todo = tips.filter((i) => !i.ok);
   return (
     <div className={cn(
       "rounded-xl border p-3",
       missing.length ? "border-amber-200 bg-amber-50/60 dark:border-amber-500/30 dark:bg-amber-500/10" : "border-emerald-200 bg-emerald-50/60 dark:border-emerald-500/30 dark:bg-emerald-500/10",
       className,
     )}>
-      <p className="text-sm font-semibold text-heading mb-2">{t("প্রকাশের আগে দেখে নিন", "Before publishing")}</p>
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <p className="text-sm font-semibold text-heading">{t("প্রকাশের আগে দেখে নিন", "Before publishing")}</p>
+        <span className={cn("text-xs font-bold px-2 py-0.5 rounded-full", score >= 80 ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200" : "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200")}>
+          {t(`পূর্ণতা ${score.toLocaleString("bn-BD")}%`, `Complete ${score}%`)}
+        </span>
+      </div>
+      <div className="h-1.5 rounded-full bg-black/5 dark:bg-white/10 mb-2 overflow-hidden" aria-hidden><div className={cn("h-full rounded-full", score >= 80 ? "bg-emerald-500" : "bg-amber-500")} style={{ width: `${score}%` }} /></div>
       <ul className="flex flex-wrap gap-2">
         {items.map((i) => (
           <li key={i.en} className={cn(
@@ -34,6 +43,11 @@ export default function PublishChecklist({ items, className }: { items: CheckIte
               `${missing.map((m) => m.en).join(", ")} missing — you can save a draft and publish later.`)
           : t("সব ঠিক আছে — প্রকাশ করতে পারেন।", "All set — ready to publish.")}
       </p>
+      {todo.length > 0 && (
+        <ul className="mt-2 space-y-1 text-xs text-gray-700 dark:text-gray-300">
+          {todo.map((i) => <li key={i.en}>💡 {t(i.bn, i.en)}{i.hint ? <span className="text-muted"> — {i.hint}</span> : null}</li>)}
+        </ul>
+      )}
     </div>
   );
 }

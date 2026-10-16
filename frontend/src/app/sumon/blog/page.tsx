@@ -1,4 +1,5 @@
 "use client";
+import PublishChecklist from "@/components/admin/catalog/PublishChecklist";
 import { useDirty, useUnsavedGuard } from "@/hooks/useUnsavedGuard";
 import RichTextEditor from "@/components/admin/catalog/RichTextEditor";
 import AiBlogWriter from "@/components/admin/AiBlogWriter";
@@ -544,6 +545,19 @@ export default function AdminBlogPage() {
 
             {/* Form */}
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+              <PublishChecklist
+                items={[
+                  { bn: "শিরোনাম", en: "Title", ok: !!(editing.title_bn?.trim() || editing.title_en?.trim()) },
+                  { bn: "কভার ছবি", en: "Cover image", ok: !!editing.featured_image_url },
+                  { bn: "লেখা", en: "Content", ok: !!(editing.content_bn?.trim() || editing.content_en?.trim()) },
+                  { bn: "ক্যাটাগরি", en: "Category", ok: !!editing.category },
+                ]}
+                tips={[
+                  { bn: "ছোট সারাংশ", en: "Excerpt", ok: !!(editing.excerpt_bn?.trim() || editing.excerpt_en?.trim()), hint: "কার্ডে ও গুগলে দেখায় — AI দিয়ে লেখানো যায়" },
+                  { bn: "ইংরেজি শিরোনাম", en: "English title", ok: !!editing.title_en?.trim(), hint: "অনুবাদ বোতাম চাপুন" },
+                  { bn: "SEO বিবরণ", en: "SEO description", ok: !!editing.seo_description?.trim(), hint: "খালি রাখলে সারাংশ ব্যবহার হয়" },
+                ]}
+              />
               {/* Live website preview — the blog card as shown on /blog */}
               <LivePreview>
                 <div className="p-1 pointer-events-none">

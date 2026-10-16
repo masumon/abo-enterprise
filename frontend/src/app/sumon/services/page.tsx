@@ -1,4 +1,5 @@
 "use client";
+import BulkImproveModal from "@/components/admin/catalog/BulkImproveModal";
 import { useDirty, useUnsavedGuard } from "@/hooks/useUnsavedGuard";
 import { askConfirm } from "@/store/confirm";
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
@@ -219,6 +220,7 @@ export default function AdminServicesPage() {
     collect(parent?.subcategories ?? [], 0);
   }
 
+  const [bulkAiOpen, setBulkAiOpen] = useState(false);
   const load = useCallback(async () => {
     setLoading(true);
     try {
@@ -824,7 +826,9 @@ export default function AdminServicesPage() {
         titleBn="সেবা"
         description={`${total} total services`}
         descriptionBn={`মোট ${String(total).replace(/\d/g, (d) => "০১২৩৪৫৬৭৮৯"[+d])}টি সেবা`}
+        actions={<button type="button" onClick={() => setBulkAiOpen(true)} className="btn btn-outline btn-sm min-h-11 gap-1.5">✨ {t("দুর্বল বিবরণ উন্নত করুন", "Improve weak descriptions")}</button>}
       />
+      {bulkAiOpen && <BulkImproveModal kind="service" onClose={() => setBulkAiOpen(false)} onSaved={() => void load()} />}
       {(total > 0 || loading || search || statusFilter || missingFilter) && (
         <AddEntryChoices thing={{ bn: "সেবা", en: "service" }} onForm={openNew} onAi={() => setAiOpen(true)} />
       )}
@@ -978,6 +982,15 @@ export default function AdminServicesPage() {
               </LivePreview>
               <StepForm steps={[
                 { id: "basic", bn: "মূল তথ্য", en: "Basics", status: (editing.name_bn || editing.name_en) && (editing.category_id || editing.category) ? "ok" : "warn", content: (<>
+                {!editing.id && !(editing.name_bn || editing.name_en) && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-xs text-muted">{t("দ্রুত শুরু:", "Quick start:")}</span>
+                    {["পাসপোর্ট আবেদন", "NID সেবা", "জন্ম নিবন্ধন", "প্রিন্টিং ও ফটোকপি", "মোবাইল সার্ভিসিং", "ওয়েবসাইট তৈরি"].map((n) => (
+                      <button key={n} type="button" onClick={() => setEditing(prev => prev ? { ...prev, name_bn: n } : prev)} className="rounded-full border border-gray-200 dark:border-white/10 px-3 min-h-9 text-xs hover:border-brand-400">{n}</button>
+                    ))}
+                    <span className="text-xs text-muted">{t("— তারপর “✨ AI বিবরণ” চাপুন", "— then tap “✨ AI”")}</span>
+                  </div>
+                )}
                 <BnEnText label={t("সেবার নাম", "Service name")} required
                   bn={editing.name_bn} en={editing.name_en}
                   onBn={(v) => setEditing(prev => prev ? { ...prev, name_bn: v } : prev)}
@@ -1250,7 +1263,10 @@ export default function AdminServicesPage() {
               />
                 </>) },
                 { id: "publish", bn: "প্রকাশ", en: "Publish", status: svcChecks.every((c) => c.ok) ? "ok" : "warn", content: (<>
-                <PublishChecklist items={svcChecks} />
+                <PublishChecklist items={svcChecks} tips={[
+                  { bn: "ইংরেজি নাম", en: "English name", ok: !!editing?.name_en?.trim(), hint: "বাংলা নামের পাশের অনুবাদ বোতাম চাপুন" },
+                  { bn: "বিস্তারিত বিবরণ (১২০+ অক্ষর)", en: "Detailed description (120+ chars)", ok: ((editing?.description_bn || editing?.description_en || "").trim().length >= 120), hint: "“✨ AI বিবরণ” দিয়ে লেখান" },
+                ]} />
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
                   <label className="flex items-center gap-2 cursor-pointer select-none min-h-11">
                     <div className="relative">

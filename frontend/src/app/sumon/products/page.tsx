@@ -1,5 +1,6 @@
 "use client";
 
+import BulkImproveModal from "@/components/admin/catalog/BulkImproveModal";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Pencil, Trash2, Loader2, Package, Copy, Download, FileText, Upload, Check, EyeOff, Star, StarOff, Tags, FilterX } from "lucide-react";
@@ -85,6 +86,7 @@ export default function AdminProductsPage() {
   walk(taxonomy as unknown as Node[], 0);
   const catLabel = (slug: string) => categoryOptions.find((o) => o.slug === slug)?.label.replace(/^(— )+/, "") ?? slug;
 
+  const [bulkAiOpen, setBulkAiOpen] = useState(false);
   const load = useCallback(async () => {
     setLoading(true);
     setLoadError(false);
@@ -247,6 +249,7 @@ export default function AdminProductsPage() {
 
   return (
     <div className="admin-page">
+      {bulkAiOpen && <BulkImproveModal kind="product" onClose={() => setBulkAiOpen(false)} onSaved={() => void load()} />}
       <AdminPageHeader
         title="Products"
         titleBn="পণ্য ব্যবস্থাপনা"
@@ -254,6 +257,7 @@ export default function AdminProductsPage() {
         descriptionBn={`${bnNum(total)}টি পণ্য — যোগ, সম্পাদনা, স্টক ও দাম। হোমপেজের “ফিচার্ড পণ্য” অংশে দেখাতে পণ্যে “ফিচার্ড” চালু করুন।`}
         actions={
           <>
+            <button type="button" onClick={() => setBulkAiOpen(true)} className="btn btn-outline btn-sm min-h-11 gap-1.5">✨ {t("দুর্বল বিবরণ উন্নত করুন", "Improve weak descriptions")}</button>
             <input ref={importInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportFile} />
             <button type="button" onClick={() => importInputRef.current?.click()} disabled={importing} className="admin-btn-secondary" title={t("পুরনো সাধারণ CSV (slug, name_en, name_bn, price…)", "Legacy quick CSV import")}>
               {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} {t("দ্রুত CSV", "Quick CSV")}

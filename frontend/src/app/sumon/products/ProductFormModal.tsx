@@ -235,6 +235,12 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
     review_count: 0,
   } as unknown as Product;
 
+  // Quality tips (score only — never block publishing).
+  const productTips = [
+    { bn: "ইংরেজি নাম", en: "English name", ok: !!w.name_en?.trim(), hint: "বাংলা নামের পাশের অনুবাদ বোতাম চাপুন" },
+    { bn: "বিস্তারিত বিবরণ (১২০+ অক্ষর)", en: "Detailed description (120+ chars)", ok: ((w.description_bn || w.description_en || "").trim().length >= 120), hint: "“✨ AI বিবরণ” দিয়ে লেখান" },
+    { bn: "SEO শিরোনাম/বিবরণ", en: "SEO title/description", ok: !!(w.seo_title?.trim() || w.seo_description?.trim()), hint: "খালি রাখলেও চলে — AI-এর SEO অপশনে লেখানো যায়" },
+  ];
   const checks = [
     { bn: "ছবি", en: "Photo", ok: !!imageUrl },
     { bn: "দাম", en: "Price", ok: Number(w.price) > 0 },
@@ -372,6 +378,14 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
             <div>
               <label className={lbl}>{t("পণ্যের নাম (বাংলা)", "Name (Bangla)")} <span className="text-red-500">*</span></label>
               <input {...register("name_bn")} className={cn("input", errors.name_bn && "input-error")} placeholder="যেমন: ফাস্ট চার্জার ৩৩W" />
+              {mode.type === "new" && !w.name_bn && (
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  <span className="text-xs text-muted">{t("দ্রুত শুরু:", "Quick start:")}</span>
+                  {["ফাস্ট চার্জার", "ইয়ারবাড", "পাওয়ার ব্যাংক", "ডাটা ক্যাবল", "মোবাইল কভার", "স্মার্ট ওয়াচ"].map((n) => (
+                    <button key={n} type="button" onClick={() => setValue("name_bn", n, { shouldDirty: true })} className="rounded-full border border-gray-200 dark:border-white/10 px-3 min-h-9 text-xs hover:border-brand-400">{n}</button>
+                  ))}
+                </div>
+              )}
               {fieldErr(errors.name_bn?.message)}
             </div>
             <div>
@@ -646,7 +660,7 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
       content: (
         <>
           <div className="lg:hidden">{preview}</div>
-          <PublishChecklist items={checks} />
+          <PublishChecklist items={checks} tips={productTips} />
           <p className="text-sm text-muted">
             {editing
               ? (editing.is_active ? t("এখন অবস্থা: প্রকাশিত (সাইটে দেখা যাচ্ছে)।", "Status now: live on the site.") : t("এখন অবস্থা: খসড়া (সাইটে লুকানো)।", "Status now: draft (hidden)."))
