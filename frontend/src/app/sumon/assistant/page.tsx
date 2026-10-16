@@ -307,7 +307,7 @@ export default function AdminAssistantPage() {
 
       {/* Settings Tab */}
       {tab === "settings" && (
-        <div className="space-y-6 admin-page-narrow">
+        <div className="space-y-6">
           <Link href="/sumon/ai" className="flex items-center gap-3 rounded-2xl border border-brand-100 bg-gradient-to-br from-brand-50 to-white p-4 hover:border-brand-300">
             <span className="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center flex-none"><Sparkles className="w-5 h-5" /></span>
             <span className="flex-1 min-w-0"><span className="block font-semibold text-heading">AI কী ও মডেল — “AI সংযোগ” পাতায়</span>

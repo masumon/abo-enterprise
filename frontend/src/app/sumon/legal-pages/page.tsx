@@ -73,7 +73,7 @@ export default function LegalPagesAdmin() {
   };
 
   return (
-    <div className="admin-page admin-page-narrow">
+    <div className="admin-page">
       <AdminPageHeader
         title="Legal Pages"
         titleBn="আইনি পেজসমূহ"

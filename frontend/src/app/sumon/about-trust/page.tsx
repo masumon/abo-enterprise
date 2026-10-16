@@ -126,7 +126,7 @@ export default function AboutTrustPage() {
       {loading ? (
         <div className="space-y-4">{[1, 2, 3].map((i) => <div key={i} className="h-40 rounded-2xl bg-gray-100 dark:bg-white/5 animate-pulse" />)}</div>
       ) : (
-        <div className="space-y-6 admin-page-narrow">
+        <div className="space-y-6">
           {BLOCKS.map((block) => (
             <section key={block.id} id={block.id} className="admin-card overflow-hidden scroll-mt-24" aria-labelledby={`${block.id}-title`}>
               <div className="flex items-start justify-between gap-3 flex-wrap px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-white/10 bg-gradient-to-r from-brand-50 to-transparent dark:from-brand-900/20">

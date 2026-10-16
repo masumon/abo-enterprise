@@ -67,7 +67,7 @@ export default function AdminDeliveryPage() {
   };
 
   return (
-    <div className="admin-page admin-page-narrow">
+    <div className="admin-page">
       <AdminPageHeader
         title="Checkout & Delivery"
         titleBn="চেকআউট ও ডেলিভারি"
