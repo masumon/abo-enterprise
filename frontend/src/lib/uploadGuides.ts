@@ -245,8 +245,8 @@ export const UPLOAD_GUIDES: Record<UploadPurpose, UploadGuide> = {
   },
   "promo-hero": {
     titleBn: "হোমপেজ প্রোমো স্লাইড",
-    size: "১২৬০×৪৮০px (২১:৮) — মোবাইলে “আপন” কার্ডের সমান মাপ",
-    ratio: 21 / 8, ratioLabel: "২১:৮", fit: "contain",
+    size: "১২০০×৯০০px (৪:৩) — ডেস্কটপে ডানের বড় কার্ড; মোবাইলে মাঝখান ঠিক রেখে ১৬:১০ বাক্সে দেখায়",
+    ratio: 4 / 3, ratioLabel: "৪:৩", fit: "contain",
     background: "ব্র্যান্ড রঙ বা অফারের ছবি",
     subject: "পুরো ছবি মোবাইল, ট্যাব ও ডেস্কটপে কাটা ছাড়া দেখায় — তবু লেখা, দাম ও লোগো মাঝখানে রাখলে সবচেয়ে ভালো",
     format: IMG, maxSize: "১MB-এর কম রাখুন (দ্রুত লোড হবে)",
