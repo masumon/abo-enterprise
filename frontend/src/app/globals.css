@@ -1557,3 +1557,28 @@ html:not(.dark) #page-content :is(.text-gray-500, .text-muted) { color: rgb(75 8
   outline: 2px solid #93c5fd;
   outline-offset: 2px;
 }
+
+
+/* Admin dark-mode audit fixes — admin-only theme selectors; public website stays unchanged. */
+.admin-shell .admin-modal-panel { background-color: #fff; color: #111827; }
+.admin-dark .admin-modal-panel { background-color: #101828; color: #e5e7eb; border-color: rgba(255,255,255,.1); }
+.admin-dark .admin-modal-panel :is(.text-gray-900, .text-gray-800, .text-heading) { color: #e5e7eb; }
+.admin-dark .admin-modal-panel :is(.text-gray-700, .text-gray-600, .text-gray-500, .text-gray-400) { color: #cbd5e1; }
+.admin-dark .admin-modal-panel :is(.border-gray-100, .border-gray-200, .border-gray-300) { border-color: rgba(255,255,255,.1); }
+.admin-dark .admin-modal-panel :is(.bg-gray-50, .bg-gray-100) { background-color: #172033; }
+.admin-dark .admin-modal-panel input, .admin-dark .admin-modal-panel select, .admin-dark .admin-modal-panel textarea { background-color: #0b1220; color: #e5e7eb; border-color: rgba(255,255,255,.16); }
+.admin-dark .admin-modal-panel select option { background-color: #101828; color: #e5e7eb; }
+.admin-dark .admin-modal-panel input::placeholder, .admin-dark .admin-modal-panel textarea::placeholder { color: #94a3b8; opacity: 1; }
+.admin-dark .admin-settings-section { background-color: #101828; border-color: rgba(255,255,255,.1); }
+.admin-dark .admin-settings-section .admin-settings-heading { color: #e5e7eb; }
+.admin-dark .admin-settings-section .admin-settings-note { background-color: rgba(59,130,246,.12); color: #bfdbfe; border-color: rgba(96,165,250,.2); }
+.admin-dark .admin-settings-section .admin-settings-note a { color: #bfdbfe; }
+.admin-dark .admin-settings-section .admin-settings-hint { color: #cbd5e1; }
+.admin-dark .admin-shell-status-pending { color: #fcd34d; background: rgba(245,158,11,.16); border-color: rgba(245,158,11,.35); }
+.admin-dark .admin-shell-status-confirmed, .admin-dark .admin-shell-status-contacted, .admin-dark .admin-shell-status-qualified { color: #93c5fd; background: rgba(59,130,246,.16); border-color: rgba(96,165,250,.32); }
+.admin-dark .admin-shell-status-processing, .admin-dark .admin-shell-status-in_progress { color: #c4b5fd; background: rgba(139,92,246,.16); border-color: rgba(167,139,250,.32); }
+.admin-dark .admin-shell-status-shipped { color: #d8b4fe; background: rgba(168,85,247,.16); border-color: rgba(192,132,252,.32); }
+.admin-dark .admin-shell-status-delivered, .admin-dark .admin-shell-status-completed, .admin-dark .admin-shell-status-new, .admin-dark .admin-shell-status-won, .admin-dark .admin-shell-status-paid, .admin-dark .admin-shell-status-active { color: #86efac; background: rgba(22,163,74,.16); border-color: rgba(74,222,128,.32); }
+.admin-dark .admin-shell-status-cancelled, .admin-dark .admin-shell-status-failed { color: #fca5a5; background: rgba(220,38,38,.16); border-color: rgba(248,113,113,.32); }
+.admin-dark .admin-shell-status-returned, .admin-dark .admin-shell-status-refunded, .admin-dark .admin-shell-status-partially_refunded { color: #fdba74; background: rgba(234,88,12,.16); border-color: rgba(251,146,60,.32); }
+.admin-dark .admin-shell-status-lost, .admin-dark .admin-shell-status-inactive { color: #cbd5e1; background: rgba(148,163,184,.14); border-color: rgba(148,163,184,.3); }
