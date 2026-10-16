@@ -7,8 +7,7 @@ import { Calendar, ShoppingBag, ArrowRight, Zap } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { useT } from "@/lib/i18n/useT";
 import AnimatedCounter from "@/components/ui/AnimatedCounter";
-import { publicApi } from "@/lib/api";
-import { ABO_ACRONYM, getBrandName, getBrandTagline } from "@/lib/tokens";
+import { ABO_ACRONYM } from "@/lib/tokens";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { usePublicStats } from "@/hooks/usePublicStats";
 import { resolveHomeBannerImage } from "@/lib/pageBanners";
@@ -25,7 +24,6 @@ import {
   heroAlignClass,
   heroVAlignClass,
 } from "@/lib/heroTextStyle";
-import BrandLogo from "@/components/ui/BrandLogo";
 import { cloudinarySrcSet, HERO_BG_WIDTHS } from "@/lib/responsiveMediaUrl";
 import type { PromoSlide } from "@/types";
 
@@ -60,8 +58,6 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
   const t = useT();
   const { settings } = usePublicSettings(["hero_image_url", "hero_mobile_image_url", "hero_promo_media_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "free_delivery_min_amount", HERO_TEXT_STYLE_KEY]);
   const { stats, loading: statsLoading } = usePublicStats();
-  const [activity, setActivity] = useState<ActivityItem[]>([]);
-  const [activityLoaded, setActivityLoaded] = useState(false);
 
   const heroImage = resolveHomeBannerImage(settings);
   const heroIsVideo = isVideoUrl(heroImage);
@@ -81,13 +77,6 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
   // Mobile/tablet card when no promo slide is live: promo media first, then the mobile banner.
   const mobileFallbackMedia = heroPromoMedia || heroMobileImg;
 
-  useEffect(() => {
-    publicApi.activity().then((r) => {
-      const items = r.data.data;
-      if (items?.length) setActivity(items);
-    }).catch(() => {}).finally(() => setActivityLoaded(true));
-  }, []);
-
   // Only show tiles that have a real, non-zero number — "—"/0 tiles look unfinished.
   const tiles = [
     { label: lang === "bn" ? "অর্ডার" : "Orders", end: stats?.orders, icon: "📦" },
@@ -95,9 +84,6 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
     { label: lang === "bn" ? "গ্রাহক" : "Clients", end: stats?.clients, icon: "👥" },
     { label: lang === "bn" ? "প্রজেক্ট" : "Projects", end: stats?.projects, icon: "🚀" },
   ].filter((item) => typeof item.end === "number" && item.end > 0);
-  // Three rows keep the card short enough to sit under the promo card on a
-  // laptop screen without running into the bottom of the hero.
-  const recent = activity.slice(0, 3);
 
   /** One media card (admin promo media / mobile banner) for when no promo slide is live. */
   const mediaCard = (url: string, sizes: string) => (
@@ -262,76 +248,54 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
                     <span className="truncate">{heroCtaText || t("hero_cta_products")}</span>
                   </Link>
                 </div>
+
+                {/* What ABO is, at a glance: three things you can do + live trust numbers (compact, left side). */}
+                <div className="flex flex-col gap-3 pt-1 w-full max-w-xl [text-shadow:none]">
+                  <div className="flex flex-wrap items-center gap-2" role="list" aria-label={lang === "bn" ? "আমরা যা করি" : "What we do"}>
+                    {[
+                      { href: "/products", icon: "🛍️", bn: "পণ্য কিনুন", en: "Shop products" },
+                      { href: "/services", icon: "🛠️", bn: "সেবা নিন", en: "Book services" },
+                      { href: "/services/software", icon: "💻", bn: "সফটওয়্যার ও AI", en: "Software & AI" },
+                    ].map((x) => (
+                      <Link key={x.href} href={x.href} role="listitem" className="inline-flex items-center gap-1.5 rounded-full bg-white/12 hover:bg-white/20 border border-white/25 backdrop-blur-md px-3.5 min-h-9 text-sm font-semibold text-white transition">
+                        <span aria-hidden>{x.icon}</span>{lang === "bn" ? x.bn : x.en}
+                      </Link>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2.5 min-h-[44px]">
+                    {statsLoading && tiles.length === 0 ? (
+                      // Same height as the real numbers, so nothing jumps when they arrive.
+                      <div className="flex gap-2" aria-hidden>{[0, 1, 2, 3].map((i) => <div key={i} className="h-11 w-[84px] rounded-xl bg-white/10 animate-pulse" />)}</div>
+                    ) : tiles.length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {tiles.map((item) => (
+                          <div key={item.label} className="flex items-center gap-2 rounded-xl bg-[#0c1330]/70 backdrop-blur-md border border-white/15 px-3 h-11">
+                            <span className="text-base leading-none" aria-hidden>{item.icon}</span>
+                            <span className="leading-tight">
+                              <b className="block text-white text-sm tabular-nums"><AnimatedCounter end={item.end as number} />+</b>
+                              <span className="block text-white/75 text-[10px]">{item.label}</span>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="flex justify-end animate-fade-in">
-              <div className="relative w-full max-w-[26rem] xl:max-w-md flex flex-col gap-4">
+              <div className="relative w-full max-w-[28rem] xl:max-w-[32rem] flex flex-col gap-4">
                 <PromoSlider
                   placement="hero"
                   aspect="aspect-[21/8]"
                   eagerFirstSlide
                   initialSlides={initialHeroSlides}
                   // Hidden below 1024px: "1px" keeps phones from fetching this copy at full size.
-                  sizes="(max-width: 1023px) 1px, 448px"
-                  fallback={heroPromoMedia ? mediaCard(heroPromoMedia, "448px") : null}
+                  sizes="(max-width: 1023px) 1px, 512px"
+                  fallback={heroPromoMedia ? mediaCard(heroPromoMedia, "512px") : null}
                 />
 
-                {(tiles.length > 0 || recent.length > 0 || statsLoading || !activityLoaded) && (
-                  // Solid dark glass: readable over any background photo.
-                  <div className="rounded-3xl p-4 xl:p-5 bg-[#0c1330]/85 backdrop-blur-xl border border-white/15 shadow-2xl">
-                    <div className="flex items-center gap-3 mb-3">
-                      <BrandLogo size="sm" href={false} variant="glass" />
-                      <div className="min-w-0">
-                        <p className="text-white font-semibold text-sm truncate">{getBrandName(lang)}</p>
-                        <p className="text-white/75 text-[11px] truncate">{getBrandTagline(lang)}</p>
-                      </div>
-                    </div>
-
-                    {tiles.length === 0 && statsLoading && (
-                      // Same height as the real tiles, so the card does not jump when the numbers arrive.
-                      <div className="grid grid-cols-4 gap-2" aria-hidden>
-                        {[0, 1, 2, 3].map((i) => <div key={i} className="rounded-xl bg-white/[0.08] border border-white/10 h-[76px] animate-pulse" />)}
-                      </div>
-                    )}
-                    {tiles.length > 0 && (
-                      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${tiles.length}, minmax(0, 1fr))` }}>
-                        {tiles.map((item) => (
-                          <div key={item.label} className="rounded-xl bg-white/[0.08] border border-white/10 px-2 py-2.5 text-center animate-scale-in">
-                            <span className="text-base leading-none" aria-hidden>{item.icon}</span>
-                            <p className="text-white font-bold text-base mt-1 tabular-nums">
-                              <AnimatedCounter end={item.end as number} />
-                            </p>
-                            <p className="text-white/80 text-[11px] truncate">{item.label}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {recent.length === 0 && !activityLoaded && (
-                      <div className={cn("space-y-1 [@media(max-height:780px)]:hidden", "mt-3")} aria-hidden>
-                        {[0, 1, 2].map((i) => <div key={i} className="h-[34px] rounded-lg bg-white/[0.06] animate-pulse" />)}
-                      </div>
-                    )}
-                    {recent.length > 0 && (
-                      // Hidden on short laptop screens so the card never runs into the wave.
-                      <div className={cn("space-y-1 [@media(max-height:780px)]:hidden", tiles.length > 0 && "mt-3")}>
-                        <p className="text-white/75 text-[11px] font-semibold uppercase tracking-wider">
-                          {lang === "bn" ? "সাম্প্রতিক কার্যক্রম" : "Recent Activity"}
-                        </p>
-                        {recent.map((item, i) => (
-                          <div key={i} className="flex items-center gap-2.5 py-1.5 border-b border-white/10 last:border-0">
-                            <span aria-hidden>{item.icon}</span>
-                            <span className="text-xs flex-1 min-w-0 truncate text-white/90">
-                              {maskPublicRefs(lang === "bn" ? item.text_bn : item.text_en)}
-                            </span>
-                            <span className="text-white/65 text-[10px] flex-none">{item.time}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </div>
