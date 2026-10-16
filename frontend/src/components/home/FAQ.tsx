@@ -21,7 +21,7 @@ export default function FAQ() {
   return (
     <section className="py-5 lg:py-7 bg-gradient-to-b from-gray-50 to-white dark:from-white/5 dark:to-[var(--surface)]">
       <div className="container mx-auto px-4 max-w-3xl">
-        <div className="mb-10">
+        <div className="mb-5 sm:mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-heading mb-2">
             {lang === "bn" ? "সাধারণ প্রশ্ন ও উত্তর" : "Frequently Asked Questions"}
           </h2>

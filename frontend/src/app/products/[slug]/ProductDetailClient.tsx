@@ -195,9 +195,9 @@ export default function ProductDetailClient({ product }: Props) {
   })();
 
   return (
-    <main className="min-h-screen py-8 px-4 pb-[calc(var(--mobile-chrome-bottom)+5rem)] lg:pb-8">
+    <main className="min-h-screen py-3 sm:py-8 px-4 pb-[calc(var(--mobile-chrome-bottom)+5rem)] lg:pb-8">
       <div className="max-w-6xl mx-auto">
-        <nav aria-label={lang === "bn" ? "অবস্থান" : "Breadcrumb"} className="mb-5 text-sm text-gray-500 dark:text-gray-400">
+        <nav aria-label={lang === "bn" ? "অবস্থান" : "Breadcrumb"} className="mb-3 sm:mb-5 text-sm text-gray-500 dark:text-gray-400">
           <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-1 min-w-0">
             <li>
               <Link href="/" className="inline-flex items-center gap-1 hover:text-brand-600">
@@ -218,11 +218,11 @@ export default function ProductDetailClient({ product }: Props) {
           </ol>
         </nav>
 
-        <GlassCard className="overflow-hidden mb-10">
+        <GlassCard className="overflow-hidden mb-6 sm:mb-10">
           <div className="grid md:grid-cols-2 gap-0">
-            <div className="p-6 border-b md:border-b-0 md:border-r border-gray-100 dark:border-white/10">
+            <div className="p-3 sm:p-6 border-b md:border-b-0 md:border-r border-gray-100 dark:border-white/10">
               <div
-                className={cn("relative aspect-square rounded-xl overflow-hidden mb-4", images[selectedImage] ? "bg-[#fff] ring-1 ring-gray-100 dark:ring-white/10" : "bg-gradient-to-br from-brand-50 to-brand-100")}
+                className={cn("relative aspect-square rounded-xl overflow-hidden mb-2 sm:mb-4", images[selectedImage] ? "bg-[#fff] ring-1 ring-gray-100 dark:ring-white/10" : "bg-gradient-to-br from-brand-50 to-brand-100")}
                 onTouchStart={onTouchStart}
                 onTouchEnd={onTouchEnd}
               >
@@ -265,7 +265,7 @@ export default function ProductDetailClient({ product }: Props) {
               )}
             </div>
 
-            <div className="p-6 flex flex-col">
+            <div className="p-4 sm:p-6 flex flex-col">
               <div className="flex items-center gap-2 mb-3">
                 {reviewCount > 0 ? (
                   <>
@@ -503,7 +503,7 @@ export default function ProductDetailClient({ product }: Props) {
         </div>
         <ProductFAQ />
         {related.length > 0 && (
-          <section className="mt-10">
+          <section className="mt-6 sm:mt-10">
             <div className="flex items-center justify-between gap-3 mb-4">
               <h2 className="text-xl font-bold">{lang === "bn" ? "একই ধরনের আরও পণ্য" : "Related Products"}</h2>
               <Link href={categoryHref} className="fancy-link fancy-link--arrow flex-shrink-0">{lang === "bn" ? "সব দেখুন" : "View all"}</Link>

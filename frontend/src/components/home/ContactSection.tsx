@@ -35,7 +35,7 @@ export default function ContactSection() {
   return (
     <section className="py-5 lg:py-7 bg-white dark:bg-[var(--surface)]">
       <div className="container mx-auto px-4">
-        <div className="mb-10">
+        <div className="mb-5 sm:mb-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-heading mb-2">
             {lang === "bn" ? "যোগাযোগ করুন" : "Get In Touch"}
           </h2>
@@ -44,8 +44,8 @@ export default function ContactSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-          <GlassCard className="p-6 space-y-4 lg:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 max-w-5xl mx-auto">
+          <GlassCard className="p-4 sm:p-6 space-y-3 sm:space-y-4 lg:col-span-1">
             <h3 className="font-bold text-heading text-lg">
               {lang === "bn" ? "আমাদের তথ্য" : "Our Information"}
             </h3>
@@ -91,13 +91,13 @@ export default function ContactSection() {
               embedSrc={mapsEmbed}
               address={address}
               title="ABO Enterprise Map"
-              minHeight="16rem"
+              minHeight="11rem"
               className="lg:min-h-[18rem]"
             />
           </GlassCard>
         </div>
 
-        <div className="text-center mt-8">
+        <div className="text-center mt-5 sm:mt-8">
           <Link href="/contact" className="btn btn-brand btn-md btn-ripple">
             {lang === "bn" ? "সম্পূর্ণ যোগাযোগ পেজ" : "Full Contact Page"}
           </Link>

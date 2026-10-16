@@ -78,10 +78,10 @@ export default function CategoryCards() {
               <Link
                 key={`${cat.href}-${i}`}
                 href={cat.href}
-                className={`group relative flex min-w-0 flex-col items-center text-center gap-1.5 sm:gap-2 px-1.5 py-3 sm:px-4 sm:py-5 lg:py-6 rounded-2xl border bg-gradient-to-b ${tint.card} shadow-sm hover:shadow-xl hover:shadow-brand-500/15 hover:-translate-y-1 active:scale-[0.97] transition-all duration-200 overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500`}
+                className={`group relative flex min-w-0 flex-col items-center text-center gap-1 sm:gap-2 px-1.5 py-2 sm:px-4 sm:py-5 lg:py-6 rounded-2xl border bg-gradient-to-b ${tint.card} shadow-sm hover:shadow-xl hover:shadow-brand-500/15 hover:-translate-y-1 active:scale-[0.97] transition-all duration-200 overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500`}
               >
                 <span aria-hidden className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 bg-gradient-to-tr from-transparent via-white/40 to-transparent dark:via-white/5 transition-opacity duration-300" />
-                <span className={`relative w-12 h-12 sm:w-14 sm:h-14 lg:w-[72px] lg:h-[72px] rounded-xl sm:rounded-2xl bg-gradient-to-br ${gradient} shadow-lg shadow-brand-500/25 ring-1 ring-white/20 flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105`}>
+                <span className={`relative w-10 h-10 sm:w-14 sm:h-14 lg:w-[72px] lg:h-[72px] rounded-xl sm:rounded-2xl bg-gradient-to-br ${gradient} shadow-lg shadow-brand-500/25 ring-1 ring-white/20 flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105`}>
                   <Icon className="w-5 h-5 sm:w-6 sm:h-6 lg:w-9 lg:h-9 text-white" strokeWidth={2} aria-hidden />
                 </span>
                 <span className="relative text-sm sm:text-base lg:text-2xl font-extrabold text-heading leading-tight tracking-tight">{label}</span>

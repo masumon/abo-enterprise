@@ -69,7 +69,7 @@ const GUIDES: Record<BannerKind, GuideText> = {
   },
   "hero-promo": {
     sizes: [
-      { device: "desktop", bn: "কার্ড: ১২৮০×৭২০ px (১৬:৯) · ছবি, GIF বা MP4", en: "Card: 1280×720 px (16:9) · image, GIF or MP4" },
+      { device: "desktop", bn: "ডেস্কটপ/ট্যাব (১০২৪px+) কার্ড: ১২৮০×৮০০ px (১৬:১০) · ছবি, GIF বা MP4। মোবাইলে মাঝখান থেকে ৭:২ পট্টি দেখায়", en: "Desktop/tablet (1024px+) card: 1280×800 px (16:10) · image, GIF or MP4. On phones the middle 7:2 strip is shown" },
     ],
     safeBn: [
       "ডেস্কটপে হিরোর ডান দিকে কার্ড হিসেবে বসে; প্রোমো স্লাইড চালু থাকলে স্লাইডই আগে দেখায়।",
@@ -218,14 +218,14 @@ export default function BannerDevicePreview({ kind, value, title }: { kind: Bann
     body = (
       <div className="grid gap-3 sm:grid-cols-3 items-end">
         {kind === "hero-promo" && (
-          <Frame device="desktop" label={`${L.desktop} · 448px`} aspect="aspect-video">
+          <Frame device="desktop" label={`${L.desktop} · 672px (১৬:১০)`} aspect="aspect-[16/10]">
             <Media url={value} className={cover} />
           </Frame>
         )}
-        <Frame device="tablet" label={`${L.tablet} · 720px`} aspect={kind === "hero-mobile" ? "aspect-[7/2]" : "aspect-video"}>
+        <Frame device="tablet" label={`${L.tablet} · 720px`} aspect="aspect-[7/2]">
           <Media url={value} className={cover} />
         </Frame>
-        <Frame device="mobile" label={`${L.mobile} · 366px`} aspect={kind === "hero-mobile" ? "aspect-[7/2]" : "aspect-video"}>
+        <Frame device="mobile" label={`${L.mobile} · 366px`} aspect="aspect-[7/2]">
           <Media url={value} className={cover} />
         </Frame>
       </div>

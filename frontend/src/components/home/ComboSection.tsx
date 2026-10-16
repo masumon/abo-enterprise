@@ -104,7 +104,7 @@ export default function ComboSection({ initialCombos = null }: { initialCombos?:
                   aria-label={bn ? `${title} — বিস্তারিত দেখুন` : `${title} — view details`}
                   className="text-left flex flex-col flex-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-400"
                 >
-                  <div className="relative aspect-[4/3] overflow-hidden">
+                  <div className="relative aspect-[16/10] sm:aspect-[4/3] overflow-hidden">
                     {c.image_url ? (
                       <Image
                         src={c.image_url}

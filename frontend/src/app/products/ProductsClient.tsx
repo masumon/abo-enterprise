@@ -300,7 +300,7 @@ export default function ProductsClient({
   const totalPages = Math.ceil(total / 20);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-6xl mx-auto px-4 py-3 sm:py-8">
       <LoadingProgress loading={loading} message={t("loading_products")} className="mb-6" />
       <DemoModeBanner show={catalogSource === "cache" && !loading} source={catalogSource} />
 

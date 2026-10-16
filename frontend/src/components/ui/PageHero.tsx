@@ -220,7 +220,7 @@ export default function PageHero({
       </div>
 
       {isBrand && (
-        <div className="absolute bottom-0 left-0 right-0 pointer-events-none" aria-hidden>
+        <div className="absolute bottom-0 left-0 right-0 pointer-events-none max-lg:hidden" aria-hidden>
           <svg viewBox="0 0 1440 48" preserveAspectRatio="none" fill="none" className="w-full h-6 md:h-8 block">
             <path
               d="M0 48L48 42C96 36 192 24 288 20C384 16 480 24 576 30C672 36 768 42 864 38C960 34 1056 20 1152 16C1248 12 1344 20 1392 24L1440 28V48H0Z"

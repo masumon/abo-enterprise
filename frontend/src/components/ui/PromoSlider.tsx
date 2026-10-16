@@ -49,18 +49,22 @@ function resolveSlideLink(raw?: string | null): { path: string | null; external:
  * placeholder until it has decoded, then fades in. Fixes the "black flash" a
  * slow banner image used to leave while the browser fetched it.
  */
-function PromoImage({ src, alt, eager, sizes, contain, onRatio }: { src: string; alt: string; eager?: boolean; sizes?: string; contain?: boolean; onRatio?: (r: number) => void }) {
+function PromoImage({ src, alt, eager, sizes, contain, onRatio, boxRatio }: { src: string; alt: string; eager?: boolean; sizes?: string; contain?: boolean; onRatio?: (r: number) => void; boxRatio?: number }) {
   // The first (eager) slide is the page's LCP image: show it from the server HTML at once.
   // Hiding it until React hydrated (opacity-0 + spinner) delayed it ~9 s on slow phones.
   const [loaded, setLoaded] = useState(!!eager);
   const imgRef = useRef<HTMLImageElement>(null);
+  const [nat, setNat] = useState<number | null>(null);
+  // An image within ~12% of the box ratio fills the box edge to edge (a sliver is trimmed) — no pale side bars.
+  const nearFit = !!(nat && boxRatio && Math.abs(nat - boxRatio) / boxRatio < 0.12);
+  const showContain = !!contain && !nearFit;
   // Server-rendered images can finish loading before React hydrates and
   // attaches onLoad — check `complete` so the spinner never sticks.
   useEffect(() => {
     const el = imgRef.current;
     if (el?.complete) {
       setLoaded(true);
-      if (el.naturalWidth && el.naturalHeight) onRatio?.(el.naturalWidth / el.naturalHeight);
+      if (el.naturalWidth && el.naturalHeight) { setNat(el.naturalWidth / el.naturalHeight); onRatio?.(el.naturalWidth / el.naturalHeight); }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -76,7 +80,7 @@ function PromoImage({ src, alt, eager, sizes, contain, onRatio }: { src: string;
       )}
       {/* contain: the whole banner is shown (no text cut off when the upload is
           not the exact box ratio); a blurred copy fills the side space. */}
-      {contain && (
+      {showContain && (
          
         <img src={cloudinaryWidthUrl(src, 320)} alt="" aria-hidden loading="lazy" decoding="async"
           className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-70" />
@@ -92,12 +96,12 @@ function PromoImage({ src, alt, eager, sizes, contain, onRatio }: { src: string;
         onLoad={(e) => {
           setLoaded(true);
           const el = e.currentTarget;
-          if (el.naturalWidth && el.naturalHeight) onRatio?.(el.naturalWidth / el.naturalHeight);
+          if (el.naturalWidth && el.naturalHeight) { setNat(el.naturalWidth / el.naturalHeight); onRatio?.(el.naturalWidth / el.naturalHeight); }
         }}
         onError={() => setLoaded(true)}
         className={cn(
           "absolute inset-0 w-full h-full transition-opacity duration-300",
-          contain ? "object-contain" : "object-cover",
+          showContain ? "object-contain" : "object-cover",
           loaded ? "opacity-100" : "opacity-0"
         )}
         loading={eager ? "eager" : "lazy"}
@@ -118,7 +122,7 @@ function ratioOfClass(cls: string): number {
  * image has loaded, adopts the image's own ratio (within sane limits) — so any banner the
  * admin uploads is shown whole and fills the card edge to edge on every screen, with no
  * coloured side bars and nothing cropped. */
-function SlideMedia({ aspect, knownRatio, minRatio = 1.2, onFit, children }: { aspect: string; knownRatio?: number | null; minRatio?: number; onFit: () => void; children: (onRatio: (r: number) => void) => React.ReactNode }) {
+function SlideMedia({ aspect, knownRatio, minRatio = 1.2, onFit, children }: { aspect: string; knownRatio?: number | null; minRatio?: number; onFit: () => void; children: (onRatio: (r: number) => void, boxRatio: number) => React.ReactNode }) {
   const base = ratioOfClass(aspect);
   const [ratio, setRatio] = useState<number | null>(knownRatio ?? null);
   const eff = ratio ? Math.max(ratio, minRatio) : null; // taller images are letter-boxed (blurred fill) instead of making the card too tall
@@ -126,7 +130,7 @@ function SlideMedia({ aspect, knownRatio, minRatio = 1.2, onFit, children }: { a
   useEffect(() => { if (fitted) onFit(); }, [fitted, onFit]);
   return (
     <div className={`relative w-full ${aspect} overflow-hidden`} style={fitted ? { aspectRatio: String(fitted) } : undefined}>
-      {children(setRatio)}
+      {children(setRatio, fitted ?? base)}
     </div>
   );
 }
@@ -212,7 +216,7 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
           const title = (lang === "bn" ? slide.title_bn : slide.title_en) || slide.title_en || "";
           const media = (
             <SlideMedia aspect={aspect} knownRatio={slide.aspect_ratio} minRatio={minRatio} onFit={refreshHeight}>
-              {(onRatio) => slide.video_url ? (
+              {(onRatio, boxRatio) => slide.video_url ? (
                 <AutoVideo
                   src={slide.video_url}
                   className="absolute inset-0 w-full h-full object-cover"
@@ -227,6 +231,7 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
                   sizes={sizes}
                   contain={fit ? fit === "contain" : true}
                   onRatio={onRatio}
+                  boxRatio={boxRatio}
                 />
               )}
             </SlideMedia>

@@ -72,3 +72,4 @@ client_secret*.json
 # Local archive of retired files (kept in project, not in git)
 /_archive/
 /admin ui_ux/
+/mobile view UI_UX/

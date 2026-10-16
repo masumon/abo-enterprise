@@ -16,7 +16,7 @@ export default function ProductFAQ() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <section className="mt-10">
+    <section className="mt-4 sm:mt-10">
       <h2 className="text-xl font-bold mb-4">{lang === "bn" ? "প্রশ্নোত্তর" : "FAQ"}</h2>
       <div className="space-y-2">
         {FAQS.map((item, i) => (
