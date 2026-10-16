@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useContactInfo } from "@/hooks/useContactInfo";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Truck, Package, Phone, MessageCircle, Calendar, ArrowLeft, CreditCard, ClipboardList, Search, Loader2 } from "lucide-react";
@@ -137,6 +138,16 @@ export default function TrackingPage() {
   useEffect(() => { if (query || orderNumber || bookingNumber) setInput(query || orderNumber || bookingNumber || ""); }, [query, orderNumber, bookingNumber]);
 
   const t = (en: string, bn: string) => (lang === "bn" ? bn : en);
+  // Admin → Couriers: tracking-page URL per courier ("{tracking_id}" is replaced). Unset = no button.
+  const { settings: courierSettings } = usePublicSettings(["courier_pathao_url", "courier_steadfast_url", "courier_redx_url", "courier_paperfly_url", "courier_ecourier_url"]);
+  const courierTemplate = tracking?.kind === "order" && tracking.courier_provider
+    ? getSettingValue(courierSettings, `courier_${tracking.courier_provider.toLowerCase().replace(/[^a-z]/g, "")}_url`).trim()
+    : "";
+  const courierLink = courierTemplate && tracking?.kind === "order" && tracking.courier_tracking_id && /^https:\/\//i.test(courierTemplate)
+    ? (courierTemplate.includes("{tracking_id}")
+        ? courierTemplate.replace("{tracking_id}", encodeURIComponent(tracking.courier_tracking_id))
+        : courierTemplate + encodeURIComponent(tracking.courier_tracking_id))
+    : "";
 
   const submitSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -288,6 +299,11 @@ export default function TrackingPage() {
                         {tracking.courier_provider}
                         {tracking.courier_tracking_id ? ` · ${tracking.courier_tracking_id}` : ""}
                       </p>
+                      {courierLink && (
+                        <a href={courierLink} target="_blank" rel="noopener noreferrer" className="fancy-link fancy-link--arrow mt-2">
+                          {t("Track on courier site", "কুরিয়ারের সাইটে ট্র্যাক করুন")}
+                        </a>
+                      )}
                     </div>
                   </div>
                 )}

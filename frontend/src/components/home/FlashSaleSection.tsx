@@ -6,7 +6,7 @@ import { ArrowRight } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import ProductCard from "@/components/features/ProductCard";
 import type { Product } from "@/types";
-import CountdownTimer from "@/components/ui/CountdownTimer";
+import CountdownTimer, { type CountdownSize } from "@/components/ui/CountdownTimer";
 import { productsApi } from "@/lib/api";
 import { usePublicSettings, getSettingValue, refreshPublicSettings } from "@/hooks/usePublicSettings";
 import { getFlashSaleStatus } from "@/lib/flashSale";
@@ -110,6 +110,10 @@ export default function FlashSaleSection({ initialSettings = null, initialProduc
     return null;
   }
   const flashEnd = status.end;
+  // Admin → Flash Sale: icon and timer size (empty = built-in look).
+  const flashIcon = getSettingValue(settings, "flash_sale_icon").trim() || "🔥";
+  const rawSize = getSettingValue(settings, "flash_sale_size");
+  const flashSize: CountdownSize = rawSize === "sm" || rawSize === "lg" || rawSize === "xl" ? rawSize : "md";
 
   return (
     <section id="flash-sale" className="relative py-5 sm:py-7 overflow-hidden bg-gradient-to-br from-brand-50 via-white to-amber-50/70 dark:from-[var(--surface)] dark:via-[var(--surface)] dark:to-[var(--surface)] scroll-mt-[calc(var(--navbar-offset)+3.5rem)]">
@@ -124,7 +128,7 @@ export default function FlashSaleSection({ initialSettings = null, initialProduc
         <div className="flex flex-wrap items-center justify-between gap-3 mb-3 sm:mb-4">
           <div className="flex items-center gap-3">
             <span className="relative flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#f4dfa0] via-[#d4af37] to-[#a3801f] shadow-lg shadow-amber-500/30 ring-1 ring-white/40 flex items-center justify-center">
-              <span className="text-xl sm:text-2xl" aria-hidden>🔥</span>
+              <span className="text-xl sm:text-2xl" aria-hidden>{flashIcon}</span>
               <span className="absolute inset-0 rounded-2xl bg-[#d4af37] animate-ping opacity-20" aria-hidden />
             </span>
             <div>
@@ -137,7 +141,7 @@ export default function FlashSaleSection({ initialSettings = null, initialProduc
             </div>
           </div>
           <div className="hidden sm:block">
-            <CountdownTimer endDate={flashEnd} size="md" tone="gold" onExpire={handleExpire} />
+            <CountdownTimer endDate={flashEnd} size={flashSize} tone="gold" onExpire={handleExpire} />
           </div>
         </div>
 
