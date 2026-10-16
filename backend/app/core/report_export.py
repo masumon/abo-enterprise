@@ -47,6 +47,11 @@ _FONTS = Path(__file__).resolve().parents[2] / "assets" / "fonts"
 
 
 def _logo() -> Path | None:
+    """The round brand badge as a transparent PNG (clean on any background); falls back to the
+    invoice's logo.jpg when the PNG is not bundled."""
+    png = Path(__file__).resolve().parents[2] / "assets" / "logo.png"
+    if png.is_file():
+        return png
     from app.core.invoice import _find_logo_path
 
     return _find_logo_path()
@@ -179,14 +184,22 @@ def build_report_pdf(report_type: str, rows: list[dict[str, Any]], period: str, 
 
     # ── Brand band ──
     cw = pdf.w - 2 * M
-    band = 74.0
+    band = 82.0
     pdf.set_fill_color(*BRAND)
     pdf.rect(M, 28, cw, band, style="F", round_corners=True, corner_radius=8)
     tx = M + 16
     if logo:
         try:
-            pdf.image(str(logo), x=M + 12, y=28 + (band - 46) / 2, w=46, h=46)
-            tx = M + 12 + 46 + 12
+            d = 58.0  # badge diameter
+            cx, cy = M + 14 + d / 2, 28 + band / 2
+            # White disc + soft ring behind the round logo, so it reads as a crisp badge on the blue band.
+            pdf.set_fill_color(255, 255, 255)
+            pdf.ellipse(cx - d / 2 - 2, cy - d / 2 - 2, d + 4, d + 4, style="F")
+            pdf.set_draw_color(147, 197, 253)
+            pdf.set_line_width(1.2)
+            pdf.ellipse(cx - d / 2 - 4, cy - d / 2 - 4, d + 8, d + 8, style="D")
+            pdf.image(str(logo), x=cx - d / 2, y=cy - d / 2, w=d, h=d)
+            tx = M + 14 + d + 18
         except Exception:  # noqa: BLE001
             pass
     pdf.set_text_color(255, 255, 255)
@@ -279,7 +292,7 @@ def build_report_xlsx(report_type: str, rows: list[dict[str, Any]], period: str,
     logo = _logo()
     if logo:
         try:
-            img = XLImage(str(logo)); img.width, img.height = 54, 54
+            img = XLImage(str(logo)); img.width, img.height = 64, 64
             ws.add_image(img, "A1")
         except Exception:  # noqa: BLE001
             pass

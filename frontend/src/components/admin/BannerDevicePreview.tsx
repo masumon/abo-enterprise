@@ -40,7 +40,7 @@ const GUIDES: Record<BannerKind, GuideText> = {
   },
   "hero-desktop": {
     sizes: [
-      { device: "desktop", bn: "ডেস্কটপ: ১৯২০×১০৮০ px (১৬:৯) — শুধু বড় স্ক্রিনে (১০২৪px+) দেখায়", en: "Desktop: 1920×1080 px (16:9) — large screens only (1024px+)" },
+      { device: "desktop", bn: "ডেস্কটপ: ১৯২০×৭৬০ px (প্রায় ৫:২) — বড় স্ক্রিনে (১০২৪px+) দেখায়; স্ক্রিনভেদে উচ্চতা ৫০০–৬৪০px, উপর-নিচ সামান্য কাটতে পারে", en: "Desktop: 1920×760 px (about 5:2) — large screens (1024px+); height 500–640px by screen, top/bottom may crop slightly" },
       { device: "tablet", bn: "ট্যাবলেট/মোবাইলে এই ছবি দেখায় না — সেখানে প্রোমো স্লাইড দেখায়", en: "Not shown on tablet/mobile — the promo slider is shown there" },
     ],
     safeBn: [
@@ -200,15 +200,15 @@ export default function BannerDevicePreview({ kind, value, title }: { kind: Bann
     );
   } else if (kind === "hero-desktop") {
     body = (
-      <Frame device="desktop" label={`${L.desktop} · 1440×900`} aspect="aspect-[1440/860]">
+      <Frame device="desktop" label={`${L.desktop} · 1440×900 (হিরোর উচ্চতা ≈ ৬০০px)`} aspect="aspect-[1440/600]">
         <Media url={value} className={cover} />
         <div className="absolute inset-0" style={{ background: HERO_SCRIM }} />
-        <TitleZone className="left-[6%] top-[28%] w-[46%] h-[40%]" text={sample} />
+        <TitleZone className="left-[6%] top-[30%] w-[46%] h-[44%]" text={sample} />
         {/* Right column: promo card + stats card positions */}
-        <div className="absolute right-[6%] top-[22%] w-[30%] aspect-video rounded-lg border-2 border-dashed border-white/70 bg-white/10 flex items-center justify-center text-[9px] sm:text-[11px] text-white text-center px-1">
+        <div className="absolute right-[6%] top-[10%] w-[30%] aspect-[21/8] rounded-lg border-2 border-dashed border-white/70 bg-white/10 flex items-center justify-center text-[9px] sm:text-[11px] text-white text-center px-1">
           {bn ? "প্রোমো কার্ড" : "Promo card"}
         </div>
-        <div className="absolute right-[6%] top-[46%] w-[30%] h-[30%] rounded-lg border-2 border-dashed border-white/70 bg-[#0c1330]/80 flex items-center justify-center text-[9px] sm:text-[11px] text-white text-center px-1">
+        <div className="absolute right-[6%] top-[44%] w-[30%] h-[42%] rounded-lg border-2 border-dashed border-white/70 bg-[#0c1330]/80 flex items-center justify-center text-[9px] sm:text-[11px] text-white text-center px-1">
           {bn ? "পরিসংখ্যান কার্ড" : "Stats card"}
         </div>
       </Frame>

@@ -282,10 +282,10 @@ export const UPLOAD_GUIDES: Record<UploadPurpose, UploadGuide> = {
   },
   "hero-banner": {
     titleBn: "হোমপেজ ব্যানার",
-    size: "১৯২০×১০৮০px (১৬:৯) · ছবি বা MP4",
-    ratio: 16 / 9, ratioLabel: "১৬:৯", fit: "cover", previewBg: "dark",
+    size: "১৯২০×৭৬০px (প্রায় ৫:২) · ছবি বা MP4",
+    ratio: 2.5, ratioLabel: "৫:২", fit: "cover", previewBg: "dark",
     background: "গাঢ় বা মাঝারি রঙ — উপরে লেখা বসে",
-    subject: "মূল বিষয় ডান দিকে/মাঝখানে রাখুন; বাম দিকে লেখা বসে",
+    subject: "ডেস্কটপ/ট্যাবে হোমপেজের উপরের অংশ এখন কম উচ্চতার (স্ক্রিনভেদে ৫০০–৬৪০px) — তাই চওড়া ছবি দিন। মূল বিষয় মাঝখানের আড়াআড়ি পট্টিতে রাখুন; উপর-নিচ কিছুটা কাটতে পারে। বাম দিকে লেখা বসে",
     format: "JPG, WebP বা MP4", maxSize: "ছবি ১MB, ভিডিও ১০MB-এর কম ভালো",
     whereBn: "হোমপেজের একদম উপরের অংশ",
   },

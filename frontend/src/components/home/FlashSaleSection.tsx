@@ -38,8 +38,10 @@ export default function FlashSaleSection({ initialSettings = null, initialProduc
   const { settings: hookSettings, loading: settingsLoading } = usePublicSettings();
   const [polled, setPolled] = useState<Record<string, string> | null>(initialSettings);
   const settings = polled ?? hookSettings;
-  // null until mounted → identical (empty) output on server and first paint.
-  const [now, setNow] = useState<number | null>(null);
+  // Homepage passes server data, so the clock is read at once and the band is part of the very
+  // first HTML (nothing pops in later and pushes the sections below it down). Without server
+  // data it stays null until mounted, as before.
+  const [now, setNow] = useState<number | null>(() => (initialSettings ? Date.now() : null));
   // null = not loaded yet; [] = loaded, nothing on sale.
   const [products, setProducts] = useState<Product[] | null>(initialProducts ? initialProducts.slice(0, 8) : null);
 
