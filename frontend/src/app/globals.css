@@ -1647,3 +1647,6 @@ body:has(.admin-overlay) .admin-ai-fab { display: none !important; }
 .admin-dark main :is([class~="text-emerald-600"], [class~="text-emerald-900"], [class~="text-green-600"], [class~="text-green-700"], [class~="text-green-800"]):not([class*="dark:text-"]) { color: rgb(110 231 183); }
 .admin-dark main :is([class~="text-red-800"], [class~="text-red-900"], [class~="text-rose-600"], [class~="text-rose-700"]):not([class*="dark:text-"]) { color: rgb(252 165 165); }
 .admin-dark main :is([class~="text-blue-600"], [class~="text-blue-700"], [class~="text-blue-800"], [class~="text-brand-900"], [class~="text-indigo-700"], [class~="text-sky-700"]):not([class*="dark:text-"]) { color: rgb(199 210 254); }
+
+/* Page behind an open admin panel/dialog does not scroll (2026-10-16). */
+body:has(.admin-overlay) { overflow: hidden; }
