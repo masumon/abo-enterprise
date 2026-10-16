@@ -91,15 +91,15 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
   ].filter((item) => typeof item.end === "number" && item.end > 0);
 
   /** One media card (admin promo media / mobile banner) for when no promo slide is live. */
-  const mediaCard = (url: string, sizes: string, ratio = "aspect-[21/8]") => (
+  const mediaCard = (url: string, sizes: string, ratio = "aspect-[21/8]", cover = false) => (
     <div className="relative rounded-2xl lg:rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-gradient-to-br from-brand-700 to-brand-900">
       {isVideoUrl(url) ? (
         <AutoVideo src={url} className={cn("w-full object-contain block", ratio)} tapToPlay aria-hidden />
       ) : (
         <div className={cn("relative w-full", ratio)}>
           {/* Whole banner visible (nothing cut); a blurred copy fills the side space. */}
-          <Image src={url} alt="" aria-hidden fill sizes="200px" className="object-cover scale-110 blur-xl opacity-60" />
-          <Image src={url} alt={promoAlt} fill sizes={sizes} className="object-contain" />
+          {!cover && <Image src={url} alt="" aria-hidden fill sizes="200px" className="object-cover scale-110 blur-xl opacity-60" />}
+          <Image src={url} alt={promoAlt} fill sizes={sizes} className={cover ? "object-cover" : "object-contain"} />
         </div>
       )}
     </div>
@@ -131,7 +131,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
           {/* Low, wide banner (7:2 — half the old height). A dedicated mobile image from the admin wins;
               otherwise the promo slides are centre-cropped to the same low strip. */}
           {heroMobileImg ? (
-            mediaCard(heroMobileImg, "(min-width: 768px) 720px, 100vw", "aspect-[7/2]")
+            mediaCard(heroMobileImg, "(min-width: 768px) 720px, 100vw", "aspect-[7/2]", true)
           ) : (
             <PromoSlider
               placement="hero"

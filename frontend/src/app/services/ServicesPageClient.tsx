@@ -676,10 +676,10 @@ export default function ServicesPageClient({
           <span aria-hidden className="block w-16 h-1 rounded-full bg-gradient-to-r from-accent-400 to-accent-600 mx-auto mb-6" />
           <div className="flex justify-center gap-3 sm:gap-4 flex-wrap">
             {[Bot, Code2, Cog, Smartphone, Megaphone, Briefcase].map((Icon, i) => (
-              <div key={i} className="flex items-center gap-2 bg-white/10 ring-1 ring-white/15 px-4 py-2 rounded-xl backdrop-blur-sm">
+              <Link key={i} href={["/services/software", "/services/software", "/services/software", "/services/software", "/services", "/contact"][i]} className="flex items-center gap-2 bg-white/10 ring-1 ring-white/15 hover:bg-white/20 hover:ring-white/30 px-4 min-h-11 rounded-xl backdrop-blur-sm transition-colors">
                 <Icon className="w-4 h-4 text-accent-400" />
                 <span className="text-sm font-medium">{["AI", "Web", "Automation", "Mobile", "Marketing", "Consulting"][i]}</span>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

@@ -140,8 +140,8 @@ export default function ProductReviews({ productId }: Props) {
   if (loading) return <div className="grid sm:grid-cols-2 gap-4 mt-10">{Array.from({ length: 2 }).map((_, i) => <ProductCardSkeleton key={i} />)}</div>;
 
   return (
-    <section className="mt-10">
-      <div className="flex items-center justify-between gap-3 mb-4">
+    <section className="mt-6 sm:mt-10">
+      <div className="flex items-center justify-between gap-3 mb-2 sm:mb-4">
         <h2 className="text-xl font-bold">{lang === "bn" ? "গ্রাহক রিভিউ" : "Customer Reviews"}</h2>
         <button type="button" onClick={() => setShowForm((v) => !v)} className="btn btn-outline btn-sm gap-1.5">
           <PenLine className="w-3.5 h-3.5" aria-hidden />

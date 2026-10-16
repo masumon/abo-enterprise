@@ -121,7 +121,7 @@ export default function FlashSaleSection({ initialSettings = null, initialProduc
 
       <div className="container mx-auto px-4 relative">
         {/* Section Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 sm:mb-8">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-3 sm:mb-4">
           <div className="flex items-center gap-3">
             <span className="relative flex-shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[#f4dfa0] via-[#d4af37] to-[#a3801f] shadow-lg shadow-amber-500/30 ring-1 ring-white/40 flex items-center justify-center">
               <span className="text-xl sm:text-2xl" aria-hidden>🔥</span>
@@ -142,16 +142,16 @@ export default function FlashSaleSection({ initialSettings = null, initialProduc
         </div>
 
         {/* Mobile Countdown */}
-        <div className="sm:hidden mb-5 flex justify-center">
+        <div className="sm:hidden mb-3 flex justify-center">
           <CountdownTimer endDate={flashEnd} size="sm" tone="gold" onExpire={handleExpire} />
         </div>
 
         {/* Admin-managed promo banner (Admin → Promo Slides, placement
             "flash_sale"). Renders nothing when no slide is configured. */}
-        <PromoSlider placement="flash_sale" aspect="aspect-[3/1]" className="mb-6 sm:mb-8" />
+        <PromoSlider placement="flash_sale" aspect="aspect-[7/2]" minRatio={3.5} className="mb-4 sm:mb-6" />
 
         {/* Products Grid */}
-        <div className="flex flex-wrap justify-center gap-3 [&>*]:w-[calc(50%-6px)] md:[&>*]:w-[calc(33.333%-8px)] lg:[&>*]:w-[calc(25%-9px)] mb-8">
+        <div className="flex flex-wrap justify-center gap-3 [&>*]:w-[calc(50%-6px)] md:[&>*]:w-[calc(33.333%-8px)] lg:[&>*]:w-[calc(25%-9px)] mb-5 sm:mb-8">
           {products.slice(0, 4).map((product) => (
             <ProductCard key={product.id} product={product} density="compact" />
           ))}

@@ -899,7 +899,7 @@
     @apply card-hover;
   }
   .enterprise-section {
-    @apply py-14 md:py-20;
+    @apply py-8 md:py-20;
   }
   .enterprise-section-alt {
     @apply enterprise-section bg-[var(--surface)] dark:bg-[var(--surface-secondary)];

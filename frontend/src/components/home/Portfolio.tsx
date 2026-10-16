@@ -28,10 +28,10 @@ export default function Portfolio() {
       <div className="container mx-auto px-4">
         <div className="flex items-end justify-between gap-4 mb-6 sm:mb-8 lg:mb-10">
           <div>
-            <span className="inline-block text-[10px] sm:text-xs font-bold tracking-[0.15em] uppercase bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent mb-1">
+            <span className="inline-block text-sm sm:text-xs font-extrabold tracking-[0.15em] uppercase bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent mb-1">
               {lang === "bn" ? "সফটওয়্যার" : "Software"}
             </span>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-heading tracking-tight leading-tight">
+            <h2 className="text-[clamp(1.2rem,5.6vw,1.6rem)] sm:text-3xl lg:text-4xl font-extrabold text-heading tracking-tight leading-tight whitespace-nowrap">
               {lang === "bn" ? "সফটওয়্যার সমাধান" : "Software Solutions"}
             </h2>
           </div>

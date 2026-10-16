@@ -264,8 +264,8 @@ export const UPLOAD_GUIDES: Record<UploadPurpose, UploadGuide> = {
   },
   "promo-flash": {
     titleBn: "ফ্ল্যাশ সেল ব্যানার",
-    size: "১৫০০×৫০০px (৩:১ চওড়া)",
-    ratio: 3, ratioLabel: "৩:১", fit: "contain",
+    size: "১২৬০×৩৬০px (৭:২) — মোবাইলের হিরো ব্যানারের সমান মাপ, সব স্ক্রিনে",
+    ratio: 3.5, ratioLabel: "৭:২", fit: "contain",
     background: "ব্র্যান্ড রঙ বা অফারের ছবি",
     subject: "পুরো ব্যানার সব স্ক্রিনে কাটা ছাড়া দেখায় — লেখা মাঝখানে রাখলে আরও ভালো",
     format: IMG, maxSize: "১MB-এর কম রাখুন",

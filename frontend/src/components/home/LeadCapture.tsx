@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { BD_PHONE_REGEX, BD_PHONE_ERROR_BN } from "@/lib/phone";
 import { trackEvent } from "@/components/analytics/GoogleAnalytics";
-import { Send, CheckCircle, Bot, Code, Cog, ChevronDown } from "lucide-react";
+import { Send, CheckCircle, Bot, Code, Cog, ChevronDown, FileText } from "lucide-react";
 import { isQueuedResponse, serviceLeadsApi } from "@/lib/api";
 import { useLanguageStore } from "@/store/language";
 import { cn } from "@/lib/utils";
@@ -164,9 +164,12 @@ export default function LeadCapture() {
               <button
                 type="button"
                 onClick={() => setIsOpen(true)}
-                className="w-full flex items-center justify-between gap-4 bg-white dark:bg-white/10 backdrop-blur-sm rounded-2xl p-6 lg:p-8 text-left hover:shadow-lg transition-shadow"
+                className="w-full flex items-center gap-3 sm:gap-4 bg-white dark:bg-white/10 backdrop-blur-sm rounded-2xl p-4 lg:p-8 text-left shadow-md ring-1 ring-brand-100 dark:ring-white/10 hover:shadow-lg transition-shadow"
               >
-                <span>
+                <span aria-hidden className="flex-none w-11 h-11 rounded-xl bg-gradient-to-br from-brand-600 to-brand-800 text-white flex items-center justify-center shadow-md shadow-brand-900/20">
+                  <FileText className="w-5 h-5" />
+                </span>
+                <span className="flex-1 min-w-0">
                   <span className="block text-base font-bold text-heading">
                     {lang === "bn" ? "বিনামূল্যে পরামর্শ পান" : "Get Free Consultation"}
                   </span>
@@ -174,8 +177,9 @@ export default function LeadCapture() {
                     {lang === "bn" ? "ফর্মটি খুলতে ক্লিক করুন — ১ মিনিট সময় লাগবে" : "Tap to open the form — takes about a minute"}
                   </span>
                 </span>
-                <span className="flex-shrink-0 w-10 h-10 rounded-full bg-brand-50 dark:bg-brand-500/20 flex items-center justify-center">
-                  <ChevronDown className="w-5 h-5 text-brand-600 dark:text-brand-300" aria-hidden />
+                <span className="flex-none inline-flex items-center gap-1 rounded-full bg-accent-500 text-[#14182b] font-bold text-sm px-3.5 min-h-10 shadow">
+                  {lang === "bn" ? "ফর্ম খুলুন" : "Open form"}
+                  <ChevronDown className="w-4 h-4" aria-hidden />
                 </span>
               </button>
             ) : (
