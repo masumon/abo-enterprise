@@ -59,11 +59,11 @@ export default function AdminReportsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleExport = async (kind: "csv" | "pdf" = "csv") => {
+  const handleExport = async (kind: "csv" | "pdf" | "xlsx" = "csv") => {
     setExporting(true);
     try {
       const params = { start_date: startDate, end_date: endDate };
-      await downloadCsv(kind === "pdf" ? reportsApi.exportPdfPath(report, params) : reportsApi.exportPath(report, params), `${report}_${startDate}_${endDate}.${kind}`);
+      await downloadCsv(kind === "pdf" ? reportsApi.exportPdfPath(report, params) : kind === "xlsx" ? reportsApi.exportXlsxPath(report, params) : reportsApi.exportPath(report, params), `${report}_${startDate}_${endDate}.${kind}`);
     } catch (err) {
       toast("error", apiErrorMessage(err, "ডাউনলোড করা যায়নি"));
     } finally {
@@ -94,6 +94,10 @@ export default function AdminReportsPage() {
             <button type="button" onClick={() => void handleExport("pdf")} disabled={exporting || dataRows.length === 0} className="btn btn-outline btn-sm min-h-11 gap-1.5 px-4">
               {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               PDF ডাউনলোড
+            </button>
+            <button type="button" onClick={() => void handleExport("xlsx")} disabled={exporting || dataRows.length === 0} className="btn btn-outline btn-sm min-h-11 gap-1.5 px-4">
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Excel ডাউনলোড
             </button>
           </>
         }

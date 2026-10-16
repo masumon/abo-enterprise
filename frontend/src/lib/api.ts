@@ -954,6 +954,8 @@ export const reportsApi = {
   },
   exportPdfPath: (report: ReportType, params: { start_date?: string; end_date?: string } = {}) =>
     reportsApi.exportPath(report, params).replace("/export", "/export-pdf"),
+  exportXlsxPath: (report: ReportType, params: { start_date?: string; end_date?: string } = {}) =>
+    reportsApi.exportPath(report, params).replace("/export", "/export-xlsx"),
 };
 
 export const notificationsApi = {

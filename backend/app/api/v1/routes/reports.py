@@ -263,6 +263,16 @@ async def get_report(
     })
 
 
+async def _export_rows(report_type: str, start_date: date | None, end_date: date | None, db: AsyncSession):
+    builder = REPORT_BUILDERS.get(report_type)
+    if not builder:
+        raise HTTPException(status_code=404, detail=f"Unknown report type. Available: {', '.join(sorted(REPORT_BUILDERS))}")
+    start, end = _window(start_date, end_date)
+    rows = await builder(db, start, end)
+    day = (end - timedelta(days=1)).date().isoformat()
+    return rows[:5000], f"{start.date().isoformat()} to {day}", f"{report_type}_{start.date().isoformat()}_{day}"
+
+
 @router.get("/{report_type}/export-pdf")
 async def export_report_pdf(
     report_type: str,
@@ -271,33 +281,30 @@ async def export_report_pdf(
     db: AsyncSession = Depends(get_db),
     _admin: str = Depends(require_role("analytics.read")),
 ):
-    """Same rows as the CSV export, rendered as a branded landscape PDF table."""
-    from app.core.pdf_report import build_table_report
+    """A4 branded PDF (logo, summary, table, page footer with contact + QR) of the same rows as the CSV."""
+    from app.core.report_export import build_report_pdf, company_info
 
-    builder = REPORT_BUILDERS.get(report_type)
-    if not builder:
-        raise HTTPException(status_code=404, detail=f"Unknown report type. Available: {', '.join(sorted(REPORT_BUILDERS))}")
-    start, end = _window(start_date, end_date)
-    rows = await builder(db, start, end)
-    headers: list[str] = []
-    for row in rows:
-        for key in row.keys():
-            if key not in headers:
-                headers.append(key)
-    headers = (headers or ["value"])[:12]  # a landscape page fits ~12 columns
-    table = [["" if r.get(h) is None else (f"{r[h]:,.2f}" if isinstance(r.get(h), float) else str(r.get(h))) for h in headers] for r in rows[:2000]]
-    day = (end - timedelta(days=1)).date().isoformat()
-    pdf = build_table_report(
-        f"{report_type.replace('_', ' ').title()} Report",
-        [h.replace("_", " ").title() for h in headers],
-        table,
-        subtitle=f"{start.date().isoformat()} to {day} · {len(rows)} rows",
-    )
-    return StreamingResponse(
-        io.BytesIO(pdf),
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={report_type}_{start.date().isoformat()}_{day}.pdf"},
-    )
+    rows, period, name = await _export_rows(report_type, start_date, end_date, db)
+    pdf = build_report_pdf(report_type, rows, period, await company_info(db))
+    return StreamingResponse(io.BytesIO(pdf), media_type="application/pdf",
+                             headers={"Content-Disposition": f"attachment; filename={name}.pdf"})
+
+
+@router.get("/{report_type}/export-xlsx")
+async def export_report_xlsx(
+    report_type: str,
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_role("analytics.read")),
+):
+    """Excel workbook with logo, styled header, money formats and a total row."""
+    from app.core.report_export import build_report_xlsx, company_info
+
+    rows, period, name = await _export_rows(report_type, start_date, end_date, db)
+    data = build_report_xlsx(report_type, rows, period, await company_info(db))
+    return StreamingResponse(io.BytesIO(data), media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                             headers={"Content-Disposition": f"attachment; filename={name}.xlsx"})
 
 
 @router.get("/{report_type}/export")
