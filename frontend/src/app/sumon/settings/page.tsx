@@ -1,5 +1,7 @@
 "use client";
 
+import SectionStatus, { type StatusCheck } from "@/components/admin/SectionStatus";
+import TrackingSetup from "@/components/admin/TrackingSetup";
 import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { useUnsavedGuard } from "@/hooks/useUnsavedGuard";
 import Link from "next/link";
@@ -212,7 +214,6 @@ const SECTIONS: Section[] = [
     title: "মার্কেটিং ও অ্যানালিটিক্স",
     icon: <Zap className="w-4 h-4" />,
     fields: [
-      { key: "facebook_pixel_id", label: "Facebook Pixel ID", placeholder: "1234567890", hint: "Conversion tracking" },
       { key: "seo_gtm_id", label: "Google Tag Manager ID", placeholder: "GTM-XXXXXXX", hint: "Container ID from tagmanager.google.com" },
       { key: "seo_gsc_verification", label: "Google Search Console Verification", placeholder: "abc123...", hint: "The content value from GSC's HTML tag verification method (not the whole <meta> tag)" },
     ],
@@ -298,6 +299,10 @@ function SectionCard({
   // Same behaviour as Backup/Courier cards: every text box filled → green ✓ and closed; otherwise open.
   const textFields = section.fields.filter((f) => f.type !== "boolean");
   const complete = textFields.length > 0 && textFields.every((f) => String(values[f.key] ?? "").trim() !== "");
+  const missing = textFields.filter((f) => String(values[f.key] ?? "").trim() === "");
+  const statusChecks: StatusCheck[] = complete
+    ? [{ label: "সব ঘর পূরণ", ok: true }]
+    : [...missing.slice(0, 3).map((f) => ({ label: f.label, ok: false })), ...(missing.length > 3 ? [{ label: `আরও ${missing.length - 3}টি ঘর`, ok: false }] : [])];
   const [open, setOpen] = useState(!complete);
   useEffect(() => { if (typeof window !== "undefined" && window.location.hash === `#${section.id}`) setOpen(true); }, [section.id]);
 
@@ -307,7 +312,7 @@ function SectionCard({
         <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex items-center gap-2.5 min-h-11 text-left flex-1 min-w-0">
           <span className="text-brand-600">{section.icon}</span>
           <h2 className="admin-settings-heading text-sm font-semibold text-gray-800 dark:text-gray-100">{section.title}</h2>
-          <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ring-1 ${complete ? "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30" : "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30"}`}>{complete ? "✓ ঠিক আছে" : "বাকি আছে"}</span>
+          <SectionStatus checks={statusChecks} compact />
           <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
         </button>
         <button
@@ -648,6 +653,12 @@ export default function AdminSettingsPage() {
           <div className="space-y-6 min-w-0">
             {q && visibleSections.length === 0 && (
               <div className="admin-card p-8 text-center text-gray-500">“{query}” — এমন কোনো সেটিং পাওয়া যায়নি</div>
+            )}
+            {!q && activeGroup === "marketing" && (
+              <section aria-label="অ্যানালিটিক্স ও পিক্সেল" className="space-y-2">
+                <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100 px-1">ভিজিটর গোনা ও বিজ্ঞাপন মাপা</h2>
+                <TrackingSetup />
+              </section>
             )}
             {visibleSections.map((section) => (
               <SectionCard

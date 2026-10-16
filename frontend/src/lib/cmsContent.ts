@@ -220,3 +220,25 @@ export function getEntryPoints(settings: Record<string, string>, fallback: CmsEn
   return parseJsonArray<CmsEntryPoint>(getSettingValue(settings, SITE_ENTRY_POINTS_KEY), fallback)
     .filter((e) => e && (e.title_en || e.title_bn) && !!e.href);
 }
+
+/** The three homepage cards shown until the admin saves their own (Admin → Homepage → Category tiles). */
+export const QUICK_CATEGORY_DEFAULTS: CmsQuickCategory[] = [
+  {
+    icon: "shopping-bag",
+    label_en: "Shop", label_bn: "দোকান",
+    desc_en: "Accessories, gadgets & electronics", desc_bn: "এক্সেসরিজ, গ্যাজেট ও ইলেকট্রনিক্স",
+    href: "/products",
+  },
+  {
+    icon: "wrench",
+    label_en: "Services", label_bn: "সেবা",
+    desc_en: "Passport, NID, printing, repairs", desc_bn: "পাসপোর্ট, NID, প্রিন্টিং, সার্ভিসিং",
+    href: "/services",
+  },
+  {
+    icon: "laptop",
+    label_en: "Software", label_bn: "সফটওয়্যার",
+    desc_en: "POS, ERP, AI & custom software", desc_bn: "POS, ERP, AI ও কাস্টম সফটওয়্যার",
+    href: "/projects",
+  },
+];

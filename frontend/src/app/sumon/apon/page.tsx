@@ -1,5 +1,6 @@
 "use client";
 
+import SectionStatus, { type StatusCheck } from "@/components/admin/SectionStatus";
 import LivePreview from "@/components/admin/LivePreview";
 import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
@@ -333,6 +334,7 @@ export default function AponAdminPage() {
         <div className="space-y-5">
           <section className={card}>
             <h2 className="font-bold text-heading">নাম ও বর্ণনা</h2>
+            <SectionStatus checks={([["apon_name_bn", "অ্যাপের নাম"], ["apon_tagline_bn", "ট্যাগলাইন"], ["apon_description_bn", "বিবরণ"], ["apon_package_name", "প্যাকেজ নাম"]] as [string, string][]).map(([k, label]) => ({ label, ok: !!v(k).trim() }))} />
             <p className="text-xs text-muted">ফাঁকা রাখলে ডিফল্ট লেখা দেখাবে।</p>
             <div className="grid sm:grid-cols-2 gap-3">
               <div><label className={label}>অ্যাপের নাম (বাংলা)</label><input className={field} value={v("apon_name_bn")} onChange={(e) => set("apon_name_bn", e.target.value)} placeholder="আপন" /></div>
@@ -394,6 +396,7 @@ export default function AponAdminPage() {
         <div className="space-y-5">
           <section className={card}>
             <h2 className="font-bold text-heading">ডাউনলোড নিয়ন্ত্রণ</h2>
+            <SectionStatus checks={[{ label: "অ্যাপ বন্ধ আছে", ok: on("apon_enabled", false), hint: "ওয়েবসাইটে অ্যাপ পেজ লুকানো" }, { label: "ডাউনলোড বন্ধ", ok: on("apon_downloads_enabled", false), hint: "ভিজিটর APK নামাতে পারবে না" }]} />
             {([
               ["apon_downloads_enabled", true, "ডাউনলোড চালু", "বন্ধ করলে পেজ থাকবে কিন্তু ডাউনলোড বাটন বন্ধ থাকবে (রক্ষণাবেক্ষণের সময় কাজে লাগে)।"],
               ["apon_captcha_enabled", true, "যোগ-বিয়োগের নিরাপত্তা-প্রশ্ন", "চালু রাখলে রোবট ও অপব্যবহার আটকায়। বন্ধ করা ভালো নয়।"],

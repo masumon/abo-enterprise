@@ -4,13 +4,14 @@ import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { useCookieConsent } from "@/lib/cookieConsent";
+import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 
-const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+const ENV_GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 /** Fires a page_view on App Router route changes. The gtag config below uses
  * send_page_view:false, so this is the ONLY source of page_views — exactly
  * one per navigation, no duplicates. */
-function RouteTracker() {
+function RouteTracker({ GA_ID }: { GA_ID: string }) {
   const pathname = usePathname();
   const lastPath = useRef<string | null>(null);
 
@@ -30,12 +31,10 @@ function RouteTracker() {
 export default function GoogleAnalytics() {
   // Opt-in: no analytics script or cookie until the visitor accepts analytics cookies.
   const { analytics } = useCookieConsent();
-  if (!GA_ID) {
-    if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
-      console.warn("GA disabled: NEXT_PUBLIC_GA_MEASUREMENT_ID is not set");
-    }
-    return null;
-  }
+  // Admin → Settings → Marketing (seo_ga4_id) wins; the old Vercel env variable still works as a fallback.
+  const { settings } = usePublicSettings(["seo_ga4_id"]);
+  const GA_ID = (getSettingValue(settings, "seo_ga4_id") || ENV_GA_ID || "").trim();
+  if (!/^G-[A-Z0-9]{6,}$/i.test(GA_ID)) return null;
   if (!analytics) return null;
 
   return (
@@ -52,7 +51,7 @@ export default function GoogleAnalytics() {
           gtag('config', '${GA_ID}', { send_page_view: false });
         `}
       </Script>
-      <RouteTracker />
+      <RouteTracker GA_ID={GA_ID} />
     </>
   );
 }

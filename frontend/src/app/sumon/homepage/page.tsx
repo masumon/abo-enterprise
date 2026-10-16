@@ -1,5 +1,7 @@
 "use client";
 
+import SectionStatus, { type StatusCheck } from "@/components/admin/SectionStatus";
+import { QUICK_CATEGORY_DEFAULTS } from "@/lib/cmsContent";
 import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { useEffect, useState, type JSX, type ReactNode } from "react";
 import Link from "next/link";
@@ -96,7 +98,7 @@ const HOMEPAGE_MAP: { bn: string; href?: string; noteBn: string }[] = [
   { bn: "যোগাযোগ ও ম্যাপ", href: "/sumon/settings#company_info", noteBn: "ঠিকানা, সময়, ম্যাপ — সেটিংস" },
 ];
 
-function Section({ id, n, title, desc, children, aside }: { id: string; n: number; title: string; desc?: ReactNode; children: ReactNode; aside?: ReactNode }) {
+function Section({ id, n, title, desc, children, aside, status }: { id: string; n: number; title: string; desc?: ReactNode; children: ReactNode; aside?: ReactNode; status?: StatusCheck[] }) {
   return (
     <section id={id} className="enterprise-card p-4 scroll-mt-36">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
@@ -106,6 +108,7 @@ function Section({ id, n, title, desc, children, aside }: { id: string; n: numbe
             {title}
           </h2>
           {desc && <p className="text-xs text-muted mt-1">{desc}</p>}
+          {status && <SectionStatus checks={status} className="mt-2" />}
         </div>
         {aside}
       </div>
@@ -322,6 +325,19 @@ export default function AdminHomepageContentPage() {
     (bn ? values.hero_subtitle_bn : values.hero_subtitle_en) || "প্রিমিয়াম টেক প্রোডাক্ট, ডিজিটাল সেবা ও AI সমাধান।";
   const activeAnnouncements = (announcements ?? []).filter((x) => x.active !== false);
   const heroSlides = (slides ?? []).filter((x) => x.placement === "hero");
+  const listCount = (key: string) => { try { const v = JSON.parse(values[key] || "[]"); return Array.isArray(v) ? v.length : 0; } catch { return 0; } };
+  const st = {
+    announce: [{ label: "চালু ঘোষণা নেই", ok: announcements === null || activeAnnouncements.length > 0, hint: "নিজের ঘোষণা না দিলে নমুনা লেখা দেখায়" }] as StatusCheck[],
+    hero: [
+      { label: "হিরোর শিরোনাম", ok: !!((values.hero_title_bn ?? "").trim() || (values.hero_title_en ?? "").trim()) },
+      { label: "ডেস্কটপ হিরো ছবি", ok: !!(values.hero_image_url ?? "").trim() },
+      { label: "মোবাইল হিরো ছবি", ok: !!((values.hero_mobile_image_url ?? "").trim() || heroSlides.length > 0), hint: "ছবি বা চালু স্লাইড লাগবে" },
+    ] as StatusCheck[],
+    slides: [{ label: "চালু হিরো স্লাইড নেই", ok: slides === null || heroSlides.length > 0, hint: "হিরোর ছবি দেখাচ্ছে" }] as StatusCheck[],
+    quick: [{ label: "নিজের কার্ড নেই", ok: listCount("site_quick_categories_json") > 0, hint: "ডিফল্ট ৩টি দেখাচ্ছে — ছবি দিতে নিচের বোতামে আনুন" }] as StatusCheck[],
+    why: [{ label: "কোনো কারণ যোগ করা নেই", ok: listCount("site_why_choose_json") > 0, hint: "ডিফল্ট লেখা দেখাচ্ছে" }] as StatusCheck[],
+    faq: [{ label: "প্রশ্নোত্তর নেই", ok: listCount("site_faq_json") > 0, hint: "ডিফল্ট প্রশ্নোত্তর দেখাচ্ছে" }] as StatusCheck[],
+  };
   const liveCount = (list: PromoSlide[]) => list.filter((x) => slideLiveState(x) === "live").length;
   const jsonEditor = (key: string, descBn?: string) => {
     const ed = editorFor(key);
@@ -329,6 +345,12 @@ export default function AdminHomepageContentPage() {
     return (
       <>
         {descBn && <p className="text-xs text-muted mb-2">{descBn}</p>}
+        {ed.key === "site_quick_categories_json" && !(values[ed.key] ?? "").trim().replace(/\[\s*\]/, "") && (
+          <div className="rounded-xl border border-amber-200 dark:border-amber-500/30 bg-amber-50/70 dark:bg-amber-500/10 p-3 mb-3 space-y-2">
+            <p className="text-sm text-gray-800 dark:text-gray-100">এখন ওয়েবসাইটে ডিফল্ট ৩টি কার্ড (দোকান, সেবা, সফটওয়্যার) দেখাচ্ছে। ছবি বসাতে আগে এই ৩টিকে এখানে আনুন, তারপর প্রতিটির “ছবি” ঘরে ছবি দিন।</p>
+            <button type="button" onClick={() => setValue(ed.key, JSON.stringify(QUICK_CATEGORY_DEFAULTS, null, 2))} className="btn btn-brand btn-sm min-h-11">ডিফল্ট ৩টি কার্ড এখানে আনুন</button>
+          </div>
+        )}
         <JsonListEditor
           value={values[ed.key] ?? ""}
           onChange={(json) => setValue(ed.key, json)}
@@ -435,6 +457,7 @@ export default function AdminHomepageContentPage() {
           <Section
             id="announce"
             n={1}
+            status={st.announce}
             title={bn ? "ঘোষণা বার" : "Announcement bar"}
             desc={bn ? "ওয়েবসাইটের একদম উপরে চলমান ছোট লেখা (অফার, নোটিশ)। লেখা বদলাতে ডান পাশের বাটন চাপুন।" : "The scrolling strip at the very top (offers, notices)."}
             aside={
@@ -468,6 +491,7 @@ export default function AdminHomepageContentPage() {
             <Section
               id="hero"
               n={2}
+            status={st.hero}
               title={bn ? "হিরো ব্যানার" : "Hero banner"}
               desc={bn ? "হোমপেজের সবচেয়ে বড় অংশ — শিরোনাম, ছোট লেখা, বাটন ও ছবি। বড় স্ক্রিনে ডেস্কটপ ছবি, মোবাইলে স্লাইড/মোবাইল ছবি দেখায়।" : "The big top area — headline, subtitle, button and images."}
             >
@@ -645,6 +669,7 @@ export default function AdminHomepageContentPage() {
           <Section
             id="slides"
             n={3}
+            status={st.slides}
             title={bn ? "স্লাইডার / প্রোমো স্লাইড" : "Slider / promo slides"}
             desc={bn ? "মোবাইল ও ট্যাবলেটে হিরোর জায়গায় ঘুরতে থাকা ছবি; ডেস্কটপে ডান পাশের কার্ডে। ফ্ল্যাশ সেলের ব্যানার “অফার” পাতায়।" : "Rotating images: the mobile/tablet hero and the desktop promo card. Flash-sale banners live in Offers."}
             aside={
@@ -671,17 +696,17 @@ export default function AdminHomepageContentPage() {
           </Section>
 
           {/* 4. Quick category tiles */}
-          <Section id="quick-categories" n={4} title={bn ? "ক্যাটাগরি টাইল" : "Category tiles"} desc={bn ? "হিরোর ঠিক নিচে ছোট শর্টকাট (দোকান/সেবা/সফটওয়্যার)। আইকন, নাম ও লিংক দিন।" : "Small shortcuts right under the hero."}>
+          <Section id="quick-categories" n={4} status={st.quick} title={bn ? "ক্যাটাগরি টাইল" : "Category tiles"} desc={bn ? "হিরোর ঠিক নিচে ছোট শর্টকাট (দোকান/সেবা/সফটওয়্যার)। আইকন, নাম ও লিংক দিন।" : "Small shortcuts right under the hero."}>
             {jsonEditor("site_quick_categories_json")}
           </Section>
 
           {/* 5. Why choose us */}
-          <Section id="why-choose" n={5} title={bn ? "কেন আমরা" : "Why choose us"} desc={bn ? editorFor("site_why_choose_json")?.descBn : editorFor("site_why_choose_json")?.desc}>
+          <Section id="why-choose" n={5} status={st.why} title={bn ? "কেন আমরা" : "Why choose us"} desc={bn ? editorFor("site_why_choose_json")?.descBn : editorFor("site_why_choose_json")?.desc}>
             {jsonEditor("site_why_choose_json")}
           </Section>
 
           {/* 6. FAQ */}
-          <Section id="faq" n={6} title={bn ? "প্রশ্নোত্তর" : "FAQ"} desc={bn ? editorFor("site_faq_json")?.descBn : editorFor("site_faq_json")?.desc}>
+          <Section id="faq" n={6} status={st.faq} title={bn ? "প্রশ্নোত্তর" : "FAQ"} desc={bn ? editorFor("site_faq_json")?.descBn : editorFor("site_faq_json")?.desc}>
             {jsonEditor("site_faq_json")}
           </Section>
 

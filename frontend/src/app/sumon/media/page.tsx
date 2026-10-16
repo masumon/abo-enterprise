@@ -1,5 +1,6 @@
 "use client";
 
+import SectionStatus, { type StatusCheck } from "@/components/admin/SectionStatus";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -622,7 +623,8 @@ export default function AdminMediaPage() {
 
       {tab === "brand" && (
         <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          <SectionHeader title="Brand & Site Images" titleBn="ব্র্যান্ড ও সাইট ছবি" sectionId="brand" onSave={saveBrand} saving={saving} saved={saved} />
+          <SectionHeader title="Brand & Site Images" titleBn="ব্র্যান্ড ও সাইট ছবি" sectionId="brand" onSave={saveBrand} saving={saving} saved={saved}
+            extra={<SectionStatus checks={[["logo_url", "সাইট লোগো"], ["favicon_url", "ফ্যাভিকন"], ["app_icon_url", "অ্যাপ আইকন"], ["default_og_image_url", "শেয়ার ছবি"]].map(([k, label]) => ({ label, ok: !!(values[k] ?? "").trim() }))} />} />
           <HeroMovedNotice values={values} />
           {BRAND_IMAGE_SLOTS.filter((slot) => !HERO_SLOT_KEYS.has(slot.key)).map((slot) => (
             <SlotEditor
