@@ -144,7 +144,7 @@ function buildWebsiteJsonLd(settings: Record<string, string>) {
 }
 
 function SectionSkeleton() {
-  return <div className="py-16 motion-safe:animate-pulse bg-gray-50/50 dark:bg-[#1c2242]/60" aria-hidden />;
+  return <div className="py-8 sm:py-16 motion-safe:animate-pulse bg-gray-50/50 dark:bg-[#1c2242]/60" aria-hidden />;
 }
 
 export default async function HomePage(

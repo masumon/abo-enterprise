@@ -76,7 +76,7 @@ export default function WhyChooseUs() {
   };
 
   return (
-    <section className="py-16">
+    <section className="py-8 sm:py-16">
       <div className="container mx-auto px-4">
         <div className="section-title text-center mb-10">
           <h2>{lang === "bn" ? "কেন ABO Enterprise?" : "Why Choose ABO Enterprise?"}</h2>

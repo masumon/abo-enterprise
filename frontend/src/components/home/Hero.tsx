@@ -204,7 +204,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
           <div className="absolute bottom-0 left-0 w-72 h-72 bg-accent-500/10 rounded-full blur-3xl" />
         </div>
 
-        <div className="container mx-auto px-4 xl:px-6 pt-3 pb-20 xl:pt-4 relative z-10">
+        <div className="container mx-auto px-4 xl:px-6 pt-3 pb-10 sm:pb-20 xl:pt-4 relative z-10">
           <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] xl:grid-cols-[minmax(0,38rem)_minmax(0,42rem)] xl:justify-center gap-8 xl:gap-10 items-center">
             <div className="text-white flex flex-col gap-4 animate-slide-up [text-shadow:0_2px_14px_rgba(0,0,0,0.35)]">
               <div className={cn("relative z-10 flex flex-col gap-4", heroAlignClass(hstyle))}>

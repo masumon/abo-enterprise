@@ -34,7 +34,7 @@ export default function BlogProductRail({
     : lang === "bn" ? "আমাদের স্টোর থেকে" : "From our store";
 
   return (
-    <section className="mt-12 pt-8 border-t border-gray-100 dark:border-white/10">
+    <section className="mt-6 sm:mt-12 pt-8 border-t border-gray-100 dark:border-white/10">
       <div className="flex items-center justify-between gap-3 mb-4">
         <h2 className="text-lg font-bold text-heading">{heading}</h2>
         <Link

@@ -99,14 +99,14 @@ export default function SoftwarePage() {
         badge={lang === "bn" ? "কাস্টম ডেভেলপমেন্ট" : "Custom Development"}
       />
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto px-4 py-6 sm:py-12">
         {/* Service Cards */}
         <div className="section-title text-center mb-8">
           <h2>{lang === "bn" ? "আমরা যা তৈরি করি" : "What We Build"}</h2>
           <div className="section-divider" />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-14">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-7 sm:mb-14">
           {serviceCards.map(({ id, icon, color, title, items, image }) => {
             const Icon = resolveServiceIcon(icon);
             return (

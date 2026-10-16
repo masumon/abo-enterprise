@@ -96,11 +96,11 @@ export default function AponPageClient() {
     <main>
       {/* ───────────── Hero ───────────── */}
       <section
-        className="relative overflow-hidden -mt-[var(--navbar-offset)] pt-[calc(var(--navbar-offset)+1.5rem)] sm:pt-[calc(var(--navbar-offset)+3rem)] pb-12 sm:pb-20 text-white"
+        className="relative overflow-hidden -mt-[var(--navbar-offset)] pt-[calc(var(--navbar-offset)+1.5rem)] sm:pt-[calc(var(--navbar-offset)+3rem)] pb-8 sm:pb-20 text-white"
         style={{ background: "linear-gradient(135deg,#0A3C85 0%,#0b3270 55%,#14182b 100%)" }}
       >
         <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-[#F2C14E]/15 blur-3xl pointer-events-none" aria-hidden />
-        <div className={cn(section, "relative grid lg:grid-cols-2 gap-10 items-center")}>
+        <div className={cn(section, "relative grid lg:grid-cols-2 gap-6 sm:gap-10 items-center")}>
           <div className="text-center lg:text-left">
             <Image src={icon} alt={`${name} logo`} width={96} height={96} unoptimized priority className="mx-auto lg:mx-0 h-20 w-20 sm:h-24 sm:w-24 rounded-[1.4rem] shadow-2xl ring-1 ring-white/25" />
             <h1 className="mt-5 text-4xl sm:text-5xl font-extrabold tracking-tight">
@@ -170,7 +170,7 @@ export default function AponPageClient() {
       </section>
 
       {/* ───────────── Features ───────────── */}
-      <section className="py-14 sm:py-20" aria-labelledby="apon-features">
+      <section className="py-8 sm:py-20" aria-labelledby="apon-features">
         <div className={section}>
           <h2 id="apon-features" className={h2}>{bn ? `${name} যা যা করে` : `What ${name} does`}</h2>
           <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -188,7 +188,7 @@ export default function AponPageClient() {
       </section>
 
       {/* ───────────── Screenshots ───────────── */}
-      <section className="py-12 sm:py-16 bg-brand-50/60 dark:bg-white/[0.03]" aria-labelledby="apon-shots">
+      <section className="py-7 sm:py-16 bg-brand-50/60 dark:bg-white/[0.03]" aria-labelledby="apon-shots">
         <div className={section}>
           <h2 id="apon-shots" className={h2}>{bn ? "অ্যাপের ভেতরটা দেখুন" : "A look inside"}</h2>
           <ul className="mt-8 flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 sm:justify-center items-start" aria-label={bn ? "স্ক্রিনশট" : "Screenshots"}>
@@ -202,7 +202,7 @@ export default function AponPageClient() {
       </section>
 
       {/* ───────────── Install + verify ───────────── */}
-      <section className="py-14 sm:py-20" aria-labelledby="apon-install">
+      <section className="py-8 sm:py-20" aria-labelledby="apon-install">
         <div className={cn(section, "grid lg:grid-cols-2 gap-8")}>
           <div>
             <h2 id="apon-install" className="text-2xl sm:text-3xl font-extrabold text-heading">{bn ? "ইনস্টল করবেন যেভাবে" : "How to install"}</h2>
@@ -233,7 +233,7 @@ export default function AponPageClient() {
       </section>
 
       {/* ───────────── Permissions ───────────── */}
-      <section className="py-12 sm:py-16 bg-brand-50/60 dark:bg-white/[0.03]" aria-labelledby="apon-perms">
+      <section className="py-7 sm:py-16 bg-brand-50/60 dark:bg-white/[0.03]" aria-labelledby="apon-perms">
         <div className={section}>
           <h2 id="apon-perms" className={h2}>{bn ? "কোন অনুমতি কেন লাগে" : "Why the app asks for each permission"}</h2>
           <p className="mt-2 text-center text-sm text-muted max-w-2xl mx-auto">
@@ -262,7 +262,7 @@ export default function AponPageClient() {
 
       {/* ───────────── What's new + QR ───────────── */}
       <>
-        <section className="py-12 sm:py-16" aria-labelledby="apon-new">
+        <section className="py-7 sm:py-16" aria-labelledby="apon-new">
           <div className={cn(section, "grid lg:grid-cols-[1fr_auto] gap-8 items-start")}>
             <div>
               <h2 id="apon-new" className="text-2xl font-extrabold text-heading">{bn ? "নতুন কী আছে" : "What's new"}</h2>
@@ -287,7 +287,7 @@ export default function AponPageClient() {
       </>
 
       {/* ───────────── FAQ ───────────── */}
-      <section className="py-12 sm:py-16 bg-brand-50/60 dark:bg-white/[0.03]" aria-labelledby="apon-faq">
+      <section className="py-7 sm:py-16 bg-brand-50/60 dark:bg-white/[0.03]" aria-labelledby="apon-faq">
         <div className={cn(section, "max-w-3xl")}>
           <h2 id="apon-faq" className={h2}>{bn ? "সাধারণ প্রশ্ন" : "Common questions"}</h2>
           <div className="mt-6">
@@ -297,7 +297,7 @@ export default function AponPageClient() {
       </section>
 
       {/* ───────────── Support ───────────── */}
-      <section className="py-14 sm:py-20" aria-labelledby="apon-support">
+      <section className="py-8 sm:py-20" aria-labelledby="apon-support">
         <div className={cn(section, "max-w-3xl text-center")}>
           <h2 id="apon-support" className="text-2xl sm:text-3xl font-extrabold text-heading">{bn ? "সহায়তা লাগলে" : "Need help?"}</h2>
           <p className="mt-2 text-sm sm:text-base text-muted">

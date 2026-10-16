@@ -79,7 +79,7 @@ export default function BookPageClient({ serviceSlug, tierId, mode }: BookPageCl
 
   if (!service || error) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-lg text-center">
+      <div className="container mx-auto px-4 py-8 sm:py-16 max-w-lg text-center">
         <h1 className="text-2xl font-bold text-heading mb-2">{lang === "bn" ? "সেবা বুকিং" : "Book a Service"}</h1>
         <p className="text-muted mb-6">{error ?? (lang === "bn" ? "সেবা পাওয়া যায়নি।" : "Service not found.")}</p>
         <Link href="/services" className="btn btn-brand btn-md inline-flex items-center gap-2">
@@ -92,7 +92,7 @@ export default function BookPageClient({ serviceSlug, tierId, mode }: BookPageCl
 
   if (booked) {
     return (
-      <div className="container mx-auto px-4 py-16 max-w-lg text-center">
+      <div className="container mx-auto px-4 py-8 sm:py-16 max-w-lg text-center">
         <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
         <h1 className="text-2xl font-bold text-heading mb-2">
           {isOrder
@@ -136,7 +136,7 @@ export default function BookPageClient({ serviceSlug, tierId, mode }: BookPageCl
         ]}
       />
 
-      <div className="container mx-auto px-4 max-w-2xl py-12">
+      <div className="container mx-auto px-4 max-w-2xl py-6 sm:py-12">
         <Link
           href={`/services/${service.slug}`}
           className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-brand-600 mb-6"

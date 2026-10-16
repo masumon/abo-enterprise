@@ -14,6 +14,9 @@ interface CustomerProfileStore {
   email: string;
   notifyOrders: boolean;
   notifyOffers: boolean;
+  /** The customer's own photo (small JPEG data URL, kept on this device). */
+  avatar: string;
+  setAvatar: (dataUrl: string) => void;
   addAddress: (addr: Omit<SavedAddress, "id">) => void;
   removeAddress: (id: string) => void;
   setDefaultAddress: (id: string) => void;
@@ -34,6 +37,9 @@ export const useCustomerProfileStore = create<CustomerProfileStore>()(
       email: "",
       notifyOrders: true,
       notifyOffers: false,
+      avatar: "",
+      // Only our Cloudinary URLs or a locally made JPEG are accepted (never arbitrary links/markup).
+      setAvatar: (avatar) => set({ avatar: avatar === "" || avatar.startsWith("https://res.cloudinary.com/") || avatar.startsWith("data:image/jpeg;base64,") ? avatar : "" }),
       addAddress: (addr) => {
         const id = `addr-${Date.now()}`;
         const addresses = get().addresses.map((a) =>

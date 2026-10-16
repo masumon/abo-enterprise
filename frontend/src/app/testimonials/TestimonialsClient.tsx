@@ -207,7 +207,7 @@ export default function TestimonialsClient() {
         </div>
       </section>
 
-      <section className="pb-16">
+      <section className="pb-8 sm:pb-16">
         <div className="container mx-auto px-4 text-center">
           <a href={contact.whatsappHref()} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-md">
             <MessageCircle className="w-4 h-4" />

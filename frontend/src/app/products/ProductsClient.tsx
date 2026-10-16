@@ -406,7 +406,7 @@ export default function ProductsClient({
       />
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-3" aria-busy="true">
+        <div className="flex flex-col items-center justify-center py-12 sm:py-24 gap-3" aria-busy="true">
           <Loader2 className="w-8 h-8 text-brand-500 animate-spin" aria-hidden />
           <p className="text-sm text-gray-400">{t("loading_products")}</p>
           <div className={cn("grid gap-4 w-full mt-4", viewMode === "grid" ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-1")}>
@@ -414,7 +414,7 @@ export default function ProductsClient({
           </div>
         </div>
       ) : error ? (
-        <div className="text-center py-24 glass rounded-2xl p-8" role="alert">
+        <div className="text-center py-12 sm:py-24 glass rounded-2xl p-8" role="alert">
           <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-3" aria-hidden />
           <p className="text-gray-600 font-semibold mb-1">{t("error_generic")}</p>
           <p className="text-gray-400 text-sm mb-5">{lang === "bn" ? "সার্ভার শীঘ্রই চালু হবে — আবার চেষ্টা করুন।" : "Server may be starting — please retry."}</p>

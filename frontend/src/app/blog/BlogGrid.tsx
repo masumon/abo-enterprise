@@ -24,7 +24,7 @@ export default function BlogGrid({ posts, page, totalPages }: Props) {
 
   if (posts.length === 0) {
     return (
-      <div className="text-center py-20 text-gray-500">
+      <div className="text-center py-10 sm:py-20 text-gray-500">
         <p className="text-lg font-semibold mb-2">
           {lang === "bn" ? "এখনো কোনো পোস্ট নেই" : "No posts yet"}
         </p>
@@ -37,7 +37,7 @@ export default function BlogGrid({ posts, page, totalPages }: Props) {
 
   return (
     <>
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6 sm:mb-12">
         {posts.map((post, i) => {
           const title = lang === "bn" && post.title_bn ? post.title_bn : post.title_en;
           const excerpt = lang === "bn" && post.excerpt_bn ? post.excerpt_bn : post.excerpt_en;

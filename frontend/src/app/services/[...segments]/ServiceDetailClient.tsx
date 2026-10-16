@@ -215,7 +215,7 @@ export default function ServiceDetailClient({ service }: Props) {
         </div>
       </PageHero>
 
-      <div className="max-w-5xl mx-auto px-4 py-12 space-y-12">
+      <div className="max-w-5xl mx-auto px-4 py-6 sm:py-12 space-y-12">
         <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-video">
           <Image
             src={resolveServiceImage(service.featured_image_url, service.slug)}

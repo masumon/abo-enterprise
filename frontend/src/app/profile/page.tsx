@@ -12,6 +12,7 @@ import { useWishlistStore } from "@/store/wishlist";
 import GlassCard from "@/components/ui/GlassCard";
 import PageHero from "@/components/ui/PageHero";
 import { useCustomerStore } from "@/store/customer";
+import CustomerAvatar from "@/components/account/CustomerAvatar";
 
 const PORTAL_ITEMS = [
   { href: "/orders", icon: Package, labelKey: "profile_orders" as const, live: true },
@@ -65,7 +66,7 @@ export default function ProfilePage() {
           <>
             <GlassCard className="p-5 mb-6">
               <div className="flex items-start gap-4 mb-4">
-                <div className="w-14 h-14 bg-brand-50 dark:bg-brand-900/30 rounded-full flex items-center justify-center flex-shrink-0 text-2xl">👤</div>
+                <CustomerAvatar bn={lang === "bn"} />
                 <div className="flex-1">
                   <p className="font-semibold text-heading">{session?.name ?? (lang === "bn" ? "গ্রাহক" : "Customer")}</p>
                   {session?.phone && <p className="text-sm text-muted mt-1">{session.phone}</p>}

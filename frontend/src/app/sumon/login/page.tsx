@@ -189,7 +189,7 @@ function LoginForm() {
               autoComplete="username"
               inputMode="email"
               className={cn(
-                "w-full px-4 py-3 min-h-12 bg-white/10 border rounded-xl text-white text-base placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40 transition-colors",
+                "w-full px-4 py-3 min-h-12 bg-white/10 border rounded-xl text-white text-base placeholder-white/50 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40 transition-colors",
                 errors.email ? "border-red-400" : "border-white/30"
               )}
               placeholder="আপনার ইমেইল লিখুন"
@@ -206,7 +206,7 @@ function LoginForm() {
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 className={cn(
-                  "w-full px-4 py-3 pr-11 min-h-12 bg-white/10 border rounded-xl text-white text-base placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40 transition-colors",
+                  "w-full px-4 py-3 pr-11 min-h-12 bg-white/10 border rounded-xl text-white text-base placeholder-white/50 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40 transition-colors",
                   errors.password ? "border-red-400" : "border-white/30"
                 )}
                 placeholder="আপনার পাসওয়ার্ড লিখুন"
@@ -226,7 +226,7 @@ function LoginForm() {
           {totpRequired && (
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1.5">
-                {useRecovery ? "রিকভারি কোড" : "অথেনটিকেটর কোড"} <span className="text-gray-500">(2FA)</span>
+                {useRecovery ? "রিকভারি কোড" : "অথেনটিকেটর কোড"} <span className="text-white/70">(2FA)</span>
               </label>
               <input
                 value={totpCode}
@@ -241,10 +241,10 @@ function LoginForm() {
                 autoComplete="one-time-code"
                 autoCapitalize="characters"
                 autoFocus
-                className="w-full px-4 py-3 bg-white/5 border border-brand-500/50 rounded-xl text-white text-center text-xl tracking-[0.3em] placeholder-gray-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40"
+                className="w-full px-4 py-3 bg-white/5 border border-brand-500/50 rounded-xl text-white text-center text-xl tracking-[0.3em] placeholder-white/40 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40"
                 placeholder={useRecovery ? "XXXXX-XXXXX" : "000000"}
               />
-              <p className="text-gray-500 text-xs mt-1.5">
+              <p className="text-white/70 text-xs mt-1.5">
                 {useRecovery
                   ? "২-ধাপ চালু করার সময় পাওয়া ১০টি রিকভারি কোডের একটি দিন (প্রতিটি একবারই কাজ করে)।"
                   : "অথেনটিকেটর অ্যাপের ৬-সংখ্যার কোড দিন"}
@@ -276,17 +276,17 @@ function LoginForm() {
         </form>
         {canPasskey && (
           <div className="mt-4">
-            <div className="flex items-center gap-3 text-xs text-gray-500 my-3"><span className="flex-1 h-px bg-white/10" />অথবা<span className="flex-1 h-px bg-white/10" /></div>
+            <div className="flex items-center gap-3 text-xs text-white/70 my-3"><span className="flex-1 h-px bg-white/10" />অথবা<span className="flex-1 h-px bg-white/10" /></div>
             <button type="button" onClick={passkeyLogin} disabled={passkeyBusy}
               className="w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 text-white font-semibold hover:bg-white/10 disabled:opacity-60">
               {passkeyBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Fingerprint className="w-5 h-5" />} আঙুলের ছাপ / মুখ দিয়ে লগইন
             </button>
-            <p className="mt-2 text-[11px] text-center text-gray-500">প্রথমবার পাসওয়ার্ড দিয়ে ঢুকে “নিরাপত্তা” পাতায় এই ডিভাইস যোগ করুন।</p>
+            <p className="mt-2 text-[11px] text-center text-white/70">প্রথমবার পাসওয়ার্ড দিয়ে ঢুকে “নিরাপত্তা” পাতায় এই ডিভাইস যোগ করুন।</p>
           </div>
         )}
       </div>
 
-      <p className="text-center text-gray-600 text-xs mt-6 flex items-center justify-center gap-1.5">
+      <p className="text-center text-white/60 text-xs mt-6 flex items-center justify-center gap-1.5">
         <ShieldCheck className="w-3.5 h-3.5" />
         শুধু নিরাপদ অ্যাডমিন অ্যাক্সেস
       </p>
@@ -347,7 +347,7 @@ export default function AdminLoginPage() {
             <BrandLogo size="lg" variant="light" href={false} />
           </div>
           <p className="text-white text-xl font-bold">ABO Enterprise</p>
-          <p className="text-gray-500 text-sm mt-1">Admin Panel</p>
+          <p className="text-white/70 text-sm mt-1">Admin Panel</p>
         </div>
 
         <Suspense fallback={<Loader2 className="w-8 h-8 text-brand-500 animate-spin" />}>

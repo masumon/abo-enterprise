@@ -34,6 +34,7 @@ from app.api.v1.routes import (
     steadfast_test,
     catalog_master,
     customers,
+    customer_profile,
     customer_metrics,
     notifications,
     reports,
@@ -84,6 +85,7 @@ api_router.include_router(translate.router)
 api_router.include_router(steadfast_test.router)
 api_router.include_router(catalog_master.router)
 api_router.include_router(customers.router)
+api_router.include_router(customer_profile.router)
 api_router.include_router(customer_metrics.router)
 api_router.include_router(notifications.router)
 api_router.include_router(reports.router)

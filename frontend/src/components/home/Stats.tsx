@@ -41,7 +41,7 @@ export default function Stats() {
   }, []);
 
   return (
-    <section className="py-14 gradient-surface" aria-label="Trust statistics">
+    <section className="py-7 sm:py-14 gradient-surface" aria-label="Trust statistics">
       <div className="container mx-auto px-2">
         <AutoScrollRow
           items={stats}

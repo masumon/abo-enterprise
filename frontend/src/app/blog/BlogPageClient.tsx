@@ -29,7 +29,7 @@ export default function BlogPageClient({ posts, page, totalPages }: Props) {
           { label: "Blog" },
         ]}
       />
-      <div className="max-w-5xl mx-auto px-4 py-12">
+      <div className="max-w-5xl mx-auto px-4 py-6 sm:py-12">
         <BlogGrid posts={posts} page={page} totalPages={totalPages} />
       </div>
     </main>
