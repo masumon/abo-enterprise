@@ -51,6 +51,7 @@ Everything on the website is managed from one secure admin panel — **no develo
 | Document | Purpose |
 |---|---|
 | [Admin Guide (বাংলা)](docs/ADMIN_GUIDE_BN.md) | Step-by-step help for running the admin panel |
+| [Release 1.0.0 — notes & checklist](docs/RELEASE.md) | What is in this version, the pre-release test list and the next-version ideas |
 | [Disaster Recovery](docs/DISASTER_RECOVERY.md) | How to restore the business if something goes wrong |
 | [Implementation Reference](docs/IMPLEMENTATION_REFERENCE.md) | Reference for developers and technical partners |
 
@@ -61,4 +62,4 @@ Website: [www.aboenterprise.com](https://www.aboenterprise.com)
 
 ---
 
-© ABO Enterprise. All rights reserved.
+**Version 1.0.0** · © 2023–2026 ABO Enterprise. All rights reserved.
