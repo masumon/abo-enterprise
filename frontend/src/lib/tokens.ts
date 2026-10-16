@@ -77,3 +77,7 @@ export const ABO_ACRONYM = {
   en: "ABO — Sumon Brothers Organization: Trusted enterprise for products, services & software.",
   bn: "ABO — Sumon Brothers Organization: পণ্য, সেবা ও সফটওয়্যারের বিশ্বস্ত এন্টারপ্রাইজ।",
 } as const;
+
+/** Copyright range shown in footers: first year of the business to the current year (e.g. "2023–2026"). */
+export const COPYRIGHT_START_YEAR = 2023;
+export const copyrightYears = (): string => `${COPYRIGHT_START_YEAR}–${new Date().getFullYear()}`;

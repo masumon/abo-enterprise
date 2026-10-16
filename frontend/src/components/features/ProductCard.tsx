@@ -184,7 +184,7 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
 
   return (
     <article
-      className="card-hover group relative flex flex-col overflow-hidden hover:border-brand-100 dark:hover:border-brand-400/30"
+      className="card-hover group relative flex flex-col h-full overflow-hidden hover:border-brand-100 dark:hover:border-brand-400/30"
       onMouseEnter={() => setActionsOpen(true)}
       onMouseLeave={() => setActionsOpen(false)}
     >
@@ -257,8 +257,9 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
           )}
         </div>
         <h3 className={cn(
-          "font-semibold text-heading leading-[1.4] line-clamp-3 sm:line-clamp-2 pb-0.5 break-words [overflow-wrap:anywhere]",
-          compact ? "text-xs mb-1.5 min-h-[2rem]" : "text-sm mb-2 min-h-[2.5rem]"
+          "font-semibold text-heading leading-[1.4] line-clamp-2 overflow-hidden break-words [overflow-wrap:anywhere]",
+          // Fixed two-line height: short and long names give identical card sizes.
+          compact ? "text-xs mb-1.5 h-[2.1rem]" : "text-sm mb-2 h-[2.5rem]"
         )}>
           {lang === "bn" ? product.name_bn : product.name_en}
         </h3>

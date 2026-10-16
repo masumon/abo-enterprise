@@ -3,7 +3,7 @@
 import Link from "next/link";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { useLanguageStore } from "@/store/language";
-import { getBrandFullTitle, getBrandName, getBrandTagline } from "@/lib/tokens";
+import { getBrandFullTitle, getBrandName, getBrandTagline, copyrightYears } from "@/lib/tokens";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
 import { isVideoUrl } from "@/lib/media";
 import AutoVideo from "@/components/ui/AutoVideo";
@@ -72,7 +72,7 @@ export default function AuthSplitLayout({ children, title, subtitle, badge }: Au
             ))}
           </ul>
         </div>
-        <p className="relative z-10 text-xs text-white/50">© {new Date().getFullYear()} ABO Enterprise</p>
+        <p className="relative z-10 text-xs text-white/50">© {copyrightYears()} ABO Enterprise</p>
       </div>
 
       <div className={`flex items-center justify-center p-6 sm:p-10 relative z-10 ${bgUrl ? "" : "page-surface"}`}>

@@ -16,7 +16,7 @@ import { useContactInfo } from "@/hooks/useContactInfo";
 import { useAponDrawerRow } from "@/components/apon/AponEntryPoints";
 import BrandLogo from "@/components/ui/BrandLogo";
 import { usePublicSettings, getSettingValue } from "@/hooks/usePublicSettings";
-import { getBrandName, getBrandTagline } from "@/lib/tokens";
+import { getBrandName, getBrandTagline, copyrightYears } from "@/lib/tokens";
 
 /**
  * The More drawer from screen 03. Four groups, fixed in both signed-in and
@@ -304,7 +304,7 @@ export default function MoreDrawer({ open, onClose }: { open: boolean; onClose: 
             </button>
           </div>
           <p className="text-center text-[10px] text-muted mt-3">
-            © {new Date().getFullYear()} ABO Enterprise
+            © {copyrightYears()} ABO Enterprise
           </p>
         </div>
       </div>

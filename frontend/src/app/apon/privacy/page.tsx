@@ -267,7 +267,7 @@ export default function AponPrivacyPage() {
       title: T("Part 3 — Copyright", "পর্ব ৩ — কপিরাইট"),
       content: (
         <div className="space-y-3">
-          {p("© 2026 SUMON | All rights reserved.", "© 2026 SUMON | সর্বস্বত্ব সংরক্ষিত।")}
+          {p("© 2023–2026 SUMON | All rights reserved.", "© ২০২৩–২০২৬ SUMON | সর্বস্বত্ব সংরক্ষিত।")}
           {p(
             "The name, logo, design, screens and text of Apon are the property of SUMON. Without written permission they may not be used in a way that suggests we endorse something.",
             "আপন-এর নাম, লোগো, নকশা, পর্দা ও লেখা SUMON-এর সম্পত্তি। লিখিত অনুমতি ছাড়া এগুলো এমনভাবে ব্যবহার করা যাবে না যাতে মনে হয় আমরা সমর্থন দিচ্ছি।",
