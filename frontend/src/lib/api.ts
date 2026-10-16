@@ -952,6 +952,8 @@ export const reportsApi = {
     const query = qs.toString();
     return `/api/v1/admin/reports/${report}/export${query ? `?${query}` : ""}`;
   },
+  exportPdfPath: (report: ReportType, params: { start_date?: string; end_date?: string } = {}) =>
+    reportsApi.exportPath(report, params).replace("/export", "/export-pdf"),
 };
 
 export const notificationsApi = {

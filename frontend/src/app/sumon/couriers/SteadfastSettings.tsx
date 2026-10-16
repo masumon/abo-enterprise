@@ -19,7 +19,7 @@ const errText = (e: unknown, fb: string): string => {
   return typeof d === "string" && d ? d : fb;
 };
 
-export default function SteadfastSettings({ onChanged }: { onChanged: () => void }) {
+export default function SteadfastSettings({ onChanged, onResult }: { onChanged: () => void; onResult?: (ok: boolean, text: string) => void }) {
   const toast = useToastStore((s) => s.push);
   const [saved, setSaved] = useState<Record<string, string> | null>(null);
   const [vals, setVals] = useState<Record<string, string>>({});
@@ -69,8 +69,11 @@ export default function SteadfastSettings({ onChanged }: { onChanged: () => void
       await persist(vals);
       const r = await api.post<ApiResponse<{ ok: boolean }>>("/api/v1/admin/couriers/steadfast/test", {}, { timeout: 60000 });
       setResult({ ok: true, text: r.data.message || "সংযোগ সফল" });
+      onResult?.(true, r.data.message || "সংযোগ সফল");
     } catch (e) {
-      setResult({ ok: false, text: errText(e, "পরীক্ষা ব্যর্থ — Key দেখে আবার চেষ্টা করুন") });
+      const text = errText(e, "পরীক্ষা ব্যর্থ — Key দেখে আবার চেষ্টা করুন");
+      setResult({ ok: false, text });
+      onResult?.(false, text);
     } finally {
       setBusy(false);
       onChanged();

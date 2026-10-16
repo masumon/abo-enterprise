@@ -1,5 +1,6 @@
 "use client";
 
+import LivePreview from "@/components/admin/LivePreview";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Loader2, Plus, Pencil, Trash2, X, Package, Minus, Search } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -247,6 +248,17 @@ export default function CombosManager({ embedded = false }: { embedded?: boolean
               <button aria-label={tx("Close", "বন্ধ করুন")} type="button" onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"><X className="w-5 h-5" /></button>
             </div>
             <div className="min-w-0 space-y-4 p-4 sm:p-5">
+              <LivePreview showDevice={false}>
+                <div className="pointer-events-none rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 overflow-hidden max-w-xs mx-auto">
+                  {form.image_url ? <img src={form.image_url} alt="" className="w-full h-32 object-cover" /> : <div className="h-32 bg-brand-50 dark:bg-white/5" />}
+                  <div className="p-3 space-y-1">
+                    {(form.badge_bn || form.badge_en) && <span className="inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-accent-500 text-[#14182b]">{bn ? form.badge_bn || form.badge_en : form.badge_en || form.badge_bn}</span>}
+                    <p className="font-semibold text-gray-900 dark:text-gray-100">{(bn ? form.title_bn || form.title_en : form.title_en || form.title_bn) || "কম্বোর নাম এখানে দেখাবে"}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300">{form.items.length.toLocaleString("bn-BD")}টি পণ্য</p>
+                    <p className="font-bold text-brand-700 dark:text-brand-300">৳{Number(form.combo_price || 0).toLocaleString("bn-BD")} {form.compare_at_price && <span className="text-xs font-normal text-gray-500 line-through">৳{Number(form.compare_at_price).toLocaleString("bn-BD")}</span>}</p>
+                  </div>
+                </div>
+              </LivePreview>
               <BnEnText label={tx("Combo name", "কম্বোর নাম")} required bn={form.title_bn} en={form.title_en} onBn={(v) => set("title_bn", v)} onEn={(v) => set("title_en", v)} placeholderBn={tx("e.g. Charger + cable combo", "যেমন: চার্জার + কেবল কম্বো")} />
               <BnEnText label={tx("Description (optional)", "বিবরণ (ঐচ্ছিক)")} rows={2} bn={form.description_bn} en={form.description_en} onBn={(v) => set("description_bn", v)} onEn={(v) => set("description_en", v)} />
               <ImageUpload value={form.image_url} onChange={(u) => set("image_url", u)} label={tx("Combo image", "কম্বো ছবি")} folder="combos" purpose="combo" />

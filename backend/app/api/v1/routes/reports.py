@@ -263,6 +263,43 @@ async def get_report(
     })
 
 
+@router.get("/{report_type}/export-pdf")
+async def export_report_pdf(
+    report_type: str,
+    start_date: date | None = Query(None),
+    end_date: date | None = Query(None),
+    db: AsyncSession = Depends(get_db),
+    _admin: str = Depends(require_role("analytics.read")),
+):
+    """Same rows as the CSV export, rendered as a branded landscape PDF table."""
+    from app.core.pdf_report import build_table_report
+
+    builder = REPORT_BUILDERS.get(report_type)
+    if not builder:
+        raise HTTPException(status_code=404, detail=f"Unknown report type. Available: {', '.join(sorted(REPORT_BUILDERS))}")
+    start, end = _window(start_date, end_date)
+    rows = await builder(db, start, end)
+    headers: list[str] = []
+    for row in rows:
+        for key in row.keys():
+            if key not in headers:
+                headers.append(key)
+    headers = (headers or ["value"])[:12]  # a landscape page fits ~12 columns
+    table = [["" if r.get(h) is None else (f"{r[h]:,.2f}" if isinstance(r.get(h), float) else str(r.get(h))) for h in headers] for r in rows[:2000]]
+    day = (end - timedelta(days=1)).date().isoformat()
+    pdf = build_table_report(
+        f"{report_type.replace('_', ' ').title()} Report",
+        [h.replace("_", " ").title() for h in headers],
+        table,
+        subtitle=f"{start.date().isoformat()} to {day} · {len(rows)} rows",
+    )
+    return StreamingResponse(
+        io.BytesIO(pdf),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={report_type}_{start.date().isoformat()}_{day}.pdf"},
+    )
+
+
 @router.get("/{report_type}/export")
 async def export_report(
     report_type: str,
