@@ -56,7 +56,7 @@ const GUIDES: Record<BannerKind, GuideText> = {
   },
   "hero-mobile": {
     sizes: [
-      { device: "mobile", bn: "মোবাইল/ট্যাবলেট কার্ড: ১২৮০×৭২০ px (১৬:৯)", en: "Mobile/tablet card: 1280×720 px (16:9)" },
+      { device: "mobile", bn: "মোবাইল/ট্যাবলেট ব্যানার: ১২৬০×৩৬০ px (৭:২, কম উচ্চতার চওড়া পট্টি)", en: "Mobile/tablet banner: 1260×360 px (7:2, wide low strip)" },
     ],
     safeBn: [
       "কোনো প্রোমো স্লাইড চালু না থাকলে মোবাইল ও ট্যাবলেটে হোমপেজের উপরে এই কার্ড দেখায়।",
@@ -222,10 +222,10 @@ export default function BannerDevicePreview({ kind, value, title }: { kind: Bann
             <Media url={value} className={cover} />
           </Frame>
         )}
-        <Frame device="tablet" label={`${L.tablet} · 720px`} aspect="aspect-video">
+        <Frame device="tablet" label={`${L.tablet} · 720px`} aspect={kind === "hero-mobile" ? "aspect-[7/2]" : "aspect-video"}>
           <Media url={value} className={cover} />
         </Frame>
-        <Frame device="mobile" label={`${L.mobile} · 366px`} aspect="aspect-video">
+        <Frame device="mobile" label={`${L.mobile} · 366px`} aspect={kind === "hero-mobile" ? "aspect-[7/2]" : "aspect-video"}>
           <Media url={value} className={cover} />
         </Frame>
       </div>

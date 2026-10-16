@@ -28,6 +28,7 @@ export type UploadPurpose =
   | "favicon"
   | "app-icon"
   | "promo-hero"
+  | "hero-mobile-banner"
   | "quick-category"
   | "promo-flash"
   | "announcement"
@@ -242,6 +243,15 @@ export const UPLOAD_GUIDES: Record<UploadPurpose, UploadGuide> = {
     subject: "মূল বিষয় ছবির মাঝখানে রাখুন — নিচের অংশে লেখা বসবে, তাই নিচে ফাঁকা/হালকা অংশ থাকলে ভালো",
     format: IMG, maxSize: "৫০০KB-এর কম রাখুন (দ্রুত লোড হবে)",
     whereBn: "হোমপেজের উপরের ৩টি বড় কার্ড",
+  },
+  "hero-mobile-banner": {
+    titleBn: "মোবাইল/ট্যাবলেট হিরো ব্যানার",
+    size: "১২৬০×৩৬০px (৭:২) — চওড়া ও কম উচ্চতার পট্টি",
+    ratio: 3.5, ratioLabel: "৭:২", fit: "contain",
+    background: "ব্র্যান্ড রঙ বা অফারের ছবি",
+    subject: "উচ্চতা কম (প্রস্থের মাত্র ২৯%) — লেখা, দাম ও লোগো মাঝখানের আড়াআড়ি পট্টিতে রাখুন; ডান-বামে কিছুটা ফাঁকা রাখুন। এই ছবি দিলে মোবাইল ও ট্যাবলেটে প্রোমো স্লাইডের বদলে এটাই দেখায়",
+    format: IMG, maxSize: "৫০০KB-এর কম রাখুন (মোবাইলে দ্রুত লোড হবে)",
+    whereBn: "মোবাইল ও ট্যাবলেটে হোমপেজের একদম উপরের ব্যানার",
   },
   "promo-hero": {
     titleBn: "হোমপেজ প্রোমো স্লাইড",

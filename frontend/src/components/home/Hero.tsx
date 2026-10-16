@@ -76,8 +76,6 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
   const freeDeliveryLabel = getFreeDeliveryLabel(lang, getSettingValue(settings, "free_delivery_min_amount"));
   const hstyle = parseHeroTextStyle(getSettingValue(settings, HERO_TEXT_STYLE_KEY));
   const promoAlt = heroTitleOverride || (lang === "bn" ? "প্রোমোশনাল ব্যানার" : "Promotional banner");
-  // Mobile/tablet card when no promo slide is live: promo media first, then the mobile banner.
-  const mobileFallbackMedia = heroPromoMedia || heroMobileImg;
 
   // Only show tiles that have a real, non-zero number — "—"/0 tiles look unfinished.
   const tiles = [
@@ -88,12 +86,12 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
   ].filter((item) => typeof item.end === "number" && item.end > 0);
 
   /** One media card (admin promo media / mobile banner) for when no promo slide is live. */
-  const mediaCard = (url: string, sizes: string) => (
+  const mediaCard = (url: string, sizes: string, ratio = "aspect-[21/8]") => (
     <div className="relative rounded-2xl lg:rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-gradient-to-br from-brand-700 to-brand-900">
       {isVideoUrl(url) ? (
-        <AutoVideo src={url} className="w-full aspect-[21/8] object-contain block" tapToPlay aria-hidden />
+        <AutoVideo src={url} className={cn("w-full object-contain block", ratio)} tapToPlay aria-hidden />
       ) : (
-        <div className="relative w-full aspect-[21/8]">
+        <div className={cn("relative w-full", ratio)}>
           {/* Whole banner visible (nothing cut); a blurred copy fills the side space. */}
           <Image src={url} alt="" aria-hidden fill sizes="200px" className="object-cover scale-110 blur-xl opacity-60" />
           <Image src={url} alt={promoAlt} fill sizes={sizes} className="object-contain" />
@@ -125,18 +123,24 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
         </div>
 
         <div className="px-3 pt-2 md:px-6 md:pt-4 md:max-w-3xl md:mx-auto">
-          <PromoSlider
-            placement="hero"
-            aspect="aspect-[21/8]"
-            fit="contain"
-            minRatio={1.7}
-            eagerFirstSlide
-            initialSlides={initialHeroSlides}
-            // ≥1024px this copy is hidden: "1px" makes the browser pick the
-            // smallest candidate there instead of a full-width image.
-            sizes="(min-width: 1024px) 1px, (min-width: 768px) 720px, 100vw"
-            fallback={mobileFallbackMedia ? mediaCard(mobileFallbackMedia, "(min-width: 768px) 720px, 100vw") : null}
-          />
+          {/* Low, wide banner (7:2 — half the old height). A dedicated mobile image from the admin wins;
+              otherwise the promo slides are centre-cropped to the same low strip. */}
+          {heroMobileImg ? (
+            mediaCard(heroMobileImg, "(min-width: 768px) 720px, 100vw", "aspect-[7/2]")
+          ) : (
+            <PromoSlider
+              placement="hero"
+              aspect="aspect-[7/2]"
+              fit="cover"
+              minRatio={3.5}
+              eagerFirstSlide
+              initialSlides={initialHeroSlides}
+              // ≥1024px this copy is hidden: "1px" makes the browser pick the
+              // smallest candidate there instead of a full-width image.
+              sizes="(min-width: 1024px) 1px, (min-width: 768px) 720px, 100vw"
+              fallback={heroPromoMedia ? mediaCard(heroPromoMedia, "(min-width: 768px) 720px, 100vw", "aspect-[7/2]") : null}
+            />
+          )}
         </div>
 
         <div className="px-3 pt-2 pb-1 md:px-6 md:py-4 md:max-w-3xl md:mx-auto">
