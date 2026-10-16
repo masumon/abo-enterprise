@@ -222,15 +222,28 @@ export default function DashboardOperationsPanel() {
           <Link href="/sumon/analytics" className="text-xs text-brand-600 hover:underline">{bn ? "মনিটরিং →" : "Monitoring →"}</Link>
         </div>
         <div className="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">{bn ? "সামগ্রিক" : "Overall"}</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? `${health.healthy}/${health.total}` : "—"}</p></div>
-          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">API</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.api?.ok ? "OK" : "Fail") : "—"}</p></div>
-          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">DB</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.database?.ok ? "OK" : "Fail") : "—"}</p></div>
-          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">{bn ? "ইমেইল" : "Email"}</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.smtp?.ok ? "OK" : "Fail") : "—"}</p></div>
-          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">GA4</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.ga4?.ok ? "OK" : "Fail") : "—"}</p></div>
-          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">AI</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.ai?.ok ? "OK" : "Fail") : "—"}</p></div>
-          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">Sentry</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.sentry?.ok ? "OK" : "Fail") : "—"}</p></div>
-          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">{bn ? "ব্যর্থ চেক" : "Failed checks"}</p><p className="text-lg font-bold text-gray-900 mt-1">{healthFailed ?? "—"}</p></div>
+          <Link href="/sumon/system-health" className={`rounded-lg border p-3 min-h-11 ${healthFailed ? "border-red-300 bg-red-50/60" : "border-gray-100"}`}><p className="text-xs text-gray-500">{bn ? "সামগ্রিক" : "Overall"}</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? `${health.healthy}/${health.total}` : "—"}</p></Link>
+          {([["api", "API"], ["database", "DB"], ["render", "Render"], ["website", bn ? "ওয়েবসাইট" : "Website"], ["cloudflare", "Cloudflare"], ["cron", "Cron"], ["smtp", bn ? "ইমেইল" : "Email"], ["cloudinary", bn ? "ছবি" : "Media"], ["ga4", "GA4"], ["sentry", "Sentry"], ["ai", "AI"]] as [string, string][]).map(([k, label]) => {
+            const c = health?.checks?.[k];
+            if (health && !c) return null;
+            const bad = !!c && !c.ok && !c.skipped;
+            return (
+              <Link key={k} href={`/sumon/system-health#${k}`} className={`rounded-lg border p-3 min-h-11 ${bad ? "border-red-300 bg-red-50/60" : "border-gray-100"}`}>
+                <p className="text-xs text-gray-500">{label}</p>
+                <p className={`text-lg font-bold mt-1 ${bad ? "text-red-600" : c?.skipped ? "text-gray-400" : "text-gray-900"}`}>{!c ? "—" : c.skipped ? (bn ? "বাদ" : "Skip") : c.ok ? "✓" : "✗"}</p>
+              </Link>
+            );
+          })}
         </div>
+        {health && healthFailed ? (
+          <div className="px-4 sm:px-5 pb-4 space-y-1.5">
+            {Object.entries(health.checks).filter(([, c]) => c && !c.ok && !c.skipped).map(([k, c]) => (
+              <Link key={k} href={`/sumon/system-health#${k}`} className="flex items-start gap-2 rounded-lg bg-red-50 text-red-800 px-3 py-2 text-sm min-h-11">
+                <span aria-hidden>✗</span><span className="break-words"><b>{k}</b>: {String((c as { error?: unknown }).error ?? "সমস্যা")}</span>
+              </Link>
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   );

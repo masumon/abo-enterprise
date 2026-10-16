@@ -606,6 +606,12 @@ async def cron(background: BackgroundTasks, token: str = Query(default="", max_l
     Answers at once (cron-job.org waits only 30 s)."""
     if not hmac.compare_digest(token, cron_token()):
         raise HTTPException(status_code=403, detail="forbidden")
+    try:
+        from app.core.service_health import mark_cron
+
+        await mark_cron(db, "backup")
+    except Exception:  # noqa: BLE001 — health bookkeeping must never block the backup
+        await db.rollback()
     cfg, hist = await store.get_config(db), engine._settle_stale(await store.get_history(db))
     if engine.is_running() or not engine.is_due(cfg, hist):
         return ApiResponse(data={"started": False}, message="এখন backup-এর সময় নয়")

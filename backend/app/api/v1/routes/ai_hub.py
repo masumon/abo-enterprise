@@ -137,6 +137,14 @@ async def daily_cron(background: BackgroundTasks, token: str = Query(default="",
     30 s cron-job.org waits."""
     if not hmac.compare_digest(token, hub.cron_token()):
         raise HTTPException(status_code=403, detail="forbidden")
+    try:
+        from app.core.database import AsyncSessionLocal
+        from app.core.service_health import mark_cron
+
+        async with AsyncSessionLocal() as s:
+            await mark_cron(s, "ai")
+    except Exception:  # noqa: BLE001 — bookkeeping only
+        pass
     if not _cron["running"]:
         _cron["running"] = True
         background.add_task(_run_daily_check)

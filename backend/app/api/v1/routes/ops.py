@@ -229,8 +229,17 @@ async def system_health(
     except Exception as exc:  # noqa: BLE001
         checks["backup_cron"] = {"ok": False, "error": f"backup status unavailable: {exc}"[:200]}
 
-    healthy = sum(1 for c in checks.values() if c.get("ok"))
-    return {"success": True, "data": {"checks": checks, "healthy": healthy, "total": len(checks)}}
+    try:
+        from app.core import service_health
+
+        checks.update(await service_health.run_all(db))
+    except Exception as exc:  # noqa: BLE001
+        checks["services"] = {"ok": False, "error": f"extra checks failed: {exc}"[:200]}
+
+    counted = [c for c in checks.values() if not c.get("skipped")]
+    healthy = sum(1 for c in counted if c.get("ok"))
+    return {"success": True, "data": {"checks": checks, "healthy": healthy, "total": len(counted),
+                                      "skipped": len(checks) - len(counted)}}
 
 
 # ─── Error Center ────────────────────────────────────────────────────────────
