@@ -315,7 +315,8 @@ function GithubCopy() {
   const [g, setG] = useState<GithubStatus | null>(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    backupApi.github().then((r) => setG(r.data.data ?? null)).catch(() => setG(null));
+    // Optional card: any failure (even a synchronous one) just hides it.
+    Promise.resolve().then(() => backupApi.github()).then((r) => setG(r.data.data ?? null)).catch(() => setG(null));
   }, []);
   if (!g) return null;
   const toggle = async () => {
