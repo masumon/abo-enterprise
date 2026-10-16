@@ -28,6 +28,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "schedule": {"enabled": False, "hour": 3, "minute": 30},  # Bangladesh time
     "retention": {"daily": 14, "weekly": 8, "monthly": 6},
     "destinations": [],
+    "github": {"enabled": True},  # GitHub Actions extra copy (workflow asks /backup/github-enabled)
 }
 
 
@@ -68,6 +69,7 @@ async def get_config(db: AsyncSession) -> dict[str, Any]:
     out.update({k: v for k, v in cfg.items() if k in out})
     out["schedule"] = {**DEFAULT_CONFIG["schedule"], **(cfg.get("schedule") or {})}
     out["retention"] = {**DEFAULT_CONFIG["retention"], **(cfg.get("retention") or {})}
+    out["github"] = {**DEFAULT_CONFIG["github"], **(cfg.get("github") or {})}
     return out
 
 

@@ -6,7 +6,7 @@ jest.mock("@/lib/api", () => ({ __esModule: true, default: {}, downloadCsv: jest
 jest.mock("@/components/admin/AdminPageHeader", () => ({ __esModule: true, default: ({ titleBn }: { titleBn?: string }) => <h1>{titleBn}</h1> }));
 jest.mock("@/lib/backup", () => {
   const actual = jest.requireActual("@/lib/backup");
-  return { ...actual, backupApi: { ...actual.backupApi, get: jest.fn() } };
+  return { ...actual, backupApi: { ...actual.backupApi, get: jest.fn(), github: jest.fn().mockRejectedValue(new Error("offline")) } };
 });
 
 const fresh = {

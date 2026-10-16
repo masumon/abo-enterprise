@@ -324,3 +324,19 @@ def test_app_client_key_is_write_protected():
     from app.api.v1.routes.settings import _is_protected_setting_key
 
     assert _is_protected_setting_key(store.K_APPS)
+
+
+def test_github_flag_default_on_and_toggle(monkeypatch):
+    from app.api.v1.routes import backup as backup_routes
+
+    state = {"cfg": {}}
+
+    async def get_config(db):
+        out = {**store.DEFAULT_CONFIG, **state["cfg"]}
+        out["github"] = {**store.DEFAULT_CONFIG["github"], **(state["cfg"].get("github") or {})}
+        return out
+
+    monkeypatch.setattr(store, "get_config", get_config)
+    assert asyncio.run(backup_routes.github_enabled(db=None)) == {"enabled": True}
+    state["cfg"] = {"github": {"enabled": False}}
+    assert asyncio.run(backup_routes.github_enabled(db=None)) == {"enabled": False}

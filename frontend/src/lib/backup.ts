@@ -28,6 +28,10 @@ export type BackupSummary = {
   history: BackupRun[]; cron_url: string; redirect_uri: string; custom_db_url: boolean;
   one_click: Partial<Record<DestKind, boolean>>;
 };
+export type GithubStatus = {
+  enabled: boolean; url: string; reason_bn: string;
+  runs: { at: string; status: string; result: string | null; url: string }[];
+};
 export type JobState = { id: string; status: "running" | "ok" | "failed"; error_bn?: string; result?: Record<string, unknown> };
 
 const B = "/api/v1/admin/backup";
@@ -53,6 +57,8 @@ export const backupApi = {
   verify: (form: FormData) => api.post<ApiResponse<{ job_id: string }>>(`${B}/verify`, form, FORM),
   setAppClient: (form: FormData) => api.post<ApiResponse<{ kind: string }>>(`${B}/app-client`, form, FORM),
   restoreTest: (form: FormData) => api.post<ApiResponse<{ job_id: string }>>(`${B}/restore-test`, form, FORM),
+  github: () => api.get<ApiResponse<GithubStatus>>(`${B}/github`),
+  setGithub: (enabled: boolean) => api.put<ApiResponse<{ enabled: boolean }>>(`${B}/github`, { enabled }),
   job: (id: string) => api.get<ApiResponse<JobState>>(`${B}/jobs/${id}`),
 };
 
