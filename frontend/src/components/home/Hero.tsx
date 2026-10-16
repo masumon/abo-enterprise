@@ -102,10 +102,12 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
   const mediaCard = (url: string, sizes: string) => (
     <div className="relative rounded-2xl lg:rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-gradient-to-br from-brand-700 to-brand-900">
       {isVideoUrl(url) ? (
-        <AutoVideo src={url} className="w-full aspect-[21/8] object-cover block" tapToPlay aria-hidden />
+        <AutoVideo src={url} className="w-full aspect-[21/8] object-contain block" tapToPlay aria-hidden />
       ) : (
         <div className="relative w-full aspect-[21/8]">
-          <Image src={url} alt={promoAlt} fill sizes={sizes} className="object-cover" />
+          {/* Whole banner visible (nothing cut); a blurred copy fills the side space. */}
+          <Image src={url} alt="" aria-hidden fill sizes="200px" className="object-cover scale-110 blur-xl opacity-60" />
+          <Image src={url} alt={promoAlt} fill sizes={sizes} className="object-contain" />
         </div>
       )}
     </div>
@@ -137,6 +139,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
           <PromoSlider
             placement="hero"
             aspect="aspect-[21/8]"
+            fit="contain"
             eagerFirstSlide
             initialSlides={initialHeroSlides}
             // ≥1024px this copy is hidden: "1px" makes the browser pick the

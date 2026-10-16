@@ -105,6 +105,8 @@ interface Props {
   className?: string;
   /** Media box ratio. Hero uses a fixed 16/9 card; flash sale is wider. */
   aspect?: string;
+  /** "contain" shows the whole banner (blurred fill on the sides) — nothing is cut off. */
+  fit?: "cover" | "contain";
   /** Hero placement is above-the-fold on mobile (the LCP candidate) — its
    * first slide must not be `loading="lazy"`, which defers the fetch until
    * an intersection check and was measured adding real seconds to LCP.
@@ -128,7 +130,7 @@ interface Props {
  * Renders `fallback` (and fetches nothing further) when the API returns no
  * slides, which is what keeps the pre-existing single hero media working.
  */
-export default function PromoSlider({ placement, fallback, className, aspect = "aspect-video", eagerFirstSlide, initialSlides, sizes = "100vw" }: Props) {
+export default function PromoSlider({ placement, fallback, className, aspect = "aspect-video", eagerFirstSlide, initialSlides, sizes = "100vw", fit }: Props) {
   const { lang } = useLanguageStore();
   const [slides, setSlides] = useState<PromoSlide[] | null>(initialSlides ?? null);
   const hasInitial = initialSlides != null;
@@ -183,7 +185,7 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
                   alt={slide.alt_text || title || ""}
                   eager={eagerFirstSlide && index === 0}
                   sizes={sizes}
-                  contain={placement === "flash_sale"}
+                  contain={fit ? fit === "contain" : placement === "flash_sale"}
                 />
               )}
             </div>
