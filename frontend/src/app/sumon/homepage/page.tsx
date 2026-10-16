@@ -577,17 +577,22 @@ export default function AdminHomepageContentPage() {
                       <span className="px-2.5 py-1 rounded-lg bg-accent-500 text-white text-[10px] sm:text-xs font-semibold">{bn ? "সেবা বুক করুন" : "Book a service"}</span>
                       <span className="px-2.5 py-1 rounded-lg border border-white/60 text-white text-[10px] sm:text-xs font-semibold">
                         {values.hero_cta_text || (bn ? "পণ্য দেখুন" : "Products")}
-                      </span>
+                    </span>
+                    </div>
+                    {/* The three shortcut pills under the buttons (desktop/tablet ≥1024px only). */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {[["🛍️", values.hero_pill1_bn, bn ? "পণ্য কিনুন" : "Shop products"], ["🛠️", values.hero_pill2_bn, bn ? "সেবা নিন" : "Book services"], ["💻", values.hero_pill3_bn, bn ? "সফটওয়্যার ও AI" : "Software & AI"]].map(([ic, v, d], i) => (
+                        <span key={i} className={cn("inline-flex items-center rounded-full bg-gradient-to-b from-white/25 to-white/[0.06] border border-white/30 text-white font-bold !min-h-0 !px-2 !py-0.5 !text-[9px] sm:!text-[11px] gap-1", hstyle.pillSize === "xl" && "!px-3 !py-1 sm:!text-sm", (hstyle.pillSize ?? "lg") === "lg" && "!px-2.5 !py-1 sm:!text-xs")}>{ic} {(bn ? v : "") || d}</span>
+                      ))}
                     </div>
                   </div>
                   <div className="absolute right-[4%] top-1/2 -translate-y-1/2 w-[28%] space-y-2">
-                    <div className="aspect-video rounded-lg bg-white/15 border border-white/30 overflow-hidden">
+                    <div className="aspect-[4/3] rounded-lg bg-white/15 border border-white/30 overflow-hidden">
                       {heroPromo && !isVideoUrl(heroPromo) && (
                          
                         <img src={heroPromo} alt="" className="w-full h-full object-cover" />
                       )}
                     </div>
-                    <div className="h-10 sm:h-16 rounded-lg bg-[#0c1330]/85 border border-white/15" />
                   </div>
                 </div>
               </div>

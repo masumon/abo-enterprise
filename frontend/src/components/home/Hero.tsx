@@ -58,7 +58,7 @@ const HERO_TINT = "linear-gradient(135deg, rgba(53,71,155,0.25) 0%, rgba(30,43,1
 export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoSlide[] | null } = {}) {
   const { lang } = useLanguageStore();
   const t = useT();
-  const { settings } = usePublicSettings(["hero_image_url", "hero_mobile_image_url", "hero_promo_media_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "hero_note_en", "hero_note_bn", "hero_pill1_bn", "hero_pill2_bn", "hero_pill3_bn", "free_delivery_min_amount", HERO_TEXT_STYLE_KEY]);
+  const { settings } = usePublicSettings(["hero_image_url", "hero_mobile_image_url", "hero_promo_media_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "hero_note_en", "hero_note_bn", "hero_pill1_bn", "hero_pill2_bn", "hero_pill3_bn", "hero_pill1_en", "hero_pill2_en", "hero_pill3_en", "hero_pill1_url", "hero_pill2_url", "hero_pill3_url", "free_delivery_min_amount", HERO_TEXT_STYLE_KEY]);
   const { stats, loading: statsLoading } = usePublicStats();
 
   const heroImage = resolveHomeBannerImage(settings);
@@ -74,6 +74,11 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
   const heroCtaText = getSettingValue(settings, "hero_cta_text");
   const heroCtaUrl = getSettingValue(settings, "hero_cta_url", "/products");
   const freeDeliveryLabel = getFreeDeliveryLabel(lang, getSettingValue(settings, "free_delivery_min_amount"));
+  // Admin-editable shortcut links: a site path (/…) or https:// URL; anything else falls back to the default.
+  const pillHref = (key: string, fallback: string) => {
+    const v = getSettingValue(settings, key).trim();
+    return v.startsWith("/") || /^https?:\/\//i.test(v) ? v : fallback;
+  };
   const hstyle = parseHeroTextStyle(getSettingValue(settings, HERO_TEXT_STYLE_KEY));
   const promoAlt = heroTitleOverride || (lang === "bn" ? "প্রোমোশনাল ব্যানার" : "Promotional banner");
 
@@ -262,9 +267,9 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
                 <div className="flex flex-col gap-3 pt-1 w-full max-w-xl [text-shadow:none]">
                   <div className="flex flex-wrap items-center gap-2" role="list" aria-label={lang === "bn" ? "আমরা যা করি" : "What we do"}>
                     {[
-                      { href: "/products", icon: "🛍️", bn: getSettingValue(settings, "hero_pill1_bn") || "পণ্য কিনুন", en: "Shop products" },
-                      { href: "/services", icon: "🛠️", bn: getSettingValue(settings, "hero_pill2_bn") || "সেবা নিন", en: "Book services" },
-                      { href: "/services/software", icon: "💻", bn: getSettingValue(settings, "hero_pill3_bn") || "সফটওয়্যার ও AI", en: "Software & AI" },
+                      { href: pillHref("hero_pill1_url", "/products"), icon: "🛍️", bn: getSettingValue(settings, "hero_pill1_bn") || "পণ্য কিনুন", en: getSettingValue(settings, "hero_pill1_en") || "Shop products" },
+                      { href: pillHref("hero_pill2_url", "/services"), icon: "🛠️", bn: getSettingValue(settings, "hero_pill2_bn") || "সেবা নিন", en: getSettingValue(settings, "hero_pill2_en") || "Book services" },
+                      { href: pillHref("hero_pill3_url", "/services/software"), icon: "💻", bn: getSettingValue(settings, "hero_pill3_bn") || "সফটওয়্যার ও AI", en: getSettingValue(settings, "hero_pill3_en") || "Software & AI" },
                     ].map((x) => (
                       <Link key={x.href} href={x.href} role="listitem" className={cn("inline-flex items-center rounded-full bg-gradient-to-b from-white/25 to-white/[0.06] hover:from-white/35 hover:to-white/15 border border-white/30 shadow-lg shadow-black/20 backdrop-blur-md font-bold text-white transition hover:-translate-y-0.5", heroPillClass(hstyle))}>
                         <span aria-hidden>{x.icon}</span>{lang === "bn" ? x.bn : x.en}
