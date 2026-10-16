@@ -211,7 +211,7 @@ export default function CombosManager({ embedded = false }: { embedded?: boolean
           {tx("No combo packs yet. Start by creating a new combo.", "এখনো কোনো কম্বো নেই। “নতুন কম্বো” দিয়ে শুরু করুন।")}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="admin-fill-grid grid grid-cols-1 gap-4">
           {combos.map((c) => (
             <div key={c.id} className="enterprise-card min-w-0 p-4">
               <div className="flex min-w-0 items-start gap-3">

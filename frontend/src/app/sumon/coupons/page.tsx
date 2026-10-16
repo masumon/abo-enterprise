@@ -175,7 +175,7 @@ export default function AdminCouponsPage() {
       ) : rows.length === 0 ? (
         <AdminEmptyState icon={Percent} title="এখনো কোনো কুপন নেই" description="“নতুন কুপন” চেপে একটি ছাড়ের কোড বানান — যেমন ABO10 দিলে ১০% ছাড়।" />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        <div className="admin-fill-grid grid grid-cols-1 gap-3">
           {rows.map((r, i) => (
             <article key={r.id ?? `new-${i}`} className={`rounded-2xl border p-4 space-y-3 bg-white dark:bg-white/5 ${r.active ? "border-gray-200 dark:border-white/10" : "border-dashed border-gray-300 opacity-80"}`}>
               <div className="flex items-start gap-2">
