@@ -118,10 +118,11 @@ function ratioOfClass(cls: string): number {
  * image has loaded, adopts the image's own ratio (within sane limits) — so any banner the
  * admin uploads is shown whole and fills the card edge to edge on every screen, with no
  * coloured side bars and nothing cropped. */
-function SlideMedia({ aspect, knownRatio, onFit, children }: { aspect: string; knownRatio?: number | null; onFit: () => void; children: (onRatio: (r: number) => void) => React.ReactNode }) {
+function SlideMedia({ aspect, knownRatio, minRatio = 1.2, onFit, children }: { aspect: string; knownRatio?: number | null; minRatio?: number; onFit: () => void; children: (onRatio: (r: number) => void) => React.ReactNode }) {
   const base = ratioOfClass(aspect);
   const [ratio, setRatio] = useState<number | null>(knownRatio ?? null);
-  const fitted = ratio && ratio >= 1.2 && ratio <= 4.5 && Math.abs(ratio - base) / base > 0.03 ? ratio : null;
+  const eff = ratio ? Math.max(ratio, minRatio) : null; // taller images are letter-boxed (blurred fill) instead of making the card too tall
+  const fitted = eff && eff <= 4.5 && Math.abs(eff - base) / base > 0.03 ? eff : null;
   useEffect(() => { if (fitted) onFit(); }, [fitted, onFit]);
   return (
     <div className={`relative w-full ${aspect} overflow-hidden`} style={fitted ? { aspectRatio: String(fitted) } : undefined}>
@@ -147,6 +148,8 @@ interface Props {
   /** Slides fetched on the server (homepage) — rendered in the first HTML so
    * the hero image starts loading immediately. null/undefined = fetch here. */
   initialSlides?: PromoSlide[] | null;
+  /** Narrowest card ratio allowed (width/height); taller images are shown whole with a blurred fill. */
+  minRatio?: number;
   /** `sizes` hint for the responsive image srcset. */
   sizes?: string;
 }
@@ -162,7 +165,7 @@ interface Props {
  * Renders `fallback` (and fetches nothing further) when the API returns no
  * slides, which is what keeps the pre-existing single hero media working.
  */
-export default function PromoSlider({ placement, fallback, className, aspect = "aspect-video", eagerFirstSlide, initialSlides, sizes = "100vw", fit }: Props) {
+export default function PromoSlider({ placement, fallback, className, aspect = "aspect-video", eagerFirstSlide, initialSlides, sizes = "100vw", fit, minRatio }: Props) {
   const { lang } = useLanguageStore();
   const [slides, setSlides] = useState<PromoSlide[] | null>(initialSlides ?? null);
   const hasInitial = initialSlides != null;
@@ -208,7 +211,7 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
         {slides.map((slide, index) => {
           const title = (lang === "bn" ? slide.title_bn : slide.title_en) || slide.title_en || "";
           const media = (
-            <SlideMedia aspect={aspect} knownRatio={slide.aspect_ratio} onFit={refreshHeight}>
+            <SlideMedia aspect={aspect} knownRatio={slide.aspect_ratio} minRatio={minRatio} onFit={refreshHeight}>
               {(onRatio) => slide.video_url ? (
                 <AutoVideo
                   src={slide.video_url}

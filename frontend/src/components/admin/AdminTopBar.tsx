@@ -12,7 +12,17 @@ import { useLanguageStore } from "@/store/language";
 import { useEffect, useState } from "react";
 import { notificationsApi, type NotificationRecord } from "@/lib/api";
 
-const MENU_ITEM = "w-full min-h-[44px] flex items-center gap-3 px-3 rounded-xl text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50";
+const MENU_ITEM = "w-full min-h-[48px] flex items-center gap-3 px-2 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50";
+/** Round coloured icon chip used in the phone "more" menu. */
+const chip = (tone: string) => `w-9 h-9 rounded-xl flex items-center justify-center flex-none ${tone}`;
+const TONE = {
+  ai: "bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-300",
+  help: "bg-sky-100 text-sky-600 dark:bg-sky-500/20 dark:text-sky-300",
+  site: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300",
+  theme: "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-300",
+  lang: "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300",
+  refresh: "bg-rose-100 text-rose-600 dark:bg-rose-500/20 dark:text-rose-300",
+};
 
 interface Props {
   adminName: string;
@@ -129,7 +139,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
             <span className="hidden xl:inline">{lang === "bn" ? "সাইট দেখুন" : "View site"}</span>
           </a>
           {/* "What is this page?" — the page's own description from the menu. */}
-          <div className="relative">
+          <div className="relative hidden sm:block">
             <button type="button" onClick={() => { setHelpOpen((v) => !v); setNotifOpen(false); setMoreOpen(false); }}
               className="h-10 min-w-[40px] sm:h-9 sm:min-w-0 px-2.5 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-600"
               aria-label={lang === "bn" ? "এই পাতার সাহায্য" : "Help for this page"} aria-expanded={helpOpen} title={lang === "bn" ? "এই পাতা কী করে?" : "What is this page?"}>
@@ -152,7 +162,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event("abo:open-ai"))}
-            className="lg:hidden h-10 min-w-[40px] px-2.5 flex items-center justify-center rounded-xl text-brand-600 hover:bg-brand-50 transition-colors"
+            className="hidden sm:flex lg:hidden h-10 min-w-[40px] px-2.5 items-center justify-center rounded-xl text-brand-600 hover:bg-brand-50 transition-colors"
             aria-label={lang === "bn" ? "AI সহকারী" : "AI assistant"}
             title={lang === "bn" ? "AI সহকারী" : "AI assistant"}
           >
@@ -299,23 +309,31 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
             {moreOpen && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setMoreOpen(false)} aria-hidden />
-                <div role="menu" className="absolute right-0 mt-2 w-56 z-40 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-xl p-1.5 space-y-0.5">
+                <div role="menu" className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-1.5rem)] z-40 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-xl p-1.5 space-y-0.5">
+                  <button type="button" role="menuitem" onClick={() => { window.dispatchEvent(new Event("abo:open-ai")); setMoreOpen(false); }} className={MENU_ITEM}>
+                    <span className={chip(TONE.ai)}><Sparkles className="w-4 h-4" /></span>
+                    {lang === "bn" ? "AI সহকারী" : "AI assistant"}
+                  </button>
+                  <Link role="menuitem" href="/sumon/help" onClick={() => setMoreOpen(false)} className={MENU_ITEM}>
+                    <span className={chip(TONE.help)}><HelpCircle className="w-4 h-4" aria-hidden /></span>
+                    {lang === "bn" ? "এই পাতার সাহায্য" : "Help"}
+                  </Link>
                   {onToggleTheme && (
                     <button type="button" role="menuitem" onClick={() => { onToggleTheme(); setMoreOpen(false); }} className={MENU_ITEM}>
-                      {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                      <span className={chip(TONE.theme)}>{dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}</span>
                       {dark ? (lang === "bn" ? "লাইট মোড" : "Light mode") : (lang === "bn" ? "ডার্ক মোড" : "Dark mode")}
                     </button>
                   )}
                   <a role="menuitem" href="/" target="_blank" rel="noopener noreferrer" onClick={() => setMoreOpen(false)} className={MENU_ITEM}>
-                    <ExternalLink className="w-4 h-4" aria-hidden />
+                    <span className={chip(TONE.site)}><ExternalLink className="w-4 h-4" aria-hidden /></span>
                     {lang === "bn" ? "ওয়েবসাইট দেখুন" : "View website"}
                   </a>
                   <button type="button" role="menuitem" onClick={() => { toggleLang(); setMoreOpen(false); }} className={MENU_ITEM}>
-                    <Languages className="w-4 h-4" />
+                    <span className={chip(TONE.lang)}><Languages className="w-4 h-4" /></span>
                     {lang === "bn" ? "Switch to English" : "বাংলায় দেখুন"}
                   </button>
                   <button type="button" role="menuitem" onClick={() => { void handleRefresh(); setMoreOpen(false); }} disabled={isRefreshing} className={MENU_ITEM}>
-                    <RotateCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                    <span className={chip(TONE.refresh)}><RotateCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} /></span>
                     {lang === "bn" ? "রিফ্রেশ" : "Refresh"}
                   </button>
                   <div className="px-1.5 pt-1.5 pb-0.5 border-t border-gray-100 dark:border-white/10">

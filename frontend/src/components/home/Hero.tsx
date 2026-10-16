@@ -127,6 +127,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
             placement="hero"
             aspect="aspect-[21/8]"
             fit="contain"
+            minRatio={1.7}
             eagerFirstSlide
             initialSlides={initialHeroSlides}
             // ≥1024px this copy is hidden: "1px" makes the browser pick the
@@ -144,7 +145,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
       {/* ── Desktop hero (≥1024px) — rich media layout ── */}
       <section
         className={cn(
-          "hidden lg:flex gradient-hero lg:min-h-[clamp(480px,66dvh,640px)] relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]",
+          "hidden lg:flex gradient-hero relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]",
           heroVAlignClass(hstyle)
         )}
       >
@@ -192,7 +193,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
           <div className="absolute bottom-0 left-0 w-72 h-72 bg-accent-500/10 rounded-full blur-3xl" />
         </div>
 
-        <div className="container mx-auto px-4 xl:px-6 pt-6 pb-14 xl:pt-8 relative z-10">
+        <div className="container mx-auto px-4 xl:px-6 pt-3 pb-20 xl:pt-4 relative z-10">
           <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-8 xl:gap-12 items-center">
             <div className="text-white flex flex-col gap-4 animate-slide-up [text-shadow:0_2px_14px_rgba(0,0,0,0.35)]">
               <div className={cn("relative z-10 flex flex-col gap-4", heroAlignClass(hstyle))}>
@@ -237,13 +238,13 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
                   {lang === "bn" ? ABO_ACRONYM.bn : ABO_ACRONYM.en}
                 </p>
 
-                <div className="flex flex-row gap-3 pt-2 w-full max-w-xl [text-shadow:none]">
-                  <Link href="/services" className="btn btn-lg btn-primary btn-ripple flex-1 justify-center min-w-0 px-6 text-base">
+                <div className="flex flex-row gap-3 pt-2 w-full max-w-2xl [text-shadow:none]">
+                  <Link href="/services" className="btn btn-lg btn-primary btn-ripple flex-1 justify-center min-w-0 px-8 text-lg !min-h-12 !h-12">
                     <Calendar className="w-5 h-5 flex-none" aria-hidden />
                     <span className="truncate">{t("hero_cta_services")}</span>
                     <ArrowRight className="w-4 h-4 flex-none" aria-hidden />
                   </Link>
-                  <Link href={heroCtaUrl.startsWith("/") ? heroCtaUrl : "/products"} className="btn btn-lg btn-outline !border-white/80 !bg-white/15 backdrop-blur-sm !text-white font-semibold hover:!bg-white/25 btn-ripple flex-1 justify-center min-w-0 px-6 text-base">
+                  <Link href={heroCtaUrl.startsWith("/") ? heroCtaUrl : "/products"} className="btn btn-lg btn-outline !border-white/80 !bg-white/15 backdrop-blur-sm !text-white font-semibold hover:!bg-white/25 btn-ripple flex-1 justify-center min-w-0 px-8 text-lg !min-h-12 !h-12">
                     <ShoppingBag className="w-5 h-5 flex-none" aria-hidden />
                     <span className="truncate">{heroCtaText || t("hero_cta_products")}</span>
                   </Link>
@@ -285,10 +286,10 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
             </div>
 
             <div className="flex justify-end animate-fade-in">
-              <div className="relative w-full max-w-[28rem] xl:max-w-[32rem] flex flex-col gap-4">
+              <div className="relative w-full max-w-[30rem] xl:max-w-[34rem] flex flex-col gap-4">
                 <PromoSlider
                   placement="hero"
-                  aspect="aspect-[21/8]"
+                  aspect="aspect-[4/3]"
                   eagerFirstSlide
                   initialSlides={initialHeroSlides}
                   // Hidden below 1024px: "1px" keeps phones from fetching this copy at full size.
@@ -301,11 +302,6 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0" aria-hidden>
-          <svg viewBox="0 0 1440 60" fill="none" className="w-full">
-            <path d="M0 60L48 52C96 44 192 28 288 24C384 20 480 28 576 36C672 44 768 52 864 48C960 44 1056 28 1152 24C1248 20 1344 28 1392 32L1440 36V60H0Z" fill="var(--surface, #fafbff)"/>
-          </svg>
-        </div>
       </section>
     </>
   );
