@@ -436,3 +436,7 @@ a.admin-card:focus-visible, a.admin-surface:focus-visible, .admin-link-row:focus
 /* Admin dark mode: lift the faintest greys (hints, placeholders, small captions) to WCAG AA. */
 .admin-dark :is([class~="text-gray-400"], [class~="text-gray-500"], [class~="text-slate-400"], [class~="text-slate-500"], [class~="text-muted"], .form-help) { color: rgb(170 184 204); }
 .admin-dark :is(input, textarea, select)::placeholder { color: rgb(148 163 184); opacity: 1; }
+
+/* Page title card (.admin-page-header bakes in a white background): dark card in dark mode so its
+   heading/description (light text) are readable on every admin page. */
+.admin-dark .admin-page-header { background-color: #101828; border-color: rgba(255, 255, 255, 0.08); box-shadow: none; }
