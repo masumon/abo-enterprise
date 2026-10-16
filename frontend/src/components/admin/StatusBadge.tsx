@@ -1,4 +1,7 @@
+"use client";
+
 import { cn } from "@/lib/utils";
+import { useAdminT } from "@/lib/i18n/adminText";
 
 const STATUS_MAP: Record<string, { label: string; class: string }> = {
   pending:       { label: "Pending",        class: "bg-amber-100 text-amber-700 border-amber-200" },
@@ -26,11 +29,12 @@ const STATUS_MAP: Record<string, { label: string; class: string }> = {
 };
 
 export default function StatusBadge({ status }: { status: string }) {
+  const tx = useAdminT();
   const config = STATUS_MAP[status] ?? { label: status, class: "bg-gray-100 text-gray-600 border-gray-200" };
   return (
     <span className={cn("inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold shadow-sm", config.class)}>
       <span className="h-1.5 w-1.5 rounded-full bg-current opacity-75" />
-      {config.label}
+      {tx(config.label)}
     </span>
   );
 }

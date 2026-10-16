@@ -11,6 +11,35 @@ import { useLanguageStore } from "@/store/language";
  */
 export const ADMIN_BN: Record<string, string> = {
   // actions
+  // shared admin status labels and search prompts
+  "Pending": "অপেক্ষমাণ",
+  "Confirmed": "নিশ্চিত",
+  "Processing": "প্রক্রিয়াধীন",
+  "Shipped": "পাঠানো হয়েছে",
+  "Delivered": "পৌঁছেছে",
+  "Cancelled": "বাতিল",
+  "Returned": "ফেরত",
+  "Refunded": "টাকা ফেরত",
+  "Part refunded": "আংশিক ফেরত",
+  "Contacted": "যোগাযোগ করা হয়েছে",
+  "In Progress": "চলমান",
+  "Completed": "সম্পন্ন",
+  "New": "নতুন",
+  "Qualified": "যোগ্য",
+  "Proposal Sent": "প্রস্তাব পাঠানো হয়েছে",
+  "Won": "জিতেছে",
+  "Lost": "হারানো",
+  "Failed": "ব্যর্থ",
+  "Inactive": "নিষ্ক্রিয়",
+  "Negotiation": "আলোচনা",
+  "Search…": "খুঁজুন…",
+  "Search logs…": "লগ খুঁজুন…",
+  "Search event messages…": "ইভেন্টের বার্তা খুঁজুন…",
+  "Search pages…": "পেজ খুঁজুন…",
+  "Search title or slug…": "শিরোনাম বা স্লাগ খুঁজুন…",
+  "Search name, phone, company…": "নাম, ফোন, কোম্পানি খুঁজুন…",
+  "Search invoice #, customer name, phone or email…": "ইনভয়েস নম্বর, গ্রাহকের নাম, ফোন বা ইমেইল খুঁজুন…",
+  "Search name, phone, order #…": "নাম, ফোন, অর্ডার#…",
   "Actions": "অ্যাকশন",
   "Activate": "সক্রিয় করুন",
   "Add Coupon": "কুপন যোগ করুন",
@@ -226,8 +255,16 @@ export const ADMIN_BN: Record<string, string> = {
   "Compose and send an email to the customer from no-reply@aboenterprise.com": "no-reply@aboenterprise.com থেকে গ্রাহককে ইমেইল লিখে পাঠান",
 };
 
+/** Translate a fixed admin UI string without translating business data. */
+export function translateAdminText(lang: "bn" | "en", text: string): string {
+  const hasBangla = /[\u0980-\u09FF]/.test(text);
+  if (lang === "bn") return hasBangla ? text : ADMIN_BN[text] ?? text;
+  if (hasBangla) return Object.entries(ADMIN_BN).find(([, bangla]) => bangla === text)?.[0] ?? text;
+  return text;
+}
+
 /** Returns `tx(en)` — Bangla when the admin language is Bangla, else English. */
 export function useAdminT() {
   const lang = useLanguageStore((s) => s.lang);
-  return useCallback((en: string) => (lang === "bn" ? ADMIN_BN[en] ?? en : en), [lang]);
+  return useCallback((en: string) => translateAdminText(lang, en), [lang]);
 }
