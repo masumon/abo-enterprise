@@ -122,6 +122,8 @@ def _err(r: httpx.Response, who: str) -> CourierError:
         msg = r.text[:200]
     if r.status_code in (401, 403):
         return CourierError(f"{who}: লগইন/Token ভুল বা মেয়াদ শেষ — Admin → কুরিয়ার-এ তথ্য ঠিক করে আবার পরীক্ষা করুন। ({msg})")
+    if not str(msg).strip() or str(msg).lstrip().startswith("<"):
+        msg = "কুরিয়ারের সার্ভার কারণ জানায়নি — একটু পরে আবার চেষ্টা করুন"
     return CourierError(f"{who} ত্রুটি ({r.status_code}): {str(msg)[:300]}")
 
 
@@ -143,7 +145,9 @@ async def _pathao_auth(c: httpx.AsyncClient, s: dict, sandbox: bool) -> str:
         "client_id": s.get("client_id"), "client_secret": s.get("client_secret"),
         "username": s.get("username"), "password": s.get("password"), "grant_type": "password"})
     if r.status_code >= 400:
-        raise _err(r, "Pathao")
+        # Pathao answers wrong login details with an empty 4xx/500 — say what to check.
+        raise CourierError("Pathao লগইন হয়নি — Client ID, Client Secret, লগইন ইমেইল ও পাসওয়ার্ড ঠিক আছে কি না দেখুন "
+                           f"(Pathao merchant panel → Developers API)। [{r.status_code}]")
     j = r.json()
     _pathao_token[key] = (j["access_token"], time.time() + int(j.get("expires_in", 3600)))
     return j["access_token"]
