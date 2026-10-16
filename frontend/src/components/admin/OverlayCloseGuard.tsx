@@ -17,7 +17,7 @@ export default function OverlayCloseGuard() {
     const onEdit = (e: Event) => {
       const panel = panelOf(e.target);
       const t = e.target as HTMLElement | null;
-      if (panel && t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && (t as HTMLInputElement).type !== "search") dirty.add(panel);
+      if (panel && !panel.hasAttribute("data-no-guard") && t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) && (t as HTMLInputElement).type !== "search") dirty.add(panel);
     };
     const ask = async (panel: Element, retry: () => void) => {
       const ok = await askConfirm("সেভ না করে বন্ধ করবেন?", { message: "আপনার করা পরিবর্তন সংরক্ষণ হবে না।", confirmLabel: "হ্যাঁ, বন্ধ করুন", variant: "warning" });

@@ -1742,3 +1742,23 @@ a.admin-card:focus-visible, a.admin-surface:focus-visible, .admin-link-row:focus
 /* Whole card opens its editor/preview (buttons inside keep their own action). */
 [data-open-card] { cursor: pointer; }
 @media (hover: hover) { [data-open-card]:hover { border-color: rgba(99, 123, 255, 0.45); } }
+
+/* ══ Dashboard greeting + sidebar polish (2026-10-16) ═══════════════════════
+   Phone: the greeting becomes one slim line (small title, one-line description, no
+   second-language line) instead of a tall card. */
+@media (max-width: 639px) {
+  .admin-greeting { padding: 0.25rem 0 0.5rem !important; gap: 0.5rem !important; }
+  .admin-greeting h1 { font-size: 1.25rem; line-height: 1.5rem; }
+  .admin-greeting p.text-brand-600 { display: none; }
+  .admin-greeting p.text-muted { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; font-size: 0.75rem; }
+  .admin-greeting > div > span[aria-hidden] { height: 1.75rem; }
+}
+/* Sidebar: calmer group titles, clear active marker, smoother hover, thin scrollbar. */
+.admin-sidebar nav a, .admin-sidebar nav button { transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease; }
+.admin-sidebar nav a[aria-current="page"] { position: relative; }
+.admin-sidebar nav a[aria-current="page"]::before {
+  content: ""; position: absolute; left: -0.5rem; top: 22%; bottom: 22%; width: 3px; border-radius: 0 3px 3px 0; background: rgb(250 204 21);
+}
+@media (hover: hover) { .admin-sidebar nav a:not([aria-current="page"]):hover { transform: translateX(2px); } }
+.admin-sidebar-scroll { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.18) transparent; }
+.admin-sidebar nav [class*="uppercase"], .admin-sidebar nav [class*="tracking-wider"] { letter-spacing: 0.06em; }

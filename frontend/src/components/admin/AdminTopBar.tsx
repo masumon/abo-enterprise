@@ -1,5 +1,7 @@
 "use client";
 
+import { useProfileStore } from "@/store/adminProfile";
+import AdminAvatar from "@/components/admin/AdminAvatar";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Search, Sparkles, ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users, AlertTriangle, MoreVertical, ExternalLink, HelpCircle } from "lucide-react";
@@ -101,7 +103,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
           {pathname !== "/sumon" && (
             <>
               <ChevronRight className="w-3.5 h-3.5 text-gray-300 shrink-0 hidden sm:block" />
-              <span className="font-semibold text-gray-900 truncate">{pageTitle}</span>
+              <span className="font-semibold text-gray-900 truncate inline-flex items-center gap-2">{pageInfo?.icon && <pageInfo.icon className="w-4 h-4 text-brand-600 flex-none" aria-hidden />}{pageTitle}</span>
             </>
           )}
         </nav>
@@ -323,15 +325,14 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
               </>
             )}
           </div>
-          <div className="hidden md:flex items-center gap-2 pl-2 border-l border-gray-100">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-xs font-bold">
-              {adminName[0]?.toUpperCase()}
-            </div>
-            <div className="text-right leading-tight">
-              <p className="text-xs font-semibold text-gray-900 max-w-[120px] truncate">{adminName}</p>
-              <p className="text-[10px] text-gray-400 capitalize">{adminRole ?? "admin"}</p>
-            </div>
-          </div>
+          <button type="button" onClick={() => useProfileStore.getState().setOpen(true)} aria-label={lang === "bn" ? "আমার প্রোফাইল খুলুন" : "Open my profile"} title={lang === "bn" ? "আমার প্রোফাইল" : "My profile"}
+            className="flex items-center gap-2 sm:pl-2 sm:border-l border-gray-100 dark:border-white/10 min-h-11 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 px-1 transition-colors">
+            <AdminAvatar name={adminName} className="w-9 h-9 sm:w-8 sm:h-8 text-xs" />
+            <span className="hidden md:block text-right leading-tight">
+              <span className="block text-xs font-semibold text-gray-900 max-w-[120px] truncate">{adminName}</span>
+              <span className="block text-[10px] text-gray-500 capitalize">{adminRole === "super_admin" ? "মালিক" : adminRole ?? "admin"}</span>
+            </span>
+          </button>
         </div>
       </div>
     </header>

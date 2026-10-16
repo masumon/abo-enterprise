@@ -117,6 +117,7 @@ export default function AdminDashboard() {
   return (
     <div className="admin-page">
       <AdminPageHeader
+        className="admin-greeting"
         title={`${greetEn}!`}
         titleBn={`${greetBn}!`}
         description="Business command center — what needs attention, what changed, and what is performing"

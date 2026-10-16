@@ -1,5 +1,7 @@
 "use client";
 
+import { useProfileStore } from "@/store/adminProfile";
+import AdminProfilePanel from "@/components/admin/AdminProfilePanel";
 import AdminAiAssistant from "@/components/admin/AdminAiAssistant";
 import GlobalConfirm from "@/components/admin/GlobalConfirm";
 import OverlayCloseGuard from "@/components/admin/OverlayCloseGuard";
@@ -52,6 +54,8 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
     });
   };
   useAdminPolling(pathname !== "/sumon/login");
+  const loadAvatar = useProfileStore((s) => s.loadAvatar);
+  useEffect(() => { if (user?.id) void loadAvatar(user.id); }, [user?.id, loadAvatar]);
 
   if (pathname === "/sumon/login") {
     return <>{children}</>;
@@ -105,6 +109,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
       <AdminAiAssistant />
       <GlobalConfirm />
       <OverlayCloseGuard />
+      <AdminProfilePanel user={user} onLogout={logout} />
       <ToastProvider />
       <DynamicFavicon />
     </div>

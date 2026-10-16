@@ -161,7 +161,7 @@ export default function AdminAnnouncementsPage() {
         }
       />
 
-      <div className="admin-surface rounded-xl border border-brand-100 dark:border-white/10 bg-brand-50/50 dark:bg-white/5 px-4 py-3 text-xs text-muted leading-relaxed mb-4">
+      <div className="rounded-xl border border-brand-100 dark:border-white/10 bg-brand-50/50 dark:bg-white/5 px-4 py-3 text-xs text-muted leading-relaxed mb-4">
         <p className="font-semibold text-heading mb-1">{bn ? "কীভাবে কাজ করে" : "How it works"}</p>
         <ul className="list-disc pl-4 space-y-0.5">
           <li>{bn ? "চালু থাকা সব ঘোষণা একটার পর একটা ডান থেকে বামে চলতে থাকে।" : "All active announcements scroll one after another."}</li>

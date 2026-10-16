@@ -1,5 +1,7 @@
 "use client";
 
+import { useProfileStore } from "@/store/adminProfile";
+import AdminAvatar from "@/components/admin/AdminAvatar";
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -37,6 +39,7 @@ export default function AdminSidebar({
   const { lang } = useLanguageStore();
   const bn = lang === "bn";
   const [query, setQuery] = useState("");
+  const setProfileOpen = useProfileStore((s) => s.setOpen);
   // Collapsed menu groups are remembered on this device.
   const [collapsed, setCollapsedState] = useState<Record<string, boolean>>({});
   useEffect(() => {
@@ -160,13 +163,14 @@ export default function AdminSidebar({
     >
       {/* Brand */}
       <div className="h-14 flex items-center justify-between px-4 border-b border-white/[0.06] shrink-0">
-        <div className="flex items-center gap-2.5 min-w-0">
+        <button type="button" onClick={() => setProfileOpen(true)} aria-label={bn ? "আমার প্রোফাইল খুলুন" : "Open my profile"} title={bn ? "আমার প্রোফাইল" : "My profile"}
+          className="flex items-center gap-2.5 min-w-0 text-left rounded-xl -ml-1 pl-1 pr-2 py-1 hover:bg-white/[0.06] transition-colors">
           <BrandLogo size="xs" variant="light" href={false} />
           <div className="min-w-0">
             <p className="text-white font-bold text-sm leading-tight truncate">ABO Enterprise</p>
-            <p className="text-gray-500 text-[10px] font-medium tracking-wider">ADMIN</p>
+            <p className="text-gray-400 text-[10px] font-medium tracking-wider">ADMIN</p>
           </div>
-        </div>
+        </button>
         <button
           type="button"
           onClick={onClose}
@@ -246,14 +250,15 @@ export default function AdminSidebar({
 
       {/* User footer */}
       <div className="px-3 py-3 border-t border-white/[0.06] shrink-0">
-        <div className="flex items-center gap-2.5 px-2 py-2 rounded-xl bg-white/[0.04]">
-          <div className="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-700 rounded-full flex items-center justify-center shrink-0">
-            <span className="text-white text-xs font-bold">{adminName[0]?.toUpperCase()}</span>
-          </div>
+        <div className="flex items-center gap-1.5 px-1.5 py-1.5 rounded-xl bg-white/[0.04]">
+          <button type="button" onClick={() => setProfileOpen(true)} aria-label={bn ? "আমার প্রোফাইল খুলুন" : "Open my profile"}
+            className="flex flex-1 min-w-0 items-center gap-2.5 text-left rounded-lg px-1 py-1 min-h-11 hover:bg-white/[0.06] transition-colors">
+          <AdminAvatar name={adminName} className="w-9 h-9 text-xs shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-white text-xs font-semibold truncate">{adminName}</p>
             <p className="text-gray-400 text-[11px]">{bn ? ({ super_admin: "মালিক (সুপার অ্যাডমিন)", admin: "অ্যাডমিন", editor: "এডিটর", viewer: "শুধু দেখতে পারেন" } as Record<string, string>)[adminRole] ?? adminRole : adminRole}</p>
           </div>
+          </button>
           <button
             type="button"
             onClick={onLogout}

@@ -90,7 +90,7 @@ export function BannerGuide({ kind }: { kind: BannerKind }) {
   const bn = lang === "bn";
   const g = GUIDES[kind];
   return (
-    <div className="admin-surface mt-3 rounded-xl border border-brand-100 dark:border-white/10 bg-brand-50/60 dark:bg-white/[0.03] p-3 text-xs text-gray-700 dark:text-gray-300 space-y-2">
+    <div className="mt-3 rounded-xl border border-brand-100 dark:border-white/10 bg-brand-50/60 dark:bg-white/[0.03] p-3 text-xs text-gray-700 dark:text-gray-300 space-y-2">
       <p className="font-semibold text-brand-800 dark:text-brand-200 flex items-center gap-1.5">
         <Info className="w-3.5 h-3.5" aria-hidden />
         {bn ? "কোন মাপের ছবি দেবেন" : "What size to upload"}

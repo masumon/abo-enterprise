@@ -212,7 +212,7 @@ export default function AdminInventoryPage() {
               <article key={b.id} className="admin-surface flex min-w-0 flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0f1a2e]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    {b.logo_url ? <img src={b.logo_url} alt="" className="admin-surface h-12 w-12 shrink-0 rounded-xl border border-gray-200 bg-white object-contain p-1 dark:border-white/10 dark:bg-[#0f1a2e]" /> : <div className="admin-surface flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-white/5"><Tags className="h-5 w-5 text-muted" /></div>}
+                    {b.logo_url ? <img src={b.logo_url} alt="" className="admin-surface h-12 w-12 shrink-0 rounded-xl border border-gray-200 bg-white object-contain p-1 dark:border-white/10 dark:bg-[#0f1a2e]" /> : <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-white/5"><Tags className="h-5 w-5 text-muted" /></div>}
                     <div className="min-w-0"><h3 className="break-words font-semibold text-heading">{b.name_en}</h3><p className="mt-0.5 break-words text-xs text-muted">{b.name_bn || b.slug}</p></div>
                   </div>
                   <StatusBadge status={b.is_active ? "active" : "inactive"} />

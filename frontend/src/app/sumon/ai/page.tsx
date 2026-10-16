@@ -119,7 +119,7 @@ export default function AiHubPage() {
                 ) : conns.length === 0 ? (
                   <EmptyStart onPick={startAdd} />
                 ) : (
-                  <button type="button" onClick={() => startAdd("")} className="admin-surface w-full rounded-2xl border-2 border-dashed border-brand-300 bg-white/70 hover:bg-brand-50 hover:border-brand-400 transition-colors p-4 flex items-center justify-center gap-2 font-semibold text-brand-700 min-h-14">
+                  <button type="button" onClick={() => startAdd("")} className="w-full rounded-2xl border-2 border-dashed border-brand-300 bg-white/70 hover:bg-brand-50 hover:border-brand-400 transition-colors p-4 flex items-center justify-center gap-2 font-semibold text-brand-700 min-h-14">
                     <Plus className="w-5 h-5" /> নতুন AI যোগ করুন — যত বেশি, তত নির্ভরযোগ্য
                   </button>
                 )}

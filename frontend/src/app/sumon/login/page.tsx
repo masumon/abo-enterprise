@@ -179,7 +179,7 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">ইমেইল</label>
+            <label htmlFor="admin-email" className="block text-sm font-semibold text-gray-100 mb-1.5">ইমেইল ঠিকানা</label>
             <input
               {...register("email")}
               id="admin-email"
@@ -189,33 +189,34 @@ function LoginForm() {
               autoComplete="username"
               inputMode="email"
               className={cn(
-                "w-full px-4 py-3 bg-white/5 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40 transition-colors",
-                errors.email ? "border-red-500" : "border-white/10"
+                "w-full px-4 py-3 min-h-12 bg-white/10 border rounded-xl text-white text-base placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40 transition-colors",
+                errors.email ? "border-red-400" : "border-white/30"
               )}
-              placeholder="admin@aboenterprise.com"
+              placeholder="আপনার ইমেইল লিখুন"
             />
-            {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>}
+            {errors.email && <p className="text-red-300 text-sm mt-1.5 font-medium">{errors.email.message}</p>}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Password</label>
+            <label htmlFor="admin-password" className="block text-sm font-semibold text-gray-100 mb-1.5">পাসওয়ার্ড</label>
             <div className="relative">
               <input
                 {...register("password")}
+                id="admin-password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="current-password"
                 className={cn(
-                  "w-full px-4 py-3 pr-11 bg-white/5 border rounded-xl text-white placeholder-gray-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40 transition-colors",
-                  errors.password ? "border-red-500" : "border-white/10"
+                  "w-full px-4 py-3 pr-11 min-h-12 bg-white/10 border rounded-xl text-white text-base placeholder-gray-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40 transition-colors",
+                  errors.password ? "border-red-400" : "border-white/30"
                 )}
-                placeholder="••••••••"
+                placeholder="আপনার পাসওয়ার্ড লিখুন"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword((v) => !v)}
                 aria-label={showPassword ? "পাসওয়ার্ড লুকান" : "পাসওয়ার্ড দেখান"}
                 aria-pressed={showPassword}
-                className="absolute right-0 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-gray-500 hover:text-gray-300"
+                className="absolute right-0 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-gray-300 hover:text-white"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -240,7 +241,7 @@ function LoginForm() {
                 autoComplete="one-time-code"
                 autoCapitalize="characters"
                 autoFocus
-                className="admin-surface w-full px-4 py-3 bg-white/5 border border-brand-500/50 rounded-xl text-white text-center text-xl tracking-[0.3em] placeholder-gray-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40"
+                className="w-full px-4 py-3 bg-white/5 border border-brand-500/50 rounded-xl text-white text-center text-xl tracking-[0.3em] placeholder-gray-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40"
                 placeholder={useRecovery ? "XXXXX-XXXXX" : "000000"}
               />
               <p className="text-gray-500 text-xs mt-1.5">
@@ -277,7 +278,7 @@ function LoginForm() {
           <div className="mt-4">
             <div className="flex items-center gap-3 text-xs text-gray-500 my-3"><span className="flex-1 h-px bg-white/10" />অথবা<span className="flex-1 h-px bg-white/10" /></div>
             <button type="button" onClick={passkeyLogin} disabled={passkeyBusy}
-              className="admin-surface w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 text-white font-semibold hover:bg-white/10 disabled:opacity-60">
+              className="w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 text-white font-semibold hover:bg-white/10 disabled:opacity-60">
               {passkeyBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Fingerprint className="w-5 h-5" />} আঙুলের ছাপ / মুখ দিয়ে লগইন
             </button>
             <p className="mt-2 text-[11px] text-center text-gray-500">প্রথমবার পাসওয়ার্ড দিয়ে ঢুকে “নিরাপত্তা” পাতায় এই ডিভাইস যোগ করুন।</p>
