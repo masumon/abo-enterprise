@@ -55,7 +55,9 @@ export function pickHeroSettings(settings: Record<string, string>): Record<strin
       /^banner_[a-z_]+_image_url$/.test(k) ||
       k === "free_delivery_min_amount" ||
       // Home "projects" band: without this the server HTML showed the built-in sample projects (dead links).
-      k === "showcase_projects_json"
+      k === "showcase_projects_json" ||
+      // Home category cards: admin titles/photos must be in the first HTML (no swap/jump after load).
+      k === "site_quick_categories_json"
     ) {
       out[k] = v;
     }

@@ -1,5 +1,6 @@
 "use client";
 
+import type { PromoSlide } from "@/types";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -29,10 +30,12 @@ const MAX_TIMEOUT = 2_147_000_000;
  * itself when a scheduled start arrives, and re-reads the admin settings every
  * 60 s (and when the tab regains focus).
  */
-export default function FlashSaleSection({ initialSettings = null, initialProducts = null }: {
+export default function FlashSaleSection({ initialSettings = null, initialProducts = null, initialSlides = null }: {
   /** Server-fetched settings/products so the band appears right after mount, not after two API round-trips. */
   initialSettings?: Record<string, string> | null;
   initialProducts?: Product[] | null;
+  /** Server-fetched flash banner slides, so the banner is in the first HTML (no jump). */
+  initialSlides?: PromoSlide[] | null;
 } = {}) {
   const { lang } = useLanguageStore();
   const { settings: hookSettings, loading: settingsLoading } = usePublicSettings();
@@ -152,7 +155,7 @@ export default function FlashSaleSection({ initialSettings = null, initialProduc
 
         {/* Admin-managed promo banner (Admin → Promo Slides, placement
             "flash_sale"). Renders nothing when no slide is configured. */}
-        <PromoSlider placement="flash_sale" aspect="aspect-[7/2]" minRatio={3.5} className="mb-4 sm:mb-6" />
+        <PromoSlider placement="flash_sale" aspect="aspect-[7/2]" minRatio={3.5} initialSlides={initialSlides} className="mb-4 sm:mb-6" />
 
         {/* Products Grid */}
         <div className="flex flex-wrap justify-center gap-3 [&>*]:w-[calc(50%-6px)] md:[&>*]:w-[calc(33.333%-8px)] lg:[&>*]:w-[calc(25%-9px)] mb-5 sm:mb-8">

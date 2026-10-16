@@ -157,9 +157,9 @@ export default async function HomePage(
   const legacyTarget = getLegacyHomeLaneTarget(legacyLane);
   if (legacyTarget) redirect(legacyTarget);
 
-  const [settings, heroSlides, initialCombos, initialFlash, aponEnabled, stats] = await Promise.all([
+  const [settings, heroSlides, initialCombos, initialFlash, aponEnabled, stats, flashSlides] = await Promise.all([
     fetchPublicSettings(), fetchPromoSlides("hero"), fetchCombos<Combo>(), fetchFlashProducts<Product>(), fetchAponEnabled(),
-    fetchPublicStats(),
+    fetchPublicStats(), fetchPromoSlides("flash_sale"),
   ]);
   // Preload the LCP image per breakpoint so the fetch starts with the HTML:
   // ≥1024px the desktop hero background, <1024px the first promo slide (the
@@ -221,7 +221,7 @@ export default async function HomePage(
       <AponHomeBand initialEnabled={aponEnabled} initialSettings={settings} />
 
       {/* Flash Sale Section */}
-      <FlashSaleSection initialSettings={Object.keys(settings).length ? settings : null} initialProducts={initialFlash} />
+      <FlashSaleSection initialSettings={Object.keys(settings).length ? settings : null} initialProducts={initialFlash} initialSlides={flashSlides} />
 
       {/* Combo Packs — above Featured Products, two-up on mobile */}
       <ComboSection initialCombos={initialCombos} />
