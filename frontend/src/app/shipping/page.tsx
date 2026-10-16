@@ -59,7 +59,7 @@ export default function ShippingPage() {
 
       <section className="enterprise-section">
         <div className="container mx-auto px-4 max-w-4xl">
-          <div className="grid md:grid-cols-3 gap-4 mb-12">
+          <div className="grid md:grid-cols-3 gap-4 mb-6 sm:mb-12">
             {[
               { icon: MapPin, title: t({ en: "Coverage", bn: "কভারেজ" }), desc: t({ en: "Sylhet & nationwide", bn: "সিলেট ও সারাদেশ" }) },
               { icon: Truck, title: t({ en: "Fast Delivery", bn: "দ্রুত ডেলিভারি" }), desc: t({ en: "Same-day in Sylhet", bn: "সিলেটে একই দিন" }) },
@@ -74,7 +74,7 @@ export default function ShippingPage() {
           </div>
 
           <h2 className="text-xl font-bold text-heading mb-4">{t({ en: "Delivery Charges", bn: "ডেলিভারি চার্জ" })}</h2>
-          <div className="enterprise-card overflow-x-auto mb-12">
+          <div className="enterprise-card overflow-x-auto mb-6 sm:mb-12">
             <table className="table-premium">
               <thead>
                 <tr>
@@ -99,7 +99,7 @@ export default function ShippingPage() {
             <Clock className="w-5 h-5 text-brand-600" />
             {t({ en: "Delivery Timeline", bn: "ডেলিভারি টাইমলাইন" })}
           </h2>
-          <div className="grid sm:grid-cols-4 gap-3 mb-12">
+          <div className="grid sm:grid-cols-4 gap-3 mb-6 sm:mb-12">
             {[
               t({ en: "Order Placed", bn: "অর্ডার" }),
               t({ en: "Processing", bn: "প্রসেসিং" }),

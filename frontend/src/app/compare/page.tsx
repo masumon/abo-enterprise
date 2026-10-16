@@ -37,7 +37,7 @@ export default function ComparePage() {
           title={lang === "bn" ? "তুলনা খালি" : "Compare is empty"}
           subtitle={lang === "bn" ? "পণ্য যোগ করে তুলনা শুরু করুন" : "Add products to start comparing"}
         />
-        <div className="text-center py-12 px-4">
+        <div className="text-center py-6 sm:py-12 px-4">
           <GitCompare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
           <Link href="/products" className="btn btn-brand btn-md mt-4 inline-flex">{lang === "bn" ? "পণ্য দেখুন" : "Browse Products"}</Link>
         </div>

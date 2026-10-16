@@ -43,7 +43,7 @@ export default function BlogPostMeta({ authorName, dateStr, tags, part = "both" 
       )}
 
       {part !== "meta" && (
-      <div className="mt-12 pt-6 border-t border-gray-100">
+      <div className="mt-6 sm:mt-12 pt-6 border-t border-gray-100">
         <Link
           href="/blog"
           className="inline-flex items-center gap-2 text-brand-600 hover:text-brand-700 font-medium text-sm"

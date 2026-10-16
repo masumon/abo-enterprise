@@ -134,7 +134,7 @@ export default function LegalPage() {
         badge={lang === "bn" ? "বিশ্বস্ত সহায়তা" : "Trusted Support"}
       />
 
-      <div className="container mx-auto px-4 max-w-2xl py-12">
+      <div className="container mx-auto px-4 max-w-2xl py-6 sm:py-12">
         {/* Disclaimer */}
         <div className="alert-warning flex gap-3 mb-6">
           <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />

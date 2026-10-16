@@ -74,7 +74,7 @@ export default function ContactPage() {
   return (
     <main className="min-h-screen">
       <PageHero pageKey="contact" title={t("contact_title")} subtitle={t("contact_sub")} breadcrumbs={[{ label: lang === "bn" ? "হোম" : "Home", href: "/" }, { label: lang === "bn" ? "যোগাযোগ" : "Contact" }]} />
-      <div className="max-w-6xl mx-auto px-4 py-12">
+      <div className="max-w-6xl mx-auto px-4 py-6 sm:py-12">
         <div className="grid lg:grid-cols-5 gap-8">
           <div className="lg:col-span-2 space-y-4">
             <h2 className="text-xl font-bold text-heading mb-4">{t("contact_get_in_touch")}</h2>
@@ -88,7 +88,7 @@ export default function ContactPage() {
           </div>
 
           <GlassCard className="lg:col-span-3 p-6 md:p-8">
-            {submitted ? <div className="flex flex-col items-center justify-center py-12 text-center"><CheckCircle className="w-14 h-14 text-green-500 mb-4" /><h3 className="text-xl font-bold text-heading mb-2">{queued ? (lang === "bn" ? "বার্তা কিউ হয়েছে!" : "Message Queued!") : lang === "bn" ? "বার্তা পাঠানো হয়েছে!" : "Message Sent!"}</h3><p className="text-muted">{queued ? (lang === "bn" ? "ইন্টারনেট ফিরলে এটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।" : "It will sync automatically when your connection returns.") : lang === "bn" ? "২৪ ঘণ্টার মধ্যে যোগাযোগ করা হবে।" : "We will get back to you within 24 hours."}</p>{!queued && reference && <ReferenceBadge reference={reference} />}</div> : <>
+            {submitted ? <div className="flex flex-col items-center justify-center py-6 sm:py-12 text-center"><CheckCircle className="w-14 h-14 text-green-500 mb-4" /><h3 className="text-xl font-bold text-heading mb-2">{queued ? (lang === "bn" ? "বার্তা কিউ হয়েছে!" : "Message Queued!") : lang === "bn" ? "বার্তা পাঠানো হয়েছে!" : "Message Sent!"}</h3><p className="text-muted">{queued ? (lang === "bn" ? "ইন্টারনেট ফিরলে এটি স্বয়ংক্রিয়ভাবে সিঙ্ক হবে।" : "It will sync automatically when your connection returns.") : lang === "bn" ? "২৪ ঘণ্টার মধ্যে যোগাযোগ করা হবে।" : "We will get back to you within 24 hours."}</p>{!queued && reference && <ReferenceBadge reference={reference} />}</div> : <>
               <h2 className="text-xl font-bold text-heading mb-6">{t("contact_send_message")}</h2>
               {submitError && <p role="alert" className="mb-4 alert-error">{submitError}</p>}
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

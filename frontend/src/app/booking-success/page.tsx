@@ -114,7 +114,7 @@ function BookingSuccessContent() {
         ]}
         variant="light"
       />
-      <div className="flex items-center justify-center px-4 pb-12">
+      <div className="flex items-center justify-center px-4 pb-6 sm:pb-12">
         <div className="surface-card rounded-2xl shadow-sm p-8 max-w-md w-full text-center">
           <div className="flex justify-center mb-5">
             <div className="w-20 h-20 rounded-full bg-green-50 dark:bg-green-900/30 flex items-center justify-center animate-scale-in">

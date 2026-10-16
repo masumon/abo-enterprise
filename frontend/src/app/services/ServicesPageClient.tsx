@@ -618,7 +618,7 @@ export default function ServicesPageClient({
               {Array.from({ length: 6 }).map((_, i) => <ServiceCardSkeleton key={i} />)}
             </div>
           ) : error ? (
-            <div className="text-center py-16 enterprise-card p-8" role="alert">
+            <div className="text-center py-8 sm:py-16 enterprise-card p-8" role="alert">
               <AlertCircle className="w-8 h-8 text-red-400 mx-auto mb-3" aria-hidden />
               <p className="text-muted mb-4">{lang === "bn" ? "সেবা লোড করা যায়নি" : "Could not load services"}</p>
               <button type="button" onClick={() => load(1, category, search, sort)} className="btn btn-brand btn-md">

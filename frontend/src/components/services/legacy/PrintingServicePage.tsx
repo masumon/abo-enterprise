@@ -113,7 +113,7 @@ export default function PrintingPage() {
         badge={lang === "bn" ? "দ্রুত ডেলিভারি" : "Fast Turnaround"}
       />
 
-      <div className="container mx-auto px-4 max-w-2xl py-12">
+      <div className="container mx-auto px-4 max-w-2xl py-6 sm:py-12">
         <div className="card p-6 md:p-8">
           {isSuccess ? (
             <div className="text-center py-8">

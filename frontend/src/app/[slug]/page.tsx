@@ -82,7 +82,7 @@ export default async function CmsPage(
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdString(jsonLd) }} />
       <main className="min-h-screen page-surface">
-        <div className="max-w-3xl mx-auto px-4 py-12">
+        <div className="max-w-3xl mx-auto px-4 py-6 sm:py-12">
           <BlogPostActions
             titleEn={page.title_en}
             titleBn={page.title_bn}

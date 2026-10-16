@@ -123,14 +123,14 @@ export default function FeaturedProducts() {
             {Array.from({ length: 8 }).map((_, i) => <ProductCardSkeleton key={i} />)}
           </div>
         ) : error ? (
-          <div role="alert" className="text-center py-12">
+          <div role="alert" className="text-center py-6 sm:py-12">
             <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-500 text-sm">
               {lang === "bn" ? "পণ্য লোড করা যায়নি।" : "Could not load products."}
             </p>
           </div>
         ) : filteredProducts.length === 0 ? (
-          <p className="text-center text-gray-400 py-12 text-sm">
+          <p className="text-center text-gray-400 py-6 sm:py-12 text-sm">
             {lang === "bn" ? "এই ক্যাটেগরিতে কোনো পণ্য নেই।" : "No products in this category."}
           </p>
         ) : (

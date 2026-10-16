@@ -98,7 +98,7 @@ export default function CareerPage() {
             })}
           </p>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-14">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-7 sm:mb-14">
             {BENEFITS.map(({ icon: Icon, title }) => (
               <div key={title.en} className="enterprise-card p-5 text-center">
                 <Icon className="w-7 h-7 text-brand-600 mx-auto mb-2" />
@@ -109,12 +109,12 @@ export default function CareerPage() {
 
           <h2 className="text-2xl font-bold text-heading mb-6">{t({ en: "Open Positions", bn: "খোলা পদ" })}</h2>
           {loadingPositions ? (
-            <div className="enterprise-card p-6 text-center mb-14">
+            <div className="enterprise-card p-6 text-center mb-7 sm:mb-14">
               <Loader2 className="w-5 h-5 animate-spin mx-auto text-muted mb-2" />
               <p className="text-sm text-muted">{t({ en: "Loading positions...", bn: "পদ লোড হচ্ছে..." })}</p>
             </div>
           ) : positions.length > 0 ? (
-            <div className="space-y-3 mb-14">
+            <div className="space-y-3 mb-7 sm:mb-14">
               {positions.map((pos) => (
                 <div key={pos.id} className="enterprise-card p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
@@ -128,13 +128,13 @@ export default function CareerPage() {
               ))}
             </div>
           ) : (
-            <div className="enterprise-card p-6 text-center mb-14 text-muted">
+            <div className="enterprise-card p-6 text-center mb-7 sm:mb-14 text-muted">
               {t({ en: "No open positions currently. Check back soon!", bn: "এখন কোনো খোলা পদ নেই। শীঘ্রই দেখুন!" })}
             </div>
           )}
 
           <h2 className="text-2xl font-bold text-heading mb-6">{t({ en: "Hiring Process", bn: "নিয়োগ প্রক্রিয়া" })}</h2>
-          <div className="grid sm:grid-cols-4 gap-3 mb-14">
+          <div className="grid sm:grid-cols-4 gap-3 mb-7 sm:mb-14">
             {HIRING_STEPS.map((step, i) => (
               <div key={step.en} className="enterprise-card p-4 text-center">
                 <span className="w-7 h-7 rounded-full bg-accent-500 text-white text-xs font-bold inline-flex items-center justify-center mb-2">{i + 1}</span>

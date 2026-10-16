@@ -17,7 +17,7 @@ export default function NotFound() {
   };
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
+    <div className="min-h-[70vh] flex items-center justify-center px-4 py-8 sm:py-16">
       <div className="text-center max-w-lg w-full">
         <div className="enterprise-card p-10">
           <div className="text-7xl font-black text-brand-200 dark:text-brand-800 mb-4 select-none" aria-hidden>404</div>

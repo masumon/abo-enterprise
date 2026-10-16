@@ -89,7 +89,7 @@ export default async function ProductsPage(
           dangerouslySetInnerHTML={{ __html: jsonLdString(itemListJsonLd) }}
         />
       )}
-      <Suspense fallback={<div className="py-24 text-center text-muted" aria-busy="true">Loading...</div>}>
+      <Suspense fallback={<div className="py-12 sm:py-24 text-center text-muted" aria-busy="true">Loading...</div>}>
         <ProductsPageShell
           initialProducts={products}
           initialTotal={total}

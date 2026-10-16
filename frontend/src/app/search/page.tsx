@@ -321,7 +321,7 @@ function SearchResults() {
         )}
 
         {/* Results */}
-        <div className="px-3 pb-24">
+        <div className="px-3 pb-12 sm:pb-24">
           {loading ? (
             <div className="space-y-3 pt-3" aria-busy="true">
               {[1, 2, 3].map((i) => (
@@ -531,7 +531,7 @@ function SearchResults() {
         ) : !q ? (
           <SearchDiscovery />
         ) : total === 0 && q ? (
-          <div className="text-center py-16 enterprise-card p-8">
+          <div className="text-center py-8 sm:py-16 enterprise-card p-8">
             <p className="text-muted">
               {lang === "bn" ? "কোনো ফলাফল পাওয়া যায়নি।" : "No results found."}
             </p>

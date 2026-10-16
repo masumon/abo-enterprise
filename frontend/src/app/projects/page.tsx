@@ -53,7 +53,7 @@ export default function ProjectsPage() {
         badge={lang === "bn" ? "এন্টারপ্রাইজ সমাধান" : "Enterprise Solutions"}
       />
 
-      <section className="max-w-6xl mx-auto px-4 pt-10 pb-12" aria-labelledby="gallery-title">
+      <section className="max-w-6xl mx-auto px-4 pt-10 pb-6 sm:pb-12" aria-labelledby="gallery-title">
         <div className="text-center mb-6">
           <h2 id="gallery-title" className="text-2xl sm:text-3xl font-bold text-heading">{t({ en: "Our Work", bn: "আমাদের করা কাজ" })}</h2>
           <p className="text-sm text-muted mt-1">{t({ en: "Real projects we have built — tap one to see the details.", bn: "আমাদের তৈরি আসল প্রজেক্ট — বিস্তারিত দেখতে কার্ডে চাপুন।" })}</p>
@@ -132,8 +132,8 @@ export default function ProjectsPage() {
       </section>
 
       <section className="max-w-6xl mx-auto px-4 py-12 sm:py-16">
-        <h2 className="text-3xl font-bold text-heading mb-12 text-center">{t({ en: "How It Works", bn: "কিভাবে কাজ করে" })}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-12">
+        <h2 className="text-3xl font-bold text-heading mb-6 sm:mb-12 text-center">{t({ en: "How It Works", bn: "কিভাবে কাজ করে" })}</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 mb-6 sm:mb-12">
           {STEPS.map((s, i) => (
             <div key={i} className="text-center">
               <div className="w-12 h-12 bg-brand-600 text-white rounded-full flex items-center justify-center font-bold text-lg mx-auto mb-4">{i + 1}</div>
@@ -145,13 +145,13 @@ export default function ProjectsPage() {
       </section>
 
       {!showForm && (
-        <section className="section-panel border-y py-16 text-center px-4">
+        <section className="section-panel border-y py-8 sm:py-16 text-center px-4">
           <h2 className="text-3xl font-bold text-heading mb-4">{t({ en: "Ready to start?", bn: "শুরু করতে প্রস্তুত?" })}</h2>
           <button type="button" onClick={startProject} className="btn btn-brand btn-lg">{t({ en: "Get Started", bn: "শুরু করুন" })}</button>
         </section>
       )}
 
-      <section id="project-form" className="max-w-2xl mx-auto px-4 py-16 scroll-mt-24">
+      <section id="project-form" className="max-w-2xl mx-auto px-4 py-8 sm:py-16 scroll-mt-24">
         {showForm ? (
           <div className="card p-8">
             <button type="button" onClick={() => setShowForm(false)} className="text-brand-600 font-semibold mb-6">← {t({ en: "Back", bn: "ফিরে যান" })}</button>
