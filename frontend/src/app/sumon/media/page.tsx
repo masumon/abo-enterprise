@@ -303,7 +303,7 @@ export default function AdminMediaPage() {
       const s = settingsRes.data.data ?? {};
       setValues(s);
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Failed to load media"));
+      toast("error", apiErrorMessage(e, "ছবি/ফাইল আনা যায়নি"));
     } finally {
       setLoading(false);
     }
@@ -324,7 +324,7 @@ export default function AdminMediaPage() {
       setReviews((reviewsRes.data.data ?? []) as typeof reviews);
       setCatalogLoaded(true);
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Failed to load catalog images"));
+      toast("error", apiErrorMessage(e, "ক্যাটালগের ছবি আনা যায়নি"));
     } finally {
       setCatalogLoading(false);
     }
@@ -353,7 +353,7 @@ export default function AdminMediaPage() {
       setLibraryTotalPages(res.data.meta?.total_pages ?? 1);
       setLibraryLoaded(true);
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Failed to load media library"));
+      toast("error", apiErrorMessage(e, "মিডিয়া লাইব্রেরি আনা যায়নি"));
     } finally {
       setLibraryLoading(false);
     }
@@ -377,8 +377,8 @@ export default function AdminMediaPage() {
       }
     }
     setBulkUploading(false);
-    if (failed > 0) toast("error", `${failed} of ${list.length} file(s) failed to upload`);
-    else toast("success", `${list.length} file(s) uploaded`);
+    if (failed > 0) toast("error", `${list.length}টির মধ্যে ${failed}টি ফাইল আপলোড হয়নি`);
+    else toast("success", `${list.length}টি ফাইল আপলোড হয়েছে`);
     setLibraryPage(1);
     await loadLibrary(1, librarySearch);
   };
@@ -406,10 +406,10 @@ export default function AdminMediaPage() {
       setLibraryAssets((prev) =>
         prev.map((a) => (a.id === editingAsset.id ? { ...a, alt_text: editAltText.trim(), tags } : a))
       );
-      toast("success", "Asset updated");
+      toast("success", "ফাইল আপডেট হয়েছে");
       setEditingAsset(null);
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Failed to update asset"));
+      toast("error", apiErrorMessage(e, "ফাইল আপডেট করা যায়নি"));
     } finally {
       setSavingAsset(false);
     }
@@ -471,7 +471,7 @@ export default function AdminMediaPage() {
       toast("success", "ফাইল মুছে ফেলা হয়েছে (Cloudinary থেকেও)");
       setDeleteTarget(null);
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Failed to delete asset"));
+      toast("error", apiErrorMessage(e, "ফাইল মুছে ফেলা যায়নি"));
     } finally {
       setDeletingAsset(false);
     }
@@ -483,10 +483,10 @@ export default function AdminMediaPage() {
     try {
       await adminApi.upsertSettings(items);
       setSaved(sectionId);
-      toast("success", "Images saved");
+      toast("success", "ছবি সংরক্ষিত হয়েছে");
       setTimeout(() => setSaved(null), 2000);
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Save failed"));
+      toast("error", apiErrorMessage(e, "সংরক্ষণ করা যায়নি"));
     } finally {
       setSaving(null);
     }
@@ -525,9 +525,9 @@ export default function AdminMediaPage() {
     try {
       await productsApi.update(id, data);
       setProducts((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
-      toast("success", "Product image updated");
+      toast("success", "পণ্যের ছবি আপডেট হয়েছে");
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Update failed"));
+      toast("error", apiErrorMessage(e, "আপডেট করা যায়নি"));
     }
   };
 
@@ -535,9 +535,9 @@ export default function AdminMediaPage() {
     try {
       await servicesAdminApi.update(id, data);
       setServices((prev) => prev.map((s) => (s.id === id ? { ...s, ...data } : s)));
-      toast("success", "Service image updated");
+      toast("success", "সেবার ছবি আপডেট হয়েছে");
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Update failed"));
+      toast("error", apiErrorMessage(e, "আপডেট করা যায়নি"));
     }
   };
 
@@ -545,9 +545,9 @@ export default function AdminMediaPage() {
     try {
       await adminBlogApi.update(id, data);
       setPosts((prev) => prev.map((p) => (p.id === id ? { ...p, ...data } : p)));
-      toast("success", "Blog image updated");
+      toast("success", "ব্লগের ছবি আপডেট হয়েছে");
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Update failed"));
+      toast("error", apiErrorMessage(e, "আপডেট করা যায়নি"));
     }
   };
 
@@ -563,9 +563,9 @@ export default function AdminMediaPage() {
     try {
       await api.patch(`/api/v1/reviews/${id}`, { photo_url: photo_url || null });
       setReviews((prev) => prev.map((r) => (r.id === id ? { ...r, photo_url: photo_url || null } : r)));
-      toast("success", "Review photo updated");
+      toast("success", "রিভিউর ছবি আপডেট হয়েছে");
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Update failed"));
+      toast("error", apiErrorMessage(e, "আপডেট করা যায়নি"));
     }
   };
 
@@ -1049,7 +1049,7 @@ export default function AdminMediaPage() {
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-heading">Edit Asset</h3>
-              <button type="button" onClick={() => setEditingAsset(null)} className="text-gray-400 hover:text-gray-600">
+              <button aria-label="বন্ধ করুন" type="button" onClick={() => setEditingAsset(null)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>

@@ -13,15 +13,12 @@ const FIELDS: { key: string; label: string; labelBn: string; hint: string; type?
   // ── Checkout behaviour (moved here from Settings — same feature area as delivery) ──
   { key: "checkout_otp_required", label: "Require phone OTP at checkout", labelBn: "চেকআউটে ফোন OTP আবশ্যক", hint: "Customer must verify their phone number before placing an order", type: "boolean" },
   { key: "checkout_confirm_channel", label: "Order confirmation channel", labelBn: "অর্ডার নিশ্চিতকরণ মাধ্যম", hint: "How customers are notified after ordering — e.g. \"sms\", \"whatsapp\", or \"none\"", type: "text" },
-  { key: "whatsapp_number", label: "WhatsApp order number", labelBn: "WhatsApp অর্ডার নম্বর", hint: "Shown as a \"Order via WhatsApp\" option, e.g. 8801825007977", type: "text" },
   // ── Delivery zones & charges ──
   { key: "delivery_charge_sylhet", label: "Sylhet (local) delivery (৳)", labelBn: "সিলেট (লোকাল) ডেলিভারি (৳)", hint: "Inside your district", type: "number" },
   { key: "delivery_charge_dhaka", label: "Dhaka & metro delivery (৳)", labelBn: "ঢাকা ও মেট্রো ডেলিভারি (৳)", hint: "Dhaka / Gazipur / Narayanganj", type: "number" },
   { key: "delivery_charge_outside", label: "Outside delivery (৳)", labelBn: "ঢাকার বাইরে ডেলিভারি (৳)", hint: "Rest of Bangladesh", type: "number" },
   { key: "free_delivery_min_amount", label: "Free delivery over (৳)", labelBn: "ফ্রি ডেলিভারি (৳-এর বেশি)", hint: "Order subtotal above this = free", type: "number" },
   { key: "advance_delivery_charge", label: "Advance / prepaid charge (৳)", labelBn: "অগ্রিম চার্জ (৳)", hint: "For products/services flagged 'requires advance'", type: "number" },
-  { key: "courier_pathao_url", label: "Pathao tracking URL", labelBn: "Pathao ট্র্যাকিং URL", hint: "Use {tracking_id} placeholder", type: "text" },
-  { key: "courier_steadfast_url", label: "Steadfast tracking URL", labelBn: "Steadfast ট্র্যাকিং URL", hint: "Use {tracking_id} placeholder", type: "text" },
   { key: "cod_max_pending_per_phone", label: "Max pending COD orders / phone", labelBn: "প্রতি ফোনে সর্বোচ্চ অপেক্ষমান COD", hint: "Blocks stacking unconfirmed COD orders. 0 = unlimited", type: "number" },
   { key: "order_blocked_phones", label: "Blocked phone numbers", labelBn: "ব্লক করা ফোন নম্বর", hint: "Comma/newline separated — these numbers cannot order", type: "textarea" },
 ];
@@ -40,7 +37,7 @@ export default function AdminDeliveryPage() {
         const s = r.data.data ?? {};
         setValues(Object.fromEntries(FIELDS.map((f) => [f.key, s[f.key] ?? ""])));
       })
-      .catch((err) => toast("error", apiErrorMessage(err, "Failed to load delivery settings")))
+      .catch((err) => toast("error", apiErrorMessage(err, "ডেলিভারি সেটিং আনা যায়নি")))
       .finally(() => setLoading(false));
   }, []);
 
@@ -63,7 +60,7 @@ export default function AdminDeliveryPage() {
       );
       toast("success", bn ? "সংরক্ষিত হয়েছে" : "Delivery settings saved");
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Failed to save"));
+      toast("error", apiErrorMessage(err, "সংরক্ষণ করা যায়নি"));
     } finally {
       setSaving(false);
     }

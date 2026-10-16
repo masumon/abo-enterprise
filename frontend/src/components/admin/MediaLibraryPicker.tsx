@@ -49,7 +49,7 @@ export default function MediaLibraryPicker({ open, onSelect, onClose, accept = "
       setAssets(filtered);
       setTotalPages(res.data.meta?.total_pages ?? 1);
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Failed to load media library"));
+      toast("error", apiErrorMessage(e, "মিডিয়া লাইব্রেরি আনা যায়নি"));
     } finally {
       setLoading(false);
     }

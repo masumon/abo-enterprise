@@ -202,12 +202,15 @@ async def admin_list_products(
     is_active: bool | None = Query(None),
     stock: str | None = Query(None, pattern="^(low|out)$", description="low = at/below the alert level, out = 0"),
     missing: str | None = Query(None, pattern="^(image|price|description|category)$"),
+    flash_sale: bool | None = Query(None, description="Only products flagged for the flash sale (admin Coupons & Flash Sale)"),
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     db: AsyncSession = Depends(get_db),
     _admin: dict = Depends(require_role("products.read")),
 ):
     conditions = [Product.is_deleted == False]  # noqa: E712
+    if flash_sale is True:  # `is True`: a direct call (tests) passes the Query() default
+        conditions.append(Product.is_flash_sale == True)  # noqa: E712
     if category:
         conditions.append(Product.category == category)
     if is_active is not None:

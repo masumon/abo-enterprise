@@ -63,20 +63,6 @@ export const HOMEPAGE_SCALAR_GROUPS: HomepageScalarGroup[] = [
       { key: "hero_cta_url", label: "Button Link", labelBn: "বাটন লিংক", type: "url", placeholder: "/products", hint: "Where that button goes — a site path starting with /, e.g. /products.", hintBn: "বাটনে চাপলে কোথায় যাবে — / দিয়ে শুরু করুন, যেমন /products। অন্য ওয়েবসাইটের লিংক চলবে না।", dataType: "string" },
     ],
   },
-  {
-    id: "flash_sale",
-    title: "Flash Sale",
-    titleBn: "ফ্ল্যাশ সেল",
-    desc: "The homepage countdown banner.",
-    descBn: "হোমপেজের কাউন্টডাউন ব্যানার।",
-    fields: [
-      { key: "feature_flash_sale", label: "Flash Sale on/off", labelBn: "ফ্ল্যাশ সেল চালু / বন্ধ", type: "boolean", hint: "ON + inside the start–end window + at least one flash-sale product → shown on the homepage", hintBn: "চালু থাকলে, শুরু–শেষ সময়ের মধ্যে এবং অন্তত একটি ফ্ল্যাশ-সেল পণ্য থাকলে হোমপেজে দেখাবে", dataType: "boolean" },
-      { key: "flash_sale_title_en", label: "Title (EN)", labelBn: "শিরোনাম (EN)", placeholder: "Flash Sale", hint: "Banner title for English visitors.", hintBn: "ইংরেজি ভিজিটরদের জন্য ব্যানারের শিরোনাম।", dataType: "string" },
-      { key: "flash_sale_title_bn", label: "Title (BN)", labelBn: "শিরোনাম (বাংলা)", placeholder: "ফ্ল্যাশ সেল", hint: "Banner title for Bangla visitors.", hintBn: "বাংলা ভিজিটরদের জন্য ব্যানারের শিরোনাম।", dataType: "string" },
-      { key: "flash_sale_start", label: "Start — Bangladesh time (optional)", labelBn: "শুরু — বাংলাদেশ সময় (ঐচ্ছিক)", type: "datetime-local", hint: "Always Bangladesh time (UTC+6). Blank = starts now.", hintBn: "সবসময় বাংলাদেশ সময় (UTC+6)। খালি রাখলে এখনই শুরু।", dataType: "string" },
-      { key: "flash_sale_end", label: "End — Bangladesh time", labelBn: "শেষ — বাংলাদেশ সময়", type: "datetime-local", hint: "Always Bangladesh time (UTC+6). Hides automatically at this moment. Blank = end of this week (Sun 23:59).", hintBn: "সবসময় বাংলাদেশ সময় (UTC+6)। এই মুহূর্তে নিজে থেকেই হোমপেজ থেকে সরে যাবে। খালি = এই সপ্তাহের শেষ (রবি রাত ১১:৫৯)।", dataType: "string" },
-    ],
-  },
 ];
 
 /** Flat list of every scalar key + its data type, for load/save. */

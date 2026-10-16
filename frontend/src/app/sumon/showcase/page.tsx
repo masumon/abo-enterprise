@@ -1,5 +1,6 @@
 "use client";
 
+import { askConfirm } from "@/store/confirm";
 import BnEnText from "@/components/admin/catalog/BnEnText";
 import TranslateButton from "@/components/admin/TranslateButton";
 import LinkImportBox from "@/components/admin/catalog/LinkImportBox";
@@ -251,6 +252,9 @@ export default function AdminShowcasePage() {
               <button type="button" onClick={() => setDeleteTarget({ kind: "service", index: i })} className="p-1.5 rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50" aria-label={t("মুছুন", "Delete")}><Trash2 className="w-4 h-4" /></button>
             </div>
           ))}
+          {(tab === "projects" ? projects.length : services.length) === 0 && (
+            <p className="p-8 text-center text-sm text-gray-500">{tab === "projects" ? t("এখনো কোনো প্রজেক্ট নেই — উপরের বোতাম চেপে প্রথমটি যোগ করুন।", "No projects yet — add the first one above.") : t("এখনো কোনো সফটওয়্যার/সেবা নেই — উপরের বোতাম চেপে প্রথমটি যোগ করুন।", "Nothing here yet — add the first one above.")}</p>
+          )}
         </div>
       )}
 
@@ -316,6 +320,7 @@ function ShowcaseEditor({ editor, projects, services, saving, onClose, onSave, o
   onSave: (e: Editor) => void;
   onOpen: (kind: "project" | "service", index: number) => void;
 }) {
+  const toast = useToastStore((s) => s.push);
   const t = useBnEn();
   const ref = useFocusTrap(true, onClose);
   const [ed, setEd] = useState<Editor>(editor);
@@ -350,10 +355,10 @@ function ShowcaseEditor({ editor, projects, services, saving, onClose, onSave, o
     else setS({ items: d.features_en.map((en, i) => ({ en, bn: d.features_bn[i] ?? "" })) });
   };
 
-  const save = (publish: boolean) => {
-    if (!(title.bn.trim() || title.en.trim())) { alert(t("আগে নাম লিখুন", "Enter a name first")); return; }
-    if (dup.slug_taken) { alert(t("এই ওয়েব ঠিকানা (slug) আগে থেকেই আছে — 'উন্নত' অংশে বদলান", "This slug already exists — change it under Advanced")); return; }
-    if (publish && checks.some((c) => !c.ok) && !window.confirm(t(`${checks.filter((c) => !c.ok).map((c) => c.bn).join(", ")} বাকি — তবুও প্রকাশ করবেন?`, "Some info is missing — publish anyway?"))) return;
+  const save = async (publish: boolean) => {
+    if (!(title.bn.trim() || title.en.trim())) { toast("error", t("আগে নাম লিখুন", "Enter a name first")); return; }
+    if (dup.slug_taken) { toast("error", t("এই ওয়েব ঠিকানা (slug) আগে থেকেই আছে — 'উন্নত' অংশে বদলান", "This slug already exists — change it under Advanced")); return; }
+    if (publish && checks.some((c) => !c.ok) && !(await askConfirm(t(`${checks.filter((c) => !c.ok).map((c) => c.bn).join(", ")} বাকি — তবুও প্রকাশ করবেন?`, "Some info is missing — publish anyway?")))) return;
     const item = { ...ed.item, hidden: !publish, title: { bn: title.bn.trim() || title.en.trim(), en: title.en.trim() || title.bn.trim() } };
     if (isProject && (item as ShowcaseProject).slug.startsWith("project-")) (item as ShowcaseProject).slug = slugify(item.title.en) || (item as ShowcaseProject).slug;
     onSave({ ...ed, item } as Editor);

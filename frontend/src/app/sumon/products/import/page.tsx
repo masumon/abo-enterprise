@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDhakaBn } from "@/lib/flashSale";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
@@ -546,7 +547,7 @@ export default function AdminProductImportPage() {
       <div className="admin-card p-5">
         <div className="flex items-center justify-between mb-3">
           <p className="text-xs font-bold text-gray-400 uppercase tracking-wide flex items-center gap-1.5"><History className="w-3.5 h-3.5" /> ইমপোর্ট হিস্টরি</p>
-          <button type="button" onClick={loadHistory} className="btn btn-ghost btn-sm"><RefreshCw className="w-3.5 h-3.5" /></button>
+          <button type="button" onClick={loadHistory} aria-label="ইতিহাস আবার আনুন" title="ইতিহাস আবার আনুন" className="btn btn-ghost btn-sm min-h-11 min-w-11"><RefreshCw className="w-3.5 h-3.5" aria-hidden /></button>
         </div>
         {history.length === 0 ? (
           <p className="text-sm text-muted">এখনো কোনো ইমপোর্ট হয়নি।</p>
@@ -563,7 +564,7 @@ export default function AdminProductImportPage() {
               <tbody>
                 {history.map((j) => (
                   <tr key={j.id} className="border-b border-gray-50 dark:border-white/5">
-                    <td className="py-2 px-2 text-xs text-muted" data-label="তারিখ">{j.created_at ? new Date(j.created_at).toLocaleString() : "—"}</td>
+                    <td className="py-2 px-2 text-xs text-muted" data-label="তারিখ">{j.created_at ? formatDhakaBn(new Date(j.created_at)) : "—"}</td>
                     <td className="py-2 px-2 text-xs truncate max-w-[160px]" data-label="ফাইল" title={j.filename ?? ""}>{j.filename || "—"}</td>
                     <td className="py-2 px-2 text-emerald-600 font-semibold" data-label="তৈরি">{j.created}</td>
                     <td className="py-2 px-2 text-brand-600 font-semibold" data-label="আপডেট">{j.updated}</td>

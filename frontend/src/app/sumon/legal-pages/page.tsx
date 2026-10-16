@@ -1,9 +1,10 @@
 "use client";
 
+import { useUnsavedGuard } from "@/hooks/useUnsavedGuard";
 import RichTextEditor from "@/components/admin/catalog/RichTextEditor";
 import { useEffect, useState } from "react";
 import TranslateButton from "@/components/admin/TranslateButton";
-import AdminTitle from "@/components/admin/AdminTitle";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -34,7 +35,7 @@ export default function LegalPagesAdmin() {
         const r = await adminApi.getSettings();
         setAllSettings(r.data.data ?? {});
       } catch (e) {
-        toast("error", apiErrorMessage(e, "Failed to load legal page content"));
+        toast("error", apiErrorMessage(e, "আইনি পেজের লেখা আনা যায়নি"));
       } finally {
         setLoading(false);
       }
@@ -45,6 +46,8 @@ export default function LegalPagesAdmin() {
     setEn(allSettings[`legal_${active}_content_en`] ?? "");
     setBn(allSettings[`legal_${active}_content_bn`] ?? "");
   }, [active, allSettings]);
+
+  useUnsavedGuard(en !== (allSettings[`legal_${active}_content_en`] ?? "") || bn !== (allSettings[`legal_${active}_content_bn`] ?? ""));
 
   const isCustomized = !!(allSettings[`legal_${active}_content_en`] || allSettings[`legal_${active}_content_bn`]);
   const page = PAGES.find((p) => p.key === active)!;
@@ -63,7 +66,7 @@ export default function LegalPagesAdmin() {
       }));
       toast("success", nextEn || nextBn ? "সংরক্ষণ করা হয়েছে — ওয়েবসাইটে নতুন লেখা দেখাবে" : "ডিফল্ট লেখায় ফিরে যাওয়া হয়েছে");
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Save failed"));
+      toast("error", apiErrorMessage(e, "সংরক্ষণ করা যায়নি"));
     } finally {
       setSaving(false);
     }
@@ -71,14 +74,12 @@ export default function LegalPagesAdmin() {
 
   return (
     <div className="admin-page admin-page-narrow">
-      <div className="flex items-center gap-2 mb-1">
-        <ScrollText className="w-6 h-6 text-brand-600" />
-        <AdminTitle en="Legal Pages" bn="আইনি পেজসমূহ" />
-      </div>
-      <p className="text-sm text-muted mb-6">
-        Privacy, Terms, Refund ও Cookies পেজের লেখা এখান থেকে পরিবর্তন করুন — কোডিং জানার দরকার নেই।
-        কোনো পেজ খালি রাখলে (কখনো সম্পাদনা না করলে) ওয়েবসাইটের বর্তমান ডিফল্ট লেখাই দেখানো হবে, কিছুই পরিবর্তন হবে না।
-      </p>
+      <AdminPageHeader
+        title="Legal Pages"
+        titleBn="আইনি পেজসমূহ"
+        description={<>Privacy, Terms, Refund ও Cookies পেজের লেখা এখান থেকে পরিবর্তন করুন — কোডিং জানার দরকার নেই।
+        কোনো পেজ খালি রাখলে (কখনো সম্পাদনা না করলে) ওয়েবসাইটের বর্তমান ডিফল্ট লেখাই দেখানো হবে, কিছুই পরিবর্তন হবে না।</>}
+      />
 
       <div className="flex gap-1 border-b border-app mb-5 overflow-x-auto">
         {PAGES.map((p) => (

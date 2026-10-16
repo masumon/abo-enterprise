@@ -136,7 +136,7 @@ export default function AdminDeliveryZonesPage() {
               {z.upazilas?.length > 0 && <p className="text-[11px] text-muted mt-0.5">উপজেলা: {z.upazilas.join(", ")}</p>}
               <div className="flex gap-2 mt-3">
                 <button type="button" onClick={() => openEdit(z)} className="btn btn-outline btn-sm flex-1"><Pencil className="w-3.5 h-3.5" /> এডিট</button>
-                <button type="button" onClick={() => setDelId(z.id)} className="btn btn-outline btn-sm text-red-600 border-red-200"><Trash2 className="w-3.5 h-3.5" /></button>
+                <button type="button" onClick={() => setDelId(z.id)} aria-label="জোন মুছুন" title="মুছুন" className="btn btn-outline btn-sm min-h-11 min-w-11 text-red-600 border-red-200"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
             </div>
           ))}
@@ -148,7 +148,7 @@ export default function AdminDeliveryZonesPage() {
           <div className="my-8 w-full max-w-lg rounded-2xl bg-white shadow-2xl dark:bg-[var(--surface-card)] max-[640px]:my-0 max-[640px]:max-h-[94dvh] max-[640px]:max-w-none max-[640px]:overflow-y-auto max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--line)]">
               <h2 className="font-bold text-heading">{form.id ? "জোন এডিট" : "নতুন জোন"}</h2>
-              <button type="button" onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"><X className="w-5 h-5" /></button>
+              <button aria-label="বন্ধ করুন" type="button" onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

@@ -56,7 +56,7 @@ export default function AdminPagesPage() {
       setTotal(r.data.meta?.total ?? data.length);
     } catch (err) {
       setPages([]);
-      toast("error", apiErrorMessage(err, "Failed to load pages"));
+      toast("error", apiErrorMessage(err, "পেজ আনা যায়নি"));
     } finally {
       setLoading(false);
     }
@@ -87,15 +87,15 @@ export default function AdminPagesPage() {
       if (editing) {
         const { slug: _slug, ...updatable } = data;
         await adminPagesApi.update(editing.id, updatable);
-        toast("success", "Page updated");
+        toast("success", "পেজ আপডেট হয়েছে");
       } else {
         await adminPagesApi.create(data);
-        toast("success", "Page created");
+        toast("success", "পেজ তৈরি হয়েছে");
       }
       setShowModal(false);
       await load();
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Failed to save page"));
+      toast("error", apiErrorMessage(err, "পেজ সংরক্ষণ করা যায়নি"));
     } finally {
       setSaving(false);
     }
@@ -110,10 +110,10 @@ export default function AdminPagesPage() {
     setDeleteTarget(null);
     try {
       await adminPagesApi.delete(p.id);
-      toast("success", "Page deleted");
+      toast("success", "পেজ মুছে ফেলা হয়েছে");
       await load();
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Failed to delete page"));
+      toast("error", apiErrorMessage(err, "পেজ মুছে ফেলা যায়নি"));
     }
   };
 

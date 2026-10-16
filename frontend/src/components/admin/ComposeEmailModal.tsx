@@ -41,7 +41,7 @@ export default function ComposeEmailModal({ open, onClose, to, defaultSubject = 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!subject.trim() || !message.trim()) {
-      toast("error", "Subject and message are required");
+      toast("error", "বিষয় ও বার্তা দিন");
       return;
     }
     setSending(true);
@@ -50,7 +50,7 @@ export default function ComposeEmailModal({ open, onClose, to, defaultSubject = 
       toast("success", r?.data?.message || "Email sent");
       onClose();
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Failed to send email"));
+      toast("error", apiErrorMessage(err, "ইমেইল পাঠানো যায়নি"));
     } finally {
       setSending(false);
     }

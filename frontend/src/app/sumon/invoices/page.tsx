@@ -2,7 +2,7 @@
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import AdminTitle from "@/components/admin/AdminTitle";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 import { Loader2, FileText, X, Trash2, Download, ChevronDown, Plus, RefreshCw, Stethoscope, CheckCircle2, AlertCircle } from "lucide-react";
 import api, { invoicesAdminApi, downloadPdf } from "@/lib/api";
@@ -73,7 +73,7 @@ export default function AdminInvoicesPage() {
       setInvoices((r.data.data ?? []) as AdminInvoice[]);
       setTotal(r.data.meta?.total ?? 0);
     } catch {
-      toast("error", "Failed to load invoices");
+      toast("error", "ইনভয়েস আনা যায়নি");
     } finally {
       setLoading(false);
     }
@@ -98,15 +98,15 @@ export default function AdminInvoicesPage() {
       };
       const totalCreated = d.created.orders + d.created.bookings + d.created.legacy_bookings;
       if (d.errors?.length) {
-        toast("error", `${totalCreated} created, ${d.errors.length} failed — ${d.errors[0]}`);
+        toast("error", `${totalCreated}টি তৈরি হয়েছে, ${d.errors.length}টি হয়নি — ${d.errors[0]}`);
       } else if (totalCreated === 0) {
-        toast("success", "All orders & bookings already have invoices");
+        toast("success", "সব অর্ডার ও বুকিংয়ের ইনভয়েস আগেই আছে");
       } else {
-        toast("success", `${totalCreated} missing invoice(s) created`);
+        toast("success", `${totalCreated}টি বাকি ইনভয়েস তৈরি হয়েছে`);
       }
       await load();
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Invoice sync failed"));
+      toast("error", apiErrorMessage(err, "ইনভয়েস তৈরি করা যায়নি"));
     } finally {
       setSyncing(false);
     }
@@ -118,7 +118,7 @@ export default function AdminInvoicesPage() {
       const r = await api.get("/api/v1/invoices/admin/diagnostics");
       setDiagReport(r.data.data as { ok: boolean; checks: { check: string; ok: boolean; detail: string }[] });
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Diagnostics failed"));
+      toast("error", apiErrorMessage(err, "পরীক্ষা চালানো যায়নি"));
     } finally {
       setDiagLoading(false);
     }
@@ -136,9 +136,9 @@ export default function AdminInvoicesPage() {
       const updated = r.data.data as AdminInvoice;
       setInvoices((prev) => prev.map((i) => (i.id === invoice.id ? updated : i)));
       setDetail(updated);
-      toast("success", "Payment status updated");
+      toast("success", "পেমেন্টের অবস্থা আপডেট হয়েছে");
     } catch {
-      toast("error", "Status update failed");
+      toast("error", "অবস্থা বদলানো যায়নি");
     } finally {
       setStatusUpdating(false);
     }
@@ -156,9 +156,9 @@ export default function AdminInvoicesPage() {
           setInvoices((prev) => prev.filter((i) => i.id !== invoice.id));
           setTotal((t) => t - 1);
           setDetail(null);
-          toast("success", "Invoice deleted");
+          toast("success", "ইনভয়েস মুছে ফেলা হয়েছে");
         } catch {
-          toast("error", "Delete failed");
+          toast("error", "মুছে ফেলা যায়নি");
         } finally {
           setDeleting(false);
         }
@@ -174,7 +174,7 @@ export default function AdminInvoicesPage() {
         `${invoice.invoice_number}.pdf`
       );
     } catch {
-      toast("error", "PDF download failed");
+      toast("error", "PDF ডাউনলোড করা যায়নি");
     } finally {
       setPdfLoading(null);
     }
@@ -182,14 +182,14 @@ export default function AdminInvoicesPage() {
 
   const handleCreate = async () => {
     if (!createForm.customer_name.trim()) {
-      toast("error", "Customer name is required"); return;
+      toast("error", "গ্রাহকের নাম দিন"); return;
     }
     const validItems = createItems.filter((i) => i.name.trim() && i.price > 0);
     if (validItems.length === 0) {
-      toast("error", "Add at least one item with name and price"); return;
+      toast("error", "অন্তত একটি পণ্য/সেবা নাম ও দামসহ দিন"); return;
     }
     if ((createForm.tax ?? 0) < 0) {
-      toast("error", "Tax amount cannot be negative"); return;
+      toast("error", "ট্যাক্স ঋণাত্মক হতে পারে না"); return;
     }
     const subtotal = validItems.reduce((s, i) => s + i.qty * i.price, 0);
     const totalAmount = subtotal + (createForm.tax || 0);
@@ -212,9 +212,9 @@ export default function AdminInvoicesPage() {
       setShowCreate(false);
       setCreateForm({ customer_name: "", customer_email: "", customer_phone: "", tax: 0, payment_method: "", notes: "" });
       setCreateItems([{ name: "", qty: 1, price: 0 }]);
-      toast("success", "Invoice created");
+      toast("success", "ইনভয়েস তৈরি হয়েছে");
     } catch {
-      toast("error", "Failed to create invoice");
+      toast("error", "ইনভয়েস তৈরি করা যায়নি");
     } finally {
       setCreating(false);
     }
@@ -222,11 +222,7 @@ export default function AdminInvoicesPage() {
 
   return (
     <div className="admin-page">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <AdminTitle en="Invoices" bn="ইনভয়েস" />
-          <p className="text-gray-500 text-sm mt-1">{total} total invoices</p>
-        </div>
+      <AdminPageHeader title="Invoices" titleBn="ইনভয়েস" description={`${total} total invoices`} descriptionBn={`মোট ${total.toLocaleString("bn-BD")}টি ইনভয়েস`} actions={
         <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleDiagnostics}
@@ -235,7 +231,7 @@ export default function AdminInvoicesPage() {
             className="btn btn-outline btn-md flex items-center gap-2"
           >
             {diagLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Stethoscope className="w-4 h-4" />}
-            Diagnostics
+            সমস্যা পরীক্ষা
           </button>
           <button
             onClick={handleBackfill}
@@ -244,13 +240,13 @@ export default function AdminInvoicesPage() {
             className="btn btn-outline btn-md flex items-center gap-2"
           >
             {syncing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            Sync from Orders
+            অর্ডার থেকে তৈরি
           </button>
           <button onClick={() => setShowCreate(true)} className="btn btn-brand btn-md flex items-center gap-2">
             <Plus className="w-4 h-4" /> {tx("Create Invoice")}
           </button>
         </div>
-      </div>
+      } />
 
       <AdminToolbar
         searchValue={searchInput}
@@ -276,7 +272,7 @@ export default function AdminInvoicesPage() {
               {diagReport.ok ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
               {diagReport.ok ? "সব পরীক্ষা পাস — ইনভয়েস সিস্টেম ঠিক আছে" : "সমস্যা পাওয়া গেছে — নিচের বিবরণ দেখুন"}
             </p>
-            <button onClick={() => setDiagReport(null)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
+            <button aria-label="বন্ধ করুন" type="button" onClick={() => setDiagReport(null)} className="text-gray-400 hover:text-gray-600"><X className="w-4 h-4" /></button>
           </div>
           <ul className="space-y-1.5">
             {diagReport.checks.map((c) => (
@@ -418,7 +414,7 @@ export default function AdminInvoicesPage() {
             {/* Header */}
             <div className="flex items-center justify-between gap-3 border-b border-gray-100 px-6 py-4 max-[640px]:px-4">
               <h2 className="text-lg font-semibold text-gray-900">{detail.invoice_number}</h2>
-              <button onClick={() => setDetail(null)} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600">
+              <button aria-label="বন্ধ করুন" type="button" onClick={() => setDetail(null)} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -645,6 +641,7 @@ export default function AdminInvoicesPage() {
                         <button
                           type="button"
                           onClick={() => setCreateItems((prev) => prev.filter((_, i) => i !== idx))}
+                          aria-label="এই লাইন মুছুন"
                           className="text-red-400 hover:text-red-600 p-1"
                         >
                           <Trash2 className="w-4 h-4" />

@@ -51,7 +51,7 @@ export default function AdminReportsPage() {
       setRows(r.data.data?.rows ?? []);
     } catch (err) {
       setRows([]);
-      toast("error", apiErrorMessage(err, "Failed to load report"));
+      toast("error", apiErrorMessage(err, "রিপোর্ট আনা যায়নি"));
     } finally {
       setLoading(false);
     }
@@ -64,7 +64,7 @@ export default function AdminReportsPage() {
     try {
       await downloadCsv(reportsApi.exportPath(report, { start_date: startDate, end_date: endDate }), `${report}_${startDate}_${endDate}.csv`);
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Export failed"));
+      toast("error", apiErrorMessage(err, "ডাউনলোড করা যায়নি"));
     } finally {
       setExporting(false);
     }

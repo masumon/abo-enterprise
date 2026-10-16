@@ -25,7 +25,7 @@ export default function TwoFactorCard() {
       const r = await authApi.totpSetup();
       setSetup(r.data.data ?? null);
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Setup failed"));
+      toast("error", apiErrorMessage(e, "চালু করা যায়নি"));
     } finally {
       setBusy(false);
     }
@@ -40,7 +40,7 @@ export default function TwoFactorCard() {
       setCode("");
       toast("success", "2FA চালু হয়েছে — পরের লগইন থেকে কোড লাগবে");
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Invalid code"));
+      toast("error", apiErrorMessage(e, "কোড সঠিক নয়"));
     } finally {
       setBusy(false);
     }
@@ -54,7 +54,7 @@ export default function TwoFactorCard() {
       setCode("");
       toast("success", "2FA বন্ধ হয়েছে");
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Invalid code"));
+      toast("error", apiErrorMessage(e, "কোড সঠিক নয়"));
     } finally {
       setBusy(false);
     }

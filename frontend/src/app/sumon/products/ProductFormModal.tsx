@@ -1,5 +1,7 @@
 "use client";
 
+import { useUnsavedGuard } from "@/hooks/useUnsavedGuard";
+import { askConfirm } from "@/store/confirm";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { X, Loader2, Save, Send } from "lucide-react";
@@ -178,10 +180,11 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
   const [linkedBlogsLoading, setLinkedBlogsLoading] = useState(false);
   const [confirmPublish, setConfirmPublish] = useState(false);
 
-  const { register, handleSubmit, setValue, watch, getValues, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, setValue, watch, getValues, formState: { errors, isDirty } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: (source ? fromProduct(source, mode.type === "clone") : NEW_DEFAULTS) as FormData,
   });
+  useUnsavedGuard(isDirty);
 
   // Blog posts this product can be featured in (many-to-many).
   useEffect(() => {
@@ -241,7 +244,7 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
 
 
   // AI description → fields. Asks before replacing text the admin wrote.
-  const applyAiDescription = (d: AiDescription) => {
+  const applyAiDescription = async (d: AiDescription) => {
     const build = (para: string, feats: string[], faq: string) =>
       [para, feats.map((f) => `• ${f}`).join("\n"), faq].filter((x) => x && x.trim()).join("\n\n");
     const faqBn = d.faq.filter((f) => f.q_bn).map((f) => `প্রশ্ন: ${f.q_bn}\nউত্তর: ${f.a_bn}`).join("\n\n");
@@ -249,7 +252,7 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
     const bn = build(d.description_bn, d.features_bn, faqBn ? `প্রশ্নোত্তর\n${faqBn}` : "");
     const en = build(d.description_en, d.features_en, faqEn ? `FAQ\n${faqEn}` : "");
     const hasText = (getValues("description_bn") || "").trim() || (getValues("description_en") || "").trim();
-    if (hasText && !window.confirm("আগের বিবরণ AI-এর লেখা দিয়ে বদলে দেবেন?")) return;
+    if (hasText && !(await askConfirm("আগের বিবরণ AI-এর লেখা দিয়ে বদলে দেবেন?"))) return;
     if (bn) setValue("description_bn", bn, { shouldDirty: true });
     if (en) setValue("description_en", en, { shouldDirty: true });
   };
@@ -330,9 +333,9 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
   }, [setValue, toast, t]);
 
   /** Link draft → empty fields only (asks before replacing a name/description). */
-  const applyLinkDraft = (d: LinkDraft) => {
+  const applyLinkDraft = async (d: LinkDraft) => {
     const v = getValues();
-    const replace = !(v.name_bn?.trim() || v.description_bn?.trim()) || window.confirm("আগের নাম/বিবরণ লিংকের তথ্য দিয়ে বদলে দেবেন?");
+    const replace = !(v.name_bn?.trim() || v.description_bn?.trim()) || (await askConfirm("আগের নাম/বিবরণ লিংকের তথ্য দিয়ে বদলে দেবেন?"));
     const put = (k: keyof FormData, val: string | undefined, force = replace) => {
       if (val && (force || !String(v[k] ?? "").trim())) setValue(k, val as never, { shouldDirty: true });
     };

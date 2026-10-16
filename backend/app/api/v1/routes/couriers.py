@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core import couriers as C
 from app.core.database import get_db
 from app.core.security import require_role
-from app.models.models import ActivityLog, Order
+from app.models.models import ActivityLog, Order, Setting
 from app.schemas.schemas import ApiResponse, OrderOut
 
 router = APIRouter(tags=["admin-couriers"])
@@ -43,7 +43,12 @@ async def get_couriers(db: AsyncSession = Depends(get_db), _a: str = Depends(req
                         "value": "" if secret else (pc.get(k) or s.get(k) or ""), "set": bool(s.get(k) or pc.get(k))}
                        for k, lbl, secret in meta["fields"]],
         })
-    return ApiResponse(data={"mode": cfg["mode"], "default": cfg["default"], "providers": providers,
+    # One control for AUTO/MANUAL: the old Steadfast "auto-send" switch (kept working by
+    # schedule_if_auto) makes MANUAL+Steadfast behave as AUTO — report what really happens.
+    mode = cfg["mode"]
+    if mode == "manual" and cfg["default"] == "steadfast" and st["enabled"] and st["auto_send"]:
+        mode = "auto"
+    return ApiResponse(data={"mode": mode, "default": cfg["default"], "providers": providers,
                              "soon": C.SOON, "undo_seconds": C.UNDO_SECONDS})
 
 
@@ -86,6 +91,10 @@ async def save_couriers(body: CouriersIn, db: AsyncSession = Depends(get_db),
             elif k in {f[0] for f in C.PROVIDERS[key]["fields"]}:
                 pc[k] = v
     await C.save(db, cfg, sec)
+    if body.mode == "manual":  # switch the old Steadfast auto-send off too, so MANUAL really is manual
+        legacy = (await db.execute(select(Setting).where(Setting.key == "steadfast_auto_send"))).scalar_one_or_none()
+        if legacy and legacy.value.strip().lower() in ("true", "1", "yes", "on"):
+            legacy.value = "false"
     db.add(ActivityLog(admin_id=UUID(admin_id), action="couriers_update", entity_type="setting",
                        new_values={"mode": cfg["mode"], "default": cfg["default"]}))
     await db.commit()

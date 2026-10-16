@@ -1,18 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import api, { downloadCsv } from "@/lib/api";
+import { useCallback, useEffect, useState } from "react";
+import api from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import { asArray, asNumber, asObject } from "@/lib/safeData";
 import {
-  Activity, AlertTriangle, Bell, CheckCircle2, Database, Download,
-  HardDrive, Loader2, Mail, RefreshCw, ShieldCheck, Upload, XCircle,
+  Activity, AlertTriangle, CheckCircle2,
+  Loader2, Mail, RefreshCw, ShieldCheck, XCircle,
 } from "lucide-react";
 
 interface HealthCheck { ok: boolean; [k: string]: unknown }
 interface HealthData { checks: Record<string, HealthCheck>; healthy: number; total: number }
-interface FeedItem { severity: "error" | "warning" | "info"; kind: string; at: string; text: string }
 
 const CHECK_LABELS: Record<string, string> = {
   api: "API Server", database: "Database", smtp: "Email (SMTP)", cloudinary: "Cloudinary (Media)",
@@ -64,13 +63,8 @@ export default function OperationsPanel() {
   const [health, setHealth] = useState<HealthData | null>(null);
   const [errors, setErrors] = useState<Record<string, never[]> | null>(null);
   const [security, setSecurity] = useState<Record<string, never[]> | null>(null);
-  const [feed, setFeed] = useState<{ items: FeedItem[]; counts: Record<string, number> } | null>(null);
   const [loading, setLoading] = useState(true);
   const [healthLoading, setHealthLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
-  const [restorePreview, setRestorePreview] = useState<{ update_count: number; create_count: number; payload: unknown } | null>(null);
-  const [restoring, setRestoring] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -82,13 +76,12 @@ export default function OperationsPanel() {
         const h = asObject<HealthData>(r?.data?.data);
         setHealth(Object.keys(h).length ? { checks: asObject<Record<string, HealthCheck>>(h.checks) as Record<string, HealthCheck>, healthy: asNumber(h.healthy), total: asNumber(h.total) } : null);
       })
-      .catch((e) => toast("error", apiErrorMessage(e, "Health check failed")))
+      .catch((e) => toast("error", apiErrorMessage(e, "সিস্টেম পরীক্ষা করা যায়নি")))
       .finally(() => setHealthLoading(false));
     try {
-      const [er, sec, nf] = await Promise.all([
+      const [er, sec] = await Promise.all([
         api.get("/api/v1/admin/ops/errors"),
         api.get("/api/v1/admin/ops/security"),
-        api.get("/api/v1/admin/ops/notifications"),
       ]);
       // Defensive: coerce each list to an array so an unexpected payload shape can't crash the panel.
       const listify = (raw: unknown, keys: string[]) => {
@@ -97,10 +90,8 @@ export default function OperationsPanel() {
       };
       setErrors(listify(er?.data?.data, ["runtime_errors", "failed_emails", "failed_payments"]));
       setSecurity(listify(sec?.data?.data, ["admin_accounts", "failed_logins", "audit_tail"]));
-      const f = asObject<{ items: FeedItem[]; counts: Record<string, number> }>(nf?.data?.data);
-      setFeed({ items: asArray<FeedItem>(f.items), counts: asObject<Record<string, number>>(f.counts) as Record<string, number> });
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Failed to load operations data"));
+      toast("error", apiErrorMessage(e, "তথ্য আনা যায়নি"));
     } finally {
       setLoading(false);
     }
@@ -108,89 +99,20 @@ export default function OperationsPanel() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  const exportBackup = async () => {
-    setExporting(true);
-    try {
-      await downloadCsv("/api/v1/admin/ops/backup/export", `abo-content-backup-${new Date().toISOString().slice(0, 10)}.json`);
-      toast("success", "কনটেন্ট ব্যাকআপ ডাউনলোড হয়েছে");
-    } catch (e) {
-      toast("error", apiErrorMessage(e, "Export failed"));
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const pickRestoreFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const payload = JSON.parse(await file.text());
-      const r = await api.post("/api/v1/admin/ops/backup/restore-settings?dry_run=true", payload);
-      setRestorePreview({ ...r.data.data, payload });
-    } catch (err) {
-      toast("error", apiErrorMessage(err, "Invalid backup file"));
-    } finally {
-      if (fileRef.current) fileRef.current.value = "";
-    }
-  };
-
-  const confirmRestore = async () => {
-    if (!restorePreview) return;
-    setRestoring(true);
-    try {
-      const r = await api.post("/api/v1/admin/ops/backup/restore-settings?dry_run=false", restorePreview.payload);
-      toast("success", `রিস্টোর সম্পন্ন: ${r.data.data.update_count} আপডেট, ${r.data.data.create_count} নতুন`);
-      setRestorePreview(null);
-    } catch (e) {
-      toast("error", apiErrorMessage(e, "Restore failed"));
-    } finally {
-      setRestoring(false);
-    }
-  };
-
   const sev = (s: string) => (s === "error" ? "text-red-600 bg-red-50" : s === "warning" ? "text-amber-600 bg-amber-50" : "text-blue-600 bg-blue-50");
 
   return (
     <div className="space-y-5">
-      {/* ── Notification Center ── */}
-      <Card
-        title="Notification Center"
-        icon={Bell}
+      {/* ── System Health ── */}
+      <Card title="সিস্টেমের অবস্থা" icon={Activity}
         action={
           <div className="flex items-center gap-2">
-            {feed && (
-              <span className="text-xs text-gray-400">
-                {asNumber(feed.counts.error)} error · {asNumber(feed.counts.warning)} warning · {asNumber(feed.counts.info)} info
-              </span>
-            )}
-            <button type="button" onClick={loadAll} className="btn btn-outline btn-sm inline-flex items-center gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5" /> Refresh
+            {health && <span className="text-xs font-semibold text-gray-500">{health.healthy}/{health.total} ঠিক আছে</span>}
+            <button type="button" onClick={loadAll} className="btn btn-outline btn-sm min-h-11 inline-flex items-center gap-1.5">
+              <RefreshCw className="w-3.5 h-3.5" aria-hidden /> আবার দেখুন
             </button>
           </div>
-        }
-      >
-        {loading ? (
-          <div className="h-24 bg-gray-50 rounded-lg animate-pulse" />
-        ) : !feed?.items.length ? (
-          <p className="text-sm text-emerald-600 py-4 text-center flex items-center justify-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4" /> সব ঠিক আছে — কোনো নোটিফিকেশন নেই
-          </p>
-        ) : (
-          <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-            {feed.items.map((n, i) => (
-              <div key={i} className="flex items-start gap-2.5 text-sm">
-                <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${sev(n.severity)} flex-shrink-0 mt-0.5`}>{n.severity}</span>
-                <span className="flex-1 text-gray-700 text-xs leading-relaxed">{n.text}</span>
-                <span className="text-[11px] text-gray-400 flex-shrink-0">{fmtAgo(n.at)}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
-
-      {/* ── System Health ── */}
-      <Card title="System Health" icon={Activity}
-        action={health && <span className="text-xs font-semibold text-gray-500">{health.healthy}/{health.total} healthy</span>}>
+        }>
         {healthLoading ? (
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             {[1, 2, 3, 4, 5, 6].map((i) => <div key={i} className="h-16 bg-gray-50 rounded-lg animate-pulse" />)}
@@ -223,7 +145,7 @@ export default function OperationsPanel() {
 
       <div className="grid lg:grid-cols-2 gap-5">
         {/* ── Error Center ── */}
-        <Card title="Error Center (last 7 days)" icon={AlertTriangle}>
+        <Card title="ত্রুটি কেন্দ্র (গত ৭ দিন)" icon={AlertTriangle}>
           {loading ? <div className="h-32 bg-gray-50 rounded-lg animate-pulse" /> : errors && (
             <div className="space-y-4">
               <div>
@@ -257,7 +179,7 @@ export default function OperationsPanel() {
         </Card>
 
         {/* ── Security Overview ── */}
-        <Card title="Security Overview" icon={ShieldCheck}>
+        <Card title="নিরাপত্তার সারাংশ" icon={ShieldCheck}>
           {loading ? <div className="h-32 bg-gray-50 rounded-lg animate-pulse" /> : security && (
             <div className="space-y-4">
               <div>
@@ -292,47 +214,6 @@ export default function OperationsPanel() {
         </Card>
       </div>
 
-      {/* ── Backup & Restore ── */}
-      <Card title="Backup & Restore" icon={Database}>
-        <div className="grid md:grid-cols-3 gap-4 text-xs">
-          <div className="rounded-lg border border-gray-100 p-4">
-            <p className="font-semibold text-gray-800 mb-1 flex items-center gap-1.5"><HardDrive className="w-3.5 h-3.5" /> পূর্ণ ডাটাবেস Backup</p>
-            <p className="text-gray-500 leading-relaxed mb-2">অর্ডার, কাস্টমার, বুকিংসহ সব টেবিল — আপনার ড্রাইভে স্বয়ংক্রিয়/ম্যানুয়াল বা কম্পিউটারে, এনক্রিপ্ট করা ও যাচাই করা।</p>
-            <a href="/sumon/backup" className="text-brand-600 hover:underline font-medium">
-              Backup খুলুন →
-            </a>
-          </div>
-          <div className="rounded-lg border border-gray-100 p-4">
-            <p className="font-semibold text-gray-800 mb-1 flex items-center gap-1.5"><Download className="w-3.5 h-3.5" /> কনটেন্ট এক্সপোর্ট (পূর্ণ backup নয়)</p>
-            <p className="text-gray-500 leading-relaxed mb-2">শুধু সেটিংস + পণ্য + সেবা — JSON ফাইল। অর্ডার/কাস্টমার এতে নেই; পূর্ণ backup-এর জন্য উপরের Backup ব্যবহার করুন।</p>
-            <button type="button" onClick={exportBackup} disabled={exporting} className="btn btn-brand btn-sm inline-flex items-center gap-1.5">
-              {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />} Download Backup
-            </button>
-          </div>
-          <div className="rounded-lg border border-gray-100 p-4">
-            <p className="font-semibold text-gray-800 mb-1 flex items-center gap-1.5"><Upload className="w-3.5 h-3.5" /> Restore Settings</p>
-            <p className="text-gray-500 leading-relaxed mb-2">ব্যাকআপ JSON থেকে CMS সেটিংস ফেরত আনুন — আগে প্রিভিউ, কিছুই মুছে যায় না।</p>
-            {!restorePreview ? (
-              <button type="button" onClick={() => fileRef.current?.click()} className="btn btn-outline btn-sm inline-flex items-center gap-1.5">
-                <Upload className="w-3.5 h-3.5" /> Choose Backup File
-              </button>
-            ) : (
-              <div className="space-y-2">
-                <p className="text-amber-700 bg-amber-50 rounded px-2 py-1.5">
-                  প্রিভিউ: <strong>{restorePreview.update_count}</strong> সেটিংস বদলাবে, <strong>{restorePreview.create_count}</strong> নতুন তৈরি হবে
-                </p>
-                <div className="flex gap-2">
-                  <button type="button" onClick={confirmRestore} disabled={restoring} className="btn btn-brand btn-sm">
-                    {restoring ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Confirm Restore"}
-                  </button>
-                  <button type="button" onClick={() => setRestorePreview(null)} className="btn btn-outline btn-sm">Cancel</button>
-                </div>
-              </div>
-            )}
-            <input ref={fileRef} type="file" accept="application/json" className="hidden" onChange={pickRestoreFile} />
-          </div>
-        </div>
-      </Card>
     </div>
   );
 }

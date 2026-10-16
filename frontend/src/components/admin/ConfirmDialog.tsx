@@ -19,7 +19,7 @@ export default function ConfirmDialog({
   title,
   message,
   description,
-  confirmLabel = "Confirm",
+  confirmLabel = "নিশ্চিত করুন",
   variant = "danger",
   onConfirm,
   onCancel,
@@ -99,7 +99,7 @@ export default function ConfirmDialog({
           </div>
           <button
             onClick={onCancel}
-            aria-label="Close dialog"
+            aria-label="বন্ধ করুন"
             className="text-gray-400 hover:text-gray-600 flex-shrink-0 mt-0.5 max-[640px]:w-11 max-[640px]:h-11 max-[640px]:flex max-[640px]:items-center max-[640px]:justify-center"
           >
             <X className="w-4 h-4" />
@@ -111,7 +111,7 @@ export default function ConfirmDialog({
             onClick={onCancel}
             className="btn btn-outline btn-sm w-full min-[641px]:w-auto"
           >
-            Cancel
+            বাতিল
           </button>
           <button
             onClick={onConfirm}

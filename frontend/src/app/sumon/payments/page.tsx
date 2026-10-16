@@ -4,7 +4,7 @@ import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/admin
 import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import AdminTitle from "@/components/admin/AdminTitle";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import {
   Loader2, Plus, Pencil, Trash2, X, ToggleLeft, ToggleRight, Archive,
   CreditCard, Check, AlertCircle, Receipt, RefreshCw,
@@ -113,7 +113,7 @@ export default function AdminPaymentsPage() {
       const r = await paymentMethodsAdminApi.list();
       setMethods((r.data.data ?? []) as PaymentMethodRecord[]);
     } catch {
-      toast("error", "Failed to load payment methods");
+      toast("error", "পেমেন্ট পদ্ধতি আনা যায়নি");
     } finally {
       setLoading(false);
     }
@@ -128,7 +128,7 @@ export default function AdminPaymentsPage() {
       setTransactions(r.data.data ?? []);
       setTxTotal(r.data.meta?.total ?? 0);
     } catch {
-      toast("error", "Failed to load transactions");
+      toast("error", "লেনদেন আনা যায়নি");
     } finally {
       setTxLoading(false);
     }
@@ -143,7 +143,7 @@ export default function AdminPaymentsPage() {
       setReconRecords(r.data.data ?? []);
       setReconTotal(r.data.meta?.total ?? 0);
     } catch {
-      toast("error", "Failed to load reconciliation records");
+      toast("error", "হিসাব মিলানোর তথ্য আনা যায়নি");
     } finally {
       setReconLoading(false);
     }
@@ -160,7 +160,7 @@ export default function AdminPaymentsPage() {
       toast(discrepant > 0 ? "error" : "success", discrepant > 0 ? `Reconciled — ${discrepant} gateway(s) have discrepancies` : "Reconciled — everything matched");
       await loadReconciliation();
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Reconciliation run failed"));
+      toast("error", apiErrorMessage(e, "হিসাব মিলানো যায়নি"));
     } finally {
       setRunningRecon(false);
     }
@@ -184,7 +184,7 @@ export default function AdminPaymentsPage() {
       await paymentMethodsAdminApi.update(m.id, { is_active: !m.is_active });
       await load();
     } catch {
-      toast("error", "Failed to update status");
+      toast("error", "অবস্থা বদলানো যায়নি");
     } finally {
       setTogglingId(null);
     }
@@ -199,10 +199,10 @@ export default function AdminPaymentsPage() {
         setDeletingId(id);
         try {
           await paymentMethodsAdminApi.delete(id);
-          toast("success", "Payment method disabled");
+          toast("success", "পেমেন্ট পদ্ধতি বন্ধ করা হয়েছে");
           await load();
         } catch {
-          toast("error", "Failed to disable payment method");
+          toast("error", "পেমেন্ট পদ্ধতি বন্ধ করা যায়নি");
         } finally {
           setDeletingId(null);
         }
@@ -212,13 +212,13 @@ export default function AdminPaymentsPage() {
 
   const handleSave = async () => {
     if (!editing) return;
-    if (!editing.payment_gateway?.trim()) { toast("error", "Gateway name is required"); return; }
+    if (!editing.payment_gateway?.trim()) { toast("error", "গেটওয়ের নাম দিন"); return; }
     const comm = editing.commission_percentage ?? 0;
-    if (comm < 0 || comm > 100) { toast("error", "Commission must be between 0% and 100%"); return; }
+    if (comm < 0 || comm > 100) { toast("error", "কমিশন ০% থেকে ১০০%-এর মধ্যে দিন"); return; }
     const minAmt = editing.min_amount ?? null;
     const maxAmt = editing.max_amount ?? null;
     if (minAmt !== null && maxAmt !== null && minAmt > maxAmt) {
-      toast("error", "Minimum amount cannot exceed maximum amount"); return;
+      toast("error", "সর্বনিম্ন পরিমাণ সর্বোচ্চের বেশি হতে পারে না"); return;
     }
 
     setSaving(true);
@@ -236,10 +236,10 @@ export default function AdminPaymentsPage() {
 
       if (isNew) {
         await paymentMethodsAdminApi.create(payload);
-        toast("success", "Payment method added");
+        toast("success", "পেমেন্ট পদ্ধতি যোগ হয়েছে");
       } else {
         await paymentMethodsAdminApi.update(editing.id!, payload);
-        toast("success", "Payment method updated");
+        toast("success", "পেমেন্ট পদ্ধতি আপডেট হয়েছে");
       }
       closePanel();
       await load();
@@ -254,22 +254,15 @@ export default function AdminPaymentsPage() {
 
   return (
     <div className="admin-page">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <AdminTitle en="Payments" bn="পেমেন্ট" />
-          <p className="text-gray-500 text-sm mt-1">
-            {tab === "gateways"
-              ? "Configure checkout payment methods"
-              : tab === "transactions"
-                ? "View bKash & Nagad transactions"
-                : "Daily payment reconciliation summary"}
-          </p>
-          {tab === "reconciliation" && (
-            <Link href="/sumon/reports?report=reconciliation" className="text-xs font-medium text-brand-600 hover:underline">
-              View the full reconciliation report in Reports →
-            </Link>
-          )}
-        </div>
+      <AdminPageHeader
+        title="Payments"
+        titleBn="পেমেন্ট"
+        description={tab === "gateways" ? "Configure checkout payment methods" : tab === "transactions" ? "View bKash & Nagad transactions" : "Daily payment reconciliation summary"}
+        descriptionBn={tab === "gateways" ? "চেকআউটের পেমেন্ট পদ্ধতি সাজান" : tab === "transactions" ? "বিকাশ ও নগদের লেনদেন দেখুন" : "প্রতিদিনের পেমেন্ট মিলানোর সারাংশ"}
+        actions={<>
+        {tab === "reconciliation" && (
+          <Link href="/sumon/reports?report=reconciliation" className="btn btn-outline btn-sm min-h-11">পূর্ণ রিপোর্ট</Link>
+        )}
         {tab === "gateways" && (
           <button onClick={() => openNew()} className="btn btn-primary btn-sm gap-1.5">
             <Plus className="w-4 h-4" /> {tx("Add Gateway")}
@@ -278,10 +271,11 @@ export default function AdminPaymentsPage() {
         {tab === "reconciliation" && (
           <button onClick={runReconciliation} disabled={runningRecon} className="btn btn-primary btn-sm gap-1.5">
             {runningRecon ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-            Run Reconciliation (yesterday)
+            গতকালের হিসাব মিলান
           </button>
         )}
-      </div>
+        </>}
+      />
 
       <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit flex-wrap">
         {([
@@ -554,7 +548,7 @@ export default function AdminPaymentsPage() {
               <h2 className="text-lg font-semibold text-gray-900">
                 {isNew ? "Add Payment Gateway" : `Edit ${GATEWAY_LABELS[editing.payment_gateway ?? ""] ?? editing.payment_gateway}`}
               </h2>
-              <button onClick={closePanel} className="text-gray-400 hover:text-gray-600">
+              <button aria-label="বন্ধ করুন" type="button" onClick={closePanel} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>

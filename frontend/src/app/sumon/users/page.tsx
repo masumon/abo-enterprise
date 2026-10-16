@@ -48,7 +48,7 @@ export default function AdminUsersPage() {
       const r = await adminApi.listUsers();
       setUsers(r.data.data ?? []);
     } catch {
-      toast("error", "Failed to load users");
+      toast("error", "ব্যবহারকারীদের তালিকা আনা যায়নি");
     } finally {
       setLoading(false);
     }
@@ -71,22 +71,22 @@ export default function AdminUsersPage() {
   const closeModal = () => { setModal(null); setEditing(null); };
 
   const handleSave = async () => {
-    if (!form.name.trim()) { toast("error", "Name is required"); return; }
+    if (!form.name.trim()) { toast("error", "নাম দিন"); return; }
     if (modal === "create") {
-      if (!form.email.trim() || !form.password.trim()) { toast("error", "Email and password are required"); return; }
-      if (!EMAIL_RE.test(form.email)) { toast("error", "Enter a valid email address"); return; }
-      if (form.password.length < 6) { toast("error", "Password must be at least 6 characters"); return; }
+      if (!form.email.trim() || !form.password.trim()) { toast("error", "ইমেইল ও পাসওয়ার্ড দিন"); return; }
+      if (!EMAIL_RE.test(form.email)) { toast("error", "সঠিক ইমেইল ঠিকানা দিন"); return; }
+      if (form.password.length < 6) { toast("error", "পাসওয়ার্ড অন্তত ৬ অক্ষরের হতে হবে"); return; }
     }
     setSaving(true);
     try {
       if (modal === "create") {
         await adminApi.createUser(form);
-        toast("success", "User created");
+        toast("success", "ব্যবহারকারী তৈরি হয়েছে");
       } else if (editing) {
         const payload: { name: string; role: string; password?: string } = { name: form.name, role: form.role };
         if (form.password.trim()) payload.password = form.password;
         await adminApi.updateUser(editing.id, payload);
-        toast("success", "User updated");
+        toast("success", "ব্যবহারকারী আপডেট হয়েছে");
       }
       closeModal();
       await load();
@@ -112,7 +112,7 @@ export default function AdminUsersPage() {
           setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, is_active: !u.is_active } : x)));
           toast("success", u.is_active ? "User deactivated" : "User activated");
         } catch {
-          toast("error", `Failed to ${action} user`);
+          toast("error", `ব্যবহারকারী ${action === "activate" ? "চালু" : "বন্ধ"} করা যায়নি`);
         } finally {
           setBusyId(null);
         }

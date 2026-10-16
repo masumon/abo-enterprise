@@ -185,7 +185,7 @@ const GROUPS: { title: string; items: { id: string; question: string; answer: Re
           <Steps
             items={[
               <><Go href="/sumon/coupons">কুপন</Go> — কোড, ছাড়ের পরিমাণ ও মেয়াদ দিন।</>,
-              <>ফ্ল্যাশ সেল চালু/বন্ধ ও সময় <Go href="/sumon/settings#flash_sale_config">সেটিংস</Go> থেকে ঠিক হয়।</>,
+              <>ফ্ল্যাশ সেল চালু/বন্ধ, সময়, পণ্য ও ব্যানার — সব <Go href="/sumon/coupons#flash">কুপন ও ফ্ল্যাশ সেল</Go> পাতায়।</>,
               <><Go href="/sumon/newsletter">নিউজলেটার</Go> — গ্রাহকদের ইমেইল তালিকা ও পাঠানো।</>,
             ]}
           />

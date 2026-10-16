@@ -1456,3 +1456,35 @@
    dark mode keeps its own overrides above. */
 html:not(.dark) #page-content :is(.text-gray-400) { color: rgb(107 114 128); }
 html:not(.dark) #page-content :is(.text-gray-500, .text-muted) { color: rgb(75 85 99); }
+
+/* Admin design unification (2026-10-16): one card look and one button look on every admin
+   page. Older `.card` and `.admin-btn-*` markup keeps working but now renders like
+   `.admin-card`, `.btn-brand` and `.btn-outline`. Scoped to the admin shell — the public
+   site is unchanged. (`.card` gets its white from @apply, so the dark-mode `.bg-white`
+   remap never reached it — admin dark mode showed white cards on Backup/Couriers.) */
+.admin-shell .card {
+  border-radius: 1rem;
+  border-color: rgb(243 244 246 / 0.9);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.055);
+}
+.admin-dark .card {
+  background: #101828;
+  border-color: rgba(255, 255, 255, 0.07);
+}
+.admin-shell .admin-btn-primary {
+  background: theme('colors.brand.600');
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  min-height: 2.75rem;
+}
+.admin-shell .admin-btn-primary:hover:not(:disabled) { background: theme('colors.brand.700'); }
+.admin-shell .admin-btn-secondary {
+  background: transparent;
+  border-color: theme('colors.brand.600');
+  color: theme('colors.brand.600');
+  box-shadow: none;
+  min-height: 2.75rem;
+}
+.admin-shell .admin-btn-secondary:hover:not(:disabled) { background: theme('colors.brand.50'); }
+.admin-dark .admin-btn-secondary { border-color: rgba(255, 255, 255, 0.2); color: rgb(226 232 240); }
+.admin-dark .admin-btn-secondary:hover:not(:disabled) { background: rgba(255, 255, 255, 0.06); }

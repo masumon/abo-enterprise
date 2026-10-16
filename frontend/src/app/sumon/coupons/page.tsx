@@ -1,12 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Percent, Plus, Save, Trash2 } from "lucide-react";
-import { couponsApi, type AdminCoupon } from "@/lib/api";
+import { Loader2, Percent, Plus, Save, Trash2, Zap } from "lucide-react";
+import { adminApi, couponsApi, type AdminCoupon } from "@/lib/api";
+import { parseBoolSetting } from "@/lib/flashSale";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
+import ConfirmDialog from "@/components/admin/ConfirmDialog";
+import FlashSalePanel from "./FlashSalePanel";
 
 interface Coupon {
   id?: string;
@@ -25,6 +28,30 @@ export default function AdminCouponsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const toast = useToastStore((s) => s.push);
+  // Two tabs; #flash opens the flash-sale tab directly (deep links).
+  const [tab, setTab] = useState<"coupons" | "flash">("coupons");
+  useEffect(() => {
+    const sync = () => setTab(window.location.hash === "#flash" ? "flash" : "coupons");
+    sync();
+    window.addEventListener("hashchange", sync);
+    return () => window.removeEventListener("hashchange", sync);
+  }, []);
+  const switchTab = (t: "coupons" | "flash") => { setTab(t); history.replaceState(null, "", t === "flash" ? "#flash" : window.location.pathname); };
+  const [removeIdx, setRemoveIdx] = useState<number | null>(null);
+  // Checkout coupon box on/off (moved here from Site Settings → Site Features).
+  const [couponsOn, setCouponsOn] = useState<boolean | null>(null);
+  useEffect(() => {
+    adminApi.getSettings().then((r) => setCouponsOn(parseBoolSetting(r.data.data?.feature_coupons, true))).catch(() => setCouponsOn(null));
+  }, []);
+  const toggleCoupons = async (on: boolean) => {
+    try {
+      await adminApi.upsertSettings([{ key: "feature_coupons", value: on ? "true" : "false", data_type: "boolean" }]);
+      setCouponsOn(on);
+      toast("success", on ? "চেকআউটে কুপনের ঘর চালু" : "চেকআউটে কুপনের ঘর বন্ধ");
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "বদলানো যায়নি"));
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -116,14 +143,28 @@ export default function AdminCouponsPage() {
   return (
     <div className="admin-page pb-24">
       <AdminPageHeader
-        title="Coupons"
-        titleBn="কুপন (ছাড়ের কোড)"
-        description={`${rows.length} coupons`}
-        descriptionBn={`${bnNum(rows.length)}টি কুপন — গ্রাহক চেকআউটে কোড লিখলে ছাড় পান। বদলের পর নিচের “সেভ করুন” চাপুন।`}
+        title="Coupons & Flash Sale"
+        titleBn="কুপন ও ফ্ল্যাশ সেল"
+        description="Discount codes and the homepage flash sale"
+        descriptionBn="ছাড়ের কোড আর হোমপেজের ফ্ল্যাশ সেল — দুটোই এখানে"
       />
 
-      <div className="flex flex-wrap gap-2">
+      <div role="tablist" aria-label="কুপন ও ফ্ল্যাশ সেল" className="flex gap-2">
+        <button type="button" role="tab" aria-selected={tab === "coupons"} onClick={() => switchTab("coupons")} className={`btn btn-sm min-h-11 gap-1.5 ${tab === "coupons" ? "btn-brand" : "btn-outline"}`}><Percent className="w-4 h-4" aria-hidden /> কুপন</button>
+        <button type="button" role="tab" aria-selected={tab === "flash"} onClick={() => switchTab("flash")} className={`btn btn-sm min-h-11 gap-1.5 ${tab === "flash" ? "btn-brand" : "btn-outline"}`}><Zap className="w-4 h-4" aria-hidden /> ফ্ল্যাশ সেল</button>
+      </div>
+
+      {tab === "flash" ? <FlashSalePanel /> : (<>
+      {couponsOn !== null && (
+        <label className="admin-card flex items-center justify-between gap-3 px-4 min-h-14 cursor-pointer">
+          <span className="text-sm"><b>{couponsOn ? "✅ কুপন চালু" : "⏸️ কুপন বন্ধ"}</b> <span className="text-gray-600">— চেকআউটে “কুপন কোড” ঘর {couponsOn ? "দেখাচ্ছে" : "লুকানো"}</span></span>
+          <input type="checkbox" className="w-5 h-5 accent-brand-600" checked={couponsOn} onChange={(e) => void toggleCoupons(e.target.checked)} />
+        </label>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2">
         <button type="button" onClick={addRow} className="btn btn-brand btn-sm min-h-11 gap-1.5"><Plus className="w-4 h-4" /> নতুন কুপন</button>
+        <p className="text-sm text-gray-600">{bnNum(rows.length)}টি কুপন — বদলের পর নিচের “সেভ করুন” চাপুন।</p>
       </div>
 
       {loading ? (
@@ -143,7 +184,7 @@ export default function AdminCouponsPage() {
                     {!r.code && <button type="button" onClick={() => updateRow(i, { code: randomCode() })} className="btn btn-outline btn-sm min-h-11 text-xs">নিজে বানাও</button>}
                   </div>
                 </div>
-                <button type="button" onClick={() => { if (!r.id || window.confirm(`কুপন ${r.code} মুছবেন? (সেভ করলে মুছে যাবে)`)) removeRow(i); }}
+                <button type="button" onClick={() => { if (!r.id) removeRow(i); else setRemoveIdx(i); }}
                   className="min-h-11 min-w-11 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 mt-5" aria-label={`মুছুন ${r.code || "কুপন"}`}>
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -196,6 +237,17 @@ export default function AdminCouponsPage() {
           </div>
         </div>
       )}
+      </>)}
+
+      <ConfirmDialog
+        open={removeIdx !== null}
+        title={`কুপন ${removeIdx !== null ? rows[removeIdx]?.code ?? "" : ""} মুছবেন?`}
+        message="“সেভ করুন” চাপলে স্থায়ীভাবে মুছে যাবে।"
+        confirmLabel="মুছুন"
+        variant="danger"
+        onConfirm={() => { if (removeIdx !== null) removeRow(removeIdx); setRemoveIdx(null); }}
+        onCancel={() => setRemoveIdx(null)}
+      />
     </div>
   );
 }

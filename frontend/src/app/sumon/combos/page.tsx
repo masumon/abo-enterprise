@@ -227,7 +227,7 @@ export default function AdminCombosPage() {
           <div className="my-8 w-full max-w-2xl rounded-2xl bg-white shadow-2xl dark:bg-[var(--surface-card)] max-[640px]:my-0 max-[640px]:max-h-[94dvh] max-[640px]:max-w-none max-[640px]:overflow-y-auto max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--line)] sticky top-0 bg-inherit rounded-t-2xl">
               <h2 className="font-bold text-heading">{form.id ? "কম্বো এডিট" : "নতুন কম্বো"}</h2>
-              <button type="button" onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"><X className="w-5 h-5" /></button>
+              <button aria-label="বন্ধ করুন" type="button" onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-5 space-y-4">
               <BnEnText label="কম্বোর নাম" required bn={form.title_bn} en={form.title_en} onBn={(v) => set("title_bn", v)} onEn={(v) => set("title_en", v)} placeholderBn="যেমন: চার্জার + কেবল কম্বো" />

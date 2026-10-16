@@ -86,10 +86,10 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     { href: "/sumon/legal-pages", icon: ScrollText, label: "Legal Pages", labelBn: "আইনি পেজ (গোপনীয়তা, শর্ত)", minRole: "admin", permission: "settings.write", descBn: "প্রাইভেসি, শর্ত, রিফান্ড, কুকি", keywords: "legal privacy terms refund cookies গোপনীয়তা শর্ত রিফান্ড" },
     { href: "/sumon/content-health", icon: HeartPulse, label: "Content Health", labelBn: "কনটেন্ট স্বাস্থ্য", minRole: "admin", descBn: "ছবি নেই, অনুবাদ বাকি, ভাঙা লিংক — কী ঠিক করতে হবে", keywords: "content health missing image translation broken কনটেন্ট স্বাস্থ্য ছবি নেই অনুবাদ" },
     { href: "/sumon/couriers", icon: Truck, label: "Couriers", labelBn: "কুরিয়ার (স্বয়ংক্রিয়)", minRole: "admin", permission: "settings.read", descBn: "Steadfast, Pathao, RedX — API বসান, পরীক্ষা করুন, স্বয়ংক্রিয়/হাতে পাঠানো", keywords: "courier steadfast pathao redx delivery parcel কুরিয়ার পার্সেল ডেলিভারি" },
-    { href: "/sumon/settings", icon: Settings, label: "Settings", labelBn: "সাইট সেটিংস", minRole: "admin", descBn: "নাম, লোগো, ফোন, ঠিকানা, কুরিয়ার, Google/SEO, ইমেইল-SMS", keywords: "logo favicon contact phone address whatsapp courier steadfast seo google analytics pixel marketing smtp sms লোগো ফোন ঠিকানা হোয়াটসঅ্যাপ কুরিয়ার গুগল" },
+    { href: "/sumon/settings", icon: Settings, label: "Settings", labelBn: "সাইট সেটিংস", minRole: "admin", descBn: "নাম, লোগো, ফোন, ঠিকানা, Google/SEO, ইমেইল-SMS", keywords: "logo favicon contact phone address whatsapp seo google analytics pixel marketing smtp sms লোগো ফোন ঠিকানা হোয়াটসঅ্যাপ গুগল" },
   ]},
   { id: "marketing", label: "Marketing", labelBn: "প্রচার ও মার্কেটিং", items: [
-    { href: "/sumon/coupons", icon: Percent, label: "Coupons", labelBn: "কুপন", minRole: "admin", descBn: "ছাড়ের কোড বানান", keywords: "coupon discount কুপন ছাড়" },
+    { href: "/sumon/coupons", icon: Percent, label: "Coupons & Flash Sale", labelBn: "কুপন ও ফ্ল্যাশ সেল", minRole: "admin", descBn: "ছাড়ের কোড, ফ্ল্যাশ সেলের সময়, পণ্য ও ব্যানার", keywords: "coupon discount flash sale countdown offer কুপন ছাড় ফ্ল্যাশ সেল অফার" },
     { href: "/sumon/newsletter", icon: Send, label: "Newsletter", labelBn: "নিউজলেটার", minRole: "admin", descBn: "গ্রাহকদের ইমেইল পাঠান", keywords: "newsletter email নিউজলেটার" },
     { href: "/sumon/email-templates", icon: Mail, label: "Email Templates", labelBn: "অটো ইমেইলের লেখা", minRole: "admin", permission: "email_templates.read", descBn: "অর্ডার/বুকিংয়ে যে ইমেইল যায় তার লেখা", keywords: "email template ইমেইল টেমপ্লেট" },
   ]},

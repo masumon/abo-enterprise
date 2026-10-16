@@ -137,7 +137,7 @@ export default function AnalyticsPage() {
       if (filename.endsWith(".pdf")) await downloadPdf(path, filename);
       else await downloadCsv(path, filename);
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Export failed"));
+      toast("error", apiErrorMessage(e, "ডাউনলোড করা যায়নি"));
     } finally {
       setExporting(null);
     }
@@ -163,7 +163,7 @@ export default function AnalyticsPage() {
         product: String(p.product ?? "—"), orders: asNumber(p.orders), revenue: asNumber(p.revenue),
       })));
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Failed to load analytics"));
+      toast("error", apiErrorMessage(e, "পরিসংখ্যান আনা যায়নি"));
     } finally {
       setLoading(false);
     }

@@ -60,7 +60,7 @@ export default function AdminAuditPage() {
       setTotal(r.data.meta?.total ?? data.length);
     } catch (err) {
       setLogs([]);
-      toast("error", apiErrorMessage(err, "Failed to load audit logs"));
+      toast("error", apiErrorMessage(err, "অডিট লগ আনা যায়নি"));
     } finally {
       setLoading(false);
     }

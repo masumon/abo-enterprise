@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDhakaBn } from "@/lib/flashSale";
 import { useCallback, useEffect, useState } from "react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import {
@@ -104,7 +105,7 @@ export default function AdminAssistantPage() {
       const r = await assistantAdminApi.getConfig();
       if (r.data.data) setConfig({ ...ASSISTANT_DEFAULT_CONFIG, ...r.data.data });
     } catch {
-      toast("error", "Failed to load assistant settings");
+      toast("error", "অ্যাসিস্ট্যান্টের সেটিং আনা যায়নি");
     } finally {
       setConfigLoading(false);
     }
@@ -117,7 +118,7 @@ export default function AdminAssistantPage() {
       setConversations(r.data.data ?? []);
       setConvTotal(r.data.meta?.total ?? 0);
     } catch {
-      toast("error", "Failed to load conversations");
+      toast("error", "কথোপকথন আনা যায়নি");
     } finally {
       setConvLoading(false);
     }
@@ -130,7 +131,7 @@ export default function AdminAssistantPage() {
       setLogs(r.data.data ?? []);
       setLogsTotal(r.data.meta?.total ?? 0);
     } catch {
-      toast("error", "Failed to load automation logs");
+      toast("error", "অটোমেশনের লগ আনা যায়নি");
     } finally {
       setLogsLoading(false);
     }
@@ -142,7 +143,7 @@ export default function AdminAssistantPage() {
       const r = await assistantAdminApi.listFaq();
       setFaqList(r.data.data ?? []);
     } catch {
-      toast("error", "Failed to load FAQ knowledge");
+      toast("error", "প্রশ্নোত্তর আনা যায়নি");
     } finally {
       setFaqLoading(false);
     }
@@ -159,9 +160,9 @@ export default function AdminAssistantPage() {
       await assistantAdminApi.updateConfig(config);
       setConfigSaved(true);
       setTimeout(() => setConfigSaved(false), 2500);
-      toast("success", "Assistant settings saved");
+      toast("success", "অ্যাসিস্ট্যান্টের সেটিং সংরক্ষিত হয়েছে");
     } catch {
-      toast("error", "Failed to save settings");
+      toast("error", "সেটিংস সংরক্ষণ করা যায়নি");
     } finally {
       setConfigSaving(false);
     }
@@ -173,7 +174,7 @@ export default function AdminAssistantPage() {
       const r = await assistantAdminApi.getConversation(id);
       setConvDetail(r.data.data ?? null);
     } catch {
-      toast("error", "Failed to load conversation");
+      toast("error", "কথোপকথন আনা যায়নি");
     } finally {
       setConvDetailLoading(false);
     }
@@ -188,11 +189,11 @@ export default function AdminAssistantPage() {
         setDeletingConvId(id);
         try {
           await assistantAdminApi.deleteConversation(id);
-          toast("success", "Conversation archived");
+          toast("success", "কথোপকথন আর্কাইভ হয়েছে");
           if (convDetail?.conversation.id === id) setConvDetail(null);
           await loadConversations();
         } catch {
-          toast("error", "Failed to archive conversation");
+          toast("error", "কথোপকথন আর্কাইভ করা যায়নি");
         } finally {
           setDeletingConvId(null);
         }
@@ -212,7 +213,7 @@ export default function AdminAssistantPage() {
 
   const saveFaq = async () => {
     if (!faqEditing) return;
-    if (!faqEditing.key.trim()) { toast("error", "FAQ key is required"); return; }
+    if (!faqEditing.key.trim()) { toast("error", "প্রশ্নোত্তরের key দিন"); return; }
     // Bangla-first: fill an empty English answer from the Bangla one.
     let fe = faqEditing;
     if (!fe.answer_en.trim() && fe.answer_bn.trim()) {
@@ -221,7 +222,7 @@ export default function AdminAssistantPage() {
       catch { setFaqSaving(false); toast("error", "অটো-অনুবাদ ব্যর্থ — English answer নিজে লিখুন"); return; }
       setFaqSaving(false);
     }
-    if (!fe.answer_en.trim()) { toast("error", "English answer is required (বাংলা লিখলে অটো-অনুবাদ হবে)"); return; }
+    if (!fe.answer_en.trim()) { toast("error", "ইংরেজি উত্তর দিন (বাংলা লিখলে নিজে অনুবাদ হবে)"); return; }
 
     setFaqSaving(true);
     try {
@@ -232,14 +233,14 @@ export default function AdminAssistantPage() {
           answer_bn: fe.answer_bn || undefined,
           questions: fe.questions || undefined,
         });
-        toast("success", "FAQ entry created");
+        toast("success", "প্রশ্নোত্তর তৈরি হয়েছে");
       } else {
         await assistantAdminApi.updateFaq(fe.key, {
           answer_en: fe.answer_en,
           answer_bn: fe.answer_bn,
           questions: fe.questions ?? "",
         });
-        toast("success", "FAQ entry updated");
+        toast("success", "প্রশ্নোত্তর আপডেট হয়েছে");
       }
       setFaqEditing(null);
       await loadFaq();
@@ -259,10 +260,10 @@ export default function AdminAssistantPage() {
         setDeletingFaqKey(key);
         try {
           await assistantAdminApi.deleteFaq(key);
-          toast("success", "FAQ deleted");
+          toast("success", "প্রশ্নোত্তর মুছে ফেলা হয়েছে");
           await loadFaq();
         } catch {
-          toast("error", "Failed to delete FAQ");
+          toast("error", "প্রশ্নোত্তর মুছে ফেলা যায়নি");
         } finally {
           setDeletingFaqKey(null);
         }
@@ -431,7 +432,7 @@ export default function AdminAssistantPage() {
               placeholder="Search by session, name or phone…"
               className="flex-1 max-w-sm px-3 py-2 border border-gray-200 rounded-lg text-sm"
             />
-            <button onClick={loadConversations} className="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">
+            <button type="button" onClick={loadConversations} aria-label="আবার আনুন" title="আবার আনুন" className="min-h-11 px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">
               <RefreshCw className={`w-4 h-4 ${convLoading ? "animate-spin" : ""}`} />
             </button>
           </div>
@@ -464,7 +465,7 @@ export default function AdminAssistantPage() {
                         </td>
                         <td className="px-4 py-3" data-label="Intent">{c.last_intent ? <StatusBadge status={c.last_intent} /> : "—"}</td>
                         <td className="px-4 py-3" data-label="Messages">{c.message_count}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500" data-label="Updated">{new Date(c.updated_at).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500" data-label="Updated">{formatDhakaBn(new Date(c.updated_at))}</td>
                         <td className="px-4 py-3 text-right" data-label="Actions">
                           <div className="flex items-center justify-end gap-1 flex-wrap">
                             <button onClick={() => viewConversation(c.id)} className="p-1.5 rounded-lg hover:bg-brand-50 text-brand-600" title="View">
@@ -509,7 +510,7 @@ export default function AdminAssistantPage() {
               <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-5 py-4 border-b">
                   <h3 className="font-semibold">Conversation Detail</h3>
-                  <button onClick={() => setConvDetail(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
+                  <button aria-label="বন্ধ করুন" type="button" onClick={() => setConvDetail(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-5 space-y-3">
                   {convDetailLoading ? (
@@ -534,7 +535,7 @@ export default function AdminAssistantPage() {
       {tab === "logs" && (
         <div className="space-y-4">
           <div className="flex justify-end">
-            <button onClick={loadLogs} className="px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">
+            <button type="button" onClick={loadLogs} aria-label="আবার আনুন" title="আবার আনুন" className="min-h-11 px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">
               <RefreshCw className={`w-4 h-4 ${logsLoading ? "animate-spin" : ""}`} />
             </button>
           </div>
@@ -564,7 +565,7 @@ export default function AdminAssistantPage() {
                         <td className="px-4 py-3" data-label="Intent">{log.intent || "—"}</td>
                         <td className="px-4 py-3" data-label="Status"><StatusBadge status={log.status} /></td>
                         <td className="px-4 py-3 font-mono text-xs" data-label="Session">{log.session_id?.slice(0, 10) || "—"}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500" data-label="Time">{new Date(log.created_at).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500" data-label="Time">{formatDhakaBn(new Date(log.created_at))}</td>
                         <td className="px-4 py-3 text-right text-xs font-medium text-emerald-600" data-label="Retention">Retained</td>
                       </tr>
                     ))}
@@ -664,7 +665,7 @@ export default function AdminAssistantPage() {
               <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-5 py-4 border-b">
                   <h3 className="font-semibold">{faqIsNew ? "Add FAQ Entry" : `Edit: ${faqEditing.key}`}</h3>
-                  <button onClick={() => setFaqEditing(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
+                  <button aria-label="বন্ধ করুন" type="button" onClick={() => setFaqEditing(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
                 </div>
                 <div className="p-5 space-y-4">
                   {faqIsNew && (

@@ -173,7 +173,7 @@ function Ga4ConnectionCheck() {
       const r = await api.get("/api/v1/admin/analytics/visitors/status");
       setStatus(r.data.data as Ga4Status);
     } catch (e) {
-      setStatus({ ok: false, configured: true, error: apiErrorMessage(e, "Status check failed") });
+      setStatus({ ok: false, configured: true, error: apiErrorMessage(e, "অবস্থা দেখা যায়নি") });
     } finally {
       setChecking(false);
     }
@@ -254,7 +254,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
       if (full?.live) setLive(full.live);
       if (r.data.success === false) setLoadError(r.data.message ?? "Failed to load");
     } catch (e) {
-      setLoadError(apiErrorMessage(e, "Failed to load visitor analytics"));
+      setLoadError(apiErrorMessage(e, "ভিজিটরের পরিসংখ্যান আনা যায়নি"));
     } finally {
       setLoading(false);
     }
@@ -268,7 +268,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
       setLive(r.data.data as LiveData);
       if (r.data.success === false) setLiveError(r.data.message ?? "Failed to load live analytics");
     } catch (e) {
-      setLiveError(apiErrorMessage(e, "Failed to load live analytics"));
+      setLiveError(apiErrorMessage(e, "লাইভ পরিসংখ্যান আনা যায়নি"));
     }
   };
 

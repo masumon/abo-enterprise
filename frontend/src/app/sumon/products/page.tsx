@@ -258,10 +258,10 @@ export default function AdminProductsPage() {
             <button type="button" onClick={() => importInputRef.current?.click()} disabled={importing} className="admin-btn-secondary" title={t("পুরনো সাধারণ CSV (slug, name_en, name_bn, price…)", "Legacy quick CSV import")}>
               {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />} {t("দ্রুত CSV", "Quick CSV")}
             </button>
-            <button type="button" onClick={() => downloadCsv("/api/v1/admin/bulk/export/products", "products.csv").catch((e) => toast("error", apiErrorMessage(e, "Export failed")))} className="admin-btn-secondary">
+            <button type="button" onClick={() => downloadCsv("/api/v1/admin/bulk/export/products", "products.csv").catch((e) => toast("error", apiErrorMessage(e, "ডাউনলোড করা যায়নি")))} className="admin-btn-secondary">
               <Download className="w-4 h-4" /> CSV
             </button>
-            <button type="button" onClick={() => downloadPdf("/api/v1/admin/bulk/export/products/pdf", "products.pdf").catch((e) => toast("error", apiErrorMessage(e, "Export failed")))} className="admin-btn-secondary">
+            <button type="button" onClick={() => downloadPdf("/api/v1/admin/bulk/export/products/pdf", "products.pdf").catch((e) => toast("error", apiErrorMessage(e, "ডাউনলোড করা যায়নি")))} className="admin-btn-secondary">
               <FileText className="w-4 h-4" /> PDF
             </button>
           </>

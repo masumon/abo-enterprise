@@ -87,7 +87,7 @@ export default function AdminAnnouncementsPage() {
     adminApi
       .getSettings()
       .then((r) => setItems(getAnnouncements(r.data.data ?? {}, FALLBACK)))
-      .catch((err) => { setItems([]); toast("error", apiErrorMessage(err, "Failed to load announcements")); })
+      .catch((err) => { setItems([]); toast("error", apiErrorMessage(err, "ঘোষণা আনা যায়নি")); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -122,7 +122,7 @@ export default function AdminAnnouncementsPage() {
       setDirty(false);
       setJustSaved(true);
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Failed to save"));
+      toast("error", apiErrorMessage(err, "সংরক্ষণ করা যায়নি"));
     } finally {
       setSaving(false);
     }

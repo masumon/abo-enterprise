@@ -50,7 +50,7 @@ export default function AdminTrackingPage() {
       setTotal(r.data.meta?.total ?? 0);
     } catch (err) {
       setOrders([]);
-      toast("error", apiErrorMessage(err, "Failed to load courier tracking"));
+      toast("error", apiErrorMessage(err, "কুরিয়ার ট্র্যাকিং আনা যায়নি"));
     } finally {
       setLoading(false);
     }

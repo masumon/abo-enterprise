@@ -1,5 +1,6 @@
 "use client";
 
+import { askConfirm } from "@/store/confirm";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -372,7 +373,7 @@ function ConnCard({ c, order, first, last, busy, act }: {
         <span className="flex-1" />
         <IconBtn label="উপরে নিন (আগে চেষ্টা হবে)" disabled={first || !!busy} onClick={() => act(`m${c.id}`, () => aiHubApi.patch(c.id, { move: -1 }))}><ArrowUp className="w-4 h-4" /></IconBtn>
         <IconBtn label="নিচে নিন" disabled={last || !!busy} onClick={() => act(`m${c.id}`, () => aiHubApi.patch(c.id, { move: 1 }))}><ArrowDown className="w-4 h-4" /></IconBtn>
-        <IconBtn label="সরান" disabled={!!busy} onClick={() => { if (window.confirm(`“${c.label}” সংযোগ সরাবেন?`)) act(`d${c.id}`, () => aiHubApi.remove(c.id), "সরানো হয়েছে"); }}><Trash2 className="w-4 h-4 text-red-500" /></IconBtn>
+        <IconBtn label="সরান" disabled={!!busy} onClick={async () => { if (await askConfirm(`“${c.label}” সংযোগ সরাবেন?`, { variant: "danger", confirmLabel: "সরান" })) act(`d${c.id}`, () => aiHubApi.remove(c.id), "সরানো হয়েছে"); }}><Trash2 className="w-4 h-4 text-red-500" /></IconBtn>
       </div>
     </article>
   );

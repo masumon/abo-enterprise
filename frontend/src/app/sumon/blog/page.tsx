@@ -1,4 +1,5 @@
 "use client";
+import { useDirty, useUnsavedGuard } from "@/hooks/useUnsavedGuard";
 import RichTextEditor from "@/components/admin/catalog/RichTextEditor";
 import AiBlogWriter from "@/components/admin/AiBlogWriter";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
@@ -68,6 +69,7 @@ export default function AdminBlogPage() {
   const [total, setTotal] = useState(0);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [editing, setEditing] = useState<Partial<BlogPost> | null>(null);
+  useUnsavedGuard(useDirty(editing, editing ? (editing.id ?? "new") : null));
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -94,7 +96,7 @@ export default function AdminBlogPage() {
       setPosts((r.data.data ?? []) as unknown as BlogPost[]);
       setTotal(r.data.meta?.total ?? 0);
     } catch {
-      toast("error", "Failed to load posts. Check your connection.");
+      toast("error", "পোস্ট আনা যায়নি — ইন্টারনেট সংযোগ দেখুন।");
     } finally {
       setLoading(false);
     }
@@ -150,7 +152,7 @@ export default function AdminBlogPage() {
       if (saved) {
         const parsed = JSON.parse(saved) as Partial<BlogPost>;
         setEditing(parsed);
-        toast("info", "Draft restored from last session");
+        toast("info", "আগের না-সংরক্ষিত লেখা ফেরত আনা হয়েছে");
       } else {
         setEditing({ ...EMPTY_FORM });
       }
@@ -233,7 +235,7 @@ export default function AdminBlogPage() {
     setEditing(clone);
     setIsNew(true);
     setSeoOpen(false);
-    toast("info", "Cloned as draft — edit and save to publish");
+    toast("info", "খসড়া কপি তৈরি হয়েছে — বদলে সংরক্ষণ করলে প্রকাশ হবে");
   };
 
   const handleTranslate = async (field: "title" | "excerpt" | "content" | "all") => {
@@ -259,12 +261,12 @@ export default function AdminBlogPage() {
       }
       if (Object.keys(updates).length > 0) {
         setEditing(prev => prev ? { ...prev, ...updates } : prev);
-        toast("success", "Translation complete");
+        toast("success", "অনুবাদ হয়েছে");
       } else {
-        toast("info", "Nothing to translate — fill Bengali fields first");
+        toast("info", "অনুবাদের কিছু নেই — আগে বাংলা ঘর পূরণ করুন");
       }
     } catch {
-      toast("error", "Translation failed. Try again.");
+      toast("error", "অনুবাদ হয়নি — আবার চেষ্টা করুন।");
     } finally {
       setTranslating(null);
     }
@@ -299,10 +301,10 @@ export default function AdminBlogPage() {
     }
 
     if (!post.title_en?.trim() && !post.title_bn?.trim()) { toast("error", "Title দিন (বাংলা বা English)"); return; }
-    if (!post.title_en?.trim()) { toast("error", "Title (EN) is required"); return; }
-    if (!post.slug?.trim()) { toast("error", "Slug is required"); return; }
+    if (!post.title_en?.trim()) { toast("error", "ইংরেজি শিরোনাম দিন"); return; }
+    if (!post.slug?.trim()) { toast("error", "ওয়েব ঠিকানা (slug) দিন"); return; }
     if (!post.content_en?.trim()) { toast("error", "Content দিন (বাংলা লিখলে অটো-অনুবাদ হবে)"); return; }
-    if (!post.category?.trim()) { toast("error", "Category is required"); return; }
+    if (!post.category?.trim()) { toast("error", "ক্যাটাগরি বাছুন"); return; }
     const editingFinal = post;
 
     setSaving(true);
@@ -310,10 +312,10 @@ export default function AdminBlogPage() {
       if (isNew) {
         await adminBlogApi.create(editingFinal);
         try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
-        toast("success", "Post created successfully");
+        toast("success", "পোস্ট তৈরি হয়েছে");
       } else {
         await adminBlogApi.update(editingFinal.id!, editingFinal);
-        toast("success", "Post updated successfully");
+        toast("success", "পোস্ট আপডেট হয়েছে");
       }
       closeEditor();
       await load();
@@ -334,10 +336,10 @@ export default function AdminBlogPage() {
         setDeletingId(id);
         try {
           await adminBlogApi.delete(id);
-          toast("success", "Post deleted");
+          toast("success", "পোস্ট মুছে ফেলা হয়েছে");
           await load();
         } catch {
-          toast("error", "Failed to delete post");
+          toast("error", "পোস্ট মুছে ফেলা যায়নি");
         } finally {
           setDeletingId(null);
         }
@@ -411,7 +413,7 @@ export default function AdminBlogPage() {
                   <div className="col-span-2"><p className="text-gray-500">{tx("Date")}</p><p className="mt-1 text-gray-700">{p.published_at ? new Date(p.published_at).toLocaleDateString("en-BD") : p.created_at ? new Date(p.created_at).toLocaleDateString("en-BD") : "—"}</p></div>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
-                  {p.status === "draft" && <button type="button" onClick={async () => { await adminBlogApi.update(p.id!, { status: "published" }); toast("success", "Published!"); load(); }} className="min-h-11 rounded-lg border border-green-200 bg-green-50 px-3 text-xs font-semibold text-green-700">{tx("Publish")}</button>}
+                  {p.status === "draft" && <button type="button" onClick={async () => { await adminBlogApi.update(p.id!, { status: "published" }); toast("success", "প্রকাশিত হয়েছে!"); load(); }} className="min-h-11 rounded-lg border border-green-200 bg-green-50 px-3 text-xs font-semibold text-green-700">{tx("Publish")}</button>}
                   {p.status === "published" && <a href={`/blog/${p.slug}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-700" onClick={(e) => e.stopPropagation()}>{tx("View on site")}</a>}
                   <button type="button" onClick={() => handleClone(p)} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-700"><Copy className="h-4 w-4" />{tx("Clone")}</button>
                   <button type="button" onClick={() => openEdit(p)} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-gray-200 px-3 text-xs font-semibold text-gray-700"><Pencil className="h-4 w-4" />{tx("Edit")}</button>
@@ -458,7 +460,7 @@ export default function AdminBlogPage() {
                       <div className="flex items-center justify-end gap-1 flex-wrap">
                         {p.status === "draft" && (
                           <button
-                            onClick={async (e) => { e.stopPropagation(); await adminBlogApi.update(p.id!, { status: "published" }); toast("success", "Published!"); load(); }}
+                            onClick={async (e) => { e.stopPropagation(); await adminBlogApi.update(p.id!, { status: "published" }); toast("success", "প্রকাশিত হয়েছে!"); load(); }}
                             className="px-2 py-1 text-xs font-semibold text-green-700 bg-green-50 hover:bg-green-100 rounded-lg border border-green-200 whitespace-nowrap transition-colors"
                             title={tx("Publish now")}
                           >{tx("Publish")}</button>
@@ -535,7 +537,7 @@ export default function AdminBlogPage() {
               <h2 className="text-lg font-semibold text-gray-900">
                 {isNew ? "New Post" : "Edit Post"}
               </h2>
-              <button onClick={() => closeEditor(false)} className="text-gray-400 hover:text-gray-600">
+              <button aria-label="বন্ধ করুন" type="button" onClick={() => closeEditor(false)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-5 h-5" />
               </button>
             </div>

@@ -43,8 +43,7 @@ import {
 import LivePreview from "@/components/admin/LivePreview";
 import { AdminIcon } from "@/lib/adminIcons";
 import { cn } from "@/lib/utils";
-import FlashSaleAdminStatus from "@/components/admin/FlashSaleAdminStatus";
-import { parseBoolSetting, parseDhakaDateTime, storedToDhakaInput } from "@/lib/flashSale";
+import { parseBoolSetting, storedToDhakaInput } from "@/lib/flashSale";
 
 /** Show stored values in the form the inputs expect: booleans as explicit
  * "true"/"false" (a never-saved flash-sale switch is ON on the website, so it
@@ -66,7 +65,6 @@ const SECTIONS: { id: string; bn: string; en: string }[] = [
   { id: "hero", bn: "হিরো ব্যানার", en: "Hero banner" },
   { id: "slides", bn: "স্লাইডার", en: "Slider" },
   { id: "quick-categories", bn: "ক্যাটাগরি টাইল", en: "Category tiles" },
-  { id: "flash-sale", bn: "ফ্ল্যাশ সেল", en: "Flash sale" },
   { id: "why-choose", bn: "কেন আমরা", en: "Why choose us" },
   { id: "faq", bn: "প্রশ্নোত্তর", en: "FAQ" },
   { id: "rest", bn: "বাকি অংশ", en: "Other sections" },
@@ -83,7 +81,7 @@ const HOMEPAGE_MAP: { bn: string; href?: string; noteBn: string }[] = [
   { bn: "ক্যাটাগরি টাইল", href: "#quick-categories", noteBn: "এই পাতায়" },
   { bn: "ফিচার আইকন সারি", noteBn: "ওয়েবসাইটে নির্দিষ্ট — কিছু করতে হবে না" },
   { bn: "আপন অ্যাপ ব্যান্ড", href: "/sumon/apon", noteBn: "অ্যাপ প্রকাশ করলে নিজে থেকেই দেখায়" },
-  { bn: "ফ্ল্যাশ সেল", href: "#flash-sale", noteBn: "এই পাতায়" },
+  { bn: "ফ্ল্যাশ সেল", href: "/sumon/coupons#flash", noteBn: "কুপন ও ফ্ল্যাশ সেল পাতায়" },
   { bn: "কম্বো প্যাক", href: "/sumon/combos", noteBn: "কম্বো পাতায় সাজান" },
   { bn: "ফিচার্ড পণ্য", href: "/sumon/products", noteBn: "পণ্যে \"ফিচার্ড\" চালু করুন" },
   { bn: "সেবা", href: "/sumon/services", noteBn: "সেবা পাতায়" },
@@ -186,7 +184,7 @@ export default function AdminHomepageContentPage() {
         setHstyle(parseHeroTextStyle(s[HERO_TEXT_STYLE_KEY]));
         setAnnouncements(s[SITE_ANNOUNCEMENTS_KEY] ? getAnnouncements(s, []) : null);
       })
-      .catch((err) => toast("error", apiErrorMessage(err, "Failed to load homepage content")))
+      .catch((err) => toast("error", apiErrorMessage(err, "হোমপেজের কনটেন্ট আনা যায়নি")))
       .finally(() => setLoading(false));
     promoSlidesApi.adminList()
       .then((r) => setSlides(r.data.data ?? []))
@@ -226,13 +224,6 @@ export default function AdminHomepageContentPage() {
     `w-7 h-7 rounded-lg border-2 shadow ${on ? "border-brand-600 ring-2 ring-brand-300" : "border-white dark:border-white/20"}`;
 
   const save = async () => {
-    // Flash sale: the end must come after the start (both Bangladesh time).
-    const fsStart = parseDhakaDateTime(values.flash_sale_start);
-    const fsEnd = parseDhakaDateTime(values.flash_sale_end);
-    if (fsStart && fsEnd && fsEnd.getTime() <= fsStart.getTime()) {
-      toast("error", bn ? "ফ্ল্যাশ সেল: শেষের সময় শুরুর সময়ের পরে হতে হবে" : "Flash sale: end must be after start");
-      return;
-    }
     setSaving(true);
     try {
       await adminApi.upsertSettings([
@@ -249,7 +240,7 @@ export default function AdminHomepageContentPage() {
       setDirty(false);
       setJustSaved(true);
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Failed to save"));
+      toast("error", apiErrorMessage(err, "সংরক্ষণ করা যায়নি"));
     } finally {
       setSaving(false);
     }
@@ -319,7 +310,6 @@ export default function AdminHomepageContentPage() {
 
 
   const heroGroup = HOMEPAGE_SCALAR_GROUPS.find((g) => g.id === "hero");
-  const flashGroup = HOMEPAGE_SCALAR_GROUPS.find((g) => g.id === "flash_sale");
   const heroDesktop = values.hero_image_url ?? "";
   const heroPromo = values.hero_promo_media_url ?? "";
   const previewTitle =
@@ -328,7 +318,6 @@ export default function AdminHomepageContentPage() {
     (bn ? values.hero_subtitle_bn : values.hero_subtitle_en) || "প্রিমিয়াম টেক প্রোডাক্ট, ডিজিটাল সেবা ও AI সমাধান।";
   const activeAnnouncements = (announcements ?? []).filter((x) => x.active !== false);
   const heroSlides = (slides ?? []).filter((x) => x.placement === "hero");
-  const flashSlides = (slides ?? []).filter((x) => x.placement === "flash_sale");
   const liveCount = (list: PromoSlide[]) => list.filter((x) => slideLiveState(x) === "live").length;
   const jsonEditor = (key: string, descBn?: string) => {
     const ed = editorFor(key);
@@ -543,9 +532,9 @@ export default function AdminHomepageContentPage() {
                 />
                 <div className="absolute inset-0 flex items-center p-4 sm:p-6">
                   <div className={cn("w-[62%] flex flex-col gap-2 text-white [text-shadow:0_2px_14px_rgba(0,0,0,0.35)]", heroAlignClass(hstyle))}>
-                    <h1 className={cn("leading-tight !text-lg sm:!text-2xl", heroTitleClass(hstyle))} style={hstyle.titleColor ? { color: hstyle.titleColor } : undefined}>
+                    <h2 className={cn("font-bold leading-tight !text-lg sm:!text-2xl", heroTitleClass(hstyle))} style={hstyle.titleColor ? { color: hstyle.titleColor } : undefined}>
                       {previewTitle}
-                    </h1>
+                    </h2>
                     <p
                       className={cn("leading-snug !text-[11px] sm:!text-sm line-clamp-2", heroSubClass(hstyle), !hstyle.subColor && "text-white/90")}
                       style={hstyle.subColor ? { color: hstyle.subColor } : undefined}
@@ -652,7 +641,7 @@ export default function AdminHomepageContentPage() {
             id="slides"
             n={3}
             title={bn ? "স্লাইডার / প্রোমো স্লাইড" : "Slider / promo slides"}
-            desc={bn ? "মোবাইল ও ট্যাবলেটে হিরোর জায়গায় ঘুরতে থাকা ছবি; ডেস্কটপে ডান পাশের কার্ডে। ফ্ল্যাশ সেলের নিচের ব্যানারও এখানে।" : "Rotating images: the mobile/tablet hero and the desktop promo card; also the flash-sale strip."}
+            desc={bn ? "মোবাইল ও ট্যাবলেটে হিরোর জায়গায় ঘুরতে থাকা ছবি; ডেস্কটপে ডান পাশের কার্ডে। ফ্ল্যাশ সেলের ব্যানার “কুপন ও ফ্ল্যাশ সেল” পাতায়।" : "Rotating images: the mobile/tablet hero and the desktop promo card. Flash-sale banners live in Coupons & Flash Sale."}
             aside={
               <Link href="/sumon/promo-slides" className="btn btn-outline btn-sm gap-1.5">
                 <GalleryHorizontal className="w-3.5 h-3.5" /> {bn ? "স্লাইড বদলান" : "Edit slides"}
@@ -672,12 +661,6 @@ export default function AdminHomepageContentPage() {
                     <p className="text-[11px] text-muted mt-1">{bn ? "কোনো স্লাইড চালু না থাকলে মোবাইলে উপরের 'হোমপেজ ব্যানার (মোবাইল)' ছবি দেখায়।" : "With no live slide, mobile shows the 'Homepage banner (mobile)' image above."}</p>
                   )}
                 </div>
-                <div>
-                  <p className="text-xs font-semibold text-heading mb-1.5">
-                    {bn ? `ফ্ল্যাশ সেল ব্যানার — ${bnNum(liveCount(flashSlides))}টি এখন দেখাচ্ছে` : `Flash-sale banners — ${liveCount(flashSlides)} live`}
-                  </p>
-                  {slideThumbs(flashSlides)}
-                </div>
               </div>
             )}
           </Section>
@@ -687,54 +670,20 @@ export default function AdminHomepageContentPage() {
             {jsonEditor("site_quick_categories_json")}
           </Section>
 
-          {/* 5. Flash sale */}
-          {flashGroup && (
-            <Section id="flash-sale" n={5} title={bn ? "ফ্ল্যাশ সেল" : "Flash sale"} desc={bn ? flashGroup.descBn : flashGroup.desc}>
-              <div className="space-y-3">{flashGroup.fields.map(renderScalar)}</div>
-              <div className="mt-3">
-                <FlashSaleAdminStatus values={values} />
-              </div>
-              <div className="mt-4">
-                  <LivePreview showDevice={false}>
-                    <div className="pointer-events-none rounded-xl overflow-hidden bg-gradient-to-r from-accent-600 to-brand-700 text-white p-4 flex items-center gap-3">
-                      <span className="text-2xl">⚡</span>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-bold truncate">
-                          {(bn ? values.flash_sale_title_bn : values.flash_sale_title_en) || values.flash_sale_title_bn || values.flash_sale_title_en || "ফ্ল্যাশ সেল"}
-                        </p>
-                        <p className="text-xs text-white/80">
-                          {values.feature_flash_sale === "true" ? (bn ? "চালু" : "On") : (bn ? "বন্ধ" : "Off")} · {bn ? "কাউন্টডাউন হোমপেজে" : "countdown on homepage"}
-                        </p>
-                      </div>
-                      <div className="flex gap-1 flex-none">
-                        {["০২", "১১", "৪৫"].map((n, i) => (
-                          <span key={i} className="bg-white/20 rounded px-2 py-1 text-sm font-bold tabular-nums">{n}</span>
-                        ))}
-                      </div>
-                    </div>
-                  </LivePreview>
-              </div>
-              <p className="text-[11px] text-muted mt-2 flex flex-wrap gap-x-3 gap-y-1">
-                <Link href="/sumon/products" className="text-brand-600 dark:text-brand-300 hover:underline inline-flex items-center gap-1">{bn ? "পণ্যে ফ্ল্যাশ-সেল দাম দিন" : "Set flash-sale prices on products"} <ArrowRight className="w-3 h-3" /></Link>
-                <Link href="/sumon/promo-slides" className="text-brand-600 dark:text-brand-300 hover:underline inline-flex items-center gap-1">{bn ? "ফ্ল্যাশ সেল ব্যানার" : "Flash-sale banners"} <ArrowRight className="w-3 h-3" /></Link>
-              </p>
-            </Section>
-          )}
-
-          {/* 6. Why choose us */}
-          <Section id="why-choose" n={6} title={bn ? "কেন আমরা" : "Why choose us"} desc={bn ? editorFor("site_why_choose_json")?.descBn : editorFor("site_why_choose_json")?.desc}>
+          {/* 5. Why choose us */}
+          <Section id="why-choose" n={5} title={bn ? "কেন আমরা" : "Why choose us"} desc={bn ? editorFor("site_why_choose_json")?.descBn : editorFor("site_why_choose_json")?.desc}>
             {jsonEditor("site_why_choose_json")}
           </Section>
 
-          {/* 7. FAQ */}
-          <Section id="faq" n={7} title={bn ? "প্রশ্নোত্তর" : "FAQ"} desc={bn ? editorFor("site_faq_json")?.descBn : editorFor("site_faq_json")?.desc}>
+          {/* 6. FAQ */}
+          <Section id="faq" n={6} title={bn ? "প্রশ্নোত্তর" : "FAQ"} desc={bn ? editorFor("site_faq_json")?.descBn : editorFor("site_faq_json")?.desc}>
             {jsonEditor("site_faq_json")}
           </Section>
 
-          {/* 8. The rest of the homepage — where each part is managed. */}
+          {/* 7. The rest of the homepage — where each part is managed. */}
           <Section
             id="rest"
-            n={8}
+            n={7}
             title={bn ? "পুরো হোমপেজ — বাকি অংশ কোথায় বদলাবেন" : "Whole homepage — where the rest is managed"}
             desc={bn ? "উপর থেকে নিচে হোমপেজের সব অংশ। অংশগুলোর ক্রম ওয়েবসাইটে নির্দিষ্ট; কিছু অংশে কিছু না থাকলে সেটি নিজে থেকেই লুকিয়ে থাকে।" : "Every homepage part, top to bottom. The order is fixed by the website."}
           >
@@ -759,10 +708,10 @@ export default function AdminHomepageContentPage() {
             </ol>
           </Section>
 
-          {/* 9. Content kept here but shown outside the homepage. */}
+          {/* 8. Content kept here but shown outside the homepage. */}
           <Section
             id="elsewhere"
-            n={9}
+            n={8}
             title={bn ? "অন্য জায়গার লেখা" : "Used elsewhere"}
             desc={bn ? "এগুলো হোমপেজের মূল অংশে দেখায় না, তবে লেখা এখানেই রাখা হয়।" : "Not part of the main homepage flow, but kept here."}
           >

@@ -72,7 +72,7 @@ export default function AdminLeadsPage() {
       setLeads((r.data.data ?? []) as unknown as AdminLead[]);
       setTotal(r.data.meta?.total ?? 0);
     } catch (err) {
-      toast("error", "Failed to load leads");
+      toast("error", "লিড আনা যায়নি");
     } finally {
       setLoading(false);
     }
@@ -85,7 +85,7 @@ export default function AdminLeadsPage() {
       setLeadsV2(r.data.data ?? []);
       setTotalV2(r.data.meta?.total ?? 0);
     } catch (err) {
-      toast("error", "Failed to load service leads");
+      toast("error", "সেবার লিড আনা যায়নি");
     } finally {
       setLoadingV2(false);
     }
@@ -112,7 +112,7 @@ export default function AdminLeadsPage() {
     try {
       await downloadCsv("/api/v1/admin/bulk/export/leads", "service-leads.csv");
     } catch {
-      toast("error", "CSV export failed");
+      toast("error", "CSV ডাউনলোড করা যায়নি");
     } finally {
       setCsvLoading(false);
     }
@@ -123,7 +123,7 @@ export default function AdminLeadsPage() {
     try {
       await downloadPdf("/api/v1/admin/bulk/export/leads/pdf", "service-leads.pdf");
     } catch {
-      toast("error", "PDF export failed");
+      toast("error", "PDF তৈরি করা যায়নি");
     } finally {
       setExportPdfLoading(false);
     }
@@ -163,9 +163,9 @@ export default function AdminLeadsPage() {
           setLeadsV2((prev) => prev.filter((l) => l.id !== id));
           setTotalV2((t) => t - 1);
           if (detailV2?.id === id) setDetailV2(null);
-          toast("success", "Lead deleted");
+          toast("success", "লিড মুছে ফেলা হয়েছে");
         } catch {
-          toast("error", "Delete failed");
+          toast("error", "মুছে ফেলা যায়নি");
         } finally {
           setUpdatingIdV2(null);
         }
@@ -516,7 +516,7 @@ export default function AdminLeadsPage() {
               <h2 className="text-lg font-semibold text-gray-900">
                 {detail ? `Lead — ${detail.name}` : "Loading..."}
               </h2>
-              <button onClick={() => setDetail(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <button aria-label="বন্ধ করুন" type="button" onClick={() => setDetail(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
 
             {detailLoading ? (
@@ -602,7 +602,7 @@ export default function AdminLeadsPage() {
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">Lead {detailV2.lead_number}</h2>
-              <button onClick={() => setDetailV2(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <button aria-label="বন্ধ করুন" type="button" onClick={() => setDetailV2(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
               <div className="flex items-center justify-between">

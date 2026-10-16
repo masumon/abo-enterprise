@@ -1,5 +1,6 @@
 "use client";
 
+import { useUnsavedGuard } from "@/hooks/useUnsavedGuard";
 import Link from "next/link";
 import { validateSettingValues } from "@/lib/settingsValidation";
 import { useEffect, useState, useCallback } from "react";
@@ -24,7 +25,7 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
     newItem: () => ({ label_en: "", label_bn: "", href: "/" }),
   },
 };
-import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Users, Trophy, Zap, Code, Mail, Truck, Info } from "lucide-react";
+import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Zap, Mail, Info, Search, Settings as SettingsIcon } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import { parseGoogleMapsEmbedInput } from "@/lib/maps";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -102,8 +103,6 @@ interface Section {
   /** Show the "Image Manager খুলুন" link under the note (image-related sections only). */
   mediaLink?: boolean;
   /** Optional link to a diagnostic/test page for this section (e.g. Steadfast connection test). */
-  testHref?: string;
-  testLabel?: string;
 }
 
 const SECTIONS: Section[] = [
@@ -112,58 +111,58 @@ const SECTIONS: Section[] = [
   // ═══════════════════════════════════════════════════════════════════════
   {
     id: "brand_core",
-    title: "Brand Identity",
+    title: "ব্র্যান্ড পরিচয়",
     icon: <Building2 className="w-4 h-4" />,
     // Logo/favicon/PWA icon/OG image moved to the Image Manager — one place
     // for every image, with size guides, preview and auto-optimize.
     mediaLink: true,
     note: "লোগো, ফ্যাভিকন, PWA আইকন ও OG ছবি এখন Image Manager-এ (ছবি ব্যবস্থাপনা) — সব ছবি এক জায়গায়।",
     fields: [
-      { key: "site_name", label: "Company Name", placeholder: "ABO Enterprise", defaultValue: "ABO Enterprise" },
-      { key: "site_tagline_en", label: "Tagline (EN)", placeholder: "Simple Solutions", defaultValue: "Simple Solutions", hint: "Shown beside the logo (More menu header) when the site is in English", translateFrom: "site_tagline_bn" },
-      { key: "site_tagline_bn", label: "Tagline (বাংলা)", placeholder: "সহজ সমাধান", defaultValue: "সহজ সমাধান" },
-      { key: "site_url", label: "Site URL", type: "url", placeholder: "https://www.aboenterprise.com", hint: "Your live website address. Used for the 'View in Admin' & order-tracking links in emails. No trailing slash." },
+      { key: "site_name", label: "কোম্পানির নাম", placeholder: "ABO Enterprise", defaultValue: "ABO Enterprise" },
+      { key: "site_tagline_en", label: "ট্যাগলাইন (ইংরেজি)", placeholder: "Simple Solutions", defaultValue: "Simple Solutions", hint: "Shown beside the logo (More menu header) when the site is in English", translateFrom: "site_tagline_bn" },
+      { key: "site_tagline_bn", label: "ট্যাগলাইন (বাংলা)", placeholder: "সহজ সমাধান", defaultValue: "সহজ সমাধান" },
+      { key: "site_url", label: "ওয়েবসাইটের ঠিকানা (URL)", type: "url", placeholder: "https://www.aboenterprise.com", hint: "Your live website address. Used for the 'View in Admin' & order-tracking links in emails. No trailing slash." },
     ],
   },
   {
     id: "company_info",
-    title: "Contact & Location",
+    title: "যোগাযোগ ও ঠিকানা",
     icon: <MapPin className="w-4 h-4" />,
     fields: [
-      { key: "contact_phone", label: "Phone (call)", type: "tel", placeholder: "01XXXXXXXXX", hint: "Shown for calls across the site, in invoices and customer SMS." },
-      { key: "whatsapp_number", label: "WhatsApp number", type: "tel", placeholder: "01XXXXXXXXX or 8801XXXXXXXXX", hint: "Used for every WhatsApp button and message link on the site (product, service, FAQ, track, footer…). Leave empty to reuse the call number above. You can keep two different numbers: one for calls, one for WhatsApp." },
-      { key: "contact_email", label: "Email", type: "email", placeholder: "info@aboenterprise.com", defaultValue: "info@aboenterprise.com", hint: "Shown on the site (footer, contact, invoices). Editable here — no redeploy." },
-      { key: "contact_address", label: "Address (বাংলা)", type: "textarea", placeholder: "হাজী বাহার উদ্দিন মার্কেট, আব্দুল্লাপুর, বৈরাগীবাজার-৩১৭০, বিয়ানীবাজার, সিলেট, বাংলাদেশ", hint: "সাইট বাংলায় থাকলে এই ঠিকানা দেখাবে" },
-      { key: "contact_address_en", label: "Address (English)", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh", hint: "Shown when the site is in English. Leave blank to reuse the Bangla address.", translateFrom: "contact_address" },
-      { key: "contact_hours_en", label: "Business Hours (EN)", placeholder: "Sat–Thu, 9:00 AM – 9:00 PM", defaultValue: "Sat–Thu, 9:00 AM – 9:00 PM", hint: "Enter real opening hours, not the business name. Shown in the footer, homepage and contact page", translateFrom: "contact_hours_bn" },
-      { key: "contact_hours_bn", label: "Business Hours (বাংলা)", placeholder: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা", defaultValue: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা" },
-      { key: "contact_compliance_officer_name", label: "Complaints & compliance officer — name", placeholder: "Full name", hint: "Shown on the legal pages (Privacy, Terms, Refund, Cookies) as the person handling complaints and data requests. Leave empty to use your Support / Customer Service team member from the About team list." },
-      { key: "contact_compliance_officer_title", label: "Complaints & compliance officer — title", placeholder: "Customer Support & Compliance", hint: "Optional job title shown next to the name." },
-      { key: "footer_about_en", label: "Footer About Text (EN)", type: "textarea", hint: "Short company description shown in the site footer", placeholder: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us.", defaultValue: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us.", translateFrom: "footer_about_bn" },
-      { key: "footer_about_bn", label: "Footer About Text (বাংলা)", type: "textarea", placeholder: "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।", defaultValue: "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।" },
-      { key: "footer_app_title_bn", label: "App block title (বাংলা)", placeholder: "আপন অ্যাপ ডাউনলোড করুন", hint: "ফুটারের অ্যাপ-ব্লকের শিরোনাম — ফাঁকা রাখলে ডিফল্ট লেখা দেখাবে" },
-      { key: "footer_app_title_en", label: "App block title (EN)", placeholder: "Get the Apon app" },
-      { key: "footer_app_subtitle_bn", label: "App block slogan (বাংলা)", placeholder: "কাজ, টাকা, ওষুধ — সব এক খাতায়, আপনার ফোনেই।" },
-      { key: "footer_app_subtitle_en", label: "App block slogan (EN)", placeholder: "Tasks, money, medicines — one notebook, on your phone." },
-      { key: "footer_payment_image_url", label: "Payment Methods Image", upload: true, accept: "image", purpose: "payment-strip", hint: "ফুটারের 'পেমেন্ট পদ্ধতি সমূহ' — সব পেমেন্ট লোগো একসাথে একটি চওড়া ছবি আপলোড করুন (যেমন SSLCommerz 'Pay With' স্ট্রিপ)। এটি বিল্ট-ইন আইকনের বদলে বসবে এবং মোবাইল/ট্যাব/ডেস্কটপে fit হবে। খালি রাখলে বিল্ট-ইন আইকন দেখাবে।" },
-      { key: "google_maps_embed", label: "Google Maps Embed", type: "textarea", hint: "Share → Embed a map", placeholder: "Paste iframe or URL" },
-      { key: "google_maps_api_key", label: "Google Maps API Key", placeholder: "AIza..." },
+      { key: "contact_phone", label: "ফোন (কল)", type: "tel", placeholder: "01XXXXXXXXX", hint: "Shown for calls across the site, in invoices and customer SMS." },
+      { key: "whatsapp_number", label: "হোয়াটসঅ্যাপ নম্বর", type: "tel", placeholder: "01XXXXXXXXX or 8801XXXXXXXXX", hint: "Used for every WhatsApp button and message link on the site (product, service, FAQ, track, footer…). Leave empty to reuse the call number above. You can keep two different numbers: one for calls, one for WhatsApp." },
+      { key: "contact_email", label: "ইমেইল", type: "email", placeholder: "info@aboenterprise.com", defaultValue: "info@aboenterprise.com", hint: "Shown on the site (footer, contact, invoices). Editable here — no redeploy." },
+      { key: "contact_address", label: "ঠিকানা (বাংলা)", type: "textarea", placeholder: "হাজী বাহার উদ্দিন মার্কেট, আব্দুল্লাপুর, বৈরাগীবাজার-৩১৭০, বিয়ানীবাজার, সিলেট, বাংলাদেশ", hint: "সাইট বাংলায় থাকলে এই ঠিকানা দেখাবে" },
+      { key: "contact_address_en", label: "ঠিকানা (ইংরেজি)", type: "textarea", placeholder: "Hazi Bahar Uddin Market, Abdullapur, Bairagibazar-3170, Beanibazar, Sylhet, Bangladesh", hint: "Shown when the site is in English. Leave blank to reuse the Bangla address.", translateFrom: "contact_address" },
+      { key: "contact_hours_en", label: "খোলার সময় (ইংরেজি)", placeholder: "Sat–Thu, 9:00 AM – 9:00 PM", defaultValue: "Sat–Thu, 9:00 AM – 9:00 PM", hint: "Enter real opening hours, not the business name. Shown in the footer, homepage and contact page", translateFrom: "contact_hours_bn" },
+      { key: "contact_hours_bn", label: "খোলার সময় (বাংলা)", placeholder: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা", defaultValue: "শনি–বৃহঃ, সকাল ৯টা–রাত ৯টা" },
+      { key: "contact_compliance_officer_name", label: "অভিযোগ ও কমপ্লায়েন্স কর্মকর্তা — নাম", placeholder: "Full name", hint: "Shown on the legal pages (Privacy, Terms, Refund, Cookies) as the person handling complaints and data requests. Leave empty to use your Support / Customer Service team member from the About team list." },
+      { key: "contact_compliance_officer_title", label: "অভিযোগ ও কমপ্লায়েন্স কর্মকর্তা — পদবি", placeholder: "Customer Support & Compliance", hint: "Optional job title shown next to the name." },
+      { key: "footer_about_en", label: "ফুটারের পরিচিতি (ইংরেজি)", type: "textarea", hint: "Short company description shown in the site footer", placeholder: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us.", defaultValue: "We provide solutions for every need in the digital age. Your business, home, and security are in good hands with us.", translateFrom: "footer_about_bn" },
+      { key: "footer_about_bn", label: "ফুটারের পরিচিতি (বাংলা)", type: "textarea", placeholder: "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।", defaultValue: "ডিজিটাল যুগের সব ধরনের সমাধান আমরা সরবরাহ করি। আপনার ব্যবসা, ঘর এবং নিরাপত্তার সব কিছু আমরা আপনার সাথে।" },
+      { key: "footer_app_title_bn", label: "অ্যাপ-ব্লকের শিরোনাম (বাংলা)", placeholder: "আপন অ্যাপ ডাউনলোড করুন", hint: "ফুটারের অ্যাপ-ব্লকের শিরোনাম — ফাঁকা রাখলে ডিফল্ট লেখা দেখাবে" },
+      { key: "footer_app_title_en", label: "অ্যাপ-ব্লকের শিরোনাম (ইংরেজি)", placeholder: "Get the Apon app" },
+      { key: "footer_app_subtitle_bn", label: "অ্যাপ-ব্লকের স্লোগান (বাংলা)", placeholder: "কাজ, টাকা, ওষুধ — সব এক খাতায়, আপনার ফোনেই।" },
+      { key: "footer_app_subtitle_en", label: "অ্যাপ-ব্লকের স্লোগান (ইংরেজি)", placeholder: "Tasks, money, medicines — one notebook, on your phone." },
+      { key: "footer_payment_image_url", label: "পেমেন্ট পদ্ধতির ছবি", upload: true, accept: "image", purpose: "payment-strip", hint: "ফুটারের 'পেমেন্ট পদ্ধতি সমূহ' — সব পেমেন্ট লোগো একসাথে একটি চওড়া ছবি আপলোড করুন (যেমন SSLCommerz 'Pay With' স্ট্রিপ)। এটি বিল্ট-ইন আইকনের বদলে বসবে এবং মোবাইল/ট্যাব/ডেস্কটপে fit হবে। খালি রাখলে বিল্ট-ইন আইকন দেখাবে।" },
+      { key: "google_maps_embed", label: "Google ম্যাপ (Embed)", type: "textarea", hint: "Share → Embed a map", placeholder: "Paste iframe or URL" },
+      { key: "google_maps_api_key", label: "Google ম্যাপ API Key", placeholder: "AIza..." },
     ],
   },
   {
     id: "email_smtp",
-    title: "Email & SMTP",
+    title: "ইমেইল পাঠানো (SMTP)",
     icon: <Mail className="w-4 h-4" />,
     note: "এখানে সেট করলে ইমেইল পাঠানো চালু হয় — env ছাড়াই। Gmail: Host smtp.gmail.com · Port 587 · User আপনার Gmail · Password একটি Gmail App Password (সাধারণ পাসওয়ার্ড নয়)।",
     fields: [
       { key: "smtp_host", label: "SMTP Host", placeholder: "smtp.gmail.com" },
       { key: "smtp_port", label: "SMTP Port", type: "number", placeholder: "587" },
       { key: "smtp_user", label: "SMTP User", placeholder: "info@aboenterprise.com" },
-      { key: "smtp_password", label: "SMTP Password / App Password", type: "password", placeholder: "•••• •••• •••• ••••", hint: "Gmail: 16-char App Password. Stored masked; not shown again." },
-      { key: "smtp_from", label: "From Address", type: "email", placeholder: "info@aboenterprise.com" },
-      { key: "smtp_from_name", label: "From Name", placeholder: "ABO Enterprise" },
-      { key: "admin_notify_email", label: "Notifications To", type: "email", placeholder: "info@aboenterprise.com", hint: "New orders/bookings/leads are emailed here." },
-      { key: "email_provider", label: "Email Provider", placeholder: "smtp", hint: "\"smtp\" (default) or \"resend\". Leave blank to use the server's env setting." },
+      { key: "smtp_password", label: "SMTP পাসওয়ার্ড / App Password", type: "password", placeholder: "•••• •••• •••• ••••", hint: "Gmail: 16-char App Password. Stored masked; not shown again." },
+      { key: "smtp_from", label: "প্রেরকের ইমেইল", type: "email", placeholder: "info@aboenterprise.com" },
+      { key: "smtp_from_name", label: "প্রেরকের নাম", placeholder: "ABO Enterprise" },
+      { key: "admin_notify_email", label: "নোটিফিকেশন যাবে যে ইমেইলে", type: "email", placeholder: "info@aboenterprise.com", hint: "New orders/bookings/leads are emailed here." },
+      { key: "email_provider", label: "ইমেইল সার্ভিস", placeholder: "smtp", hint: "\"smtp\" (default) or \"resend\". Leave blank to use the server's env setting." },
       { key: "resend_api_key", label: "Resend API Key", type: "password", placeholder: "re_••••••••", hint: "Only used when Email Provider is \"resend\". Stored masked; not shown again." },
     ],
   },
@@ -181,102 +180,13 @@ const SECTIONS: Section[] = [
   // ═══════════════════════════════════════════════════════════════════════
   {
     id: "ecommerce_config",
-    title: "E-Commerce Settings",
+    title: "দোকানের সাধারণ সেটিং",
     icon: <ShoppingBag className="w-4 h-4" />,
-    note: "চেকআউট OTP, ডেলিভারি চার্জ, ফ্রি লিমিট, কুরিয়ার ও COD সুরক্ষা → Checkout & Delivery মডিউলে। কুপন → Marketing → Coupons মডিউলে।",
+    note: "চেকআউট OTP, ডেলিভারি চার্জ, ফ্রি লিমিট ও COD সুরক্ষা → “চেকআউট ও ডেলিভারি” পাতায়। কুরিয়ার → “কুরিয়ার” পাতায়। কুপন ও ফ্ল্যাশ সেল → “কুপন ও ফ্ল্যাশ সেল” পাতায়।",
     fields: [
-      { key: "currency", label: "Currency", placeholder: "BDT" },
-      { key: "min_order_amount", label: "Min Order (৳)", type: "number", placeholder: "200" },
-      { key: "tax_percent", label: "Tax / VAT %", type: "number", placeholder: "0", hint: "Shown on invoices for reference — not yet applied to checkout totals (a deliberate, separate decision)." },
-    ],
-  },
-  {
-    id: "steadfast_courier",
-    title: "Steadfast Courier API",
-    icon: <Truck className="w-4 h-4" />,
-    note: "অর্ডার সরাসরি Steadfast কুরিয়ারে পাঠান। Key দুটি Steadfast প্যানেলের API পেজ থেকে নিন — এখানে দিলে গোপন থাকবে (আর ফেরত দেখানো হয় না)। ⚠️ কোথাও Key শেয়ার হয়ে গেলে Steadfast-এ 'Regenerate Key' চেপে নতুন Key নিন।",
-    testHref: "/sumon/couriers#steadfast",
-    testLabel: "Key সেভ করার পর কুরিয়ার পাতায় পরীক্ষা করুন (Pathao, RedX-ও সেখানে) →",
-    fields: [
-      {
-        key: "steadfast_enabled",
-        label: "Steadfast চালু",
-        type: "boolean",
-        hint: "চালু থাকলে অর্ডার মডালে 'Send to Steadfast' বাটন কাজ করবে।",
-      },
-      {
-        key: "steadfast_auto_send",
-        label: "স্বয়ংক্রিয় পাঠানো (অর্ডার confirmed হলে)",
-        type: "boolean",
-        hint: "অর্ডার 'confirmed' করলেই নিজে থেকে Steadfast-এ consignment তৈরি হবে। বন্ধ রাখলে শুধু বাটন দিয়ে পাঠাতে হবে।",
-      },
-      {
-        key: "steadfast_api_key",
-        label: "API Key",
-        type: "password",
-        placeholder: "•••• •••• ••••",
-        hint: "Steadfast → Profile → API পেজের Api-Key। গোপনভাবে সংরক্ষিত হয়, আর দেখানো হয় না।",
-      },
-      {
-        key: "steadfast_secret_key",
-        label: "Secret Key",
-        type: "password",
-        placeholder: "•••• •••• ••••",
-        hint: "Steadfast API পেজের Secret-Key। গোপনভাবে সংরক্ষিত।",
-      },
-      {
-        key: "steadfast_webhook_token",
-        label: "Webhook Auth Token",
-        type: "password",
-        placeholder: "•••• •••• ••••",
-        hint: "একটি নিজের তৈরি গোপন টোকেন দিন, তারপর Steadfast প্যানেলে গিয়ে Callback Url = [আপনার API ডোমেইন]/api/v1/orders/steadfast/webhook এবং Auth Token (Bearer) = এই একই টোকেন বসান। এটা করলে ডেলিভারি স্ট্যাটাস (delivered/hold/cancelled ইত্যাদি) স্বয়ংক্রিয়ভাবে অর্ডারে আপডেট হবে।",
-      },
-      {
-        key: "steadfast_delivery_type",
-        label: "ডেলিভারি টাইপ",
-        type: "select",
-        options: [
-          { value: "0", label: "Home Delivery (বাসায় ডেলিভারি)" },
-          { value: "1", label: "Point / Hub Pickup (হাব পিকআপ)" },
-        ],
-        hint: "সাধারণত Home Delivery।",
-      },
-      {
-        key: "steadfast_base_url",
-        label: "API Base URL",
-        type: "url",
-        placeholder: "https://portal.packzy.com/api/v1",
-        defaultValue: "https://portal.packzy.com/api/v1",
-        hint: "সাধারণত পরিবর্তনের দরকার নেই। খালি রাখলে ডিফল্ট ব্যবহার হবে।",
-      },
-    ],
-  },
-  {
-    id: "flash_sale_config",
-    title: "Flash Sale",
-    icon: <ShoppingBag className="w-4 h-4" />,
-    note: "কাউন্টডাউনের লেখা, আইকন ও আকার। ব্যানার ছবি → Content → Promo Slides। কোন পণ্যে ছাড় → Products-এ প্রতিটি পণ্যের ফ্ল্যাশ সেল ফিল্ড।",
-    fields: [
-      { key: "flash_sale_title_en", label: "Label (English)", placeholder: "Today's Best Offer", translateFrom: "flash_sale_title_bn" },
-      { key: "flash_sale_title_bn", label: "Label (বাংলা)", placeholder: "আজকের দুর্দান্ত অফার" },
-      {
-        key: "flash_sale_icon",
-        label: "Icon",
-        placeholder: "⚡",
-        hint: "একটি ইমোজি — লেখার দুই পাশে বসবে। খালি রাখলে ⚡ ব্যবহার হবে। যেমন: ⚡ 🔥 🎁 💥 ⏰",
-      },
-      {
-        key: "flash_sale_size",
-        label: "Text & Timer Size",
-        type: "select",
-        options: [
-          { value: "sm", label: "Small" },
-          { value: "md", label: "Medium (default)" },
-          { value: "lg", label: "Large" },
-          { value: "xl", label: "Extra Large" },
-        ],
-        hint: "মোবাইলে ছোট দেখালে Large বা Extra Large বেছে নিন। লেখা ও ঘড়ি দুটোই একসাথে বড় হবে।",
-      },
+      { key: "currency", label: "মুদ্রা", placeholder: "BDT" },
+      { key: "min_order_amount", label: "সর্বনিম্ন অর্ডার (৳)", type: "number", placeholder: "200" },
+      { key: "tax_percent", label: "ট্যাক্স / ভ্যাট %", type: "number", placeholder: "0", hint: "Shown on invoices for reference — not yet applied to checkout totals (a deliberate, separate decision)." },
     ],
   },
 
@@ -285,7 +195,7 @@ const SECTIONS: Section[] = [
   // ═══════════════════════════════════════════════════════════════════════
   {
     id: "social_links",
-    title: "Social Media Links",
+    title: "সোশ্যাল মিডিয়া লিংক",
     icon: <Share2 className="w-4 h-4" />,
     fields: [
       { key: "facebook_url", label: "Facebook", type: "url", placeholder: "https://facebook.com/aboenterprise" },
@@ -298,7 +208,7 @@ const SECTIONS: Section[] = [
   },
   {
     id: "marketing_config",
-    title: "Marketing & Analytics",
+    title: "মার্কেটিং ও অ্যানালিটিক্স",
     icon: <Zap className="w-4 h-4" />,
     fields: [
       { key: "facebook_pixel_id", label: "Facebook Pixel ID", placeholder: "1234567890", hint: "Conversion tracking" },
@@ -312,24 +222,21 @@ const SECTIONS: Section[] = [
   // ═══════════════════════════════════════════════════════════════════════
   {
     id: "site_features",
-    title: "Site Features",
+    title: "সাইটের ফিচার চালু/বন্ধ",
     icon: <Zap className="w-4 h-4" />,
     fields: [
-      { key: "feature_coupons", label: "Coupons", type: "boolean", hint: "Checkout coupon field" },
-      { key: "feature_guest_checkout", label: "Guest Checkout", type: "boolean" },
-      { key: "feature_newsletter", label: "Newsletter", type: "boolean", hint: "Footer signup" },
-      { key: "feature_infinite_scroll", label: "Infinite Scroll", type: "boolean", hint: "Product load-more" },
-      { key: "feature_assistant_chat", label: "AI Chat Widget", type: "boolean" },
-      { key: "feature_assistant_whatsapp", label: "Assistant WhatsApp", type: "boolean" },
+      { key: "feature_guest_checkout", label: "লগইন ছাড়া অর্ডার (Guest Checkout)", type: "boolean" },
+      { key: "feature_newsletter", label: "নিউজলেটার", type: "boolean", hint: "Footer signup" },
+      { key: "feature_infinite_scroll", label: "স্ক্রল করলে আরও পণ্য (Infinite Scroll)", type: "boolean", hint: "Product load-more" },
     ],
   },
   {
     id: "search_config",
-    title: "Search Suggestions",
+    title: "সার্চের পরামর্শ",
     icon: <Globe className="w-4 h-4" />,
     note: "সার্চ পেজে (খালি থাকলে) 'সাজেশন' অংশে দেখানো কাস্টম লিংক। খালি রাখলে ক্যাটাগরি থেকে স্বয়ংক্রিয় সাজেশন দেখাবে।",
     fields: [
-      { key: "search_suggestions_json", label: "Suggestion Links", type: "textarea", hint: "Each: a label (EN/বাংলা) and a link shown under Suggestions on search" },
+      { key: "search_suggestions_json", label: "পরামর্শের লিংক", type: "textarea", hint: "Each: a label (EN/বাংলা) and a link shown under Suggestions on search" },
     ],
   },
 
@@ -338,11 +245,11 @@ const SECTIONS: Section[] = [
   // ═══════════════════════════════════════════════════════════════════════
   {
     id: "system_config",
-    title: "System Settings",
+    title: "সিস্টেম",
     icon: <Shield className="w-4 h-4" />,
     fields: [
-      { key: "timezone", label: "Timezone", placeholder: "Asia/Dhaka" },
-      { key: "maintenance_mode", label: "Maintenance Mode", type: "text" as const, placeholder: "false", hint: "true to disable site" },
+      { key: "timezone", label: "সময় অঞ্চল", placeholder: "Asia/Dhaka" },
+      { key: "maintenance_mode", label: "রক্ষণাবেক্ষণ মোড (সাইট বন্ধ)", type: "text" as const, placeholder: "false", hint: "true to disable site" },
     ],
   },
 ];
@@ -355,7 +262,7 @@ const SECTION_GROUPS: { id: string; label: string; labelBn: string; sectionIds: 
   { id: "branding", label: "Branding & Contact", labelBn: "ব্র্যান্ডিং ও যোগাযোগ",
     sectionIds: ["brand_core", "company_info", "social_links"] },
   { id: "store", label: "Store & Checkout", labelBn: "দোকান ও চেকআউট",
-    sectionIds: ["ecommerce_config", "steadfast_courier", "flash_sale_config"] },
+    sectionIds: ["ecommerce_config"] },
   { id: "email", label: "Email", labelBn: "ইমেইল",
     sectionIds: ["email_smtp"] },
   { id: "marketing", label: "Marketing & Search", labelBn: "মার্কেটিং ও সার্চ",
@@ -363,6 +270,8 @@ const SECTION_GROUPS: { id: string; label: string; labelBn: string; sectionIds: 
   { id: "system", label: "System", labelBn: "সিস্টেম",
     sectionIds: ["site_features", "system_config", "demo_config"] },
 ];
+
+const GROUP_ICONS: Record<string, React.ElementType> = { branding: Building2, store: ShoppingBag, email: Mail, marketing: Globe, system: Shield };
 
 function groupForSection(sectionId: string): string {
   return SECTION_GROUPS.find((g) => g.sectionIds.includes(sectionId))?.id ?? SECTION_GROUPS[0].id;
@@ -408,7 +317,7 @@ function SectionCard({
               ? <Check className="w-3.5 h-3.5" />
               : <Save className="w-3.5 h-3.5" />
           }
-          {isSaving ? "Saving…" : isSaved ? "Saved!" : "Save"}
+          {isSaving ? "সংরক্ষণ হচ্ছে…" : isSaved ? "সংরক্ষিত!" : "সংরক্ষণ"}
         </button>
       </div>
       {section.note && (
@@ -418,13 +327,6 @@ function SectionCard({
           {section.mediaLink && <Link href="/sumon/media" className="font-semibold underline hover:no-underline max-[899px]:inline-flex max-[899px]:items-center max-[899px]:min-h-[40px]">
             Image Manager খুলুন →
           </Link>}
-        </div>
-      )}
-      {section.testHref && (
-        <div className="px-6 py-2.5 bg-gray-50 dark:bg-white/5 border-b border-gray-100 dark:border-white/10 text-xs">
-          <Link href={section.testHref} className="font-semibold text-brand-700 dark:text-brand-400 underline hover:no-underline max-[899px]:inline-flex max-[899px]:items-center max-[899px]:min-h-[40px]">
-            {section.testLabel ?? "Test connection →"}
-          </Link>
         </div>
       )}
       <div className="divide-y divide-gray-50 dark:divide-white/5">
@@ -519,10 +421,21 @@ export default function AdminSettingsPage() {
   const [savedId, setSavedId] = useState<string | null>(null);
   const [confirmMaintenance, setConfirmMaintenance] = useState<{ sectionId: string | "__all__" } | null>(null);
   const [activeGroup, setActiveGroup] = useState<string>(SECTION_GROUPS[0].id);
+  // Search across every group; a matching section title shows all its fields.
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const visibleSections = q
+    ? SECTIONS.map((sec) => (sec.title.toLowerCase().includes(q) ? sec : { ...sec, fields: sec.fields.filter((f) => `${f.label} ${f.hint ?? ""} ${f.key}`.toLowerCase().includes(q)) }))
+        .filter((sec) => sec.fields.length > 0)
+    : SECTIONS.filter((section) => groupForSection(section.id) === activeGroup);
+  const filledCount = (ids: string[]): [number, number] => {
+    const fs = SECTIONS.filter((sec) => ids.includes(sec.id)).flatMap((sec) => sec.fields).filter((f) => f.type !== "boolean");
+    return [fs.filter((f) => String(values[f.key] ?? "").trim()).length, fs.length];
+  };
   const toast = useToastStore((s) => s.push);
 
   // Keep the active tab in sync with the URL hash, so sidebar links like
-  // /sumon/settings#steadfast_courier (and #marketing_config for "Marketing
+  // /sumon/settings#company_info (and #marketing_config for "Marketing
   // & SEO") land on the right tab instead of a hidden one.
   useEffect(() => {
     const syncFromHash = () => {
@@ -564,7 +477,7 @@ export default function AdminSettingsPage() {
       }
       setValues(flat);
     } catch {
-      toast("error", "Failed to load settings");
+      toast("error", "সেটিংস আনা যায়নি");
     } finally {
       setLoading(false);
     }
@@ -572,8 +485,12 @@ export default function AdminSettingsPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  // Keys edited but not yet saved — warns before leaving the page.
+  const [dirtyKeys, setDirtyKeys] = useState<Set<string>>(new Set());
+  useUnsavedGuard(dirtyKeys.size > 0);
   const handleChange = (key: string, val: string) => {
     setValues((prev) => ({ ...prev, [key]: val }));
+    setDirtyKeys((prev) => (prev.has(key) ? prev : new Set(prev).add(key)));
   };
 
   const validateUrls = (section: Section): string | null => {
@@ -617,13 +534,14 @@ export default function AdminSettingsPage() {
         await adminApi.upsertSettings(items);
       } catch (e) {
         anyFailed = true;
-        toast("error", apiErrorMessage(e, `Could not save “${section.title}”. Check your connection and try again.`));
+        toast("error", apiErrorMessage(e, `“${section.title}” সংরক্ষণ করা যায়নি — ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।`));
       }
     }
     if (!anyFailed) {
+      setDirtyKeys(new Set());
       setSavedId("__all__");
       setTimeout(() => setSavedId(null), 2500);
-      toast("success", "All settings saved");
+      toast("success", "সব সেটিং সংরক্ষিত হয়েছে");
     }
     setSaving(null);
   };
@@ -646,15 +564,16 @@ export default function AdminSettingsPage() {
     try {
       const items = buildSaveItems(section, values);
       if (items.length === 0) {
-        toast("info", "No editable fields to save in this section");
+        toast("info", "এই অংশে সংরক্ষণের মতো কিছু নেই");
         return;
       }
       await adminApi.upsertSettings(items);
+      setDirtyKeys((prev) => { const next = new Set(prev); section.fields.forEach((f) => next.delete(f.key)); return next; });
       setSavedId(sectionId);
       setTimeout(() => setSavedId(null), 2500);
-      toast("success", `${section.title} saved`);
+      toast("success", `${section.title} — সংরক্ষিত হয়েছে`);
     } catch (e) {
-      toast("error", apiErrorMessage(e, `Could not save “${section.title}”. Check your connection and try again.`));
+      toast("error", apiErrorMessage(e, `“${section.title}” সংরক্ষণ করা যায়নি — ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।`));
     } finally {
       setSaving(null);
     }
@@ -665,29 +584,17 @@ export default function AdminSettingsPage() {
       <AdminPageHeader
         title="Settings"
         titleBn="সাইট সেটিংস"
-        description="ব্র্যান্ডিং, যোগাযোগ, ডেলিভারি, পেমেন্ট ও মার্কেটিং কনফিগার করুন"
+        description="Brand, contact, email, marketing and system settings"
+        descriptionBn="ব্র্যান্ড, যোগাযোগ, ইমেইল, মার্কেটিং ও সিস্টেম — কুরিয়ার, কুপন/ফ্ল্যাশ সেল ও চেকআউট নিজ নিজ পাতায়"
         actions={
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={load}
-              disabled={loading}
-              className="admin-btn-secondary !py-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
+            <button type="button" onClick={load} disabled={loading} className="btn btn-outline btn-sm min-h-11 gap-1.5">
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} aria-hidden /> আবার আনুন
             </button>
-            <button
-              onClick={handleSaveAll}
-              disabled={saving !== null || loading}
-              className={`admin-btn-primary !py-2 ${savedId === "__all__" ? "!bg-green-600 hover:!bg-green-600" : ""}`}
-            >
-              {saving === "__all__"
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : savedId === "__all__"
-                  ? <Check className="w-4 h-4" />
-                  : <SaveAll className="w-4 h-4" />
-              }
-              {saving === "__all__" ? "Saving…" : savedId === "__all__" ? "All Saved!" : "Save All"}
+            <button type="button" onClick={handleSaveAll} disabled={saving !== null || loading}
+              className={`btn btn-primary btn-sm min-h-11 gap-1.5 ${savedId === "__all__" ? "!bg-green-600 hover:!bg-green-600" : ""}`}>
+              {saving === "__all__" ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : savedId === "__all__" ? <Check className="w-4 h-4" aria-hidden /> : <SaveAll className="w-4 h-4" aria-hidden />}
+              {saving === "__all__" ? "সংরক্ষণ হচ্ছে…" : savedId === "__all__" ? "সব সংরক্ষিত!" : "সব সংরক্ষণ"}
             </button>
           </div>
         }
@@ -700,77 +607,60 @@ export default function AdminSettingsPage() {
           ))}
         </div>
       ) : (
-        <div className="space-y-6 admin-page-narrow">
-          <div className="flex gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-fit flex-wrap" role="tablist">
-            {SECTION_GROUPS.map((g) => (
-              <button
-                key={g.id}
-                type="button"
-                role="tab"
-                aria-selected={activeGroup === g.id}
-                onClick={() => setActiveGroup(g.id)}
-                className={`px-3.5 py-2 max-[899px]:min-h-[40px] rounded-lg text-sm font-medium transition-colors ${
-                  activeGroup === g.id ? "bg-white dark:bg-gray-800 text-brand-700 dark:text-brand-400 shadow-sm" : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-                }`}
-              >
-                {g.label}
-              </button>
+        <div className="lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-6 lg:items-start">
+          <nav aria-label="সেটিংসের ভাগ" className="lg:sticky lg:top-24 space-y-3 mb-4 lg:mb-0">
+            <label className="relative block">
+              <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden />
+              <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="সেটিং খুঁজুন…" aria-label="সেটিং খুঁজুন" className="input pl-9 min-h-11 w-full text-base" />
+            </label>
+            <div role="tablist" className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 lg:mx-0 lg:px-0 lg:flex-col lg:overflow-visible">
+              {SECTION_GROUPS.map((g) => {
+                const Icon = GROUP_ICONS[g.id] ?? SettingsIcon;
+                const [done, total] = filledCount(g.sectionIds);
+                const active = activeGroup === g.id && !q;
+                return (
+                  <button key={g.id} type="button" role="tab" aria-selected={active} onClick={() => { setQuery(""); setActiveGroup(g.id); }}
+                    className={`flex items-center gap-2 min-h-11 px-3 rounded-xl text-sm font-medium whitespace-nowrap flex-none lg:w-full text-left transition-colors ${active ? "bg-brand-600 text-white shadow-sm" : "bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 text-gray-700 hover:border-brand-300"}`}>
+                    <Icon className="w-4 h-4 flex-none" aria-hidden />
+                    <span className="flex-1">{g.labelBn}</span>
+                    {total > 0 && <span className={`text-xs ${active ? "text-white/80" : "text-gray-500"}`} title="পূরণ করা ঘর">{done.toLocaleString("bn-BD")}/{total.toLocaleString("bn-BD")}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+          <div className="space-y-6 min-w-0">
+            {q && visibleSections.length === 0 && (
+              <div className="admin-card p-8 text-center text-gray-500">“{query}” — এমন কোনো সেটিং পাওয়া যায়নি</div>
+            )}
+            {visibleSections.map((section) => (
+              <SectionCard
+                key={section.id}
+                section={section}
+                values={values}
+                onChange={handleChange}
+                onSave={handleSave}
+                saving={saving}
+                savedId={savedId}
+              />
             ))}
-          </div>
-          {activeGroup === "branding" && (
-            <div className="admin-card p-4 sm:p-5 flex items-center justify-between gap-4 flex-wrap border-brand-100 dark:border-white/10">
-              <div className="flex items-center gap-3 min-w-0">
-                <Users className="w-5 h-5 text-brand-500 flex-shrink-0" aria-hidden />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-heading">টিম, ক্লায়েন্ট/পার্টনার লোগো ও ব্যবসায়িক নিবন্ধন</p>
-                  <p className="text-xs text-muted mt-0.5">এগুলো এখন &lsquo;আমাদের সম্পর্কে ও বিশ্বাস&rsquo; পাতায় — আগের সব তথ্য সেখানেই আছে।</p>
-                </div>
-              </div>
-              <Link href="/sumon/about-trust" className="btn btn-outline btn-sm flex-shrink-0">সেখানে যান →</Link>
-            </div>
-          )}
-          {SECTIONS.filter((section) => groupForSection(section.id) === activeGroup).map((section) => (
-            <SectionCard
-              key={section.id}
-              section={section}
-              values={values}
-              onChange={handleChange}
-              onSave={handleSave}
-              saving={saving}
-              savedId={savedId}
-            />
-          ))}
-          <div className="admin-card p-5 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <ImageIcon className="w-5 h-5 text-brand-500 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-semibold text-gray-900">পেজ ব্যানার ও সব ছবি</p>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  সব পেজের ব্যানার, ব্র্যান্ড ছবি ও গ্যালারি এক জায়গা থেকে ম্যানেজ করুন — Media Library-তে।
-                </p>
-              </div>
-            </div>
-            <Link href="/sumon/media" className="btn btn-outline btn-sm flex-shrink-0">
-              Media Library →
-            </Link>
           </div>
         </div>
       )}
 
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
-        <h3 className="font-semibold text-amber-800 mb-2">Hosting-Level Settings</h3>
+        <h3 className="font-semibold text-amber-800 mb-2">হোস্টিং-এ রাখা সেটিং</h3>
         <p className="text-sm text-amber-700">
-          A few core security keys are managed directly on the hosting provider, not here — your
-          developer handles those. Email/SMTP can be set here instead (Email &amp; SMTP section)
-          — those values override the hosting defaults, and the SMTP password is stored masked.
+          কয়েকটি মূল নিরাপত্তা-চাবি এখানে নয়, সরাসরি হোস্টিং-এ রাখা হয় — সেগুলো ডেভেলপার দেখেন। ইমেইল (SMTP) এখানেই দেওয়া যায়;
+          এখানে দিলে হোস্টিং-এর মান বাদ দিয়ে এটিই চলে, আর পাসওয়ার্ড লুকানো অবস্থায় সংরক্ষিত থাকে।
         </p>
       </div>
 
       <ConfirmDialog
         open={!!confirmMaintenance}
-        title="Turn on Maintenance Mode?"
-        message="This takes the live website offline for every visitor until you turn it off again. Only proceed if you mean to do this now."
-        confirmLabel="Save & enable"
+        title="রক্ষণাবেক্ষণ মোড চালু করবেন?"
+        message="বন্ধ না করা পর্যন্ত লাইভ ওয়েবসাইট সব ভিজিটরের জন্য বন্ধ থাকবে। এখনই দরকার হলে তবেই চালু করুন।"
+        confirmLabel="সংরক্ষণ ও চালু"
         variant="warning"
         onConfirm={() => {
           const target = confirmMaintenance;

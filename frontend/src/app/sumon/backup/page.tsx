@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { useHashScroll } from "@/hooks/useHashScroll";
+import ContentCopy from "./ContentCopy";
 import { useToastStore } from "@/store/toast";
 import {
   backupApi, DRIVE_GUIDES, guideOf, OAUTH_HELP, type BackupRun, type BackupSummary, type DestKind, type GithubStatus, type JobState,
@@ -267,6 +268,8 @@ export default function BackupPage() {
       </Step>
 
       <GithubCopy />
+
+      <ContentCopy />
 
       <section id="backup-history" className="card p-4 sm:p-5 space-y-3 scroll-mt-24 transition">
         <h2 className="font-semibold text-gray-900">Backup-এর ইতিহাস</h2>

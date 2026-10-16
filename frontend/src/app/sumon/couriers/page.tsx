@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { AlertTriangle, CheckCircle2, ChevronDown, ExternalLink, Loader2, PlugZap, Truck, Zap } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import api from "@/lib/api";
 import { useToastStore } from "@/store/toast";
 import type { ApiResponse } from "@/types";
+import SteadfastSettings from "./SteadfastSettings";
+import TrackingLinks from "./TrackingLinks";
 
 type Field = { key: string; label: string; secret: boolean; value: string; set: boolean };
 type Provider = { key: string; label: string; note: string; sandbox_supported: boolean; enabled: boolean | null; sandbox: boolean; ready: boolean; fields: Field[] };
@@ -16,7 +17,7 @@ type Data = { mode: "auto" | "manual"; default: string; providers: Provider[]; s
 const GUIDE: Record<string, { link: string; linkLabel: string; steps: string[]; color: string; letter: string }> = {
   steadfast: {
     link: "https://steadfast.com.bd", linkLabel: "Steadfast", color: "from-emerald-500 to-teal-600", letter: "S",
-    steps: ["Steadfast মার্চেন্ট প্যানেলে লগইন করুন → API অংশ খুলুন।", "API Key ও Secret Key কপি করে “সাইট সেটিংস → Steadfast Courier API”-তে বসিয়ে সেভ করুন।", "এখানে ফিরে “পরীক্ষা করুন” চাপুন।"],
+    steps: ["Steadfast মার্চেন্ট প্যানেলে লগইন করুন → API অংশ খুলুন।", "API Key ও Secret Key কপি করে নিচের ঘরে বসান।", "“সংরক্ষণ ও পরীক্ষা করুন” চাপুন — সফল হলে “প্রস্তুত” দেখাবে।"],
   },
   pathao: {
     link: "https://merchant.pathao.com", linkLabel: "Pathao Merchant", color: "from-red-500 to-rose-600", letter: "P",
@@ -78,7 +79,7 @@ export default function CouriersPage() {
   const saveAndTest = async (p: Provider) => {
     setBusy(p.key);
     try {
-      if (p.key !== "steadfast") await api.put("/api/v1/admin/couriers", { providers: { [p.key]: { values: vals[p.key] ?? {} } } });
+      await api.put("/api/v1/admin/couriers", { providers: { [p.key]: { values: vals[p.key] ?? {} } } });
       const r = await api.post<ApiResponse<{ ok: boolean }>>(`/api/v1/admin/couriers/${p.key}/test`, {}, { timeout: 60000 });
       setResult((m) => ({ ...m, [p.key]: { ok: true, text: r.data.message || "সংযোগ সফল" } }));
       await load();
@@ -151,10 +152,8 @@ export default function CouriersPage() {
                     <a href={g.link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-brand-700 underline min-h-11">{g.linkLabel} খুলুন <ExternalLink className="w-3.5 h-3.5" /></a>
                   </details>
                 )}
-                {p.key === "steadfast" && (
-                  <Link href="/sumon/settings" className="text-sm text-brand-700 underline inline-flex min-h-11 items-center">সাইট সেটিংসে Steadfast Key বসান →</Link>
-                )}
-                {p.fields.map((f) => (
+                {p.key === "steadfast" && <SteadfastSettings onChanged={load} />}
+                {p.key !== "steadfast" && p.fields.map((f) => (
                   <label key={f.key} className="text-sm block">{f.label}{f.secret && f.set && <span className="text-xs text-emerald-700"> (সংরক্ষিত — বদলাতে নতুনটি লিখুন)</span>}
                     <input className="input w-full min-h-11 text-base" type={f.secret ? "password" : "text"} autoComplete="off"
                       placeholder={f.secret && f.set ? "••••••••" : ""}
@@ -169,11 +168,13 @@ export default function CouriersPage() {
                     পরীক্ষামূলক (Sandbox) সার্ভার — আসল পার্সেল তৈরি হবে না
                   </label>
                 )}
+                {p.key !== "steadfast" && (
                 <button type="button" disabled={!!busy} onClick={() => saveAndTest(p)} className="btn btn-brand min-h-11 px-5 gap-1.5 w-full sm:w-auto justify-center">
                   {busy === p.key ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlugZap className="w-4 h-4" />}
-                  {p.key === "steadfast" ? "পরীক্ষা করুন" : "সংরক্ষণ ও পরীক্ষা করুন"}
+                  সংরক্ষণ ও পরীক্ষা করুন
                 </button>
-                {result[p.key] && (
+                )}
+                {p.key !== "steadfast" && result[p.key] && (
                   <p role="status" className={`text-sm rounded-lg p-2 ${result[p.key].ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-red-800"}`}>
                     {result[p.key].ok ? "✓ " : "⚠️ "}{result[p.key].text}
                   </p>
@@ -202,6 +203,10 @@ export default function CouriersPage() {
             {data.providers.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
           </select>
         </label>
+      </Step>
+
+      <Step n={3} title="গ্রাহকের জন্য ট্র্যাকিং লিংক" done={false}>
+        <TrackingLinks />
       </Step>
     </div>
   );

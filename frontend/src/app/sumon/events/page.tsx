@@ -63,7 +63,7 @@ ${JSON.stringify(e.meta, null, 2)}` : ""}`;
       setTotal(r.data.meta?.total ?? data.length);
     } catch (err) {
       setEvents([]);
-      toast("error", apiErrorMessage(err, "Failed to load system events"));
+      toast("error", apiErrorMessage(err, "সিস্টেমের ঘটনা আনা যায়নি"));
     } finally {
       setLoading(false);
     }

@@ -1,7 +1,8 @@
 "use client";
 
+import { useDirty, useUnsavedGuard } from "@/hooks/useUnsavedGuard";
 import { useEffect, useState, useCallback } from "react";
-import AdminTitle from "@/components/admin/AdminTitle";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import { Loader2, Mail, Plus, Pencil, Ban, X, CheckCircle, XCircle, Eye, Code } from "lucide-react";
 import { emailTemplatesAdminApi, type EmailTemplateRecord } from "@/lib/api";
 import BnEnText from "@/components/admin/catalog/BnEnText";
@@ -26,6 +27,7 @@ export default function AdminEmailTemplatesPage() {
   const [templates, setTemplates] = useState<EmailTemplateRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Partial<EmailTemplateRecord> | null>(null);
+  useUnsavedGuard(useDirty(editing, editing ? (editing.id ?? "new") : null));
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -39,7 +41,7 @@ export default function AdminEmailTemplatesPage() {
       const r = await emailTemplatesAdminApi.list();
       setTemplates(r.data.data ?? []);
     } catch {
-      toast("error", "Failed to load templates");
+      toast("error", "টেমপ্লেট আনা যায়নি");
     } finally {
       setLoading(false);
     }
@@ -75,7 +77,7 @@ export default function AdminEmailTemplatesPage() {
 
   const handleSave = async () => {
     if (!editing?.template_name?.trim()) {
-      toast("error", "Template name is required");
+      toast("error", "টেমপ্লেটের নাম দিন");
       return;
     }
     // Bangla-first: fill empty English subject/body from the Bangla ones.
@@ -104,7 +106,7 @@ export default function AdminEmailTemplatesPage() {
     try {
       if (isNew) {
         await emailTemplatesAdminApi.create(payload);
-        toast("success", "Template created");
+        toast("success", "টেমপ্লেট তৈরি হয়েছে");
       } else {
         await emailTemplatesAdminApi.update(editing.id!, {
           subject_en: payload.subject_en,
@@ -113,12 +115,12 @@ export default function AdminEmailTemplatesPage() {
           body_bn: payload.body_bn,
           is_active: payload.is_active,
         });
-        toast("success", "Template updated");
+        toast("success", "টেমপ্লেট আপডেট হয়েছে");
       }
       close();
       await load();
     } catch {
-      toast("error", "Save failed");
+      toast("error", "সংরক্ষণ করা যায়নি");
     } finally {
       setSaving(false);
     }
@@ -134,9 +136,9 @@ export default function AdminEmailTemplatesPage() {
         try {
           await emailTemplatesAdminApi.delete(id);
           setTemplates((prev) => prev.filter((t) => t.id !== id));
-          toast("success", "Template deactivated");
+          toast("success", "টেমপ্লেট বন্ধ করা হয়েছে");
         } catch {
-          toast("error", "Deactivation failed");
+          toast("error", "বন্ধ করা যায়নি");
         } finally {
           setDeletingId(null);
         }
@@ -149,30 +151,28 @@ export default function AdminEmailTemplatesPage() {
       await emailTemplatesAdminApi.update(t.id, { is_active: !t.is_active });
       setTemplates((prev) => prev.map((x) => (x.id === t.id ? { ...x, is_active: !t.is_active } : x)));
     } catch {
-      toast("error", "Update failed");
+      toast("error", "আপডেট করা যায়নি");
     }
   };
 
   return (
     <div className="admin-page space-y-5">
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex min-w-0 items-center gap-3">
-          <span className="grid h-11 w-11 flex-none place-items-center rounded-xl border border-brand-100 bg-brand-50 text-brand-700"><Mail className="h-5 w-5" /></span>
-          <div>
-            <AdminTitle en="Email Templates" bn="ইমেইল টেমপ্লেট" />
-            <p className="text-gray-500 text-sm">গ্রাহকের কাছে নিজে থেকে যে ইমেইলগুলো যায় — {templates.length}টি। লেখা বদলাতে কার্ডে চাপুন।</p>
-          </div>
-        </div>
-        <button onClick={openNew} className="btn btn-brand btn-md min-h-11 flex items-center justify-center gap-2 whitespace-nowrap">
-          <Plus className="w-4 h-4" /> নতুন টেমপ্লেট
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Email Templates"
+        titleBn="ইমেইল টেমপ্লেট"
+        description={<>গ্রাহকের কাছে নিজে থেকে যে ইমেইলগুলো যায় — {templates.length}টি। লেখা বদলাতে কার্ডে চাপুন।</>}
+        actions={
+          <button onClick={openNew} className="btn btn-brand btn-md min-h-11 flex items-center justify-center gap-2 whitespace-nowrap">
+            <Plus className="w-4 h-4" /> নতুন টেমপ্লেট
+          </button>
+        }
+      />
 
       <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
         {loading ? (
           <div className="p-12 flex justify-center"><Loader2 className="w-6 h-6 text-brand-500 animate-spin" /></div>
         ) : templates.length === 0 ? (
-          <AdminEmptyState icon={Mail} title="No email templates yet" description="Create your first template to customize the emails customers receive." />
+          <AdminEmptyState icon={Mail} title="এখনো কোনো ইমেইল টেমপ্লেট নেই" description="প্রথম টেমপ্লেট বানান — গ্রাহক যে ইমেইল পান তা নিজের মতো সাজাতে পারবেন।" />
         ) : (
           <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3">
@@ -222,7 +222,7 @@ export default function AdminEmailTemplatesPage() {
                   {previewMode ? <Code className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   {previewMode ? "লিখুন" : "প্রিভিউ"}
                 </button>
-                <button onClick={close} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+                <button aria-label="বন্ধ করুন" type="button" onClick={close} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
               </div>
             </div>
             {previewMode ? (

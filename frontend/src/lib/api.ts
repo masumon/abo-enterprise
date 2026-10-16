@@ -117,7 +117,7 @@ export const productsApi = {
   list: (params?: { category?: string; category_slug?: string; subcategory_slug?: string; featured?: boolean; flash_sale?: boolean; search?: string; sort_by?: string; page?: number; per_page?: number }, opts?: { timeout?: number; maxRetries?: number }) =>
     api.get<PaginatedResponse<Product>>("/api/v1/products", { params, ...opts }),
 
-  adminList: (params?: { category?: string; search?: string; is_active?: boolean; page?: number; per_page?: number }) =>
+  adminList: (params?: { category?: string; search?: string; is_active?: boolean; page?: number; per_page?: number; flash_sale?: boolean }) =>
     api.get<PaginatedResponse<Product>>("/api/v1/products/admin", { params }),
 
   get: (slug: string, opts?: { timeout?: number; maxRetries?: number }) =>

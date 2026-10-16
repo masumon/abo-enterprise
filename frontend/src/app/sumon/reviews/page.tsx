@@ -79,7 +79,7 @@ export default function AdminReviewsPage() {
       setReviews((r.data.data ?? []) as AdminReview[]);
       setTotal(r.data.meta?.total ?? 0);
     } catch {
-      toast("error", "Failed to load reviews");
+      toast("error", "রিভিউ আনা যায়নি");
     } finally {
       setLoading(false);
     }
@@ -105,9 +105,9 @@ export default function AdminReviewsPage() {
     try {
       await api.patch(`/api/v1/reviews/${review.id}`, update);
       setReviews((prev) => prev.map((r) => (r.id === review.id ? { ...r, ...update } : r)));
-      toast("success", "Review updated");
+      toast("success", "রিভিউ আপডেট হয়েছে");
     } catch {
-      toast("error", "Update failed");
+      toast("error", "আপডেট করা যায়নি");
     } finally {
       setBusyId(null);
     }
@@ -158,7 +158,7 @@ export default function AdminReviewsPage() {
     }
     if (creating) {
       if (!d.customer_name?.trim() || !d.review_en?.trim()) {
-        toast("error", "Customer name and review text are required");
+        toast("error", "গ্রাহকের নাম ও রিভিউ লেখা দিন");
         return;
       }
       setSaving(true);
@@ -187,7 +187,7 @@ export default function AdminReviewsPage() {
         toast("success", "নতুন মতামত যোগ হয়েছে");
         closeEdit();
       } catch {
-        toast("error", "Create failed");
+        toast("error", "তৈরি করা যায়নি");
       } finally {
         setSaving(false);
       }
@@ -199,10 +199,10 @@ export default function AdminReviewsPage() {
       const res = await api.patch(`/api/v1/reviews/${editing.id}`, d);
       const updated = res.data.data as AdminReview;
       setReviews((prev) => prev.map((r) => (r.id === editing.id ? { ...r, ...updated } : r)));
-      toast("success", "Review saved");
+      toast("success", "রিভিউ সংরক্ষিত হয়েছে");
       closeEdit();
     } catch {
-      toast("error", "Save failed");
+      toast("error", "সংরক্ষণ করা যায়নি");
     } finally {
       setSaving(false);
     }
@@ -222,7 +222,7 @@ export default function AdminReviewsPage() {
           void loadCounts();
           toast("success", "মুছে ফেলা হয়েছে");
         } catch {
-          toast("error", "Delete failed");
+          toast("error", "মুছে ফেলা যায়নি");
         } finally {
           setBusyId(null);
         }
@@ -516,7 +516,7 @@ export default function AdminReviewsPage() {
           <div ref={editorRef} className="ml-auto w-full max-w-lg h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-lg font-semibold text-gray-900">{creating ? "New Review" : "Edit Review"}</h2>
-              <button onClick={closeEdit} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <button aria-label="বন্ধ করুন" type="button" onClick={closeEdit} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">

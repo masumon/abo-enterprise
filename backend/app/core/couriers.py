@@ -29,7 +29,7 @@ DEFAULT_CFG: dict[str, Any] = {"mode": "manual", "default": "steadfast", "provid
 
 # provider → {label, fields: [(key, Bangla label, secret?)], sandbox?}
 PROVIDERS: dict[str, dict[str, Any]] = {
-    "steadfast": {"label": "Steadfast", "fields": [], "note": "সেটিং আগের মতোই সাইট সেটিংসে (API Key/Secret)।"},
+    "steadfast": {"label": "Steadfast", "fields": [], "note": "API Key/Secret এই পাতার Steadfast ঘরে।"},
     "pathao": {"label": "Pathao Courier", "fields": [
         ("client_id", "Client ID", False), ("client_secret", "Client Secret", True),
         ("username", "লগইন ইমেইল", False), ("password", "লগইন পাসওয়ার্ড", True), ("store_id", "Store ID", False)],
@@ -249,7 +249,7 @@ async def test_provider(db: AsyncSession, provider: str) -> str:
 
         st = await get_settings(db)
         if not st["api_key"] or not st["secret_key"]:
-            raise CourierError("Steadfast API Key/Secret সাইট সেটিংসে দেওয়া নেই।")
+            raise CourierError("Steadfast API Key/Secret দেওয়া নেই — কুরিয়ার পাতার Steadfast ঘরে বসান।")
         async with httpx.AsyncClient(timeout=30) as c:
             r = await c.get(f"{st['base_url']}/get_balance", headers={"Api-Key": st["api_key"], "Secret-Key": st["secret_key"]})
         if r.status_code >= 400:

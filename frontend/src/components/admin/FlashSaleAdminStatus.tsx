@@ -56,7 +56,7 @@ export default function FlashSaleAdminStatus({ values }: { values: Record<string
       )}
       {liveProducts === 0 && status.state !== "off" && (
         <p className="text-xs px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/30">
-          এখন কোনো পণ্য ফ্ল্যাশ সেলে নেই, তাই হোমপেজে সেকশনটি দেখাবে না। Products → পণ্য এডিট করে &quot;Flash Sale&quot; টিক, ফ্ল্যাশ সেল দাম (মূল দামের চেয়ে কম) ও শেষ সময় দিন।
+          এখন কোনো পণ্য ফ্ল্যাশ সেলে নেই, তাই হোমপেজে সেকশনটি দেখাবে না। নিচের “ফ্ল্যাশ সেলের পণ্য” অংশে পণ্য যোগ করে ফ্ল্যাশ দাম (আসল দামের চেয়ে কম) দিন — শেষ সময় পার হয়ে থাকলে নতুন সময় দিন।
         </p>
       )}
       {liveProducts !== null && liveProducts > 0 && (

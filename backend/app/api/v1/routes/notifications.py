@@ -30,8 +30,10 @@ async def list_notifications(
     conditions = [Notification.is_deleted == False, _visible_to(admin_id)]  # noqa: E712
     if unread_only:
         conditions.append(Notification.is_read == False)  # noqa: E712
-    if type:
-        conditions.append(Notification.type == type)
+    if type:  # one type, or several comma-separated (e.g. "low_stock,out_of_stock")
+        types = [t.strip() for t in type.split(",") if t.strip()][:10]
+        if types:
+            conditions.append(Notification.type.in_(types))
 
     total = (await db.execute(select(func.count(Notification.id)).where(and_(*conditions)))).scalar_one()
     rows = (await db.execute(

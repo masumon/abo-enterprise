@@ -56,7 +56,7 @@ export default function CareerPositionsManager() {
       setItems(cleaned);
       toast("success", bn ? "পদ সংরক্ষিত হয়েছে" : "Positions saved");
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Failed to save"));
+      toast("error", apiErrorMessage(err, "সংরক্ষণ করা যায়নি"));
     } finally {
       setSaving(false);
     }

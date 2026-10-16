@@ -79,7 +79,7 @@ export default function AdminOrdersPage() {
       setTotal(r.data.meta?.total ?? 0);
       setLoadError(null);
     } catch (err) {
-      setLoadError(apiErrorMessage(err, "Failed to load orders. Please retry."));
+      setLoadError(apiErrorMessage(err, "অর্ডার আনা যায়নি — আবার চেষ্টা করুন।"));
     } finally {
       setLoading(false);
     }
@@ -152,19 +152,19 @@ export default function AdminOrdersPage() {
     try {
       const r = await ordersApi.updateStatus(id, status);
       if (!r?.data?.data) {
-        toast("error", "Failed to update order status");
+        toast("error", "অর্ডারের অবস্থা বদলানো যায়নি");
         return;
       }
       await load();
       if (detail?.id === id) setDetail(prev => prev ? { ...prev, order_status: status } : prev);
-      toast("success", `Order status updated to ${status}`);
+      toast("success", `অর্ডারের অবস্থা বদলেছে: ${status}`);
       const upd = r.data.data as unknown as AdminOrder;
       if (upd?.courier_dispatch_at) {
         setNowTick(Date.now());
         setPendingCourier({ id, number: upd.order_number, until: new Date(upd.courier_dispatch_at).getTime() });
       }
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Failed to update order status"));
+      toast("error", apiErrorMessage(err, "অর্ডারের অবস্থা বদলানো যায়নি"));
     } finally {
       setUpdatingId(null);
     }
@@ -181,7 +181,7 @@ export default function AdminOrdersPage() {
       await load();
       toast("success", r?.data?.message || "Advance marked received");
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Failed to update"));
+      toast("error", apiErrorMessage(err, "আপডেট করা যায়নি"));
     } finally {
       setUpdatingId(null);
     }
@@ -206,7 +206,7 @@ export default function AdminOrdersPage() {
       setBulkStatus("");
       await load();
     } catch {
-      toast("error", "Bulk update failed");
+      toast("error", "একসাথে আপডেট করা যায়নি");
     } finally {
       setBulkLoading(false);
     }
@@ -217,7 +217,7 @@ export default function AdminOrdersPage() {
     try {
       await downloadCsv(`/api/v1/admin/bulk/export/orders?days=${csvDays}`, `orders_last${csvDays}days.csv`);
     } catch {
-      toast("error", "CSV export failed");
+      toast("error", "CSV ডাউনলোড করা যায়নি");
     } finally {
       setCsvLoading(false);
     }
@@ -228,7 +228,7 @@ export default function AdminOrdersPage() {
     try {
       await downloadPdf(`/api/v1/admin/bulk/export/orders/pdf?days=${csvDays}`, `orders_last${csvDays}days.pdf`);
     } catch {
-      toast("error", "PDF export failed");
+      toast("error", "PDF তৈরি করা যায়নি");
     } finally {
       setExportPdfLoading(false);
     }
@@ -242,7 +242,7 @@ export default function AdminOrdersPage() {
         `invoice-${order.order_number}.pdf`
       );
     } catch {
-      toast("error", "PDF download failed");
+      toast("error", "PDF ডাউনলোড করা যায়নি");
     } finally {
       setPdfLoading(null);
     }
@@ -253,19 +253,19 @@ export default function AdminOrdersPage() {
     try {
       const r = await ordersApi.get(id);
       if (!r?.data?.data) {
-        toast("error", "Order details not found in response");
+        toast("error", "অর্ডারের তথ্য পাওয়া যায়নি");
         return;
       }
       const data = r.data.data as unknown as AdminOrder;
       if (!data.id || !data.order_number) {
-        toast("error", "Invalid order data structure");
+        toast("error", "অর্ডারের তথ্য ঠিক নেই");
         return;
       }
       setDetail(data);
       setCourierProvider(data.courier_provider ?? "");
       setCourierTracking(data.courier_tracking_id ?? "");
     } catch (err: unknown) {
-      toast("error", `Failed to load order: ${apiErrorMessage(err, "Unknown error")}`);
+      toast("error", `অর্ডার আনা যায়নি: ${apiErrorMessage(err, "অজানা সমস্যা")}`);
     } finally {
       setDetailLoading(false);
     }
@@ -279,7 +279,7 @@ export default function AdminOrdersPage() {
         courier_provider: courierProvider || undefined,
         courier_tracking_id: courierTracking || undefined,
       });
-      toast("success", "Courier info updated");
+      toast("success", "কুরিয়ারের তথ্য আপডেট হয়েছে");
       await load();
       setDetail((prev) => prev ? {
         ...prev,
@@ -288,7 +288,7 @@ export default function AdminOrdersPage() {
         order_status: courierTracking && ["confirmed", "processing"].includes(prev.order_status) ? "shipped" : prev.order_status,
       } : prev);
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Could not update courier"));
+      toast("error", apiErrorMessage(err, "কুরিয়ারের তথ্য বদলানো যায়নি"));
     } finally {
       setCourierSaving(false);
     }
@@ -321,7 +321,7 @@ export default function AdminOrdersPage() {
       const res = await ordersApi.sendToSteadfast(detail.id);
       const updated = res.data.data as unknown as AdminOrder | undefined;
       const tracking = updated?.courier_tracking_id ?? "";
-      toast("success", `Steadfast-এ পাঠানো হয়েছে — tracking ${tracking}`);
+      toast("success", `Steadfast-এ পাঠানো হয়েছে — ট্র্যাকিং ${tracking}`);
       await load();
       setDetail((prev) => prev ? {
         ...prev,
@@ -482,7 +482,7 @@ export default function AdminOrdersPage() {
               <thead>
                 <tr>
                   <th className="px-4 py-3 w-8">
-                    <button onClick={toggleAll} className="text-gray-400 hover:text-brand-600">
+                    <button type="button" onClick={toggleAll} aria-label={allSelected ? "সব বাছাই তুলুন" : "সব অর্ডার বাছুন"} className="text-gray-400 hover:text-brand-600">
                       {allSelected ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
                     </button>
                   </th>
@@ -498,7 +498,7 @@ export default function AdminOrdersPage() {
                 {orders.map((o) => (
                   <tr key={o.id} className={selected.has(o.id) ? "bg-brand-50/40" : ""}>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                      <button onClick={() => toggleSelect(o.id)} className="text-gray-400 hover:text-brand-600">
+                      <button type="button" onClick={() => toggleSelect(o.id)} aria-label={`অর্ডার ${o.order_number} বাছুন`} aria-pressed={selected.has(o.id)} className="text-gray-400 hover:text-brand-600">
                         {selected.has(o.id) ? <CheckSquare className="w-4 h-4 text-brand-600" /> : <Square className="w-4 h-4" />}
                       </button>
                     </td>
@@ -576,7 +576,7 @@ export default function AdminOrdersPage() {
               <h2 className="text-lg font-semibold text-gray-900">
                 {detail ? `Order ${detail.order_number}` : "Loading..."}
               </h2>
-              <button onClick={() => setDetail(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <button aria-label="বন্ধ করুন" type="button" onClick={() => setDetail(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
 
             {detailLoading ? (

@@ -1,4 +1,6 @@
 "use client";
+import { useDirty, useUnsavedGuard } from "@/hooks/useUnsavedGuard";
+import { askConfirm } from "@/store/confirm";
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback } from "react";
@@ -144,6 +146,7 @@ export default function AdminServicesPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [editing, setEditing] = useState<Partial<Service> | null>(null);
+  useUnsavedGuard(useDirty(editing, editing ? (editing.id ?? "new") : null));
   const [isNew, setIsNew] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -327,11 +330,11 @@ export default function AdminServicesPage() {
   ];
 
   // AI description → service fields. Fills empty boxes; asks before replacing text.
-  const applyAiDescription = (d: AiDescription) => {
+  const applyAiDescription = async (d: AiDescription) => {
     const cur = editing;
     if (!cur) return;
     const hasText = (cur.description_bn || "").trim() || (cur.description_en || "").trim();
-    const replace = !hasText || window.confirm("আগের বিবরণ AI-এর লেখা দিয়ে বদলে দেবেন?");
+    const replace = !hasText || (await askConfirm("আগের বিবরণ AI-এর লেখা দিয়ে বদলে দেবেন?"));
     setEditing((prev) => {
       if (!prev) return prev;
       const next = { ...prev };
@@ -352,10 +355,10 @@ export default function AdminServicesPage() {
   };
 
   /** Link draft → service fields (empty ones; asks before replacing text). */
-  const applyLinkDraft = (d: LinkDraft) => {
+  const applyLinkDraft = async (d: LinkDraft) => {
     const cur = editing;
     if (!cur) return;
-    const replace = !(cur.name_bn?.trim() || cur.long_description_bn?.trim()) || window.confirm("আগের নাম/বিবরণ লিংকের তথ্য দিয়ে বদলে দেবেন?");
+    const replace = !(cur.name_bn?.trim() || cur.long_description_bn?.trim()) || (await askConfirm("আগের নাম/বিবরণ লিংকের তথ্য দিয়ে বদলে দেবেন?"));
     const pick = (old: string | undefined, val: string) => (val && (replace || !old?.trim()) ? val : old);
     setEditing((prev) => prev ? {
       ...prev,
@@ -389,7 +392,7 @@ export default function AdminServicesPage() {
   const handleSave = async (publish?: boolean) => {
     if (!editing) return;
     if (publish && svcChecks.some((c) => !c.ok) &&
-      !window.confirm(t(`${svcChecks.filter((c) => !c.ok).map((c) => c.bn).join(", ")} বাকি — তবুও প্রকাশ করবেন?`, `Missing ${svcChecks.filter((c) => !c.ok).map((c) => c.en).join(", ")} — publish anyway?`))) return;
+      !(await askConfirm(t(`${svcChecks.filter((c) => !c.ok).map((c) => c.bn).join(", ")} বাকি — তবুও প্রকাশ করবেন?`, `Missing ${svcChecks.filter((c) => !c.ok).map((c) => c.en).join(", ")} — publish anyway?`)))) return;
     if (isNew && svcDup.slug_taken) { toast("error", t("এই ওয়েব ঠিকানা (slug) আগে থেকেই আছে — 'উন্নত' অংশে বদলান", "Slug already exists — change it under Advanced")); return; }
     // Bangla-first: fill empty English name/descriptions from Bangla siblings
     // before validation, so the admin never types English by hand.
@@ -426,22 +429,22 @@ export default function AdminServicesPage() {
       toast("error", "অটো-অনুবাদ ব্যর্থ — English নিজে লিখুন বা → English চাপুন");
       return;
     }
-    if (!ed.name_en?.trim()) { setSaving(false); toast("error", "Name (EN) is required (বাংলা লিখলে অটো-অনুবাদ হবে)"); return; }
-    if (!ed.slug?.trim()) { setSaving(false); toast("error", "Slug is required"); return; }
-    if (!ed.category_id && !ed.category) { setSaving(false); toast("error", "Category is required"); return; }
-    if (!ed.pricing_type) { setSaving(false); toast("error", "Pricing type is required"); return; }
+    if (!ed.name_en?.trim()) { setSaving(false); toast("error", "ইংরেজি নাম দিন (বাংলা লিখলে নিজে অনুবাদ হবে)"); return; }
+    if (!ed.slug?.trim()) { setSaving(false); toast("error", "ওয়েব ঠিকানা (slug) দিন"); return; }
+    if (!ed.category_id && !ed.category) { setSaving(false); toast("error", "ক্যাটাগরি বাছুন"); return; }
+    if (!ed.pricing_type) { setSaving(false); toast("error", "দামের ধরন বাছুন"); return; }
     if (ed.min_price != null && ed.max_price != null && ed.min_price > ed.max_price) {
-      setSaving(false); toast("error", "Minimum price cannot be greater than maximum price"); return;
+      setSaving(false); toast("error", "সর্বনিম্ন দাম সর্বোচ্চ দামের বেশি হতে পারে না"); return;
     }
-    if (ed.base_price != null && ed.base_price < 0) { setSaving(false); toast("error", "Base price cannot be negative"); return; }
+    if (ed.base_price != null && ed.base_price < 0) { setSaving(false); toast("error", "মূল দাম ঋণাত্মক হতে পারে না"); return; }
 
     try {
       if (isNew) {
         await servicesAdminApi.create(ed);
-        toast("success", "Service created");
+        toast("success", "সেবা তৈরি হয়েছে");
       } else {
         await servicesAdminApi.update(ed.id!, ed);
-        toast("success", "Service updated");
+        toast("success", "সেবা আপডেট হয়েছে");
       }
       closeEditor();
       await load();
@@ -461,10 +464,10 @@ export default function AdminServicesPage() {
         setDeletingId(id);
         try {
           await servicesAdminApi.delete(id);
-          toast("success", "Service deleted");
+          toast("success", "সেবা মুছে ফেলা হয়েছে");
           await load();
         } catch (e) {
-          toast("error", apiErrorMessage(e, "Failed to delete service"));
+          toast("error", apiErrorMessage(e, "সেবা মুছে ফেলা যায়নি"));
         } finally {
           setDeletingId(null);
         }
@@ -502,11 +505,11 @@ export default function AdminServicesPage() {
     setBulkLoading(true);
     try {
       await Promise.all(Array.from(selected).map((id) => servicesAdminApi.update(id, patch)));
-      toast("success", `${selected.size} service(s) ${label}`);
+      toast("success", `${selected.size}টি সেবা ${label}`);
       setSelected(new Set());
       await load();
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Bulk update failed"));
+      toast("error", apiErrorMessage(e, "একসাথে আপডেট করা যায়নি"));
     } finally {
       setBulkLoading(false);
     }
@@ -516,7 +519,7 @@ export default function AdminServicesPage() {
     const count = selected.size;
     setConfirmState({
       title: question,
-      message: `This will ${verb} ${count} service${count === 1 ? "" : "s"}, which changes what customers see on the live site.`,
+      message: `${count.toLocaleString("bn-BD")}টি সেবা ${verb} হবে — লাইভ সাইটে গ্রাহক যা দেখেন তা বদলে যাবে।`,
       action: () => {
         setConfirmState(null);
         runBulkUpdate(patch, pastTenseLabel);
@@ -534,11 +537,11 @@ export default function AdminServicesPage() {
         setBulkLoading(true);
         try {
           await Promise.all(Array.from(selected).map((id) => servicesAdminApi.delete(id)));
-          toast("success", `${count} service(s) deleted`);
+          toast("success", `${count}টি সেবা মুছে ফেলা হয়েছে`);
           setSelected(new Set());
           await load();
         } catch (e) {
-          toast("error", apiErrorMessage(e, "Bulk delete failed"));
+          toast("error", apiErrorMessage(e, "একসাথে মুছে ফেলা যায়নি"));
         } finally {
           setBulkLoading(false);
         }
@@ -642,9 +645,9 @@ export default function AdminServicesPage() {
         try {
           await servicesAdminApi.deleteTier(editing!.id!, tierId);
           setEditing(prev => prev ? { ...prev, pricing_tiers: prev.pricing_tiers?.filter(t => t.id !== tierId) } : prev);
-          toast("success", "Tier removed");
+          toast("success", "প্যাকেজ সরানো হয়েছে");
         } catch {
-          toast("error", "Failed to remove tier");
+          toast("error", "প্যাকেজ সরানো যায়নি");
         } finally {
           setDeletingTierId(null);
         }
@@ -785,9 +788,9 @@ export default function AdminServicesPage() {
         try {
           await servicesAdminApi.deleteFormField(editing!.id!, fieldId);
           setEditing(prev => prev ? { ...prev, booking_forms: prev.booking_forms?.filter(f => f.id !== fieldId) } : prev);
-          toast("success", "Field removed");
+          toast("success", "ঘর সরানো হয়েছে");
         } catch {
-          toast("error", "Failed to remove field");
+          toast("error", "ঘর সরানো যায়নি");
         } finally {
           setDeletingFieldId(null);
         }
@@ -849,16 +852,16 @@ export default function AdminServicesPage() {
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 bg-brand-50 border border-brand-200 rounded-xl px-4 py-3">
           <span className="text-sm font-medium text-brand-800">{selected.size} selected</span>
-          <button onClick={() => confirmBulkUpdate({ is_active: true }, "activate", "activated", "Activate selected services?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+          <button onClick={() => confirmBulkUpdate({ is_active: true }, "চালু", "চালু হয়েছে", "বাছাই করা সেবা চালু করবেন?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
             <Check className="w-3.5 h-3.5" /> {tx("Activate")}
           </button>
-          <button onClick={() => confirmBulkUpdate({ is_active: false }, "deactivate", "deactivated", "Deactivate selected services?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+          <button onClick={() => confirmBulkUpdate({ is_active: false }, "বন্ধ", "বন্ধ হয়েছে", "বাছাই করা সেবা বন্ধ করবেন?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
             <Ban className="w-3.5 h-3.5" /> {tx("Deactivate")}
           </button>
-          <button onClick={() => confirmBulkUpdate({ is_featured: true }, "feature", "featured", "Feature selected services?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+          <button onClick={() => confirmBulkUpdate({ is_featured: true }, "ফিচার্ড", "ফিচার্ড হয়েছে", "বাছাই করা সেবা ফিচার্ড করবেন?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
             <Star className="w-3.5 h-3.5" /> {tx("Feature")}
           </button>
-          <button onClick={() => confirmBulkUpdate({ is_featured: false }, "unfeature", "unfeatured", "Unfeature selected services?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
+          <button onClick={() => confirmBulkUpdate({ is_featured: false }, "ফিচার্ড থেকে বাদ", "ফিচার্ড থেকে বাদ হয়েছে", "বাছাই করা সেবা ফিচার্ড থেকে বাদ দেবেন?")} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1">
             <StarOff className="w-3.5 h-3.5" /> {tx("Unfeature")}
           </button>
           <button onClick={handleBulkDelete} disabled={bulkLoading} className="btn btn-outline btn-sm gap-1 text-red-600 hover:bg-red-50">
@@ -962,7 +965,7 @@ export default function AdminServicesPage() {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-lg font-semibold text-heading">{isNew ? t("নতুন সেবা", "New service") : t("সেবা সম্পাদনা", "Edit service")}</h2>
-              <button onClick={closeEditor} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <button aria-label="বন্ধ করুন" type="button" onClick={closeEditor} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
 
             {/* Scrollable form */}

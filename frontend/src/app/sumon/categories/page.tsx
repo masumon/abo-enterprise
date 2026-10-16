@@ -1,5 +1,7 @@
 "use client";
 
+import { useDirty, useUnsavedGuard } from "@/hooks/useUnsavedGuard";
+import { askConfirm } from "@/store/confirm";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -30,6 +32,7 @@ import ImageUpload from "@/components/admin/ImageUpload";
 import LivePreview from "@/components/admin/LivePreview";
 import { useFocusTrap } from "@/lib/useFocusTrap";
 import { cn } from "@/lib/utils";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import { useAdminT } from "@/lib/i18n/adminText";
 import { findDuplicateName } from "@/lib/categoryNames";
@@ -170,6 +173,7 @@ export default function AdminCategoriesPage() {
   const [visibleCount, setVisibleCount] = useState(PAGE_STEP);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  useUnsavedGuard(useDirty(editor ? form : null, editor));
   const toast = useToastStore((s) => s.push);
 
   const editorRef = useFocusTrap(editor !== null, () => setEditor(null));
@@ -180,7 +184,7 @@ export default function AdminCategoriesPage() {
       const res = await categoriesAdminApi.list();
       setRoots(res.data.data ?? []);
     } catch (err) {
-      toast("error", apiErrorMessage(err, "Failed to load categories"));
+      toast("error", apiErrorMessage(err, "ক্যাটাগরি আনা যায়নি"));
     } finally {
       setLoading(false);
     }
@@ -356,7 +360,7 @@ export default function AdminCategoriesPage() {
       await categoriesAdminApi.update(node.id, { is_active: next });
     } catch (err) {
       setRoots((prev) => updateNodeInTree(prev, node.id, (n) => ({ ...n, is_active: !next })));
-      toast("error", apiErrorMessage(err, "Status change failed"));
+      toast("error", apiErrorMessage(err, "অবস্থা বদলানো যায়নি"));
     }
   };
 
@@ -368,7 +372,7 @@ export default function AdminCategoriesPage() {
   const emptyActive = allNodes.filter((n) => n.is_active && isEmptyNode(n));
   const [toolBusy, setToolBusy] = useState("");
   const fillBangla = async () => {
-    if (!noBn.length || !window.confirm(`${noBn.length}টি ক্যাটাগরির বাংলা নাম ইংরেজি থেকে অনুবাদ করে বসানো হবে। চালাবেন?`)) return;
+    if (!noBn.length || !(await askConfirm(`${noBn.length}টি ক্যাটাগরির বাংলা নাম ইংরেজি থেকে অনুবাদ করে বসানো হবে। চালাবেন?`))) return;
     setToolBusy("bn");
     let ok = 0;
     for (const n of noBn) {
@@ -382,7 +386,7 @@ export default function AdminCategoriesPage() {
     await load();
   };
   const hideEmpty = async () => {
-    if (!emptyActive.length || !window.confirm(`${emptyActive.length}টি খালি ক্যাটাগরি (কোনো পণ্য/সেবা নেই) সাইটে লুকানো হবে। কিছু মুছবে না — পরে সুইচ চেপে আবার দেখানো যাবে। চালাবেন?`)) return;
+    if (!emptyActive.length || !(await askConfirm(`${emptyActive.length}টি খালি ক্যাটাগরি (কোনো পণ্য/সেবা নেই) সাইটে লুকানো হবে। কিছু মুছবে না — পরে সুইচ চেপে আবার দেখানো যাবে। চালাবেন?`))) return;
     setToolBusy("hide");
     let ok = 0;
     for (const n of emptyActive) {
@@ -524,43 +528,32 @@ export default function AdminCategoriesPage() {
 
   return (
     <div className="admin-page">
-      {/* ---------- Premium header ---------- */}
-      <header
-        className="relative overflow-hidden rounded-[20px] px-5 sm:px-7 py-6 sm:py-7 text-white shadow-[0_10px_40px_rgba(21,101,192,0.25)]"
-        style={{ background: "radial-gradient(120% 140% at 85% -20%, rgba(228,161,27,.38), transparent 55%), linear-gradient(135deg, #0d47a1, #1565c0)" }}
-      >
-        <div className="relative z-10 flex items-start justify-between gap-4 flex-wrap">
-          <div>
-            <p className="text-[11px] tracking-[0.16em] uppercase font-bold text-white/70">ABO Enterprise · Admin</p>
-            <h1 className="mt-1.5 text-2xl sm:text-[2rem] font-extrabold tracking-tight text-balance">ক্যাটাগরি ব্যবস্থাপনা</h1>
-            <p className="mt-1 text-white/80 text-sm max-w-[52ch]">পণ্য ও সেবার সব ক্যাটাগরি এক জায়গায়। ↑↓ দিয়ে ক্রম বদলান, সুইচ দিয়ে সাইটে দেখান/লুকান।</p>
+      <AdminPageHeader
+        title="Categories"
+        titleBn="ক্যাটাগরি ব্যবস্থাপনা"
+        description={<>পণ্য ও সেবার সব ক্যাটাগরি এক জায়গায়। ↑↓ দিয়ে ক্রম বদলান, সুইচ দিয়ে সাইটে দেখান/লুকান।</>}
+        actions={<>
+          <button type="button" onClick={() => void load()} title={tx("Refresh")} aria-label="আবার আনুন" className="btn btn-outline btn-sm min-h-11 min-w-11">
+            <RefreshCw className="w-4 h-4" aria-hidden />
+          </button>
+          <button type="button" onClick={() => openCreate(null)} className="btn btn-brand btn-sm min-h-11 gap-1.5">
+            <Plus className="w-4 h-4" aria-hidden /> নতুন ক্যাটাগরি
+          </button>
+        </>}
+      />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        {[
+          { n: stats.total, l: "মোট ক্যাটাগরি" },
+          { n: stats.roots, l: "মূল ক্যাটাগরি" },
+          { n: stats.active, l: "সাইটে দেখায়" },
+          { n: stats.inactive, l: "লুকানো" },
+        ].map((st) => (
+          <div key={st.l} className="admin-card px-3.5 py-3">
+            <p className="text-2xl font-extrabold tabular-nums leading-none text-heading">{st.n}</p>
+            <p className="text-xs text-muted mt-1.5 font-semibold">{st.l}</p>
           </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => void load()} title={tx("Refresh")}
-              className="inline-flex items-center gap-1.5 bg-white/15 hover:bg-white/25 border border-white/20 text-white font-semibold text-sm px-3.5 py-2.5 rounded-xl transition-colors">
-              <RefreshCw className="w-4 h-4" />
-            </button>
-            <button type="button" onClick={() => openCreate(null)}
-              className="inline-flex items-center gap-2 bg-white text-[#0d47a1] font-bold text-sm px-4 py-2.5 rounded-xl shadow-lg hover:-translate-y-0.5 transition-transform">
-              <Plus className="w-4 h-4" /> নতুন ক্যাটাগরি
-            </button>
-          </div>
-        </div>
-
-        <div className="relative z-10 grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-5">
-          {[
-            { n: stats.total, l: "মোট ক্যাটাগরি" },
-            { n: stats.roots, l: "মূল ক্যাটাগরি" },
-            { n: stats.active, l: "সাইটে দেখায়" },
-            { n: stats.inactive, l: "লুকানো" },
-          ].map((s) => (
-            <div key={s.l} className="rounded-2xl bg-white/12 border border-white/18 px-3.5 py-3 backdrop-blur-sm">
-              <p className="text-2xl font-extrabold tabular-nums leading-none">{s.n}</p>
-              <p className="text-[0.72rem] uppercase tracking-wide text-white/75 mt-1.5 font-semibold">{s.l}</p>
-            </div>
-          ))}
-        </div>
-      </header>
+        ))}
+      </div>
 
       {/* ---------- Type tabs ---------- */}
       <div className="flex gap-1 p-1 bg-gray-100 dark:bg-white/5 rounded-xl w-full sm:w-fit overflow-x-auto" role="tablist" aria-label="ক্যাটাগরির ধরন">

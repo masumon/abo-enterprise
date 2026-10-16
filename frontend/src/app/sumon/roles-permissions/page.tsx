@@ -43,7 +43,7 @@ export default function RolesPermissionsPage() {
         setRoles(r.data.data.roles);
         setPermissions(r.data.data.permissions);
       } catch (e) {
-        toast("error", apiErrorMessage(e, "Failed to load roles & permissions"));
+        toast("error", apiErrorMessage(e, "রোল ও অনুমতি আনা যায়নি"));
       } finally {
         setLoading(false);
       }

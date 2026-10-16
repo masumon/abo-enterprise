@@ -6,10 +6,10 @@ import { useLanguageStore } from "@/store/language";
 
 interface Props {
   title: string;
-  description?: string;
+  description?: ReactNode;
   titleBn?: string;
   /** Optional Bengali description; falls back to `description` when absent. */
-  descriptionBn?: string;
+  descriptionBn?: ReactNode;
   actions?: ReactNode;
   className?: string;
 }

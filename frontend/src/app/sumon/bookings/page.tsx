@@ -56,7 +56,7 @@ export default function AdminBookingsPage() {
       setBookingsV2(r.data.data ?? []);
       setTotalV2(r.data.meta?.total ?? 0);
     } catch (err) {
-      toast("error", "Failed to load service bookings");
+      toast("error", "সেবার বুকিং আনা যায়নি");
     } finally {
       setLoadingV2(false);
     }
@@ -69,7 +69,7 @@ export default function AdminBookingsPage() {
     try {
       await downloadCsv("/api/v1/admin/bulk/export/bookings", "service-bookings.csv");
     } catch {
-      toast("error", "CSV export failed");
+      toast("error", "CSV ডাউনলোড করা যায়নি");
     } finally {
       setCsvLoading(false);
     }
@@ -80,7 +80,7 @@ export default function AdminBookingsPage() {
     try {
       await downloadPdf("/api/v1/admin/bulk/export/bookings/pdf", "service-bookings.pdf");
     } catch {
-      toast("error", "PDF export failed");
+      toast("error", "PDF তৈরি করা যায়নি");
     } finally {
       setExportPdfLoading(false);
     }
@@ -91,7 +91,7 @@ export default function AdminBookingsPage() {
     try {
       await downloadPdf(`/api/v1/invoices/admin/bookings-v2/${id}/pdf`, `receipt-${bookingNumber}.pdf`);
     } catch {
-      toast("error", "PDF download failed");
+      toast("error", "PDF ডাউনলোড করা যায়নি");
     } finally {
       setPdfLoading(null);
     }
@@ -106,9 +106,9 @@ export default function AdminBookingsPage() {
       await serviceBookingsAdminApi.updateStatus(id, status);
       await loadV2();
       if (detailV2?.id === id) setDetailV2(prev => prev ? { ...prev, status } : prev);
-      toast("success", `Booking status updated to ${status.replace(/_/g, " ")}`);
+      toast("success", `বুকিংয়ের অবস্থা বদলেছে: ${status.replace(/_/g, " ")}`);
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Failed to update booking status"));
+      toast("error", apiErrorMessage(e, "বুকিংয়ের অবস্থা বদলানো যায়নি"));
     } finally {
       setUpdatingIdV2(null);
     }
@@ -131,9 +131,9 @@ export default function AdminBookingsPage() {
           setBookingsV2((prev) => prev.filter((b) => b.id !== id));
           setTotalV2((t) => t - 1);
           if (detailV2?.id === id) setDetailV2(null);
-          toast("success", "Booking deleted");
+          toast("success", "বুকিং মুছে ফেলা হয়েছে");
         } catch {
-          toast("error", "Delete failed");
+          toast("error", "মুছে ফেলা যায়নি");
         } finally {
           setUpdatingIdV2(null);
         }
@@ -152,9 +152,9 @@ export default function AdminBookingsPage() {
         setBookingsV2((prev) => prev.map((b) => (b.id === saved.id ? { ...b, ...saved } : b)));
       }
       setEditV2(null);
-      toast("success", "Booking updated");
+      toast("success", "বুকিং আপডেট হয়েছে");
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Failed to update booking"));
+      toast("error", apiErrorMessage(e, "বুকিং আপডেট করা যায়নি"));
     } finally {
       setSavingV2(false);
     }
@@ -170,9 +170,9 @@ export default function AdminBookingsPage() {
         setDetailV2((prev) => (prev ? { ...prev, ...saved } : prev));
         setBookingsV2((prev) => prev.map((b) => (b.id === saved.id ? { ...b, ...saved } : b)));
       }
-      toast("success", "Advance marked received; booking confirmed");
+      toast("success", "অগ্রিম পাওয়া গেছে — বুকিং নিশ্চিত");
     } catch (e) {
-      toast("error", apiErrorMessage(e, "Failed to mark advance received"));
+      toast("error", apiErrorMessage(e, "অগ্রিম পাওয়া চিহ্ন দেওয়া যায়নি"));
     } finally {
       setSavingV2(false);
     }
@@ -354,7 +354,7 @@ export default function AdminBookingsPage() {
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">Booking {detailV2.booking_number}</h2>
-              <button onClick={() => setDetailV2(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+              <button aria-label="বন্ধ করুন" type="button" onClick={() => setDetailV2(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="overflow-y-auto flex-1 px-6 py-4 space-y-5">
               <div className="flex items-center justify-between gap-2 flex-wrap">

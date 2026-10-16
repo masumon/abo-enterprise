@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDhakaBn } from "@/lib/flashSale";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import TranslateButton from "@/components/admin/TranslateButton";
 import ImageUpload from "@/components/admin/ImageUpload";
@@ -197,7 +198,7 @@ export default function AdminInventoryPage() {
               <input className="rounded-lg border border-gray-200 dark:border-white/10 p-2 bg-white dark:bg-[#0f1a2e] md:col-span-2" placeholder="কারণ লিখুন (আবশ্যক)" value={reason} onChange={(e) => setReason(e.target.value)} />
               <button className="md:col-span-4 inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-600 text-white py-2 disabled:opacity-50" disabled={adjusting} onClick={submitAdjustment}>{Number(delta) >= 0 ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />} {adjusting ? "সেভ হচ্ছে…" : Number(delta) < 0 ? `${Math.abs(Number(delta))} পিস কমান` : Number(delta) > 0 ? `${Number(delta)} পিস যোগ করুন` : "স্টক বদলান"}</button>
             </div>
-            <div className="max-h-64 overflow-auto border border-gray-200 dark:border-white/10 rounded-lg"><table className="w-full text-xs"><thead><tr className="border-b border-gray-200 dark:border-white/10 text-left"><th className="p-2">সময়</th><th className="p-2">ধরন</th><th className="p-2">পরিবর্তন</th><th className="p-2">এরপর স্টক</th><th className="p-2">কারণ</th></tr></thead><tbody>{movements.map((m) => <tr key={m.id} className="border-b border-gray-200 dark:border-white/10/50"><td className="p-2">{m.created_at ? new Date(m.created_at).toLocaleString() : "—"}</td><td className="p-2">{m.movement_type}</td><td className="p-2">{m.quantity_delta > 0 ? "+" : ""}{m.quantity_delta}</td><td className="p-2">{m.quantity_after}</td><td className="p-2">{m.reason || "—"}</td></tr>)}</tbody></table></div>
+            <div className="max-h-64 overflow-auto border border-gray-200 dark:border-white/10 rounded-lg"><table className="w-full text-xs"><thead><tr className="border-b border-gray-200 dark:border-white/10 text-left"><th className="p-2">সময়</th><th className="p-2">ধরন</th><th className="p-2">পরিবর্তন</th><th className="p-2">এরপর স্টক</th><th className="p-2">কারণ</th></tr></thead><tbody>{movements.map((m) => <tr key={m.id} className="border-b border-gray-200 dark:border-white/10/50"><td className="p-2">{m.created_at ? formatDhakaBn(new Date(m.created_at)) : "—"}</td><td className="p-2">{m.movement_type}</td><td className="p-2">{m.quantity_delta > 0 ? "+" : ""}{m.quantity_delta}</td><td className="p-2">{m.quantity_after}</td><td className="p-2">{m.reason || "—"}</td></tr>)}</tbody></table></div>
           </div></div>}
         </>
       ) : (
