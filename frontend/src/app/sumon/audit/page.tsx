@@ -200,9 +200,7 @@ export default function AdminAuditPage() {
           >
             আগের
           </button>
-          <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
-            Page {page} of {totalPages}
-          </span>
+          <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">পাতা {page} / {totalPages}</span>
           <button
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}

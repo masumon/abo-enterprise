@@ -256,7 +256,7 @@ export default function ImageUpload({
                   disabled={uploading}
                   className="btn btn-outline btn-sm flex items-center gap-1"
                 >
-                  <X className="w-3.5 h-3.5" /> Cancel
+                  <X className="w-3.5 h-3.5" /> বাতিল
                 </button>
               </div>
               {uploading && uploadProgress !== null && (

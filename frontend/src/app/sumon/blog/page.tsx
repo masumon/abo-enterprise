@@ -670,7 +670,7 @@ export default function AdminBlogPage() {
               {/* Slug */}
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                  Slug <span className="text-red-400">*</span>
+                  ওয়েব ঠিকানা (slug) <span className="text-red-400">*</span>
                 </label>
                 <input
                   value={editing.slug ?? ""}

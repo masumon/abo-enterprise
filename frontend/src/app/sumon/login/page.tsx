@@ -179,7 +179,7 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">ইমেইল</label>
             <input
               {...register("email")}
               id="admin-email"

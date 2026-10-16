@@ -137,16 +137,16 @@ export default function MediaLibraryPicker({ open, onSelect, onClose, accept = "
               onClick={() => { const p = page - 1; setPage(p); void load(p, search); }}
               className="btn btn-outline btn-sm disabled:opacity-50"
             >
-              Previous
+              আগের
             </button>
-            <span className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300">Page {page} of {totalPages}</span>
+            <span className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-300">পাতা {page} / {totalPages}</span>
             <button
               type="button"
               disabled={page >= totalPages || loading}
               onClick={() => { const p = page + 1; setPage(p); void load(p, search); }}
               className="btn btn-outline btn-sm disabled:opacity-50"
             >
-              Next
+              পরের
             </button>
           </div>
         )}

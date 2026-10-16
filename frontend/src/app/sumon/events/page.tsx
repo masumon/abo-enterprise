@@ -149,7 +149,7 @@ ${JSON.stringify(e.meta, null, 2)}` : ""}`;
                 <tr>
                   <th>Time</th>
                   <th>Severity</th>
-                  <th>Type</th>
+                  <th>ধরন</th>
                   <th>Source</th>
                   <th>Message</th>
                 </tr>
@@ -219,9 +219,9 @@ ${JSON.stringify(e.meta, null, 2)}` : ""}`;
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-          <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">Page {page} of {totalPages}</span>
-          <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">Next</button>
+          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="btn btn-outline btn-sm">আগের</button>
+          <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">পাতা {page} / {totalPages}</span>
+          <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">পরের</button>
         </div>
       )}
     </div>

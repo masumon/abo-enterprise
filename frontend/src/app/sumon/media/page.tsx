@@ -899,7 +899,7 @@ export default function AdminMediaPage() {
               onClick={() => { setLibraryPage(1); void loadLibrary(1, librarySearch); }}
               className="btn btn-outline btn-sm"
             >
-              Search
+              খুঁজুন
             </button>
           </div>
 
@@ -1001,14 +1001,14 @@ export default function AdminMediaPage() {
                           onClick={() => openEditAsset(asset)}
                           className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-brand-300 hover:text-brand-600"
                         >
-                          <Pencil className="w-3 h-3" /> Edit
+                          <Pencil className="w-3 h-3" /> সম্পাদনা
                         </button>
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(asset)}
                           className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-gray-200 text-red-500 hover:border-red-300 hover:bg-red-50"
                         >
-                          <Trash2 className="w-3 h-3" /> Delete
+                          <Trash2 className="w-3 h-3" /> মুছুন
                         </button>
                       </div>
                     </div>
@@ -1024,7 +1024,7 @@ export default function AdminMediaPage() {
                     onClick={() => { const p = libraryPage - 1; setLibraryPage(p); void loadLibrary(p, librarySearch); }}
                     className="btn btn-outline btn-sm disabled:opacity-50"
                   >
-                    Previous
+                    আগের
                   </button>
                   <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
                     Page {libraryPage} of {libraryTotalPages}
@@ -1035,7 +1035,7 @@ export default function AdminMediaPage() {
                     onClick={() => { const p = libraryPage + 1; setLibraryPage(p); void loadLibrary(p, librarySearch); }}
                     className="btn btn-outline btn-sm disabled:opacity-50"
                   >
-                    Next
+                    পরের
                   </button>
                 </div>
               )}
@@ -1077,7 +1077,7 @@ export default function AdminMediaPage() {
               />
             </div>
             <div className="flex justify-end gap-2 flex-wrap">
-              <button type="button" onClick={() => setEditingAsset(null)} className="btn btn-outline btn-sm">Cancel</button>
+              <button type="button" onClick={() => setEditingAsset(null)} className="btn btn-outline btn-sm">বাতিল</button>
               <button type="button" onClick={saveAssetEdit} disabled={savingAsset} className="btn btn-brand btn-sm disabled:opacity-60">
                 {savingAsset ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save

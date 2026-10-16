@@ -451,7 +451,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
               <option value={30}>30s</option>
             </select>
             <button type="button" onClick={loadLive} className="btn btn-outline btn-sm inline-flex items-center gap-1.5">
-              <RefreshCw className="w-3.5 h-3.5" /> Refresh
+              <RefreshCw className="w-3.5 h-3.5" /> আবার আনুন
             </button>
           </div>
         </div>

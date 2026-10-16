@@ -154,11 +154,11 @@ export default function AdminPagesPage() {
             <table className="table-premium table-responsive min-[641px]:min-w-0 min-[641px]:min-w-[600px] min-w-0 min-[641px]:min-w-[600px]">
               <thead>
                 <tr>
-                  <th>Title</th>
-                  <th>Slug</th>
-                  <th>Status</th>
+                  <th>শিরোনাম</th>
+                  <th>ওয়েব ঠিকানা (slug)</th>
+                  <th>অবস্থা</th>
                   <th>Updated</th>
-                  <th className="text-right">Actions</th>
+                  <th className="text-right">কাজ</th>
                 </tr>
               </thead>
               <tbody>
@@ -197,9 +197,9 @@ export default function AdminPagesPage() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-          <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">Page {page} of {totalPages}</span>
-          <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">Next</button>
+          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="btn btn-outline btn-sm">আগের</button>
+          <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">পাতা {page} / {totalPages}</span>
+          <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">পরের</button>
         </div>
       )}
 
@@ -245,7 +245,7 @@ export default function AdminPagesPage() {
                   <input {...register("seo_title")} className="input" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">অবস্থা</label>
                   <select {...register("status")} className="input">
                     <option value="draft">Draft</option>
                     <option value="published">Published</option>
@@ -257,7 +257,7 @@ export default function AdminPagesPage() {
                 <textarea {...register("seo_description")} rows={2} className="input" />
               </div>
               <div className="flex justify-end gap-2 flex-wrap pt-2">
-                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline btn-md">Cancel</button>
+                <button type="button" onClick={() => setShowModal(false)} className="btn btn-outline btn-md">বাতিল</button>
                 <button type="submit" disabled={saving} className="btn btn-brand btn-md">
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : editing ? "Save Changes" : "Create Page"}
                 </button>
