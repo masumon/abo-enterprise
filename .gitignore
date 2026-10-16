@@ -68,3 +68,7 @@ backend/demo_cleanup_backups/
 
 # Google OAuth client files (secrets) — never commit
 client_secret*.json
+
+# Local archive of retired files (kept in project, not in git)
+/_archive/
+/admin ui_ux/
