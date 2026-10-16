@@ -1531,3 +1531,29 @@ html:not(.dark) #page-content :is(.text-gray-500, .text-muted) { color: rgb(75 8
 .admin-dark :is([class~="text-amber-700"], [class~="text-amber-800"]):not([class*="dark:text-"]) { color: rgb(252 211 77); }
 .admin-dark :is([class~="text-red-500"], [class~="text-red-600"], [class~="text-red-700"]):not([class*="dark:text-"]) { color: rgb(248 113 113); }
 .admin-shell [class~="bg-blue-100"][class~="text-blue-600"] { color: rgb(29 78 216); }
+
+/* Admin accessibility: maintain readable input hints, disabled states and keyboard focus in dark mode. */
+.admin-dark :is(input, select, textarea)::placeholder {
+  color: rgb(148 163 184);
+  opacity: 1;
+}
+.admin-dark :is(input, select, textarea):disabled {
+  color: rgb(148 163 184);
+  background-color: #111827;
+  opacity: 1;
+  cursor: not-allowed;
+}
+.admin-dark :is(
+  a,
+  button,
+  [role="button"],
+  [role="menuitem"],
+  input,
+  select,
+  textarea,
+  summary,
+  [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}

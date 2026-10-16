@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { AlertTriangle, Trash2, X } from "lucide-react";
+import { useLanguageStore } from "@/store/language";
 
 interface Props {
   open: boolean;
@@ -24,6 +25,8 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
 }: Props) {
+  const lang = useLanguageStore((s) => s.lang);
+  const bn = lang === "bn";
   const cancelRef = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
@@ -87,7 +90,7 @@ export default function ConfirmDialog({
       style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div ref={dialogRef} className="w-full max-w-md animate-scale-in max-h-[90vh] overflow-y-auto rounded-3xl border border-gray-100 bg-white p-6 shadow-2xl">
+      <div ref={dialogRef} className="w-full max-w-md animate-scale-in max-h-[90dvh] overflow-y-auto rounded-3xl border border-gray-100 bg-white p-6 text-gray-900 shadow-2xl dark:border-white/10 dark:bg-[var(--surface-card)] dark:text-gray-100">
         <div className="pointer-events-none -mx-6 -mt-6 mb-4 h-px bg-gradient-to-r from-transparent via-brand-300/60 to-transparent" />
         <div className="flex items-start gap-4">
           <div className={`p-3 rounded-2xl border flex-shrink-0 ${colors.icon}`}>
@@ -95,29 +98,29 @@ export default function ConfirmDialog({
           </div>
           <div className="flex-1 min-w-0">
             <h3 id="confirm-title" className="text-base font-semibold text-gray-900 mb-1 text-balance">{title}</h3>
-            <p className="text-sm text-gray-500 leading-relaxed">{message ?? description ?? ""}</p>
+            <p className="text-sm leading-relaxed text-gray-500 dark:text-gray-300">{message ?? description ?? ""}</p>
           </div>
           <button
             onClick={onCancel}
-            aria-label="বন্ধ করুন"
-            className="text-gray-400 hover:text-gray-600 flex-shrink-0 mt-0.5 max-[640px]:w-11 max-[640px]:h-11 max-[640px]:flex max-[640px]:items-center max-[640px]:justify-center"
+            aria-label={bn ? "বন্ধ করুন" : "Close"}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 flex-shrink-0 mt-0.5 max-[640px]:w-11 max-[640px]:h-11 max-[640px]:flex max-[640px]:items-center max-[640px]:justify-center"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="flex flex-col-reverse gap-3 mt-6 pt-1 border-t border-gray-100 min-[641px]:flex-row min-[641px]:flex-wrap min-[641px]:justify-end">
+        <div className="flex flex-col-reverse gap-3 mt-6 pt-1 border-t border-gray-100 min-[641px]:flex-row min-[641px]:flex-wrap min-[641px]:justify-end dark:border-white/10">
           <button
             ref={cancelRef}
             onClick={onCancel}
             className="btn btn-outline btn-sm w-full min-[641px]:w-auto"
           >
-            বাতিল
+            {bn ? "বাতিল" : "Cancel"}
           </button>
           <button
             onClick={onConfirm}
             className={`btn btn-sm w-full px-5 min-[641px]:w-auto ${colors.btn}`}
           >
-            {confirmLabel}
+            {bn && confirmLabel === "নিশ্চিত করুন" ? "নিশ্চিত করুন" : !bn && confirmLabel === "নিশ্চিত করুন" ? "Confirm" : confirmLabel}
           </button>
         </div>
       </div>

@@ -17,14 +17,9 @@ interface Props {
 export default function AdminPageHeader({ title, description, titleBn, descriptionBn, actions, className }: Props) {
   const { lang } = useLanguageStore();
 
-  // Respect the admin top-bar language toggle (which already localizes the
-  // sidebar + breadcrumbs). When Bengali is selected and a Bengali title is
-  // provided, show it as the primary heading with English as the secondary
-  // line — so the page headline matches the Bengali navigation instead of
-  // always leading in English. Falls back gracefully when titleBn is absent.
-  const useBn = lang === "bn" && !!titleBn;
-  const primary = useBn ? titleBn : title;
-  const secondary = useBn ? title : titleBn;
+  // Show one heading in the selected language. Repeating the English title
+  // beneath a Bengali heading left mixed-language UI after switching to Bangla.
+  const primary = lang === "bn" ? titleBn ?? title : title;
   const desc = lang === "bn" ? descriptionBn ?? description : description;
 
   return (
@@ -34,9 +29,6 @@ export default function AdminPageHeader({ title, description, titleBn, descripti
         <span className="mt-1 h-9 w-1.5 rounded-full bg-gradient-to-b from-brand-500 to-brand-700 flex-shrink-0" aria-hidden />
         <div className="min-w-0 space-y-1">
           <h1 className="text-xl sm:text-2xl font-bold text-heading tracking-tight text-balance">{primary}</h1>
-          {secondary && (
-            <p className="text-sm text-brand-600 font-medium">{secondary}</p>
-          )}
           {desc && (
             <p className="text-sm text-muted max-w-3xl leading-relaxed">{desc}</p>
           )}
