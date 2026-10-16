@@ -304,7 +304,7 @@ const GROUPS: { title: string; items: { id: string; question: string; answer: Re
 
 export default function AdminHelpPage() {
   return (
-    <div className="admin-page admin-page-narrow">
+    <div className="admin-page">
       <AdminPageHeader
         title="Help Guide"
         titleBn="সহায়তা গাইড"

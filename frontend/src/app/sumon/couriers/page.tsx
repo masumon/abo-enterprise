@@ -97,7 +97,7 @@ export default function CouriersPage() {
   const done = [data.providers.some((p) => p.ready), true];
 
   return (
-    <div className="admin-page admin-page-narrow">
+    <div className="admin-page">
       <AdminPageHeader title="Couriers" titleBn="কুরিয়ার" descriptionBn="কুরিয়ারের API বসান → পরীক্ষা করুন → স্বয়ংক্রিয় বা হাতে পাঠানো বেছে নিন" />
 
       {/* status */}

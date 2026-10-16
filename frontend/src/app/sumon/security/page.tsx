@@ -248,7 +248,7 @@ function SecurityInner() {
   const lowCodes = enabled && typeof left === "number" && left <= 3;
 
   return (
-    <div className="admin-page admin-page-narrow">
+    <div className="admin-page">
       <AdminPageHeader
         title="Account Security"
         titleBn="অ্যাকাউন্ট নিরাপত্তা"

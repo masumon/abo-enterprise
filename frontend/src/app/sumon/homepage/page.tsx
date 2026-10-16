@@ -388,7 +388,7 @@ export default function AdminHomepageContentPage() {
   ) : null;
 
   return (
-    <div className="admin-page admin-page-narrow pb-24">
+    <div className="admin-page pb-24">
       <HomepageSectionNav />
       <AdminPageHeader
         title="Arrange Homepage"

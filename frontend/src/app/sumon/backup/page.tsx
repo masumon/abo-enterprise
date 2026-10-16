@@ -164,7 +164,7 @@ export default function BackupPage() {
   const help = oauth && !oauth.ok ? OAUTH_HELP[oauth.reason] ?? OAUTH_HELP.failed : null;
 
   return (
-    <div className="admin-page admin-page-narrow">
+    <div className="admin-page">
       <AdminPageHeader title="Database Backup" titleBn="ডাটাবেস Backup" descriptionBn="অর্ডার, কাস্টমার, বুকিং — সব ডেটা তালাবদ্ধ (এনক্রিপ্ট) করে আপনার ড্রাইভে বা কম্পিউটারে" />
 
       {help && (

@@ -55,7 +55,7 @@ export default function ContentHealthPage() {
   const total = (groups ?? []).reduce((n, g) => n + g.items.length, 0);
 
   return (
-    <div className="admin-page admin-page-narrow space-y-5">
+    <div className="admin-page space-y-5">
       <AdminPageHeader
         title="Content Health"
         titleBn="কনটেন্ট স্বাস্থ্য"
