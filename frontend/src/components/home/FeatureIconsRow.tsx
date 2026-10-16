@@ -74,9 +74,9 @@ export default function FeatureIconsRow() {
   const item = ({ icon: Icon, label, color, href }: (typeof FEATURES)[number]) => (
     <Link
       href={href}
-      className="flex flex-col items-center justify-center gap-1.5 py-1.5 sm:py-3 px-3 sm:px-5 w-20 sm:w-24 min-h-11 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group touch-manipulation"
+      className="flex flex-col items-center justify-center gap-1.5 py-1.5 sm:py-3 px-3 sm:px-5 w-20 sm:w-24 lg:w-28 min-h-11 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors group touch-manipulation"
     >
-      <Icon className={`w-6 sm:w-8 h-6 sm:h-8 ${color} group-hover:scale-110 transition-transform`} aria-hidden />
+      <Icon className={`w-6 sm:w-8 lg:w-9 h-6 sm:h-8 lg:h-9 ${color} group-hover:scale-110 transition-transform`} aria-hidden />
       <span className="text-[11px] sm:text-xs font-semibold text-center text-heading leading-tight">
         {lang === "bn" ? label.bn : label.en}
       </span>
@@ -85,17 +85,14 @@ export default function FeatureIconsRow() {
 
   return (
     <section className="py-3 sm:py-4 bg-white dark:bg-[var(--surface)]">
-      {/* Desktop: everything fits, so a calm centred row (no repeated icons). */}
-      <div className="hidden lg:flex container mx-auto px-4 flex-wrap justify-center gap-2">
-        {FEATURES.map((f) => <div key={f.id}>{item(f)}</div>)}
-      </div>
-      {/* Phones/tablets: gentle auto-scroll. */}
-      <div className="lg:hidden container mx-auto px-4 [mask-image:linear-gradient(to_right,transparent,#000_6%,#000_94%,transparent)]">
+      {/* Every screen: a gentle right-to-left auto-scroll like the partner band; it pauses on hover/focus
+          and each item is a normal link, so a click goes straight to its page. */}
+      <div className="container mx-auto px-4 [mask-image:linear-gradient(to_right,transparent,#000_6%,#000_94%,transparent)]">
         <AutoScrollRow
           items={FEATURES}
           keyExtractor={(f) => f.id}
           spaceBetween={8}
-          minSlides={24}
+          minSlides={40}
           renderItem={item}
         />
       </div>
