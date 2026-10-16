@@ -9,7 +9,14 @@ from __future__ import annotations
 import io
 import re
 import secrets
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
+
+# Bangladesh Standard Time (UTC+6, no daylight saving) — reports show local time.
+_BD = timezone(timedelta(hours=6))
+
+
+def _bd_now() -> datetime:
+    return datetime.now(_BD)
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -108,7 +115,7 @@ def _totals(headers: list[str], rows: list[dict[str, Any]]) -> list[tuple[str, f
 
 
 def report_ref() -> str:
-    return f"RPT-{datetime.now(timezone.utc):%Y%m%d}-{secrets.token_hex(2).upper()}"
+    return f"RPT-{_bd_now():%Y%m%d}-{secrets.token_hex(2).upper()}"
 
 
 def build_report_pdf(report_type: str, rows: list[dict[str, Any]], period: str, company: dict[str, str]) -> bytes:
@@ -118,7 +125,7 @@ def build_report_pdf(report_type: str, rows: list[dict[str, Any]], period: str, 
     title_en, title_bn = TITLES.get(report_type, (f"{_pretty(report_type)} Report", "রিপোর্ট"))
     headers = _headers(rows)
     ref = report_ref()
-    generated = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M UTC")
+    generated = _bd_now().strftime("%d %b %Y, %I:%M %p") + " (Bangladesh Time)"
     landscape = len(headers) > 6
     logo = _logo()
 
@@ -279,7 +286,7 @@ def build_report_xlsx(report_type: str, rows: list[dict[str, Any]], period: str,
     ws["B1"] = company.get("name", ""); ws["B1"].font = Font(bold=True, size=16, color="1E3A8A")
     ws["B2"] = company.get("tagline", ""); ws["B2"].font = Font(size=9, color="6B7280")
     ws["B3"] = f"{title_en} · {title_bn}"; ws["B3"].font = Font(bold=True, size=13)
-    ws["B4"] = f"Period: {period}   ·   Generated {datetime.now(timezone.utc):%d %b %Y, %H:%M UTC}   ·   {len(rows)} records"
+    ws["B4"] = f"Period: {period}   ·   Generated {_bd_now():%d %b %Y, %I:%M %p} (Bangladesh Time)   ·   {len(rows)} records"
     ws["B4"].font = Font(size=9, color="6B7280")
     for r in (1, 2, 3, 4):
         ws.row_dimensions[r].height = 20

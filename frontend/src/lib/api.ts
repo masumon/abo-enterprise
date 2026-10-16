@@ -462,7 +462,7 @@ export async function downloadCsv(path: string, filename: string): Promise<void>
   a.href = url;
   a.download = filename;
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
 }
 
 // ── Bulk Product Import ──────────────────────────────────────────────────────

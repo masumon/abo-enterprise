@@ -42,7 +42,7 @@ export default function AdminReportsPage() {
   const [endDate, setEndDate] = useState(() => toDateInput(new Date()));
   const [rows, setRows] = useState<Record<string, unknown>[]>([]);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
+  const [exporting, setExporting] = useState<"" | "csv" | "pdf" | "xlsx">("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,14 +60,14 @@ export default function AdminReportsPage() {
   useEffect(() => { load(); }, [load]);
 
   const handleExport = async (kind: "csv" | "pdf" | "xlsx" = "csv") => {
-    setExporting(true);
+    setExporting(kind);
     try {
       const params = { start_date: startDate, end_date: endDate };
       await downloadCsv(kind === "pdf" ? reportsApi.exportPdfPath(report, params) : kind === "xlsx" ? reportsApi.exportXlsxPath(report, params) : reportsApi.exportPath(report, params), `${report}_${startDate}_${endDate}.${kind}`);
     } catch (err) {
       toast("error", apiErrorMessage(err, "ডাউনলোড করা যায়নি"));
     } finally {
-      setExporting(false);
+      setExporting("");
     }
   };
 
@@ -87,16 +87,16 @@ export default function AdminReportsPage() {
         descriptionBn="বিক্রয়, রেভিনিউ, পণ্য, সেবা, গ্রাহক, পেমেন্ট, কুরিয়ার, লাভ এবং রিকনসিলিয়েশন — তারিখ পরিসর অনুযায়ী ফিল্টার এবং CSV এক্সপোর্ট করা যায়। সঠিক সংখ্যা যাচাইয়ের জন্য এটিই মূল জায়গা।"
         actions={
           <>
-            <button type="button" onClick={() => void handleExport("csv")} disabled={exporting || dataRows.length === 0} className="btn btn-brand btn-sm min-h-11 gap-1.5 px-4">
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            <button type="button" onClick={() => void handleExport("csv")} disabled={!!exporting || dataRows.length === 0} className="btn btn-brand btn-sm min-h-11 gap-1.5 px-4">
+              {exporting === "csv" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               CSV ডাউনলোড
             </button>
-            <button type="button" onClick={() => void handleExport("pdf")} disabled={exporting || dataRows.length === 0} className="btn btn-outline btn-sm min-h-11 gap-1.5 px-4">
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            <button type="button" onClick={() => void handleExport("pdf")} disabled={!!exporting || dataRows.length === 0} className="btn btn-outline btn-sm min-h-11 gap-1.5 px-4">
+              {exporting === "pdf" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               PDF ডাউনলোড
             </button>
-            <button type="button" onClick={() => void handleExport("xlsx")} disabled={exporting || dataRows.length === 0} className="btn btn-outline btn-sm min-h-11 gap-1.5 px-4">
-              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+            <button type="button" onClick={() => void handleExport("xlsx")} disabled={!!exporting || dataRows.length === 0} className="btn btn-outline btn-sm min-h-11 gap-1.5 px-4">
+              {exporting === "xlsx" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
               Excel ডাউনলোড
             </button>
           </>
