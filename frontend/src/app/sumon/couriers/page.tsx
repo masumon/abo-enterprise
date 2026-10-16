@@ -1,5 +1,6 @@
 "use client";
 
+import StatusCard from "@/components/admin/StatusCard";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertTriangle, CheckCircle2, ChevronDown, ExternalLink, Loader2, PlugZap, Truck, Zap } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -129,20 +130,20 @@ export default function CouriersPage() {
           {data.providers.map((p) => {
             const g = GUIDE[p.key];
             return (
-              <section key={p.key} id={`courier-${p.key}`}
-                className={`scroll-mt-24 rounded-2xl border p-4 space-y-3 transition ${focusKey === p.key ? "border-brand-500 ring-4 ring-brand-200" : "border-gray-200"}`}>
-                <div className="flex items-center gap-3">
-                  <span aria-hidden className={`w-10 h-10 rounded-xl bg-gradient-to-br ${g?.color ?? "from-gray-500 to-gray-700"} text-white font-bold flex items-center justify-center flex-none`}>{g?.letter ?? "C"}</span>
-                  <h3 className="font-semibold flex-1">{p.label}</h3>
-                  {p.ready && <span className="text-xs px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">প্রস্তুত</span>}
-                  {p.enabled !== null && (
+              <StatusCard key={p.key} id={`courier-${p.key}`}
+                state={result[p.key]?.ok === false ? "error" : p.ready ? "ok" : "todo"}
+                forceOpen={focusKey === p.key}
+                className={focusKey === p.key ? "!border-brand-500 ring-4 ring-brand-200" : ""}
+                title={p.label}
+                subtitle={result[p.key]?.ok === false ? result[p.key].text : p.ready ? "যুক্ত ও চালু — ক্লিক করলে খুলবে" : "API তথ্য বসিয়ে পরীক্ষা করুন"}
+                leading={<span aria-hidden className={`w-10 h-10 rounded-xl bg-gradient-to-br ${g?.color ?? "from-gray-500 to-gray-700"} text-white font-bold flex items-center justify-center flex-none`}>{g?.letter ?? "C"}</span>}
+                aside={p.enabled !== null ? (
                     <label className="flex items-center gap-2 text-sm min-h-11 cursor-pointer">
                       <input type="checkbox" className="w-5 h-5" checked={!!p.enabled}
                         onChange={(e) => save({ providers: { [p.key]: { enabled: e.target.checked } } }, e.target.checked ? "চালু হয়েছে" : "বন্ধ হয়েছে")} />
                       চালু
                     </label>
-                  )}
-                </div>
+                  ) : undefined}>
                 {g && (
                   <details className="rounded-lg bg-gray-50 p-3 text-sm group" open={!p.fields.some((f) => f.set) && p.key !== "steadfast"}>
                     <summary className="cursor-pointer min-h-11 flex items-center gap-1 font-medium list-none">
@@ -152,7 +153,7 @@ export default function CouriersPage() {
                     <a href={g.link} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-brand-700 underline min-h-11">{g.linkLabel} খুলুন <ExternalLink className="w-3.5 h-3.5" /></a>
                   </details>
                 )}
-                {p.key === "steadfast" && <SteadfastSettings onChanged={load} />}
+                {p.key === "steadfast" && <SteadfastSettings onChanged={load} onResult={(ok, text) => setResult((m) => ({ ...m, steadfast: { ok, text } }))} />}
                 {p.key !== "steadfast" && p.fields.map((f) => (
                   <label key={f.key} className="text-sm block">{f.label}{f.secret && f.set && <span className="text-xs text-emerald-700"> (সংরক্ষিত — বদলাতে নতুনটি লিখুন)</span>}
                     <input className="input w-full min-h-11 text-base" type={f.secret ? "password" : "text"} autoComplete="off"
@@ -179,7 +180,7 @@ export default function CouriersPage() {
                     {result[p.key].ok ? "✓ " : "⚠️ "}{result[p.key].text}
                   </p>
                 )}
-              </section>
+              </StatusCard>
             );
           })}
         </div>

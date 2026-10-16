@@ -59,10 +59,11 @@ export default function AdminReportsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const handleExport = async () => {
+  const handleExport = async (kind: "csv" | "pdf" = "csv") => {
     setExporting(true);
     try {
-      await downloadCsv(reportsApi.exportPath(report, { start_date: startDate, end_date: endDate }), `${report}_${startDate}_${endDate}.csv`);
+      const params = { start_date: startDate, end_date: endDate };
+      await downloadCsv(kind === "pdf" ? reportsApi.exportPdfPath(report, params) : reportsApi.exportPath(report, params), `${report}_${startDate}_${endDate}.${kind}`);
     } catch (err) {
       toast("error", apiErrorMessage(err, "ডাউনলোড করা যায়নি"));
     } finally {
@@ -85,10 +86,16 @@ export default function AdminReportsPage() {
         description="Sales, revenue, products, services, customers, payments, courier, profit and reconciliation — filterable by date range, exportable as CSV. This is the canonical place to check exact numbers."
         descriptionBn="বিক্রয়, রেভিনিউ, পণ্য, সেবা, গ্রাহক, পেমেন্ট, কুরিয়ার, লাভ এবং রিকনসিলিয়েশন — তারিখ পরিসর অনুযায়ী ফিল্টার এবং CSV এক্সপোর্ট করা যায়। সঠিক সংখ্যা যাচাইয়ের জন্য এটিই মূল জায়গা।"
         actions={
-          <button type="button" onClick={handleExport} disabled={exporting || dataRows.length === 0} className="btn btn-brand btn-sm min-h-11 gap-1.5 px-4">
-            {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            Export CSV
-          </button>
+          <>
+            <button type="button" onClick={() => void handleExport("csv")} disabled={exporting || dataRows.length === 0} className="btn btn-brand btn-sm min-h-11 gap-1.5 px-4">
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              CSV ডাউনলোড
+            </button>
+            <button type="button" onClick={() => void handleExport("pdf")} disabled={exporting || dataRows.length === 0} className="btn btn-outline btn-sm min-h-11 gap-1.5 px-4">
+              {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              PDF ডাউনলোড
+            </button>
+          </>
         }
       />
 

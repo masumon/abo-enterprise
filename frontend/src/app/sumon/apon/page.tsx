@@ -1,5 +1,6 @@
 "use client";
 
+import LivePreview from "@/components/admin/LivePreview";
 import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -348,6 +349,12 @@ export default function AponAdminPage() {
               <div><label className={label}>প্যাকেজ নাম</label><input className={cn(field, "font-mono text-xs")} value={v("apon_package_name")} onChange={(e) => set("apon_package_name", e.target.value)} placeholder="com.masumon.apon" /></div>
               <div><label className={label}>সাইনিং সার্টিফিকেট SHA-256</label><input className={cn(field, "font-mono text-xs")} value={v("apon_cert_sha256")} onChange={(e) => set("apon_cert_sha256", e.target.value)} placeholder="AE:3D:E5:…" /></div>
             </div>
+            <LivePreview showDevice={false}>
+              <div className="pointer-events-none rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 p-4 flex items-center gap-3 max-w-sm">
+                {v("apon_icon_url") ? <img src={v("apon_icon_url")} alt="" className="w-14 h-14 rounded-2xl object-cover" /> : <span className="w-14 h-14 rounded-2xl bg-brand-600 text-white font-bold text-xl flex items-center justify-center">আ</span>}
+                <div className="min-w-0"><p className="font-bold text-gray-900 dark:text-gray-100">{v("apon_name_bn") || "আপন"}</p><p className="text-xs text-gray-600 dark:text-gray-300 truncate">{v("apon_tagline_bn") || "ট্যাগলাইন এখানে দেখাবে"}</p><span className="mt-1 inline-block rounded-lg bg-brand-600 text-white text-xs font-semibold px-3 py-1">{v("apon_button_label_bn") || "ডাউনলোড করুন"}</span></div>
+              </div>
+            </LivePreview>
             {/* Store links: the footer shows "Google Play" / "App Store" buttons only when filled. */}
             <div className="grid sm:grid-cols-2 gap-3">
               <div><label className={label}>Google Play লিংক (ঐচ্ছিক)</label><input className={field} type="url" inputMode="url" value={v("play_store_url")} onChange={(e) => set("play_store_url", e.target.value)} placeholder="https://play.google.com/store/apps/details?id=…" /></div>

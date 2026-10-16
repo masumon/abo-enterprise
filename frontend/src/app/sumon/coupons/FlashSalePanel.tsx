@@ -1,5 +1,6 @@
 "use client";
 
+import LivePreview from "@/components/admin/LivePreview";
 import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, Plus, Save, Search, Trash2, Zap } from "lucide-react";
@@ -182,6 +183,16 @@ export default function FlashSalePanel() {
           </label>
         </div>
         <FlashSaleAdminStatus values={vals} />
+        <LivePreview showDevice={false}>
+          <div className="pointer-events-none rounded-xl overflow-hidden bg-gradient-to-r from-accent-600 to-brand-700 text-white p-4 flex items-center gap-3">
+            <span className="text-2xl">{vals.flash_sale_icon || "⚡"}</span>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold truncate">{vals.flash_sale_title_bn || vals.flash_sale_title_en || "আজকের দুর্দান্ত অফার"}</p>
+              <p className="text-xs text-white/80">{on ? "চালু — কাউন্টডাউন হোমপেজে" : "বন্ধ — হোমপেজে দেখাবে না"}</p>
+            </div>
+            <div className="flex gap-1 flex-none">{["০২", "১১", "৪৫"].map((n) => <span key={n} className="bg-white/20 rounded px-2 py-1 text-sm font-bold tabular-nums">{n}</span>)}</div>
+          </div>
+        </LivePreview>
         <button type="button" onClick={saveSettings} disabled={saving} className="btn btn-brand min-h-11 px-5 gap-1.5 w-full sm:w-auto justify-center">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" aria-hidden /> : <Save className="w-4 h-4" aria-hidden />} সংরক্ষণ করুন
         </button>

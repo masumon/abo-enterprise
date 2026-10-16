@@ -1,5 +1,6 @@
 "use client";
 
+import LivePreview from "@/components/admin/LivePreview";
 import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { formatDhakaBn } from "@/lib/flashSale";
 import { useCallback, useEffect, useState } from "react";
@@ -415,6 +416,9 @@ export default function AdminAssistantPage() {
                   <div>
                     <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">স্বাগত বার্তা (বাংলা)<AiTextMenu compact text={config.assistant_welcome_bn} onApply={(v) => setConfig((c) => ({ ...c, assistant_welcome_bn: v }))} context="website chat assistant welcome message (Bangla)" /></label>
                     <textarea value={config.assistant_welcome_bn} onChange={(e) => setConfig((c) => ({ ...c, assistant_welcome_bn: e.target.value }))} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100" />
+                    <LivePreview showDevice={false}>
+                      <div className="pointer-events-none max-w-xs"><div className="inline-block rounded-2xl rounded-bl-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/10 px-3 py-2 text-sm text-gray-800 dark:text-gray-100" dir="auto">{config.assistant_welcome_bn || config.assistant_welcome_en || "স্বাগত বার্তা এখানে দেখাবে"}</div></div>
+                    </LivePreview>
                   </div>
                 </div>
               </div>

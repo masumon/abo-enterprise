@@ -26,7 +26,7 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
     newItem: () => ({ label_en: "", label_bn: "", href: "/" }),
   },
 };
-import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Zap, Mail, Info, Search, Settings as SettingsIcon } from "lucide-react";
+import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Zap, Mail, Info, Search, ChevronDown, Settings as SettingsIcon } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import { parseGoogleMapsEmbedInput } from "@/lib/maps";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -295,14 +295,21 @@ function SectionCard({
 }) {
   const isSaving = saving === section.id;
   const isSaved = savedId === section.id;
+  // Same behaviour as Backup/Courier cards: every text box filled → green ✓ and closed; otherwise open.
+  const textFields = section.fields.filter((f) => f.type !== "boolean");
+  const complete = textFields.length > 0 && textFields.every((f) => String(values[f.key] ?? "").trim() !== "");
+  const [open, setOpen] = useState(!complete);
+  useEffect(() => { if (typeof window !== "undefined" && window.location.hash === `#${section.id}`) setOpen(true); }, [section.id]);
 
   return (
     <div id={section.id} className="admin-surface admin-settings-section bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow overflow-hidden scroll-mt-24">
       <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-white/10 bg-gradient-to-r from-brand-50 to-transparent dark:from-brand-900/20 gap-3 flex-wrap">
-        <div className="flex items-center gap-2.5">
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} className="flex items-center gap-2.5 min-h-11 text-left flex-1 min-w-0">
           <span className="text-brand-600">{section.icon}</span>
           <h2 className="admin-settings-heading text-sm font-semibold text-gray-800 dark:text-gray-100">{section.title}</h2>
-        </div>
+          <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ring-1 ${complete ? "bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/30" : "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-500/30"}`}>{complete ? "✓ ঠিক আছে" : "বাকি আছে"}</span>
+          <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
+        </button>
         <button
           onClick={() => onSave(section.id)}
           disabled={isSaving}
@@ -321,6 +328,7 @@ function SectionCard({
           {isSaving ? "সংরক্ষণ হচ্ছে…" : isSaved ? "সংরক্ষিত!" : "সংরক্ষণ"}
         </button>
       </div>
+      {open && (<>
       {section.note && (
         <div className="admin-settings-note px-6 py-2.5 bg-brand-50/50 border-b border-brand-100/60 text-xs text-brand-800 dark:text-blue-100 flex items-center gap-2 flex-wrap">
           {section.mediaLink ? <ImageIcon className="w-3.5 h-3.5 flex-shrink-0" /> : <Info className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />}
@@ -417,6 +425,7 @@ function SectionCard({
           </div>
         ))}
       </div>
+      </>)}
     </div>
   );
 }
