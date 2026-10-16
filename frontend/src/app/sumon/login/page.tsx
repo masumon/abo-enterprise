@@ -179,7 +179,7 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1.5">Email</label>
+            <label className="block text-sm font-medium text-gray-300 mb-1.5">ইমেইল</label>
             <input
               {...register("email")}
               id="admin-email"
@@ -240,7 +240,7 @@ function LoginForm() {
                 autoComplete="one-time-code"
                 autoCapitalize="characters"
                 autoFocus
-                className="w-full px-4 py-3 bg-white/5 border border-brand-500/50 rounded-xl text-white text-center text-xl tracking-[0.3em] placeholder-gray-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40"
+                className="admin-surface w-full px-4 py-3 bg-white/5 border border-brand-500/50 rounded-xl text-white text-center text-xl tracking-[0.3em] placeholder-gray-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/40"
                 placeholder={useRecovery ? "XXXXX-XXXXX" : "000000"}
               />
               <p className="text-gray-500 text-xs mt-1.5">
@@ -277,7 +277,7 @@ function LoginForm() {
           <div className="mt-4">
             <div className="flex items-center gap-3 text-xs text-gray-500 my-3"><span className="flex-1 h-px bg-white/10" />অথবা<span className="flex-1 h-px bg-white/10" /></div>
             <button type="button" onClick={passkeyLogin} disabled={passkeyBusy}
-              className="w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 text-white font-semibold hover:bg-white/10 disabled:opacity-60">
+              className="admin-surface w-full min-h-12 inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 text-white font-semibold hover:bg-white/10 disabled:opacity-60">
               {passkeyBusy ? <Loader2 className="w-5 h-5 animate-spin" /> : <Fingerprint className="w-5 h-5" />} আঙুলের ছাপ / মুখ দিয়ে লগইন
             </button>
             <p className="mt-2 text-[11px] text-center text-gray-500">প্রথমবার পাসওয়ার্ড দিয়ে ঢুকে “নিরাপত্তা” পাতায় এই ডিভাইস যোগ করুন।</p>

@@ -149,7 +149,7 @@ export default function ServiceDetailsEditor({ value, onChange, serviceName, not
         {panel === "template" && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {DETAIL_TEMPLATES.map((t) => (
-              <button key={t.id} type="button" onClick={() => applyTemplate(t.id)} className="rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 px-3 py-2.5 text-left hover:border-brand-400 min-h-11">
+              <button key={t.id} type="button" onClick={() => applyTemplate(t.id)} className="admin-surface rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 px-3 py-2.5 text-left hover:border-brand-400 min-h-11">
                 <span className="text-lg">{t.icon}</span> <span className="text-sm font-medium text-heading">{t.bn}</span>
               </button>
             ))}
@@ -165,7 +165,7 @@ export default function ServiceDetailsEditor({ value, onChange, serviceName, not
           busy || !aiDraft ? (
             <p className="text-sm text-muted flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" /> AI “{serviceName}”-এর জন্য লিখছে… (৩০-৬০ সেকেন্ড)</p>
           ) : (
-            <div className="rounded-xl border border-brand-200 dark:border-brand-500/30 bg-white dark:bg-white/5 p-3 space-y-2">
+            <div className="admin-surface rounded-xl border border-brand-200 dark:border-brand-500/30 bg-white dark:bg-white/5 p-3 space-y-2">
               <p className="text-sm font-semibold text-heading">✨ AI যা লিখেছে — কোনগুলো রাখবেন?</p>
               <div className="flex flex-wrap gap-2">
                 {TABS.map((t) => {

@@ -134,7 +134,7 @@ ${JSON.stringify(e.meta, null, 2)}` : ""}`;
         <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
           <div className="space-y-3 p-3 min-[641px]:hidden">
             {events.map((e) => (
-              <article key={e.id} role="button" tabIndex={0} onClick={() => setDetail(e)} onKeyDown={(k) => { if (k.key === "Enter" || k.key === " ") { k.preventDefault(); setDetail(e); } }} className="cursor-pointer rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:border-brand-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-400">
+              <article key={e.id} role="button" tabIndex={0} onClick={() => setDetail(e)} onKeyDown={(k) => { if (k.key === "Enter" || k.key === " ") { k.preventDefault(); setDetail(e); } }} className="admin-surface cursor-pointer rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:border-brand-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-400">
                 <div className="flex flex-wrap items-start justify-between gap-2"><span className={`badge text-xs font-semibold ${SEVERITY_STYLE[e.severity] ?? SEVERITY_STYLE.info}`}>{e.severity}</span><time className="text-right text-xs text-gray-500">{new Date(e.created_at).toLocaleString("en-BD", {year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</time></div>
                 <p className="mt-3 break-words text-sm font-semibold capitalize text-gray-900">{e.event_type.replace(/_/g, " ")}</p>
                 <p className="mt-1 break-words text-xs text-gray-500">Source: {e.source}</p>
@@ -149,7 +149,7 @@ ${JSON.stringify(e.meta, null, 2)}` : ""}`;
                 <tr>
                   <th>Time</th>
                   <th>Severity</th>
-                  <th>Type</th>
+                  <th>ধরন</th>
                   <th>Source</th>
                   <th>Message</th>
                 </tr>
@@ -183,10 +183,10 @@ ${JSON.stringify(e.meta, null, 2)}` : ""}`;
       )}
 
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE}
+        <div className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetail(null)} onKeyDown={(k) => { if (k.key === "Escape") setDetail(null); }}
           role="dialog" aria-modal="true" aria-label="ঘটনার বিস্তারিত">
-          <div className="rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" style={ADMIN_MODAL_PANEL_STYLE} onClick={(e) => e.stopPropagation()}>
+          <div className="admin-sheet admin-sheet--m rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" style={ADMIN_MODAL_PANEL_STYLE} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3 px-5 sm:px-6 py-4 border-b border-gray-100">
               <div className="min-w-0">
                 <span className={`badge text-xs font-semibold ${SEVERITY_STYLE[detail.severity] ?? SEVERITY_STYLE.info}`}>{detail.severity}</span>
@@ -219,9 +219,9 @@ ${JSON.stringify(e.meta, null, 2)}` : ""}`;
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="btn btn-outline btn-sm">Previous</button>
-          <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">Page {page} of {totalPages}</span>
-          <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">Next</button>
+          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="btn btn-outline btn-sm">আগের</button>
+          <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">পাতা {page} / {totalPages}</span>
+          <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">পরের</button>
         </div>
       )}
     </div>

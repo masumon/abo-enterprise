@@ -509,13 +509,13 @@ export default function AdminReviewsPage() {
       {/* Edit / Create slide-in panel */}
       {(editing || creating) && (
         <div
-          className="fixed inset-0 z-50 flex"
+          className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex"
           style={ADMIN_MODAL_BACKDROP_STYLE}
           role="dialog"
           aria-modal="true"
           aria-label={creating ? "Create review" : "Edit review"}
         >
-          <div ref={editorRef} className="ml-auto w-full max-w-lg h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
+          <div ref={editorRef} className="admin-sheet admin-sheet--m ml-auto w-full max-w-lg h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-lg font-semibold text-gray-900">{creating ? "New Review" : "Edit Review"}</h2>
               <button aria-label="বন্ধ করুন" type="button" onClick={closeEdit} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>

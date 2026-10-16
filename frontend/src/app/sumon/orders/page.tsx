@@ -559,7 +559,7 @@ export default function AdminOrdersPage() {
       {/* Order Detail Modal */}
       {(detail || detailLoading) && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0"
+          className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0"
           style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetail(null)}
           role="dialog"
@@ -568,7 +568,7 @@ export default function AdminOrdersPage() {
         >
           <div
             ref={detailRef}
-            className="rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col animate-scale-in max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl"
+            className="admin-sheet admin-sheet--m rounded-2xl w-full max-w-xl max-h-[90vh] flex flex-col animate-scale-in max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl"
             style={ADMIN_MODAL_PANEL_STYLE}
             onClick={e => e.stopPropagation()}
           >
@@ -696,7 +696,7 @@ export default function AdminOrdersPage() {
                     <div>
                       <label className="text-xs text-gray-500">{tx("Provider")}</label>
                       <select value={courierProvider} onChange={(e) => setCourierProvider(e.target.value)} className="input text-sm mt-1">
-                        <option value="">— Select —</option>
+                        <option value="">— বাছুন —</option>
                         {COURIERS.map((c) => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
@@ -706,9 +706,9 @@ export default function AdminOrdersPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <button type="button" onClick={saveCourier} disabled={courierSaving} className="btn btn-primary btn-sm gap-1">
+                    <button type="button" onClick={saveCourier} disabled={courierSaving} className="btn btn-outline btn-sm min-h-11 gap-1">
                       {courierSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                      Save Courier
+                      কুরিয়ার তথ্য সংরক্ষণ
                     </button>
                     {detail.courier_tracking_id ? (
                       <span className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1.5 font-medium">

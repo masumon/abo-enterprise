@@ -241,13 +241,13 @@ export default function AdminBookingsPage() {
           <>
           <div className="space-y-3 p-3 min-[641px]:hidden">
             {bookingsV2.map((b) => (
-              <article key={b.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+              <article key={b.id} className="admin-surface rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
                 <button type="button" onClick={() => setDetailV2(b)} className="block min-h-11 w-full text-left">
                   <span className="flex items-start justify-between gap-3"><span className="min-w-0"><span className="block break-words text-sm font-bold text-gray-900">{b.booking_number}</span><span className="mt-1 block text-xs text-gray-500">{new Date(b.created_at).toLocaleDateString("en-BD")}</span></span><span className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${b.payment_status === "paid" ? "bg-green-100 text-green-700" : b.payment_status === "partial" ? "bg-yellow-100 text-yellow-700" : b.payment_status === "refunded" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"}`}>{b.payment_status}</span></span>
                   <span className="mt-3 block break-words text-sm font-semibold text-gray-900">{b.customer_name}</span><span className="block break-all text-xs text-gray-500">{b.customer_phone}</span>
                 </button>
                 <div className="mt-3 grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 text-sm"><div className="min-w-0"><p className="text-xs text-gray-500">Service</p><p className="mt-1 break-words text-gray-800">{b.service_name}{b.service_tier ? ` · ${b.service_tier}` : ""}</p></div><div><p className="text-xs text-gray-500">Price</p><p className="mt-1 font-semibold text-gray-900">{b.final_price != null ? `৳${b.final_price.toLocaleString()}` : b.quoted_price != null ? `৳${b.quoted_price.toLocaleString()}` : "—"}</p><p className="text-xs capitalize text-gray-500">{b.pricing_type}</p></div></div>
-                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3"><label className="flex min-w-0 flex-1 items-center gap-2 text-xs text-gray-500"><span>Status</span><select aria-label={`Status for ${b.booking_number}`} value={b.status} disabled={updatingIdV2 === b.id} onChange={(e) => requestStatusChange(b.id, e.target.value)} className="min-h-11 min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-800">{STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}</select></label><button type="button" onClick={() => handleDeleteV2(b.id, b.booking_number)} disabled={updatingIdV2 === b.id} aria-label={`Delete booking ${b.booking_number}`} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-red-100 px-3 text-xs font-semibold text-red-600 disabled:opacity-40"><Trash2 className="h-4 w-4" />Delete</button></div>
+                <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3"><label className="flex min-w-0 flex-1 items-center gap-2 text-xs text-gray-500"><span>অবস্থা</span><select aria-label={`Status for ${b.booking_number}`} value={b.status} disabled={updatingIdV2 === b.id} onChange={(e) => requestStatusChange(b.id, e.target.value)} className="min-h-11 min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-2 text-xs text-gray-800">{STATUSES_V2.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}</select></label><button type="button" onClick={() => handleDeleteV2(b.id, b.booking_number)} disabled={updatingIdV2 === b.id} aria-label={`Delete booking ${b.booking_number}`} className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-red-100 px-3 text-xs font-semibold text-red-600 disabled:opacity-40"><Trash2 className="h-4 w-4" />মুছুন</button></div>
               </article>
             ))}
           </div>
@@ -339,7 +339,7 @@ export default function AdminBookingsPage() {
       {/* Booking Detail Modal */}
       {detailV2 && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0"
+          className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0"
           style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetailV2(null)}
           role="dialog"
@@ -348,7 +348,7 @@ export default function AdminBookingsPage() {
         >
           <div
             ref={detailV2Ref}
-            className={`flex max-h-[90vh] w-full max-w-lg flex-col animate-scale-in max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl ${ADMIN_MODAL_PANEL_CLASS}`}
+            className={`admin-sheet admin-sheet--m flex max-h-[90vh] w-full max-w-lg flex-col animate-scale-in max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl ${ADMIN_MODAL_PANEL_CLASS}`}
             style={ADMIN_MODAL_PANEL_STYLE}
             onClick={e => e.stopPropagation()}
           >

@@ -141,9 +141,9 @@ export default function AdminTrackingPage() {
 
       {total > PER_PAGE && (
         <div className="flex justify-center gap-2">
-          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="btn btn-outline btn-sm">Previous</button>
+          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="btn btn-outline btn-sm">আগের</button>
           <span className="px-4 py-2 text-sm text-gray-600">Page {page}</span>
-          <button disabled={orders.length < PER_PAGE} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">Next</button>
+          <button disabled={orders.length < PER_PAGE} onClick={() => setPage((p) => p + 1)} className="btn btn-outline btn-sm">পরের</button>
         </div>
       )}
     </div>

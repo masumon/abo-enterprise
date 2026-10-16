@@ -230,8 +230,8 @@ export default function AdminCouponsPage() {
       )}
 
       {(dirty || saving) && (
-        <div className="fixed bottom-0 left-0 right-0 lg:left-64 z-30 border-t border-gray-200 dark:border-white/10 bg-white/95 dark:bg-gray-900/95 backdrop-blur pl-4 pr-24 py-3 flex items-center justify-between gap-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <p className="text-sm text-amber-700 dark:text-amber-300">⚠️ সেভ করা হয়নি এমন পরিবর্তন আছে</p>
+        <div className="admin-savebar fixed bottom-4 inset-x-4 sm:inset-x-auto sm:right-6 z-40 flex items-center justify-between sm:justify-end gap-3 rounded-2xl bg-white dark:bg-[#111a2e] border border-gray-200 dark:border-white/10 shadow-xl px-4 py-2.5">
+          <span className="text-xs font-medium text-amber-600 dark:text-amber-400">অসংরক্ষিত পরিবর্তন আছে</span>
           <div className="flex gap-2">
             <button type="button" onClick={() => void load()} disabled={saving} className="btn btn-outline btn-sm min-h-11">বাতিল</button>
             <button type="button" onClick={save} disabled={saving} className="btn btn-brand btn-sm min-h-11 gap-1.5">

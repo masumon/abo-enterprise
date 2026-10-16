@@ -61,9 +61,9 @@ function PasswordDialog({ ask, onClose }: { ask: Ask; onClose: () => void }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [busy, onClose]);
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={ask.title}
+    <div className="admin-overlay admin-overlay--dialog fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={ask.title}
       onClick={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
-      <div className="bg-white rounded-2xl w-full max-w-md p-5 space-y-3 shadow-xl">
+      <div className="admin-sheet admin-sheet--s bg-white rounded-2xl w-full max-w-md p-5 space-y-3 shadow-xl">
         <p className="font-semibold text-gray-900">{ask.title}</p>
         {ask.note && <p className={`text-sm ${ask.danger ? "text-red-700" : "text-gray-600"}`}>{ask.note}</p>}
         <input className={input} type="password" autoFocus placeholder="আপনার অ্যাডমিন লগইন পাসওয়ার্ড" value={pw}
@@ -164,7 +164,7 @@ export default function BackupPage() {
   const help = oauth && !oauth.ok ? OAUTH_HELP[oauth.reason] ?? OAUTH_HELP.failed : null;
 
   return (
-    <div className="space-y-4 max-w-5xl">
+    <div className="admin-page admin-page-narrow">
       <AdminPageHeader title="Database Backup" titleBn="ডাটাবেস Backup" descriptionBn="অর্ডার, কাস্টমার, বুকিং — সব ডেটা তালাবদ্ধ (এনক্রিপ্ট) করে আপনার ড্রাইভে বা কম্পিউটারে" />
 
       {help && (
@@ -462,7 +462,7 @@ function AddDrive({ kind, setKind, redirectUri, oneClick, onDone }: {
     } finally { setBusy(false); }
   };
   const card = (d: (typeof DRIVE_GUIDES)[number]) => (
-    <button key={d.kind} type="button" className="text-left rounded-xl border border-gray-200 bg-white p-3 min-h-16 hover:border-brand-400 hover:shadow-sm transition flex items-center gap-3" onClick={() => setKind(d.kind)}>
+    <button key={d.kind} type="button" className="admin-surface text-left rounded-xl border border-gray-200 bg-white p-3 min-h-16 hover:border-brand-400 hover:shadow-sm transition flex items-center gap-3" onClick={() => setKind(d.kind)}>
       <DriveAvatar kind={d.kind} big />
       <span className="min-w-0">
       <p className="font-medium flex flex-wrap items-center gap-1.5">{d.name}{oneClick[d.kind] && <span className="text-[11px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 inline-flex items-center gap-0.5"><Zap className="w-3 h-3" />এক ক্লিকে</span>}</p>

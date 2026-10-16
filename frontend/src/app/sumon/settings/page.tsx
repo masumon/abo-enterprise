@@ -297,7 +297,7 @@ function SectionCard({
   const isSaved = savedId === section.id;
 
   return (
-    <div id={section.id} className="admin-settings-section bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow overflow-hidden scroll-mt-24">
+    <div id={section.id} className="admin-surface admin-settings-section bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow overflow-hidden scroll-mt-24">
       <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-white/10 bg-gradient-to-r from-brand-50 to-transparent dark:from-brand-900/20 gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
           <span className="text-brand-600">{section.icon}</span>

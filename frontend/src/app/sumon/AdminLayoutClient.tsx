@@ -2,6 +2,7 @@
 
 import AdminAiAssistant from "@/components/admin/AdminAiAssistant";
 import GlobalConfirm from "@/components/admin/GlobalConfirm";
+import OverlayCloseGuard from "@/components/admin/OverlayCloseGuard";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { getAdminPageTitle } from "@/lib/adminNav";
@@ -103,6 +104,7 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
       <AdminCommandPalette role={user.role} />
       <AdminAiAssistant />
       <GlobalConfirm />
+      <OverlayCloseGuard />
       <ToastProvider />
       <DynamicFavicon />
     </div>

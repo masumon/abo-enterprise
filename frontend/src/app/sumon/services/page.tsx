@@ -959,13 +959,13 @@ export default function AdminServicesPage() {
       {/* Create / Edit panel */}
       {editing !== null && (
         <div
-          className="fixed inset-0 z-50 flex"
+          className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex"
           style={ADMIN_MODAL_BACKDROP_STYLE}
           role="dialog"
           aria-modal="true"
           aria-label={isNew ? "Create service" : "Edit service"}
         >
-          <div ref={editorRef} className="ml-auto w-full max-w-2xl h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
+          <div ref={editorRef} className="admin-sheet admin-sheet--l ml-auto w-full max-w-2xl h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-lg font-semibold text-heading">{isNew ? t("নতুন সেবা", "New service") : t("সেবা সম্পাদনা", "Edit service")}</h2>
@@ -1019,7 +1019,7 @@ export default function AdminServicesPage() {
                         }
                         className="input w-full text-sm"
                       >
-                        <option value="">— Select —</option>
+                        <option value="">— বাছুন —</option>
                         {treeOptions.map((o) => (
                           <option key={o.id} value={o.id}>{o.label}</option>
                         ))}

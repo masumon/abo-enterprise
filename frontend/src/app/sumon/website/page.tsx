@@ -119,7 +119,7 @@ export default function WebsiteHubPage() {
         descriptionBn="সাইটে যা কিছু প্রকাশিত — সব এক জায়গায়: কতগুলো আছে, শেষ কবে বদলেছে, নতুন যোগ ও সাইটে দেখা।"
       />
 
-      <div className="rounded-2xl border border-brand-100 bg-brand-50/60 dark:bg-white/5 dark:border-white/10 p-4 text-sm leading-relaxed flex gap-3">
+      <div className="admin-surface rounded-2xl border border-brand-100 bg-brand-50/60 dark:bg-white/5 dark:border-white/10 p-4 text-sm leading-relaxed flex gap-3">
         <Sparkles className="w-5 h-5 text-brand-600 dark:text-brand-300 flex-none mt-0.5" aria-hidden />
         <p>
           {bn

@@ -79,14 +79,14 @@ export default function AiPhotoStartModal({ open, onClose, onDraft, kind, folder
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE}>
-      <div ref={panelRef} role="dialog" aria-modal="true" className="rounded-2xl w-full max-w-md p-5 space-y-4 max-h-[90vh] overflow-y-auto" style={ADMIN_MODAL_PANEL_STYLE}>
+    <div className="admin-overlay admin-overlay--dialog fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE}>
+      <div ref={panelRef} role="dialog" aria-modal="true" className="admin-sheet admin-sheet--m rounded-2xl w-full max-w-md p-5 space-y-4 max-h-[90vh] overflow-y-auto" style={ADMIN_MODAL_PANEL_STYLE}>
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-heading flex items-center gap-2"><Sparkles className="w-5 h-5 text-violet-600" /> {t("ছবি দিয়ে (AI)", "From a photo (AI)")}</h2>
           <button type="button" onClick={onClose} aria-label={t("বন্ধ করুন", "Close")} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
         </div>
         <button type="button" onClick={() => inputRef.current?.click()}
-          className="w-full aspect-video rounded-xl border-2 border-dashed border-[var(--line)] hover:border-brand-400 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-white/5">
+          className="admin-surface w-full aspect-video rounded-xl border-2 border-dashed border-[var(--line)] hover:border-brand-400 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-white/5">
           {preview
             // eslint-disable-next-line @next/next/no-img-element -- local preview
             ? <img src={preview} alt="" className="w-full h-full object-contain" />

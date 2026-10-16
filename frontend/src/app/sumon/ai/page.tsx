@@ -119,7 +119,7 @@ export default function AiHubPage() {
                 ) : conns.length === 0 ? (
                   <EmptyStart onPick={startAdd} />
                 ) : (
-                  <button type="button" onClick={() => startAdd("")} className="w-full rounded-2xl border-2 border-dashed border-brand-300 bg-white/70 hover:bg-brand-50 hover:border-brand-400 transition-colors p-4 flex items-center justify-center gap-2 font-semibold text-brand-700 min-h-14">
+                  <button type="button" onClick={() => startAdd("")} className="admin-surface w-full rounded-2xl border-2 border-dashed border-brand-300 bg-white/70 hover:bg-brand-50 hover:border-brand-400 transition-colors p-4 flex items-center justify-center gap-2 font-semibold text-brand-700 min-h-14">
                     <Plus className="w-5 h-5" /> নতুন AI যোগ করুন — যত বেশি, তত নির্ভরযোগ্য
                   </button>
                 )}
@@ -256,7 +256,7 @@ function EmptyStart({ onPick }: { onPick: (p: string) => void }) {
 
 function ProviderCard({ p, onPick }: { p: ProviderGuide; onPick: (id: string) => void }) {
   return (
-    <button type="button" onClick={() => onPick(p.id)} className="group text-left rounded-2xl border border-gray-100 bg-white hover:border-brand-300 hover:shadow-md transition p-4 min-h-14 flex gap-3">
+    <button type="button" onClick={() => onPick(p.id)} className="admin-surface group text-left rounded-2xl border border-gray-100 bg-white hover:border-brand-300 hover:shadow-md transition p-4 min-h-14 flex gap-3">
       <Avatar provider={p.id} name={p.name} />
       <span className="min-w-0">
         <span className="flex flex-wrap items-center gap-1.5 font-semibold text-heading">{p.name}
@@ -269,7 +269,7 @@ function ProviderCard({ p, onPick }: { p: ProviderGuide; onPick: (id: string) =>
 
 function TaskRouting({ data, conns, act }: { data: HubSummary; conns: HubConn[]; act: (k: string, fn: () => Promise<unknown>, ok?: string) => Promise<void> }) {
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-4" aria-labelledby="tasks-title">
+    <section className="admin-surface rounded-2xl border border-gray-100 bg-white p-4" aria-labelledby="tasks-title">
       <h2 id="tasks-title" className="font-bold text-heading">কোন কাজে কোন AI</h2>
       <p className="text-xs text-muted mb-3">“অটো” রাখুন — সিস্টেম নিজে শিখে সেরাটা বাছে</p>
       <ul className="space-y-3">
@@ -299,7 +299,7 @@ function TaskRouting({ data, conns, act }: { data: HubSummary; conns: HubConn[];
 
 function Fold({ icon: Icon, title, sub, children }: { icon: LucideIcon; title: string; sub: string; children: React.ReactNode }) {
   return (
-    <details className="group rounded-2xl border border-gray-100 bg-white">
+    <details className="admin-surface group rounded-2xl border border-gray-100 bg-white">
       <summary className="flex items-center gap-3 p-4 cursor-pointer list-none min-h-14">
         <span className="w-9 h-9 rounded-xl bg-gray-50 text-gray-600 flex items-center justify-center flex-none"><Icon className="w-4 h-4" /></span>
         <span className="flex-1 min-w-0"><span className="block font-semibold text-heading">{title}</span><span className="block text-xs text-muted">{sub}</span></span>

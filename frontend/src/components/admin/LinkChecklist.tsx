@@ -46,7 +46,7 @@ export default function LinkChecklist({
   }, [options, q]);
 
   return (
-    <div className="rounded-xl border border-[var(--line,#e5e7eb)] overflow-hidden bg-white dark:bg-white/5">
+    <div className="admin-surface rounded-xl border border-[var(--line,#e5e7eb)] overflow-hidden bg-white dark:bg-white/5">
       <div className="relative border-b border-[var(--line,#e5e7eb)]">
         <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" aria-hidden />
         <input

@@ -76,8 +76,8 @@ export default function BulkImproveModal({ kind, onClose, onSaved }: { kind: "pr
 
   const label = kind === "product" ? "পণ্য" : "সেবা";
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE} onClick={onClose} role="dialog" aria-modal="true" aria-label="দুর্বল বিবরণ উন্নত করুন">
-      <div className="rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col" style={ADMIN_MODAL_PANEL_STYLE} onClick={(e) => e.stopPropagation()}>
+    <div className="admin-overlay admin-overlay--dialog fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE} onClick={onClose} role="dialog" aria-modal="true" aria-label="দুর্বল বিবরণ উন্নত করুন">
+      <div className="admin-sheet admin-sheet--l rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col" style={ADMIN_MODAL_PANEL_STYLE} onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 dark:border-white/10">
           <h2 className="font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2"><Sparkles className="w-5 h-5 text-brand-600" aria-hidden /> দুর্বল বিবরণ উন্নত করুন</h2>
           <button type="button" onClick={onClose} aria-label="বন্ধ করুন" className="min-h-11 min-w-11 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-white/10"><X className="w-5 h-5" /></button>

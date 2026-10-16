@@ -133,7 +133,7 @@ export default function AdminAuditPage() {
         <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
           <div className="space-y-3 p-3 min-[641px]:hidden">
             {filtered.map((log) => (
-              <article key={log.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+              <article key={log.id} className="admin-surface rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-2"><span className={`badge text-xs font-semibold ${actionBadgeClass(log.action)}`}>{log.action}</span><time className="text-right text-xs text-gray-500">{new Date(log.created_at).toLocaleString("en-BD", {year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</time></div>
                 <div className="mt-3 grid grid-cols-1 gap-3 border-t border-gray-100 pt-3 text-sm">
                   <div><p className="text-xs text-gray-500">ধরন</p><p className="mt-1 break-words capitalize text-gray-800">{log.entity_type.replace(/_/g, " ")}</p></div>
@@ -200,9 +200,7 @@ export default function AdminAuditPage() {
           >
             আগের
           </button>
-          <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
-            Page {page} of {totalPages}
-          </span>
+          <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">পাতা {page} / {totalPages}</span>
           <button
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}

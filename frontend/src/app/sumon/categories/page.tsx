@@ -487,7 +487,7 @@ export default function AdminCategoriesPage() {
 
   // ---- Sub-category row ----
   const SubRow = ({ node, accent, canUp, canDown }: { node: Node; accent: typeof ACCENTS[number]; canUp: boolean; canDown: boolean }) => (
-    <div className="flex items-center flex-wrap gap-2.5 sm:gap-3 rounded-xl border border-[var(--border,#e2e8f3)] bg-[var(--surface-2,#f4f7fc)] px-2.5 sm:px-3 py-2 transition-colors hover:bg-[var(--surface,#fff)] hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.03]">
+    <div className="admin-surface flex items-center flex-wrap gap-2.5 sm:gap-3 rounded-xl border border-[var(--border,#e2e8f3)] bg-[var(--surface-2,#f4f7fc)] px-2.5 sm:px-3 py-2 transition-colors hover:bg-[var(--surface,#fff)] hover:border-gray-300 dark:border-white/10 dark:bg-white/[0.03]">
       {node.image_url ? (
         <span className="relative w-9 h-9 rounded-[10px] overflow-hidden flex-shrink-0 ring-1 ring-black/5">
           <Image src={node.image_url} alt="" fill className="object-cover" sizes="36px" />
@@ -583,10 +583,10 @@ export default function AdminCategoriesPage() {
             onChange={(e) => { setSearchValue(e.target.value); setVisibleCount(PAGE_STEP); }}
             placeholder="নাম (বাংলা/ইংরেজি) দিয়ে খুঁজুন…"
             aria-label="ক্যাটাগরি খুঁজুন"
-            className="w-full text-sm rounded-xl border border-[var(--border,#e2e8f3)] bg-[var(--surface,#fff)] dark:bg-white/5 dark:border-white/10 pl-10 pr-3 py-2.5 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition"
+            className="admin-surface w-full text-sm rounded-xl border border-[var(--border,#e2e8f3)] bg-[var(--surface,#fff)] dark:bg-white/5 dark:border-white/10 pl-10 pr-3 py-2.5 outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/15 transition"
           />
         </div>
-        <div className="inline-flex bg-[var(--surface,#fff)] dark:bg-white/5 border border-[var(--border,#e2e8f3)] dark:border-white/10 rounded-xl p-1">
+        <div className="admin-surface inline-flex bg-[var(--surface,#fff)] dark:bg-white/5 border border-[var(--border,#e2e8f3)] dark:border-white/10 rounded-xl p-1">
           {(["all", "active", "inactive", "empty", "nobn"] as StatusFilter[]).map((s) => (
             <button
               key={s}
@@ -606,7 +606,7 @@ export default function AdminCategoriesPage() {
       </div>
 
       {(noBn.length > 0 || emptyActive.length > 0) && (
-        <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 p-2">
+        <div className="admin-surface flex flex-wrap items-center gap-2 rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 p-2">
           <span className="text-xs font-semibold text-muted px-1">⚡ দ্রুত কাজ:</span>
           {noBn.length > 0 && (
             <button type="button" onClick={fillBangla} disabled={!!toolBusy} className="btn btn-outline btn-sm min-h-11 gap-1.5">
@@ -727,7 +727,7 @@ export default function AdminCategoriesPage() {
 
           {hasMore && (
             <button type="button" onClick={() => setVisibleCount((c) => c + PAGE_STEP)}
-              className="block mx-auto mt-2 bg-[var(--surface,#fff)] dark:bg-white/5 border border-[var(--border,#e2e8f3)] dark:border-white/10 text-gray-500 dark:text-gray-400 font-semibold text-sm px-6 py-2.5 rounded-xl hover:border-brand-500 hover:text-brand-600 transition inline-flex items-center gap-1.5">
+              className="admin-surface block mx-auto mt-2 bg-[var(--surface,#fff)] dark:bg-white/5 border border-[var(--border,#e2e8f3)] dark:border-white/10 text-gray-500 dark:text-gray-400 font-semibold text-sm px-6 py-2.5 rounded-xl hover:border-brand-500 hover:text-brand-600 transition inline-flex items-center gap-1.5">
               <ChevronDown className="w-4 h-4" /> আরও দেখুন ({filteredRoots.length - visibleCount})
             </button>
           )}

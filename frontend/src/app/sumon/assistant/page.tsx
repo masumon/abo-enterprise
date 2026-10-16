@@ -316,10 +316,10 @@ export default function AdminAssistantPage() {
           </Link>
 
           {/* Integration overview */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
               <Link2 className="w-4 h-4 text-brand-600" />
-              <h2 className="text-sm font-semibold text-gray-800">Admin ↔ Assistant Integration</h2>
+              <h2 className="text-sm font-semibold text-gray-800">সহকারী কোন কোন অংশ দেখতে পারে</h2>
             </div>
             <div className="p-6 grid sm:grid-cols-2 gap-3">
               {INTEGRATIONS.map((item) => (
@@ -340,7 +340,7 @@ export default function AdminAssistantPage() {
           {configLoading ? (
             <div className="h-64 bg-gray-100 rounded-2xl animate-pulse" />
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                 <h2 className="text-sm font-semibold text-gray-800">ফিচার চালু/বন্ধ</h2>
                 <button
@@ -440,7 +440,7 @@ export default function AdminAssistantPage() {
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             {convLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-600" /></div>
             ) : conversations.length === 0 ? (
@@ -504,13 +504,13 @@ export default function AdminAssistantPage() {
 
           {(convDetail || convDetailLoading) && (
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+              className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
               onClick={() => setConvDetail(null)}
               role="dialog"
               aria-modal="true"
               aria-label="কথোপকথনের বিস্তারিত"
             >
-              <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-sheet admin-sheet--m bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-5 py-4 border-b">
                   <h3 className="font-semibold">কথোপকথনের বিস্তারিত</h3>
                   <button aria-label="বন্ধ করুন" type="button" onClick={() => setConvDetail(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
@@ -543,7 +543,7 @@ export default function AdminAssistantPage() {
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             {logsLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-600" /></div>
             ) : logs.length === 0 ? (
@@ -607,7 +607,7 @@ export default function AdminAssistantPage() {
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             {faqLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-600" /></div>
             ) : faqList.length === 0 ? (
@@ -659,13 +659,13 @@ export default function AdminAssistantPage() {
 
           {faqEditing && (
             <div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
+              className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40"
               onClick={() => setFaqEditing(null)}
               role="dialog"
               aria-modal="true"
               aria-label={faqIsNew ? "Add FAQ entry" : "Edit FAQ entry"}
             >
-              <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-sheet admin-sheet--m bg-white rounded-2xl shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-5 py-4 border-b">
                   <h3 className="font-semibold">{faqIsNew ? "Add FAQ Entry" : `Edit: ${faqEditing.key}`}</h3>
                   <button aria-label="বন্ধ করুন" type="button" onClick={() => setFaqEditing(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>

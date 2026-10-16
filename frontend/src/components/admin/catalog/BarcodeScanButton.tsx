@@ -60,8 +60,8 @@ export default function BarcodeScanButton({ onResult }: { onResult: (code: strin
         <ScanLine className="w-4 h-4" /> স্ক্যান
       </button>
       {open && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="বারকোড স্ক্যান">
-          <div className="w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 overflow-hidden">
+        <div className="admin-overlay admin-overlay--dialog fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4" role="dialog" aria-modal="true" aria-label="বারকোড স্ক্যান">
+          <div className="admin-sheet admin-sheet--s w-full max-w-sm rounded-2xl bg-white dark:bg-gray-900 overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5">
               <p className="text-sm font-semibold text-heading">বারকোড ক্যামেরার সামনে ধরুন</p>
               <button type="button" onClick={() => setOpen(false)} className="p-2 text-gray-400" aria-label="বন্ধ"><X className="w-5 h-5" /></button>

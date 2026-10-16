@@ -37,7 +37,7 @@ export default function SeoAutoPanel({ name, desc, tags, path, title, descriptio
         <p className="text-xs font-semibold text-gray-600 dark:text-gray-300">🔎 Google-এ যেমন দেখাবে <span className="font-normal text-gray-400">— খালি রাখলেও চলবে, নাম ও বিবরণ নিজে থেকে ব্যবহার হয়</span></p>
         <button type="button" onClick={fill} className="btn btn-outline btn-sm gap-1.5 min-h-10"><Wand2 className="w-4 h-4" /> নিজে থেকে পূরণ</button>
       </div>
-      <div className="rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 p-3">
+      <div className="admin-surface rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 p-3">
         <p className="text-[12px] text-emerald-700 dark:text-emerald-400 truncate">aboenterprise.com{path}</p>
         <p className="text-[17px] leading-snug text-blue-700 dark:text-blue-400 line-clamp-2">{shownTitle}</p>
         <p className="text-[13px] text-gray-600 dark:text-gray-300 line-clamp-2">{shownDesc}</p>

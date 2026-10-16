@@ -86,11 +86,11 @@ export default function ConfirmDialog({
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-title"
-      className="fixed inset-0 z-[200] flex items-center justify-center p-4"
+      className="admin-overlay admin-overlay--dialog fixed inset-0 z-[200] flex items-center justify-center p-4"
       style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onCancel(); }}
     >
-      <div ref={dialogRef} className="w-full max-w-md animate-scale-in max-h-[90dvh] overflow-y-auto rounded-3xl border border-gray-100 bg-white p-6 text-gray-900 shadow-2xl dark:border-white/10 dark:bg-[var(--surface-card)] dark:text-gray-100">
+      <div ref={dialogRef} className="admin-sheet admin-sheet--s w-full max-w-md animate-scale-in max-h-[90dvh] overflow-y-auto rounded-3xl border border-gray-100 bg-white p-6 text-gray-900 shadow-2xl dark:border-white/10 dark:bg-[var(--surface-card)] dark:text-gray-100">
         <div className="pointer-events-none -mx-6 -mt-6 mb-4 h-px bg-gradient-to-r from-transparent via-brand-300/60 to-transparent" />
         <div className="flex items-start gap-4">
           <div className={`p-3 rounded-2xl border flex-shrink-0 ${colors.icon}`}>

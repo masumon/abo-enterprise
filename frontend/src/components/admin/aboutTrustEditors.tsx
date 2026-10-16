@@ -55,7 +55,7 @@ export const ABOUT_TRUST_EDITORS: Record<string, TrustEditor> = {
     ],
     newItem: () => ({ name: "", abbr: "", image: "", desc_en: "", desc_bn: "", href: "" }),
     previewRow: (item) => (
-      <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 w-fit mx-auto">
+      <div className="admin-surface flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-white/5 border border-gray-100 dark:border-white/10 w-fit mx-auto">
         {s(item, "image") ? (
           // eslint-disable-next-line @next/next/no-img-element -- live admin preview
           <img src={s(item, "image")} alt="" className="w-8 h-8 rounded-lg object-cover" />

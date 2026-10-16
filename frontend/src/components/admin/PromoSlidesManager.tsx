@@ -148,7 +148,7 @@ export default function PromoSlidesManager({ only, embedded = false }: { only?: 
         }
       />}
 
-      {!embedded && <div className="rounded-xl border border-brand-100 dark:border-white/10 bg-brand-50/50 dark:bg-white/5 px-4 py-3 text-xs text-muted leading-relaxed">
+      {!embedded && <div className="admin-surface rounded-xl border border-brand-100 dark:border-white/10 bg-brand-50/50 dark:bg-white/5 px-4 py-3 text-xs text-muted leading-relaxed">
         <p className="font-semibold text-heading mb-1">কীভাবে কাজ করে</p>
         <ul className="list-disc pl-4 space-y-0.5">
           <li>একই জায়গায় একাধিক স্লাইড থাকলে সেগুলো নিজে থেকেই ঘুরতে থাকে — ক্রম নম্বর ছোট হলে আগে দেখায়।</li>
@@ -276,8 +276,8 @@ export default function PromoSlidesManager({ only, embedded = false }: { only?: 
       </div>
 
       {editing !== null && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/30" style={ADMIN_MODAL_BACKDROP_STYLE} role="dialog" aria-modal="true" aria-label="স্লাইড সম্পাদনা">
-          <div ref={editorRef} className="ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-2xl animate-slide-in-right dark:bg-[#111a2e] max-[640px]:max-w-none max-[640px]:pb-[env(safe-area-inset-bottom)]">
+        <div className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex justify-end bg-black/30" style={ADMIN_MODAL_BACKDROP_STYLE} role="dialog" aria-modal="true" aria-label="স্লাইড সম্পাদনা">
+          <div ref={editorRef} className="admin-sheet admin-sheet--m ml-auto flex h-full w-full max-w-lg flex-col bg-white shadow-2xl animate-slide-in-right dark:bg-[#111a2e] max-[640px]:max-w-none max-[640px]:pb-[env(safe-area-inset-bottom)]">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{editing.id ? "স্লাইড বদলান" : "নতুন স্লাইড"}</h2>
               <button aria-label="বন্ধ করুন" type="button" onClick={() => setEditing(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
@@ -299,7 +299,7 @@ export default function PromoSlidesManager({ only, embedded = false }: { only?: 
                 const spec = SPECS[editing.placement ?? only ?? "hero"];
                 return (
                   <>
-                    <div className="rounded-xl bg-brand-50 dark:bg-white/5 border border-brand-100 dark:border-white/10 px-3 py-2.5 text-[12px] text-brand-800 dark:text-brand-200 space-y-1">
+                    <div className="admin-surface rounded-xl bg-brand-50 dark:bg-white/5 border border-brand-100 dark:border-white/10 px-3 py-2.5 text-[12px] text-brand-800 dark:text-brand-200 space-y-1">
                       <p><span className="font-semibold">প্রস্তাবিত মাপ:</span> {spec.size} ({spec.ratio})</p>
                       <p><span className="font-semibold">ফরম্যাট:</span> JPG, PNG বা WebP · ১MB-এর কম হলে দ্রুত লোড হয়</p>
                       <p className="text-brand-700/80">{spec.note}</p>

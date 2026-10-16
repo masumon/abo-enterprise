@@ -31,7 +31,7 @@ function Card({ title, icon: Icon, children, action }: {
   title: string; icon: React.ElementType; children: React.ReactNode; action?: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-5">
+    <div className="admin-surface bg-white rounded-xl border border-gray-100 p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-gray-900 text-sm flex items-center gap-2">
           <Icon className="w-4 h-4 text-gray-400" /> {title}

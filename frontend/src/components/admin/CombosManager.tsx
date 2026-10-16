@@ -240,8 +240,8 @@ export default function CombosManager({ embedded = false }: { embedded?: boolean
       )}
 
       {open && (
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-4 max-[640px]:items-end max-[640px]:p-0">
-          <div className="my-8 w-full max-w-2xl rounded-2xl bg-white shadow-2xl dark:bg-[var(--surface-card)] max-[640px]:my-0 max-[640px]:max-h-[94dvh] max-[640px]:max-w-none max-[640px]:overflow-y-auto max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl">
+        <div className="admin-overlay admin-overlay--panel fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-4 max-[640px]:items-end max-[640px]:p-0">
+          <div className="admin-sheet admin-sheet--l my-8 w-full max-w-2xl rounded-2xl bg-white shadow-2xl dark:bg-[var(--surface-card)] max-[640px]:my-0 max-[640px]:max-h-[94dvh] max-[640px]:max-w-none max-[640px]:overflow-y-auto max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--line)] sticky top-0 bg-inherit rounded-t-2xl">
               <h2 className="break-words font-bold text-heading">{form.id ? tx("Edit combo pack", "কম্বো সম্পাদনা") : tx("New combo pack", "নতুন কম্বো")}</h2>
               <button aria-label={tx("Close", "বন্ধ করুন")} type="button" onClick={() => setOpen(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10"><X className="w-5 h-5" /></button>

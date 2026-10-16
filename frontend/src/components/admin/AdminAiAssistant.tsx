@@ -53,7 +53,7 @@ export default function AdminAiAssistant() {
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} aria-label="AI সহকারী খুলুন"
-        className="hidden lg:flex fixed z-40 right-4 bottom-6 items-center gap-1.5 rounded-full bg-brand-600 text-white shadow-lg px-4 min-h-12 text-sm font-semibold hover:bg-brand-700">
+        className="admin-ai-fab hidden lg:flex fixed z-40 right-4 bottom-6 items-center gap-1.5 rounded-full bg-brand-600 text-white shadow-lg px-4 min-h-12 text-sm font-semibold hover:bg-brand-700">
         <Sparkles className="w-4 h-4" /> AI
       </button>
       {open && (

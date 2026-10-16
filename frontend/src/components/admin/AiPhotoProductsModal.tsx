@@ -161,9 +161,9 @@ export default function AiPhotoProductsModal({ open, onClose, categoryOptions, o
   const reset = () => { setFiles([]); setRows([]); setHint(""); };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4" style={ADMIN_MODAL_BACKDROP_STYLE}>
+    <div className="admin-overlay admin-overlay--dialog fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4" style={ADMIN_MODAL_BACKDROP_STYLE}>
       <div ref={panelRef} role="dialog" aria-modal="true" aria-label="ছবি থেকে পণ্য (AI)"
-        className="rounded-2xl w-full max-w-4xl max-h-[94vh] flex flex-col dark:!bg-[#151a2e]" style={ADMIN_MODAL_PANEL_STYLE}>
+        className="admin-sheet admin-sheet--xl rounded-2xl w-full max-w-4xl max-h-[94vh] flex flex-col dark:!bg-[#151a2e]" style={ADMIN_MODAL_PANEL_STYLE}>
         <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-[var(--line)]">
           <div>
             <h2 className="text-lg font-semibold text-heading flex items-center gap-2"><Sparkles className="w-5 h-5 text-brand-600" /> ছবি থেকে পণ্য (AI)</h2>

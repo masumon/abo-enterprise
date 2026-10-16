@@ -58,14 +58,14 @@ export default function ComposeEmailModal({ open, onClose, to, defaultSubject = 
 
   return (
     <div
-      className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+      className="admin-overlay admin-overlay--dialog fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-label="Compose email"
     >
       <div
-        className="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 overflow-hidden"
+        className="admin-surface admin-sheet admin-sheet--m w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-100 dark:border-white/10 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 px-5 py-4 border-b border-gray-100 dark:border-white/10">
@@ -115,7 +115,7 @@ export default function ComposeEmailModal({ open, onClose, to, defaultSubject = 
             Sent from ABO Enterprise (no-reply@aboenterprise.com) to the customer.
           </p>
           <div className="flex justify-end gap-2 flex-wrap pt-1">
-            <button type="button" onClick={onClose} className="btn btn-ghost btn-sm">Cancel</button>
+            <button type="button" onClick={onClose} className="btn btn-ghost btn-sm">বাতিল</button>
             <button type="submit" disabled={sending} className="btn btn-brand btn-sm disabled:opacity-60">
               {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
               {sending ? "Sending…" : "Send"}

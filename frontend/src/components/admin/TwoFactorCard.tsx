@@ -63,10 +63,10 @@ export default function TwoFactorCard() {
   if (enabled === null) return null;
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
+    <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
       <div className="flex items-center gap-2.5 mb-1">
         {enabled ? <ShieldCheck className="w-5 h-5 text-emerald-600" /> : <ShieldOff className="w-5 h-5 text-gray-400" />}
-        <h2 className="text-sm font-semibold text-gray-800">Two-Factor Authentication (আপনার অ্যাকাউন্ট)</h2>
+        <h2 className="text-sm font-semibold text-gray-800">২-ধাপ যাচাই (2FA) — আপনার অ্যাকাউন্ট</h2>
         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${enabled ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
           {enabled ? "চালু" : "বন্ধ"}
         </span>

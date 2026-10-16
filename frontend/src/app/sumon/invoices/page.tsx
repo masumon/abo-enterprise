@@ -289,7 +289,7 @@ export default function AdminInvoicesPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="admin-surface bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-12 flex justify-center">
             <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
@@ -308,7 +308,7 @@ export default function AdminInvoicesPage() {
                   key={inv.id}
                   type="button"
                   onClick={() => setDetail(inv)}
-                  className="block min-h-11 w-full rounded-xl border border-gray-100 bg-white p-4 text-left shadow-sm transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  className="admin-surface block min-h-11 w-full rounded-xl border border-gray-100 bg-white p-4 text-left shadow-sm transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                   aria-label={`${tx("Invoice")} ${inv.invoice_number}, ${inv.customer_name}, ${formatPrice(inv.total)}`}
                 >
                   <span className="flex min-w-0 items-start justify-between gap-3">
@@ -399,12 +399,12 @@ export default function AdminInvoicesPage() {
 
       {detail && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0"
+          className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0"
           style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetail(null)}
         >
           <div
-            className={`flex max-h-[90vh] w-full max-w-lg flex-col max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl ${ADMIN_MODAL_PANEL_CLASS}`}
+            className={`admin-sheet admin-sheet--m flex max-h-[90vh] w-full max-w-lg flex-col max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl ${ADMIN_MODAL_PANEL_CLASS}`}
             style={ADMIN_MODAL_PANEL_STYLE}
             onClick={(e) => e.stopPropagation()}
           >
@@ -579,8 +579,8 @@ export default function AdminInvoicesPage() {
       )}
 
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0" style={ADMIN_MODAL_BACKDROP_STYLE}>
-          <div className={`max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 shadow-2xl max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl max-[640px]:p-4 ${ADMIN_MODAL_PANEL_CLASS}`} style={ADMIN_MODAL_PANEL_STYLE}>
+        <div className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0" style={ADMIN_MODAL_BACKDROP_STYLE}>
+          <div className={`admin-sheet admin-sheet--m max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 shadow-2xl max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl max-[640px]:p-4 ${ADMIN_MODAL_PANEL_CLASS}`} style={ADMIN_MODAL_PANEL_STYLE}>
             <div className="mb-5 flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">{tx("Create Invoice")}</h2>
               <button type="button" onClick={() => setShowCreate(false)} aria-label={tx("Close")} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>

@@ -169,8 +169,8 @@ function SectionHeader({
   return (
     <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 bg-gray-50/50 gap-3 flex-wrap">
       <div>
-        <h2 className="text-sm font-semibold text-gray-800">{title}</h2>
-        <p className="text-xs text-gray-400">{titleBn}</p>
+        <h2 className="text-sm font-semibold text-gray-800">{titleBn}</h2>
+        <p className="text-xs text-gray-400">{title}</p>
       </div>
       <div className="flex items-center gap-2">
         {extra}
@@ -621,7 +621,7 @@ export default function AdminMediaPage() {
       </div>
 
       {tab === "brand" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <SectionHeader title="Brand & Site Images" titleBn="ব্র্যান্ড ও সাইট ছবি" sectionId="brand" onSave={saveBrand} saving={saving} saved={saved} />
           <HeroMovedNotice values={values} />
           {BRAND_IMAGE_SLOTS.filter((slot) => !HERO_SLOT_KEYS.has(slot.key)).map((slot) => (
@@ -639,7 +639,7 @@ export default function AdminMediaPage() {
       )}
 
       {tab === "banners" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <SectionHeader
             title="Page Banner Images"
             titleBn="পেজ ব্যানার ছবি (২৫টি)"
@@ -691,7 +691,7 @@ export default function AdminMediaPage() {
                     : reviews.length;
 
             return (
-              <div key={section.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div key={section.id} className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setCatalogOpen((o) => ({ ...o, [section.id]: !open }))}
@@ -899,7 +899,7 @@ export default function AdminMediaPage() {
               onClick={() => { setLibraryPage(1); void loadLibrary(1, librarySearch); }}
               className="btn btn-outline btn-sm"
             >
-              Search
+              খুঁজুন
             </button>
           </div>
 
@@ -911,7 +911,7 @@ export default function AdminMediaPage() {
               <p className="text-xs text-gray-400 mb-3">রিড-অনলি — সেটিংস/পণ্য/সেবা/ব্লগ থেকে স্বয়ংক্রিয়ভাবে নেওয়া।</p>
               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
                 {siteImages.map((img) => (
-                  <div key={img.url} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div key={img.url} className="admin-surface bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                     <div className="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
                       <MediaEl url={img.url} className="w-full h-full object-cover" />
                     </div>
@@ -928,7 +928,7 @@ export default function AdminMediaPage() {
               <Loader2 className="w-7 h-7 animate-spin text-brand-500" />
             </div>
           ) : (
-            <div className="flex flex-wrap items-center gap-2 mb-4 rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 p-2">
+            <div className="admin-surface flex flex-wrap items-center gap-2 mb-4 rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 p-2">
               <label className="flex items-center gap-2 text-sm px-2 min-h-11 cursor-pointer">
                 <input type="checkbox" className="rounded" checked={shownAssets.length > 0 && shownAssets.every((a) => selected.has(a.id))}
                   onChange={(e) => setSelected(e.target.checked ? new Set(shownAssets.map((a) => a.id)) : new Set())} />
@@ -1001,14 +1001,14 @@ export default function AdminMediaPage() {
                           onClick={() => openEditAsset(asset)}
                           className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:border-brand-300 hover:text-brand-600"
                         >
-                          <Pencil className="w-3 h-3" /> Edit
+                          <Pencil className="w-3 h-3" /> সম্পাদনা
                         </button>
                         <button
                           type="button"
                           onClick={() => setDeleteTarget(asset)}
                           className="flex-1 flex items-center justify-center gap-1 text-xs py-1.5 rounded-lg border border-gray-200 text-red-500 hover:border-red-300 hover:bg-red-50"
                         >
-                          <Trash2 className="w-3 h-3" /> Delete
+                          <Trash2 className="w-3 h-3" /> মুছুন
                         </button>
                       </div>
                     </div>
@@ -1024,7 +1024,7 @@ export default function AdminMediaPage() {
                     onClick={() => { const p = libraryPage - 1; setLibraryPage(p); void loadLibrary(p, librarySearch); }}
                     className="btn btn-outline btn-sm disabled:opacity-50"
                   >
-                    Previous
+                    আগের
                   </button>
                   <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
                     Page {libraryPage} of {libraryTotalPages}
@@ -1035,7 +1035,7 @@ export default function AdminMediaPage() {
                     onClick={() => { const p = libraryPage + 1; setLibraryPage(p); void loadLibrary(p, librarySearch); }}
                     className="btn btn-outline btn-sm disabled:opacity-50"
                   >
-                    Next
+                    পরের
                   </button>
                 </div>
               )}
@@ -1045,8 +1045,8 @@ export default function AdminMediaPage() {
       )}
 
       {editingAsset && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 max-[640px]:items-end max-[640px]:p-0" onClick={() => setEditingAsset(null)}>
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 max-[640px]:items-end max-[640px]:p-0" onClick={() => setEditingAsset(null)}>
+          <div className="admin-sheet admin-sheet--m bg-white rounded-2xl shadow-xl max-w-md w-full p-5 space-y-4 max-h-[90vh] overflow-y-auto max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-heading">Edit Asset</h3>
               <button aria-label="বন্ধ করুন" type="button" onClick={() => setEditingAsset(null)} className="text-gray-400 hover:text-gray-600">
@@ -1077,7 +1077,7 @@ export default function AdminMediaPage() {
               />
             </div>
             <div className="flex justify-end gap-2 flex-wrap">
-              <button type="button" onClick={() => setEditingAsset(null)} className="btn btn-outline btn-sm">Cancel</button>
+              <button type="button" onClick={() => setEditingAsset(null)} className="btn btn-outline btn-sm">বাতিল</button>
               <button type="button" onClick={saveAssetEdit} disabled={savingAsset} className="btn btn-brand btn-sm disabled:opacity-60">
                 {savingAsset ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save
