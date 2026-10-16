@@ -219,10 +219,10 @@ export default function ProductDetailClient({ product }: Props) {
         </nav>
 
         <GlassCard className="overflow-hidden mb-6 sm:mb-10">
-          <div className="grid md:grid-cols-2 gap-0">
-            <div className="p-3 sm:p-6 border-b md:border-b-0 md:border-r border-gray-100 dark:border-white/10">
+          <div className="grid md:grid-cols-[1.15fr_1fr] gap-0">
+            <div className="p-0 sm:p-5 border-b md:border-b-0 md:border-r border-gray-100 dark:border-white/10">
               <div
-                className={cn("relative aspect-square rounded-xl overflow-hidden mb-2 sm:mb-4", images[selectedImage] ? "bg-[#fff] ring-1 ring-gray-100 dark:ring-white/10" : "bg-gradient-to-br from-brand-50 to-brand-100")}
+                className={cn("relative aspect-square sm:rounded-xl overflow-hidden mb-2 sm:mb-4", images[selectedImage] ? "bg-[#fff] sm:ring-1 ring-gray-100 dark:ring-white/10" : "bg-gradient-to-br from-brand-50 to-brand-100")}
                 onTouchStart={onTouchStart}
                 onTouchEnd={onTouchEnd}
               >
@@ -255,7 +255,7 @@ export default function ProductDetailClient({ product }: Props) {
                 )}
               </div>
               {images.length > 1 && (
-                <div className="flex gap-2 overflow-x-auto pb-1">
+                <div className="flex gap-2 overflow-x-auto pb-2 px-3 sm:px-0 sm:pb-1">
                   {images.map((img, i) => (
                     <button key={i} type="button" onClick={() => setSelectedImage(i)} className={cn("w-16 h-16 rounded-lg overflow-hidden border-2 flex-shrink-0 bg-[#fff]", selectedImage === i ? "border-brand-500" : "border-gray-200 dark:border-white/10")} aria-label={`Image ${i + 1}`} aria-current={selectedImage === i}>
                       <Image src={img} alt="" width={64} height={64} className="object-contain w-full h-full p-1" />

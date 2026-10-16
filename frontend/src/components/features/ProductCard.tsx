@@ -53,7 +53,7 @@ function productAlt(product: Product, lang: string) {
     : `${product.name_en} — ABO Enterprise`;
 }
 
-export default function ProductCard({ product, onAddToCart, layout = "grid", density = "default" }: Props) {
+export default function ProductCard({ product, onAddToCart, layout = "grid", density = "compact" }: Props) {
   const compact = density === "compact";
   const router = useRouter();
   const { addItem } = useCartStore();
@@ -213,13 +213,13 @@ export default function ProductCard({ product, onAddToCart, layout = "grid", den
         "opacity-100 lg:opacity-0",
         actionsOpen && "lg:opacity-100"
       )}>
-        <button type="button" onClick={handleWishlist} className={cn("rounded-lg glass flex items-center justify-center pointer-events-auto touch-manipulation transition-transform hover:scale-110", compact ? "w-8 h-8" : "w-9 h-9", wished ? "text-accent-500" : "text-gray-500 hover:text-accent-500")} aria-label={t("wishlist")}>
+        <button type="button" onClick={handleWishlist} className={cn("rounded-full bg-white/95 dark:bg-gray-900/90 shadow-sm ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center pointer-events-auto touch-manipulation transition-transform hover:scale-110", compact ? "w-8 h-8" : "w-9 h-9", wished ? "text-accent-500" : "text-gray-500 hover:text-accent-500")} aria-label={t("wishlist")}>
           <Heart className={cn(compact ? "w-3.5 h-3.5" : "w-4 h-4", wished && "fill-current")} />
         </button>
-        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addCompare(product); toast("info", lang === "bn" ? "তুলনায় যোগ" : "Added to compare"); }} disabled={isCompared(productId)} className={cn("rounded-lg glass max-lg:hidden flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation transition-transform hover:scale-110 hover:text-brand-600", compact ? "w-8 h-8" : "w-9 h-9")} aria-label={t("compare")}>
+        <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); addCompare(product); toast("info", lang === "bn" ? "তুলনায় যোগ" : "Added to compare"); }} disabled={isCompared(productId)} className={cn("rounded-full bg-white/95 dark:bg-gray-900/90 shadow-sm ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation transition-transform hover:scale-110 hover:text-brand-600", compact ? "w-8 h-8" : "w-9 h-9")} aria-label={t("compare")}>
           <GitCompare className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} />
         </button>
-        <Link href={`/products/${product.slug}`} className={cn("rounded-lg glass max-lg:hidden flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation transition-transform hover:scale-110 hover:text-brand-600", compact ? "w-8 h-8" : "w-9 h-9")} aria-label={t("view_details")}>
+        <Link href={`/products/${product.slug}`} className={cn("rounded-full bg-white/95 dark:bg-gray-900/90 shadow-sm ring-1 ring-black/5 dark:ring-white/10 flex items-center justify-center text-gray-500 pointer-events-auto touch-manipulation transition-transform hover:scale-110 hover:text-brand-600", compact ? "w-8 h-8" : "w-9 h-9")} aria-label={t("view_details")}>
           <Eye className={compact ? "w-3.5 h-3.5" : "w-4 h-4"} />
         </Link>
       </div>

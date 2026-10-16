@@ -33,7 +33,7 @@ export default function ImageZoom({ src, alt, className, fit = "cover", label = 
         className={cn("relative group w-full h-full", className)}
         aria-label={label}
       >
-        <Image src={src} alt={alt} fill className={fit === "contain" ? "object-contain p-3 sm:p-5" : "object-cover"} sizes="(max-width: 768px) 100vw, 50vw" />
+        <Image src={src} alt={alt} fill className={fit === "contain" ? "object-contain p-1 sm:p-2" : "object-cover"} sizes="(max-width: 768px) 100vw, 55vw" />
         <span className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
           <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
         </span>
