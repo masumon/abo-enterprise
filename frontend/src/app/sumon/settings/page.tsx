@@ -192,8 +192,8 @@ const SECTIONS: Section[] = [
     title: "Steadfast Courier API",
     icon: <Truck className="w-4 h-4" />,
     note: "অর্ডার সরাসরি Steadfast কুরিয়ারে পাঠান। Key দুটি Steadfast প্যানেলের API পেজ থেকে নিন — এখানে দিলে গোপন থাকবে (আর ফেরত দেখানো হয় না)। ⚠️ কোথাও Key শেয়ার হয়ে গেলে Steadfast-এ 'Regenerate Key' চেপে নতুন Key নিন।",
-    testHref: "/sumon/steadfast-test",
-    testLabel: "Key সেভ করার পর সংযোগ পরীক্ষা করুন →",
+    testHref: "/sumon/couriers#steadfast",
+    testLabel: "Key সেভ করার পর কুরিয়ার পাতায় পরীক্ষা করুন (Pathao, RedX-ও সেখানে) →",
     fields: [
       {
         key: "steadfast_enabled",

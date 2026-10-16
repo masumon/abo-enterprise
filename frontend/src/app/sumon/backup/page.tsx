@@ -6,6 +6,7 @@ import {
   Power, Printer, RefreshCw, ShieldCheck, Trash2, Upload, X, Zap,
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { useHashScroll } from "@/hooks/useHashScroll";
 import { useToastStore } from "@/store/toast";
 import {
   backupApi, DRIVE_GUIDES, guideOf, OAUTH_HELP, type BackupRun, type BackupSummary, type DestKind, type GithubStatus, type JobState,
@@ -78,9 +79,9 @@ function PasswordDialog({ ask, onClose }: { ask: Ask; onClose: () => void }) {
   );
 }
 
-function Step({ n, title, summary, done, open, children }: { n: number; title: string; summary?: string; done: boolean; open: boolean; children: React.ReactNode }) {
+function Step({ n, title, summary, done, open, children, id }: { n: number; title: string; summary?: string; done: boolean; open: boolean; children: React.ReactNode; id?: string }) {
   return (
-    <details open={open} className="card p-4 sm:p-5 group">
+    <details id={id} open={open} className="card p-4 sm:p-5 group scroll-mt-24 transition">
       <summary className="list-none cursor-pointer flex items-center gap-3 min-h-11">
         <span className={`w-8 h-8 rounded-full text-sm font-bold flex items-center justify-center flex-none text-white ${done ? "bg-emerald-600" : "bg-brand-600"}`}>
           {done ? "✓" : n.toLocaleString("bn-BD")}
@@ -147,6 +148,8 @@ export default function BackupPage() {
     return () => { if (timer.current) clearTimeout(timer.current); };
   }, [data, localRun, load]);
 
+  useHashScroll(!!data);
+
   const act = async (key: string, fn: () => Promise<unknown>, ok?: string) => {
     setBusy(key);
     try { await fn(); if (ok) toast("success", ok); await load(); } catch (e) { toast("error", errText(e, "কাজটি হয়নি — আবার চেষ্টা করুন")); } finally { setBusy(""); }
@@ -204,11 +207,11 @@ export default function BackupPage() {
         {!ready && <p className="mt-3 text-sm bg-brand-50 text-brand-800 rounded-lg p-2">শুরু করতে নিচের <b>৩টি ধাপ</b> শেষ করুন ({done.filter(Boolean).length.toLocaleString("bn-BD")}/৩ সম্পন্ন)।</p>}
       </div>
 
-      <Step n={1} title="Backup পাসওয়ার্ড দিন" summary={done[0] ? `সেট করা আছে · কী-চিহ্ন ${data.keys.fingerprint}` : "সব backup এই পাসওয়ার্ডে তালাবদ্ধ থাকবে"} done={done[0]} open={!done[0]}>
+      <Step id="backup-password" n={1} title="Backup পাসওয়ার্ড দিন" summary={done[0] ? `সেট করা আছে · কী-চিহ্ন ${data.keys.fingerprint}` : "সব backup এই পাসওয়ার্ডে তালাবদ্ধ থাকবে"} done={done[0]} open={!done[0]}>
         <KeysSection data={data} busy={busy} act={act} />
       </Step>
 
-      <Step n={2} title="ড্রাইভ যুক্ত করুন (যেখানে backup জমা হবে)" summary={done[1] ? data.destinations.map((d) => d.label).join(" · ") : "Google Drive, OneDrive বা Dropbox"} done={done[1]} open={(done[0] && !done[1]) || adding !== null}>
+      <Step id="backup-drives" n={2} title="ড্রাইভ যুক্ত করুন (যেখানে backup জমা হবে)" summary={done[1] ? data.destinations.map((d) => d.label).join(" · ") : "Google Drive, OneDrive বা Dropbox"} done={done[1]} open={(done[0] && !done[1]) || adding !== null}>
         {data.destinations.length > 0 && (
           <div className="grid sm:grid-cols-2 gap-3">
             {data.destinations.map((d) => (
@@ -259,13 +262,13 @@ export default function BackupPage() {
         {!data.keys.set && <p className="text-xs text-gray-500">আগে ধাপ ১ (পাসওয়ার্ড) শেষ করুন।</p>}
       </Step>
 
-      <Step n={3} title="প্রতিদিন নিজে Backup চালু করুন" summary={done[2] ? `প্রতিদিন ${String(data.schedule.hour).padStart(2, "0")}:${String(data.schedule.minute).padStart(2, "0")} (বাংলাদেশ সময়)` : "বন্ধ আছে"} done={done[2]} open={done[0] && done[1] && !done[2]}>
+      <Step id="backup-auto" n={3} title="প্রতিদিন নিজে Backup চালু করুন" summary={done[2] ? `প্রতিদিন ${String(data.schedule.hour).padStart(2, "0")}:${String(data.schedule.minute).padStart(2, "0")} (বাংলাদেশ সময়)` : "বন্ধ আছে"} done={done[2]} open={done[0] && done[1] && !done[2]}>
         <ScheduleSection data={data} busy={busy} act={act} />
       </Step>
 
       <GithubCopy />
 
-      <section className="card p-4 sm:p-5 space-y-3">
+      <section id="backup-history" className="card p-4 sm:p-5 space-y-3 scroll-mt-24 transition">
         <h2 className="font-semibold text-gray-900">Backup-এর ইতিহাস</h2>
         {data.history.length === 0 && (
           <div className="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-600">
@@ -333,7 +336,7 @@ function GithubCopy() {
   };
   const last = g.runs[0];
   return (
-    <section className="card p-4 sm:p-5 space-y-3">
+    <section id="backup-github" className="card p-4 sm:p-5 space-y-3 scroll-mt-24 transition">
       <div className="flex flex-wrap items-center gap-3">
         <span aria-hidden className="w-9 h-9 rounded-xl bg-gray-900 text-white font-bold flex items-center justify-center flex-none">GH</span>
         <div className="flex-1 min-w-0">

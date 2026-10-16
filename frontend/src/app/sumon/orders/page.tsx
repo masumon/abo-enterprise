@@ -141,7 +141,7 @@ export default function AdminOrdersPage() {
       toast("success", r.data.message || "কুরিয়ারে পাঠানো হয়েছে");
       void load();
     } catch (e) {
-      toast("error", apiErrorMessage(e, "কুরিয়ারে পাঠানো যায়নি"));
+      toast("error", apiErrorMessage(e, "কুরিয়ারে পাঠানো যায়নি"), { label: "কুরিয়ার সেটিং", href: `/sumon/couriers#${courierChoice}` });
     } finally {
       setCourierBusy(false);
     }
@@ -733,7 +733,8 @@ export default function AdminOrdersPage() {
                       </span>
                     )}
                     {detail.courier_error && !detail.courier_tracking_id && (
-                      <p className="w-full text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5">⚠️ {detail.courier_error}</p>
+                      <p className="w-full text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5">⚠️ {detail.courier_error}{" "}
+                        <a href={`/sumon/couriers#${detail.courier_provider || courierChoice}`} className="underline font-medium">কুরিয়ার সেটিং ঠিক করুন →</a></p>
                     )}
                   </div>
                 </div>

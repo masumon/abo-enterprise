@@ -140,6 +140,7 @@ export const HOMEPAGE_CONTENT_EDITORS: HomepageContentEditor[] = [
       { path: "desc_en", label: "Description (EN)", labelBn: "বিবরণ (EN)", translateFrom: "desc_bn" },
       { path: "desc_bn", label: "Description (BN)", labelBn: "বিবরণ (বাংলা)" },
       { path: "href", label: "Link", labelBn: "লিংক", hint: "e.g. /products" },
+      { path: "image_url", label: "Photo (optional)", labelBn: "ছবি (ঐচ্ছিক) — দিলে কার্ডে আসল ছবি দেখাবে", type: "image", purpose: "quick-category" },
     ],
     newItem: () => ({ icon: "smartphone", label_en: "", label_bn: "", desc_en: "", desc_bn: "", href: "/products" }),
   },

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { ShoppingBag, Wrench, Laptop, ArrowRight, type LucideIcon } from "lucide-react";
 import { useLanguageStore } from "@/store/language";
 import { usePublicSettings } from "@/hooks/usePublicSettings";
@@ -53,6 +54,7 @@ export default function CategoryCards() {
   const { lang } = useLanguageStore();
   const { settings } = usePublicSettings([SITE_QUICK_CATEGORIES_KEY]);
   const categories = getQuickCategories(settings, FALLBACK);
+  const hasPhotos = categories.some((c) => !!c.image_url?.trim());
 
   return (
     <section className="pt-2 pb-4 sm:py-6 bg-white dark:bg-[var(--surface)]">
@@ -64,6 +66,33 @@ export default function CategoryCards() {
             const tint = TINTS[i % TINTS.length];
             const label = lang === "bn" ? cat.label_bn || cat.label_en : cat.label_en || cat.label_bn;
             const blurb = lang === "bn" ? cat.desc_bn || cat.desc_en : cat.desc_en || cat.desc_bn;
+            if (hasPhotos) {
+              // Photo layout (admin uploaded a real photo for at least one card): the picture fills
+              // the card, a dark fade at the bottom keeps the white text readable. Cards without a
+              // photo use the brand gradient with a large faint icon, so all three still match.
+              return (
+                <Link key={`${cat.href}-${i}`} href={cat.href}
+                  className="group relative block min-w-0 aspect-[3/4] sm:aspect-[4/3] rounded-2xl overflow-hidden shadow-md hover:shadow-xl hover:shadow-brand-500/20 hover:-translate-y-1 active:scale-[0.98] transition-all duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500">
+                  {cat.image_url ? (
+                    <Image src={cat.image_url} alt="" fill sizes="(max-width: 640px) 34vw, 320px"
+                      className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                  ) : (
+                    <span aria-hidden className={`absolute inset-0 bg-gradient-to-br ${gradient} flex items-center justify-center`}>
+                      <Icon className="w-16 h-16 sm:w-20 sm:h-20 text-white/25" strokeWidth={1.5} />
+                    </span>
+                  )}
+                  <span aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/25 to-transparent" />
+                  <span className="absolute inset-x-0 bottom-0 p-2.5 sm:p-4 flex flex-col items-start text-left gap-0.5 sm:gap-1">
+                    <span className="text-sm sm:text-lg font-extrabold text-white leading-tight drop-shadow">{label}</span>
+                    <span className="hidden sm:block text-xs text-white/85 leading-snug line-clamp-2">{blurb}</span>
+                    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-white/95 text-gray-900 px-2.5 py-1 text-[10px] sm:text-xs font-bold shadow-sm transition-transform group-hover:translate-x-0.5">
+                      {lang === "bn" ? "দেখুন" : "Explore"}
+                      <ArrowRight className="w-3 h-3" aria-hidden />
+                    </span>
+                  </span>
+                </Link>
+              );
+            }
             return (
               <Link
                 key={`${cat.href}-${i}`}

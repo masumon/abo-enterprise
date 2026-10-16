@@ -28,6 +28,7 @@ export type UploadPurpose =
   | "favicon"
   | "app-icon"
   | "promo-hero"
+  | "quick-category"
   | "promo-flash"
   | "announcement"
   | "page-banner"
@@ -232,6 +233,15 @@ export const UPLOAD_GUIDES: Record<UploadPurpose, UploadGuide> = {
     subject: "চিহ্নটি মাঝখানের ৮০% জায়গায় রাখুন",
     format: "PNG", maxSize: "৫০০KB-এর কম",
     whereBn: "মোবাইলের হোম স্ক্রিনের আইকন",
+  },
+  "quick-category": {
+    titleBn: "হোমপেজ কার্ডের ছবি (দোকান / সেবা / সফটওয়্যার)",
+    size: "৬০০×৮০০px (৩:৪) — যেকোনো মাপ দিলেও নিজে মাপমতো বসবে",
+    ratio: 3 / 4, ratioLabel: "৩:৪", fit: "cover",
+    background: "আসল দোকান, সেবা বা সফটওয়্যারের পরিষ্কার ছবি",
+    subject: "মূল বিষয় ছবির মাঝখানে রাখুন — নিচের অংশে লেখা বসবে, তাই নিচে ফাঁকা/হালকা অংশ থাকলে ভালো",
+    format: IMG, maxSize: "৫০০KB-এর কম রাখুন (দ্রুত লোড হবে)",
+    whereBn: "হোমপেজের উপরের ৩টি বড় কার্ড",
   },
   "promo-hero": {
     titleBn: "হোমপেজ প্রোমো স্লাইড",

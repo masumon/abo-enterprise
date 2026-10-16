@@ -121,6 +121,8 @@ export interface CmsQuickCategory {
   desc_en: string;
   desc_bn: string;
   href: string;
+  /** Optional real photo — when any card has one, all cards use the photo layout. */
+  image_url?: string;
 }
 
 /** Homepage entry-point card (3-path navigation). */

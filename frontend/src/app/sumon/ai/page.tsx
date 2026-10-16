@@ -8,6 +8,7 @@ import {
   RefreshCw, ShieldCheck, Sparkles, Trash2, Wallet, X, Zap, type LucideIcon,
 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import { useHashScroll } from "@/hooks/useHashScroll";
 import { assistantAdminApi } from "@/lib/api";
 import {
   aiHubApi, browserAi, guideOf, modelBadges, PROVIDER_GUIDES, TASKS,
@@ -64,6 +65,7 @@ export default function AiHubPage() {
     }
   }, [toast]);
   useEffect(() => { load(); }, [load]);
+  useHashScroll(!!data);
 
   const act = async (key: string, fn: () => Promise<unknown>, ok?: string) => {
     setBusy(key);

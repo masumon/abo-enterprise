@@ -45,7 +45,7 @@ export default function DeveloperCredit({ className }: { className?: string }) {
 
   return (
     <div className={cn("w-full pt-1", className)} role="group" aria-label={bn ? "ডেভেলপার ক্রেডিট" : "Developer credits"}>
-      <ul className="mx-auto flex max-w-3xl flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-[11px] text-white/65">
+      <ul className="mx-auto flex max-w-3xl flex-wrap items-center justify-center lg:justify-end gap-x-4 gap-y-1.5 text-[11px] text-white/65">
         {credits.map(({ member, kind }) => {
           const facebook = normalizeExternalUrl(member.facebook);
           const site = normalizeExternalUrl(member.website) || (kind === "developer" ? LEGACY_DEVELOPER_SITE : "");
@@ -54,7 +54,7 @@ export default function DeveloperCredit({ className }: { className?: string }) {
               <span>{bn ? LABEL[kind].bn : LABEL[kind].en}:</span>
               <span className="font-semibold text-white/90">{member.name}</span>
               {facebook && (
-                <IconLink href={facebook} label={`${member.name} — Facebook`} className="bg-[#1877f2]">
+                <IconLink href={facebook} label={`${member.name} — Facebook`} className="bg-white/10 hover:bg-[#1877f2]">
                   <FacebookIcon className="h-3 w-3" />
                 </IconLink>
               )}
@@ -67,7 +67,7 @@ export default function DeveloperCredit({ className }: { className?: string }) {
           );
         })}
       </ul>
-      <p className="mt-2 text-[11px] text-white/60">
+      <p className="mt-2 lg:mt-1 text-[11px] text-white/60 lg:text-right">
         {bn ? "পরিচালনায়" : "Powered by"} <span className="font-bold uppercase tracking-wide text-white/90">{brandName}</span>
       </p>
     </div>

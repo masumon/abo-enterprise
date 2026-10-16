@@ -26,6 +26,9 @@ logger = logging.getLogger(__name__)
 @router.get("/admin/couriers", response_model=ApiResponse)
 async def get_couriers(db: AsyncSession = Depends(get_db), _a: str = Depends(require_role("settings.read"))):
     cfg, sec = await C.get_config(db), await C.get_secrets(db)
+    from app.core.steadfast import get_settings as steadfast_settings
+
+    st = await steadfast_settings(db)
     providers = []
     for key, meta in C.PROVIDERS.items():
         pc = cfg["providers"].get(key) or {}
@@ -33,6 +36,9 @@ async def get_couriers(db: AsyncSession = Depends(get_db), _a: str = Depends(req
         providers.append({
             "key": key, "label": meta["label"], "note": meta.get("note", ""), "sandbox_supported": bool(meta.get("sandbox")),
             "enabled": bool(pc.get("enabled")) if key != "steadfast" else None, "sandbox": bool(pc.get("sandbox")),
+            # ready = switched on and every required field filled (Steadfast: its site-settings keys)
+            "ready": (bool(st["enabled"] and st["api_key"] and st["secret_key"]) if key == "steadfast" else
+                      bool(pc.get("enabled")) and all(s.get(k) or pc.get(k) for k, lbl, _ in meta["fields"] if "ঐচ্ছিক" not in lbl)),
             "fields": [{"key": k, "label": lbl, "secret": secret,
                         "value": "" if secret else (pc.get(k) or s.get(k) or ""), "set": bool(s.get(k) or pc.get(k))}
                        for k, lbl, secret in meta["fields"]],
