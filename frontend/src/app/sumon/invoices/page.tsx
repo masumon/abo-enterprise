@@ -289,7 +289,7 @@ export default function AdminInvoicesPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="admin-surface bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         {loading ? (
           <div className="p-12 flex justify-center">
             <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
@@ -308,7 +308,7 @@ export default function AdminInvoicesPage() {
                   key={inv.id}
                   type="button"
                   onClick={() => setDetail(inv)}
-                  className="block min-h-11 w-full rounded-xl border border-gray-100 bg-white p-4 text-left shadow-sm transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+                  className="admin-surface block min-h-11 w-full rounded-xl border border-gray-100 bg-white p-4 text-left shadow-sm transition-colors hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
                   aria-label={`${tx("Invoice")} ${inv.invoice_number}, ${inv.customer_name}, ${formatPrice(inv.total)}`}
                 >
                   <span className="flex min-w-0 items-start justify-between gap-3">

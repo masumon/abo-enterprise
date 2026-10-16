@@ -316,7 +316,7 @@ export default function AdminAssistantPage() {
           </Link>
 
           {/* Integration overview */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
               <Link2 className="w-4 h-4 text-brand-600" />
               <h2 className="text-sm font-semibold text-gray-800">সহকারী কোন কোন অংশ দেখতে পারে</h2>
@@ -340,7 +340,7 @@ export default function AdminAssistantPage() {
           {configLoading ? (
             <div className="h-64 bg-gray-100 rounded-2xl animate-pulse" />
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                 <h2 className="text-sm font-semibold text-gray-800">ফিচার চালু/বন্ধ</h2>
                 <button
@@ -440,7 +440,7 @@ export default function AdminAssistantPage() {
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             {convLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-600" /></div>
             ) : conversations.length === 0 ? (
@@ -543,7 +543,7 @@ export default function AdminAssistantPage() {
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             {logsLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-600" /></div>
             ) : logs.length === 0 ? (
@@ -607,7 +607,7 @@ export default function AdminAssistantPage() {
             </button>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             {faqLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-600" /></div>
             ) : faqList.length === 0 ? (

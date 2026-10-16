@@ -207,7 +207,7 @@ export default function JsonListEditor({ value, onChange, fields, newItem, mapKe
         <AiFillPanel multi context={context} fields={aiFields} onAdd={addAi} presets={aiPresets} avoid={parsed.map(firstText)} />
       )}
       {parsed.map((item, i) => (
-        <div key={i} className="rounded-xl border border-gray-200 dark:border-white/10 p-3 space-y-2 bg-white dark:bg-white/[0.02]">
+        <div key={i} className="admin-surface rounded-xl border border-gray-200 dark:border-white/10 p-3 space-y-2 bg-white dark:bg-white/[0.02]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-gray-400">#{i + 1}</span>
             <div className="flex items-center gap-1">

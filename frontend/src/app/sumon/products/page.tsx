@@ -416,7 +416,7 @@ export default function AdminProductsPage() {
         </div>
       )}
 
-      <label className="flex items-center gap-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 cursor-pointer w-fit">
+      <label className="admin-surface flex items-center gap-3 bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-3 cursor-pointer w-fit">
         <button type="button" role="switch" aria-checked={blogRailEnabled} disabled={blogRailSaving} onClick={toggleBlogRail}
           className={cn("relative w-10 h-6 rounded-full transition-colors flex-shrink-0 disabled:opacity-50", blogRailEnabled ? "bg-brand-600" : "bg-gray-300")}>
           <span className={cn("absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform", blogRailEnabled && "translate-x-4")} />

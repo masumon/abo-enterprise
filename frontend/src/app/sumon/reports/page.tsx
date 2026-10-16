@@ -168,7 +168,7 @@ export default function AdminReportsPage() {
               const entries = columns.map((column) => [column, row[column]] as const);
               const [lead, ...details] = entries;
               return (
-                <article key={i} className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
+                <article key={i} className="admin-surface overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
                   {lead && (
                     <div className="border-b border-gray-100 bg-gradient-to-r from-brand-50/80 to-white px-4 py-3">
                       <div className="mb-1 flex items-center justify-between gap-3">

@@ -85,7 +85,7 @@ function TopList({ title, icon: Icon, rows, emptyText }: {
 }) {
   const max = Math.max(...rows.map((r) => r.revenue), 1);
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-5">
+    <div className="admin-surface bg-white rounded-xl border border-gray-100 p-5">
       <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-sm">
         <Icon className="w-4 h-4 text-gray-400" /> {title}
       </h3>
@@ -268,7 +268,7 @@ export default function AnalyticsPage() {
             icon: Users, color: "text-orange-600 bg-orange-50",
           },
         ].map(card => (
-          <div key={card.label} className="bg-white rounded-xl border border-gray-100 p-5">
+          <div key={card.label} className="admin-surface bg-white rounded-xl border border-gray-100 p-5">
             <div className="flex items-start justify-between mb-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${card.color}`}>
                 <card.icon className="w-5 h-5" />
@@ -285,7 +285,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Revenue Chart — stacked orders + bookings */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6">
+      <div className="admin-surface bg-white rounded-xl border border-gray-100 p-6">
         <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
           <h2 className="font-bold text-gray-900">{bn ? `রেভিনিউ (${days} দিন)` : `Revenue (${days}d)`}</h2>
           <div className="flex items-center gap-4">
@@ -361,7 +361,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Lead Funnel */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6">
+      <div className="admin-surface bg-white rounded-xl border border-gray-100 p-6">
         <h2 className="font-bold text-gray-900 mb-5 flex items-center gap-2">
           <Trophy className="w-4 h-4 text-gray-400" /> লিডের ধাপ
         </h2>
@@ -391,7 +391,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Bulk Export */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6">
+      <div className="admin-surface bg-white rounded-xl border border-gray-100 p-6">
         <h2 className="font-bold text-gray-900 mb-4">ডাটা ডাউনলোড</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[

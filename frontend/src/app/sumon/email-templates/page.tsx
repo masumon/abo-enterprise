@@ -179,7 +179,7 @@ export default function AdminEmailTemplatesPage() {
             {templates.map((t) => {
               const info = templateInfo(t.template_name);
               return (
-                <article key={t.id} className="rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 shadow-sm">
+                <article key={t.id} className="admin-surface rounded-xl border border-gray-100 dark:border-white/10 bg-white dark:bg-white/5 p-4 shadow-sm">
                   <button type="button" onClick={() => openEdit(t)} className="block min-h-11 w-full text-left">
                     <span className="flex items-start justify-between gap-3">
                       <span className="min-w-0">

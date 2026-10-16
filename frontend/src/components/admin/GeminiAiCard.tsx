@@ -53,7 +53,7 @@ export default function GeminiAiCard() {
   const active = !!(status?.has_key && status.enabled);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-brand-600" />

@@ -122,7 +122,7 @@ function BarList({ title, icon: Icon, rows, dim, metric, format }: {
 }) {
   const max = Math.max(...rows.map((r) => Number(r[metric]) || 0), 1);
   return (
-    <div className="bg-white rounded-xl border border-gray-100 p-5">
+    <div className="admin-surface bg-white rounded-xl border border-gray-100 p-5">
       <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-sm">
         <Icon className="w-4 h-4 text-gray-400" /> {title}
       </h3>
@@ -285,7 +285,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
 
   if (data && !data.configured) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-8 text-center max-w-2xl mx-auto">
+      <div className="admin-surface bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-8 text-center max-w-2xl mx-auto">
         <Globe2 className="w-12 h-12 text-brand-400 mx-auto mb-4" />
         <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-2">Visitor Analytics সেটআপ বাকি</h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 leading-relaxed">
@@ -318,7 +318,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
 
   if (loadError || !data?.totals) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-8 text-center">
+      <div className="admin-surface bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-8 text-center">
         <p className="text-sm text-red-600 mb-3">{loadError ?? "Could not load visitor analytics"}</p>
         <div className="flex flex-col items-center gap-3">
           <button type="button" onClick={loadHistorical} className="btn btn-outline btn-sm inline-flex items-center gap-1.5">
@@ -427,7 +427,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
           </div>
         </div>
       )}
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 sm:p-5">
+      <div className="admin-surface bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <div>
             <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm flex items-center gap-2">
@@ -460,7 +460,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           {liveKpis.map((k) => (
-            <div key={k.label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
+            <div key={k.label} className="admin-surface bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${k.color}`}>
                 <k.icon className="w-5 h-5 animate-pulse" />
               </div>
@@ -470,7 +470,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
           ))}
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 mb-4">
+        <div className="admin-surface bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 mb-4">
           <h4 className="font-bold text-gray-900 dark:text-gray-100 mb-3 text-sm">Active Users — Last 30 Minutes</h4>
           {liveData.timeline.length === 0 ? (
             <p className="text-xs text-gray-400 py-4 text-center">No live timeline data yet</p>
@@ -501,7 +501,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 sm:p-5">
+      <div className="admin-surface bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4 sm:p-5">
         <div className="mb-4">
           <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm">Historical — Last {days} Days</h3>
           <p className="text-[11px] text-gray-400 mt-0.5">Source: Google Analytics 4</p>
@@ -509,7 +509,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           {historicalKpis.map((k) => (
-            <div key={k.label} className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
+            <div key={k.label} className="admin-surface bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${k.color}`}>
                 <k.icon className="w-5 h-5" />
               </div>
@@ -519,7 +519,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
           ))}
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6 mb-4">
+        <div className="admin-surface bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6 mb-4">
           <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4 text-sm">Daily Visitors</h3>
           {daily.length === 0 ? (
             <p className="text-sm text-gray-400 py-8 text-center">No visitor data yet — GA4 needs 24–48h after setup</p>
@@ -543,7 +543,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
           )}
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 mb-4">
+        <div className="admin-surface bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-5 mb-4">
           <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-3 text-sm">New vs Returning Visitors</h3>
           {(() => {
             const nv = nvr["new"] ?? 0;
@@ -578,7 +578,7 @@ export default function VisitorAnalytics({ days }: { days: number }) {
           <BarList title="Top Services" icon={Wrench} rows={historical.top_services} dim="pagePath" metric="screenPageViews" format={lastSegment} />
         </div>
 
-        <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6">
+        <div className="admin-surface bg-white dark:bg-gray-900 rounded-xl border border-gray-100 dark:border-gray-800 p-6">
           <h3 className="font-bold text-gray-900 dark:text-gray-100 mb-4 text-sm">Peak Hours <span className="font-normal text-gray-400">(visitor activity by hour of day)</span></h3>
           {(() => {
             const hours = historical.peak_hours ?? [];

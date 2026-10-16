@@ -312,7 +312,7 @@ function SecurityInner() {
             </li>
             <li className="space-y-2">
               <p className="font-semibold text-heading">ধাপ ২: অ্যাপ দিয়ে এই QR কোড স্ক্যান করুন</p>
-              <div className="inline-block rounded-xl bg-white p-2 border border-[var(--line)]">
+              <div className="admin-surface inline-block rounded-xl bg-white p-2 border border-[var(--line)]">
                 <Image src={setup.qr_data_uri} alt="2FA QR কোড" width={176} height={176} unoptimized className="block" />
               </div>
               <p className="text-xs text-muted">

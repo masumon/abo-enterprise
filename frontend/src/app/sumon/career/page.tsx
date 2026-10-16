@@ -113,7 +113,7 @@ export default function CareerAdminPage() {
       <CareerPositionsManager />
 
       {/* Filters: search + status chips */}
-      <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-3 space-y-3">
+      <div className="admin-surface bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 p-3 space-y-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input type="text" placeholder="নাম, ফোন বা ইমেইল দিয়ে খুঁজুন…" value={search} aria-label="খুঁজুন"
@@ -142,7 +142,7 @@ export default function CareerAdminPage() {
             {apps.map((app) => {
               const st = statusOf(app.status);
               return (
-                <article key={app.id} className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-4 shadow-sm">
+                <article key={app.id} className="admin-surface rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-white/5 p-4 shadow-sm">
                   <button type="button" onClick={() => handleViewDetail(app.id)} className="block w-full text-left min-h-11">
                     <span className="flex items-start justify-between gap-2">
                       <span className="min-w-0">

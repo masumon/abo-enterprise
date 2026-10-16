@@ -134,7 +134,7 @@ ${JSON.stringify(e.meta, null, 2)}` : ""}`;
         <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
           <div className="space-y-3 p-3 min-[641px]:hidden">
             {events.map((e) => (
-              <article key={e.id} role="button" tabIndex={0} onClick={() => setDetail(e)} onKeyDown={(k) => { if (k.key === "Enter" || k.key === " ") { k.preventDefault(); setDetail(e); } }} className="cursor-pointer rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:border-brand-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-400">
+              <article key={e.id} role="button" tabIndex={0} onClick={() => setDetail(e)} onKeyDown={(k) => { if (k.key === "Enter" || k.key === " ") { k.preventDefault(); setDetail(e); } }} className="admin-surface cursor-pointer rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:border-brand-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-400">
                 <div className="flex flex-wrap items-start justify-between gap-2"><span className={`badge text-xs font-semibold ${SEVERITY_STYLE[e.severity] ?? SEVERITY_STYLE.info}`}>{e.severity}</span><time className="text-right text-xs text-gray-500">{new Date(e.created_at).toLocaleString("en-BD", {year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</time></div>
                 <p className="mt-3 break-words text-sm font-semibold capitalize text-gray-900">{e.event_type.replace(/_/g, " ")}</p>
                 <p className="mt-1 break-words text-xs text-gray-500">Source: {e.source}</p>

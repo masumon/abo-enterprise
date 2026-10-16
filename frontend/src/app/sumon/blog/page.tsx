@@ -398,7 +398,7 @@ export default function AdminBlogPage() {
           <>
           <div className="space-y-3 p-3 min-[641px]:hidden">
             {posts.map((p) => (
-              <article key={p.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+              <article key={p.id} className="admin-surface rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
                 <button type="button" onClick={() => openEdit(p)} className="block min-h-11 w-full text-left">
                   <span className="flex items-start justify-between gap-3">
                     <span className="min-w-0">

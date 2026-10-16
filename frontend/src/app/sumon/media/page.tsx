@@ -621,7 +621,7 @@ export default function AdminMediaPage() {
       </div>
 
       {tab === "brand" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <SectionHeader title="Brand & Site Images" titleBn="ব্র্যান্ড ও সাইট ছবি" sectionId="brand" onSave={saveBrand} saving={saving} saved={saved} />
           <HeroMovedNotice values={values} />
           {BRAND_IMAGE_SLOTS.filter((slot) => !HERO_SLOT_KEYS.has(slot.key)).map((slot) => (
@@ -639,7 +639,7 @@ export default function AdminMediaPage() {
       )}
 
       {tab === "banners" && (
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <SectionHeader
             title="Page Banner Images"
             titleBn="পেজ ব্যানার ছবি (২৫টি)"
@@ -691,7 +691,7 @@ export default function AdminMediaPage() {
                     : reviews.length;
 
             return (
-              <div key={section.id} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div key={section.id} className="admin-surface bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setCatalogOpen((o) => ({ ...o, [section.id]: !open }))}
@@ -911,7 +911,7 @@ export default function AdminMediaPage() {
               <p className="text-xs text-gray-400 mb-3">রিড-অনলি — সেটিংস/পণ্য/সেবা/ব্লগ থেকে স্বয়ংক্রিয়ভাবে নেওয়া।</p>
               <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3">
                 {siteImages.map((img) => (
-                  <div key={img.url} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div key={img.url} className="admin-surface bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                     <div className="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
                       <MediaEl url={img.url} className="w-full h-full object-cover" />
                     </div>
@@ -928,7 +928,7 @@ export default function AdminMediaPage() {
               <Loader2 className="w-7 h-7 animate-spin text-brand-500" />
             </div>
           ) : (
-            <div className="flex flex-wrap items-center gap-2 mb-4 rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 p-2">
+            <div className="admin-surface flex flex-wrap items-center gap-2 mb-4 rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 p-2">
               <label className="flex items-center gap-2 text-sm px-2 min-h-11 cursor-pointer">
                 <input type="checkbox" className="rounded" checked={shownAssets.length > 0 && shownAssets.every((a) => selected.has(a.id))}
                   onChange={(e) => setSelected(e.target.checked ? new Set(shownAssets.map((a) => a.id)) : new Set())} />

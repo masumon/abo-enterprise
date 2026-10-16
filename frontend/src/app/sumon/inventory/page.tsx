@@ -155,7 +155,7 @@ export default function AdminInventoryPage() {
                 const isOut = p.stock_quantity <= 0;
                 const isLow = !isOut && p.stock_quantity <= p.low_stock_threshold;
                 return (
-                  <article key={p.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0f1a2e]">
+                  <article key={p.id} className="admin-surface rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0f1a2e]">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <h3 className="break-words text-sm font-semibold text-heading">{p.name_bn || p.name_en}</h3>
@@ -186,7 +186,7 @@ export default function AdminInventoryPage() {
             {!items.length && !loading && <div className="p-4"><AdminEmptyState icon={Package} title="কোনো পণ্য নেই" description="আগে পণ্য যোগ করুন — স্টক এখানে নিজে থেকে দেখাবে।" /></div>}
           </div>
 
-          {selected && <div className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4" onClick={() => setSelected(null)}><div role="dialog" aria-modal="true" aria-label="স্টক বদলান" onClick={(e) => e.stopPropagation()} className="admin-sheet admin-sheet--m w-full max-w-2xl max-h-[92dvh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#0f1a2e] border border-gray-200 dark:border-white/10 p-4 space-y-4">
+          {selected && <div className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 sm:p-4" onClick={() => setSelected(null)}><div role="dialog" aria-modal="true" aria-label="স্টক বদলান" onClick={(e) => e.stopPropagation()} className="admin-surface admin-sheet admin-sheet--m w-full max-w-2xl max-h-[92dvh] overflow-y-auto rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#0f1a2e] border border-gray-200 dark:border-white/10 p-4 space-y-4">
             <div className="flex items-start justify-between gap-2"><div className="min-w-0"><h2 className="font-semibold break-words">{selected.name_bn || selected.name_en}</h2><p className="text-sm text-muted">এখন স্টকে আছে: <b className="text-heading text-base">{selected.stock_quantity}</b> পিস</p></div><button className="min-h-11 min-w-11 rounded-lg border border-gray-200 dark:border-white/10 px-3 text-sm" onClick={() => setSelected(null)}>বন্ধ</button></div>
             <div className="flex flex-wrap gap-1.5">{[["purchase", "📦 নতুন মাল এসেছে", 1], ["adjustment", "🛒 দোকানে বিক্রি", -1], ["return", "↩️ গ্রাহক ফেরত দিয়েছে", 1], ["damage", "💔 নষ্ট/ক্ষতিগ্রস্ত", -1], ["correction", "🔢 গুনে ঠিক করা", 0]].map(([t, label, sign]) => (
               <button key={String(label)} type="button" onClick={() => { setMovementType(String(t)); setReason(String(label).replace(/^\S+\s/, "")); if (sign) setDelta((d) => { const n = Math.abs(Number(d) || 1); return String(Number(sign) * n); }); }}
@@ -209,10 +209,10 @@ export default function AdminInventoryPage() {
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 sm:gap-4">
             {brands.map((b) => (
-              <article key={b.id} className="flex min-w-0 flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0f1a2e]">
+              <article key={b.id} className="admin-surface flex min-w-0 flex-col gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-[#0f1a2e]">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-3">
-                    {b.logo_url ? <img src={b.logo_url} alt="" className="h-12 w-12 shrink-0 rounded-xl border border-gray-200 bg-white object-contain p-1 dark:border-white/10 dark:bg-[#0f1a2e]" /> : <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-white/5"><Tags className="h-5 w-5 text-muted" /></div>}
+                    {b.logo_url ? <img src={b.logo_url} alt="" className="admin-surface h-12 w-12 shrink-0 rounded-xl border border-gray-200 bg-white object-contain p-1 dark:border-white/10 dark:bg-[#0f1a2e]" /> : <div className="admin-surface flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-gray-200 bg-gray-50 dark:border-white/10 dark:bg-white/5"><Tags className="h-5 w-5 text-muted" /></div>}
                     <div className="min-w-0"><h3 className="break-words font-semibold text-heading">{b.name_en}</h3><p className="mt-0.5 break-words text-xs text-muted">{b.name_bn || b.slug}</p></div>
                   </div>
                   <StatusBadge status={b.is_active ? "active" : "inactive"} />

@@ -1703,3 +1703,12 @@ body:has(.admin-overlay) { overflow: hidden; }
 .admin-dark main :is([class~="input-error"], [aria-invalid="true"]) { border-color: rgb(248 113 113); }
 /* One size for section headings inside forms/panels. */
 .admin-shell main :is(.admin-sheet, [class~="admin-card"], [class~="card"]) h2:not([class*="text-xl"]):not([class*="text-2xl"]):not([class*="text-lg"]) { font-size: 1rem; line-height: 1.5rem; }
+
+/* Hand-written white cards across the admin get the same radius, border and shadow as .admin-card
+   (without its overflow:hidden, so dropdown menus inside are never clipped). 2026-10-16 */
+.admin-shell .admin-surface {
+  border-radius: 1rem;
+  border-color: rgb(243 244 246 / 0.9);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.055);
+}
+.admin-dark .admin-surface { border-color: rgba(255, 255, 255, 0.07); box-shadow: none; }

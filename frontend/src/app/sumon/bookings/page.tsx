@@ -241,7 +241,7 @@ export default function AdminBookingsPage() {
           <>
           <div className="space-y-3 p-3 min-[641px]:hidden">
             {bookingsV2.map((b) => (
-              <article key={b.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+              <article key={b.id} className="admin-surface rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
                 <button type="button" onClick={() => setDetailV2(b)} className="block min-h-11 w-full text-left">
                   <span className="flex items-start justify-between gap-3"><span className="min-w-0"><span className="block break-words text-sm font-bold text-gray-900">{b.booking_number}</span><span className="mt-1 block text-xs text-gray-500">{new Date(b.created_at).toLocaleDateString("en-BD")}</span></span><span className={`shrink-0 rounded-full px-2 py-1 text-xs font-medium ${b.payment_status === "paid" ? "bg-green-100 text-green-700" : b.payment_status === "partial" ? "bg-yellow-100 text-yellow-700" : b.payment_status === "refunded" ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-600"}`}>{b.payment_status}</span></span>
                   <span className="mt-3 block break-words text-sm font-semibold text-gray-900">{b.customer_name}</span><span className="block break-all text-xs text-gray-500">{b.customer_phone}</span>

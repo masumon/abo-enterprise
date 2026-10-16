@@ -187,7 +187,7 @@ export default function NewsletterAdminPage() {
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-xl border border-[var(--line)] p-1 bg-white dark:bg-white/5">
+        <div className="admin-surface inline-flex rounded-xl border border-[var(--line)] p-1 bg-white dark:bg-white/5">
           {(["active", "unsubscribed"] as const).map((k) => (
             <button key={k} type="button" onClick={() => setTab(k)} className={`px-3 min-h-10 rounded-lg text-sm font-semibold ${tab === k ? "bg-brand-600 text-white" : "text-muted"}`}>
               {k === "active" ? "সক্রিয়" : "বাদ পড়া"}
@@ -200,7 +200,7 @@ export default function NewsletterAdminPage() {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
+      <div className="admin-surface bg-white dark:bg-white/5 rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-brand-500" /></div>
         ) : shown.length === 0 ? (

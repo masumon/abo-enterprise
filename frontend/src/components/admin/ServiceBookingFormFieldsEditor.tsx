@@ -200,7 +200,7 @@ export default function ServiceBookingFormFieldsEditor({
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
             {FIELD_TEMPLATES.map((t) => (
               <button key={t.id} type="button" onClick={() => setTemplate(t.id)}
-                className="rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 px-3 py-3 text-left hover:border-brand-400 min-h-11">
+                className="admin-surface rounded-xl border border-[var(--line)] bg-white dark:bg-white/5 px-3 py-3 text-left hover:border-brand-400 min-h-11">
                 <span className="text-xl">{t.icon}</span>
                 <span className="block text-sm font-semibold text-heading mt-1">{t.bn}</span>
                 <span className="block text-[11px] text-muted">{t.fields.length}টি প্রশ্ন</span>
