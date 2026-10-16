@@ -39,6 +39,9 @@ _PUBLIC_SETTING_EXACT_KEYS = {
     "app_icon_url",
     "default_og_image_url",
     "facebook_pixel_id",
+    # Read by the public site (gallery office photo, search-box suggestions) — were blocked before.
+    "gallery_office_image_url",
+    "search_suggestions_json",
 }
 
 _PUBLIC_SETTING_PREFIXES = (
