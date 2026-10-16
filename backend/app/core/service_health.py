@@ -58,11 +58,16 @@ async def _site(client: httpx.AsyncClient) -> tuple[dict, dict]:
         return e, dict(e)
     ms = int((time.time() - t0) * 1000)
     h = {k.lower(): v for k, v in r.headers.items()}
-    site = {"ok": r.status_code < 400, "latency_ms": ms, "status": r.status_code, "host": urlparse(url).netloc,
-            "host_server": "Vercel" if "x-vercel-id" in h else h.get("server", "")}
-    if not site["ok"]:
-        site["error"] = f"ওয়েবসাইট HTTP {r.status_code} দিচ্ছে"
     cf_on = "cf-ray" in h or h.get("server", "").lower() == "cloudflare"
+    # Cloudflare's bot protection often answers a server-to-server probe (our request comes
+    # from a data-centre IP) with 403/429/503 — the site itself is fine for real visitors.
+    challenged = cf_on and r.status_code in (403, 429, 503)
+    site = {"ok": r.status_code < 400 or challenged, "latency_ms": ms, "status": r.status_code, "host": urlparse(url).netloc,
+            "host_server": "Vercel" if "x-vercel-id" in h else h.get("server", "")}
+    if challenged:
+        site["note"] = f"Cloudflare সুরক্ষা এই স্বয়ংক্রিয় পরীক্ষাকে আটকেছে (HTTP {r.status_code}) — সাইট পৌঁছানো গেছে, ভিজিটরদের জন্য সাধারণত ঠিক"
+    elif not site["ok"]:
+        site["error"] = f"ওয়েবসাইট HTTP {r.status_code} দিচ্ছে"
     cf: dict = {"ok": True, "active": cf_on, "cache": h.get("cf-cache-status", "")}
     token = os.environ.get("CLOUDFLARE_API_TOKEN", "").strip()
     if token:

@@ -83,7 +83,7 @@ export function healthDetail(key: string, c: HealthCheck): string {
     case "render": return c.skipped ? n("note") : `${n("service") || "সার্ভিস"} · সংস্করণ ${n("commit") || "—"}${c.branch ? ` (${n("branch")})` : ""}`;
     case "database": return `সংযুক্ত — সাড়া ${n("latency_ms")}ms`;
     case "supabase": return c.skipped ? n("note") : `${n("host")} সচল`;
-    case "website": return `${n("host")} খোলা যাচ্ছে · ${n("latency_ms")}ms${c.host_server ? ` · ${n("host_server")}` : ""}`;
+    case "website": return c.note ? n("note") : `${n("host")} খোলা যাচ্ছে · ${n("latency_ms")}ms${c.host_server ? ` · ${n("host_server")}` : ""}`;
     case "cloudflare": return c.skipped ? n("note") : `${c.active ? "Cloudflare সক্রিয়" : "Cloudflare দিয়ে যাচ্ছে না"}${c.token ? " · API টোকেন বৈধ" : ""}${c.zone_status ? ` · জোন ${n("zone_status")}` : ""}`;
     case "cron": return c.hours_ago !== undefined ? `শেষ কল ${n("hours_ago")} ঘণ্টা আগে${c.jobs !== undefined ? ` · ${n("enabled")}/${n("jobs")} জব চালু` : ""}` : "";
     case "smtp": return n("provider") ? `${n("provider")} · ${n("email")}` : `${n("email") || n("host") || "সংযুক্ত"}`;
