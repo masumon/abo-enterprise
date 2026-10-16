@@ -197,6 +197,15 @@ class WriteIn(BaseModel):
     text: str = Field("", max_length=8000)
     instruction: str = Field("", max_length=1000)
     context: str = Field("", max_length=300)
+    # Optional voice: professional (default) | friendly | sales. Old callers send nothing.
+    tone: str = Field("", pattern="^(|professional|friendly|sales)$")
+
+
+_TONES = {
+    "professional": "Tone: professional, trustworthy and clear.",
+    "friendly": "Tone: warm, friendly and simple, like talking to a neighbour.",
+    "sales": "Tone: persuasive and benefit-focused with a clear call to action — but never invent prices, discounts or guarantees.",
+}
 
 
 @router.post("/write", response_model=ApiResponse)
@@ -209,6 +218,8 @@ async def ai_write(payload: WriteIn, _admin: str = Depends(require_admin), db: A
     parts = []
     if payload.context.strip():
         parts.append("Where it is used: " + payload.context.strip())
+    if payload.tone:
+        parts.append(_TONES[payload.tone])
     if payload.instruction.strip():
         parts.append("Instruction: " + ai_gemini._mask(payload.instruction.strip()))
     if payload.text.strip():
@@ -279,3 +290,82 @@ async def blog_draft(
     out["suggested"] = [{"id": i, "kind": "product", "name": names.get(i, "")} for i in out["product_ids"]] + \
         [{"id": i, "kind": "service", "name": names.get(i, "")} for i in out["service_ids"]]
     return ApiResponse(data=out)
+
+
+
+# ── Generic "✨ AI দিয়ে পূরণ" for any admin form ────────────────────────────────
+# The form sends its own field list, so one endpoint serves every editor (team,
+# partner logos, registrations, FAQ, reasons, announcements, reviews, hero…).
+# Only the requested keys come back; nothing is saved here.
+
+class FillField(BaseModel):
+    key: str = Field(..., min_length=1, max_length=60, pattern=r"^[A-Za-z0-9_.]+$")
+    label: str = Field("", max_length=120)
+    hint: str = Field("", max_length=200)
+    type: str = Field("text", pattern="^(text|textarea|number|icon)$")
+
+
+class FillIn(BaseModel):
+    context: str = Field(..., min_length=2, max_length=300)
+    fields: list[FillField] = Field(..., min_length=1, max_length=20)
+    input: str = Field("", max_length=4000)
+    count: int = Field(1, ge=1, le=10)
+    existing: dict[str, str] = Field(default_factory=dict)
+    avoid: list[str] = Field(default_factory=list, max_length=50)
+    tone: str = Field("", pattern="^(|professional|friendly|sales)$")
+
+
+FILL_SYSTEM = (
+    WRITE_SYSTEM
+    + ' You fill admin form fields. Return ONLY JSON: {"items": [ {<key>: <value>, ...}, ... ]}. '
+    "Use exactly the given keys. Keys ending in _bn / .bn / bn are natural Bangla; _en / .en / en are English "
+    "(same meaning). Fields of type icon get ONE fitting emoji. Numbers are plain numbers. Keep values short "
+    "enough for a website card unless the hint says otherwise. Never invent prices, phone numbers, addresses, "
+    "registration numbers, awards or customer names that were not given — leave such fields as an empty string."
+)
+
+
+@router.post("/fill", response_model=ApiResponse)
+async def ai_fill(payload: FillIn, _admin: str = Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    """Draft one or more items for any admin form from a short input (or fill an item's empty fields)."""
+    if not (payload.input.strip() or any(v.strip() for v in payload.existing.values())):
+        raise HTTPException(status_code=400, detail="AI-কে কিছু তথ্য দিন — কয়েকটি শব্দ লিখুন।")
+    nl = "\n"
+    spec = nl.join(f"- {f.key} ({f.type}): {f.label}{' — ' + f.hint if f.hint else ''}" for f in payload.fields)
+    parts = [f"Form: {payload.context.strip()}", "Fields:" + nl + spec, f"How many items: {payload.count}"]
+    if payload.input.strip():
+        parts.append("Owner's input:" + nl + ai_gemini._mask(payload.input.strip()))
+    filled = [f"{k}: {v}" for k, v in payload.existing.items() if v.strip()]
+    if filled:
+        parts.append("Already filled (keep these meanings, fill only the empty ones):" + nl + nl.join(filled))
+    if payload.avoid:
+        parts.append("Do not repeat these existing items: " + "; ".join(a[:80] for a in payload.avoid))
+    if payload.tone:
+        parts.append(_TONES[payload.tone])
+    try:
+        raw = await ai_gemini.generate_json(db, FILL_SYSTEM, (nl + nl).join(parts), max_tokens=4096)
+    except ai_gemini.AiUnavailable as exc:
+        raise _fail(exc)
+    items = raw.get("items") if isinstance(raw, dict) else raw
+    keys = {f.key: f.type for f in payload.fields}
+    out = []
+    for it in (items if isinstance(items, list) else [])[: payload.count]:
+        if not isinstance(it, dict):
+            continue
+        row = {}
+        for k, t in keys.items():
+            v = it.get(k)
+            if v is None:
+                continue
+            if t == "number":
+                try:
+                    row[k] = float(v) if "." in str(v) else int(v)
+                except (TypeError, ValueError):
+                    continue
+            else:
+                row[k] = str(v).strip()[:2000]
+        if row:
+            out.append(row)
+    if not out:
+        raise HTTPException(status_code=502, detail="AI কিছু তৈরি করতে পারেনি — আরেকটু তথ্য দিয়ে আবার চেষ্টা করুন।")
+    return ApiResponse(data={"items": out})

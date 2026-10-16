@@ -1519,8 +1519,11 @@ export const aiCatalogApi = {
   categoryIdeas: (data: { name: string; kind: "product" | "service" | "both"; existing: string[] }) =>
     api.post<ApiResponse<{ items: { name_bn: string; name_en: string; icon: string }[] }>>("/api/v1/admin/ai-catalog/category-ideas", data, { timeout: 120000 }),
   /** General AI writer for any admin text (improve / fix / translate / write …). */
-  write: (data: { task: AiWriteTask; text?: string; instruction?: string; context?: string }) =>
+  write: (data: { task: AiWriteTask; text?: string; instruction?: string; context?: string; tone?: AiTone }) =>
     api.post<ApiResponse<{ text: string }>>("/api/v1/admin/ai-catalog/write", data, { timeout: 120000 }),
+  /** Generic "✨ AI দিয়ে পূরণ": the form sends its own fields; returns draft items (nothing saved). */
+  fill: (data: { context: string; fields: AiFillField[]; input?: string; count?: number; existing?: Record<string, string>; avoid?: string[]; tone?: AiTone }) =>
+    api.post<ApiResponse<{ items: Record<string, string | number>[] }>>("/api/v1/admin/ai-catalog/fill", data, { timeout: 120000 }),
   /** Steps, benefits, requirements, documents, FAQ and/or packages for a service (nothing saved). */
   serviceDetails: (data: { name: string; notes?: string; parts: string[] }) =>
     api.post<ApiResponse<ServiceDetailsDraft>>("/api/v1/admin/ai-catalog/service-details", data, { timeout: 150000 }),
@@ -1530,6 +1533,8 @@ export const aiCatalogApi = {
   bookingFields: (data: { name: string; notes?: string }) =>
     api.post<ApiResponse<{ fields: AiBookingField[] }>>("/api/v1/admin/ai-catalog/booking-fields", data, { timeout: 120000 }),
 };
+export type AiTone = "" | "professional" | "friendly" | "sales";
+export interface AiFillField { key: string; label?: string; hint?: string; type?: "text" | "textarea" | "number" | "icon" }
 export type AiWriteTask = "improve" | "shorten" | "expand" | "fix" | "to_en" | "to_bn" | "bullets" | "seo" | "write";
 export interface AiBlogDraft {
   title_bn: string; title_en: string; excerpt_bn: string; excerpt_en: string; content_bn: string; content_en: string;

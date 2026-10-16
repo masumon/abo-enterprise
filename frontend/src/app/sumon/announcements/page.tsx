@@ -1,5 +1,7 @@
 "use client";
 
+import AiFillPanel from "@/components/admin/catalog/AiFillPanel";
+import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { useEffect, useState } from "react";
 import { Plus, Trash2, ArrowUp, ArrowDown, Save, Loader2, Languages, Check, Zap, X } from "lucide-react";
 import { ANNOUNCEMENT_VARIANT_BG } from "@/components/layout/AnnouncementBar";
@@ -221,11 +223,11 @@ export default function AdminAnnouncementsPage() {
 
               <div className="grid sm:grid-cols-2 gap-3">
                 <label className="block">
-                  <span className="block text-xs font-medium text-muted mb-1">{bn ? "লেখা (বাংলা)" : "Text (Bangla)"}</span>
+                  <span className="flex items-center justify-between gap-2 text-xs font-medium text-muted mb-1">{bn ? "লেখা (বাংলা)" : "Text (Bangla)"}<AiTextMenu compact text={it.bn} onApply={(v) => update(i, { bn: v })} context="website top announcement bar (one short line, Bangla)" /></span>
                   <input value={it.bn} onChange={(e) => update(i, { bn: e.target.value })} placeholder="যেমন: ৳২০০০+ অর্ডারে ফ্রি ডেলিভারি" className="input" />
                 </label>
                 <label className="block">
-                  <span className="block text-xs font-medium text-muted mb-1">{bn ? "লেখা (ইংরেজি)" : "Text (English)"}</span>
+                  <span className="flex items-center justify-between gap-2 text-xs font-medium text-muted mb-1">{bn ? "লেখা (ইংরেজি)" : "Text (English)"}<AiTextMenu compact text={it.en} onApply={(v) => update(i, { en: v })} context="website top announcement bar (one short line, English)" /></span>
                   <input value={it.en} onChange={(e) => update(i, { en: e.target.value })} placeholder="e.g. Free delivery on orders over ৳2000" className="input" />
                 </label>
               </div>
@@ -278,6 +280,14 @@ export default function AdminAnnouncementsPage() {
             );
           })}
 
+          <AiFillPanel multi
+            context="Website top announcement bar for a phone/electronics/printing/IT shop in Sylhet — one short catchy line each"
+            placeholder="কী জানাতে চান লিখুন — যেমন: ঈদ অফার, ২০০০ টাকার বেশি অর্ডারে ফ্রি ডেলিভারি"
+            presets={["নতুন পণ্য এসেছে", "ঈদ / উৎসবের অফার", "ফ্রি ডেলিভারি", "সার্ভিসিং-এ ছাড়"]}
+            fields={[{ key: "bn", label: "Announcement (Bangla)" }, { key: "en", label: "Announcement (English)" }, { key: "icon", label: "emoji", type: "icon" }]}
+            avoid={items.map((x) => x.bn || x.en)}
+            onAdd={(drafts) => { setItems((l) => [...l, ...drafts.map((d) => ({ ...blank(), bn: String(d.bn ?? ""), en: String(d.en ?? ""), icon: String(d.icon ?? "") || undefined }))]); touch(); }}
+          />
           <button type="button" onClick={() => { setItems((l) => [...l, blank()]); touch(); }} className="btn btn-outline btn-md w-full">
             <Plus className="w-4 h-4" />
             {bn ? "নতুন ঘোষণা যোগ করুন" : "Add announcement"}

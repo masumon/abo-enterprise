@@ -1,5 +1,6 @@
 "use client";
 
+import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { formatDhakaBn } from "@/lib/flashSale";
 import { useCallback, useEffect, useState } from "react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -407,11 +408,12 @@ export default function AdminAssistantPage() {
                     <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                       স্বাগত বার্তা (ইংরেজি)
                       <TranslateButton bn={config.assistant_welcome_bn} onResult={(en) => setConfig((c) => ({ ...c, assistant_welcome_en: en }))} en={config.assistant_welcome_en} onResultBn={(b) => setConfig((c) => ({ ...c, assistant_welcome_bn: b }))} />
+                      <AiTextMenu compact text={config.assistant_welcome_en} onApply={(v) => setConfig((c) => ({ ...c, assistant_welcome_en: v }))} context="website chat assistant welcome message (English)" />
                     </label>
                     <textarea value={config.assistant_welcome_en} onChange={(e) => setConfig((c) => ({ ...c, assistant_welcome_en: e.target.value }))} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100" />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Welcome Message (বাংলা)</label>
+                    <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">স্বাগত বার্তা (বাংলা)<AiTextMenu compact text={config.assistant_welcome_bn} onApply={(v) => setConfig((c) => ({ ...c, assistant_welcome_bn: v }))} context="website chat assistant welcome message (Bangla)" /></label>
                     <textarea value={config.assistant_welcome_bn} onChange={(e) => setConfig((c) => ({ ...c, assistant_welcome_bn: e.target.value }))} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100" />
                   </div>
                 </div>
@@ -684,6 +686,7 @@ export default function AdminAssistantPage() {
                     <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 uppercase mb-1">
                       উত্তর (ইংরেজি)
                       <TranslateButton bn={faqEditing.answer_bn} onResult={(en) => setFaqEditing((f) => f && { ...f, answer_en: en })} en={faqEditing.answer_en} onResultBn={(b) => setFaqEditing((f) => f && { ...f, answer_bn: b })} />
+                      <AiTextMenu compact text={faqEditing.answer_en} onApply={(v) => setFaqEditing((f) => f && { ...f, answer_en: v })} context="chat assistant FAQ answer (English)" />
                     </label>
                     <textarea
                       value={faqEditing.answer_en}
@@ -693,7 +696,7 @@ export default function AdminAssistantPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Answer (বাংলা)</label>
+                    <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 uppercase mb-1">উত্তর (বাংলা)<AiTextMenu compact text={faqEditing.answer_bn ?? ""} onApply={(v) => setFaqEditing((f) => f && { ...f, answer_bn: v })} context="chat assistant FAQ answer (Bangla)" /></label>
                     <textarea
                       value={faqEditing.answer_bn}
                       onChange={(e) => setFaqEditing((f) => f && { ...f, answer_bn: e.target.value })}

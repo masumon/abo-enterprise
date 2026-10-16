@@ -1,11 +1,16 @@
 "use client";
 
-import { useMemo } from "react";
-import { Plus, Trash2, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Plus, Trash2, ArrowUp, ArrowDown, AlertTriangle, Loader2, Sparkles } from "lucide-react";
 import ImageUpload from "@/components/admin/ImageUpload";
 import type { UploadPurpose } from "@/lib/uploadGuides";
 import LivePreview from "@/components/admin/LivePreview";
 import TranslateButton from "@/components/admin/TranslateButton";
+import AiFillPanel from "@/components/admin/catalog/AiFillPanel";
+import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
+import { aiCatalogApi, type AiFillField } from "@/lib/api";
+import { apiErrorMessage } from "@/lib/apiError";
+import { useToastStore } from "@/store/toast";
 import { useLanguageStore } from "@/store/language";
 import { ADMIN_ICON_OPTIONS, ADMIN_EMOJI_OPTIONS, AdminIcon } from "@/lib/adminIcons";
 
@@ -76,6 +81,10 @@ interface Props {
   mapKey?: string;
   /** Optional "as it appears on the website" preview rendered under each row. */
   previewRow?: (item: Record<string, unknown>) => React.ReactNode;
+  /** What this list is on the website, e.g. "homepage FAQ" — enables ✨ AI help. */
+  aiContext?: string;
+  /** Ready-made ideas for the AI box (tap to use). */
+  aiPresets?: string[];
 }
 
 function getPath(obj: Record<string, unknown>, path: string): unknown {
@@ -100,8 +109,15 @@ function setPath(obj: Record<string, unknown>, path: string, val: unknown): Reco
  * doesn't show. If the stored value isn't a valid array, it falls back to a
  * raw textarea so nothing is lost.
  */
-export default function JsonListEditor({ value, onChange, fields, newItem, mapKey, previewRow }: Props) {
+export default function JsonListEditor({ value, onChange, fields, newItem, mapKey, previewRow, aiContext, aiPresets }: Props) {
   const { lang } = useLanguageStore();
+  const toast = useToastStore((s) => s.push);
+  const [fillingRow, setFillingRow] = useState<number | null>(null);
+  // Text-like fields the AI can write (images and links stay with the admin).
+  const aiFields: AiFillField[] = fields
+    .filter((f) => f.type !== "image" && !/(^|\.|_)(href|url|link|image|website|facebook)$/i.test(f.path))
+    .map((f) => ({ key: f.path, label: f.labelBn ?? f.label, hint: f.hint, type: f.type === "icon" ? "icon" : f.type === "number" ? "number" : f.type === "textarea" ? "textarea" : "text" }));
+  const context = aiContext ?? `website list: ${fields.map((f) => f.label).join(", ")}`;
   const parsed = useMemo(() => {
     try {
       const v = JSON.parse(value || (mapKey ? "{}" : "[]"));
@@ -159,13 +175,48 @@ export default function JsonListEditor({ value, onChange, fields, newItem, mapKe
     commit(next);
   };
 
+  const firstText = (it: Record<string, unknown>) => { const f = aiFields.find((x) => x.type !== "icon"); const v = f ? getPath(it, f.key) : ""; return v == null ? "" : String(v); };
+  const addAi = (items: Record<string, string | number>[]) =>
+    commit([...parsed, ...items.map((d) => Object.entries(d).reduce<Record<string, unknown>>((acc, [k, v]) => setPath(acc, k, v), newItem()))]);
+  // Fill only the EMPTY text fields of one row from what is already written there.
+  const fillRow = async (i: number) => {
+    const it = parsed[i];
+    const existing: Record<string, string> = {};
+    const empty: AiFillField[] = [];
+    for (const f of aiFields) { const v = getPath(it, f.key); if (v == null || String(v).trim() === "") empty.push(f); else existing[f.key] = String(v); }
+    if (!empty.length) { toast("info", "এই সারির সব ঘর আগেই পূরণ করা"); return; }
+    if (!Object.keys(existing).length) { toast("error", "আগে অন্তত একটি ঘর লিখুন — বাকিগুলো AI পূরণ করবে"); return; }
+    setFillingRow(i);
+    try {
+      const r = await aiCatalogApi.fill({ context, fields: empty, existing, count: 1 });
+      const d = r.data.data?.items?.[0] ?? {};
+      let next = it;
+      for (const f of empty) if (d[f.key] !== undefined && String(d[f.key]).trim()) next = setPath(next, f.key, d[f.key]);
+      commit(parsed.map((x, idx) => (idx === i ? next : x)));
+      toast("success", "খালি ঘরগুলো AI পূরণ করেছে — দেখে নিন");
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "AI কাজ করেনি — AI সেটিংসে কী দেওয়া আছে কিনা দেখুন"));
+    } finally {
+      setFillingRow(null);
+    }
+  };
+
   return (
     <div className="space-y-3">
+      {aiFields.length > 0 && !mapKey && (
+        <AiFillPanel multi context={context} fields={aiFields} onAdd={addAi} presets={aiPresets} avoid={parsed.map(firstText)} />
+      )}
       {parsed.map((item, i) => (
         <div key={i} className="rounded-xl border border-gray-200 dark:border-white/10 p-3 space-y-2 bg-white dark:bg-white/[0.02]">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-gray-400">#{i + 1}</span>
             <div className="flex items-center gap-1">
+              {aiFields.length > 0 && (
+                <button type="button" onClick={() => void fillRow(i)} disabled={fillingRow !== null} title="খালি ঘরগুলো AI দিয়ে পূরণ" aria-label="খালি ঘরগুলো AI দিয়ে পূরণ"
+                  className="h-7 px-2 rounded-lg text-xs font-semibold text-brand-700 dark:text-brand-300 hover:bg-brand-50 dark:hover:bg-brand-500/10 inline-flex items-center gap-1">
+                  {fillingRow === i ? <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden /> : <Sparkles className="w-3.5 h-3.5" aria-hidden />} খালি ঘর পূরণ
+                </button>
+              )}
               <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="w-7 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 flex items-center justify-center disabled:opacity-30" aria-label="উপরে নিন"><ArrowUp className="w-3.5 h-3.5" /></button>
               <button type="button" onClick={() => move(i, 1)} disabled={i === parsed.length - 1} className="w-7 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 flex items-center justify-center disabled:opacity-30" aria-label="নিচে নিন"><ArrowDown className="w-3.5 h-3.5" /></button>
               <button type="button" onClick={() => remove(i)} className="w-7 h-7 rounded-lg hover:bg-red-50 text-red-500 flex items-center justify-center" aria-label="মুছুন"><Trash2 className="w-3.5 h-3.5" /></button>
@@ -185,6 +236,9 @@ export default function JsonListEditor({ value, onChange, fields, newItem, mapKe
                       const g = (path: string) => { const s = getPath(item, path); return s == null ? "" : String(s); };
                       return <TranslateButton bn={g(from)} onResult={(en) => update(i, f.path, en)} en={g(f.path)} onResultBn={(b) => update(i, from, b)} />;
                     })()}
+                    {(f.type === undefined || f.type === "text" || f.type === "textarea") && aiFields.some((x) => x.key === f.path) && (
+                      <AiTextMenu compact text={val} onApply={(v) => update(i, f.path, v)} context={`${context} — ${f.labelBn ?? f.label}`} />
+                    )}
                   </span>
                   {f.type === "icon" ? (
                     <IconPicker value={val} onChange={(v) => update(i, f.path, v)} />

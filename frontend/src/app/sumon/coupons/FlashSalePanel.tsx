@@ -1,5 +1,6 @@
 "use client";
 
+import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, Plus, Save, Search, Trash2, Zap } from "lucide-react";
 import { adminApi, productsApi } from "@/lib/api";
@@ -156,10 +157,10 @@ export default function FlashSalePanel() {
           <input type="checkbox" className="w-5 h-5 accent-brand-600" checked={on} onChange={(e) => set("feature_flash_sale", e.target.checked ? "true" : "false")} />
         </label>
         <div className="grid sm:grid-cols-2 gap-3">
-          <label className="text-sm block">শিরোনাম (বাংলা)
+          <label className="text-sm block"><span className="flex items-center justify-between gap-2">শিরোনাম (বাংলা)<AiTextMenu compact text={vals.flash_sale_title_bn} onApply={(t) => set("flash_sale_title_bn", t)} context="flash sale countdown banner title (short, exciting)" /></span>
             <input className="input w-full min-h-11 text-base" placeholder="আজকের দুর্দান্ত অফার" value={vals.flash_sale_title_bn} onChange={(e) => set("flash_sale_title_bn", e.target.value)} />
           </label>
-          <label className="text-sm block">শিরোনাম (ইংরেজি — ঐচ্ছিক)
+          <label className="text-sm block"><span className="flex items-center justify-between gap-2">শিরোনাম (ইংরেজি — ঐচ্ছিক)<AiTextMenu compact text={vals.flash_sale_title_en} onApply={(t) => set("flash_sale_title_en", t)} context="flash sale countdown banner title (short, exciting)" /></span>
             <input className="input w-full min-h-11 text-base" placeholder="Today's Best Offer" value={vals.flash_sale_title_en} onChange={(e) => set("flash_sale_title_en", e.target.value)} />
           </label>
           <label className="text-sm block">শুরু — বাংলাদেশ সময় (ঐচ্ছিক)

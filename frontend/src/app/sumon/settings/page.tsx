@@ -1,5 +1,6 @@
 "use client";
 
+import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { useUnsavedGuard } from "@/hooks/useUnsavedGuard";
 import Link from "next/link";
 import { validateSettingValues } from "@/lib/settingsValidation";
@@ -340,6 +341,11 @@ function SectionCard({
                   <TranslateButton bn={values[from]} onResult={(en) => onChange(field.key, en)} en={values[field.key]} onResultBn={(b) => onChange(from, b)} />
                 ) : null;
               })()}
+              {/* ✨ AI only on customer-facing text (not links, keys, numbers or technical values). */}
+              {!field.upload && (field.type === undefined || field.type === "text" || field.type === "textarea")
+                && !/(url|email|phone|whatsapp|smtp|key|_id|pixel|gtm|gsc|verification|provider|currency|timezone|maintenance|maps|json|min_order|tax|_name$|_title$)/.test(field.key) && (
+                <span className="normal-case tracking-normal"><AiTextMenu compact text={values[field.key] ?? ""} onApply={(v) => onChange(field.key, v)} context={`website setting: ${field.label}`} /></span>
+              )}
             </label>
             {field.upload ? (
               <ImageUpload
@@ -374,6 +380,7 @@ function SectionCard({
                 newItem={TRUST_EDITORS[field.key].newItem}
                 mapKey={TRUST_EDITORS[field.key].mapKey}
                 previewRow={TRUST_EDITORS[field.key].previewRow}
+                aiContext={`Website setting list: ${field.label}`}
               />
             ) : field.type === "select" ? (
               <select

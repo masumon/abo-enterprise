@@ -164,6 +164,7 @@ export default function AboutTrustPage() {
                       newItem={ed.newItem}
                       mapKey={ed.mapKey}
                       previewRow={ed.previewRow}
+                      aiContext={key === "about_team_json" ? "About page team members (name and role come from the owner; write the short bio)" : key === "client_logos_json" ? "Client / partner companies we worked with (logos section) — short description of each" : key === "site_registrations_json" ? "Business registrations / trust badges — labels only; never invent numbers" : `About & trust: ${key}`}
                     />
                   );
                 })}

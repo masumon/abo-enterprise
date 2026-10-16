@@ -1,4 +1,6 @@
 "use client";
+import AiFillPanel from "@/components/admin/catalog/AiFillPanel";
+import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
 import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
@@ -520,6 +522,26 @@ export default function AdminReviewsPage() {
             </div>
 
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
+              <AiFillPanel
+                title="✨ মেসেজ থেকে রিভিউ বানান"
+                context="Customer testimonial for the website — keep the customer's real meaning; polish only the language"
+                placeholder="গ্রাহকের হোয়াটসঅ্যাপ/ফেসবুক মেসেজ বা মুখের কথা এখানে পেস্ট করুন — নাম জানা থাকলে সাথে লিখুন"
+                fields={[
+                  { key: "customer_name", label: "Customer name (only if given)" },
+                  { key: "company", label: "Company / place (only if given)" },
+                  { key: "rating", label: "Star rating 1-5 from the message tone", type: "number" },
+                  { key: "review_bn", label: "Review in Bangla", type: "textarea" },
+                  { key: "review_en", label: "Review in English", type: "textarea" },
+                ]}
+                onAdd={([d]) => setDraft((x) => ({
+                  ...x,
+                  customer_name: x.customer_name?.trim() ? x.customer_name : String(d.customer_name ?? ""),
+                  company: x.company?.trim() ? x.company : String(d.company ?? "") || null,
+                  rating: Math.min(5, Math.max(1, Number(d.rating) || x.rating || 5)),
+                  review_bn: String(d.review_bn ?? x.review_bn ?? ""),
+                  review_en: String(d.review_en ?? x.review_en ?? ""),
+                }))}
+              />
               {/* Live website preview — the review card as shown on the site */}
               <LivePreview showDevice={false}>
                 <div className="p-1 pointer-events-none max-w-xs mx-auto">
@@ -621,8 +643,11 @@ export default function AdminReviewsPage() {
                 <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider">{tx("Review Content")}</h3>
                 <div>
                   <label className="form-label flex items-center justify-between gap-2">
-                    Review (English)
-                    <TranslateButton bn={draft.review_bn} onResult={(en) => setDraft(d => ({ ...d, review_en: en }))} en={draft.review_en} onResultBn={(b) => setDraft(d => ({ ...d, review_bn: b }))} />
+                    রিভিউ (ইংরেজি)
+                    <span className="inline-flex items-center gap-1">
+                      <TranslateButton bn={draft.review_bn} onResult={(en) => setDraft(d => ({ ...d, review_en: en }))} en={draft.review_en} onResultBn={(b) => setDraft(d => ({ ...d, review_bn: b }))} />
+                      <AiTextMenu compact text={draft.review_en ?? ""} onApply={(v) => setDraft(d => ({ ...d, review_en: v }))} context="customer testimonial (English)" />
+                    </span>
                   </label>
                   <textarea
                     rows={4}
@@ -632,7 +657,9 @@ export default function AdminReviewsPage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label">Review (বাংলা)</label>
+                  <label className="form-label flex items-center justify-between gap-2">রিভিউ (বাংলা)
+                    <AiTextMenu compact text={draft.review_bn ?? ""} onApply={(v) => setDraft(d => ({ ...d, review_bn: v }))} context="customer testimonial (Bangla)" />
+                  </label>
                   <textarea
                     rows={3}
                     value={draft.review_bn ?? ""}

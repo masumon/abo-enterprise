@@ -1,5 +1,6 @@
 "use client";
 
+import AiTextMenu from "@/components/admin/catalog/AiTextMenu";
 import { useEffect, useState, type JSX, type ReactNode } from "react";
 import Link from "next/link";
 import { Save, Loader2, Check, ImageIcon, ChevronDown, ExternalLink, Pencil, Megaphone, GalleryHorizontal, ArrowRight } from "lucide-react";
@@ -280,9 +281,12 @@ export default function AdminHomepageContentPage() {
               en={val}
               onResultBn={(t) => setValue(f.key.replace(/_en$/, "_bn"), t)}
             />
+            {(f.type === undefined || f.type === "text" || f.type === "textarea") && <AiTextMenu compact text={val} onApply={(t) => setValue(f.key, t)} context={`website homepage: ${f.label}`} />}
           </span>
         ) : (
-          <span className="block text-xs font-medium text-muted mb-1">{bn ? f.labelBn : f.label}</span>
+          <span className="flex items-center justify-between gap-2 text-xs font-medium text-muted mb-1">{bn ? f.labelBn : f.label}
+            {(f.type === undefined || f.type === "text" || f.type === "textarea") && <AiTextMenu compact text={val} onApply={(t) => setValue(f.key, t)} context={`website homepage: ${f.label}`} />}
+          </span>
         )}
         {f.type === "textarea" ? (
           <textarea
@@ -331,6 +335,7 @@ export default function AdminHomepageContentPage() {
           fields={ed.fields}
           newItem={ed.newItem}
           previewRow={CONTENT_PREVIEWS[ed.key] ? (item) => CONTENT_PREVIEWS[ed.key](item, bn) : undefined}
+          aiContext={`ABO Enterprise website homepage list "${ed.key}"${descBn ? ` — ${descBn}` : ""}`}
         />
         <p className="text-[11px] text-muted mt-2">{bn ? "খালি রাখলে ওয়েবসাইটে আগের মতো ডিফল্ট লেখা দেখাবে।" : "Leave empty to show the built-in default."}</p>
       </>
