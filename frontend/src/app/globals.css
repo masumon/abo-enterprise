@@ -1682,3 +1682,24 @@ body:has(.admin-overlay) { overflow: hidden; }
 }
 /* Shared "unsaved changes" bar (2026-10-16) — same spot, spacing and safe area on every page. */
 .admin-savebar { backdrop-filter: blur(10px); }
+
+/* ══ Admin form states (2026-10-16) — same look everywhere ═══════════════════
+   Dropdowns, disabled/loading buttons, error text, placeholders, section titles. */
+.admin-shell main select:not([multiple]) {
+  border-radius: 0.75rem;
+  padding-inline: 0.75rem;
+  cursor: pointer;
+}
+.admin-shell main :is(button, [class~="btn"], a[class~="btn"]):disabled,
+.admin-shell main :is(button, [class~="btn"])[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.admin-shell main :is(input, textarea, select):disabled { opacity: 0.6; cursor: not-allowed; }
+.admin-shell main :is(input, textarea)::placeholder { opacity: 0.7; }
+.admin-shell main :is([class~="input-error"], [aria-invalid="true"]) { border-color: rgb(220 38 38); }
+.admin-shell main :is(input, textarea, select):focus-visible { outline: 2px solid rgb(99 123 255); outline-offset: 1px; }
+.admin-dark main :is([class~="input-error"], [aria-invalid="true"]) { border-color: rgb(248 113 113); }
+/* One size for section headings inside forms/panels. */
+.admin-shell main :is(.admin-sheet, [class~="admin-card"], [class~="card"]) h2:not([class*="text-xl"]):not([class*="text-2xl"]):not([class*="text-lg"]) { font-size: 1rem; line-height: 1.5rem; }
