@@ -71,16 +71,16 @@ export default function AdminCommandPalette({ role }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex items-start justify-center pt-[15vh] px-4"
+      className="fixed inset-0 z-[90] flex items-start justify-center pt-3 sm:pt-[15vh] px-3 sm:px-4"
       style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(3px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
       role="dialog"
       aria-modal="true"
       aria-label="Quick navigation"
     >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 w-full max-w-lg overflow-hidden">
         <div className="flex items-center gap-2 px-4 border-b border-gray-100">
-          <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          <Search className="w-5 h-5 text-brand-500 flex-shrink-0" />
           <input
             ref={inputRef}
             value={query}
@@ -91,12 +91,12 @@ export default function AdminCommandPalette({ role }: Props) {
               else if (e.key === "Enter" && items[active]) { e.preventDefault(); go(items[active].href); }
             }}
             placeholder="কী করতে চান? লিখুন — যেমন: ব্যানার, ছবি, অর্ডার, লোগো…"
-            className="w-full py-3.5 text-sm outline-none placeholder:text-gray-400"
+            className="w-full py-4 text-base sm:text-sm outline-none bg-transparent text-gray-900 dark:text-gray-100 placeholder:text-gray-400"
             aria-label="Search admin pages"
           />
-          <kbd className="text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5 flex-shrink-0">Esc</kbd>
+          <kbd className="hidden sm:inline text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5 flex-shrink-0">Esc</kbd>
         </div>
-        <ul className="max-h-72 overflow-y-auto py-2" role="listbox">
+        <ul className="max-h-[70dvh] sm:max-h-72 overflow-y-auto py-2" role="listbox">
           {items.length === 0 && (
             <li className="px-4 py-6 text-center text-sm text-gray-400">কিছু পাওয়া যায়নি</li>
           )}
@@ -109,11 +109,11 @@ export default function AdminCommandPalette({ role }: Props) {
                   onClick={() => go(item.href)}
                   onMouseEnter={() => setActive(i)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left",
-                    i === active ? "bg-brand-50 text-brand-700" : "text-gray-700"
+                    "w-full flex items-center gap-3 px-4 py-3 sm:py-2.5 text-sm text-left min-h-12 sm:min-h-0",
+                    i === active ? "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200" : "text-gray-700 dark:text-gray-200"
                   )}
                 >
-                  <Icon className="w-4 h-4 flex-shrink-0 text-gray-400" />
+                  <Icon className="w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0 text-brand-500" />
                   <span className="flex-1 min-w-0">
                     <span className="block font-medium truncate">{item.labelBn ?? item.label}</span>
                     {item.descBn && <span className="block text-xs text-gray-400 truncate">{item.descBn}</span>}
