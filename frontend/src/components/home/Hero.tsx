@@ -268,6 +268,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
               <div className="relative w-full max-w-[26rem] xl:max-w-md flex flex-col gap-4">
                 <PromoSlider
                   placement="hero"
+                  aspect="aspect-[21/8]"
                   eagerFirstSlide
                   initialSlides={initialHeroSlides}
                   // Hidden below 1024px: "1px" keeps phones from fetching this copy at full size.

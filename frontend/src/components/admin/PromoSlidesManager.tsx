@@ -26,14 +26,14 @@ const PLACEMENTS: { value: PromoSlide["placement"]; label: string; help: string 
 /** Rendered size per surface, so uploads match the box they land in. */
 const SPECS: Record<PromoSlide["placement"], { size: string; ratio: string; note: string }> = {
   hero: {
-    size: "১২৮০ × ৭২০ px",
-    ratio: "১৬:৯",
-    note: "হোমপেজের একদম উপরে দেখায় — মোবাইলে উপরের বারের নিচে, ডেস্কটপে শিরোনামের পাশে।",
+    size: "১২৬০ × ৪৮০ px",
+    ratio: "২১:৮",
+    note: "হোমপেজের একদম উপরে দেখায় — মোবাইলে উপরের বারের নিচে, ডেস্কটপে শিরোনামের পাশে। যে মাপেরই দিন, পুরো ছবি কার্ডে ঠিকঠাক বসে — কাটে না, পাশে ফাঁকা রং থাকে না; এই মাপ দিলে সবচেয়ে সুন্দর হয়।",
   },
   flash_sale: {
     size: "১৫০০ × ৫০০ px",
     ratio: "৩:১",
-    note: "ফ্ল্যাশ সেলের কাউন্টডাউনের নিচে দেখায় — শুধু ফ্ল্যাশ সেল চলাকালীন।",
+    note: "ফ্ল্যাশ সেলের কাউন্টডাউনের নিচে দেখায় — শুধু ফ্ল্যাশ সেল চলাকালীন। যে মাপেরই দিন, পুরো ছবি কার্ডে বসে যায়; এই মাপ দিলে সবচেয়ে সুন্দর।",
   },
 };
 

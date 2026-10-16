@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
+import type { Swiper as SwiperType } from "swiper";
 import { Autoplay, Pagination, A11y } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/pagination";
@@ -48,7 +49,7 @@ function resolveSlideLink(raw?: string | null): { path: string | null; external:
  * placeholder until it has decoded, then fades in. Fixes the "black flash" a
  * slow banner image used to leave while the browser fetched it.
  */
-function PromoImage({ src, alt, eager, sizes, contain }: { src: string; alt: string; eager?: boolean; sizes?: string; contain?: boolean }) {
+function PromoImage({ src, alt, eager, sizes, contain, onRatio }: { src: string; alt: string; eager?: boolean; sizes?: string; contain?: boolean; onRatio?: (r: number) => void }) {
   // The first (eager) slide is the page's LCP image: show it from the server HTML at once.
   // Hiding it until React hydrated (opacity-0 + spinner) delayed it ~9 s on slow phones.
   const [loaded, setLoaded] = useState(!!eager);
@@ -56,7 +57,12 @@ function PromoImage({ src, alt, eager, sizes, contain }: { src: string; alt: str
   // Server-rendered images can finish loading before React hydrates and
   // attaches onLoad — check `complete` so the spinner never sticks.
   useEffect(() => {
-    if (imgRef.current?.complete) setLoaded(true);
+    const el = imgRef.current;
+    if (el?.complete) {
+      setLoaded(true);
+      if (el.naturalWidth && el.naturalHeight) onRatio?.(el.naturalWidth / el.naturalHeight);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <>
@@ -83,7 +89,11 @@ function PromoImage({ src, alt, eager, sizes, contain }: { src: string; alt: str
         srcSet={cloudinarySrcSet(src, PROMO_WIDTHS)}
         sizes={sizes}
         alt={alt}
-        onLoad={() => setLoaded(true)}
+        onLoad={(e) => {
+          setLoaded(true);
+          const el = e.currentTarget;
+          if (el.naturalWidth && el.naturalHeight) onRatio?.(el.naturalWidth / el.naturalHeight);
+        }}
         onError={() => setLoaded(true)}
         className={cn(
           "absolute inset-0 w-full h-full transition-opacity duration-300",
@@ -95,6 +105,28 @@ function PromoImage({ src, alt, eager, sizes, contain }: { src: string; alt: str
         decoding="async"
       />
     </>
+  );
+}
+
+/** Ratio of a Tailwind aspect class ("aspect-[21/8]", "aspect-video"). */
+function ratioOfClass(cls: string): number {
+  const m = /aspect-\[(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)\]/.exec(cls);
+  return m ? Number(m[1]) / Number(m[2]) : 16 / 9;
+}
+
+/** The media box of one slide. It starts at the placement's recommended ratio and, once the
+ * image has loaded, adopts the image's own ratio (within sane limits) — so any banner the
+ * admin uploads is shown whole and fills the card edge to edge on every screen, with no
+ * coloured side bars and nothing cropped. */
+function SlideMedia({ aspect, onFit, children }: { aspect: string; onFit: () => void; children: (onRatio: (r: number) => void) => React.ReactNode }) {
+  const base = ratioOfClass(aspect);
+  const [ratio, setRatio] = useState<number | null>(null);
+  const fitted = ratio && ratio >= 1.2 && ratio <= 4.5 && Math.abs(ratio - base) / base > 0.03 ? ratio : null;
+  useEffect(() => { if (fitted) onFit(); }, [fitted, onFit]);
+  return (
+    <div className={`relative w-full ${aspect} overflow-hidden`} style={fitted ? { aspectRatio: String(fitted) } : undefined}>
+      {children(setRatio)}
+    </div>
   );
 }
 
@@ -152,6 +184,9 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
     };
   }, [placement, hasInitial]);
 
+  const swiperRef = useRef<SwiperType | null>(null);
+  const refreshHeight = useCallback(() => { swiperRef.current?.updateAutoHeight(0); }, []);
+
   // null = still loading: render the fallback so there's no layout jump.
   if (!slides || slides.length === 0) return <>{fallback ?? null}</>;
 
@@ -160,6 +195,8 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
       <Swiper
         modules={[Autoplay, Pagination, A11y]}
         slidesPerView={1}
+        autoHeight
+        onSwiper={(sw) => { swiperRef.current = sw; }}
         // rewind instead of loop: loop clones the slides after hydration, which re-created the
         // first (LCP) image and delayed it by seconds on phones.
         rewind={slides.length > 1}
@@ -171,8 +208,8 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
         {slides.map((slide, index) => {
           const title = (lang === "bn" ? slide.title_bn : slide.title_en) || slide.title_en || "";
           const media = (
-            <div className={`relative w-full ${aspect} overflow-hidden`}>
-              {slide.video_url ? (
+            <SlideMedia aspect={aspect} onFit={refreshHeight}>
+              {(onRatio) => slide.video_url ? (
                 <AutoVideo
                   src={slide.video_url}
                   className="absolute inset-0 w-full h-full object-cover"
@@ -185,10 +222,11 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
                   alt={slide.alt_text || title || ""}
                   eager={eagerFirstSlide && index === 0}
                   sizes={sizes}
-                  contain={fit ? fit === "contain" : placement === "flash_sale"}
+                  contain={fit ? fit === "contain" : true}
+                  onRatio={onRatio}
                 />
               )}
-            </div>
+            </SlideMedia>
           );
 
           const body = (
