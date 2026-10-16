@@ -1,5 +1,5 @@
 "use client";
-import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
+import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_CLASS, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
@@ -348,11 +348,11 @@ export default function AdminBookingsPage() {
         >
           <div
             ref={detailV2Ref}
-            className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl animate-scale-in max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl"
+            className={`flex max-h-[90vh] w-full max-w-lg flex-col animate-scale-in max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl ${ADMIN_MODAL_PANEL_CLASS}`}
             style={ADMIN_MODAL_PANEL_STYLE}
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10">
               <h2 className="text-lg font-semibold text-gray-900">Booking {detailV2.booking_number}</h2>
               <button aria-label="বন্ধ করুন" type="button" onClick={() => setDetailV2(null)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
@@ -380,7 +380,7 @@ export default function AdminBookingsPage() {
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-xl p-4">
+              <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl p-4">
                 <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                   <h3 className="font-semibold text-gray-900 text-sm">{tx("Customer")}</h3>
                   <div className="flex gap-2">

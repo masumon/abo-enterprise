@@ -297,11 +297,11 @@ function SectionCard({
   const isSaved = savedId === section.id;
 
   return (
-    <div id={section.id} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow overflow-hidden scroll-mt-24">
+    <div id={section.id} className="admin-settings-section bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm hover:shadow-md transition-shadow overflow-hidden scroll-mt-24">
       <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-b border-gray-100 dark:border-white/10 bg-gradient-to-r from-brand-50 to-transparent dark:from-brand-900/20 gap-3 flex-wrap">
         <div className="flex items-center gap-2.5">
           <span className="text-brand-600">{section.icon}</span>
-          <h2 className="text-sm font-semibold text-gray-800">{section.title}</h2>
+          <h2 className="admin-settings-heading text-sm font-semibold text-gray-800 dark:text-gray-100">{section.title}</h2>
         </div>
         <button
           onClick={() => onSave(section.id)}
@@ -322,7 +322,7 @@ function SectionCard({
         </button>
       </div>
       {section.note && (
-        <div className="px-6 py-2.5 bg-brand-50/50 border-b border-brand-100/60 text-xs text-brand-800 flex items-center gap-2 flex-wrap">
+        <div className="admin-settings-note px-6 py-2.5 bg-brand-50/50 border-b border-brand-100/60 text-xs text-brand-800 dark:text-blue-100 flex items-center gap-2 flex-wrap">
           {section.mediaLink ? <ImageIcon className="w-3.5 h-3.5 flex-shrink-0" /> : <Info className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />}
           <span>{section.note}</span>
           {section.mediaLink && <Link href="/sumon/media" className="font-semibold underline hover:no-underline max-[899px]:inline-flex max-[899px]:items-center max-[899px]:min-h-[40px]">
@@ -408,11 +408,11 @@ function SectionCard({
                 value={values[field.key] ?? ""}
                 onChange={(e) => onChange(field.key, e.target.value)}
                 placeholder={field.placeholder}
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                className="w-full px-3 py-2 border border-gray-200 dark:border-white/10 rounded-lg text-sm bg-white dark:bg-white/5 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
               />
             )}
             {field.hint && (
-              <p className="text-xs text-gray-400 mt-1">{field.hint}</p>
+              <p className="admin-settings-hint text-xs text-gray-400 dark:text-gray-300 mt-1">{field.hint}</p>
             )}
           </div>
         ))}

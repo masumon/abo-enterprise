@@ -1,5 +1,5 @@
 "use client";
-import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
+import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_CLASS, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -404,11 +404,8 @@ export default function AdminInvoicesPage() {
           onClick={() => setDetail(null)}
         >
           <div
-            className="flex max-h-[90vh] w-full max-w-lg flex-col rounded-2xl max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl"
-            style={{
-              background: "rgba(255,255,255,0.98)",
-              boxShadow: "0 24px 64px rgba(30,43,107,0.16), 0 8px 24px rgba(0,0,0,0.08)",
-            }}
+            className={`flex max-h-[90vh] w-full max-w-lg flex-col max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl ${ADMIN_MODAL_PANEL_CLASS}`}
+            style={ADMIN_MODAL_PANEL_STYLE}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
@@ -461,7 +458,7 @@ export default function AdminInvoicesPage() {
               </div>
 
               {/* Customer */}
-              <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+              <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl p-4 space-y-2">
                 <h3 className="font-semibold text-gray-900 text-sm">{tx("Customer")}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                   <div>
@@ -488,7 +485,7 @@ export default function AdminInvoicesPage() {
                 <div className="border border-gray-100 dark:border-white/10 rounded-xl overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="bg-gray-50 border-b border-gray-100">
+                      <tr className="bg-gray-50 dark:bg-white/[0.04] border-b border-gray-100 dark:border-white/10">
                         <th className="text-left px-4 py-2.5 text-xs font-semibold text-gray-400">{tx("Item")}</th>
                         <th className="text-center px-4 py-2.5 text-xs font-semibold text-gray-400">{tx("Qty")}</th>
                         <th className="text-right px-4 py-2.5 text-xs font-semibold text-gray-400">{tx("Price")}</th>
@@ -516,7 +513,7 @@ export default function AdminInvoicesPage() {
               )}
 
               {/* Totals */}
-              <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+              <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl p-4 space-y-2 text-sm">
                 <div className="flex justify-between text-gray-500">
                   <span>{tx("Subtotal")}</span>
                   <span>{formatPrice(detail.subtotal)}</span>
@@ -543,7 +540,7 @@ export default function AdminInvoicesPage() {
               {(detail.issued_date || detail.due_date || detail.paid_date) && (
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
                   {detail.issued_date && (
-                    <div className="bg-gray-50 rounded-xl p-3">
+                    <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl p-3">
                       <span className="text-xs text-gray-400 block mb-1">{tx("Issued")}</span>
                       <p className="font-medium text-gray-900 text-xs">
                         {new Date(detail.issued_date).toLocaleDateString("en-BD")}
@@ -582,8 +579,8 @@ export default function AdminInvoicesPage() {
       )}
 
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl max-[640px]:p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0" style={ADMIN_MODAL_BACKDROP_STYLE}>
+          <div className={`max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 shadow-2xl max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl max-[640px]:p-4 ${ADMIN_MODAL_PANEL_CLASS}`} style={ADMIN_MODAL_PANEL_STYLE}>
             <div className="mb-5 flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">{tx("Create Invoice")}</h2>
               <button type="button" onClick={() => setShowCreate(false)} aria-label={tx("Close")} className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>

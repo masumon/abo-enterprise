@@ -4,7 +4,7 @@ import { useDirty, useUnsavedGuard } from "@/hooks/useUnsavedGuard";
 import RichTextEditor from "@/components/admin/catalog/RichTextEditor";
 import AiBlogWriter from "@/components/admin/AiBlogWriter";
 import { useOpenOnNew } from "@/lib/useOpenOnNew";
-import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
+import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_CLASS, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -439,7 +439,7 @@ export default function AdminBlogPage() {
                 {posts.map((p) => (
                   <tr key={p.id} onClick={() => openEdit(p)} className="cursor-pointer hover:bg-brand-50/40 transition-colors">
                     <td className="px-5 py-3" data-label={tx("Title")}>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap justify-end">
                         {p.is_featured && <Star className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
                         <div>
                           <p className="font-medium text-gray-900 truncate max-w-[200px] sm:max-w-[280px]">{p.title_en}</p>
@@ -532,9 +532,9 @@ export default function AdminBlogPage() {
           aria-modal="true"
           aria-label={isNew ? "Create blog post" : "Edit blog post"}
         >
-          <div ref={editorRef} className="ml-auto w-full max-w-2xl h-full flex flex-col bg-white shadow-2xl overflow-hidden animate-slide-in-right">
+          <div ref={editorRef} className={`ml-auto w-full max-w-2xl h-full flex flex-col shadow-2xl overflow-hidden animate-slide-in-right ${ADMIN_MODAL_PANEL_CLASS}`} style={ADMIN_MODAL_PANEL_STYLE}>
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10 flex-shrink-0">
               <h2 className="text-lg font-semibold text-gray-900">
                 {isNew ? "New Post" : "Edit Post"}
               </h2>
@@ -763,9 +763,9 @@ export default function AdminBlogPage() {
               </div>
 
               {/* English version — auto-translated on save; open to review/edit */}
-              <div className="border border-gray-200 rounded-xl overflow-hidden">
+              <div className="border border-gray-200 dark:border-white/10 rounded-xl overflow-hidden">
                 <button type="button" onClick={() => setEnOpen(o => !o)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+                  className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 dark:bg-white/[0.04] hover:bg-gray-100 dark:hover:bg-white/[0.08] transition-colors text-left">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                     English Version
                     <span className="ml-1.5 text-gray-400 font-normal normal-case">— বাংলা লিখে Save দিলে অটো-অনুবাদ হয়; দেখতে/সম্পাদনা করতে খুলুন</span>
@@ -914,7 +914,7 @@ export default function AdminBlogPage() {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 flex-shrink-0 bg-gray-50/50">
+            <div className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 border-t border-gray-100 dark:border-white/10 flex-shrink-0 bg-gray-50/50 dark:bg-white/[0.03] flex-wrap">
               <div className="flex items-center gap-1.5 text-xs text-gray-500">
                 {editing.status === "published"
                   ? <><Eye className="w-3.5 h-3.5 text-green-500" /> {tx("Visible on site")}</>

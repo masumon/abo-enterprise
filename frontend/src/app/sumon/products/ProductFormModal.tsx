@@ -8,7 +8,7 @@ import { X, Loader2, Save, Send } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
+import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_CLASS, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 import { productsApi, adminBlogApi, type AiDescription } from "@/lib/api";
 import { productAdminApi, toSlug, shortId, type DupMatch } from "@/lib/catalogAdminApi";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -761,7 +761,7 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4" style={ADMIN_MODAL_BACKDROP_STYLE}>
       <div ref={modalRef} role="dialog" aria-modal="true" aria-label={title}
-        className="w-full max-w-5xl h-full sm:h-[92vh] sm:rounded-2xl flex flex-col animate-scale-in" style={ADMIN_MODAL_PANEL_STYLE}>
+        className={`w-full max-w-5xl h-full sm:h-[92vh] flex flex-col animate-scale-in ${ADMIN_MODAL_PANEL_CLASS}`} style={ADMIN_MODAL_PANEL_STYLE}>
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-gray-100 dark:border-white/10">
           <h2 className="text-lg font-semibold text-heading">{title}</h2>
           <button type="button" onClick={onClose} aria-label={t("বন্ধ করুন", "Close")} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>

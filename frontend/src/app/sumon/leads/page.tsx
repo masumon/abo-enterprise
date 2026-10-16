@@ -1,5 +1,5 @@
 "use client";
-import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
+import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_CLASS, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
@@ -508,11 +508,11 @@ export default function AdminLeadsPage() {
         >
           <div
             ref={detailRef}
-            className="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in"
+            className={`rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in ${ADMIN_MODAL_PANEL_CLASS}`}
             style={ADMIN_MODAL_PANEL_STYLE}
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10">
               <h2 className="text-lg font-semibold text-gray-900">
                 {detail ? `Lead — ${detail.name}` : "Loading..."}
               </h2>
@@ -535,7 +535,7 @@ export default function AdminLeadsPage() {
                   </select>
                 </div>
 
-                <div className="bg-gray-50 rounded-xl p-4">
+                <div className="bg-gray-50 dark:bg-white/[0.04] rounded-xl p-4">
                   <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
                     <h3 className="font-semibold text-gray-900 text-sm">{tx("Contact Info")}</h3>
                     <div className="flex gap-2">
