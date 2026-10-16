@@ -173,8 +173,8 @@ export default function CustomersPage() {
       </div>
 
       {selected && (
-        <div className="fixed inset-0 z-50 bg-black/40 p-0 sm:p-8 overflow-y-auto" role="dialog" aria-modal="true" aria-label={bn ? "গ্রাহক বিস্তারিত" : "Customer details"}>
-          <div className="mx-auto max-w-5xl admin-card bg-white min-h-full sm:min-h-[80vh] rounded-none sm:rounded-2xl">
+        <div className="admin-overlay admin-overlay--panel fixed inset-0 z-50 bg-black/40 p-0 sm:p-8 overflow-y-auto" role="dialog" aria-modal="true" aria-label={bn ? "গ্রাহক বিস্তারিত" : "Customer details"}>
+          <div className="admin-sheet admin-sheet--xl mx-auto max-w-5xl admin-card bg-white min-h-full sm:min-h-[80vh] rounded-none sm:rounded-2xl">
             <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 flex items-center justify-between gap-3 p-4 sm:p-5 border-b border-gray-100"><div className="min-w-0"><h2 className="text-lg sm:text-xl font-semibold break-words">{selected.name || selected.phone}</h2><p className="text-sm text-gray-500 break-all">{selected.phone} · {selected.email || "—"}</p><ContactButtons phone={selected.phone} email={selected.email} className="mt-2" /></div><button type="button" onClick={() => { setSelected(null); setHistory(null); setEditOpen(false); }} className="admin-btn-secondary p-2" aria-label={bn ? "বন্ধ করুন" : "Close"}><X className="w-5 h-5" /></button></div>
             {detailLoading ? <div className="p-16 flex justify-center"><RefreshCw className="w-6 h-6 animate-spin text-gray-400" /></div> : (
               <div className="p-3 sm:p-5 space-y-4 sm:space-y-6">

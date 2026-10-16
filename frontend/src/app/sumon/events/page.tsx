@@ -183,10 +183,10 @@ ${JSON.stringify(e.meta, null, 2)}` : ""}`;
       )}
 
       {detail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE}
+        <div className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetail(null)} onKeyDown={(k) => { if (k.key === "Escape") setDetail(null); }}
           role="dialog" aria-modal="true" aria-label="ঘটনার বিস্তারিত">
-          <div className="rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" style={ADMIN_MODAL_PANEL_STYLE} onClick={(e) => e.stopPropagation()}>
+          <div className="admin-sheet admin-sheet--m rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" style={ADMIN_MODAL_PANEL_STYLE} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3 px-5 sm:px-6 py-4 border-b border-gray-100">
               <div className="min-w-0">
                 <span className={`badge text-xs font-semibold ${SEVERITY_STYLE[detail.severity] ?? SEVERITY_STYLE.info}`}>{detail.severity}</span>

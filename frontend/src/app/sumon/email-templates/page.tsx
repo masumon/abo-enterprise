@@ -209,8 +209,8 @@ export default function AdminEmailTemplatesPage() {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0" style={{ background: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl">
+        <div className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0" style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="admin-sheet admin-sheet--l bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h2 className="text-lg font-semibold">{isNew ? "নতুন টেমপ্লেট" : `${templateInfo(editing.template_name).icon} ${templateInfo(editing.template_name).bn}`}</h2>
               <div className="flex items-center gap-2">

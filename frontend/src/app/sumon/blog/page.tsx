@@ -439,7 +439,7 @@ export default function AdminBlogPage() {
                 {posts.map((p) => (
                   <tr key={p.id} onClick={() => openEdit(p)} className="cursor-pointer hover:bg-brand-50/40 transition-colors">
                     <td className="px-5 py-3" data-label={tx("Title")}>
-                      <div className="flex items-center gap-2 flex-wrap justify-end">
+                      <div className="flex items-center gap-2 flex-wrap justify-end min-[641px]:justify-start">
                         {p.is_featured && <Star className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />}
                         <div>
                           <p className="font-medium text-gray-900 truncate max-w-[200px] sm:max-w-[280px]">{p.title_en}</p>
@@ -526,13 +526,13 @@ export default function AdminBlogPage() {
       {/* Create / Edit Panel */}
       {editing !== null && (
         <div
-          className="fixed inset-0 z-50 flex"
+          className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex"
           style={ADMIN_MODAL_BACKDROP_STYLE}
           role="dialog"
           aria-modal="true"
           aria-label={isNew ? "Create blog post" : "Edit blog post"}
         >
-          <div ref={editorRef} className={`ml-auto w-full max-w-2xl h-full flex flex-col shadow-2xl overflow-hidden animate-slide-in-right ${ADMIN_MODAL_PANEL_CLASS}`} style={ADMIN_MODAL_PANEL_STYLE}>
+          <div ref={editorRef} className={`admin-sheet admin-sheet--l ml-auto w-full max-w-2xl h-full flex flex-col shadow-2xl overflow-hidden animate-slide-in-right ${ADMIN_MODAL_PANEL_CLASS}`} style={ADMIN_MODAL_PANEL_STYLE}>
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/10 flex-shrink-0">
               <h2 className="text-lg font-semibold text-gray-900">
@@ -689,7 +689,7 @@ export default function AdminBlogPage() {
                     onChange={e => setEditing(prev => prev ? { ...prev, category: e.target.value } : prev)}
                     className="input w-full text-sm"
                   >
-                    <option value="">— Select —</option>
+                    <option value="">— বাছুন —</option>
                     {CATEGORIES.map(c => <option key={c} value={c} className="capitalize">{c.replace(/-/g, " ")}</option>)}
                   </select>
                 </div>

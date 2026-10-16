@@ -178,9 +178,9 @@ export default function CareerAdminPage() {
       )}
 
       {selectedApp && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 max-[640px]:items-end max-[640px]:p-0" onClick={() => setSelectedApp(null)}>
+        <div className="admin-overlay admin-overlay--panel fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 max-[640px]:items-end max-[640px]:p-0" onClick={() => setSelectedApp(null)}>
           <div role="dialog" aria-modal="true" aria-label="আবেদনের বিস্তারিত" onClick={(e) => e.stopPropagation()}
-            className="bg-white dark:bg-gray-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none">
+            className="admin-sheet admin-sheet--m bg-white dark:bg-gray-900 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none">
             <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/10 px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
               <div className="min-w-0">
                 <h2 className="text-lg font-semibold text-heading break-words">{selectedApp.name}</h2>

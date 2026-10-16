@@ -339,7 +339,7 @@ export default function AdminBookingsPage() {
       {/* Booking Detail Modal */}
       {detailV2 && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0"
+          className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0"
           style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetailV2(null)}
           role="dialog"
@@ -348,7 +348,7 @@ export default function AdminBookingsPage() {
         >
           <div
             ref={detailV2Ref}
-            className={`flex max-h-[90vh] w-full max-w-lg flex-col animate-scale-in max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl ${ADMIN_MODAL_PANEL_CLASS}`}
+            className={`admin-sheet admin-sheet--m flex max-h-[90vh] w-full max-w-lg flex-col animate-scale-in max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl ${ADMIN_MODAL_PANEL_CLASS}`}
             style={ADMIN_MODAL_PANEL_STYLE}
             onClick={e => e.stopPropagation()}
           >

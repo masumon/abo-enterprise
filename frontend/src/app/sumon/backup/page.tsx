@@ -61,9 +61,9 @@ function PasswordDialog({ ask, onClose }: { ask: Ask; onClose: () => void }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [busy, onClose]);
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={ask.title}
+    <div className="admin-overlay admin-overlay--dialog fixed inset-0 z-50 bg-black/40 flex items-end sm:items-center justify-center p-3" role="dialog" aria-modal="true" aria-label={ask.title}
       onClick={(e) => { if (e.target === e.currentTarget && !busy) onClose(); }}>
-      <div className="bg-white rounded-2xl w-full max-w-md p-5 space-y-3 shadow-xl">
+      <div className="admin-sheet admin-sheet--s bg-white rounded-2xl w-full max-w-md p-5 space-y-3 shadow-xl">
         <p className="font-semibold text-gray-900">{ask.title}</p>
         {ask.note && <p className={`text-sm ${ask.danger ? "text-red-700" : "text-gray-600"}`}>{ask.note}</p>}
         <input className={input} type="password" autoFocus placeholder="আপনার অ্যাডমিন লগইন পাসওয়ার্ড" value={pw}

@@ -1582,3 +1582,68 @@ html:not(.dark) #page-content :is(.text-gray-500, .text-muted) { color: rgb(75 8
 .admin-dark .admin-shell-status-cancelled, .admin-dark .admin-shell-status-failed { color: #fca5a5; background: rgba(220,38,38,.16); border-color: rgba(248,113,113,.32); }
 .admin-dark .admin-shell-status-returned, .admin-dark .admin-shell-status-refunded, .admin-dark .admin-shell-status-partially_refunded { color: #fdba74; background: rgba(234,88,12,.16); border-color: rgba(251,146,60,.32); }
 .admin-dark .admin-shell-status-lost, .admin-dark .admin-shell-status-inactive { color: #cbd5e1; background: rgba(148,163,184,.14); border-color: rgba(148,163,184,.3); }
+
+/* ══ Admin overlay system (2026-10-16) ════════════════════════════════════════
+   Every admin form / detail / picker opens the same way (classes added to the
+   existing markup; contents unchanged):
+   • admin-overlay--panel  → desktop/tablet: right-side panel; phone: full screen
+   • admin-overlay--dialog → desktop/tablet: centred box;     phone: full screen
+     (small confirm boxes stay centred on phones too)
+   Sizes: s 480 · m 640 · l 880 · xl 1100 px. */
+.admin-sheet--s { --sheet-w: 480px; }
+.admin-sheet--m { --sheet-w: 640px; }
+.admin-sheet--l { --sheet-w: 880px; }
+.admin-sheet--xl { --sheet-w: 1100px; }
+.admin-sheet { --sheet-bg: #fff; background-color: var(--sheet-bg); }
+.admin-dark .admin-sheet { --sheet-bg: #101828; }
+@keyframes admin-sheet-in { from { transform: translateX(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes admin-sheet-up { from { transform: translateY(28px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes admin-dialog-in { from { transform: scale(0.97); opacity: 0; } to { transform: none; opacity: 1; } }
+.admin-overlay.admin-overlay { z-index: 60; }
+@media (min-width: 768px) {
+  .admin-overlay.admin-overlay--panel { display: flex !important; align-items: stretch !important; justify-content: flex-end !important; padding: 0 !important; overflow: hidden !important; }
+  .admin-overlay--panel > .admin-sheet {
+    width: min(var(--sheet-w), calc(100vw - 2rem)) !important; max-width: none !important;
+    height: 100dvh !important; max-height: 100dvh !important; min-height: 0 !important; margin: 0 !important;
+    border-radius: 20px 0 0 20px !important; display: flex !important; flex-direction: column !important;
+    overflow-y: auto; animation: admin-sheet-in 0.22s ease-out;
+  }
+  .admin-overlay.admin-overlay--dialog { display: flex !important; align-items: center !important; justify-content: center !important; padding: 1.5rem !important; }
+  .admin-overlay--dialog > .admin-sheet {
+    width: min(var(--sheet-w), calc(100vw - 3rem)) !important; max-width: none !important;
+    max-height: 90dvh !important; border-radius: 20px !important; overflow-y: auto; animation: admin-dialog-in 0.18s ease-out;
+  }
+}
+@media (max-width: 767px) {
+  .admin-overlay.admin-overlay { display: flex !important; align-items: stretch !important; justify-content: stretch !important; padding: 0 !important; overflow: hidden !important; }
+  .admin-overlay > .admin-sheet:not(.admin-sheet--s) {
+    width: 100vw !important; max-width: none !important; height: 100dvh !important; max-height: 100dvh !important; min-height: 0 !important;
+    margin: 0 !important; border-radius: 0 !important; display: flex !important; flex-direction: column !important;
+    overflow-y: auto; animation: admin-sheet-up 0.22s ease-out; padding-bottom: env(safe-area-inset-bottom);
+  }
+  .admin-overlay.admin-overlay--dialog:has(> .admin-sheet--s) { align-items: center !important; justify-content: center !important; padding: 1rem !important; }
+  .admin-overlay > .admin-sheet--s { width: calc(100vw - 2rem) !important; max-width: none !important; max-height: 90dvh !important; border-radius: 20px !important; overflow-y: auto; }
+}
+/* Header of a panel stays visible while the body scrolls. */
+.admin-overlay--panel > .admin-sheet > :first-child:not(:only-child) { position: sticky; top: 0; z-index: 3; background-color: var(--sheet-bg); }
+@media (prefers-reduced-motion: reduce) { .admin-sheet { animation: none !important; } }
+/* The floating AI button never covers a panel's buttons. */
+body:has(.admin-overlay) .admin-ai-fab { display: none !important; }
+
+/* ══ Admin dark mode: pastel panels & outline buttons (2026-10-16) ═══════════
+   ~470 light tints (bg-*-50, white gradients) stayed light in dark mode and hid
+   their text. Same meaning, dark-friendly tint. Explicit dark: classes win. */
+.admin-dark main :is([class~="bg-gray-50"], [class^="bg-gray-50/"], [class*=" bg-gray-50/"], [class~="bg-gray-100"], [class^="bg-white/"], [class*=" bg-white/"]):not([class*="dark:bg-"]) { background-color: rgba(255, 255, 255, 0.04) !important; }
+.admin-dark main :is([class~="bg-brand-50"], [class^="bg-brand-50/"], [class*=" bg-brand-50/"], [class~="bg-blue-50"], [class~="bg-sky-50"], [class~="bg-indigo-50"], [class~="bg-violet-50"], [class~="bg-blue-100"]):not([class*="dark:bg-"]) { background-color: rgba(99, 123, 255, 0.12) !important; }
+.admin-dark main :is([class~="bg-amber-50"], [class^="bg-amber-50/"], [class*=" bg-amber-50/"], [class~="bg-yellow-50"], [class~="bg-orange-50"], [class~="bg-amber-100"]):not([class*="dark:bg-"]) { background-color: rgba(245, 158, 11, 0.12) !important; }
+.admin-dark main :is([class~="bg-emerald-50"], [class^="bg-emerald-50/"], [class*=" bg-emerald-50/"], [class~="bg-green-50"], [class~="bg-emerald-100"], [class~="bg-green-100"]):not([class*="dark:bg-"]) { background-color: rgba(16, 185, 129, 0.12) !important; }
+.admin-dark main :is([class~="bg-red-50"], [class^="bg-red-50/"], [class*=" bg-red-50/"], [class~="bg-rose-50"], [class~="bg-red-100"]):not([class*="dark:bg-"]) { background-color: rgba(239, 68, 68, 0.12) !important; }
+.admin-dark main :is([class^="from-white"], [class*=" from-white"], [class^="to-white"], [class*=" to-white"], [class^="from-gray-50"], [class*=" from-gray-50"], [class^="from-brand-50"], [class*=" from-brand-50"], [class^="from-emerald-50"], [class*=" from-emerald-50"], [class^="from-amber-50"], [class*=" from-amber-50"], [class^="from-blue-50"], [class*=" from-blue-50"]):not([class*="dark:from-"]):not([class*="dark:bg-"]) { background-image: none !important; background-color: rgba(255, 255, 255, 0.04) !important; }
+.admin-dark main :is([class*="border-amber-"], [class*="border-brand-1"], [class*="border-brand-2"], [class*="border-emerald-2"], [class*="border-red-2"], [class*="border-blue-1"], [class*="border-gray-1"], [class*="border-gray-2"]):not([class*="dark:border-"]) { border-color: rgba(255, 255, 255, 0.12) !important; }
+.admin-dark [class~="btn-outline"] { color: rgb(199 210 254); border-color: rgba(147, 167, 255, 0.45); background-color: transparent; }
+.admin-dark [class~="btn-outline"]:hover:not(:disabled) { background-color: rgba(255, 255, 255, 0.06); }
+.admin-dark [class~="text-heading"] { color: rgb(226 232 240); }
+.admin-dark main :is([class~="text-amber-600"], [class~="text-amber-900"], [class~="text-yellow-700"], [class~="text-yellow-800"], [class~="text-orange-700"], [class~="text-orange-800"]):not([class*="dark:text-"]) { color: rgb(252 211 77); }
+.admin-dark main :is([class~="text-emerald-600"], [class~="text-emerald-900"], [class~="text-green-600"], [class~="text-green-700"], [class~="text-green-800"]):not([class*="dark:text-"]) { color: rgb(110 231 183); }
+.admin-dark main :is([class~="text-red-800"], [class~="text-red-900"], [class~="text-rose-600"], [class~="text-rose-700"]):not([class*="dark:text-"]) { color: rgb(252 165 165); }
+.admin-dark main :is([class~="text-blue-600"], [class~="text-blue-700"], [class~="text-blue-800"], [class~="text-brand-900"], [class~="text-indigo-700"], [class~="text-sky-700"]):not([class*="dark:text-"]) { color: rgb(199 210 254); }

@@ -499,7 +499,7 @@ export default function AdminLeadsPage() {
       {/* V1 Lead Detail Modal */}
       {(detail || detailLoading) && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center p-4"
           style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetail(null)}
           role="dialog"
@@ -508,7 +508,7 @@ export default function AdminLeadsPage() {
         >
           <div
             ref={detailRef}
-            className={`rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in ${ADMIN_MODAL_PANEL_CLASS}`}
+            className={`admin-sheet admin-sheet--m rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in ${ADMIN_MODAL_PANEL_CLASS}`}
             style={ADMIN_MODAL_PANEL_STYLE}
             onClick={e => e.stopPropagation()}
           >
@@ -587,7 +587,7 @@ export default function AdminLeadsPage() {
       {/* V2 Lead Detail Modal */}
       {detailV2 && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center p-4"
           style={ADMIN_MODAL_BACKDROP_STYLE}
           onClick={() => setDetailV2(null)}
           role="dialog"
@@ -596,7 +596,7 @@ export default function AdminLeadsPage() {
         >
           <div
             ref={detailV2Ref}
-            className="rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in"
+            className="admin-sheet admin-sheet--m rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col animate-scale-in"
             style={ADMIN_MODAL_PANEL_STYLE}
             onClick={e => e.stopPropagation()}
           >

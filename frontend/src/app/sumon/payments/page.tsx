@@ -538,13 +538,13 @@ export default function AdminPaymentsPage() {
       {/* Edit/Create Panel */}
       {editing !== null && (
         <div
-          className="fixed inset-0 z-50 flex"
+          className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex"
           style={ADMIN_MODAL_BACKDROP_STYLE}
           role="dialog"
           aria-modal="true"
           aria-label={isNew ? "Add payment gateway" : "Edit payment gateway"}
         >
-          <div ref={panelRef} className="ml-auto w-full max-w-md h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
+          <div ref={panelRef} className="admin-sheet admin-sheet--m ml-auto w-full max-w-md h-full flex flex-col bg-white shadow-2xl animate-slide-in-right overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
               <h2 className="text-lg font-semibold text-gray-900">
                 {isNew ? "Add Payment Gateway" : `Edit ${GATEWAY_LABELS[editing.payment_gateway ?? ""] ?? editing.payment_gateway}`}

@@ -759,9 +759,9 @@ export default function ProductFormModal({ mode, onClose, onSaved, categoryOptio
   const title = editing ? t("পণ্য সম্পাদনা", "Edit product") : mode.type === "clone" ? t("কপি করে নতুন পণ্য", "New product (copy)") : t("নতুন পণ্য", "New product");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4" style={ADMIN_MODAL_BACKDROP_STYLE}>
+    <div className="admin-overlay admin-overlay--panel fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4" style={ADMIN_MODAL_BACKDROP_STYLE}>
       <div ref={modalRef} role="dialog" aria-modal="true" aria-label={title}
-        className={`w-full max-w-5xl h-full sm:h-[92vh] flex flex-col animate-scale-in ${ADMIN_MODAL_PANEL_CLASS}`} style={ADMIN_MODAL_PANEL_STYLE}>
+        className={`admin-sheet admin-sheet--l w-full max-w-5xl h-full sm:h-[92vh] flex flex-col animate-scale-in ${ADMIN_MODAL_PANEL_CLASS}`} style={ADMIN_MODAL_PANEL_STYLE}>
         <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-gray-100 dark:border-white/10">
           <h2 className="text-lg font-semibold text-heading">{title}</h2>
           <button type="button" onClick={onClose} aria-label={t("বন্ধ করুন", "Close")} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>

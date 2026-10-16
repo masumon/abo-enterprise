@@ -67,13 +67,13 @@ export default function MediaLibraryPicker({ open, onSelect, onClose, accept = "
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE}>
+    <div className="admin-overlay admin-overlay--dialog fixed inset-0 z-[60] flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE}>
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Media library"
-        className="rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col animate-scale-in"
+        className="admin-sheet admin-sheet--xl rounded-2xl w-full max-w-3xl max-h-[85vh] flex flex-col animate-scale-in"
         style={ADMIN_MODAL_PANEL_STYLE}
       >
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-white/10 shrink-0">
