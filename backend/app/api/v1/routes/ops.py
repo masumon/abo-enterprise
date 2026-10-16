@@ -180,6 +180,22 @@ async def system_health(
     checks["sentry"] = {"ok": bool(os.environ.get("SENTRY_DSN", "").strip()),
                         **({} if os.environ.get("SENTRY_DSN") else {"error": "SENTRY_DSN not set — errors kept in-memory only"})}
 
+    # AI providers — last known state of the AI Hub connections (no paid call made here)
+    try:
+        from app.assistant import ai_hub
+
+        _ai = await ai_hub.summary(db)
+        _total = len(_ai["connections"])
+        _work = int(_ai["working"])
+        if _total == 0:
+            checks["ai"] = {"ok": False, "error": "No AI key added — Admin → AI Hub"}
+        elif _work == 0:
+            checks["ai"] = {"ok": False, "error": f"{_total} AI key(s) added but none working"}
+        else:
+            checks["ai"] = {"ok": True, "working": _work, "total": _total, "used_today": int(_ai["today"]["count"])}
+    except Exception as exc:  # noqa: BLE001
+        checks["ai"] = {"ok": False, "error": f"AI status unavailable: {exc}"[:200]}
+
     # Cache — in-process report caches
     try:
         from app.core.ga4 import _report_cache  # noqa: PLC2701 — introspection only

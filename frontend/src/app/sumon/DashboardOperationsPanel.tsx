@@ -221,12 +221,14 @@ export default function DashboardOperationsPanel() {
           <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><Activity className="w-4 h-4 text-gray-400" aria-hidden="true" />{bn ? "সিস্টেম হেলথ" : "System health"}</h3>
           <Link href="/sumon/analytics" className="text-xs text-brand-600 hover:underline">{bn ? "মনিটরিং →" : "Monitoring →"}</Link>
         </div>
-        <div className="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+        <div className="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">{bn ? "সামগ্রিক" : "Overall"}</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? `${health.healthy}/${health.total}` : "—"}</p></div>
           <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">API</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.api?.ok ? "OK" : "Fail") : "—"}</p></div>
           <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">DB</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.database?.ok ? "OK" : "Fail") : "—"}</p></div>
           <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">{bn ? "ইমেইল" : "Email"}</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.smtp?.ok ? "OK" : "Fail") : "—"}</p></div>
           <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">GA4</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.ga4?.ok ? "OK" : "Fail") : "—"}</p></div>
+          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">AI</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.ai?.ok ? "OK" : "Fail") : "—"}</p></div>
+          <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">Sentry</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? (health.checks?.sentry?.ok ? "OK" : "Fail") : "—"}</p></div>
           <div className="rounded-lg border border-gray-100 p-3"><p className="text-xs text-gray-500">{bn ? "ব্যর্থ চেক" : "Failed checks"}</p><p className="text-lg font-bold text-gray-900 mt-1">{healthFailed ?? "—"}</p></div>
         </div>
       </div>

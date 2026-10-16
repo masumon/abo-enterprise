@@ -16,7 +16,7 @@ interface HealthData { checks: Record<string, HealthCheck>; healthy: number; tot
 const CHECK_LABELS: Record<string, string> = {
   api: "API Server", database: "Database", smtp: "Email (SMTP)", cloudinary: "Cloudinary (Media)",
   ga4: "Google Analytics", sentry: "Error Monitoring (Sentry)", cache: "Cache", storage: "Storage",
-  backup_cron: "Scheduled Backup",
+  ai: "AI Providers", backup_cron: "Scheduled Backup",
 };
 
 function fmtAgo(iso: string): string {
@@ -131,6 +131,7 @@ export default function OperationsPanel() {
                   {key === "storage" && c.ok ? `DB ${String(c.database_mb)}MB · Media ${String(c.media_files)} files (${String(c.media_mb)}MB)` : null}
                   {key === "cache" && c.ok ? `${String(c.ga4_cached_reports)} GA4 reports cached` : null}
                   {key === "backup_cron" ? "Admin → Backup" : null}
+                  {key === "ai" && c.ok ? `${String(c.working)}/${String(c.total)} working · ${String(c.used_today)} calls today` : null}
                   {key === "smtp" && c.ok ? String(c.email || c.host || "connected") : null}
                   {(key === "cloudinary" || key === "ga4" || key === "sentry") && c.ok ? "Connected" : null}
                   {!c.ok ? String(c.error ?? "Unavailable") : null}
