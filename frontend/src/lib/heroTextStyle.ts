@@ -14,7 +14,11 @@ export interface HeroTextStyle {
   titleColor?: string;
   titleSize?: "sm" | "md" | "lg" | "xl";
   subColor?: string;
-  subSize?: "sm" | "md" | "lg";
+  subSize?: "sm" | "md" | "lg" | "xl";
+  /** The small "ABO — Sumon Brothers Organization…" line. */
+  noteSize?: "sm" | "md" | "lg";
+  /** The shopping shortcut pills (পণ্য কিনুন / সেবা নিন / সফটওয়্যার ও AI). */
+  pillSize?: "md" | "lg" | "xl";
   bold?: boolean;
   italic?: boolean;
   shadow?: boolean;
@@ -42,7 +46,16 @@ const SUB_SIZE: Record<string, string> = {
   sm: "text-sm sm:text-base",
   md: "text-base sm:text-lg",
   lg: "text-lg sm:text-xl",
+  xl: "text-xl sm:text-2xl",
 };
+const NOTE_SIZE: Record<string, string> = { sm: "text-xs", md: "text-xs lg:text-sm", lg: "text-sm lg:text-base" };
+const PILL_SIZE: Record<string, string> = {
+  md: "min-h-9 px-3.5 text-sm gap-1.5 [&>span]:text-base",
+  lg: "min-h-11 px-5 text-base gap-2 [&>span]:text-xl",
+  xl: "min-h-14 px-6 text-lg gap-2.5 [&>span]:text-2xl",
+};
+export const heroNoteClass = (s: HeroTextStyle): string => NOTE_SIZE[s.noteSize ?? "md"] ?? NOTE_SIZE.md;
+export const heroPillClass = (s: HeroTextStyle): string => PILL_SIZE[s.pillSize ?? "lg"] ?? PILL_SIZE.lg;
 const ALIGN: Record<string, string> = {
   left: "text-left items-start",
   center: "text-center items-center",
@@ -83,7 +96,13 @@ export const HERO_TITLE_SIZES = [
   { v: "sm", label: "ছোট" }, { v: "md", label: "মাঝারি" }, { v: "lg", label: "বড়" }, { v: "xl", label: "খুব বড়" },
 ] as const;
 export const HERO_SUB_SIZES = [
+  { v: "sm", label: "ছোট" }, { v: "md", label: "মাঝারি" }, { v: "lg", label: "বড়" }, { v: "xl", label: "খুব বড়" },
+] as const;
+export const HERO_NOTE_SIZES = [
   { v: "sm", label: "ছোট" }, { v: "md", label: "মাঝারি" }, { v: "lg", label: "বড়" },
+] as const;
+export const HERO_PILL_SIZES = [
+  { v: "md", label: "মাঝারি" }, { v: "lg", label: "বড়" }, { v: "xl", label: "খুব বড়" },
 ] as const;
 export const HERO_ALIGNS = [
   { v: "left", label: "◧ বাম" }, { v: "center", label: "▣ মাঝ" }, { v: "right", label: "◨ ডান" },

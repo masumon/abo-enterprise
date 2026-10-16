@@ -21,6 +21,8 @@ import {
   parseHeroTextStyle,
   heroTitleClass,
   heroSubClass,
+  heroNoteClass,
+  heroPillClass,
   heroAlignClass,
   heroVAlignClass,
 } from "@/lib/heroTextStyle";
@@ -56,7 +58,7 @@ const HERO_TINT = "linear-gradient(135deg, rgba(53,71,155,0.25) 0%, rgba(30,43,1
 export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoSlide[] | null } = {}) {
   const { lang } = useLanguageStore();
   const t = useT();
-  const { settings } = usePublicSettings(["hero_image_url", "hero_mobile_image_url", "hero_promo_media_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "free_delivery_min_amount", HERO_TEXT_STYLE_KEY]);
+  const { settings } = usePublicSettings(["hero_image_url", "hero_mobile_image_url", "hero_promo_media_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "hero_note_en", "hero_note_bn", "hero_pill1_bn", "hero_pill2_bn", "hero_pill3_bn", "free_delivery_min_amount", HERO_TEXT_STYLE_KEY]);
   const { stats, loading: statsLoading } = usePublicStats();
 
   const heroImage = resolveHomeBannerImage(settings);
@@ -194,7 +196,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
         </div>
 
         <div className="container mx-auto px-4 xl:px-6 pt-3 pb-20 xl:pt-4 relative z-10">
-          <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-8 xl:gap-12 items-center">
+          <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] xl:grid-cols-[minmax(0,42rem)_minmax(0,34rem)] xl:justify-center gap-8 xl:gap-10 items-center">
             <div className="text-white flex flex-col gap-4 animate-slide-up [text-shadow:0_2px_14px_rgba(0,0,0,0.35)]">
               <div className={cn("relative z-10 flex flex-col gap-4", heroAlignClass(hstyle))}>
                 <div className="flex flex-wrap items-center gap-2 [text-shadow:none]">
@@ -228,14 +230,16 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
                 </h1>
 
                 <p
-                  className={cn("max-w-lg leading-relaxed", heroSubClass(hstyle), !hstyle.subColor && "text-white/90")}
+                  className={cn("max-w-xl leading-relaxed", heroSubClass(hstyle), !hstyle.subColor && "text-white/90")}
                   style={hstyle.subColor ? { color: hstyle.subColor } : undefined}
                 >
                   {heroSubtitle}
                 </p>
 
-                <p className="text-white/75 text-xs max-w-lg">
-                  {lang === "bn" ? ABO_ACRONYM.bn : ABO_ACRONYM.en}
+                <p className={cn("text-white/80 max-w-xl leading-relaxed", heroNoteClass(hstyle))}>
+                  {lang === "bn"
+                    ? getSettingValue(settings, "hero_note_bn") || ABO_ACRONYM.bn
+                    : getSettingValue(settings, "hero_note_en") || ABO_ACRONYM.en}
                 </p>
 
                 <div className="flex flex-row gap-3 pt-2 w-full max-w-2xl [text-shadow:none]">
@@ -254,11 +258,11 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
                 <div className="flex flex-col gap-3 pt-1 w-full max-w-xl [text-shadow:none]">
                   <div className="flex flex-wrap items-center gap-2" role="list" aria-label={lang === "bn" ? "আমরা যা করি" : "What we do"}>
                     {[
-                      { href: "/products", icon: "🛍️", bn: "পণ্য কিনুন", en: "Shop products" },
-                      { href: "/services", icon: "🛠️", bn: "সেবা নিন", en: "Book services" },
-                      { href: "/services/software", icon: "💻", bn: "সফটওয়্যার ও AI", en: "Software & AI" },
+                      { href: "/products", icon: "🛍️", bn: getSettingValue(settings, "hero_pill1_bn") || "পণ্য কিনুন", en: "Shop products" },
+                      { href: "/services", icon: "🛠️", bn: getSettingValue(settings, "hero_pill2_bn") || "সেবা নিন", en: "Book services" },
+                      { href: "/services/software", icon: "💻", bn: getSettingValue(settings, "hero_pill3_bn") || "সফটওয়্যার ও AI", en: "Software & AI" },
                     ].map((x) => (
-                      <Link key={x.href} href={x.href} role="listitem" className="inline-flex items-center gap-1.5 rounded-full bg-white/12 hover:bg-white/20 border border-white/25 backdrop-blur-md px-3.5 min-h-9 text-sm font-semibold text-white transition">
+                      <Link key={x.href} href={x.href} role="listitem" className={cn("inline-flex items-center rounded-full bg-gradient-to-b from-white/25 to-white/[0.06] hover:from-white/35 hover:to-white/15 border border-white/30 shadow-lg shadow-black/20 backdrop-blur-md font-bold text-white transition hover:-translate-y-0.5", heroPillClass(hstyle))}>
                         <span aria-hidden>{x.icon}</span>{lang === "bn" ? x.bn : x.en}
                       </Link>
                     ))}
@@ -285,7 +289,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
               </div>
             </div>
 
-            <div className="flex justify-end animate-fade-in">
+            <div className="flex justify-end xl:justify-start animate-fade-in">
               <div className="relative w-full max-w-[30rem] xl:max-w-[34rem] flex flex-col gap-4">
                 <PromoSlider
                   placement="hero"

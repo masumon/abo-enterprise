@@ -41,6 +41,8 @@ import {
   matchesPreset,
   heroTitleClass,
   heroSubClass,
+  HERO_NOTE_SIZES,
+  HERO_PILL_SIZES,
   heroAlignClass,
 } from "@/lib/heroTextStyle";
 import LivePreview from "@/components/admin/LivePreview";
@@ -643,6 +645,22 @@ export default function AdminHomepageContentPage() {
                         <button key={c} type="button" onClick={() => setS({ subColor: c })} className={swCls(hstyle.subColor === c)} style={{ background: c }} aria-label={c} />
                       ))}
                       <button type="button" onClick={() => setS({ subColor: undefined })} className="text-[11px] text-muted underline">{bn ? "অটো" : "Auto"}</button>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-medium text-muted mb-1.5">{bn ? "ছোট পরিচয়-লাইনের সাইজ (ABO — Sumon Brothers…)" : "Small line size"}</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {HERO_NOTE_SIZES.map((o) => (
+                        <button key={o.v} type="button" onClick={() => setS({ noteSize: o.v })} className={segCls((hstyle.noteSize ?? "md") === o.v)}>{o.label}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-medium text-muted mb-1.5">{bn ? "শর্টকাট বাটনের সাইজ (পণ্য কিনুন / সেবা নিন / সফটওয়্যার)" : "Shortcut buttons size"}</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {HERO_PILL_SIZES.map((o) => (
+                        <button key={o.v} type="button" onClick={() => setS({ pillSize: o.v })} className={segCls((hstyle.pillSize ?? "lg") === o.v)}>{o.label}</button>
+                      ))}
                     </div>
                   </div>
                   <div>
