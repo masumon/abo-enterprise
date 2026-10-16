@@ -1680,3 +1680,5 @@ body:has(.admin-overlay) { overflow: hidden; }
 @media (min-width: 640px) {
   .admin-shell main [class~="grid"][class~="grid-cols-2"][class~="sm:grid-cols-3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+/* Shared "unsaved changes" bar (2026-10-16) — same spot, spacing and safe area on every page. */
+.admin-savebar { backdrop-filter: blur(10px); }
