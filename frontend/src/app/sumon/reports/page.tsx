@@ -9,15 +9,15 @@ import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
 
 const REPORT_TABS: { value: ReportType; label: string; labelBn: string }[] = [
-  { value: "sales", label: "Sales", labelBn: "বিক্রয়" },
-  { value: "revenue", label: "Revenue", labelBn: "রেভিনিউ" },
-  { value: "products", label: "Products", labelBn: "পণ্য" },
-  { value: "services", label: "Services", labelBn: "সেবা" },
-  { value: "customers", label: "Customers", labelBn: "গ্রাহক" },
-  { value: "payments", label: "Payments", labelBn: "পেমেন্ট" },
-  { value: "courier", label: "Courier", labelBn: "কুরিয়ার" },
-  { value: "profit", label: "Profit", labelBn: "লাভ" },
-  { value: "reconciliation", label: "Reconciliation", labelBn: "রিকনসিলিয়েশন" },
+  { value: "sales", label: "বিক্রি", labelBn: "বিক্রয়" },
+  { value: "revenue", label: "আয়", labelBn: "রেভিনিউ" },
+  { value: "products", label: "পণ্য", labelBn: "পণ্য" },
+  { value: "services", label: "সেবা", labelBn: "সেবা" },
+  { value: "customers", label: "গ্রাহক", labelBn: "গ্রাহক" },
+  { value: "payments", label: "পেমেন্ট", labelBn: "পেমেন্ট" },
+  { value: "courier", label: "কুরিয়ার", labelBn: "কুরিয়ার" },
+  { value: "profit", label: "লাভ", labelBn: "লাভ" },
+  { value: "reconciliation", label: "হিসাব মিলানো", labelBn: "রিকনসিলিয়েশন" },
 ];
 
 function toDateInput(d: Date): string {
@@ -92,12 +92,12 @@ export default function AdminReportsPage() {
         }
       />
 
-      <section aria-label="Choose report" className="min-w-0">
+      <section aria-label="রিপোর্ট বাছুন" className="min-w-0">
         <div className="mb-2 flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold text-heading">Report type</h2>
+          <h2 className="text-sm font-semibold text-heading">রিপোর্টের ধরন</h2>
           <span className="text-xs text-gray-500">{REPORT_TABS.length} reports</span>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 min-[641px]:flex-wrap min-[641px]:overflow-visible min-[641px]:pb-0" role="group" aria-label="Report type">
+        <div className="flex gap-2 overflow-x-auto pb-2 min-[641px]:flex-wrap min-[641px]:overflow-visible min-[641px]:pb-0" role="group" aria-label="রিপোর্টের ধরন">
           {REPORT_TABS.map((tab) => (
             <button
               key={tab.value}
@@ -112,33 +112,33 @@ export default function AdminReportsPage() {
         </div>
       </section>
 
-      <section className="admin-card rounded-2xl border border-gray-100 p-4 shadow-sm" aria-label="Report date range">
+      <section className="admin-card rounded-2xl border border-gray-100 p-4 shadow-sm" aria-label="রিপোর্টের সময়সীমা">
         <div className="mb-3 flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
             <BarChart3 className="h-4 w-4" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-heading">Reporting period</h2>
-            <p className="text-xs text-gray-500">Choose the dates to refresh this report</p>
+            <h2 className="text-sm font-semibold text-heading">রিপোর্টের সময়</h2>
+            <p className="text-xs text-gray-500">রিপোর্ট দেখতে তারিখ বাছুন</p>
           </div>
         </div>
         <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 min-[641px]:flex min-[641px]:items-end">
           <div className="min-w-0">
-            <label htmlFor="report-start-date" className="mb-1.5 block text-xs font-medium text-gray-600">Start date</label>
+            <label htmlFor="report-start-date" className="mb-1.5 block text-xs font-medium text-gray-600">শুরুর তারিখ</label>
             <input id="report-start-date" type="date" value={startDate} max={endDate} onChange={(e) => setStartDate(e.target.value)} className="admin-input min-h-11 w-full text-sm min-[641px]:w-auto" />
           </div>
           <div className="min-w-0">
-            <label htmlFor="report-end-date" className="mb-1.5 block text-xs font-medium text-gray-600">End date</label>
+            <label htmlFor="report-end-date" className="mb-1.5 block text-xs font-medium text-gray-600">শেষ তারিখ</label>
             <input id="report-end-date" type="date" value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} className="admin-input min-h-11 w-full text-sm min-[641px]:w-auto" />
           </div>
         </div>
       </section>
 
       {summaryRow && (
-        <section className="rounded-2xl border border-brand-100 bg-brand-50/50 p-4 text-sm text-brand-900" aria-label="Report summary">
+        <section className="rounded-2xl border border-brand-100 bg-brand-50/50 p-4 text-sm text-brand-900" aria-label="রিপোর্টের সারাংশ">
           <div className="mb-2 flex items-center gap-2 font-semibold">
             <BarChart3 className="h-4 w-4 shrink-0" aria-hidden="true" />
-            Report note
+            রিপোর্টের নোট
           </div>
           <div className="space-y-2">
             {Object.entries(summaryRow).filter(([k]) => k !== "summary").map(([k, v]) => (
@@ -158,7 +158,7 @@ export default function AdminReportsPage() {
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-50 text-gray-400">
             <BarChart3 className="h-6 w-6" aria-hidden="true" />
           </div>
-          <h2 className="text-sm font-semibold text-gray-700">No report data found</h2>
+          <h2 className="text-sm font-semibold text-gray-700">এই সময়ে কোনো তথ্য নেই</h2>
           <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">There are no records for this report in the selected date range. Try adjusting the dates.</p>
         </div>
       ) : (

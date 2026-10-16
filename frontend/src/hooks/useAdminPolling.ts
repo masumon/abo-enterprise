@@ -25,6 +25,8 @@ export function useAdminPolling(enabled = true) {
           pending_orders: number;
           pending_bookings: number;
           new_leads: number;
+          new_applications?: number;
+          low_stock?: number;
         };
 
         const pendingOrders = data.pending_orders ?? 0;
@@ -35,29 +37,29 @@ export function useAdminPolling(enabled = true) {
         if (prev.current.pendingOrders >= 0) {
           if (pendingOrders > prev.current.pendingOrders) {
             const diff = pendingOrders - prev.current.pendingOrders;
-            toast("info", `${diff} new order${diff > 1 ? "s" : ""} received`, { label: "View", href: "/sumon/orders" });
+            toast("info", `${diff.toLocaleString("bn-BD")}টি নতুন অর্ডার এসেছে`, { label: "দেখুন", href: "/sumon/orders" });
           }
           if (pendingBookings > prev.current.pendingBookings) {
             const diff = pendingBookings - prev.current.pendingBookings;
-            toast("info", `${diff} new booking${diff > 1 ? "s" : ""} received`, { label: "View", href: "/sumon/bookings" });
+            toast("info", `${diff.toLocaleString("bn-BD")}টি নতুন বুকিং এসেছে`, { label: "দেখুন", href: "/sumon/bookings" });
           }
           if (newLeads > prev.current.newLeads) {
             const diff = newLeads - prev.current.newLeads;
-            toast("info", `${diff} new lead${diff > 1 ? "s" : ""} received`, { label: "View", href: "/sumon/leads" });
+            toast("info", `${diff.toLocaleString("bn-BD")}টি নতুন লিড এসেছে`, { label: "দেখুন", href: "/sumon/leads" });
           }
         }
 
         prev.current = { pendingOrders, pendingBookings, newLeads };
-        setAlerts({ pendingOrders, pendingBookings, newLeads });
+        setAlerts({ pendingOrders, pendingBookings, newLeads, newApplications: data.new_applications ?? 0, lowStock: data.low_stock ?? 0 });
         failureCountRef.current = 0; // Reset on success
         if (lastSyncFailedToastRef.current) {
-          toast("success", "Dashboard sync restored");
+          toast("success", "ড্যাশবোর্ডের সংযোগ ফিরে এসেছে");
           lastSyncFailedToastRef.current = false;
         }
       } catch (err) {
         failureCountRef.current += 1;
         if (failureCountRef.current >= FAILURE_THRESHOLD && !lastSyncFailedToastRef.current) {
-          toast("error", "Dashboard stats sync failed (retrying)");
+          toast("error", "ড্যাশবোর্ডের তথ্য আনা যাচ্ছে না — আবার চেষ্টা চলছে");
           lastSyncFailedToastRef.current = true;
         }
       }

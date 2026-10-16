@@ -140,7 +140,7 @@ export default function PromoSlidesManager({ only, embedded = false }: { only?: 
         title="Promo Slides"
         titleBn="প্রোমো স্লাইড"
         description="Image/video slides with a link — the homepage hero slider."
-        descriptionBn="লিংকসহ ছবি/ভিডিও স্লাইড — হোমপেজের উপরের স্লাইডার। ফ্ল্যাশ সেল ব্যানার এখন “কুপন ও ফ্ল্যাশ সেল” পাতায়।"
+        descriptionBn="লিংকসহ ছবি/ভিডিও স্লাইড — হোমপেজের উপরের স্লাইডার। ফ্ল্যাশ সেল ব্যানার এখন “অফার” পাতায়।"
         actions={
           <button onClick={() => setEditing({ ...empty })} className="btn btn-primary btn-sm gap-1.5">
             <Plus className="w-4 h-4" /> নতুন স্লাইড

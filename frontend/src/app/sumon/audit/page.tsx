@@ -110,19 +110,19 @@ export default function AdminAuditPage() {
         <select
           value={actionFilter}
           onChange={(e) => { setActionFilter(e.target.value); setPage(1); }}
-          aria-label="Filter by action"
+          aria-label="কাজ অনুযায়ী বাছুন"
           className="admin-input text-sm w-auto"
         >
-          <option value="">All Actions</option>
+          <option value="">সব কাজ</option>
           {allActions.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
         <select
           value={entityFilter}
           onChange={(e) => { setEntityFilter(e.target.value); setPage(1); }}
-          aria-label="Filter by entity"
+          aria-label="ধরন অনুযায়ী বাছুন"
           className="admin-input text-sm w-auto"
         >
-          <option value="">All Entities</option>
+          <option value="">সব ধরন</option>
           {allEntities.map((e) => <option key={e} value={e}>{e}</option>)}
         </select>
       </AdminToolbar>
@@ -136,9 +136,9 @@ export default function AdminAuditPage() {
               <article key={log.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
                 <div className="flex flex-wrap items-start justify-between gap-2"><span className={`badge text-xs font-semibold ${actionBadgeClass(log.action)}`}>{log.action}</span><time className="text-right text-xs text-gray-500">{new Date(log.created_at).toLocaleString("en-BD", {year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</time></div>
                 <div className="mt-3 grid grid-cols-1 gap-3 border-t border-gray-100 pt-3 text-sm">
-                  <div><p className="text-xs text-gray-500">Entity</p><p className="mt-1 break-words capitalize text-gray-800">{log.entity_type.replace(/_/g, " ")}</p></div>
-                  <div><p className="text-xs text-gray-500">Record ID</p><p className="mt-1 break-all font-mono text-xs text-gray-600">{log.entity_id ?? "—"}</p></div>
-                  <div><p className="text-xs text-gray-500">Admin</p><p className="mt-1 break-all text-gray-800">{log.admin_email ?? "—"}</p></div>
+                  <div><p className="text-xs text-gray-500">ধরন</p><p className="mt-1 break-words capitalize text-gray-800">{log.entity_type.replace(/_/g, " ")}</p></div>
+                  <div><p className="text-xs text-gray-500">রেকর্ড ID</p><p className="mt-1 break-all font-mono text-xs text-gray-600">{log.entity_id ?? "—"}</p></div>
+                  <div><p className="text-xs text-gray-500">অ্যাডমিন</p><p className="mt-1 break-all text-gray-800">{log.admin_email ?? "—"}</p></div>
                 </div>
               </article>
             ))}
@@ -147,29 +147,29 @@ export default function AdminAuditPage() {
             <table className="table-premium table-responsive min-[641px]:min-w-[500px] min-w-0 min-[641px]:min-w-[500px]">
               <thead>
                 <tr>
-                  <th>Time</th>
-                  <th>Action</th>
-                  <th>Entity</th>
-                  <th>Record ID</th>
-                  <th>Admin</th>
+                  <th>সময়</th>
+                  <th>কাজ</th>
+                  <th>ধরন</th>
+                  <th>রেকর্ড ID</th>
+                  <th>অ্যাডমিন</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((log) => (
                   <tr key={log.id}>
-                    <td className="text-gray-500 text-xs whitespace-nowrap" data-label="Time">
+                    <td className="text-gray-500 text-xs whitespace-nowrap" data-label="সময়">
                       {new Date(log.created_at).toLocaleString("en-BD", {
                         year: "numeric", month: "short", day: "numeric",
                         hour: "2-digit", minute: "2-digit",
                       })}
                     </td>
-                    <td data-label="Action">
+                    <td data-label="কাজ">
                       <span className={`badge text-xs font-semibold ${actionBadgeClass(log.action)}`}>
                         {log.action}
                       </span>
                     </td>
-                    <td className="text-gray-700 capitalize" data-label="Entity">{log.entity_type.replace(/_/g, " ")}</td>
-                    <td data-label="Record ID">
+                    <td className="text-gray-700 capitalize" data-label="ধরন">{log.entity_type.replace(/_/g, " ")}</td>
+                    <td data-label="রেকর্ড ID">
                       {log.entity_id ? (
                         <span
                           className="text-xs text-gray-400 font-mono cursor-default"
@@ -179,7 +179,7 @@ export default function AdminAuditPage() {
                         </span>
                       ) : "—"}
                     </td>
-                    <td className="text-xs text-gray-500" data-label="Admin">{log.admin_email ?? "—"}</td>
+                    <td className="text-xs text-gray-500" data-label="অ্যাডমিন">{log.admin_email ?? "—"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -198,7 +198,7 @@ export default function AdminAuditPage() {
             onClick={() => setPage((p) => p - 1)}
             className="btn btn-outline btn-sm"
           >
-            Previous
+            আগের
           </button>
           <span className="px-3 py-1.5 text-sm text-gray-600 bg-gray-50 rounded-lg border border-gray-200">
             Page {page} of {totalPages}
@@ -208,7 +208,7 @@ export default function AdminAuditPage() {
             onClick={() => setPage((p) => p + 1)}
             className="btn btn-outline btn-sm"
           >
-            Next
+            পরের
           </button>
         </div>
       )}

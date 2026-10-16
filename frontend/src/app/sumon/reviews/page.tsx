@@ -252,7 +252,7 @@ export default function AdminReviewsPage() {
         title="Reviews & testimonials"
         titleBn="রিভিউ ও মতামত"
         description={`${total} in this tab · product reviews, service reviews and site testimonials in one place`}
-        descriptionBn={`এই ট্যাবে ${bnNum(total)}টি · পণ্যের রিভিউ, সেবার রিভিউ ও সাইটের মতামত — সব এক জায়গায়`}
+        descriptionBn={`এই ট্যাবে ${bnNum(total)}টি · পণ্যের রিভিউ, সেবার রিভিউ ও সাইটের মতামত — সব এক জায়গায়। হোমপেজে “গ্রাহক রিভিউ” অংশ দেখাতে অন্তত ৫টি রিভিউ “ফিচার্ড” করুন।`}
         actions={
           <>
             <div className="relative">

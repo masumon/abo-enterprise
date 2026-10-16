@@ -14,7 +14,7 @@ export interface AdminNavItem {
   labelBn?: string;
   exact?: boolean;
   external?: boolean;
-  badge?: "orders" | "bookings" | "leads";
+  badge?: "orders" | "bookings" | "leads" | "career" | "lowstock" | "notifications";
   minRole?: AdminRole;
   /** Dotted backend permission (app.core.rbac.ROLE_PERMISSIONS) this item's
    * page actually requires, e.g. "users.read". When set and a `permissions`
@@ -60,15 +60,14 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     { href: "/sumon/leads", icon: Users, label: "Leads", labelBn: "নতুন আগ্রহী (লিড)", badge: "leads", permission: "leads.read", descBn: "যারা যোগাযোগ বা কোটেশন চেয়েছেন", keywords: "lead লিড কোটেশন আগ্রহী" },
     { href: "/sumon/customers", icon: Users, label: "Customers", labelBn: "গ্রাহক", minRole: "admin", permission: "customers.read", descBn: "গ্রাহকের তালিকা ও ইতিহাস", keywords: "customer গ্রাহক ক্রেতা" },
     { href: "/sumon/tracking", icon: Truck, label: "Tracking", labelBn: "অর্ডার ট্র্যাকিং", permission: "orders.read", descBn: "পার্সেল এখন কোথায় দেখুন", keywords: "tracking ট্র্যাক পার্সেল" },
-    { href: "/sumon/career", icon: UserPlus, label: "Career Applications", labelBn: "চাকরির আবেদন", minRole: "admin", permission: "career.read", descBn: "চাকরির জন্য আসা আবেদন", keywords: "career job চাকরি আবেদন" },
-    { href: "/sumon/notifications", icon: Bell, label: "Notifications", labelBn: "নোটিফিকেশন", descBn: "সাইট থেকে আসা সব বার্তা", keywords: "notification বার্তা" },
+    { href: "/sumon/career", icon: UserPlus, label: "Career Applications", labelBn: "চাকরির আবেদন", badge: "career", minRole: "admin", permission: "career.read", descBn: "চাকরির জন্য আসা আবেদন", keywords: "career job চাকরি আবেদন" },
+    { href: "/sumon/notifications", icon: Bell, label: "Notifications", labelBn: "নোটিফিকেশন", badge: "notifications", descBn: "সাইট থেকে আসা সব বার্তা", keywords: "notification বার্তা" },
   ]},
   { id: "products-services", label: "Products & services", labelBn: "পণ্য ও সেবা", items: [
     { href: "/sumon/products", icon: Package, label: "Products", labelBn: "পণ্য", exact: true, permission: "products.read", descBn: "পণ্য যোগ, ছবি, দাম ও স্টক", keywords: "product পণ্য দাম ছবি" },
     { href: "/sumon/categories", icon: FolderTree, label: "Categories", labelBn: "ক্যাটাগরি", minRole: "admin", permission: "products.read", descBn: "পণ্য ও সেবার ক্যাটাগরি, ছবি, ক্রম ও দেখান/লুকান", keywords: "category subcategory ক্যাটাগরি সাব-ক্যাটাগরি ভাগ ক্রম" },
-    { href: "/sumon/inventory", icon: Boxes, label: "Inventory & Product Brands", labelBn: "স্টক ও পণ্যের ব্র্যান্ড", minRole: "admin", permission: "products.read", descBn: "কোন পণ্য কতটা আছে; পণ্যের ব্র্যান্ড (যেমন Samsung)", keywords: "stock inventory brand manufacturer স্টক মজুত পণ্যের ব্র্যান্ড কোম্পানি" },
+    { href: "/sumon/inventory", icon: Boxes, label: "Inventory & Product Brands", labelBn: "স্টক ও পণ্যের ব্র্যান্ড", badge: "lowstock", minRole: "admin", permission: "products.read", descBn: "কোন পণ্য কতটা আছে; পণ্যের ব্র্যান্ড (যেমন Samsung)", keywords: "stock inventory brand manufacturer স্টক মজুত পণ্যের ব্র্যান্ড কোম্পানি" },
     { href: "/sumon/products/import", icon: UploadCloud, label: "Bulk Import", labelBn: "একসাথে অনেক পণ্য আপলোড", minRole: "admin", permission: "products.write", descBn: "Excel/CSV থেকে একসাথে পণ্য তুলুন", keywords: "import bulk csv excel আপলোড" },
-    { href: "/sumon/combos", icon: Package, label: "Combo Packs", labelBn: "কম্বো প্যাক", permission: "products.read", descBn: "কয়েকটি পণ্য মিলিয়ে অফার", keywords: "combo কম্বো অফার প্যাক" },
     { href: "/sumon/services", icon: Wrench, label: "Services", labelBn: "সেবা", permission: "services.read", descBn: "সেবার বিবরণ, দাম ও বুকিং ফর্ম", keywords: "service সেবা" },
     { href: "/sumon/reviews", icon: Star, label: "Reviews & Testimonials", labelBn: "রিভিউ ও মতামত", permission: "reviews.read", descBn: "পণ্য/সেবার রিভিউ ও সাইটের মতামত — দেখান, লুকান, টেস্ট রিভিউ মুছুন", keywords: "review testimonial rating রিভিউ মতামত রেটিং টেস্টিমোনিয়াল গ্রাহকের কথা" },
   ]},
@@ -89,7 +88,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     { href: "/sumon/settings", icon: Settings, label: "Settings", labelBn: "সাইট সেটিংস", minRole: "admin", descBn: "নাম, লোগো, ফোন, ঠিকানা, Google/SEO, ইমেইল-SMS", keywords: "logo favicon contact phone address whatsapp seo google analytics pixel marketing smtp sms লোগো ফোন ঠিকানা হোয়াটসঅ্যাপ গুগল" },
   ]},
   { id: "marketing", label: "Marketing", labelBn: "প্রচার ও মার্কেটিং", items: [
-    { href: "/sumon/coupons", icon: Percent, label: "Coupons & Flash Sale", labelBn: "কুপন ও ফ্ল্যাশ সেল", minRole: "admin", descBn: "ছাড়ের কোড, ফ্ল্যাশ সেলের সময়, পণ্য ও ব্যানার", keywords: "coupon discount flash sale countdown offer কুপন ছাড় ফ্ল্যাশ সেল অফার" },
+    { href: "/sumon/coupons", icon: Percent, label: "Offers", labelBn: "অফার (কুপন, ফ্ল্যাশ সেল, কম্বো)", minRole: "admin", descBn: "ছাড়ের কোড, ফ্ল্যাশ সেলের সময়-পণ্য-ব্যানার আর কম্বো প্যাক — সব অফার এক পাতায়", keywords: "offer coupon discount flash sale countdown combo pack bundle অফার কুপন ছাড় ফ্ল্যাশ সেল কম্বো প্যাক" },
     { href: "/sumon/newsletter", icon: Send, label: "Newsletter", labelBn: "নিউজলেটার", minRole: "admin", descBn: "গ্রাহকদের ইমেইল পাঠান", keywords: "newsletter email নিউজলেটার" },
     { href: "/sumon/email-templates", icon: Mail, label: "Email Templates", labelBn: "অটো ইমেইলের লেখা", minRole: "admin", permission: "email_templates.read", descBn: "অর্ডার/বুকিংয়ে যে ইমেইল যায় তার লেখা", keywords: "email template ইমেইল টেমপ্লেট" },
   ]},
@@ -128,6 +127,11 @@ export function getAdminPageTitle(pathname: string, lang: "en" | "bn" = "en"): s
   const match = ADMIN_ALL_PAGES.find((item) => item.exact ? pathname === item.href : pathname.startsWith(item.href));
   if (!match) return lang === "bn" ? "অ্যাডমিন" : "Admin";
   return lang === "bn" ? match.labelBn ?? match.label : match.label;
+}
+
+/** The nav entry for a path (for the top bar's "এই পাতা কী করে" help). */
+export function getAdminPageInfo(pathname: string): AdminNavItem | undefined {
+  return ADMIN_ALL_PAGES.find((item) => item.exact ? pathname === item.href : pathname.startsWith(item.href));
 }
 
 export const ADMIN_QUICK_ACTIONS = [

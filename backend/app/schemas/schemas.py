@@ -481,6 +481,8 @@ class DashboardStats(BaseModel):
     new_leads: int
     total_leads: int
     total_products: int
+    new_applications: int = 0
+    low_stock: int = 0
     recent_orders: list[Any] = []
     recent_leads: list[Any] = []
 

@@ -48,16 +48,16 @@ function Toggle({ checked, onChange, label, hint }: { checked: boolean; onChange
 }
 
 const INTEGRATIONS = [
-  { label: "Products", table: "products", desc: "Search, price, stock, categories" },
-  { label: "Services", table: "services", desc: "Info, pricing tiers, booking" },
-  { label: "Orders", table: "orders + order_items", desc: "Place order, track, invoice" },
-  { label: "Bookings", table: "bookings_v2", desc: "Service booking + status" },
-  { label: "Leads", table: "leads_v2", desc: "Inquiry / quote submission" },
-  { label: "Settings", table: "settings", desc: "Delivery charges, welcome, flags" },
-  { label: "FAQ Knowledge", table: "assistant_faq_knowledge", desc: "Admin-editable Q&A (separate from the public /faq page)" },
-  { label: "Coupons", table: "coupons_json", desc: "Validate & list coupons" },
-  { label: "Blog", table: "blog_posts", desc: "Search & recent posts" },
-  { label: "Conversations", table: "assistant_conversations", desc: "Session history & logs" },
+  { label: "পণ্য", table: "products", desc: "খোঁজা, দাম, স্টক, ক্যাটাগরি" },
+  { label: "সেবা", table: "services", desc: "তথ্য, দামের প্যাকেজ, বুকিং" },
+  { label: "অর্ডার", table: "orders + order_items", desc: "অর্ডার, ট্র্যাকিং, ইনভয়েস" },
+  { label: "বুকিং", table: "bookings_v2", desc: "সেবা বুকিং ও অবস্থা" },
+  { label: "লিড", table: "leads_v2", desc: "জিজ্ঞাসা / কোটেশন জমা" },
+  { label: "সেটিংস", table: "settings", desc: "ডেলিভারি চার্জ, স্বাগত বার্তা, সুইচ" },
+  { label: "প্রশ্নোত্তর ভাণ্ডার", table: "assistant_faq_knowledge", desc: "অ্যাডমিনের প্রশ্নোত্তর (ওয়েবসাইটের /faq পাতা থেকে আলাদা)" },
+  { label: "কুপন", table: "coupons_json", desc: "কুপন যাচাই ও তালিকা" },
+  { label: "ব্লগ", table: "blog_posts", desc: "খোঁজা ও নতুন পোস্ট" },
+  { label: "কথোপকথন", table: "assistant_conversations", desc: "সেশনের ইতিহাস ও লগ" },
 ];
 
 export default function AdminAssistantPage() {
@@ -182,7 +182,7 @@ export default function AdminAssistantPage() {
 
   const deleteConversation = (id: string) => {
     setConfirmState({
-      title: "Archive this conversation?",
+      title: "এই কথোপকথন আর্কাইভ করবেন?",
       message: "This conversation will be hidden from the active conversation list. Its history will be preserved.",
       action: async () => {
         setConfirmState(null);
@@ -272,10 +272,10 @@ export default function AdminAssistantPage() {
   };
 
   const tabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: "settings", label: "Settings", icon: Settings2 },
-    { id: "conversations", label: "Conversations", icon: MessageSquare },
-    { id: "logs", label: "Automation Logs", icon: Zap },
-    { id: "faq", label: "FAQ Knowledge", icon: BookOpen },
+    { id: "settings", label: "সেটিংস", icon: Settings2 },
+    { id: "conversations", label: "কথোপকথন", icon: MessageSquare },
+    { id: "logs", label: "অটোমেশন লগ", icon: Zap },
+    { id: "faq", label: "প্রশ্নোত্তর ভাণ্ডার", icon: BookOpen },
   ];
 
   return (
@@ -284,6 +284,7 @@ export default function AdminAssistantPage() {
         title="AI Assistant"
         titleBn="AI সহকারী"
         description="Manage automation assistant, WhatsApp integration, conversations and knowledge base"
+        descriptionBn="ওয়েবসাইটের চ্যাট সহকারী — হোয়াটসঅ্যাপ সংযোগ, গ্রাহকের কথোপকথন আর প্রশ্নোত্তর (জ্ঞানভাণ্ডার) এখান থেকে সামলান।"
       />
 
       <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-1">
@@ -340,7 +341,7 @@ export default function AdminAssistantPage() {
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                <h2 className="text-sm font-semibold text-gray-800">Feature Controls</h2>
+                <h2 className="text-sm font-semibold text-gray-800">ফিচার চালু/বন্ধ</h2>
                 <button
                   onClick={saveConfig}
                   disabled={configSaving}
@@ -354,57 +355,57 @@ export default function AdminAssistantPage() {
               </div>
 
               <div className="px-6 py-2">
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-3 pb-1">General</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-3 pb-1">সাধারণ</p>
                 <div className="divide-y divide-gray-50">
                   <Toggle
-                    label="Enable Assistant Chat Widget (site-wide)"
+                    label="ওয়েবসাইটে চ্যাট সহকারী চালু (সব পাতায়)"
                     hint="Master switch — hides the floating assistant when off"
                     checked={config.feature_assistant_chat}
                     onChange={(v) => setConfig((c) => ({ ...c, feature_assistant_chat: v }))}
                   />
                   <Toggle
-                    label="WhatsApp option inside Assistant"
+                    label="সহকারীর ভেতরে হোয়াটসঅ্যাপ অপশন"
                     checked={config.feature_assistant_whatsapp}
                     onChange={(v) => setConfig((c) => ({ ...c, feature_assistant_whatsapp: v }))}
                   />
                 </div>
 
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-5 pb-1">Automation (DB writes)</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-5 pb-1">স্বয়ংক্রিয় কাজ (ডাটা লেখে)</p>
                 <div className="divide-y divide-gray-50">
-                  <Toggle label="Place orders via chat" hint="Multi-step order → orders table" checked={config.assistant_feature_orders} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_orders: v }))} />
-                  <Toggle label="Book services via chat" hint="Multi-step booking → bookings_v2" checked={config.assistant_feature_bookings} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_bookings: v }))} />
-                  <Toggle label="Submit leads / quotes" hint="Inquiry → leads_v2" checked={config.assistant_feature_leads} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_leads: v }))} />
-                  <Toggle label="Customer complaints → admin notify" checked={config.assistant_feature_complaints} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_complaints: v }))} />
+                  <Toggle label="চ্যাটে অর্ডার" hint="Multi-step order → orders table" checked={config.assistant_feature_orders} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_orders: v }))} />
+                  <Toggle label="চ্যাটে সেবা বুকিং" hint="Multi-step booking → bookings_v2" checked={config.assistant_feature_bookings} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_bookings: v }))} />
+                  <Toggle label="লিড / কোটেশন জমা" hint="Inquiry → leads_v2" checked={config.assistant_feature_leads} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_leads: v }))} />
+                  <Toggle label="গ্রাহকের অভিযোগ → অ্যাডমিনকে জানানো" checked={config.assistant_feature_complaints} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_complaints: v }))} />
                 </div>
 
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-5 pb-1">Tracking (DB reads)</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-5 pb-1">ট্র্যাকিং (ডাটা পড়ে)</p>
                 <div className="divide-y divide-gray-50">
-                  <Toggle label="Order tracking" hint="By order number or phone" checked={config.assistant_feature_order_tracking} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_order_tracking: v }))} />
-                  <Toggle label="Booking tracking" hint="By BK- number or phone" checked={config.assistant_feature_booking_tracking} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_booking_tracking: v }))} />
-                  <Toggle label="Lead / inquiry tracking" hint="By LF- number or phone" checked={config.assistant_feature_lead_tracking} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_lead_tracking: v }))} />
+                  <Toggle label="অর্ডার ট্র্যাকিং" hint="By order number or phone" checked={config.assistant_feature_order_tracking} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_order_tracking: v }))} />
+                  <Toggle label="বুকিং ট্র্যাকিং" hint="By BK- number or phone" checked={config.assistant_feature_booking_tracking} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_booking_tracking: v }))} />
+                  <Toggle label="লিড / জিজ্ঞাসা ট্র্যাকিং" hint="By LF- number or phone" checked={config.assistant_feature_lead_tracking} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_lead_tracking: v }))} />
                 </div>
 
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-5 pb-1">Catalog & Knowledge</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-5 pb-1">ক্যাটালগ ও তথ্য</p>
                 <div className="divide-y divide-gray-50">
-                  <Toggle label="Product search & details" checked={config.assistant_feature_product_search} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_product_search: v }))} />
-                  <Toggle label="Service info & pricing" checked={config.assistant_feature_service_info} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_service_info: v }))} />
-                  <Toggle label="Coupons" checked={config.assistant_feature_coupons} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_coupons: v }))} />
-                  <Toggle label="Invoice help" checked={config.assistant_feature_invoices} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_invoices: v }))} />
-                  <Toggle label="Delivery info & charges" checked={config.assistant_feature_delivery_info} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_delivery_info: v }))} />
-                  <Toggle label="FAQ answers" hint="Uses FAQ tab + admin settings" checked={config.assistant_feature_faq} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_faq: v }))} />
-                  <Toggle label="Blog posts" checked={config.assistant_feature_blog} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_blog: v }))} />
-                  <Toggle label="Web search fallback" hint="DuckDuckGo when DB has no match" checked={config.assistant_feature_web_search} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_web_search: v }))} />
+                  <Toggle label="পণ্য খোঁজা ও বিস্তারিত" checked={config.assistant_feature_product_search} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_product_search: v }))} />
+                  <Toggle label="সেবার তথ্য ও দাম" checked={config.assistant_feature_service_info} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_service_info: v }))} />
+                  <Toggle label="কুপন" checked={config.assistant_feature_coupons} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_coupons: v }))} />
+                  <Toggle label="ইনভয়েস সাহায্য" checked={config.assistant_feature_invoices} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_invoices: v }))} />
+                  <Toggle label="ডেলিভারি তথ্য ও চার্জ" checked={config.assistant_feature_delivery_info} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_delivery_info: v }))} />
+                  <Toggle label="প্রশ্নোত্তরের উত্তর" hint="Uses FAQ tab + admin settings" checked={config.assistant_feature_faq} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_faq: v }))} />
+                  <Toggle label="ব্লগ পোস্ট" checked={config.assistant_feature_blog} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_blog: v }))} />
+                  <Toggle label="না পেলে ওয়েবে খোঁজা" hint="DuckDuckGo when DB has no match" checked={config.assistant_feature_web_search} onChange={(v) => setConfig((c) => ({ ...c, assistant_feature_web_search: v }))} />
                 </div>
 
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-5 pb-1">Messages</p>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide pt-5 pb-1">বার্তা</p>
                 <div className="py-4 space-y-4">
                   <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">WhatsApp Number</label>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">হোয়াটসঅ্যাপ নম্বর</label>
                     <input type="tel" value={config.whatsapp_number} onChange={(e) => setConfig((c) => ({ ...c, whatsapp_number: e.target.value }))} placeholder="8801825007977" className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100" />
                   </div>
                   <div>
                     <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                      Welcome Message (English)
+                      স্বাগত বার্তা (ইংরেজি)
                       <TranslateButton bn={config.assistant_welcome_bn} onResult={(en) => setConfig((c) => ({ ...c, assistant_welcome_en: en }))} en={config.assistant_welcome_en} onResultBn={(b) => setConfig((c) => ({ ...c, assistant_welcome_bn: b }))} />
                     </label>
                     <textarea value={config.assistant_welcome_en} onChange={(e) => setConfig((c) => ({ ...c, assistant_welcome_en: e.target.value }))} rows={2} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100" />
@@ -429,7 +430,7 @@ export default function AdminAssistantPage() {
               value={convSearch}
               onChange={(e) => setConvSearch(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && loadConversations()}
-              placeholder="Search by session, name or phone…"
+              placeholder="সেশন, নাম বা ফোন দিয়ে খুঁজুন…"
               className="flex-1 max-w-sm px-3 py-2 border border-gray-200 rounded-lg text-sm"
             />
             <button type="button" onClick={loadConversations} aria-label="আবার আনুন" title="আবার আনুন" className="min-h-11 px-3 py-2 border border-gray-200 rounded-lg text-sm hover:bg-gray-50">
@@ -441,43 +442,43 @@ export default function AdminAssistantPage() {
             {convLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-600" /></div>
             ) : conversations.length === 0 ? (
-              <p className="text-center text-gray-500 py-16 text-sm">No conversations yet</p>
+              <p className="text-center text-gray-500 py-16 text-sm">এখনো কোনো কথোপকথন নেই</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm table-responsive">
                   <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                     <tr>
-                      <th className="text-left px-4 py-3">Session</th>
-                      <th className="text-left px-4 py-3">Customer</th>
-                      <th className="text-left px-4 py-3">Intent</th>
-                      <th className="text-left px-4 py-3">Messages</th>
-                      <th className="text-left px-4 py-3">Updated</th>
-                      <th className="text-right px-4 py-3">Actions</th>
+                      <th className="text-left px-4 py-3">সেশন</th>
+                      <th className="text-left px-4 py-3">গ্রাহক</th>
+                      <th className="text-left px-4 py-3">উদ্দেশ্য</th>
+                      <th className="text-left px-4 py-3">বার্তা</th>
+                      <th className="text-left px-4 py-3">আপডেট</th>
+                      <th className="text-right px-4 py-3">কাজ</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {conversations.map((c) => (
                       <tr key={c.id} className="hover:bg-gray-50/50">
-                        <td className="px-4 py-3 font-mono text-xs" data-label="Session">{c.session_id.slice(0, 12)}…</td>
-                        <td className="px-4 py-3" data-label="Customer">
+                        <td className="px-4 py-3 font-mono text-xs" data-label="সেশন">{c.session_id.slice(0, 12)}…</td>
+                        <td className="px-4 py-3" data-label="গ্রাহক">
                           <div>{c.customer_name || "—"}</div>
                           <div className="text-xs text-gray-400">{c.customer_phone || ""}</div>
                         </td>
-                        <td className="px-4 py-3" data-label="Intent">{c.last_intent ? <StatusBadge status={c.last_intent} /> : "—"}</td>
-                        <td className="px-4 py-3" data-label="Messages">{c.message_count}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500" data-label="Updated">{formatDhakaBn(new Date(c.updated_at))}</td>
-                        <td className="px-4 py-3 text-right" data-label="Actions">
+                        <td className="px-4 py-3" data-label="উদ্দেশ্য">{c.last_intent ? <StatusBadge status={c.last_intent} /> : "—"}</td>
+                        <td className="px-4 py-3" data-label="বার্তা">{c.message_count}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500" data-label="আপডেট">{formatDhakaBn(new Date(c.updated_at))}</td>
+                        <td className="px-4 py-3 text-right" data-label="কাজ">
                           <div className="flex items-center justify-end gap-1 flex-wrap">
-                            <button onClick={() => viewConversation(c.id)} className="p-1.5 rounded-lg hover:bg-brand-50 text-brand-600" title="View">
-                              <span className="sr-only">View conversation</span>
+                            <button onClick={() => viewConversation(c.id)} className="p-1.5 rounded-lg hover:bg-brand-50 text-brand-600" title="দেখুন">
+                              <span className="sr-only">কথোপকথন দেখুন</span>
                               <Eye className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => deleteConversation(c.id)}
                               disabled={deletingConvId === c.id}
-                              aria-label="Archive conversation"
+                              aria-label="কথোপকথন আর্কাইভ"
                               className="p-1.5 rounded-lg hover:bg-red-50 text-red-500"
-                              title="Archive"
+                              title="আর্কাইভ"
                             >
                               {deletingConvId === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                             </button>
@@ -493,9 +494,9 @@ export default function AdminAssistantPage() {
 
           {convTotal > 20 && (
             <div className="flex justify-center gap-2">
-              <button disabled={convPage <= 1} onClick={() => setConvPage((p) => p - 1)} className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40">Prev</button>
+              <button disabled={convPage <= 1} onClick={() => setConvPage((p) => p - 1)} className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40">আগের</button>
               <span className="text-sm text-gray-500 py-1">Page {convPage}</span>
-              <button disabled={convPage * 20 >= convTotal} onClick={() => setConvPage((p) => p + 1)} className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40">Next</button>
+              <button disabled={convPage * 20 >= convTotal} onClick={() => setConvPage((p) => p + 1)} className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40">পরের</button>
             </div>
           )}
 
@@ -505,11 +506,11 @@ export default function AdminAssistantPage() {
               onClick={() => setConvDetail(null)}
               role="dialog"
               aria-modal="true"
-              aria-label="Conversation detail"
+              aria-label="কথোপকথনের বিস্তারিত"
             >
               <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-5 py-4 border-b">
-                  <h3 className="font-semibold">Conversation Detail</h3>
+                  <h3 className="font-semibold">কথোপকথনের বিস্তারিত</h3>
                   <button aria-label="বন্ধ করুন" type="button" onClick={() => setConvDetail(null)} className="p-1 rounded-lg hover:bg-gray-100"><X className="w-5 h-5" /></button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-5 space-y-3">
@@ -544,29 +545,29 @@ export default function AdminAssistantPage() {
             {logsLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-600" /></div>
             ) : logs.length === 0 ? (
-              <p className="text-center text-gray-500 py-16 text-sm">No automation logs yet</p>
+              <p className="text-center text-gray-500 py-16 text-sm">এখনো কোনো অটোমেশন লগ নেই</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm table-responsive">
                   <thead className="bg-gray-50 text-gray-500 text-xs uppercase">
                     <tr>
-                      <th className="text-left px-4 py-3">Action</th>
-                      <th className="text-left px-4 py-3">Intent</th>
-                      <th className="text-left px-4 py-3">Status</th>
-                      <th className="text-left px-4 py-3">Session</th>
-                      <th className="text-left px-4 py-3">Time</th>
-                      <th className="text-right px-4 py-3">Retention</th>
+                      <th className="text-left px-4 py-3">কাজ</th>
+                      <th className="text-left px-4 py-3">উদ্দেশ্য</th>
+                      <th className="text-left px-4 py-3">অবস্থা</th>
+                      <th className="text-left px-4 py-3">সেশন</th>
+                      <th className="text-left px-4 py-3">সময়</th>
+                      <th className="text-right px-4 py-3">কতদিন রাখা হবে</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
                     {logs.map((log) => (
                       <tr key={log.id} className="hover:bg-gray-50/50">
-                        <td className="px-4 py-3 font-medium" data-label="Action">{log.action}</td>
-                        <td className="px-4 py-3" data-label="Intent">{log.intent || "—"}</td>
-                        <td className="px-4 py-3" data-label="Status"><StatusBadge status={log.status} /></td>
-                        <td className="px-4 py-3 font-mono text-xs" data-label="Session">{log.session_id?.slice(0, 10) || "—"}</td>
-                        <td className="px-4 py-3 text-xs text-gray-500" data-label="Time">{formatDhakaBn(new Date(log.created_at))}</td>
-                        <td className="px-4 py-3 text-right text-xs font-medium text-emerald-600" data-label="Retention">Retained</td>
+                        <td className="px-4 py-3 font-medium" data-label="কাজ">{log.action}</td>
+                        <td className="px-4 py-3" data-label="উদ্দেশ্য">{log.intent || "—"}</td>
+                        <td className="px-4 py-3" data-label="অবস্থা"><StatusBadge status={log.status} /></td>
+                        <td className="px-4 py-3 font-mono text-xs" data-label="সেশন">{log.session_id?.slice(0, 10) || "—"}</td>
+                        <td className="px-4 py-3 text-xs text-gray-500" data-label="সময়">{formatDhakaBn(new Date(log.created_at))}</td>
+                        <td className="px-4 py-3 text-right text-xs font-medium text-emerald-600" data-label="কতদিন রাখা হবে">রাখা হয়েছে</td>
                       </tr>
                     ))}
                   </tbody>
@@ -577,9 +578,9 @@ export default function AdminAssistantPage() {
 
           {logsTotal > 20 && (
             <div className="flex justify-center gap-2">
-              <button disabled={logsPage <= 1} onClick={() => setLogsPage((p) => p - 1)} className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40">Prev</button>
+              <button disabled={logsPage <= 1} onClick={() => setLogsPage((p) => p - 1)} className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40">আগের</button>
               <span className="text-sm text-gray-500 py-1">Page {logsPage}</span>
-              <button disabled={logsPage * 20 >= logsTotal} onClick={() => setLogsPage((p) => p + 1)} className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40">Next</button>
+              <button disabled={logsPage * 20 >= logsTotal} onClick={() => setLogsPage((p) => p + 1)} className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40">পরের</button>
             </div>
           )}
         </div>
@@ -594,13 +595,13 @@ export default function AdminAssistantPage() {
               <input
                 value={faqSearch}
                 onChange={(e) => setFaqSearch(e.target.value)}
-                placeholder="Search FAQ entries…"
+                placeholder="প্রশ্নোত্তর খুঁজুন…"
                 className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-400"
               />
             </div>
             <p className="text-sm text-gray-500">{faqList.length} entries</p>
             <button onClick={openNewFaq} className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium hover:bg-brand-700">
-              <Plus className="w-4 h-4" /> Add FAQ
+              <Plus className="w-4 h-4" /> প্রশ্নোত্তর যোগ
             </button>
           </div>
 
@@ -608,7 +609,7 @@ export default function AdminAssistantPage() {
             {faqLoading ? (
               <div className="flex justify-center py-16"><Loader2 className="w-6 h-6 animate-spin text-brand-600" /></div>
             ) : faqList.length === 0 ? (
-              <p className="text-center text-gray-500 py-16 text-sm">No FAQ entries. Add your first one.</p>
+              <p className="text-center text-gray-500 py-16 text-sm">কোনো প্রশ্নোত্তর নেই — প্রথমটি যোগ করুন।</p>
             ) : (
               <div className="divide-y divide-gray-50">
                 {faqList.filter((entry) => {
@@ -670,7 +671,7 @@ export default function AdminAssistantPage() {
                 <div className="p-5 space-y-4">
                   {faqIsNew && (
                     <div>
-                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Key (e.g. delivery, warranty)</label>
+                      <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Key (যেমন delivery, warranty)</label>
                       <input
                         value={faqEditing.key}
                         onChange={(e) => setFaqEditing((f) => f && { ...f, key: e.target.value })}
@@ -681,7 +682,7 @@ export default function AdminAssistantPage() {
                   )}
                   <div>
                     <label className="flex items-center justify-between gap-2 text-xs font-semibold text-gray-500 uppercase mb-1">
-                      Answer (English)
+                      উত্তর (ইংরেজি)
                       <TranslateButton bn={faqEditing.answer_bn} onResult={(en) => setFaqEditing((f) => f && { ...f, answer_en: en })} en={faqEditing.answer_en} onResultBn={(b) => setFaqEditing((f) => f && { ...f, answer_bn: b })} />
                     </label>
                     <textarea
@@ -702,7 +703,7 @@ export default function AdminAssistantPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">
-                      Customer questions / keywords
+                      গ্রাহকের প্রশ্ন / কীওয়ার্ড
                     </label>
                     <textarea
                       value={faqEditing.questions ?? ""}
@@ -716,7 +717,7 @@ export default function AdminAssistantPage() {
                     </p>
                   </div>
                   <div className="flex justify-end gap-2 flex-wrap pt-2">
-                    <button onClick={() => setFaqEditing(null)} className="px-4 py-2 border border-gray-200 rounded-lg text-sm">Cancel</button>
+                    <button onClick={() => setFaqEditing(null)} className="px-4 py-2 border border-gray-200 rounded-lg text-sm">বাতিল</button>
                     <button
                       onClick={saveFaq}
                       disabled={faqSaving}

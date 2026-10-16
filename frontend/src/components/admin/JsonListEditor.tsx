@@ -166,9 +166,9 @@ export default function JsonListEditor({ value, onChange, fields, newItem, mapKe
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-gray-400">#{i + 1}</span>
             <div className="flex items-center gap-1">
-              <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="w-7 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 flex items-center justify-center disabled:opacity-30" aria-label="Move up"><ArrowUp className="w-3.5 h-3.5" /></button>
-              <button type="button" onClick={() => move(i, 1)} disabled={i === parsed.length - 1} className="w-7 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 flex items-center justify-center disabled:opacity-30" aria-label="Move down"><ArrowDown className="w-3.5 h-3.5" /></button>
-              <button type="button" onClick={() => remove(i)} className="w-7 h-7 rounded-lg hover:bg-red-50 text-red-500 flex items-center justify-center" aria-label="Delete"><Trash2 className="w-3.5 h-3.5" /></button>
+              <button type="button" onClick={() => move(i, -1)} disabled={i === 0} className="w-7 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 flex items-center justify-center disabled:opacity-30" aria-label="উপরে নিন"><ArrowUp className="w-3.5 h-3.5" /></button>
+              <button type="button" onClick={() => move(i, 1)} disabled={i === parsed.length - 1} className="w-7 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 flex items-center justify-center disabled:opacity-30" aria-label="নিচে নিন"><ArrowDown className="w-3.5 h-3.5" /></button>
+              <button type="button" onClick={() => remove(i)} className="w-7 h-7 rounded-lg hover:bg-red-50 text-red-500 flex items-center justify-center" aria-label="মুছুন"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-2">
@@ -215,7 +215,7 @@ export default function JsonListEditor({ value, onChange, fields, newItem, mapKe
         </div>
       ))}
       <button type="button" onClick={() => commit([...parsed, newItem()])} className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-600 hover:text-brand-700">
-        <Plus className="w-4 h-4" /> Add
+        <Plus className="w-4 h-4" /> যোগ করুন
       </button>
     </div>
   );

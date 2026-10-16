@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Percent, Plus, Save, Trash2, Zap } from "lucide-react";
+import { Loader2, Package, Percent, Plus, Save, Trash2, Zap } from "lucide-react";
 import { adminApi, couponsApi, type AdminCoupon } from "@/lib/api";
 import { parseBoolSetting } from "@/lib/flashSale";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -10,6 +10,7 @@ import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminEmptyState from "@/components/admin/AdminEmptyState";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
 import FlashSalePanel from "./FlashSalePanel";
+import CombosManager from "@/components/admin/CombosManager";
 
 interface Coupon {
   id?: string;
@@ -28,15 +29,16 @@ export default function AdminCouponsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const toast = useToastStore((s) => s.push);
-  // Two tabs; #flash opens the flash-sale tab directly (deep links).
-  const [tab, setTab] = useState<"coupons" | "flash">("coupons");
+  // Three tabs; #flash / #combos open that tab directly (deep links).
+  type Tab = "coupons" | "flash" | "combos";
+  const [tab, setTab] = useState<Tab>("coupons");
   useEffect(() => {
-    const sync = () => setTab(window.location.hash === "#flash" ? "flash" : "coupons");
+    const sync = () => setTab(window.location.hash === "#flash" ? "flash" : window.location.hash === "#combos" ? "combos" : "coupons");
     sync();
     window.addEventListener("hashchange", sync);
     return () => window.removeEventListener("hashchange", sync);
   }, []);
-  const switchTab = (t: "coupons" | "flash") => { setTab(t); history.replaceState(null, "", t === "flash" ? "#flash" : window.location.pathname); };
+  const switchTab = (t: Tab) => { setTab(t); history.replaceState(null, "", t === "coupons" ? window.location.pathname : `#${t}`); };
   const [removeIdx, setRemoveIdx] = useState<number | null>(null);
   // Checkout coupon box on/off (moved here from Site Settings → Site Features).
   const [couponsOn, setCouponsOn] = useState<boolean | null>(null);
@@ -143,18 +145,19 @@ export default function AdminCouponsPage() {
   return (
     <div className="admin-page pb-24">
       <AdminPageHeader
-        title="Coupons & Flash Sale"
-        titleBn="কুপন ও ফ্ল্যাশ সেল"
-        description="Discount codes and the homepage flash sale"
-        descriptionBn="ছাড়ের কোড আর হোমপেজের ফ্ল্যাশ সেল — দুটোই এখানে"
+        title="Offers"
+        titleBn="অফার"
+        description="Coupon codes, the homepage flash sale and combo packs"
+        descriptionBn="ছাড়ের কোড (কুপন), হোমপেজের ফ্ল্যাশ সেল আর কম্বো প্যাক — সব অফার এক পাতায়"
       />
 
-      <div role="tablist" aria-label="কুপন ও ফ্ল্যাশ সেল" className="flex gap-2">
+      <div role="tablist" aria-label="অফারের ধরন" className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
         <button type="button" role="tab" aria-selected={tab === "coupons"} onClick={() => switchTab("coupons")} className={`btn btn-sm min-h-11 gap-1.5 ${tab === "coupons" ? "btn-brand" : "btn-outline"}`}><Percent className="w-4 h-4" aria-hidden /> কুপন</button>
         <button type="button" role="tab" aria-selected={tab === "flash"} onClick={() => switchTab("flash")} className={`btn btn-sm min-h-11 gap-1.5 ${tab === "flash" ? "btn-brand" : "btn-outline"}`}><Zap className="w-4 h-4" aria-hidden /> ফ্ল্যাশ সেল</button>
+        <button type="button" role="tab" aria-selected={tab === "combos"} onClick={() => switchTab("combos")} className={`btn btn-sm min-h-11 gap-1.5 whitespace-nowrap ${tab === "combos" ? "btn-brand" : "btn-outline"}`}><Package className="w-4 h-4" aria-hidden /> কম্বো প্যাক</button>
       </div>
 
-      {tab === "flash" ? <FlashSalePanel /> : (<>
+      {tab === "flash" ? <FlashSalePanel /> : tab === "combos" ? <CombosManager embedded /> : (<>
       {couponsOn !== null && (
         <label className="admin-card flex items-center justify-between gap-3 px-4 min-h-14 cursor-pointer">
           <span className="text-sm"><b>{couponsOn ? "✅ কুপন চালু" : "⏸️ কুপন বন্ধ"}</b> <span className="text-gray-600">— চেকআউটে “কুপন কোড” ঘর {couponsOn ? "দেখাচ্ছে" : "লুকানো"}</span></span>

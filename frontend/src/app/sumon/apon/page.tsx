@@ -347,7 +347,13 @@ export default function AponAdminPage() {
               <div><label className={label}>প্যাকেজ নাম</label><input className={cn(field, "font-mono text-xs")} value={v("apon_package_name")} onChange={(e) => set("apon_package_name", e.target.value)} placeholder="com.masumon.apon" /></div>
               <div><label className={label}>সাইনিং সার্টিফিকেট SHA-256</label><input className={cn(field, "font-mono text-xs")} value={v("apon_cert_sha256")} onChange={(e) => set("apon_cert_sha256", e.target.value)} placeholder="AE:3D:E5:…" /></div>
             </div>
-            <button type="button" disabled={busy === "settings"} onClick={() => saveSettings(["apon_name_bn", "apon_name_en", "apon_tagline_bn", "apon_tagline_en", "apon_description_bn", "apon_description_en", "apon_button_label_bn", "apon_button_label_en", "apon_icon_url", "apon_package_name", "apon_cert_sha256"], "সংরক্ষিত হয়েছে")} className="btn btn-brand btn-md gap-2"><Save className="w-4 h-4" /> সংরক্ষণ করুন</button>
+            {/* Store links: the footer shows "Google Play" / "App Store" buttons only when filled. */}
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div><label className={label}>Google Play লিংক (ঐচ্ছিক)</label><input className={field} type="url" inputMode="url" value={v("play_store_url")} onChange={(e) => set("play_store_url", e.target.value)} placeholder="https://play.google.com/store/apps/details?id=…" /></div>
+              <div><label className={label}>App Store লিংক (ঐচ্ছিক)</label><input className={field} type="url" inputMode="url" value={v("app_store_url")} onChange={(e) => set("app_store_url", e.target.value)} placeholder="https://apps.apple.com/app/…" /></div>
+            </div>
+            <p className="text-xs text-muted -mt-1">দিলে ওয়েবসাইটের ফুটারে “Google Play” / “App Store” বোতাম দেখাবে; খালি রাখলে বোতাম লুকানো থাকবে।</p>
+            <button type="button" disabled={busy === "settings"} onClick={() => saveSettings(["apon_name_bn", "apon_name_en", "apon_tagline_bn", "apon_tagline_en", "apon_description_bn", "apon_description_en", "apon_button_label_bn", "apon_button_label_en", "apon_icon_url", "apon_package_name", "apon_cert_sha256", "play_store_url", "app_store_url"], "সংরক্ষিত হয়েছে")} className="btn btn-brand btn-md gap-2"><Save className="w-4 h-4" /> সংরক্ষণ করুন</button>
           </section>
 
           {([

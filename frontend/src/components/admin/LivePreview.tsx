@@ -52,7 +52,7 @@ export default function LivePreview({
               <span className="w-px h-4 bg-gray-200 dark:bg-white/10 mx-0.5" />
             </>
           )}
-          <button type="button" onClick={() => setDark((d) => !d)} className={seg(false)} aria-label="Toggle light/dark" title={dark ? "Dark" : "Light"}>
+          <button type="button" onClick={() => setDark((d) => !d)} className={seg(false)} aria-label="লাইট/ডার্ক বদলান" title={dark ? "ডার্ক" : "লাইট"}>
             {dark ? <Moon className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
           </button>
         </div>

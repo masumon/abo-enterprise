@@ -33,16 +33,25 @@ export default function AdminSidebar({
   onClose,
 }: Props) {
   const pathname = usePathname();
-  const { pendingOrders, pendingBookings, newLeads } = useAlertStore();
+  const { pendingOrders, pendingBookings, newLeads, newApplications, lowStock, unreadNotifications } = useAlertStore();
   const { lang } = useLanguageStore();
   const bn = lang === "bn";
   const [query, setQuery] = useState("");
-  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+  // Collapsed menu groups are remembered on this device.
+  const [collapsed, setCollapsedState] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    try { const raw = localStorage.getItem("abo_admin_nav_collapsed"); if (raw) setCollapsedState(JSON.parse(raw)); } catch { /* private mode */ }
+  }, []);
+  const setCollapsed = (fn: (p: Record<string, boolean>) => Record<string, boolean>) =>
+    setCollapsedState((p) => { const next = fn(p); try { localStorage.setItem("abo_admin_nav_collapsed", JSON.stringify(next)); } catch { /* ignore */ } return next; });
 
   const badgeCount = (key?: string) => {
     if (key === "orders") return pendingOrders;
     if (key === "bookings") return pendingBookings;
     if (key === "leads") return newLeads;
+    if (key === "career") return newApplications;
+    if (key === "lowstock") return lowStock;
+    if (key === "notifications") return unreadNotifications;
     return 0;
   };
 
@@ -162,7 +171,7 @@ export default function AdminSidebar({
           type="button"
           onClick={onClose}
           className="lg:hidden w-8 h-8 max-[640px]:w-11 max-[640px]:h-11 flex items-center justify-center rounded-lg text-gray-500 hover:text-white hover:bg-white/10"
-          aria-label="Close menu"
+          aria-label={bn ? "মেনু বন্ধ করুন" : "Close menu"}
         >
           <X className="w-4 h-4" />
         </button>
@@ -243,12 +252,14 @@ export default function AdminSidebar({
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-white text-xs font-semibold truncate">{adminName}</p>
-            <p className="text-gray-500 text-[10px] capitalize">{adminRole}</p>
+            <p className="text-gray-400 text-[11px]">{bn ? ({ super_admin: "মালিক (সুপার অ্যাডমিন)", admin: "অ্যাডমিন", editor: "এডিটর", viewer: "শুধু দেখতে পারেন" } as Record<string, string>)[adminRole] ?? adminRole : adminRole}</p>
           </div>
           <button
+            type="button"
             onClick={onLogout}
+            aria-label={bn ? "লগআউট" : "Logout"}
             className="p-2 max-[640px]:min-w-[44px] max-[640px]:min-h-[44px] rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-            title="Logout"
+            title={bn ? "লগআউট" : "Logout"}
           >
             <LogOut className="w-4 h-4" />
           </button>

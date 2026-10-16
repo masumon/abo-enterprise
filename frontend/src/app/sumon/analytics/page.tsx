@@ -68,7 +68,7 @@ function TrendChip({ pct }: { pct: number | null | undefined }) {
       className={`inline-flex items-center gap-0.5 text-[11px] font-semibold px-1.5 py-0.5 rounded-full ${
         up ? "text-emerald-700 bg-emerald-50" : "text-red-600 bg-red-50"
       }`}
-      title="Compared with the previous period of the same length"
+      title="আগের একই সময়ের তুলনায়"
     >
       {up ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
       {up ? "+" : ""}{pct}%
@@ -309,7 +309,7 @@ export default function AnalyticsPage() {
           {loading ? " " : <>{bn ? "মোট" : "Period total"} <span className="font-semibold text-gray-600">৳{periodTotal.toLocaleString()}</span> · {bn ? "দৈনিক গড়" : "Daily average"} ৳{Math.round(dailyAvg).toLocaleString()}</>}
         </p>
         {loading ? (
-          <div className="h-40 flex items-center justify-center text-gray-400">Loading...</div>
+          <div className="h-40 flex items-center justify-center text-gray-400">লোড হচ্ছে...</div>
         ) : (
           <div className="flex items-end gap-0.5 h-40 overflow-hidden">
             {chart.map((d, i) => (
@@ -363,7 +363,7 @@ export default function AnalyticsPage() {
       {/* Lead Funnel */}
       <div className="bg-white rounded-xl border border-gray-100 p-6">
         <h2 className="font-bold text-gray-900 mb-5 flex items-center gap-2">
-          <Trophy className="w-4 h-4 text-gray-400" /> Lead Funnel
+          <Trophy className="w-4 h-4 text-gray-400" /> লিডের ধাপ
         </h2>
         <div className="space-y-3">
           {funnelStages.map(stage => {
@@ -392,17 +392,17 @@ export default function AnalyticsPage() {
 
       {/* Bulk Export */}
       <div className="bg-white rounded-xl border border-gray-100 p-6">
-        <h2 className="font-bold text-gray-900 mb-4">Export Data</h2>
+        <h2 className="font-bold text-gray-900 mb-4">ডাটা ডাউনলোড</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[
-            { label: "Products CSV", path: "/api/v1/admin/bulk/export/products", filename: "products.csv", key: "products" },
-            { label: "Products PDF", path: "/api/v1/admin/bulk/export/products/pdf", filename: "products.pdf", key: "products-pdf" },
+            { label: "পণ্য CSV", path: "/api/v1/admin/bulk/export/products", filename: "products.csv", key: "products" },
+            { label: "পণ্য PDF", path: "/api/v1/admin/bulk/export/products/pdf", filename: "products.pdf", key: "products-pdf" },
             { label: `Orders CSV (${days}d)`, path: `/api/v1/admin/bulk/export/orders?days=${days}`, filename: `orders-${days}d.csv`, key: "orders" },
             { label: `Orders PDF (${days}d)`, path: `/api/v1/admin/bulk/export/orders/pdf?days=${days}`, filename: `orders-${days}d.pdf`, key: "orders-pdf" },
-            { label: "Leads CSV", path: "/api/v1/admin/bulk/export/leads", filename: "service-leads.csv", key: "leads" },
-            { label: "Leads PDF", path: "/api/v1/admin/bulk/export/leads/pdf", filename: "service-leads.pdf", key: "leads-pdf" },
-            { label: "Bookings CSV", path: "/api/v1/admin/bulk/export/bookings", filename: "service-bookings.csv", key: "bookings" },
-            { label: "Bookings PDF", path: "/api/v1/admin/bulk/export/bookings/pdf", filename: "service-bookings.pdf", key: "bookings-pdf" },
+            { label: "লিড CSV", path: "/api/v1/admin/bulk/export/leads", filename: "service-leads.csv", key: "leads" },
+            { label: "লিড PDF", path: "/api/v1/admin/bulk/export/leads/pdf", filename: "service-leads.pdf", key: "leads-pdf" },
+            { label: "বুকিং CSV", path: "/api/v1/admin/bulk/export/bookings", filename: "service-bookings.csv", key: "bookings" },
+            { label: "বুকিং PDF", path: "/api/v1/admin/bulk/export/bookings/pdf", filename: "service-bookings.pdf", key: "bookings-pdf" },
           ].map(btn => (
             <button
               key={btn.label}

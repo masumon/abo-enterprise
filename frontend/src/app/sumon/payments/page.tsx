@@ -192,7 +192,7 @@ export default function AdminPaymentsPage() {
 
   const handleDelete = (id: string) => {
     setConfirmState({
-      title: "Remove this payment method from the list?",
+      title: "এই পেমেন্ট পদ্ধতি তালিকা থেকে সরাবেন?",
       message: "It will no longer be offered at checkout. Existing payment and transaction history will be preserved — this is different from the on/off switch, which just turns it on or off without removing it.",
       action: async () => {
         setConfirmState(null);
@@ -279,14 +279,15 @@ export default function AdminPaymentsPage() {
 
       <div className="flex gap-1 p-1 bg-gray-100 rounded-xl w-fit flex-wrap">
         {([
-          ["gateways", "Gateways"],
-          ["transactions", "Transactions"],
-          ["reconciliation", "Reconciliation"],
+          ["gateways", "পেমেন্ট পদ্ধতি"],
+          ["transactions", "লেনদেন"],
+          ["reconciliation", "হিসাব মিলানো"],
         ] as const).map(([t, label]) => (
           <button
             key={t}
+            type="button"
             onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-4 py-2 min-h-11 rounded-lg text-sm font-medium transition-colors ${
               tab === t ? "bg-white text-gray-900 shadow-sm" : "text-gray-500 hover:text-gray-700"
             }`}
           >
@@ -495,14 +496,14 @@ export default function AdminPaymentsPage() {
 
                     <div className="mt-3 space-y-1 text-xs text-gray-500">
                       {m.account_identifier && (
-                        <p><span className="text-gray-400">Account:</span> {m.account_identifier}</p>
+                        <p><span className="text-gray-400">অ্যাকাউন্ট:</span> {m.account_identifier}</p>
                       )}
                       {m.commission_percentage > 0 && (
-                        <p><span className="text-gray-400">Commission:</span> {m.commission_percentage}%</p>
+                        <p><span className="text-gray-400">কমিশন:</span> {m.commission_percentage}%</p>
                       )}
                       {(m.min_amount != null || m.max_amount != null) && (
                         <p>
-                          <span className="text-gray-400">Range:</span>{" "}
+                          <span className="text-gray-400">সীমা:</span>{" "}
                           {m.min_amount != null ? `৳${m.min_amount}` : "—"} – {m.max_amount != null ? `৳${m.max_amount}` : "—"}
                         </p>
                       )}
@@ -511,7 +512,7 @@ export default function AdminPaymentsPage() {
 
                     <div className="mt-3 flex items-center gap-1.5">
                       {m.is_active
-                        ? <><Check className="w-3.5 h-3.5 text-green-500" /><span className="text-xs text-green-600 font-medium">Active at checkout</span></>
+                        ? <><Check className="w-3.5 h-3.5 text-green-500" /><span className="text-xs text-green-600 font-medium">চেকআউটে চালু</span></>
                         : <><AlertCircle className="w-3.5 h-3.5 text-gray-400" /><span className="text-xs text-gray-400">{tx("Disabled")}</span></>
                       }
                     </div>
@@ -525,9 +526,9 @@ export default function AdminPaymentsPage() {
 
       {tab === "gateways" && (
       <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-        <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">SSLCommerz Integration</p>
+        <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-1">SSLCommerz সংযোগ</p>
         <p className="text-sm text-blue-600">
-          Add a gateway with name <code className="bg-blue-100 px-1 rounded font-mono">sslcommerz</code> and put your Store ID in the Account Identifier field.
+          নামসহ একটি গেটওয়ে যোগ করুন <code className="bg-blue-100 px-1 rounded font-mono">sslcommerz</code> and put your Store ID in the Account Identifier field.
           Set API keys and sandbox/live mode via Render environment variables: <code className="bg-blue-100 px-1 rounded font-mono">SSLCOMMERZ_STORE_ID</code>,{" "}
           <code className="bg-blue-100 px-1 rounded font-mono">SSLCOMMERZ_STORE_PASS</code>, <code className="bg-blue-100 px-1 rounded font-mono">SSLCOMMERZ_SANDBOX</code>.
         </p>
@@ -556,7 +557,7 @@ export default function AdminPaymentsPage() {
             <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4">
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                  Gateway ID <span className="text-red-400">*</span>
+                  গেটওয়ে ID <span className="text-red-400">*</span>
                 </label>
                 {isNew ? (
                   <input
@@ -578,7 +579,7 @@ export default function AdminPaymentsPage() {
                 <input
                   value={editing.account_identifier ?? ""}
                   onChange={(e) => setEditing((p) => p ? { ...p, account_identifier: e.target.value } : p)}
-                  placeholder="Phone number, Store ID, account no..."
+                  placeholder="ফোন নম্বর, Store ID, অ্যাকাউন্ট নম্বর..."
                   className="input w-full"
                 />
               </div>
@@ -597,7 +598,7 @@ export default function AdminPaymentsPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Sort Order</label>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">ক্রম</label>
                   <input
                     type="number"
                     value={editing.sort_order ?? 0}
@@ -631,12 +632,12 @@ export default function AdminPaymentsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Description / Notes</label>
+                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">বিবরণ / নোট</label>
                 <textarea
                   value={editing.description ?? ""}
                   onChange={(e) => setEditing((p) => p ? { ...p, description: e.target.value } : p)}
                   rows={2}
-                  placeholder="Optional note for admins..."
+                  placeholder="অ্যাডমিনদের জন্য নোট (ঐচ্ছিক)..."
                   className="input w-full resize-none text-sm"
                 />
               </div>
@@ -652,7 +653,7 @@ export default function AdminPaymentsPage() {
                   <div className={`w-10 h-6 rounded-full transition-colors ${editing.is_active ? "bg-green-500" : "bg-gray-300"}`} />
                   <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editing.is_active ? "translate-x-5" : "translate-x-1"}`} />
                 </div>
-                <span className="text-sm font-medium text-gray-700">Active at checkout</span>
+                <span className="text-sm font-medium text-gray-700">চেকআউটে চালু</span>
               </label>
             </div>
 

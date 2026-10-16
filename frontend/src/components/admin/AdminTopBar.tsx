@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, Sparkles, ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users, AlertTriangle, MoreVertical } from "lucide-react";
-import { getAdminPageTitle } from "@/lib/adminNav";
+import { Search, Sparkles, ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users, AlertTriangle, MoreVertical, ExternalLink, HelpCircle } from "lucide-react";
+import { getAdminPageInfo, getAdminPageTitle } from "@/lib/adminNav";
 import AdminInstallButton from "@/components/admin/AdminInstallButton";
 import { useAlertStore } from "@/store/alerts";
 import { useLanguageStore } from "@/store/language";
@@ -25,6 +25,8 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
   const router = useRouter();
   const { lang, toggle: toggleLang } = useLanguageStore();
   const pageTitle = getAdminPageTitle(pathname, lang);
+  const pageInfo = getAdminPageInfo(pathname);
+  const [helpOpen, setHelpOpen] = useState(false);
   const { pendingOrders, pendingBookings, newLeads } = useAlertStore();
   const alertTotal = pendingOrders + pendingBookings + newLeads;
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -36,7 +38,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
   const [unreadCount, setUnreadCount] = useState(0);
 
   const loadNotifications = () => {
-    notificationsApi.unreadCount().then((r) => setUnreadCount(r.data.data?.count ?? 0)).catch(() => {});
+    notificationsApi.unreadCount().then((r) => { const n = r.data.data?.count ?? 0; setUnreadCount(n); useAlertStore.getState().setUnread(n); }).catch(() => {});
     notificationsApi.list({ unread_only: true, per_page: 5 }).then((r) => setPersistentNotifs(r.data.data ?? [])).catch(() => {});
   };
 
@@ -53,13 +55,14 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
   const markNotificationRead = (id: string) => {
     notificationsApi.markRead(id).catch(() => {});
     setPersistentNotifs((prev) => prev.filter((n) => n.id !== id));
-    setUnreadCount((c) => Math.max(0, c - 1));
+    setUnreadCount((c) => { const n = Math.max(0, c - 1); useAlertStore.getState().setUnread(n); return n; });
   };
 
   const markAllNotificationsRead = () => {
     notificationsApi.markAllRead().catch(() => {});
     setPersistentNotifs([]);
     setUnreadCount(0);
+    useAlertStore.getState().setUnread(0);
   };
 
   const notifItems = [
@@ -86,7 +89,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
           type="button"
           onClick={onMenuClick}
           className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-brand-600 hover:bg-brand-700 active:scale-95 transition-all shadow-sm shadow-brand-900/20"
-          aria-label="Open menu"
+          aria-label={lang === "bn" ? "মেনু খুলুন" : "Open menu"}
         >
           <Menu className="w-5 h-5 text-white" />
         </button>
@@ -117,6 +120,32 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
             <Search className="w-4 h-4" />
             <span className="hidden md:inline">{lang === "bn" ? "খুঁজুন" : "Search"}</span>
           </button>
+          <a href="/" target="_blank" rel="noopener noreferrer"
+            className="hidden sm:flex h-9 px-2.5 items-center justify-center gap-1.5 rounded-xl hover:bg-gray-100 transition-colors text-gray-600 text-xs font-semibold"
+            aria-label={lang === "bn" ? "ওয়েবসাইট দেখুন (নতুন ট্যাবে)" : "View website (new tab)"} title={lang === "bn" ? "ওয়েবসাইট দেখুন" : "View website"}>
+            <ExternalLink className="w-4 h-4" aria-hidden />
+            <span className="hidden xl:inline">{lang === "bn" ? "সাইট দেখুন" : "View site"}</span>
+          </a>
+          {/* "What is this page?" — the page's own description from the menu. */}
+          <div className="relative">
+            <button type="button" onClick={() => { setHelpOpen((v) => !v); setNotifOpen(false); setMoreOpen(false); }}
+              className="h-10 min-w-[40px] sm:h-9 sm:min-w-0 px-2.5 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-600"
+              aria-label={lang === "bn" ? "এই পাতার সাহায্য" : "Help for this page"} aria-expanded={helpOpen} title={lang === "bn" ? "এই পাতা কী করে?" : "What is this page?"}>
+              <HelpCircle className="w-4 h-4" aria-hidden />
+            </button>
+            {helpOpen && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setHelpOpen(false)} aria-hidden />
+                <div role="dialog" aria-label={lang === "bn" ? "এই পাতার সাহায্য" : "Page help"} className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] z-40 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-xl p-4 space-y-2">
+                  <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{pageTitle}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">{pageInfo?.descBn ?? (lang === "bn" ? "অ্যাডমিনের মূল পাতা — আজকের অর্ডার, বুকিং ও জরুরি কাজ এক নজরে।" : "Admin home — today's orders, bookings and urgent work at a glance.")}</p>
+                  <Link href="/sumon/help" onClick={() => setHelpOpen(false)} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-600 hover:underline">
+                    {lang === "bn" ? "পুরো সাহায্য গাইড →" : "Full help guide →"}
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
           {/* Phones/tablets: AI assistant lives here instead of a floating button. */}
           <button
             type="button"
@@ -133,8 +162,8 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
               type="button"
               onClick={onToggleTheme}
               className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-600"
-              aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-              title={dark ? "Light mode" : "Dark mode"}
+              aria-label={dark ? (lang === "bn" ? "লাইট মোড" : "Switch to light mode") : (lang === "bn" ? "ডার্ক মোড" : "Switch to dark mode")}
+              title={dark ? (lang === "bn" ? "লাইট মোড" : "Light mode") : (lang === "bn" ? "ডার্ক মোড" : "Dark mode")}
             >
               {dark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
@@ -143,7 +172,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
             type="button"
             onClick={toggleLang}
             className="w-9 h-9 flex items-center justify-center gap-1 rounded-xl hover:bg-gray-100 transition-colors text-gray-600 text-[10px] font-bold"
-            aria-label="Toggle language"
+            aria-label={lang === "bn" ? "ভাষা বদলান" : "Toggle language"}
             title={lang === "bn" ? "Switch to English" : "বাংলায় দেখুন"}
           >
             <Languages className="w-4 h-4" />
@@ -153,8 +182,8 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors disabled:opacity-50"
-            aria-label="Refresh admin panel"
-            title="Refresh"
+            aria-label={lang === "bn" ? "অ্যাডমিন রিফ্রেশ করুন" : "Refresh admin panel"}
+            title={lang === "bn" ? "রিফ্রেশ" : "Refresh"}
           >
             <RotateCw className={`w-4 h-4 text-gray-600 ${isRefreshing ? "animate-spin" : ""}`} />
           </button>
@@ -162,7 +191,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
           <div className="relative">
             <button
               type="button"
-              onClick={() => { setNotifOpen((v) => !v); setMoreOpen(false); }}
+              onClick={() => { setNotifOpen((v) => !v); setMoreOpen(false); setHelpOpen(false); }}
               className="relative w-10 h-10 sm:w-9 sm:h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-600"
               aria-label={lang === "bn" ? "নোটিফিকেশন" : "Notifications"}
               aria-expanded={notifOpen}
@@ -257,7 +286,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
           <div className="relative sm:hidden">
             <button
               type="button"
-              onClick={() => { setMoreOpen((v) => !v); setNotifOpen(false); }}
+              onClick={() => { setMoreOpen((v) => !v); setNotifOpen(false); setHelpOpen(false); }}
               className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gray-600"
               aria-label={lang === "bn" ? "আরও অপশন" : "More options"}
               aria-expanded={moreOpen}
@@ -275,6 +304,10 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
                       {dark ? (lang === "bn" ? "লাইট মোড" : "Light mode") : (lang === "bn" ? "ডার্ক মোড" : "Dark mode")}
                     </button>
                   )}
+                  <a role="menuitem" href="/" target="_blank" rel="noopener noreferrer" onClick={() => setMoreOpen(false)} className={MENU_ITEM}>
+                    <ExternalLink className="w-4 h-4" aria-hidden />
+                    {lang === "bn" ? "ওয়েবসাইট দেখুন" : "View website"}
+                  </a>
                   <button type="button" role="menuitem" onClick={() => { toggleLang(); setMoreOpen(false); }} className={MENU_ITEM}>
                     <Languages className="w-4 h-4" />
                     {lang === "bn" ? "Switch to English" : "বাংলায় দেখুন"}

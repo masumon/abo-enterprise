@@ -115,7 +115,7 @@ export default function AboutTrustPage() {
         title="About & trust"
         titleBn="আমাদের সম্পর্কে ও বিশ্বাস"
         description="Team, client/partner logos and business registrations — one place."
-        descriptionBn="টিম, ক্লায়েন্ট/পার্টনার লোগো ও ব্যবসায়িক নিবন্ধন — সব এক জায়গায়। প্রতিটি অংশ আলাদা করে সংরক্ষণ করুন।"
+        descriptionBn="টিম, ক্লায়েন্ট/পার্টনার লোগো ও ব্যবসায়িক নিবন্ধন — সব এক জায়গায়। প্রতিটি অংশ আলাদা করে সংরক্ষণ করুন। ক্লায়েন্ট লোগো অংশ হোমপেজে দেখাতে অন্তত ১টি আসল লোগো দিন।"
         actions={
           <button type="button" onClick={() => void load()} disabled={loading} className="admin-btn-secondary !py-2">
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} aria-hidden /> রিফ্রেশ

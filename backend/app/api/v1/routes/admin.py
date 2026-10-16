@@ -13,7 +13,7 @@ from app.core.security import require_admin, require_role, hash_password
 from app.core.config import settings
 from app.core.email import send_email
 from app.models.models import (
-    Order, BookingV2, LeadV2, Product, AdminUser, ActivityLog,
+    Order, BookingV2, LeadV2, Product, AdminUser, ActivityLog, CareerApplication,
     BkashTransaction, NagadTransaction, PaymentReconciliation,
 )
 from app.schemas.schemas import (
@@ -54,6 +54,16 @@ async def get_stats(
     total_products = await db.scalar(
         select(func.count(Product.id)).where(Product.is_deleted == False, Product.is_active == True)
     )
+    # Sidebar badges: new job applications and products at/below their stock alert level.
+    new_applications = await db.scalar(
+        select(func.count(CareerApplication.id)).where(CareerApplication.is_deleted == False, CareerApplication.status == "new")  # noqa: E712
+    )
+    low_stock = await db.scalar(
+        select(func.count(Product.id)).where(
+            Product.is_deleted == False, Product.is_active == True,  # noqa: E712
+            Product.stock_quantity <= func.coalesce(Product.low_stock_threshold, 5),
+        )
+    )
 
     recent_orders_result = await db.execute(
         select(Order)
@@ -79,6 +89,8 @@ async def get_stats(
         total_leads=total_leads or 0,
         new_leads=new_leads or 0,
         total_products=total_products or 0,
+        new_applications=new_applications or 0,
+        low_stock=low_stock or 0,
         recent_orders=[
             {
                 "id": str(o.id),

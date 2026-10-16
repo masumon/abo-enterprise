@@ -81,8 +81,8 @@ const HOMEPAGE_MAP: { bn: string; href?: string; noteBn: string }[] = [
   { bn: "ক্যাটাগরি টাইল", href: "#quick-categories", noteBn: "এই পাতায়" },
   { bn: "ফিচার আইকন সারি", noteBn: "ওয়েবসাইটে নির্দিষ্ট — কিছু করতে হবে না" },
   { bn: "আপন অ্যাপ ব্যান্ড", href: "/sumon/apon", noteBn: "অ্যাপ প্রকাশ করলে নিজে থেকেই দেখায়" },
-  { bn: "ফ্ল্যাশ সেল", href: "/sumon/coupons#flash", noteBn: "কুপন ও ফ্ল্যাশ সেল পাতায়" },
-  { bn: "কম্বো প্যাক", href: "/sumon/combos", noteBn: "কম্বো পাতায় সাজান" },
+  { bn: "ফ্ল্যাশ সেল", href: "/sumon/coupons#flash", noteBn: "অফার পাতার ফ্ল্যাশ সেল ট্যাবে" },
+  { bn: "কম্বো প্যাক", href: "/sumon/coupons#combos", noteBn: "অফার পাতার কম্বো ট্যাবে সাজান" },
   { bn: "ফিচার্ড পণ্য", href: "/sumon/products", noteBn: "পণ্যে \"ফিচার্ড\" চালু করুন" },
   { bn: "সেবা", href: "/sumon/services", noteBn: "সেবা পাতায়" },
   { bn: "সফটওয়্যার ও প্রজেক্ট", href: "/sumon/showcase", noteBn: "শোকেস পাতায়" },
@@ -641,7 +641,7 @@ export default function AdminHomepageContentPage() {
             id="slides"
             n={3}
             title={bn ? "স্লাইডার / প্রোমো স্লাইড" : "Slider / promo slides"}
-            desc={bn ? "মোবাইল ও ট্যাবলেটে হিরোর জায়গায় ঘুরতে থাকা ছবি; ডেস্কটপে ডান পাশের কার্ডে। ফ্ল্যাশ সেলের ব্যানার “কুপন ও ফ্ল্যাশ সেল” পাতায়।" : "Rotating images: the mobile/tablet hero and the desktop promo card. Flash-sale banners live in Coupons & Flash Sale."}
+            desc={bn ? "মোবাইল ও ট্যাবলেটে হিরোর জায়গায় ঘুরতে থাকা ছবি; ডেস্কটপে ডান পাশের কার্ডে। ফ্ল্যাশ সেলের ব্যানার “অফার” পাতায়।" : "Rotating images: the mobile/tablet hero and the desktop promo card. Flash-sale banners live in Offers."}
             aside={
               <Link href="/sumon/promo-slides" className="btn btn-outline btn-sm gap-1.5">
                 <GalleryHorizontal className="w-3.5 h-3.5" /> {bn ? "স্লাইড বদলান" : "Edit slides"}

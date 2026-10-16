@@ -251,7 +251,7 @@ export default function AdminProductsPage() {
         title="Products"
         titleBn="পণ্য ব্যবস্থাপনা"
         description={`${total} products — add, edit, stock & pricing`}
-        descriptionBn={`${bnNum(total)}টি পণ্য — যোগ, সম্পাদনা, স্টক ও দাম`}
+        descriptionBn={`${bnNum(total)}টি পণ্য — যোগ, সম্পাদনা, স্টক ও দাম। হোমপেজের “ফিচার্ড পণ্য” অংশে দেখাতে পণ্যে “ফিচার্ড” চালু করুন।`}
         actions={
           <>
             <input ref={importInputRef} type="file" accept=".csv" className="hidden" onChange={handleImportFile} />

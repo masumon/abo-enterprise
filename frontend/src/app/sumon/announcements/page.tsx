@@ -142,7 +142,7 @@ export default function AdminAnnouncementsPage() {
         title="Announcement Bar"
         titleBn="ঘোষণা বার"
         description="The scrolling strip at the very top of the website — offers, notices & info."
-        descriptionBn="ওয়েবসাইটের একদম উপরে চলমান ছোট লেখা — অফার, নোটিশ ও তথ্য।"
+        descriptionBn="ওয়েবসাইটের একদম উপরে চলমান ছোট লেখা — অফার, নোটিশ ও তথ্য। নিজের ঘোষণা না দিলে নমুনা লেখা দেখায়; সব ঘোষণা বন্ধ করলে বারটি লুকিয়ে যায়।"
         className="mb-4"
         actions={
           <div className="flex items-center gap-2 flex-wrap justify-end">

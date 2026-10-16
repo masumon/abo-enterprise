@@ -182,7 +182,7 @@ const SECTIONS: Section[] = [
     id: "ecommerce_config",
     title: "দোকানের সাধারণ সেটিং",
     icon: <ShoppingBag className="w-4 h-4" />,
-    note: "চেকআউট OTP, ডেলিভারি চার্জ, ফ্রি লিমিট ও COD সুরক্ষা → “চেকআউট ও ডেলিভারি” পাতায়। কুরিয়ার → “কুরিয়ার” পাতায়। কুপন ও ফ্ল্যাশ সেল → “কুপন ও ফ্ল্যাশ সেল” পাতায়।",
+    note: "চেকআউট OTP, ডেলিভারি চার্জ, ফ্রি লিমিট ও COD সুরক্ষা → “চেকআউট ও ডেলিভারি” পাতায়। কুরিয়ার → “কুরিয়ার” পাতায়। কুপন, ফ্ল্যাশ সেল ও কম্বো → “অফার” পাতায়।",
     fields: [
       { key: "currency", label: "মুদ্রা", placeholder: "BDT" },
       { key: "min_order_amount", label: "সর্বনিম্ন অর্ডার (৳)", type: "number", placeholder: "200" },
