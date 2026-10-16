@@ -469,4 +469,4 @@ a.admin-card:focus-visible, a.admin-surface:focus-visible, .admin-link-row:focus
 .admin-marquee > span { display: inline-block; white-space: nowrap; }
 .admin-marquee[data-run="1"] > span { animation: admin-marquee 9s ease-in-out infinite alternate; }
 @keyframes admin-marquee { 0%, 12% { transform: translateX(0); } 88%, 100% { transform: translateX(calc(-1 * var(--shift, 0px))); } }
-@media (prefers-reduced-motion: reduce) { .admin-marquee[data-run="1"] > span { animation: none; } .admin-marquee { text-overflow: ellipsis; } }
+/* Keeps moving even when the device asks for reduced motion: it is slow and small, and the only way to read a long name. */

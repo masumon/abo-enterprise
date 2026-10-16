@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, CornerDownLeft } from "lucide-react";
+import { Search, CornerDownLeft, X } from "lucide-react";
 import { ADMIN_NAV_GROUPS, canSeeNavItem, type AdminRole } from "@/lib/adminNav";
 import { cn } from "@/lib/utils";
 
@@ -71,15 +71,19 @@ export default function AdminCommandPalette({ role }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-[90] flex items-start justify-center pt-3 sm:pt-[15vh] px-3 sm:px-4"
+      className="fixed inset-0 z-[90] flex items-stretch sm:items-start justify-center sm:pt-[15vh] sm:px-4"
       style={{ background: "rgba(0,0,0,0.45)", backdropFilter: "blur(3px)" }}
       onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
       role="dialog"
       aria-modal="true"
       aria-label="Quick navigation"
     >
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 w-full max-w-lg overflow-hidden">
-        <div className="flex items-center gap-2 px-4 border-b border-gray-100">
+      <div className="bg-white dark:bg-gray-900 flex flex-col h-dvh sm:h-auto rounded-none sm:rounded-2xl shadow-2xl ring-1 ring-black/5 dark:ring-white/10 w-full max-w-lg overflow-hidden">
+        <div className="sm:hidden flex items-center justify-between px-4 pt-4 pb-2">
+          <p className="text-lg font-extrabold text-gray-900 dark:text-gray-100">কোথায় যেতে চান?</p>
+          <button type="button" onClick={() => setOpen(false)} aria-label="বন্ধ করুন" className="min-h-11 min-w-11 -mr-2 flex items-center justify-center rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-white/10"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="flex items-center gap-2 px-4 border-b border-gray-100 dark:border-white/10 max-sm:mx-3 max-sm:mb-2 max-sm:rounded-2xl max-sm:border max-sm:border-brand-200 max-sm:bg-brand-50/60 dark:max-sm:bg-white/5">
           <Search className="w-5 h-5 text-brand-500 flex-shrink-0" />
           <input
             ref={inputRef}
@@ -96,7 +100,7 @@ export default function AdminCommandPalette({ role }: Props) {
           />
           <kbd className="hidden sm:inline text-[10px] text-gray-400 border border-gray-200 rounded px-1.5 py-0.5 flex-shrink-0">Esc</kbd>
         </div>
-        <ul className="max-h-[70dvh] sm:max-h-72 overflow-y-auto py-2" role="listbox">
+        <ul className="flex-1 min-h-0 sm:flex-none sm:max-h-72 overflow-y-auto py-2" role="listbox">
           {items.length === 0 && (
             <li className="px-4 py-6 text-center text-sm text-gray-400">কিছু পাওয়া যায়নি</li>
           )}
@@ -113,12 +117,12 @@ export default function AdminCommandPalette({ role }: Props) {
                     i === active ? "bg-brand-50 text-brand-700 dark:bg-brand-500/15 dark:text-brand-200" : "text-gray-700 dark:text-gray-200"
                   )}
                 >
-                  <Icon className="w-5 h-5 sm:w-4 sm:h-4 flex-shrink-0 text-brand-500" />
+                  <span className="w-10 h-10 sm:w-8 sm:h-8 rounded-xl bg-brand-50 dark:bg-brand-500/15 flex items-center justify-center flex-none"><Icon className="w-5 h-5 sm:w-4 sm:h-4 text-brand-600 dark:text-brand-300" /></span>
                   <span className="flex-1 min-w-0">
                     <span className="block font-medium truncate">{item.labelBn ?? item.label}</span>
-                    {item.descBn && <span className="block text-xs text-gray-400 truncate">{item.descBn}</span>}
+                    {item.descBn && <span className="block text-xs text-gray-500 dark:text-gray-400 line-clamp-1">{item.descBn}</span>}
                   </span>
-                  <span className="text-[10px] text-gray-300 uppercase">{item.group}</span>
+                  <span className="hidden min-[400px]:inline-block text-[10px] font-semibold text-brand-600 dark:text-brand-200 bg-brand-50 dark:bg-white/10 rounded-full px-2 py-0.5 max-w-[6.5rem] truncate">{item.group}</span>
                   {i === active && <CornerDownLeft className="w-3.5 h-3.5 text-brand-400" />}
                 </button>
               </li>

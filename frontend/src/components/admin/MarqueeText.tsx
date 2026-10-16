@@ -18,6 +18,7 @@ export default function MarqueeText({ text, className }: { text: string; classNa
     measure();
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
     if (ro && box.current) ro.observe(box.current);
+    if (ro && inner.current) ro.observe(inner.current);
     return () => ro?.disconnect();
   }, [text]);
 

@@ -1,5 +1,6 @@
 "use client";
 
+import DashboardGreeting from "@/components/admin/DashboardGreeting";
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import {
@@ -116,19 +117,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="admin-page">
-      <AdminPageHeader
-        className="admin-greeting"
-        title={`${greetEn}!`}
-        titleBn={`${greetBn}!`}
-        description="Business command center — what needs attention, what changed, and what is performing"
-        descriptionBn="ব্যবসার কমান্ড সেন্টার — এখন কী দরকার, কী পরিবর্তন হয়েছে এবং কী ভালো চলছে"
-        actions={<div className="flex items-center gap-2">
-          {updatedLabel && <span className="text-xs text-gray-400 hidden sm:inline">{bn ? "আপডেট" : "Updated"} {updatedLabel}</span>}
-          <button onClick={() => fetchStats(true)} disabled={refreshing} className="admin-btn-secondary !py-2 !px-3" title={bn ? "রিফ্রেশ" : "Refresh"} aria-label={bn ? "রিফ্রেশ" : "Refresh"}>
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
-          </button>
-        </div>}
-      />
+      <DashboardGreeting bn={bn} lastUpdated={lastUpdated} refreshing={refreshing} onRefresh={() => fetchStats(true)} />
 
       {/* Plain-language list of what is still missing; hides itself when everything is done. */}
       <SetupChecklist totalProducts={stats ? stats.total_products : null} />
@@ -141,13 +130,13 @@ export default function AdminDashboard() {
       </div>}
 
       <section>
-        <div className="flex items-center gap-2 mb-3"><Clock className="w-4 h-4 text-sky-500" /><h2 className="text-sm font-semibold text-gray-700">{bn ? "এখন মনোযোগ দরকার" : "Needs attention"}</h2></div>
+        <div className="admin-section-title mb-3"><Clock className="w-5 h-5 text-sky-500 flex-none" /><h2 className="text-inherit font-extrabold !text-[inherit]">{bn ? "এখন মনোযোগ দরকার" : "Needs attention"}</h2></div>
         <div className="admin-pair-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-          <Link href="/sumon/orders" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "অপেক্ষমান অর্ডার" : "Pending orders"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.pending_orders ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "অর্ডার দেখুন →" : "Review orders →"}</p></Link>
-          <Link href="/sumon/bookings" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "অপেক্ষমান বুকিং" : "Pending bookings"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.pending_bookings ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "বুকিং দেখুন →" : "Review bookings →"}</p></Link>
-          <Link href="/sumon/leads" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "নতুন লিড" : "New leads"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.new_leads ?? 0}</p><p className="text-xs text-brand-600 mt-1">{bn ? "লিড দেখুন →" : "Follow up leads →"}</p></Link>
-          <Link href="/sumon/payments" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5" />{bn ? "ব্যর্থ পেমেন্ট" : "Failed payments"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : failedPayments === null ? "—" : failedPayments}</p><p className="text-xs text-brand-600 mt-1">{bn ? "পেমেন্ট দেখুন →" : "Review payments →"}</p></Link>
-          <Link href="/sumon/inventory" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500 flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{bn ? "কম স্টক" : "Low stock"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : lowStock === null ? "—" : lowStock}</p><p className="text-xs text-brand-600 mt-1">{outOfStock !== null && outOfStock > 0 ? (bn ? `${outOfStock}টি স্টক শেষ` : `${outOfStock} out of stock`) : (bn ? "ইনভেন্টরি দেখুন →" : "Review inventory →")}</p></Link>
+          <Link href="/sumon/orders" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "অপেক্ষমান অর্ডার" : "Pending orders"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.pending_orders ?? 0}</p><span className="fancy-link mt-2 !min-h-9">{bn ? "অর্ডার দেখুন →" : "Review orders →"}</span></Link>
+          <Link href="/sumon/bookings" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "অপেক্ষমান বুকিং" : "Pending bookings"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.pending_bookings ?? 0}</p><span className="fancy-link mt-2 !min-h-9">{bn ? "বুকিং দেখুন →" : "Review bookings →"}</span></Link>
+          <Link href="/sumon/leads" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500">{bn ? "নতুন লিড" : "New leads"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : stats?.new_leads ?? 0}</p><span className="fancy-link mt-2 !min-h-9">{bn ? "লিড দেখুন →" : "Follow up leads →"}</span></Link>
+          <Link href="/sumon/payments" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500 flex items-center gap-1"><CreditCard className="w-3.5 h-3.5" />{bn ? "ব্যর্থ পেমেন্ট" : "Failed payments"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : failedPayments === null ? "—" : failedPayments}</p><span className="fancy-link mt-2 !min-h-9">{bn ? "পেমেন্ট দেখুন →" : "Review payments →"}</span></Link>
+          <Link href="/sumon/inventory" className="admin-card p-4 hover:border-brand-200 transition-colors"><p className="text-xs text-gray-500 flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" />{bn ? "কম স্টক" : "Low stock"}</p><p className="text-2xl font-bold text-gray-900 mt-1">{loading ? "—" : lowStock === null ? "—" : lowStock}</p><span className="fancy-link mt-2 !min-h-9">{outOfStock !== null && outOfStock > 0 ? (bn ? `${outOfStock}টি স্টক শেষ` : `${outOfStock} out of stock`) : (bn ? "ইনভেন্টরি দেখুন →" : "Review inventory →")}</span></Link>
         </div>
       </section>
       <section>
@@ -155,7 +144,7 @@ export default function AdminDashboard() {
         <AdminQuickActions actions={quickActions} />
       </section>
       <details className="group lg:[&>summary]:pointer-events-none" open={webOpen} onToggle={(e) => setWebOpen((e.target as HTMLDetailsElement).open)}>
-        <summary className="list-none cursor-pointer min-h-11 flex items-center"><div className="flex items-center gap-2 mb-1"><Sparkles className="w-4 h-4 text-accent-500" /><h2 className="text-sm font-semibold text-gray-700">{bn ? "ওয়েবসাইট সাজান" : "Make the website yours"}</h2></div><span className="ml-auto text-xs text-brand-600 lg:hidden group-open:hidden">দেখুন ▾</span></summary>
+        <summary className="list-none cursor-pointer min-h-11 flex items-center"><div className="admin-section-title mb-1 flex-1"><Sparkles className="w-5 h-5 text-accent-500 flex-none" /><h2 className="text-inherit font-extrabold !text-[inherit]">{bn ? "ওয়েবসাইট সাজান" : "Make the website yours"}</h2></div><span className="ml-auto fancy-link lg:hidden group-open:hidden">দেখুন ▾</span></summary>
         <p className="text-xs text-gray-500 mb-3">{bn ? "ব্যানার, ছবি, ভিডিও, লেখা বদলান — বদলালে সাইটে সাথে সাথে দেখা যাবে।" : "Change banners, photos, videos and text — updates show on the site right away."}</p>
         <AdminQuickActions actions={ADMIN_WEBSITE_ACTIONS} />
       </details>
