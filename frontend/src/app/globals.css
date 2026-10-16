@@ -1438,7 +1438,7 @@
 /* ── Admin readability & touch polish (visual only; no layout/logic change) ──
    Pale grey help text was hard to read on white cards, very small labels were
    tiring on phones, and 14px inputs made iPhones zoom in on every tap. */
-.admin-shell :is(.text-gray-400, .form-help):not(.admin-sidebar *):not(.admin-sidebar) { color: rgb(100 116 139); }
+.admin-shell:not(.admin-dark) :is(.text-gray-400, .form-help):not(.admin-sidebar *):not(.admin-sidebar) { color: rgb(100 116 139); }
 .admin-shell [class~="text-[10px]"] { font-size: 11px; }
 @media (max-width: 639px) {
   .admin-shell [class~="text-[10px]"], .admin-shell [class~="text-[11px]"] { font-size: 12px; }
@@ -1519,3 +1519,15 @@ html:not(.dark) #page-content :is(.text-gray-500, .text-muted) { color: rgb(75 8
     inset: -10px -4px;
   }
 }
+
+/* Admin readability (2026-10-16, measured WCAG AA 4.5:1): secondary text was a step too
+   faint — light: grey on the #f1f2f7 page; dark: slate-500 on #101828 cards. Attribute
+   selectors on purpose (plain utility selectors clash with Tailwind @apply). */
+.admin-shell:not(.admin-dark) :is([class~="text-muted"], [class~="text-gray-500"]) { color: rgb(75 85 99); }
+.admin-shell:not(.admin-dark) [class~="text-red-500"] { color: rgb(220 38 38); }
+.admin-dark :is([class~="text-muted"], [class~="text-gray-500"], [class~="text-gray-400"], [class*="text-gray-400"]) { color: rgb(148 163 184); }
+.admin-dark :is([class~="text-brand-600"], [class~="text-brand-700"], [class~="text-brand-800"]):not([class*="dark:text-"]) { color: rgb(147 167 255); }
+.admin-dark :is([class~="text-emerald-700"], [class~="text-emerald-800"]):not([class*="dark:text-"]) { color: rgb(110 231 183); }
+.admin-dark :is([class~="text-amber-700"], [class~="text-amber-800"]):not([class*="dark:text-"]) { color: rgb(252 211 77); }
+.admin-dark :is([class~="text-red-500"], [class~="text-red-600"], [class~="text-red-700"]):not([class*="dark:text-"]) { color: rgb(248 113 113); }
+.admin-shell [class~="bg-blue-100"][class~="text-blue-600"] { color: rgb(29 78 216); }

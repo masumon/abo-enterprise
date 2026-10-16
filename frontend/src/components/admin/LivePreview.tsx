@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Smartphone, Monitor, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +34,8 @@ export default function LivePreview({
   className,
 }: LivePreviewProps) {
   const [dark, setDark] = useState(false);
+  // Follow the admin theme at first: in admin dark mode the text inside is light, so a light canvas would hide it.
+  useEffect(() => { if (document.querySelector(".admin-dark")) setDark(true); }, []);
   const [device, setDevice] = useState<"mobile" | "desktop">(defaultDevice);
 
   return (

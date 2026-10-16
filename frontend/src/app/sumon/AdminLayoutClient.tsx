@@ -62,7 +62,8 @@ export default function AdminLayoutClient({ children }: { children: React.ReactN
   }
 
   return (
-    <div className={`min-h-screen admin-shell${dark ? " admin-dark" : ""}`}>
+    <div className={`min-h-screen admin-shell${dark ? " admin-dark dark" : ""}`}>
+      {/* "dark" too: switches on every Tailwind dark: colour already written in the admin pages. */}
       {sidebarOpen && (
         <button
           type="button"
