@@ -42,6 +42,7 @@ from app.api.v1.routes import (
     ai_catalog,
     ai_hub,
     backup,
+    couriers,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -91,3 +92,4 @@ api_router.include_router(app_download.router)
 api_router.include_router(ai_catalog.router)
 api_router.include_router(ai_hub.router)
 api_router.include_router(backup.router)
+api_router.include_router(couriers.router)

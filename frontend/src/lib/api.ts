@@ -190,6 +190,10 @@ export const ordersApi = {
   updateStatus: (id: string, status: string) =>
     api.patch<ApiResponse<Order>>(`/api/v1/orders/${id}/status`, { status }),
 
+  courierSend: (id: string, provider?: string) =>
+    api.post<ApiResponse<Order>>(`/api/v1/orders/${id}/courier/send`, { provider }, { timeout: 60000 }),
+  courierUndo: (id: string) => api.post<ApiResponse<null>>(`/api/v1/orders/${id}/courier/undo`, {}),
+
   refund: (id: string, data: { amount: number; method: string; note?: string; restock?: boolean }) =>
     api.post<ApiResponse<Order>>(`/api/v1/orders/${id}/refund`, data),
 

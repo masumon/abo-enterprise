@@ -26,6 +26,7 @@ interface AdminOrder {
   advance_amount?: number; advance_paid?: boolean;
   courier_provider?: string | null; courier_tracking_id?: string | null; courier_status?: string | null;
   refund_amount?: number | null; refund_method?: string | null; refund_note?: string | null; refunded_at?: string | null;
+  courier_dispatch_at?: string | null; courier_error?: string | null;
   /** Institutional invoice identity (manual_sql/0009); all null on a personal order. */
   company_name?: string | null; company_bin?: string | null; company_tin?: string | null;
   po_number?: string | null; billing_address?: string | null;
@@ -33,6 +34,7 @@ interface AdminOrder {
 }
 
 const STATUSES = ["pending", "confirmed", "processing", "shipped", "delivered", "cancelled", "returned"];
+const COURIER_CHOICES: [string, string][] = [["steadfast", "Steadfast"], ["pathao", "Pathao"], ["redx", "RedX"]];
 const REFUND_METHODS: [string, string][] = [["cash", "নগদ"], ["bkash", "bKash"], ["nagad", "Nagad"], ["rocket", "Rocket"], ["bank", "ব্যাংক"], ["card", "কার্ড"], ["other", "অন্যান্য"]];
 const COURIERS = ["pathao", "steadfast", "redx", "other"];
 
@@ -104,6 +106,47 @@ export default function AdminOrdersPage() {
     searchTimer.current = setTimeout(() => { setSearch(v); setPage(1); }, 400);
   };
 
+  // Courier AUTO: after "confirmed" the server sends in 15 s — show an undo bar meanwhile.
+  const [pendingCourier, setPendingCourier] = useState<{ id: string; number: string; until: number } | null>(null);
+  const [nowTick, setNowTick] = useState(0);
+  const [courierChoice, setCourierChoice] = useState("steadfast");
+  const [courierBusy, setCourierBusy] = useState(false);
+  useEffect(() => {
+    if (!pendingCourier) return;
+    const t = setInterval(() => {
+      setNowTick(Date.now());
+      if (Date.now() > pendingCourier.until) { setPendingCourier(null); void load(); }
+    }, 500);
+    return () => clearInterval(t);
+  }, [pendingCourier]); // eslint-disable-line react-hooks/exhaustive-deps
+  const undoCourier = async () => {
+    if (!pendingCourier) return;
+    try {
+      await ordersApi.courierUndo(pendingCourier.id);
+      toast("success", "কুরিয়ারে পাঠানো বাতিল হয়েছে");
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "বাতিল করা যায়নি"));
+    } finally {
+      setPendingCourier(null);
+      void load();
+    }
+  };
+  const sendCourier = async () => {
+    if (!detail) return;
+    setCourierBusy(true);
+    try {
+      const r = await ordersApi.courierSend(detail.id, courierChoice);
+      const u = r.data.data as unknown as AdminOrder;
+      setDetail((prev) => prev ? { ...prev, ...u, items: prev.items } : prev);
+      toast("success", r.data.message || "কুরিয়ারে পাঠানো হয়েছে");
+      void load();
+    } catch (e) {
+      toast("error", apiErrorMessage(e, "কুরিয়ারে পাঠানো যায়নি"));
+    } finally {
+      setCourierBusy(false);
+    }
+  };
+
   const updateStatus = async (id: string, status: string) => {
     setUpdatingId(id);
     try {
@@ -115,6 +158,11 @@ export default function AdminOrdersPage() {
       await load();
       if (detail?.id === id) setDetail(prev => prev ? { ...prev, order_status: status } : prev);
       toast("success", `Order status updated to ${status}`);
+      const upd = r.data.data as unknown as AdminOrder;
+      if (upd?.courier_dispatch_at) {
+        setNowTick(Date.now());
+        setPendingCourier({ id, number: upd.order_number, until: new Date(upd.courier_dispatch_at).getTime() });
+      }
     } catch (err) {
       toast("error", apiErrorMessage(err, "Failed to update order status"));
     } finally {
@@ -497,6 +545,17 @@ export default function AdminOrdersPage() {
         </div>
       )}
 
+      {pendingCourier && (
+        <div role="status" className="fixed inset-x-3 bottom-3 sm:left-auto sm:right-6 sm:w-[26rem] z-[60] rounded-2xl bg-gray-900 text-white shadow-2xl p-3 flex items-center gap-3">
+          <Loader2 className="w-5 h-5 animate-spin flex-none" aria-hidden />
+          <p className="flex-1 text-sm">
+            #{pendingCourier.number} কুরিয়ারে যাবে <b>{Math.max(0, Math.ceil((pendingCourier.until - nowTick) / 1000)).toLocaleString("bn-BD")}</b> সেকেন্ডে
+          </p>
+          <button type="button" onClick={undoCourier} className="btn btn-sm min-h-11 bg-white text-gray-900 hover:bg-gray-100">↶ ফিরিয়ে নিন</button>
+          <button type="button" onClick={undoCourier} aria-label="বাতিল" className="min-h-11 min-w-11 flex items-center justify-center rounded-lg hover:bg-white/10"><X className="w-5 h-5" /></button>
+        </div>
+      )}
+
       {/* Order Detail Modal */}
       {(detail || detailLoading) && (
         <div
@@ -651,22 +710,30 @@ export default function AdminOrdersPage() {
                       {courierSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                       Save Courier
                     </button>
-                    {detail.courier_provider === "steadfast" && detail.courier_tracking_id ? (
+                    {detail.courier_tracking_id ? (
                       <span className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg px-2.5 py-1.5 font-medium">
-                        ✓ Steadfast: {detail.courier_tracking_id}
+                        ✓ {detail.courier_provider ?? "courier"}: {detail.courier_tracking_id}
                         {detail.courier_status ? ` · ${detail.courier_status.replace(/_/g, " ")}` : ""}
                       </span>
                     ) : (
+                      <span className="inline-flex flex-wrap items-center gap-2">
+                      <select value={courierChoice} onChange={(e) => setCourierChoice(e.target.value)} className="input text-sm min-h-11 w-auto" aria-label="কুরিয়ার বাছুন">
+                        {COURIER_CHOICES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                      </select>
                       <button
                         type="button"
-                        onClick={sendToSteadfast}
-                        disabled={steadfastSending || ["cancelled", "delivered"].includes(detail.order_status)}
-                        className="btn btn-sm gap-1 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
-                        title="Steadfast কুরিয়ারে consignment তৈরি করুন"
+                        onClick={sendCourier}
+                        disabled={courierBusy || ["cancelled", "delivered", "returned"].includes(detail.order_status)}
+                        className="btn btn-sm min-h-11 gap-1 bg-emerald-600 hover:bg-emerald-700 text-white disabled:opacity-50"
+                        title="কুরিয়ারে পার্সেল বুক করুন"
                       >
-                        {steadfastSending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-                        Send to Steadfast
+                        {courierBusy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                        কুরিয়ারে পাঠান
                       </button>
+                      </span>
+                    )}
+                    {detail.courier_error && !detail.courier_tracking_id && (
+                      <p className="w-full text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg px-2.5 py-1.5">⚠️ {detail.courier_error}</p>
                     )}
                   </div>
                 </div>

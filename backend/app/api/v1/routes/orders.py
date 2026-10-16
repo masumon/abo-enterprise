@@ -849,18 +849,16 @@ async def update_order_status(
         }
         background_tasks.add_task(send_email, order.customer_email, subject_map[order.order_status], html)
 
-    # Auto-send to Steadfast when an order is confirmed (if enabled in Settings).
-    # Failures never block the status update — they are logged only.
-    already_sent = order.courier_provider == "steadfast" and bool(order.courier_tracking_id)
-    if payload.status == "confirmed" and old_status != "confirmed" and not already_sent:
+    # Courier AUTO mode (Admin → কুরিয়ার, or the old Steadfast auto-send switch): when an
+    # order is confirmed it is sent after a 15 s undo window. Never blocks the status update.
+    if payload.status == "confirmed" and old_status != "confirmed" and not order.courier_tracking_id:
         try:
-            cfg = await steadfast_settings(db)
-            if cfg["enabled"] and cfg["auto_send"]:
-                await _dispatch_steadfast(db, order, background_tasks, admin_id)
-        except SteadfastError as exc:
-            logger.warning("Auto Steadfast send skipped for %s: %s", order.order_number, exc)
+            from app.api.v1.routes.couriers import schedule_if_auto
+
+            await schedule_if_auto(db, order, background_tasks, admin_id)
+            await db.refresh(order)
         except Exception:  # pragma: no cover - defensive
-            logger.exception("Unexpected error during auto Steadfast send for %s", order.order_number)
+            logger.exception("Could not schedule courier for %s", order.order_number)
 
     return ApiResponse(data=OrderOut.model_validate(order), message="Order status updated")
 

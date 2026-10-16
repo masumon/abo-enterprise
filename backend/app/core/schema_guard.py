@@ -41,6 +41,8 @@ ORDER_REFUND_COLUMNS: dict[str, str] = {
     "refund_method": "VARCHAR(30)",
     "refund_note": "TEXT",
     "refunded_at": "TIMESTAMPTZ",
+    "courier_dispatch_at": "TIMESTAMPTZ",  # manual_sql/0050
+    "courier_error": "TEXT",
 }
 
 

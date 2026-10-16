@@ -155,6 +155,9 @@ class Order(Base):
     refund_method: Mapped[str | None] = mapped_column(String(30))
     refund_note: Mapped[str | None] = mapped_column(Text)
     refunded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # Courier automation (manual_sql/0050): send time while the 15 s undo runs, last error.
+    courier_dispatch_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    courier_error: Mapped[str | None] = mapped_column(Text)
     # Institutional invoice identity (manual_sql/0009). All NULL on a personal
     # order, which is exactly how every existing row behaves.
     company_name: Mapped[str | None] = mapped_column(String(255))

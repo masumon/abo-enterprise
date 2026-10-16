@@ -343,6 +343,8 @@ class OrderOut(BaseModel):
     refund_method: str | None = None
     refund_note: str | None = None
     refunded_at: datetime | None = None
+    courier_dispatch_at: datetime | None = None
+    courier_error: str | None = None
     model_config = {"from_attributes": True}
 
 
