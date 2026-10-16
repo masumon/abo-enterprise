@@ -24,7 +24,7 @@ const TRUST_EDITORS: Record<string, { fields: JsonListField[]; newItem: () => Re
     newItem: () => ({ label_en: "", label_bn: "", href: "/" }),
   },
 };
-import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Users, Trophy, Zap, Code, Mail, Truck } from "lucide-react";
+import { Save, RefreshCw, Loader2, Building2, Share2, ImageIcon, ShoppingBag, MapPin, Check, SaveAll, Shield, Globe, Users, Trophy, Zap, Code, Mail, Truck, Info } from "lucide-react";
 import { useToastStore } from "@/store/toast";
 import { parseGoogleMapsEmbedInput } from "@/lib/maps";
 import { apiErrorMessage } from "@/lib/apiError";
@@ -99,6 +99,8 @@ interface Section {
   fields: SettingField[];
   /** Info line rendered under the section header (e.g. Image Manager pointer). */
   note?: string;
+  /** Show the "Image Manager খুলুন" link under the note (image-related sections only). */
+  mediaLink?: boolean;
   /** Optional link to a diagnostic/test page for this section (e.g. Steadfast connection test). */
   testHref?: string;
   testLabel?: string;
@@ -114,6 +116,7 @@ const SECTIONS: Section[] = [
     icon: <Building2 className="w-4 h-4" />,
     // Logo/favicon/PWA icon/OG image moved to the Image Manager — one place
     // for every image, with size guides, preview and auto-optimize.
+    mediaLink: true,
     note: "লোগো, ফ্যাভিকন, PWA আইকন ও OG ছবি এখন Image Manager-এ (ছবি ব্যবস্থাপনা) — সব ছবি এক জায়গায়।",
     fields: [
       { key: "site_name", label: "Company Name", placeholder: "ABO Enterprise", defaultValue: "ABO Enterprise" },
@@ -410,11 +413,11 @@ function SectionCard({
       </div>
       {section.note && (
         <div className="px-6 py-2.5 bg-brand-50/50 border-b border-brand-100/60 text-xs text-brand-800 flex items-center gap-2 flex-wrap">
-          <ImageIcon className="w-3.5 h-3.5 flex-shrink-0" />
+          {section.mediaLink ? <ImageIcon className="w-3.5 h-3.5 flex-shrink-0" /> : <Info className="w-3.5 h-3.5 flex-shrink-0" aria-hidden />}
           <span>{section.note}</span>
-          <Link href="/sumon/media" className="font-semibold underline hover:no-underline max-[899px]:inline-flex max-[899px]:items-center max-[899px]:min-h-[40px]">
+          {section.mediaLink && <Link href="/sumon/media" className="font-semibold underline hover:no-underline max-[899px]:inline-flex max-[899px]:items-center max-[899px]:min-h-[40px]">
             Image Manager খুলুন →
-          </Link>
+          </Link>}
         </div>
       )}
       {section.testHref && (

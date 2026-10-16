@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { adminApi } from "@/lib/api";
 import { apiErrorMessage } from "@/lib/apiError";
 import { useToastStore } from "@/store/toast";
-import { Loader2, History } from "lucide-react";
+import { Loader2, History, X, Copy } from "lucide-react";
+import { ADMIN_MODAL_BACKDROP_STYLE, ADMIN_MODAL_PANEL_STYLE } from "@/lib/adminModalStyles";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminToolbar from "@/components/admin/AdminToolbar";
 
@@ -36,6 +37,17 @@ export default function AdminSystemEventsPage() {
   const [severityFilter, setSeverityFilter] = useState("");
   const [allTypes, setAllTypes] = useState<string[]>([]);
   const PER_PAGE = 50;
+  // Clicked event → full message + details (the table row truncates long messages).
+  const [detail, setDetail] = useState<SystemEventRow | null>(null);
+  const copyDetail = async (e: SystemEventRow) => {
+    const text = `${e.created_at}  [${e.severity}] ${e.event_type} (${e.source})
+
+${e.message}${e.meta && Object.keys(e.meta).length ? `
+
+${JSON.stringify(e.meta, null, 2)}` : ""}`;
+    try { await navigator.clipboard.writeText(text); toast("success", "কপি হয়েছে"); }
+    catch { toast("error", "কপি করা যায়নি"); }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -122,11 +134,12 @@ export default function AdminSystemEventsPage() {
         <div className="admin-card overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
           <div className="space-y-3 p-3 min-[641px]:hidden">
             {events.map((e) => (
-              <article key={e.id} className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+              <article key={e.id} role="button" tabIndex={0} onClick={() => setDetail(e)} onKeyDown={(k) => { if (k.key === "Enter" || k.key === " ") { k.preventDefault(); setDetail(e); } }} className="cursor-pointer rounded-xl border border-gray-100 bg-white p-4 shadow-sm hover:border-brand-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-400">
                 <div className="flex flex-wrap items-start justify-between gap-2"><span className={`badge text-xs font-semibold ${SEVERITY_STYLE[e.severity] ?? SEVERITY_STYLE.info}`}>{e.severity}</span><time className="text-right text-xs text-gray-500">{new Date(e.created_at).toLocaleString("en-BD", {year:"numeric",month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</time></div>
                 <p className="mt-3 break-words text-sm font-semibold capitalize text-gray-900">{e.event_type.replace(/_/g, " ")}</p>
                 <p className="mt-1 break-words text-xs text-gray-500">Source: {e.source}</p>
-                <p className="mt-3 whitespace-pre-wrap break-words border-t border-gray-100 pt-3 text-sm text-gray-700">{e.message}</p>
+                <p className="mt-3 line-clamp-4 whitespace-pre-wrap break-words border-t border-gray-100 pt-3 text-sm text-gray-700">{e.message}</p>
+                <p className="mt-2 text-xs font-semibold text-brand-600">বিস্তারিত দেখুন →</p>
               </article>
             ))}
           </div>
@@ -143,7 +156,7 @@ export default function AdminSystemEventsPage() {
               </thead>
               <tbody>
                 {events.map((e) => (
-                  <tr key={e.id}>
+                  <tr key={e.id} tabIndex={0} onClick={() => setDetail(e)} onKeyDown={(k) => { if (k.key === "Enter") setDetail(e); }} className="cursor-pointer hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-400" title="ক্লিক করে পুরো বার্তা দেখুন">
                     <td className="text-gray-500 text-xs whitespace-nowrap" data-label="Time">
                       {new Date(e.created_at).toLocaleString("en-BD", {
                         year: "numeric", month: "short", day: "numeric",
@@ -157,7 +170,7 @@ export default function AdminSystemEventsPage() {
                     </td>
                     <td className="text-gray-700" data-label="Type">{e.event_type.replace(/_/g, " ")}</td>
                     <td className="text-xs text-gray-500" data-label="Source">{e.source}</td>
-                    <td className="text-sm text-gray-700 max-w-md truncate" data-label="Message" title={e.message}>{e.message}</td>
+                    <td className="text-sm text-gray-700 max-w-md truncate" data-label="Message">{e.message}</td>
                   </tr>
                 ))}
               </tbody>
@@ -166,6 +179,41 @@ export default function AdminSystemEventsPage() {
           {events.length === 0 && (
             <p className="p-8 text-center text-gray-500">{search || typeFilter || severityFilter ? "No events match your filter" : "No system events recorded yet"}</p>
           )}
+        </div>
+      )}
+
+      {detail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={ADMIN_MODAL_BACKDROP_STYLE}
+          onClick={() => setDetail(null)} onKeyDown={(k) => { if (k.key === "Escape") setDetail(null); }}
+          role="dialog" aria-modal="true" aria-label="ঘটনার বিস্তারিত">
+          <div className="rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col animate-scale-in" style={ADMIN_MODAL_PANEL_STYLE} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3 px-5 sm:px-6 py-4 border-b border-gray-100">
+              <div className="min-w-0">
+                <span className={`badge text-xs font-semibold ${SEVERITY_STYLE[detail.severity] ?? SEVERITY_STYLE.info}`}>{detail.severity}</span>
+                <h2 className="mt-2 text-lg font-semibold text-gray-900 break-words capitalize">{detail.event_type.replace(/_/g, " ")}</h2>
+                <p className="mt-0.5 text-xs text-gray-500 break-words">
+                  {new Date(detail.created_at).toLocaleString("bn-BD", { timeZone: "Asia/Dhaka", year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" })} · উৎস: {detail.source}
+                </p>
+              </div>
+              <button type="button" onClick={() => setDetail(null)} aria-label="বন্ধ করুন" autoFocus className="min-h-11 min-w-11 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="overflow-y-auto flex-1 px-5 sm:px-6 py-4 space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-gray-500 mb-1.5">পুরো বার্তা</p>
+                <p className="whitespace-pre-wrap break-words text-sm text-gray-800 rounded-xl bg-gray-50 p-3">{detail.message}</p>
+              </div>
+              {detail.meta && Object.keys(detail.meta).length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 mb-1.5">বিস্তারিত তথ্য</p>
+                  <pre className="whitespace-pre-wrap break-all text-xs text-gray-700 rounded-xl bg-gray-50 p-3 font-mono">{JSON.stringify(detail.meta, null, 2)}</pre>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 px-5 sm:px-6 py-3 border-t border-gray-100">
+              <button type="button" onClick={() => copyDetail(detail)} className="btn btn-outline btn-sm min-h-11 gap-1.5"><Copy className="w-4 h-4" aria-hidden /> কপি করুন</button>
+              <button type="button" onClick={() => setDetail(null)} className="btn btn-primary btn-sm min-h-11">বন্ধ করুন</button>
+            </div>
+          </div>
         </div>
       )}
 
