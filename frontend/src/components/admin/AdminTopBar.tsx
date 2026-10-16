@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Search, Sparkles, ChevronRight, Menu, Bell, RotateCw, Languages, Moon, Sun, X, ShoppingCart, Briefcase, Users, AlertTriangle, MoreVertical, ExternalLink, HelpCircle } from "lucide-react";
 import { getAdminPageInfo, getAdminPageTitle } from "@/lib/adminNav";
+import MarqueeText from "@/components/admin/MarqueeText";
 import AdminInstallButton from "@/components/admin/AdminInstallButton";
 import { useAlertStore } from "@/store/alerts";
 import { useLanguageStore } from "@/store/language";
@@ -113,7 +114,11 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
           {pathname !== "/sumon" && (
             <>
               <ChevronRight className="w-3.5 h-3.5 text-gray-300 shrink-0 hidden sm:block" />
-              <span className="font-semibold text-gray-900 truncate inline-flex items-center gap-2">{pageInfo?.icon && <pageInfo.icon className="w-4 h-4 text-brand-600 flex-none" aria-hidden />}{pageTitle}</span>
+              <span className="font-semibold text-gray-900 inline-flex items-center gap-2 min-w-0 flex-1">
+                {pageInfo?.icon && <pageInfo.icon className="w-4 h-4 text-brand-600 flex-none" aria-hidden />}
+                <MarqueeText text={pageTitle} className="sm:hidden flex-1" />
+                <span className="hidden sm:inline truncate">{pageTitle}</span>
+              </span>
             </>
           )}
         </nav>
@@ -125,7 +130,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event("abo-admin-search"))}
-            className="h-10 min-w-[40px] sm:h-9 sm:min-w-0 px-2.5 flex items-center justify-center gap-1.5 rounded-xl hover:bg-gray-100 transition-colors text-gray-600 text-xs font-semibold"
+            className="h-10 min-w-[40px] sm:h-9 sm:min-w-0 px-2.5 hidden sm:flex items-center justify-center gap-1.5 rounded-xl hover:bg-gray-100 transition-colors text-gray-600 text-xs font-semibold"
             aria-label={lang === "bn" ? "পেজ খুঁজুন" : "Search pages"}
             title={lang === "bn" ? "পেজ খুঁজুন (Ctrl+K)" : "Search pages (Ctrl+K)"}
           >
@@ -352,6 +357,15 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
             </span>
           </button>
         </div>
+      </div>
+      {/* Phones: the search lives on its own row under the title, full width. */}
+      <div className="sm:hidden px-3 pb-2">
+        <button type="button" onClick={() => window.dispatchEvent(new Event("abo-admin-search"))}
+          className="w-full h-11 rounded-xl flex items-center gap-2.5 px-3.5 text-sm text-gray-500 dark:text-gray-400 bg-white/70 dark:bg-white/5 border border-brand-100 dark:border-white/10 shadow-sm"
+          aria-label={lang === "bn" ? "পেজ খুঁজুন" : "Search pages"}>
+          <Search className="w-4 h-4 text-brand-500 flex-none" aria-hidden />
+          <span className="truncate">{lang === "bn" ? "পেজ খুঁজুন…" : "Search pages…"}</span>
+        </button>
       </div>
     </header>
   );

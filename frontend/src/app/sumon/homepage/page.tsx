@@ -437,7 +437,7 @@ export default function AdminHomepageContentPage() {
       ) : (
         <div className="space-y-6">
           {/* Sticky section navigator — the homepage in visitor order. */}
-          <nav aria-label={bn ? "হোমপেজের অংশ" : "Homepage sections"} className="sticky top-14 z-10 enterprise-card px-2 py-2 shadow-sm">
+          <nav aria-label={bn ? "হোমপেজের অংশ" : "Homepage sections"} className="sticky top-[6.5rem] sm:top-14 z-10 enterprise-card px-2 py-2 shadow-sm">
             <div className="flex gap-1 overflow-x-auto">
               {SECTIONS.map((x, idx) => (
                 <a
