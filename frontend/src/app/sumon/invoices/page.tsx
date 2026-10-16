@@ -579,7 +579,7 @@ export default function AdminInvoicesPage() {
       )}
 
       {showCreate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0" style={{ background: "rgba(0,0,0,0.5)" }}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 max-[640px]:items-end max-[640px]:p-0" style={ADMIN_MODAL_BACKDROP_STYLE}>
           <div className={`max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 shadow-2xl max-[640px]:max-h-[94dvh] max-[640px]:rounded-b-none max-[640px]:rounded-t-2xl max-[640px]:p-4 ${ADMIN_MODAL_PANEL_CLASS}`} style={ADMIN_MODAL_PANEL_STYLE}>
             <div className="mb-5 flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">{tx("Create Invoice")}</h2>
