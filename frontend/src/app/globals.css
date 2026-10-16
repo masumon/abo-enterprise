@@ -945,6 +945,8 @@
      restyle the inner form so labels/inputs read on the dark glass. */
   .auth-glass label { color: rgba(255, 255, 255, 0.92); }
   .auth-glass > p, .auth-glass .text-muted, .auth-glass .text-heading { color: rgba(255, 255, 255, 0.75); }
+  .auth-glass a:not(.btn), .auth-glass .text-brand-600, .auth-glass .text-brand-700 { color: #bfdbfe; }
+  .auth-glass :is(.text-gray-500, .text-gray-600, .text-gray-700) { color: rgba(255, 255, 255, 0.78); }
   .auth-glass .input,
   .auth-glass input:not([type="submit"]):not([type="checkbox"]),
   .auth-glass textarea,

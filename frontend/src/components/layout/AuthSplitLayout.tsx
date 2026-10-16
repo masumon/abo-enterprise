@@ -77,13 +77,13 @@ export default function AuthSplitLayout({ children, title, subtitle, badge }: Au
 
       <div className={`flex items-center justify-center p-6 sm:p-10 relative z-10 ${bgUrl ? "" : "page-surface"}`}>
         <div className="w-full max-w-md">
-          <div className="lg:hidden text-center mb-8">
+          <div className="lg:hidden text-center mb-5">
             <BrandLogo size="lg" href={false} variant={bgUrl ? "light" : "brand"} className="mx-auto mb-3" />
             <p className={`text-sm font-semibold ${bgUrl ? "text-white" : "text-heading"}`}>{getBrandFullTitle(lang)}</p>
           </div>
           <div className="mb-6">
             {badge && (
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-brand-500/15 text-brand-600 dark:text-brand-200 mb-2">
+              <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full mb-2 ${bgUrl ? "bg-white/15 text-white ring-1 ring-white/25" : "bg-brand-500/15 text-brand-600 dark:text-brand-200"}`}>
                 {badge}
               </span>
             )}
@@ -101,6 +101,10 @@ export default function AuthSplitLayout({ children, title, subtitle, badge }: Au
           >
             {children}
           </div>
+          {/* Trust line under the card — why it is safe to sign in. */}
+          <ul className={`mt-4 flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[11px] font-medium ${bgUrl ? "text-white/85" : "text-muted"}`}>
+            {(lang === "bn" ? ["🔒 নিরাপদ কোড-লগইন", "🔑 পাসওয়ার্ড লাগে না", "✉️ কোড ইমেইলে আসে"] : ["🔒 Secure code sign-in", "🔑 No password", "✉️ Code sent by email"]).map((x) => <li key={x}>{x}</li>)}
+          </ul>
         </div>
       </div>
     </div>
