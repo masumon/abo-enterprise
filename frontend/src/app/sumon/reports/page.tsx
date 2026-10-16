@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Download, Loader2, BarChart3 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -59,7 +59,11 @@ export default function AdminReportsPage() {
 
   useEffect(() => { load(); }, [load]);
 
+  const busyRef = useRef(false);
   const handleExport = async (kind: "csv" | "pdf" | "xlsx" = "csv") => {
+    // One download at a time: a second click (or a click on another format) is ignored until this one ends.
+    if (busyRef.current) return;
+    busyRef.current = true;
     setExporting(kind);
     try {
       const params = { start_date: startDate, end_date: endDate };
@@ -67,6 +71,7 @@ export default function AdminReportsPage() {
     } catch (err) {
       toast("error", apiErrorMessage(err, "ডাউনলোড করা যায়নি"));
     } finally {
+      busyRef.current = false;
       setExporting("");
     }
   };

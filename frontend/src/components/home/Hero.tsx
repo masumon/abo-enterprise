@@ -59,8 +59,9 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
   const { lang } = useLanguageStore();
   const t = useT();
   const { settings } = usePublicSettings(["hero_image_url", "hero_mobile_image_url", "hero_promo_media_url", "hero_title_en", "hero_title_bn", "hero_subtitle_en", "hero_subtitle_bn", "hero_cta_text", "hero_cta_url", "free_delivery_min_amount", HERO_TEXT_STYLE_KEY]);
-  const { stats } = usePublicStats();
+  const { stats, loading: statsLoading } = usePublicStats();
   const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [activityLoaded, setActivityLoaded] = useState(false);
 
   const heroImage = resolveHomeBannerImage(settings);
   const heroIsVideo = isVideoUrl(heroImage);
@@ -84,7 +85,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
     publicApi.activity().then((r) => {
       const items = r.data.data;
       if (items?.length) setActivity(items);
-    }).catch(() => {});
+    }).catch(() => {}).finally(() => setActivityLoaded(true));
   }, []);
 
   // Only show tiles that have a real, non-zero number — "—"/0 tiles look unfinished.
@@ -157,7 +158,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
       {/* ── Desktop hero (≥1024px) — rich media layout ── */}
       <section
         className={cn(
-          "hidden lg:flex gradient-hero min-h-[92vh] min-h-[92dvh] relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]",
+          "hidden lg:flex gradient-hero lg:min-h-[clamp(480px,66dvh,640px)] relative overflow-hidden -mt-[var(--navbar-offset)] pt-[var(--navbar-height)]",
           heroVAlignClass(hstyle)
         )}
       >
@@ -205,10 +206,10 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
           <div className="absolute bottom-0 left-0 w-72 h-72 bg-accent-500/10 rounded-full blur-3xl" />
         </div>
 
-        <div className="container mx-auto px-4 xl:px-6 pt-8 pb-20 xl:pt-12 relative z-10">
-          <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-10 xl:gap-16 items-center">
-            <div className="text-white flex flex-col gap-6 animate-slide-up [text-shadow:0_2px_14px_rgba(0,0,0,0.35)]">
-              <div className={cn("relative z-10 flex flex-col gap-6", heroAlignClass(hstyle))}>
+        <div className="container mx-auto px-4 xl:px-6 pt-6 pb-14 xl:pt-8 relative z-10">
+          <div className="grid grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] gap-8 xl:gap-12 items-center">
+            <div className="text-white flex flex-col gap-4 animate-slide-up [text-shadow:0_2px_14px_rgba(0,0,0,0.35)]">
+              <div className={cn("relative z-10 flex flex-col gap-4", heroAlignClass(hstyle))}>
                 <div className="flex flex-wrap items-center gap-2 [text-shadow:none]">
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium bg-black/35 backdrop-blur-md border border-white/20">
                     <Zap className="w-3.5 h-3.5 text-yellow-300" aria-hidden />
@@ -276,7 +277,7 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
                   fallback={heroPromoMedia ? mediaCard(heroPromoMedia, "448px") : null}
                 />
 
-                {(tiles.length > 0 || recent.length > 0) && (
+                {(tiles.length > 0 || recent.length > 0 || statsLoading || !activityLoaded) && (
                   // Solid dark glass: readable over any background photo.
                   <div className="rounded-3xl p-4 xl:p-5 bg-[#0c1330]/85 backdrop-blur-xl border border-white/15 shadow-2xl">
                     <div className="flex items-center gap-3 mb-3">
@@ -287,6 +288,12 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
                       </div>
                     </div>
 
+                    {tiles.length === 0 && statsLoading && (
+                      // Same height as the real tiles, so the card does not jump when the numbers arrive.
+                      <div className="grid grid-cols-4 gap-2" aria-hidden>
+                        {[0, 1, 2, 3].map((i) => <div key={i} className="rounded-xl bg-white/[0.08] border border-white/10 h-[76px] animate-pulse" />)}
+                      </div>
+                    )}
                     {tiles.length > 0 && (
                       <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${tiles.length}, minmax(0, 1fr))` }}>
                         {tiles.map((item) => (
@@ -301,6 +308,11 @@ export default function Hero({ initialHeroSlides }: { initialHeroSlides?: PromoS
                       </div>
                     )}
 
+                    {recent.length === 0 && !activityLoaded && (
+                      <div className={cn("space-y-1 [@media(max-height:780px)]:hidden", "mt-3")} aria-hidden>
+                        {[0, 1, 2].map((i) => <div key={i} className="h-[34px] rounded-lg bg-white/[0.06] animate-pulse" />)}
+                      </div>
+                    )}
                     {recent.length > 0 && (
                       // Hidden on short laptop screens so the card never runs into the wave.
                       <div className={cn("space-y-1 [@media(max-height:780px)]:hidden", tiles.length > 0 && "mt-3")}>

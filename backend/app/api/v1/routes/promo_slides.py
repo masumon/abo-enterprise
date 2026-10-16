@@ -4,8 +4,13 @@ One table drives every carousel on the site; `placement` selects the surface
 ("hero", "flash_sale"), so adding a new one needs no new endpoint.
 """
 
+import asyncio
+import re
+import struct
 import uuid
 from datetime import datetime, timezone
+
+import httpx
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import or_, select
@@ -26,6 +31,43 @@ router = APIRouter(prefix="/promo-slides", tags=["promo-slides"])
 
 def _serialize(row: PromoSlide) -> dict:
     return PromoSlideOut.model_validate(row).model_dump(mode="json")
+
+
+# Width/height ratio of a Cloudinary image, so the website can reserve the exact box before the
+# image downloads (no layout jump). Cloudinary re-renders it as a tiny PNG whose header holds the
+# size; the result is cached per URL (an uploaded image never changes).
+_ratio_cache: dict[str, float | None] = {}
+_UPLOAD = re.compile(r"^(https://res\.cloudinary\.com/[^/]+/image/upload/)(.+)$")
+
+
+async def _image_ratio(url: str | None) -> float | None:
+    if not url:
+        return None
+    if url in _ratio_cache:
+        return _ratio_cache[url]
+    m = _UPLOAD.match(url)
+    ratio: float | None = None
+    if m:
+        try:
+            async with httpx.AsyncClient(timeout=httpx.Timeout(3.0)) as client:
+                r = await client.get(f"{m.group(1)}w_64,c_limit,f_png/{m.group(2)}")
+            if r.status_code == 200 and r.content[1:4] == b"PNG":
+                w, h = struct.unpack(">II", r.content[16:24])
+                if w and h:
+                    ratio = round(w / h, 4)
+        except Exception:  # noqa: BLE001 — optional hint only
+            ratio = None
+    if ratio is not None or not m:
+        _ratio_cache[url] = ratio  # do not cache a transient failure
+    return ratio
+
+
+async def _with_ratios(rows: list[PromoSlide]) -> list[dict]:
+    out = [_serialize(r) for r in rows]
+    ratios = await asyncio.gather(*[_image_ratio(r.image_url) for r in rows])
+    for o, rt in zip(out, ratios):
+        o["aspect_ratio"] = rt
+    return out
 
 
 @router.get("", response_model=ApiResponse)
@@ -52,7 +94,7 @@ async def list_promo_slides(
     )).scalars().all()
     # A slide with no media would render an empty frame in the carousel.
     return ApiResponse(
-        data=[_serialize(r) for r in rows if r.image_url or r.video_url],
+        data=await _with_ratios([r for r in rows if r.image_url or r.video_url]),
         message="ok",
     )
 

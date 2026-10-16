@@ -78,6 +78,8 @@ export interface PromoSlide {
   is_active: boolean;
   starts_at?: string | null;
   ends_at?: string | null;
+  /** Width/height of the image, supplied by the API so the box is reserved before it loads. */
+  aspect_ratio?: number | null;
 }
 
 export interface Review {

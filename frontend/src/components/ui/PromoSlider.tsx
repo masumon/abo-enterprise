@@ -118,9 +118,9 @@ function ratioOfClass(cls: string): number {
  * image has loaded, adopts the image's own ratio (within sane limits) — so any banner the
  * admin uploads is shown whole and fills the card edge to edge on every screen, with no
  * coloured side bars and nothing cropped. */
-function SlideMedia({ aspect, onFit, children }: { aspect: string; onFit: () => void; children: (onRatio: (r: number) => void) => React.ReactNode }) {
+function SlideMedia({ aspect, knownRatio, onFit, children }: { aspect: string; knownRatio?: number | null; onFit: () => void; children: (onRatio: (r: number) => void) => React.ReactNode }) {
   const base = ratioOfClass(aspect);
-  const [ratio, setRatio] = useState<number | null>(null);
+  const [ratio, setRatio] = useState<number | null>(knownRatio ?? null);
   const fitted = ratio && ratio >= 1.2 && ratio <= 4.5 && Math.abs(ratio - base) / base > 0.03 ? ratio : null;
   useEffect(() => { if (fitted) onFit(); }, [fitted, onFit]);
   return (
@@ -208,7 +208,7 @@ export default function PromoSlider({ placement, fallback, className, aspect = "
         {slides.map((slide, index) => {
           const title = (lang === "bn" ? slide.title_bn : slide.title_en) || slide.title_en || "";
           const media = (
-            <SlideMedia aspect={aspect} onFit={refreshHeight}>
+            <SlideMedia aspect={aspect} knownRatio={slide.aspect_ratio} onFit={refreshHeight}>
               {(onRatio) => slide.video_url ? (
                 <AutoVideo
                   src={slide.video_url}

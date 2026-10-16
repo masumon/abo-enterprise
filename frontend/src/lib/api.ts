@@ -461,8 +461,11 @@ export async function downloadCsv(path: string, filename: string): Promise<void>
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
+  a.rel = "noopener";
+  a.style.display = "none";
+  document.body.appendChild(a); // some browsers ignore clicks on detached links
   a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 10000);
 }
 
 // ── Bulk Product Import ──────────────────────────────────────────────────────
