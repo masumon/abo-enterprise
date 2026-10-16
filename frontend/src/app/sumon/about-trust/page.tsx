@@ -1,5 +1,6 @@
 "use client";
 
+import SectionStatus, { type StatusCheck } from "@/components/admin/SectionStatus";
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { BadgeCheck, Check, ExternalLink, Handshake, Image as ImageIcon, Loader2, RefreshCw, Save, ShieldCheck, Star, Users } from "lucide-react";
@@ -135,6 +136,10 @@ export default function AboutTrustPage() {
                     <span className="text-brand-600 dark:text-brand-300">{block.icon}</span>{block.title}
                   </h2>
                   <p className="text-xs text-muted mt-1">দেখা যায়: {block.where}</p>
+                  <SectionStatus className="mt-2" checks={block.jsonKeys.map((k) => {
+                    let n = 0; try { const v = JSON.parse(values[k] || (ABOUT_TRUST_EDITORS[k]?.mapKey ? "{}" : "[]")); n = Array.isArray(v) ? v.length : Object.keys(v ?? {}).length; } catch { n = -1; }
+                    return { label: block.title, ok: n > 0, hint: n < 0 ? "তথ্যের ধরন ঠিক নেই — সম্পাদনা করে আবার সংরক্ষণ করুন" : "এখনো কিছু যোগ করা হয়নি" };
+                  })} />
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <a href={block.view} target="_blank" rel="noopener noreferrer" className="btn btn-outline btn-sm gap-1.5">

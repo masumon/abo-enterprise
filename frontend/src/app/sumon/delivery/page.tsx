@@ -1,5 +1,6 @@
 "use client";
 
+import SectionStatus from "@/components/admin/SectionStatus";
 import { useEffect, useState } from "react";
 import { Save, Loader2 } from "lucide-react";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
@@ -81,6 +82,7 @@ export default function AdminDeliveryPage() {
           </button>
         }
       />
+      <SectionStatus checks={[["delivery_charge_sylhet", "সিলেটের চার্জ"], ["delivery_charge_dhaka", "ঢাকার চার্জ"], ["delivery_charge_outside", "ঢাকার বাইরের চার্জ"]].map(([k, label]) => ({ label, ok: Number(values[k]) > 0, hint: "০ বা ফাঁকা" }))} />
 
       {loading ? (
         <div className="flex justify-center py-16"><Loader2 className="w-7 h-7 animate-spin text-brand-500" /></div>
