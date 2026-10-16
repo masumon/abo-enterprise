@@ -139,7 +139,7 @@ ${JSON.stringify(e.meta, null, 2)}` : ""}`;
                 <p className="mt-3 break-words text-sm font-semibold capitalize text-gray-900">{e.event_type.replace(/_/g, " ")}</p>
                 <p className="mt-1 break-words text-xs text-gray-500">Source: {e.source}</p>
                 <p className="mt-3 line-clamp-4 whitespace-pre-wrap break-words border-t border-gray-100 pt-3 text-sm text-gray-700">{e.message}</p>
-                <p className="mt-2 text-xs font-semibold text-brand-600">বিস্তারিত দেখুন →</p>
+                <p className="fancy-link mt-2">বিস্তারিত দেখুন →</p>
               </article>
             ))}
           </div>

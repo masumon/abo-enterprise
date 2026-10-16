@@ -748,9 +748,9 @@ export default function AdminHomepageContentPage() {
                   <span className="font-medium text-heading flex-1 min-w-0">{m.bn}</span>
                   {m.href ? (
                     m.href.startsWith("#") ? (
-                      <a href={m.href} className="text-xs text-brand-600 dark:text-brand-300 hover:underline whitespace-nowrap">{m.noteBn}</a>
+                      <a href={m.href} className="fancy-link">{m.noteBn}</a>
                     ) : (
-                      <Link href={m.href} className="text-xs text-brand-600 dark:text-brand-300 hover:underline inline-flex items-center gap-1 text-right">
+                      <Link href={m.href} className="fancy-link">
                         {m.noteBn} <ExternalLink className="w-3 h-3 flex-none" />
                       </Link>
                     )

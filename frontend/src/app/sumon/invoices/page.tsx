@@ -328,7 +328,7 @@ export default function AdminInvoicesPage() {
                     <span className="text-xs text-gray-500">{new Date(inv.created_at).toLocaleDateString("en-BD")}</span>
                     <span className="text-base font-bold tabular-nums text-brand-700">{formatPrice(inv.total)}</span>
                   </span>
-                  <span className="mt-2 block text-xs font-medium text-brand-600">{tx("View details")} →</span>
+                  <span className="fancy-link mt-2">{tx("View details")} →</span>
                 </button>
               ))}
             </div>

@@ -151,7 +151,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
                 <div role="dialog" aria-label={lang === "bn" ? "এই পাতার সাহায্য" : "Page help"} className="absolute right-0 mt-2 w-72 max-w-[calc(100vw-1.5rem)] z-40 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-white/10 shadow-xl p-4 space-y-2">
                   <p className="text-sm font-bold text-gray-900 dark:text-gray-100">{pageTitle}</p>
                   <p className="text-sm text-gray-600 dark:text-gray-300">{pageInfo?.descBn ?? (lang === "bn" ? "অ্যাডমিনের মূল পাতা — আজকের অর্ডার, বুকিং ও জরুরি কাজ এক নজরে।" : "Admin home — today's orders, bookings and urgent work at a glance.")}</p>
-                  <Link href="/sumon/help" onClick={() => setHelpOpen(false)} className="inline-flex min-h-11 items-center text-sm font-semibold text-brand-600 hover:underline">
+                  <Link href="/sumon/help" onClick={() => setHelpOpen(false)} className="fancy-link">
                     {lang === "bn" ? "পুরো সাহায্য গাইড →" : "Full help guide →"}
                   </Link>
                 </div>
@@ -228,7 +228,7 @@ export default function AdminTopBar({ adminName, adminRole, onMenuClick, dark, o
                       <button
                         type="button"
                         onClick={() => { setDismissed(new Set(["orders", "bookings", "leads"])); markAllNotificationsRead(); }}
-                        className="text-xs text-brand-600 hover:underline"
+                        className="fancy-link"
                       >
                         {lang === "bn" ? "সব ক্লিয়ার" : "Clear all"}
                       </button>

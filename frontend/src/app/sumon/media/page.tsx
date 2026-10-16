@@ -707,7 +707,7 @@ export default function AdminMediaPage() {
                     <Link
                       href={section.adminHref}
                       onClick={(e) => e.stopPropagation()}
-                      className="text-xs text-brand-600 hover:underline flex items-center gap-1"
+                      className="fancy-link"
                     >
                       Full editor <ExternalLink className="w-3 h-3" />
                     </Link>

@@ -229,7 +229,7 @@ export default function AnalyticsPage() {
 
       {tab === "business" && (<AdminSectionBoundary>
       <div className="flex justify-end">
-        <Link href="/sumon/reports?report=revenue" className="text-xs font-medium text-brand-600 hover:underline">
+        <Link href="/sumon/reports?report=revenue" className="fancy-link">
           {bn ? "সম্পূর্ণ রিপোর্ট দেখুন (Reports) →" : "View the full, exact-numbers report in Reports →"}
         </Link>
       </div>

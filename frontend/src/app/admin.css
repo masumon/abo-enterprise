@@ -440,3 +440,33 @@ a.admin-card:focus-visible, a.admin-surface:focus-visible, .admin-link-row:focus
 /* Page title card (.admin-page-header bakes in a white background): dark card in dark mode so its
    heading/description (light text) are readable on every admin page. */
 .admin-dark .admin-page-header { background-color: #101828; border-color: rgba(255, 255, 255, 0.08); box-shadow: none; }
+
+/* ── Section title band (e.g. "অপারেশন ও ব্যবসার অবস্থা"): bigger, with a tinted fade and accent bar. ── */
+.admin-section-title {
+  display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 0.9rem; border-radius: 0.9rem;
+  font-size: 1.125rem; font-weight: 800; line-height: 1.4; color: #1e2b6b;
+  background: linear-gradient(90deg, rgba(53, 71, 155, 0.12) 0%, rgba(53, 71, 155, 0.02) 100%);
+  border-left: 4px solid #35479b;
+}
+@media (min-width: 1024px) { .admin-section-title { font-size: 1.3rem; } }
+.admin-dark .admin-section-title { color: #e0e7ff; background: linear-gradient(90deg, rgba(129, 140, 248, 0.2) 0%, rgba(129, 140, 248, 0.03) 100%); border-left-color: #818cf8; }
+
+/* ── Light-mode glass cards (admin only): soft tinted translucency; real blur only on desktop with a
+   pointer (blur is costly on phones, so there it is just the tint). Dark mode is unchanged. ── */
+.admin-shell:not(.admin-dark) :is(.admin-card, .admin-surface, .admin-page-header) {
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.88) 0%, rgba(238, 243, 255, 0.7) 100%);
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 8px 28px rgba(53, 71, 155, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+@media (min-width: 1024px) and (hover: hover) {
+  .admin-shell:not(.admin-dark) :is(.admin-card, .admin-surface, .admin-page-header) {
+    -webkit-backdrop-filter: blur(12px) saturate(1.15); backdrop-filter: blur(12px) saturate(1.15);
+  }
+}
+
+/* ── Phone header: long page names glide right-to-left instead of being cut; search sits below. ── */
+.admin-marquee { overflow: hidden; min-width: 0; }
+.admin-marquee > span { display: inline-block; white-space: nowrap; }
+.admin-marquee[data-run="1"] > span { animation: admin-marquee 9s ease-in-out infinite alternate; }
+@keyframes admin-marquee { 0%, 12% { transform: translateX(0); } 88%, 100% { transform: translateX(calc(-1 * var(--shift, 0px))); } }
+@media (prefers-reduced-motion: reduce) { .admin-marquee[data-run="1"] > span { animation: none; } .admin-marquee { text-overflow: ellipsis; } }

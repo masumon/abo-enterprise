@@ -375,7 +375,7 @@ export default function AponAdminPage() {
             <section key={key} className={card}>
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="font-bold text-heading">{title}</h2>
-                {!v(key) && <button type="button" onClick={() => set(key, JSON.stringify(defaults))} className="text-xs font-semibold text-brand-600 hover:underline">ডিফল্ট তালিকা থেকে সম্পাদনা শুরু করুন</button>}
+                {!v(key) && <button type="button" onClick={() => set(key, JSON.stringify(defaults))} className="fancy-link">ডিফল্ট তালিকা থেকে সম্পাদনা শুরু করুন</button>}
               </div>
               {!v(key) && <p className="text-xs text-muted">এখন ওয়েবসাইটে ডিফল্ট তালিকা দেখাচ্ছে। সম্পাদনা করতে উপরের লিংকে চাপুন।</p>}
               {v(key) && <JsonListEditor value={v(key)} onChange={(json) => set(key, json)} fields={fields} newItem={newItem} aiContext={`Apon mobile app download page — ${title}`} />}

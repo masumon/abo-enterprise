@@ -113,7 +113,7 @@ export default function LegalPagesAdmin() {
               href={page.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-brand-600 hover:underline inline-flex items-center gap-1"
+              className="fancy-link"
             >
               ওয়েবসাইটে দেখুন <ExternalLink className="w-3 h-3" />
             </a>

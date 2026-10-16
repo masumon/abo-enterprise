@@ -99,9 +99,9 @@ export default function DashboardOperationsPanel() {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Activity className="w-4 h-4 text-brand-500" />
-        <h2 className="text-sm font-semibold text-gray-700">{bn ? "অপারেশন ও ব্যবসার অবস্থা" : "Operations & business status"}</h2>
+      <div className="admin-section-title">
+        <Activity className="w-6 h-6 text-brand-500 flex-none" aria-hidden />
+        <h2 className="text-inherit font-extrabold !text-[inherit]">{bn ? "অপারেশন ও ব্যবসার অবস্থা" : "Operations & business status"}</h2>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -123,17 +123,17 @@ export default function DashboardOperationsPanel() {
         <div className="admin-card p-4">
           <p className="text-xs text-gray-500">{bn ? "পেমেন্ট সমস্যা" : "Payment failures"}</p>
           <p className="text-xl font-bold text-gray-900 mt-1">{failedPayments ?? "—"}</p>
-          <Link href="/sumon/payments" className="text-xs text-brand-600 hover:underline">{bn ? "পেমেন্ট দেখুন →" : "Review payments →"}</Link>
+          <Link href="/sumon/payments" className="fancy-link">{bn ? "পেমেন্ট দেখুন →" : "Review payments →"}</Link>
         </div>
         <div className="admin-card p-4">
           <p className="text-xs text-gray-500">{bn ? "ইমেইল সমস্যা" : "Email failures"}</p>
           <p className="text-xl font-bold text-gray-900 mt-1">{failedEmails ?? "—"}</p>
-          <Link href="/sumon/analytics" className="text-xs text-brand-600 hover:underline">{bn ? "অপারেশন দেখুন →" : "Open operations →"}</Link>
+          <Link href="/sumon/analytics" className="fancy-link">{bn ? "অপারেশন দেখুন →" : "Open operations →"}</Link>
         </div>
         <div className="admin-card p-4">
           <p className="text-xs text-gray-500">{bn ? "অপঠিত নোটিফিকেশন" : "Unread notifications"}</p>
           <p className="text-xl font-bold text-gray-900 mt-1">{unreadCount ?? "—"}</p>
-          <Link href="/sumon/notifications" className="text-xs text-brand-600 hover:underline">{bn ? "সব দেখুন →" : "View all →"}</Link>
+          <Link href="/sumon/notifications" className="fancy-link">{bn ? "সব দেখুন →" : "View all →"}</Link>
         </div>
         <div className="admin-card p-4">
           <p className="text-xs text-gray-500">{bn ? "অর্ডার পেমেন্ট · ৭ দিন" : "Order payments · 7d"}</p>
@@ -158,7 +158,7 @@ export default function DashboardOperationsPanel() {
         <div className="admin-card p-4">
           <p className="text-xs text-gray-500">{bn ? "ফিরতি গ্রাহক · ৩০ দিন" : "Returning customers · 30d"}</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">{customerMetrics ? customerMetrics.returning_customers : "—"}</p>
-          <Link href="/sumon/customers" className="text-xs text-brand-600 hover:underline">{bn ? "গ্রাহক দেখুন →" : "View customers →"}</Link>
+          <Link href="/sumon/customers" className="fancy-link">{bn ? "গ্রাহক দেখুন →" : "View customers →"}</Link>
         </div>
         <div className="admin-card p-4">
           <p className="text-xs text-gray-500">{bn ? "শীর্ষ পণ্য · ৩০ দিন" : "Top products · 30d"}</p>
@@ -183,7 +183,7 @@ export default function DashboardOperationsPanel() {
         <div className="admin-card lg:col-span-2">
           <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex items-center justify-between">
             <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><Clock className="w-4 h-4 text-sky-500" />{bn ? "মনোযোগ প্রয়োজন" : "Needs attention"}</h3>
-            <Link href="/sumon/analytics" className="text-xs text-brand-600 hover:underline">{bn ? "বিস্তারিত →" : "Details →"}</Link>
+            <Link href="/sumon/analytics" className="fancy-link">{bn ? "বিস্তারিত →" : "Details →"}</Link>
           </div>
           <div className="divide-y divide-gray-50">
             {notifications === null ? (
@@ -219,7 +219,7 @@ export default function DashboardOperationsPanel() {
       <div className="admin-card">
         <div className="px-4 sm:px-5 py-4 border-b border-gray-100 flex items-center justify-between">
           <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm"><Activity className="w-4 h-4 text-emerald-500" aria-hidden="true" />{bn ? "সিস্টেম হেলথ" : "System health"}</h3>
-          <Link href="/sumon/analytics" className="text-xs text-brand-600 hover:underline">{bn ? "মনিটরিং →" : "Monitoring →"}</Link>
+          <Link href="/sumon/analytics" className="fancy-link">{bn ? "মনিটরিং →" : "Monitoring →"}</Link>
         </div>
         <div className="p-4 sm:p-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Link href="/sumon/system-health" className={`rounded-lg border p-3 min-h-11 ${healthFailed ? "border-red-300 bg-red-50/60" : "border-gray-100"}`}><p className="text-xs text-gray-500">{bn ? "সামগ্রিক" : "Overall"}</p><p className="text-lg font-bold text-gray-900 mt-1">{health ? `${health.healthy}/${health.total}` : "—"}</p></Link>

@@ -506,7 +506,7 @@ export default function ProductDetailClient({ product }: Props) {
           <section className="mt-10">
             <div className="flex items-center justify-between gap-3 mb-4">
               <h2 className="text-xl font-bold">{lang === "bn" ? "একই ধরনের আরও পণ্য" : "Related Products"}</h2>
-              <Link href={categoryHref} className="text-sm font-semibold text-brand-600 hover:underline flex-shrink-0">{lang === "bn" ? "সব দেখুন" : "View all"}</Link>
+              <Link href={categoryHref} className="fancy-link fancy-link--arrow flex-shrink-0">{lang === "bn" ? "সব দেখুন" : "View all"}</Link>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
               {related.map((p) => <ProductCard key={p.id ?? p.slug} product={p} onAddToCart={openCart} />)}

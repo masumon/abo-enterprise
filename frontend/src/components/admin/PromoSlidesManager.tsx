@@ -193,7 +193,7 @@ export default function PromoSlidesManager({ only, embedded = false }: { only?: 
                     </div>
                     <button
                       onClick={() => setEditing({ ...empty, placement: value })}
-                      className="text-xs font-semibold text-brand-600 hover:underline whitespace-nowrap flex-none"
+                      className="fancy-link flex-none"
                     >
                       + যোগ করুন
                     </button>

@@ -1330,3 +1330,28 @@ html:not(.dark) #page-content :is(.text-gray-500, .text-muted) { color: rgb(75 8
 /* Whole card opens its editor/preview (buttons inside keep their own action). */
 [data-open-card] { cursor: pointer; }
 @media (hover: hover) { [data-open-card]:hover { border-color: rgba(99, 123, 255, 0.45); } }
+
+/* ── Fancy action link ("সব দেখুন →", "পেমেন্ট দেখুন →") — soft brand-tinted pill with a fade, bigger on
+   larger screens, arrow that nudges forward on hover. Used in the admin and on the public site. ── */
+.fancy-link {
+  display: inline-flex; align-items: center; gap: 0.4rem; min-height: 2.5rem; padding: 0.3rem 0.95rem;
+  border-radius: 9999px; font-weight: 700; font-size: 0.875rem; line-height: 1.25; white-space: nowrap;
+  color: #2a3a85; text-decoration: none;
+  background: linear-gradient(135deg, rgba(53, 71, 155, 0.13) 0%, rgba(53, 71, 155, 0.04) 100%);
+  border: 1px solid rgba(53, 71, 155, 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.fancy-link:hover, .fancy-link:focus-visible {
+  transform: translateY(-1px); box-shadow: 0 6px 16px rgba(53, 71, 155, 0.18);
+  background: linear-gradient(135deg, rgba(53, 71, 155, 0.2) 0%, rgba(53, 71, 155, 0.07) 100%); text-decoration: none;
+}
+.fancy-link:active { transform: translateY(0); }
+.fancy-link--arrow::after { content: "→"; display: inline-block; transition: transform 0.15s ease; }
+.fancy-link--arrow:hover::after { transform: translateX(3px); }
+@media (min-width: 768px) { .fancy-link { font-size: 0.9375rem; padding: 0.35rem 1.1rem; } }
+@media (min-width: 1024px) { .fancy-link { font-size: 1rem; min-height: 2.75rem; padding: 0.4rem 1.2rem; } }
+.dark .fancy-link, .admin-dark .fancy-link {
+  color: #c7d2fe; border-color: rgba(165, 180, 252, 0.3);
+  background: linear-gradient(135deg, rgba(129, 140, 248, 0.22) 0%, rgba(129, 140, 248, 0.06) 100%);
+}
+@media (prefers-reduced-motion: reduce) { .fancy-link, .fancy-link--arrow::after { transition: none; } }

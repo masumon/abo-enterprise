@@ -63,7 +63,7 @@ export default function ServicesOverview() {
               {lang === "bn" ? "আমাদের সেবাসমূহ" : "Our Services"}
             </h2>
           </div>
-          <Link href="/services" className="group inline-flex items-center gap-1.5 flex-shrink-0 rounded-full border border-[var(--line)] bg-white dark:bg-white/5 px-3.5 py-2 text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-300 shadow-sm hover:shadow-md hover:border-brand-200 hover:-translate-y-0.5 transition-all whitespace-nowrap">
+          <Link href="/services" className="group fancy-link flex-shrink-0">
             {lang === "bn" ? "সব সেবা" : "View all"}
             <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>

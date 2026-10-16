@@ -102,7 +102,7 @@ export default function FeaturedProducts() {
           </h2>
           <Link
             href="/products"
-            className="inline-flex items-center gap-1 text-xs sm:text-sm font-semibold text-brand-600 dark:text-brand-300 whitespace-nowrap px-3 py-1.5 rounded-full bg-brand-50 dark:bg-brand-500/10 hover:bg-brand-100 dark:hover:bg-brand-500/20 transition-colors"
+            className="fancy-link"
           >
             {lang === "bn" ? "সব দেখুন" : "View all"}
             <span aria-hidden>→</span>

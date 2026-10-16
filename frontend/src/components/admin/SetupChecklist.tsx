@@ -180,7 +180,7 @@ export default function SetupChecklist({ totalProducts }: { totalProducts?: numb
                 <span className="block text-sm font-semibold text-heading">{bn ? i.bn : i.en}</span>
                 <span className="block text-xs text-muted leading-relaxed">{bn ? i.hintBn : i.hintEn}</span>
               </span>
-              <span className="text-xs font-semibold text-brand-600 dark:text-brand-300 whitespace-nowrap mt-0.5">{bn ? "ঠিক করুন →" : "Fix →"}</span>
+              <span className="fancy-link mt-0.5">{bn ? "ঠিক করুন →" : "Fix →"}</span>
             </Link>
           </li>
         ))}
