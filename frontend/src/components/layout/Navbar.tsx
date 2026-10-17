@@ -98,7 +98,7 @@ export default function Navbar() {
       >
         {/* Mobile display size only; source logo remains admin-configurable. */}
         <Link href="/" className="flex-none flex items-center" aria-label={brandName}>
-          <BrandLogo size="md" href={false} priority className="mobile-header-logo" />
+          <BrandLogo size="md" href={false} priority className="[&>img]:!object-contain" />
         </Link>
 
         <span className="flex-1" aria-hidden="true" />
